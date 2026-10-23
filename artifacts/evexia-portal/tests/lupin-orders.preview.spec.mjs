@@ -101,6 +101,7 @@ test('Lupin exact validation, attachments, save, review, filters, CSV, cancel an
   await expect(page.locator('[data-testid^="row-lupin-"]')).toHaveCount(1);
   const downloadEvent = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'CSV', exact: true }).click();
   const download = await downloadEvent;
   const csv = await readFile(await download.path(), 'utf8');
   expect(csv).toContain('DEMO-LUPIN-0007');

@@ -27,6 +27,7 @@ async function fit(page) {
 async function csv(page) {
   const next = page.waitForEvent('download');
   await page.getByTestId('kits-export').click();
+  await page.getByRole('menuitem', { name: 'CSV', exact: true }).click();
   const download = await next;
   expect(download.suggestedFilename()).toBe('kits-consumables-orders.csv');
   return fs.readFile(await download.path(), 'utf8');

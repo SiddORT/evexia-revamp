@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Download, Upload } from 'lucide-react';
+import { useAdminPreferences } from './adminPreferences.js';
 import ImmDialog from '../immunotherapy/ImmDialog.jsx';
 import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { releaseBlob } from '../../services/downloadRelease.js';
@@ -8,7 +10,11 @@ import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderTransfers.css';
 
 export default function OrderTransfers({ kind, rows, snapshot, store, adapter, total, renderActions }) {
+  const { theme, appearance } = useAdminPreferences();
   const [format, setFormat] = useState('csv');
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportBusy = useRef(false);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [review, setReview] = useState(null);
@@ -34,23 +40,27 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
   }, [Boolean(adapter), open, uncertain]);
   useEffect(() => { if (review) summary.current?.focus(); }, [review]);
   const close = () => { if (committing.current || uncertain) return; generation.current++; setOpen(false); setBusy(false); setReview(null); setConfirmed(false); setError(''); setFileName(''); };
-  async function download(template = false) {
+  async function download(template = false, selectedFormat = format) {
+    if (exportBusy.current) return;
+    exportBusy.current = true;
+    setExporting(true);
     setError(''); setMessage('');
     try {
       // Capture once, before generating any dates or workbook content.
       const preferences = captureExportPreferences();
       if (adapter) {
-        const blob = await adapter.download(template, preferences, format);
-        releaseBlob(blob, `${kind}-orders${template ? '-template' : ''}.${format}`);
+        const blob = await adapter.download(template, preferences, selectedFormat);
+        releaseBlob(blob, `${kind}-orders${template ? '-template' : ''}.${selectedFormat}`);
         setMessage(template ? 'Blank server-order template downloaded. Use real master IDs; attachment metadata does not restore files.' : 'All authoritative filtered saved orders downloaded, including historical snapshots. File contents excluded.');
         return;
       }
       const source = template ? orderTemplate(kind) : snapshot;
       const orders = template ? source.orders : rows;
-      const blob = orderTransferBlob(kind, orders, source, preferences, format);
-      releaseBlob(blob, `${kind}-orders${template ? '-template' : ''}.${format}`);
-      setMessage(`${template ? 'Template' : `${orders.length} filtered orders (all pages)`} handed to your browser as ${format === 'xlsx' ? 'Excel' : 'CSV'}. Attachment metadata only; no file contents.`);
+      const blob = orderTransferBlob(kind, orders, source, preferences, selectedFormat);
+      releaseBlob(blob, `${kind}-orders${template ? '-template' : ''}.${selectedFormat}`);
+      setMessage(`${template ? 'Template' : `${orders.length} filtered orders (all pages)`} handed to your browser as ${selectedFormat === 'xlsx' ? 'Excel' : 'CSV'}. Attachment metadata only; no file contents.`);
     } catch (e) { setError(e.message || 'Local download could not be started. Please retry.'); }
+    finally { exportBusy.current = false; setExporting(false); }
   }
   async function read(file) {
     const token = ++generation.current;
@@ -81,22 +91,32 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
     }
   }
   const actions = <div className="order-transfer-actions">
-      <label className="order-transfer-format">File format
-        <select value={format} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
-      </label>
-      <button type="button" className="admin-button admin-button--secondary" disabled={adapter ? total === 0 : !rows.length} onClick={() => download()} data-testid={exportTestId}><Download size={15} aria-hidden="true" />Export</button>
+      <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(nextOpen) => { if (!nextOpen || !exportBusy.current) setExportMenuOpen(nextOpen); }}>
+        <DropdownMenu.Trigger asChild>
+          <button type="button" className="admin-button admin-button--secondary" disabled={adapter ? total === 0 : !rows.length} aria-disabled={exporting || undefined} data-testid={exportTestId}><Download size={15} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export'}</button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label={`${title} export format`}>
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => { setFormat('csv'); void download(false, 'csv'); }}>CSV</DropdownMenu.Item>
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => { setFormat('xlsx'); void download(false, 'xlsx'); }}>Excel (.xlsx)</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
       <button ref={trigger} type="button" className="admin-button admin-button--secondary" onClick={() => { setError(''); setMessage(''); setOpen(true); }}><Upload size={15} aria-hidden="true" />Import</button>
     </div>;
   return <div className="order-transfers">
     {renderActions ? renderActions(actions) : actions}
-    <p className="order-transfer-scope">{adapter ? 'Export reads all matching saved server orders, not just this section. Secure scan limit: 10,000 candidate records / 8 MB; narrow filters if exceeded. Imports: up to 500 orders / 1 MiB validated request, atomic server validation. ' : `Export: all ${rows.length} filtered orders across all pages, not only the current page. Local session data; `}Attachment metadata only, never file contents.</p>
+    {kind !== 'immunotherapy' && <p className="order-transfer-scope">Export: all {rows.length} filtered orders across all pages, not only the current page. Local session data; Attachment metadata only, never file contents.</p>}
     {message && <p role="status" className="order-transfer-message">{message}</p>}
     {error && !open && <p role="alert" className="order-transfer-error">{error}</p>}
     {open && <ImmDialog title={`Import ${title} orders`} eyebrow={adapter ? 'Shared server transfer' : 'Local transfer'} description={adapter ? 'Review validates real master references on the server. Explicit confirmation saves the entire batch atomically. External names and snapshots are not trusted; masters are never created.' : 'Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged.'} onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">
       <div className="order-transfer-dialog-fields">
         <p>Use the eight-column template. Order details and patient relationships are JSON; keep decimal values in quoted text. Preserve the declared date context, or use ISO YYYY-MM-DD. {adapter ? 'The template is blank; use real master UUIDs, supported dosage/results and nonempty bottles. Legacy PO numbers are ignored.' : 'The template contains one fictional example—replace or remove it.'}</p>
         <p>{adapter ? 'Keep original order ID, number and exported version for matching updates. For new orders, leave ID and number blank; numbering is server assigned. Legacy patient/snapshot columns are ignored, not used to create masters. Attachment metadata cannot restore uploads: existing saved file associations remain unchanged and new orders import without files.' : 'Keep the original order ID and number to update an order. Give a new order matching sequence identifiers. Patient directory conflicts are rejected, not overwritten. Saved recipient/billing snapshots are retained.'} No order is deleted because it is absent from the file.</p>
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => download(true)}>Download {format === 'xlsx' ? 'Excel' : 'CSV'} template</button>
+        <label className="order-transfer-format">Template file format
+          <select value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
+        </label>
+        <button type="button" className="admin-button admin-button--secondary" disabled={exporting} onClick={() => download(true)}>Download {format === 'xlsx' ? 'Excel' : 'CSV'} template</button>
         <label className="admin-dialog__field">CSV or Excel file ({adapter ? 'up to 8 MB / 500 orders; validated JSON up to 1 MiB' : 'up to 8 MB / 10,000 orders'})
           <input type="file" disabled={Boolean(adapter) && (busy || uncertain)} accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
         </label>
