@@ -96,3 +96,10 @@
 @media (prefers-reduced-motion: reduce) {
   .recovery-card *, .auth-form .submit-button, .auth-form .forgot-button { transition: none !important; animation: none !important; transform: none !important; }
 }
+
+.recovery-page[data-admin-theme="modern"] .recovery-background { opacity: 0.22; }
+.recovery-page[data-admin-theme="modern"] .recovery-card { font-family: var(--font-sans); }
+.recovery-page .field__input-wrap { position: relative; }
+.recovery-page .auth-form--admin .field input { min-height: 50px; }
+.recovery-page .password-toggle { min-width: 44px; min-height: 44px; }
+@media (max-width: 480px) { .recovery-card { padding: 22px 18px; } }

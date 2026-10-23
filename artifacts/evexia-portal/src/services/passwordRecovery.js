@@ -23,11 +23,11 @@ async function send(path, body) {
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = path === 'set-password' && response.status === 400
-      ? 'This invitation link is invalid, expired or already used. Ask your administrator for a new invitation.'
-      : path === 'reset-password' && response.status === 400
+    const message = ['reset-password', 'set-password'].includes(path) && response.status === 400
       && (data?.error?.message ?? data?.detail) === 'Choose a password different from your current password.'
       ? 'Choose a password different from your current password.'
+      : path === 'set-password' && response.status === 400
+      ? 'This invitation link is invalid, expired or already used. Ask your administrator for a new invitation.'
       : response.status === 429 ? 'Too many attempts. Try again later.'
       : response.status === 503 ? 'Password recovery is temporarily unavailable. Try again later or contact your administrator.'
       : response.status >= 500 ? 'Password recovery could not complete. Please try again later.'

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Link } from 'wouter';
 import BrandMark from '../components/BrandMark.jsx';
 import Field from '../components/auth/Field.jsx';
@@ -14,7 +15,10 @@ function scrubFragment() {
 
 export default function PasswordRecoveryPage({ reset = false }) {
   const invitation = reset && new URLSearchParams(window.location.search).get('invitation') === '1';
-  const { theme } = useAdminPreferences();
+  const { theme: preferredTheme } = useAdminPreferences();
+  const theme = invitation ? 'modern' : preferredTheme;
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [token, setToken] = useState(() => reset ? recoveryToken(window.location.hash) : '');
   const generation = useRef(0);
   const [kind, setKind] = useState(() =>
@@ -108,13 +112,23 @@ export default function PasswordRecoveryPage({ reset = false }) {
             {invitation ? 'This invitation is missing or invalid. Ask your administrator for a new invitation.' : 'This recovery link is missing or invalid. Request a new link.'}
           </div>
         ) : !done && (
-          <form className="auth-form" onSubmit={submit} noValidate aria-busy={busy} data-testid="form-password-recovery">
+          <form className={`auth-form${invitation ? ' auth-form--admin' : ''}`} onSubmit={submit} noValidate aria-busy={busy} data-testid="form-password-recovery">
             {reset ? <>
               <input type="text" name="username" autoComplete="username" value="" readOnly hidden />
-              <Field id="new-password" type="password" label="New password" autoComplete="new-password"
-                value={password} onChange={event => setPassword(event.target.value)} />
-              <Field id="confirm-password" type="password" label="Confirm new password" autoComplete="new-password"
-                value={confirmation} onChange={event => setConfirmation(event.target.value)} />
+              <Field id="new-password" type={showNew ? 'text' : 'password'} label="New password" autoComplete="new-password"
+                value={password} onChange={event => setPassword(event.target.value)}>
+                <button type="button" className="password-toggle" onClick={() => setShowNew(visible => !visible)}
+                  aria-label={showNew ? 'Hide new password' : 'Show new password'} aria-pressed={showNew}>
+                  {showNew ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </button>
+              </Field>
+              <Field id="confirm-password" type={showConfirm ? 'text' : 'password'} label="Confirm new password" autoComplete="new-password"
+                value={confirmation} onChange={event => setConfirmation(event.target.value)}>
+                <button type="button" className="password-toggle" onClick={() => setShowConfirm(visible => !visible)}
+                  aria-label={showConfirm ? 'Hide confirm new password' : 'Show confirm new password'} aria-pressed={showConfirm}>
+                  {showConfirm ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </button>
+              </Field>
               <p className="recovery-hint">Use 12 to 128 characters. Longer passphrases are fine.</p>
             </> : <Field id="recovery-identifier" label="Email or User ID" autoComplete="username"
               value={identifier} onChange={event => setIdentifier(event.target.value)} />}
@@ -127,7 +141,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
           <div className="recovery-alert" role="alert" data-testid="status-recovery-error">
             <strong>We could not complete that</strong>
             {message}
-            {!/^Enter |match|characters/i.test(message) && (
+            {!/^Enter |match|characters|invalid|expired|already|used|no longer/i.test(message) && (
               <> If this looks temporary, wait a few minutes and try again.</>
             )}
           </div>

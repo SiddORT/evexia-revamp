@@ -34,6 +34,15 @@ inline guidance and unconditional recovery-page message.
 **How to apply:** Preserve this interaction during merges; do not introduce
 an account-type lookup or weaken backend Super Admin recovery protection.
 
+Invited MRs set their own password through an emailed setup link, then sign in
+to the MR portal. The user requests the modern theme, a background image, and
+show/hide eye controls for both password fields on that setup screen.
+
+**Why:** The user explicitly requested this invitation experience.
+
+**How to apply:** Preserve the dedicated invitation flow and its presentation
+when merging login or recovery changes; do not send passwords in invitations.
+
 For this recovery rollout, UAT access is permitted when needed, but database
 migrations and production-impacting actions require reporting the exact action
 and its risks first. A code push must not implicitly authorize deployment.

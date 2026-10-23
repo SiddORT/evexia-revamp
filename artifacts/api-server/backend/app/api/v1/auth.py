@@ -75,8 +75,12 @@ def set_invited_password(body: ResetPasswordRequest, request: Request, response:
     try:
         kind = password_recovery.reset(db, settings, body.token, body.new_password,
             request.state.request_id, purpose="account_invitation")
-    except service.AuthError:
+    except service.AuthError as error:
         db.rollback()
+        # Preserve only this safe, actionable validation message. All token,
+        # account and eligibility failures retain the same generic response.
+        if str(error) == "Choose a password different from your current password.":
+            raise HTTPException(400, str(error)) from None
         raise HTTPException(400, "This invitation link is invalid, expired or already used. Ask your administrator for a new invitation.") from None
     clear_refresh_cookie(response, settings)
     return {"message": "Password set. Sign in with your new password.", "identity_kind": kind}
