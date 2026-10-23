@@ -17,6 +17,14 @@ deploy without authorization for that operation.
 
 # Development release compatibility
 
+PO/PR saved document revisions retain encrypted canonical models with the
+reviewed browser-local template/date snapshot. History reuses authenticated
+audit evidence; PR remains quantity-based, and unavailable legacy layouts must
+not be fabricated. See `docs/procurement-document-revisions.md` for migration,
+renderer compatibility and download limitations. This delivery was source-only:
+tests and runtime verification were explicitly not performed, and migrations
+were prepared but not executed.
+
 Development compatibility checks are manual-only: explicitly request
 `pnpm check:development` or `pnpm verify:development` when diagnostics are needed.
 Normal preview access, lifecycle/HMR events, ordinary API requests, managed

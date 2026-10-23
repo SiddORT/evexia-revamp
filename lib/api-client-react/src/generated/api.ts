@@ -100,6 +100,7 @@ import type {
   DoctorResponse,
   DoctorReview,
   DoctorStatus,
+  DocumentHistory,
   DomainAction,
   DomainResponse,
   DownloadAllergenSampleParams,
@@ -158,7 +159,11 @@ import type {
   GetInventoryStockHistoryParams,
   GetLanguageHistoryParams,
   GetOpeningStockItemsParams,
+  GetPurchaseOrderChangesParams,
+  GetPurchaseOrderDocumentParams,
   GetPurchaseReceivedAnalyticsParams,
+  GetPurchaseReceivedChangesParams,
+  GetPurchaseReceivedDocumentParams,
   GetPurchaseReceivedFiltersParams,
   GetPurchaseReceivedSourceParams,
   GetSalesTargetChoicesParams,
@@ -432,6 +437,7 @@ import type {
   SalesTargetReview,
   SalesTargetStatus,
   SalesTargetVersion,
+  SavedDocument,
   SessionListResponse,
   SessionPage,
   SessionResponse,
@@ -22594,6 +22600,127 @@ export const useDeletePurchaseOrder = <
   return useMutation(getDeletePurchaseOrderMutationOptions(options));
 };
 
+export const getGetPurchaseOrderDocumentUrl = (
+  recordId: string,
+  params?: GetPurchaseOrderDocumentParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-orders/${recordId}/documents?${stringifiedParams}`
+    : `/api/v1/admin/purchase-orders/${recordId}/documents`;
+};
+
+/**
+ * @summary Document
+ */
+export const getPurchaseOrderDocument = async (
+  recordId: string,
+  params?: GetPurchaseOrderDocumentParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SavedDocument> => {
+  return customFetch<SavedDocument>(
+    getGetPurchaseOrderDocumentUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPurchaseOrderDocumentQueryKey = (
+  recordId: string,
+  params?: GetPurchaseOrderDocumentParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-orders/${recordId}/documents`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseOrderDocumentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseOrderDocument>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseOrderDocumentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseOrderDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPurchaseOrderDocumentQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseOrderDocument>>
+  > = ({ signal }) =>
+    getPurchaseOrderDocument(recordId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseOrderDocument>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseOrderDocumentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseOrderDocument>>
+>;
+export type GetPurchaseOrderDocumentQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Document
+ */
+
+export function useGetPurchaseOrderDocument<
+  TData = Awaited<ReturnType<typeof getPurchaseOrderDocument>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseOrderDocumentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseOrderDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseOrderDocumentQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getEditPurchaseOrderUrl = (recordId: string) => {
   return `/api/v1/admin/purchase-orders/${recordId}/edit`;
 };
@@ -22711,6 +22838,127 @@ export const useEditPurchaseOrder = <
 > => {
   return useMutation(getEditPurchaseOrderMutationOptions(options));
 };
+
+export const getGetPurchaseOrderChangesUrl = (
+  recordId: string,
+  params?: GetPurchaseOrderChangesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-orders/${recordId}/history?${stringifiedParams}`
+    : `/api/v1/admin/purchase-orders/${recordId}/history`;
+};
+
+/**
+ * @summary History
+ */
+export const getPurchaseOrderChanges = async (
+  recordId: string,
+  params?: GetPurchaseOrderChangesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DocumentHistory> => {
+  return customFetch<DocumentHistory>(
+    getGetPurchaseOrderChangesUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPurchaseOrderChangesQueryKey = (
+  recordId: string,
+  params?: GetPurchaseOrderChangesParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-orders/${recordId}/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseOrderChangesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseOrderChanges>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseOrderChangesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseOrderChanges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPurchaseOrderChangesQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseOrderChanges>>
+  > = ({ signal }) =>
+    getPurchaseOrderChanges(recordId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseOrderChanges>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseOrderChangesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseOrderChanges>>
+>;
+export type GetPurchaseOrderChangesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary History
+ */
+
+export function useGetPurchaseOrderChanges<
+  TData = Awaited<ReturnType<typeof getPurchaseOrderChanges>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseOrderChangesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseOrderChanges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseOrderChangesQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getPreviewPurchaseOrderEditUrl = (recordId: string) => {
   return `/api/v1/admin/purchase-orders/${recordId}/preview`;
@@ -24431,6 +24679,130 @@ export const useDeletePurchaseReceived = <
   return useMutation(getDeletePurchaseReceivedMutationOptions(options));
 };
 
+export const getGetPurchaseReceivedDocumentUrl = (
+  recordId: string,
+  params?: GetPurchaseReceivedDocumentParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/${recordId}/documents?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/${recordId}/documents`;
+};
+
+/**
+ * @summary Document
+ */
+export const getPurchaseReceivedDocument = async (
+  recordId: string,
+  params?: GetPurchaseReceivedDocumentParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SavedDocument> => {
+  return customFetch<SavedDocument>(
+    getGetPurchaseReceivedDocumentUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPurchaseReceivedDocumentQueryKey = (
+  recordId: string,
+  params?: GetPurchaseReceivedDocumentParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/${recordId}/documents`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseReceivedDocumentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedDocument>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseReceivedDocumentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPurchaseReceivedDocumentQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseReceivedDocument>>
+  > = ({ signal }) =>
+    getPurchaseReceivedDocument(recordId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseReceivedDocument>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseReceivedDocumentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseReceivedDocument>>
+>;
+export type GetPurchaseReceivedDocumentQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Document
+ */
+
+export function useGetPurchaseReceivedDocument<
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedDocument>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseReceivedDocumentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseReceivedDocumentQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getEditPurchaseReceivedUrl = (recordId: string) => {
   return `/api/v1/admin/purchase-received/${recordId}/edit`;
 };
@@ -24548,6 +24920,127 @@ export const useEditPurchaseReceived = <
 > => {
   return useMutation(getEditPurchaseReceivedMutationOptions(options));
 };
+
+export const getGetPurchaseReceivedChangesUrl = (
+  recordId: string,
+  params?: GetPurchaseReceivedChangesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/${recordId}/history?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/${recordId}/history`;
+};
+
+/**
+ * @summary History
+ */
+export const getPurchaseReceivedChanges = async (
+  recordId: string,
+  params?: GetPurchaseReceivedChangesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DocumentHistory> => {
+  return customFetch<DocumentHistory>(
+    getGetPurchaseReceivedChangesUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPurchaseReceivedChangesQueryKey = (
+  recordId: string,
+  params?: GetPurchaseReceivedChangesParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/${recordId}/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseReceivedChangesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedChanges>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseReceivedChangesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedChanges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPurchaseReceivedChangesQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseReceivedChanges>>
+  > = ({ signal }) =>
+    getPurchaseReceivedChanges(recordId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseReceivedChanges>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseReceivedChangesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseReceivedChanges>>
+>;
+export type GetPurchaseReceivedChangesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary History
+ */
+
+export function useGetPurchaseReceivedChanges<
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedChanges>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetPurchaseReceivedChangesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedChanges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseReceivedChangesQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getPreviewPurchaseReceivedEditUrl = (recordId: string) => {
   return `/api/v1/admin/purchase-received/${recordId}/preview`;

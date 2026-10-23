@@ -1,7 +1,7 @@
 """Shared procurement records; independent of legacy browser receiving."""
 import uuid
 from datetime import date
-from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKey, Integer, JSON, String
+from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models import Timestamps
@@ -52,6 +52,7 @@ class PurchaseOrderAudit(Base):
     action: Mapped[str] = mapped_column(String(8))
     summary: Mapped[str] = mapped_column(String(2000))
     actor: Mapped[str] = mapped_column(String(320))
+    payload_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class PurchaseOrderRequest(Base):

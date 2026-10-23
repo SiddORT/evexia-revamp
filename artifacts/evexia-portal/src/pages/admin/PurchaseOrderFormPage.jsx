@@ -20,6 +20,8 @@ import {
 } from '../../services/serverPurchaseOrders.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
+import { captureDocumentContext } from '../../services/savedProcurementDocuments.js';
+import DocumentPreferenceRecovery from '../../components/admin/DocumentPreferenceRecovery.jsx';
 
 const BASE = '/admin/inventory/purchase-orders';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -96,7 +98,8 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState(restored ? 'A previous save attempt did not return a confirmed result. Retry it to confirm whether it was saved; nothing is duplicated.' : '');
   const [saveError, setSaveError] = useState('');
-  const [review, setReview] = useState(restored ? { order: restored.order, token: restored.reviewToken } : null);
+  const [documentPreferenceError, setDocumentPreferenceError] = useState('');
+  const [review, setReview] = useState(restored ? { order: restored.order, token: restored.reviewToken, input: restored.input || toInput(restored.values) } : null);
   const [uncertain, setUncertain] = useState(Boolean(restored));
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -168,18 +171,20 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
 
   async function runReview(event) {
     event.preventDefault();
-    if (busyRef.current || locked) return;
+    if (busyRef.current || locked || documentPreferenceError) return;
     const found = validate(values);
     setErrors(found);
     setSaveError('');
     if (Object.keys(found).length) { document.getElementById('po-form-errors')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     busyRef.current = true; setBusy(true);
     try {
-      const result = await (editing ? previewPurchaseOrderEdit(order.id, toInput(values)) : previewPurchaseOrder(toInput(values)));
-      setReview({ order: result.order, token: result.reviewToken });
+      const input = { ...toInput(values), documentContext: captureDocumentContext('po') };
+      const result = await (editing ? previewPurchaseOrderEdit(order.id, input) : previewPurchaseOrder(input));
+      setReview({ order: result.order, token: result.reviewToken, input });
       setNotice('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (cause) {
+      if (cause.documentPreferenceFailure) setDocumentPreferenceError(cause.message);
       setSaveError(describeError(cause, 'The order could not be reviewed. Your draft is kept; try again.'));
     } finally { busyRef.current = false; setBusy(false); }
   }
@@ -188,7 +193,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     if (busyRef.current || !review) return;
     busyRef.current = true; setBusy(true);
     setSaveError('');
-    const input = uncertain && restored ? (restored.input || toInput(restored.values)) : toInput(values);
+    const input = uncertain && restored ? (restored.input || toInput(restored.values)) : review.input;
     const fingerprint = uncertain && restored ? restored.fingerprint : JSON.stringify({ input, token: review.token });
     if (pendingRef.current?.fingerprint !== fingerprint) pendingRef.current = { fingerprint, key: newKey() };
     const { key } = pendingRef.current;
@@ -218,7 +223,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
         setUncertain(true);
         setSaveError('The server did not confirm whether this order was saved. Retry to confirm; the same request identity is reused so no duplicate is created.');
       } else {
-        await clearAttempt(); pendingRef.current = null; setUncertain(false);
+        await clearAttempt(); pendingRef.current = null; setUncertain(false); setReview(null);
         setSaveError(describeError(cause, 'The order could not be saved. Your draft is kept.'));
       }
     } finally { busyRef.current = false; setBusy(false); }
@@ -236,10 +241,11 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     {notice && <div className="admin-feedback" role="status" style={{ margin: 18 }}>{notice}</div>}
     {blocked && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{blocked}</div>}
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError}</div>}
+    {documentPreferenceError && <DocumentPreferenceRecovery kind="po" message={documentPreferenceError} onRecovered={() => { setDocumentPreferenceError(''); setSaveError(''); }} />}
     {editing && <p className="po-review__note" style={{ margin: 18 }}>Retained products keep their saved names, prices and GST, even if their master records are no longer available. Newly selected products use the current catalogue.</p>}
     {conflict && <button type="button" className="admin-button" onClick={async () => { if (await confirm('Discard this draft and reload the latest saved order?', { actionLabel: 'Discard and reload' }) && !busyRef.current) { navigation.current = {}; onReload(); } }}>Reload latest order</button>}
     {review ? <>
-      <div className="po-review"><p className="po-review__note">Confirming saves this order on the server. It does not send an order to a supplier.</p>
+      <div className="po-review"><p className="po-review__note">Confirming saves this order and its document on the server. It does not send an order to a supplier. Captured template: {review.input?.documentContext?.templateId || restored?.input?.documentContext?.templateId || 'Legacy retry; original request retained'}.</p>
         <dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.order.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.order.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.order.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.order.expectedDate)}</dd></div></dl>
         <TaxBasis basis={review.order.taxBasis} />
         <h3 className="po-section-title">Items <span>{review.order.lines.length} product {review.order.lines.length === 1 ? 'line' : 'lines'}</span></h3></div>

@@ -938,8 +938,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'inventory'
     ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/history)?|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
-    ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i
-    : /^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i;
+    ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i
+    : /^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
   if (!allowed.test(path)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
@@ -953,6 +953,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (writing && ['purchase-orders', 'purchase-received'].includes(resource) && /\/(?:documents|history)$/.test(path)) {
+    throw new SessionError('Saved documents and history are read-only.');
+  }
   const httpMethod = method || (writing ? 'POST' : 'GET');
   const epoch = generation;
   const owner = state.user?.id;

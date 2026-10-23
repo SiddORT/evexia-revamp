@@ -15,6 +15,7 @@ from app.services.staff_crypto import StaffCrypto
 from app.services.zones import label
 from app.services import purchase_orders as orders
 from app.services.purchase_received_crypto import PRError, ReceiptCrypto
+from app.services import procurement_documents as documents
 
 SCAN_LIMIT = 2000
 
@@ -82,6 +83,7 @@ def get_row(db, record_id):
 
 
 def review_data(db, crypto, body, existing=None):
+    generation = documents.context(body)
     po = source(db, body.poId, crypto, str(existing.id) if existing else None)
     if po["status"] != "open" or (existing and existing.po_id != body.poId):
         raise PRError("Choose an open server PO. The source of a saved receipt cannot change.", 409, "pr_source")
@@ -129,7 +131,7 @@ def review_data(db, crypto, body, existing=None):
             vendorGstNo=vendor.gstNo or "", locationId=po["locationId"], locationName=po["locationName"])
     data.update(receivedDate=body.receivedDate.isoformat(), receiverMode=body.receiverMode,
                 staffId=str(body.staffId) if body.staffId else None, receivedBy=name, lines=lines)
-    token_data = [data, po["version"], po["balances"], existing.version if existing else None, receiver_version]
+    token_data = [data, generation, po["version"], po["balances"], existing.version if existing else None, receiver_version]
     return dict(receipt=data, reviewToken=crypto.digests(token_data)[crypto.active])
 
 
@@ -143,7 +145,10 @@ def mutation(db, actor, body, record_id=None, operation="created"):
         # Always before PO locks: transfer and initialization writers use this
         # same lock, including before receipt source reads or retry resolution.
         inventory.lock(db)
-        digest_data = [operation, str(record_id), body.model_dump(mode="json")]
+        payload = body.model_dump(mode="json")
+        if "documentContext" not in body.model_fields_set:
+            payload.pop("documentContext", None)
+        digest_data = [operation, str(record_id), payload]
         hashes = crypto.digests(digest_data)
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": body.idempotencyKey.int % (2**63 - 1)})
         retry = db.get(ReceiptRetry, body.idempotencyKey)
@@ -177,6 +182,8 @@ def mutation(db, actor, body, record_id=None, operation="created"):
         row.status, row.updated_at = data["status"], now
         data.update(id=str(row.id), number=row.number, version=row.version,
                     source="server", createdAt=before["createdAt"] if before else now.isoformat(), updatedAt=now.isoformat())
+        if operation != "deleted":
+            data["documentRevision"] = row.version
         row.payload_ciphertext = crypto.seal(row.id, "receipt", data)
         db.flush()
         inventory.reconcile_receipt(db, current, data)
@@ -189,8 +196,11 @@ def mutation(db, actor, body, record_id=None, operation="created"):
         db.add(event)
         db.flush()
         history = dict(id=str(event.id), receiptId=str(row.id), number=row.number, action=operation, at=now.isoformat(),
-                       actor=label(db, current.user.id), summary=f"Receipt {operation}; {len(data['lines'])} saved lines", receipt=data)
+                       actor=label(db, current.user.id), summary=f"Receipt {operation}; {len(data['lines'])} saved lines", receipt=data, before=before)
         db.add(ReceiptHistory(event_id=event.id, receipt_id=row.id, payload_ciphertext=crypto.seal(event.id, "history", history)))
+        if operation != "deleted":
+            documents.archive(db, "pr", row, event, {**data, "company": dict(documents.COMPANY)},
+                documents.context(body), crypto)
         db.add(ReceiptRetry(key=body.idempotencyKey, actor_id=current.user.id, digest=hashes[crypto.active],
                            payload_ciphertext=crypto.seal(body.idempotencyKey, "retry", data)))
         return data

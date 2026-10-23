@@ -9,6 +9,7 @@ import { renderPRReceiptPages } from '../services/prReceiptRender.js';
 export default function useDocumentPresentation(document, type) {
   const preferences = useAdminPreferences();
   return useMemo(() => {
+    if (document.archived) return document;
     if (!document.model) return document;
     const presentation = displayPreferences(preferences);
     return {

@@ -251,7 +251,7 @@ export function clearPending() {
 /* ---------- confirmed-save marker (set only after a confirmed server response) ---------- */
 const SAVED_KEY = 'evexia.po.saved-notice';
 export function markSaved(order) {
-  try { window.sessionStorage.setItem(SAVED_KEY, JSON.stringify({ owner: ownerId(), number: String(order?.number || '') })); } catch { /* notice is optional */ }
+  try { window.sessionStorage.setItem(SAVED_KEY, JSON.stringify({ owner: ownerId(), number: String(order?.number || ''), documentRevision: order?.documentRevision ?? null })); } catch { /* notice is optional */ }
 }
 export function consumeSaved() {
   try {

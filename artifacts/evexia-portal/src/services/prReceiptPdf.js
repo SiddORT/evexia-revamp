@@ -175,7 +175,7 @@ export function downloadSearchableReceipt(document, filename, logoUrl, options =
 }
 
 async function prepareSearchableReceipt(document, filename, logoUrl, {
-  guard = reportingIdentityGuard(), metadata = { source: 'pr_receipt', kind: 'searchable', format: 'PDF' },
+  guard = reportingIdentityGuard(), metadata = { source: 'pr_receipt', kind: 'searchable', format: 'PDF' }, beforeRelease,
 } = {}) {
   guard();
   const textPages = measureReceiptTextPages(document.pages);
@@ -184,5 +184,8 @@ async function prepareSearchableReceipt(document, filename, logoUrl, {
   for (let i = 0; i < document.pages.length; i++) {
     images.push(await rasterizePage(document.pages[i], logo, i + 1));
   }
-  return downloadPdfBytes(buildReceiptPdf(images, textPages), filename, { guard, metadata });
+  const bytes = buildReceiptPdf(images, textPages);
+  if (beforeRelease) await beforeRelease();
+  guard();
+  return downloadPdfBytes(bytes, filename, { guard, metadata });
 }

@@ -294,7 +294,7 @@ export function downloadInvoiceDocument(invoiceDocument, filename, logoUrl, opti
 
 async function prepareInvoiceDownload(invoiceDocument, filename, logoUrl, {
   activityResource = 'purchase_order', metadata = { source: 'po_invoice', kind: 'invoice', format: 'PDF' },
-  guard = reportingIdentityGuard(),
+  guard = reportingIdentityGuard(), beforeRelease,
 } = {}) {
   guard();
   if (!invoiceDocument || typeof invoiceDocument !== 'object' ||
@@ -315,6 +315,8 @@ async function prepareInvoiceDownload(invoiceDocument, filename, logoUrl, {
     jpegPages.push(await rasterizePage(invoiceDocument.pages[index], logoDataUri, index + 1));
   }
   const pdfBytes = buildInvoicePdf(jpegPages);
+  if (beforeRelease) await beforeRelease();
+  guard();
   const result = await downloadPdfBytes(pdfBytes, filename, { metadata, guard });
   if (activityResource) recordLocalAction(activityResource, 'exported');
   return result;

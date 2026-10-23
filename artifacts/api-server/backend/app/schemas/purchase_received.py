@@ -4,6 +4,7 @@ from datetime import date
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.purchase_orders import POResponse
+from app.schemas.procurement_documents import DocumentContext
 
 
 class PRLineInput(BaseModel):
@@ -17,6 +18,7 @@ class PRLineInput(BaseModel):
 
 class PRInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    documentContext: DocumentContext | None = None
     poId: uuid.UUID
     receivedDate: date
     receiverMode: Literal["staff", "other"]
@@ -90,6 +92,7 @@ class PRSaved(PRSnapshot):
     updatedAt: str
     deletedAt: str | None
     fulfillment: Literal["Open", "Partially Received", "Closed"] | None = None
+    documentRevision: int | None = None
 
 
 class PRReview(BaseModel):

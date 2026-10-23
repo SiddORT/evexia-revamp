@@ -17,6 +17,7 @@ from app.services.allergens import authorize
 from app.services.zones import label
 from app.services.purchase_order_tax import tax_basis, supplier_state, calculate_components, COMPONENTS
 from app.services.location_geography import geography
+from app.services import procurement_documents as documents
 
 MAX_TOTAL = 10000000000
 MODELS = {"vendors": (Vendor, Vendor.vendorName), "locations": (StorageLocation, StorageLocation.name),
@@ -61,7 +62,9 @@ def projection(db, row):
     lines = db.scalars(select(Line).where(Line.order_id == row.id, Line.position >= 0).order_by(Line.position)).all()
     installed = db.scalar(text("SELECT to_regclass('purchase_receipts') IS NOT NULL"))
     receipt_count = db.scalar(text("SELECT count(*) FROM purchase_receipts WHERE po_id=:id AND status='active'"), {"id": row.id}) if installed else 0
-    return dict(id=str(row.id), number=row.number, version=row.version, activeReceiptCount=receipt_count, poDate=row.po_date.isoformat(),
+    current_document = documents.latest_row(db, "po", row.id)
+    return dict(id=str(row.id), number=row.number, version=row.version, activeReceiptCount=receipt_count,
+                documentRevision=current_document.record_version if current_document else None, poDate=row.po_date.isoformat(),
                 expectedDate=row.expected_date.isoformat(), vendorId=str(row.vendor_id), vendorName=row.vendor_name,
                 locationId=str(row.location_id), locationName=row.location_name, status=row.status,
                 subtotal=row.subtotal, gstAmount=row.gst_amount, total=row.total,
@@ -71,6 +74,7 @@ def projection(db, row):
 
 
 def preview_data(db, body, existing=None):
+    generation = documents.context(body)
     previous = projection(db, existing) if existing else None
     vendor = None if previous and previous["vendorId"] == str(body.vendorId) else locked_reference(db, "vendors", body.vendorId)
     # Retained vendors keep captured tax identity, never silently adopt master changes.
@@ -106,9 +110,12 @@ def preview_data(db, body, existing=None):
                  locationId=str(body.locationId), locationName=location.name if location else previous["locationName"],
                  lines=lines, **figures)
     order.update(taxBasis=basis, taxComponents={k: sum(line["taxComponents"][k] for line in lines) for k in COMPONENTS})
-    token = digest([order, vendor.version if vendor else None, location.version if location else None, revisions,
+    crypto = documents.crypto_for(db)
+    historical = documents.previous_model(db, "po", existing.id, crypto) if existing else None
+    document_model = documents.po_supplement(db, order, historical)
+    token = digest([order, generation, document_model, vendor.version if vendor else None, location.version if location else None, revisions,
                     str(existing.id) if existing else None, existing.version if existing else None])
-    return dict(order=order, reviewToken=token)
+    return dict(order=order, reviewToken=token, documentModel=document_model)
 
 
 def preview(db, actor, body, record_id=None):
@@ -122,14 +129,17 @@ def find(db, record_id):
     return row
 
 
-def audit(db, actor, row, action, summary):
+def audit(db, actor, row, action, summary, before=None, after=None):
     event = AuditEvent(actor_id=actor.user.id, session_id=actor.session_id, action=f"purchase_order_{action}",
                        resource_type="purchase_order", resource_id=row.id, outcome="success",
                        request_id=db.info.get("request_id"), created_at=utcnow())
     db.add(event)
     db.flush()
+    crypto = documents.crypto_for(db)
     db.add(Meta(event_id=event.id, order_id=row.id, number=row.number, action=action,
-                summary=summary, actor=label(db, actor.user.id)))
+                summary=summary, actor=label(db, actor.user.id),
+                payload_ciphertext=crypto.seal(event.id, "po-history", dict(before=before, after=after))))
+    return event
 
 
 def persist_lines(db, row, lines):
@@ -155,6 +165,8 @@ def mutation(db, actor, body, record_id=None, operation="created"):
         # committed/lost-ack responses can be recovered before any new validation.
         if "placeOfSupplyCode" not in body.model_fields_set:
             payload.pop("placeOfSupplyCode", None)
+        if "documentContext" not in body.model_fields_set:
+            payload.pop("documentContext", None)
         payload_digest = digest([operation, record_id, payload])
         # Serialize retry key before existence check, including across requests.
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": int(body.idempotencyKey.int % (2**63 - 1))})
@@ -208,8 +220,16 @@ def mutation(db, actor, body, record_id=None, operation="created"):
             row.version += 1
         row.updated_at = utcnow()
         db.flush()
-        audit(db, current, row, operation, summary)
         result = projection(db, row)
+        if operation != "deleted":
+            result["documentRevision"] = row.version
+        event = audit(db, current, row, operation, summary, before, result)
+        if operation != "deleted":
+            model = {**review["documentModel"], **result,
+                "lines": [{**line, "hsnCode": source["hsnCode"]}
+                    for line, source in zip(result["lines"], review["documentModel"]["lines"])]}
+            documents.archive(db, "po", row, event, model, documents.context(body),
+                documents.crypto_for(db))
         db.add(Retry(key=body.idempotencyKey, actor_id=current.user.id, digest=payload_digest, response=result))
         return result
     return transaction(db, actor, work)

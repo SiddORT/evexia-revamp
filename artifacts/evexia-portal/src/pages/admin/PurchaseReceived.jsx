@@ -1,16 +1,15 @@
 import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../components/admin/adminPreferences.js';
+import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
-import PRDocumentPreview from '../../components/admin/PRDocumentPreview.jsx';
 import ReceiptRetryRecovery from '../../components/admin/ReceiptRetryRecovery.jsx';
 import SelectIndicator from '../../components/admin/SelectIndicator.jsx';
-import { listPR, exportPR, activityPR, analyticsPR, filtersPR, pendingPR, sourcePR, getPR, exportPRCSV } from '../../services/serverPurchaseReceived.js';
-import { downloadPRDocument, makePRDocument } from '../../services/prDocuments.js';
+import { listPR, exportPR, activityPR, analyticsPR, filtersPR, pendingPR, sourcePR, exportPRCSV } from '../../services/serverPurchaseReceived.js';
 import { downloadBlob } from '../../services/downloads.js';
 import '../../purchaseOrders.css';
 import '../../purchaseReceived.css';
@@ -31,7 +30,7 @@ export default function PurchaseReceived() {
   const [freshness, setFreshness] = useState(0);
   const [data, setData] = useState(null), [stats, setStats] = useState(null), [options, setOptions] = useState({ vendors: [], receivers: [] });
   const [source, setSource] = useState(null), [error, setError] = useState(''), [actionError, setActionError] = useState('');
-  const [doc, setDoc] = useState(null), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false), [loading, setLoading] = useState(true);
   const [recovery, setRecovery] = useState(() => { try { return { pending: pendingPR() }; } catch (e) { return { error: e.message }; } });
   const generation = useRef(0);
   const params = { po_id: poId, query: filters.search, from_date: filters.from, to_date: filters.to, vendor_id: filters.vendorId,
@@ -63,18 +62,6 @@ export default function PurchaseReceived() {
   const change = (key, value) => { setFilters((f) => ({ ...f, [key]: value })); setPage(1); };
   const canCreate = !poId || (source?.status === 'open' && source?.fulfillment !== 'Closed');
   const open = (r) => navigate(`${BASE}/${r.id}`);
-  async function documentAction(r, pdf) {
-    const preferences = getAdminDisplayPreferences();
-    if (busy) return;
-    setBusy(true); setActionError('');
-    try {
-      const saved = await getPR(r.id);
-      const document = makePRDocument(saved, undefined, preferences);
-      if (pdf) await downloadPRDocument(document, `${saved.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`);
-      else setDoc(document);
-    } catch (cause) { setActionError(cause.message); }
-    finally { setBusy(false); }
-  }
   async function csv() {
     const preferences = captureExportPreferences();
     if (busy) return;
@@ -90,8 +77,7 @@ export default function PurchaseReceived() {
   }
   const actions = (r) => <div className="po-actions">
     <button type="button" className="po-action po-action--icon" title="View" aria-label={`View ${r.number}`} onClick={() => open(r)}><ArrowUpRight size={15} /></button>
-    <button type="button" className="po-action po-action--icon" title="Preview receipt" aria-label={`Preview ${r.number}`} disabled={busy} onClick={() => documentAction(r, false)}><Eye size={15} /></button>
-    <button type="button" className="po-action po-action--icon" title="Download PDF" aria-label={`Download PDF for ${r.number}`} disabled={busy} onClick={() => documentAction(r, true)}><Download size={15} /></button>
+    <ProcurementDocumentActions key={r.id} kind="pr" record={r} />
   </div>;
   const columns = [
     { key: 's', label: 'Sr. No.', render: (_r, i) => i + 1 },
@@ -160,6 +146,5 @@ export default function PurchaseReceived() {
           <h2>Linked purchase orders</h2><div className="po-event-counts">{Object.entries(data.fulfillment).map(([k, n]) => <div key={k}><strong>{n}</strong><span>{k}</span></div>)}</div>
           <h2>Line outcomes</h2><div className="po-event-counts">{[['received lines', data.lines], ['lines with acceptance', data.acceptedAny], ['fully accepted lines', data.fullyAccepted], ['lines with rejection', data.anyRejected], ['all-rejected lines', data.allRejected], ['receipts in scope', data.receipts]].map(([k, n]) => <div key={k}><strong>{n}</strong><span>{k}</span></div>)}</div></div>}
     </section>
-    {doc && <PRDocumentPreview document={doc} onClose={() => setDoc(null)} />}
   </div></AdminLayout>;
 }

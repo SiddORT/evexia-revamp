@@ -51,6 +51,12 @@ def readiness(db: Session = Depends(get_db)):
         CommunicationCrypto(get_settings())
         # Reviewed Staff successors retain every predecessor capability.
         feature_revisions = revisions
+        if revisions == ["0064_procurement_documents"]:
+            from app.services.procurement_documents import crypto_for
+            crypto_for(db)
+            db.execute(text("SELECT event_id,po_id,pr_id,record_version,payload_ciphertext FROM procurement_documents LIMIT 0"))
+            db.execute(text("SELECT payload_ciphertext FROM purchase_order_audit LIMIT 0"))
+            revisions = ["0063_spt_orders"]
         if revisions == ["0063_spt_orders"]:
             db.execute(text("SELECT snapshot_ciphertext,version,source_id FROM spt_orders LIMIT 0"))
             db.execute(text("SELECT snapshot_ciphertext FROM spt_patients LIMIT 0"))

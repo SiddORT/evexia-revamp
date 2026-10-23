@@ -30,7 +30,7 @@ export function prReceiptFilename(number) {
 }
 
 /** Searchable by default; image-only is an explicit, on-device alternative. */
-export async function downloadPRDocument(document, _filename, logoUrl, { format = 'searchable' } = {}) {
+export async function downloadPRDocument(document, _filename, logoUrl, { format = 'searchable', beforeRelease } = {}) {
   if (!document || !Array.isArray(document.pages) || !document.pages.length ||
     document.pages.some((page) => typeof page !== 'string')) {
     throw new Error('Purchase Received document pages are missing; no PDF was downloaded.');
@@ -44,11 +44,11 @@ export async function downloadPRDocument(document, _filename, logoUrl, { format 
   const guard = reportingIdentityGuard();
   guard();
   try {
-    const filename = prReceiptFilename(document.number);
+    const filename = document.archived ? `${String(document.number).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 100)}-revision-${document.revision}${document.current ? '-current' : '-superseded'}.pdf` : prReceiptFilename(document.number);
     const metadata = { source: 'pr_receipt', kind: format, format: 'PDF' };
     const result = format === 'image'
-      ? await downloadInvoiceDocument(document, filename, logoUrl, { activityResource: null, metadata, guard })
-      : await downloadSearchableReceipt(document, filename, logoUrl, { metadata, guard });
+      ? await downloadInvoiceDocument(document, filename, logoUrl, { activityResource: null, metadata, guard, beforeRelease })
+      : await downloadSearchableReceipt(document, filename, logoUrl, { metadata, guard, beforeRelease });
     recordLocalAction('purchase_received', 'exported');
     return result;
   } catch (error) {

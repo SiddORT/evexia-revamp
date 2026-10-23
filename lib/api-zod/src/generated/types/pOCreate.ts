@@ -5,9 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { DocumentContext } from "./documentContext";
 import type { POLineInput } from "./pOLineInput";
 
 export interface POCreate {
+  documentContext?: DocumentContext | null;
   expectedDate: Date;
   idempotencyKey: string;
   /**

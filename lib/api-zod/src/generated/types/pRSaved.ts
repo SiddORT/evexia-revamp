@@ -13,6 +13,7 @@ import type { PRSavedStatus } from "./pRSavedStatus";
 export interface PRSaved {
   createdAt: string;
   deletedAt: string | null;
+  documentRevision?: number | null;
   fulfillment?: PRSavedFulfillment;
   id: string;
   lines: PRLineSnapshot[];

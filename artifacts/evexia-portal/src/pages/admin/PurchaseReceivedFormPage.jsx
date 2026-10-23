@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { ArrowLeft, ClipboardCheck, Download, Eye, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../components/admin/adminPreferences.js';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
@@ -11,12 +11,13 @@ import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import ReceiptReferenceSelect from '../../components/admin/ReceiptReferenceSelect.jsx';
 import ReceiptRetryRecovery from '../../components/admin/ReceiptRetryRecovery.jsx';
 import { setNavigationGuard, interceptNavigation } from '../../auth/navigationGuard.js';
-import PRDocumentPreview from '../../components/admin/PRDocumentPreview.jsx';
+import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
 import { getPOFulfillment, getPR, sourcePR, activityPR, reviewPR, savePR, removePR, validateDraftPR, inputPR, pendingPR, rememberPR, forgetPR, reconcilePR, ownerPR } from '../../services/serverPurchaseReceived.js';
-import { downloadPRDocument, makePRDocument } from '../../services/prDocuments.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
 import '../../purchaseReceived.css';
+import { captureDocumentContext } from '../../services/savedProcurementDocuments.js';
+import DocumentPreferenceRecovery from '../../components/admin/DocumentPreferenceRecovery.jsx';
 
 const BASE = '/admin/inventory/purchase-received';
 const PO_BASE = '/admin/inventory/purchase-orders';
@@ -53,6 +54,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const [errors, setErrors] = useState({});
   const [review, setReview] = useState(null);
   const [saveError, setSaveError] = useState('');
+  const [documentPreferenceError, setDocumentPreferenceError] = useState('');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [uncertain, setUncertain] = useState(false);
@@ -101,15 +103,16 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const payload = () => inputPR(values);
   async function prepare(e) {
     e.preventDefault();
-    if (saveBlocked || busyRef.current || uncertain || otherPending || sourceLoading || batchDefaults.blocked) return;
+    if (saveBlocked || busyRef.current || uncertain || otherPending || sourceLoading || batchDefaults.blocked || documentPreferenceError) return;
     const errors = validateDraftPR(values, po, receipt);
     setErrors(errors);
     if (Object.keys(errors).length) { document.getElementById('pr-form-errors')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     busyRef.current = true; setBusy(true); onSaveStateChange(true);
     try {
-      const result = await reviewPR(payload(), receipt?.id);
-      setReview({ ...result.receipt, token: result.reviewToken }); window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (cause) { setSaveError(cause.message); }
+      const input = { ...payload(), documentContext: captureDocumentContext('pr') };
+      const result = await reviewPR(input, receipt?.id);
+      setReview({ ...result.receipt, token: result.reviewToken, input }); window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (cause) { if (cause.documentPreferenceFailure) setDocumentPreferenceError(cause.message); setSaveError(cause.message); }
     finally { busyRef.current = false; setBusy(false); onSaveStateChange(false); }
   }
   async function save() {
@@ -127,7 +130,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
       attempt.current = attempt.current || { key: crypto.randomUUID(), id: receipt?.id || null, operation: receipt ? 'edit' : 'create' };
       await rememberPR(attempt.current);
       journaled = true;
-      const next = await savePR(payload(), review.token, attempt.current.key, receipt);
+      const next = await savePR(review.input, review.token, attempt.current.key, receipt);
       await forgetPR(attempt.current.key); attempt.current = null;
       navigation.current = {};
       onSaved(next);
@@ -181,8 +184,9 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
     {otherPending && <ReceiptRetryRecovery pending={otherPending} onResolved={resolvedOther} />}
     <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Receipt details'}</h2>{review && <p>Nothing has been saved yet. Check batches, quantities and balances.</p>}</div><ClipboardCheck size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError} <button type="button" className="po-link" onClick={requestRefresh} data-testid="button-refresh-pr-draft">Refresh records</button></div>}
+    {documentPreferenceError && <DocumentPreferenceRecovery kind="pr" message={documentPreferenceError} onRecovered={() => { setDocumentPreferenceError(''); setSaveError(''); }} />}
     {review ? <>
-      <div className="po-review pr-lines-content"><p className="po-review__note">Server-reviewed receipt. Confirming saves receiving only; it does not update a stock ledger or notify a supplier.</p>
+      <div className="po-review pr-lines-content"><p className="po-review__note">Server-reviewed receipt. Captured document template: {review.input.documentContext.templateId}. Confirming saves this receipt and its quantity-based document; it does not create a financial invoice or notify a supplier.</p>
         <dl className="po-detail-grid"><div><dt>PO</dt><dd>{review.poNumber}</dd></div><div><dt>Vendor</dt><dd>{review.vendorName}</dd></div><div><dt>Destination</dt><dd>{review.locationName}</dd></div><div><dt>Received date</dt><dd>{displayDate(review.receivedDate)}</dd></div><div><dt>Received by</dt><dd>{review.receivedBy}</dd></div></dl>
         <h3 className="po-section-title">Lines <span>{summary.lines.length} to save</span></h3>
       <div className="pr-grid" tabIndex={0} role="region" aria-label="Receipt lines"><table><thead><tr><th>Sr. No.</th><th>Product</th><th>Ordered</th><th>Received</th><th>Accepted</th><th>Rejected</th><th>Batch No.</th><th>Expiry</th><th>Balance after</th></tr></thead>
@@ -253,8 +257,6 @@ export default function PurchaseReceivedFormPage({ id }) {
   const [deleting, setDeleting] = useState(false);
   const deletingRef = useRef(false);
   const [showActivity, setShowActivity] = useState(false);
-  const [doc, setDoc] = useState(null);
-  const [pdfBusy, setPdfBusy] = useState(false);
   const [version, setVersion] = useState(0);
   const [draftPoId, setDraftPoId] = useState(requestedPoId);
   const [draftDirty, setDraftDirty] = useState(false);
@@ -364,13 +366,6 @@ export default function PurchaseReceivedFormPage({ id }) {
     }
     finally { deletingRef.current = false; setDeleting(false); }
   }
-  async function pdf() {
-    if (pdfBusy) return; setPdfBusy(true); setActionError('');
-    try { await downloadPRDocument(makePRDocument(record, undefined, getAdminDisplayPreferences()), `${record.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`); }
-    catch (cause) { setActionError(cause.message || 'Could not download this receipt.'); }
-    finally { setPdfBusy(false); }
-  }
-  function preview() { setActionError(''); try { setDoc(makePRDocument(record, undefined, getAdminDisplayPreferences())); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
   const title = isNew ? 'New purchase received' : editing ? 'Edit purchase received' : record?.number || 'Purchase received';
 
   return <AdminLayout title={title}><div className={`po-page${!isNew && !editing ? ' pr-page--detail' : ''}`}>
@@ -388,8 +383,7 @@ export default function PurchaseReceivedFormPage({ id }) {
         <div className="po-form-intro"><div><h2>Receipt overview</h2><p>Created {stamp(record.createdAt)} · Last changed {stamp(record.updatedAt)}{record.deletedAt ? ` · Deleted ${stamp(record.deletedAt)}` : ''}</p></div>
           <div className="po-actions">
              <button type="button" className="admin-button admin-button--secondary" onClick={() => setShowActivity((v) => !v)} aria-expanded={showActivity} data-testid="button-pr-activity"><History size={15} /> Activity ({snapshot.record.eventTotal})</button>
-            <button type="button" className="admin-button admin-button--secondary" onClick={preview} data-testid="button-preview-pr"><Eye size={15} /> Preview</button>
-            <button type="button" className="admin-button admin-button--secondary" disabled={pdfBusy} onClick={pdf} data-testid="button-pdf-pr"><Download size={15} /> {pdfBusy ? 'Preparing…' : 'PDF'}</button>
+            <ProcurementDocumentActions key={record.id} kind="pr" record={record} />
             {record.status === 'active' && <><button type="button" className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-pr"><Pencil size={15} /> Edit</button><button type="button" className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-pr"><Trash2 size={15} /> Delete</button></>}
           </div></div>
         <div className="po-review pr-lines-content">
@@ -404,6 +398,5 @@ export default function PurchaseReceivedFormPage({ id }) {
     </>}
      {pendingPoId !== null && isNew && <ConfirmationDialog title="Switch purchase order?" description="The link changed to another purchase order while this receipt has unsaved changes. Switching discards this draft. Choose Cancel to keep the draft and return the URL to the purchase order it was started with." actionLabel="Switch PO and discard" destructive onConfirm={switchPo} onClose={keepDraft} />}
       {confirmDelete && record && <ConfirmationDialog title={`Delete ${record.number}?`} description="Its accepted quantities return to the PO balance. Details and activity remain on the server." actionLabel={deleting ? 'Deleting…' : 'Delete receipt'} destructive onConfirm={remove} onClose={() => { if (!deleting) { setConfirmDelete(false); setActionError(''); } }} error={actionError} />}
-    {doc && <PRDocumentPreview document={doc} onClose={() => setDoc(null)} />}
   </div></AdminLayout>;
 }

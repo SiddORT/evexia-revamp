@@ -2040,6 +2040,78 @@ export interface DoctorStatus {
   status: DoctorStatusStatus;
 }
 
+export type DocumentChangeAfter = { [key: string]: unknown } | null;
+
+export type DocumentChangeBefore = { [key: string]: unknown } | null;
+
+export interface DocumentChange {
+  action: string;
+  actor: string;
+  after: DocumentChangeAfter;
+  at: string;
+  before: DocumentChangeBefore;
+  id: string;
+  previousRevision: number | null;
+  revision: number | null;
+  summary: string;
+}
+
+export type DocumentContextTemplateId =
+  (typeof DocumentContextTemplateId)[keyof typeof DocumentContextTemplateId];
+
+export const DocumentContextTemplateId = {
+  classic: "classic",
+  modern: "modern",
+  compact: "compact",
+} as const;
+
+export type DocumentPresentationClock =
+  (typeof DocumentPresentationClock)[keyof typeof DocumentPresentationClock];
+
+export const DocumentPresentationClock = {
+  NUMBER_12: "12",
+  NUMBER_24: "24",
+} as const;
+
+export type DocumentPresentationDateFormat =
+  (typeof DocumentPresentationDateFormat)[keyof typeof DocumentPresentationDateFormat];
+
+export const DocumentPresentationDateFormat = {
+  "dd-mmm-yyyy": "dd-mmm-yyyy",
+  "mm-dd-yyyy": "mm-dd-yyyy",
+  "dd-mm-yyyy": "dd-mm-yyyy",
+  "yyyy-mm-dd": "yyyy-mm-dd",
+} as const;
+
+export interface DocumentPresentation {
+  clock: DocumentPresentationClock;
+  dateFormat: DocumentPresentationDateFormat;
+  /**
+   * @minLength 1
+   * @maxLength 80
+   */
+  resolvedTimeZone: string;
+  /**
+   * @minLength 1
+   * @maxLength 80
+   */
+  timeZone: string;
+}
+
+export interface DocumentContext {
+  presentation: DocumentPresentation;
+  rendererVersion?: 1;
+  schemaVersion?: 1;
+  templateId: DocumentContextTemplateId;
+}
+
+export interface DocumentHistory {
+  items: DocumentChange[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export type DomainActionAction =
   (typeof DomainActionAction)[keyof typeof DomainActionAction];
 
@@ -5559,6 +5631,7 @@ export interface POLineInput {
 }
 
 export interface POCreate {
+  documentContext?: DocumentContext | null;
   expectedDate: string;
   idempotencyKey: string;
   /**
@@ -5581,6 +5654,7 @@ export interface PODelete {
 }
 
 export interface POEdit {
+  documentContext?: DocumentContext | null;
   expectedDate: string;
   /** @minimum 1 */
   expected_version: number;
@@ -5599,6 +5673,7 @@ export interface POEdit {
 }
 
 export interface POInput {
+  documentContext?: DocumentContext | null;
   expectedDate: string;
   /**
    * @minItems 1
@@ -5669,6 +5744,7 @@ export interface POResponse {
   activeReceiptCount?: number;
   createdAt: string;
   deletedAt: string | null;
+  documentRevision?: number | null;
   expectedDate: string;
   gstAmount: number;
   id: string;
@@ -5879,6 +5955,7 @@ export interface PRLineInput {
 }
 
 export interface PRCreate {
+  documentContext?: DocumentContext | null;
   idempotencyKey: string;
   /**
    * @minItems 1
@@ -5909,6 +5986,7 @@ export const PREditReceiverMode = {
 } as const;
 
 export interface PREdit {
+  documentContext?: DocumentContext | null;
   /** @minimum 1 */
   expected_version: number;
   idempotencyKey: string;
@@ -5945,6 +6023,7 @@ export const PRInputReceiverMode = {
 } as const;
 
 export interface PRInput {
+  documentContext?: DocumentContext | null;
   /**
    * @minItems 1
    * @maxItems 100
@@ -5997,6 +6076,7 @@ export const PRSavedStatus = {
 export interface PRSaved {
   createdAt: string;
   deletedAt: string | null;
+  documentRevision?: number | null;
   fulfillment?: PRSavedFulfillment;
   id: string;
   lines: PRLineSnapshot[];
@@ -6102,6 +6182,7 @@ export interface PRSource {
   balances: PRSourceBalances;
   createdAt: string;
   deletedAt: string | null;
+  documentRevision?: number | null;
   expectedDate: string;
   fulfillment: PRSourceFulfillment;
   gstAmount: number;
@@ -8126,6 +8207,33 @@ export interface SalesTargetStatus {
 export interface SalesTargetVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export type SavedDocumentModel = { [key: string]: unknown };
+
+export type SavedDocumentTemplateId =
+  (typeof SavedDocumentTemplateId)[keyof typeof SavedDocumentTemplateId];
+
+export const SavedDocumentTemplateId = {
+  classic: "classic",
+  modern: "modern",
+  compact: "compact",
+} as const;
+
+export interface SavedDocument {
+  actor: string;
+  current: boolean;
+  eventId: string;
+  generatedAt: string;
+  /** @minimum 1 */
+  latestRevision: number;
+  model: SavedDocumentModel;
+  presentation: DocumentPresentation;
+  rendererVersion?: 1;
+  /** @minimum 1 */
+  revision: number;
+  schemaVersion?: 1;
+  templateId: SavedDocumentTemplateId;
 }
 
 export type SessionResponseStatus =
@@ -12232,6 +12340,23 @@ export type ListPurchaseOrderReferencesParams = {
   selected_id?: string | null;
 };
 
+export type GetPurchaseOrderDocumentParams = {
+  revision?: number | null;
+};
+
+export type GetPurchaseOrderChangesParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
 export type ListPurchaseReceivedParams = {
   /**
    * @maxLength 200
@@ -12557,6 +12682,23 @@ export type ListPurchaseReceivedReferencesParams = {
 
 export type GetPurchaseReceivedSourceParams = {
   exclude_id?: string | null;
+};
+
+export type GetPurchaseReceivedDocumentParams = {
+  revision?: number | null;
+};
+
+export type GetPurchaseReceivedChangesParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
 };
 
 export type ListDownloadLogsParams = {

@@ -346,6 +346,7 @@ function normalizeModel(model) {
 }
 
 function drawPageHeader(model, pageIndex, pageCount, theme, layout) {
+  const COMPANY = model.company || { name: 'EVEXIA LIFE SCIENCES PVT. LTD.', address: '2nd floor, Laud Mansion, Mumbai - 400 004', email: 'info@evexialifesciences.com', website: 'www.evexialifesciences.com' };
   if (theme.id !== 'classic') {
     return drawThemedPageHeader(model, pageIndex, pageCount, theme, layout);
   }
@@ -484,6 +485,7 @@ function prepareLayout(model, baseTheme) {
 }
 
 function drawThemedPageHeader(model, pageIndex, pageCount, theme, layout) {
+  const COMPANY = model.company || { name: 'EVEXIA LIFE SCIENCES PVT. LTD.', address: '2nd floor, Laud Mansion, Mumbai - 400 004', email: 'info@evexialifesciences.com', website: 'www.evexialifesciences.com' };
   const colors = theme.colors;
   const { margin } = layout;
   const header = layout.headerLayout;
@@ -955,7 +957,7 @@ function drawFinalSignatory(theme, layout) {
     (isClassic
       ? `<rect x="${boxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" fill="#ffffff" stroke="${colors.grid}" stroke-width="0.9"/>`
       : `<rect x="${boxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="${theme.metadataPanelRadius}" fill="${colors.card}" stroke="${colors.grid}" stroke-width="0.9"/>`),
-    textElement(boxX + boxWidth / 2, boxY + 27, `For ${COMPANY.name}`, {
+    textElement(boxX + boxWidth / 2, boxY + 27, `For ${model.company?.name || COMPANY.name}`, {
       size: isClassic ? 7.2 : theme.metaFont - 1, fill: colors.ink, weight: 700, anchor: 'middle', letterSpacing: 0.6,
     }),
     textElement(boxX + boxWidth / 2, boxY + 47, 'UNSIGNED · SIGNATURE PLACEHOLDER', {

@@ -11,6 +11,7 @@ export default function POInvoiceDocument({ document, compact = false }) {
   return <div className={`po-invoice-document${compact ? ' po-invoice-document--compact' : ''}`}>
     {!compact && document.model && <section className="sr-only" aria-label="Invoice text details">
       <h3>Purchase order {document.number}</h3>
+      {document.archived && <p>{document.statusText}</p>}
       <p>{document.model.company.name}. {document.model.company.address}</p>
       <p>Vendor: {document.model.vendor.name}. Address: {document.model.vendor.address || 'Not recorded'}. GST number: {document.model.vendor.gstNo || 'Not recorded'}.</p>
       <p>PO date: {date(document.model.poDate)}. Expected delivery: {date(document.model.expectedDate)}. Deliver to: {document.model.locationName}. Status: {document.model.status}.</p>
@@ -18,6 +19,7 @@ export default function POInvoiceDocument({ document, compact = false }) {
       <table><caption>Purchase order items</caption><thead><tr>{['Sr. no.', 'Product', 'HSN code', 'Quantity', 'Unit price', 'Gross amount', 'GST %', 'GST amount', 'Final total'].map((label) => <th scope="col" key={label}>{label}</th>)}</tr></thead>
         <tbody>{document.model.lines.map((line, index) => <tr key={index}><td>{index + 1}</td><th scope="row">{line.productName}</th><td>{line.hsnCode || 'Not recorded'}</td><td>{line.quantity}</td><td>₹{formatRate(line.unitPrice)}</td><td>{money(line.subtotal)}</td><td>{formatRate(line.gst)}%</td><td>{money(line.gstAmount)}</td><td>{money(line.total)}</td></tr>)}</tbody>
       </table><p>Taxable amount: {money(document.model.subtotal)}. GST amount: {money(document.model.gstAmount)}. Final total: {money(document.model.total)}.</p>
+      {document.model.taxComponents && <p>Saved GST components: {Object.entries(document.model.taxComponents).map(([key, amount]) => `${key.toUpperCase()} ${money(amount)}`).join('; ')}.</p>}
     </section>}
     {pages.map((page, index) => <div key={index} className="po-invoice-document__page" aria-hidden={!compact}
       role="img" aria-label={`${document.number || 'Sample PO'} invoice page ${index + 1}`}

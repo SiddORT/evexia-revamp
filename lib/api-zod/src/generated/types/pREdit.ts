@@ -5,10 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { DocumentContext } from "./documentContext";
 import type { PREditReceiverMode } from "./pREditReceiverMode";
 import type { PRLineInput } from "./pRLineInput";
 
 export interface PREdit {
+  documentContext?: DocumentContext | null;
   /** @minimum 1 */
   expected_version: number;
   idempotencyKey: string;

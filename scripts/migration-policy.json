@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0064_procurement_documents": "automatic",
     "0060_staff_account_numbers": "automatic",
     "0058_master_numbers": "automatic",
     "0057_staff_employee_code": "automatic",

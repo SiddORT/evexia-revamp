@@ -6,6 +6,7 @@ import { Editor, LineTable } from '../../pages/admin/PurchaseOrderFormPage.jsx';
 import { TaxBasis } from './PurchaseOrderTaxSummary.jsx';
 import PurchaseOrderDeleteDialog from './PurchaseOrderDeleteDialog.jsx';
 import POReceivingSection from './POReceivingSection.jsx';
+import ProcurementDocumentActions from './ProcurementDocumentActions.jsx';
 import { sourcePR } from '../../services/serverPurchaseReceived.js';
 import {
   describeError, getPurchaseOrder, isPermissionError, loadOrderMutation,
@@ -88,6 +89,7 @@ export default function PurchaseOrderDetail({ id }) {
           <TaxBasis basis={order.taxBasis} />
         </div>
         <LineTable lines={order.lines} figures={order} />
+        <div className="po-review"><ProcurementDocumentActions key={order.id} kind="po" record={order} /></div>
         {order.status === 'open' && <div className="po-form-footer"><div className="po-actions">
           <button type="button" className="admin-button" disabled={Boolean(order.activeReceiptCount) || Boolean(blocked) || Boolean(pending)} onClick={() => { setRetry(loadOrderMutation(id)); setEditing(true); setNotice(''); }} data-testid="button-edit-po">Edit purchase order</button>
           <button type="button" className="admin-button admin-button--secondary" disabled={(Boolean(order.activeReceiptCount) && !pending) || Boolean(blocked) || pending?.operation === 'edit'} onClick={() => { setDeleting(true); setNotice(''); }} data-testid="button-delete-po">{pending?.operation === 'delete' ? 'Reconcile deletion' : 'Delete purchase order'}</button>

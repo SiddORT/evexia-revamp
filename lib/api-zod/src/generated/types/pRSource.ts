@@ -17,6 +17,7 @@ export interface PRSource {
   balances: PRSourceBalances;
   createdAt: string;
   deletedAt: string | null;
+  documentRevision?: number | null;
   expectedDate: Date;
   fulfillment: PRSourceFulfillment;
   gstAmount: number;

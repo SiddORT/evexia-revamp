@@ -1249,6 +1249,10 @@ export const listPurchaseOrdersQueryOffsetDefault = 0;
 export const listPurchaseOrdersQueryOffsetMin = 0;
 export const listPurchaseOrdersQueryOffsetMax = 1000000;
 export const listPurchaseOrdersResponseItemsItemActiveReceiptCountDefault = 0;
+export const createPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const createPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const createPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
+export const createPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
 export const createPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const createPurchaseOrderBodyLinesMax = 100;
 export const createPurchaseOrderResponseActiveReceiptCountDefault = 0;
@@ -1264,6 +1268,10 @@ export const listPurchaseOrderFilterOptionsQueryLimitMax = 100;
 export const listPurchaseOrderFilterOptionsQueryOffsetDefault = 0;
 export const listPurchaseOrderFilterOptionsQueryOffsetMin = 0;
 export const listPurchaseOrderFilterOptionsQueryOffsetMax = 1000000;
+export const previewPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const previewPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const previewPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
+export const previewPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const previewPurchaseOrderBodyLinesMax = 100;
 export const listPurchaseOrderReferencesQueryQueryMax = 200;
@@ -1274,9 +1282,26 @@ export const listPurchaseOrderReferencesQueryOffsetMin = 0;
 export const listPurchaseOrderReferencesQueryOffsetMax = 1000000;
 export const getPurchaseOrderResponseActiveReceiptCountDefault = 0;
 export const deletePurchaseOrderResponseActiveReceiptCountDefault = 0;
+export const getPurchaseOrderDocumentResponsePresentationResolvedTimeZoneMax = 80;
+export const getPurchaseOrderDocumentResponsePresentationTimeZoneMax = 80;
+export const getPurchaseOrderDocumentResponseRendererVersionDefault = 1;
+export const getPurchaseOrderDocumentResponseSchemaVersionDefault = 1;
+export const editPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const editPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const editPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
+export const editPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
 export const editPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const editPurchaseOrderBodyLinesMax = 100;
 export const editPurchaseOrderResponseActiveReceiptCountDefault = 0;
+export const getPurchaseOrderChangesQueryLimitDefault = 10;
+export const getPurchaseOrderChangesQueryLimitMax = 50;
+export const getPurchaseOrderChangesQueryOffsetDefault = 0;
+export const getPurchaseOrderChangesQueryOffsetMin = 0;
+export const getPurchaseOrderChangesQueryOffsetMax = 1000000;
+export const previewPurchaseOrderEditBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const previewPurchaseOrderEditBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const previewPurchaseOrderEditBodyDocumentContextOneRendererVersionDefault = 1;
+export const previewPurchaseOrderEditBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseOrderEditBodyLinesItemQuantityMax = 11;
 export const previewPurchaseOrderEditBodyLinesMax = 100;
 export const listPurchaseReceivedQueryQueryMax = 200;
@@ -1287,6 +1312,10 @@ export const listPurchaseReceivedQueryOffsetDefault = 0;
 export const listPurchaseReceivedQueryOffsetMin = 0;
 export const listPurchaseReceivedQueryOffsetMax = 1000000;
 export const listPurchaseReceivedQueryActivityQueryMax = 200;
+export const createPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const createPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const createPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
+export const createPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
 export const createPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
 export const createPurchaseReceivedBodyLinesItemBatchNoMax = 120;
 export const createPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
@@ -1329,6 +1358,10 @@ export const getPurchaseReceivedFiltersQueryOffsetDefault = 0;
 export const getPurchaseReceivedFiltersQueryOffsetMin = 0;
 export const getPurchaseReceivedFiltersQueryOffsetMax = 1000000;
 export const getPurchaseReceivedFiltersQueryActivityQueryMax = 200;
+export const previewPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const previewPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const previewPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
+export const previewPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
 export const previewPurchaseReceivedBodyLinesItemBatchNoMax = 120;
 export const previewPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
@@ -1341,11 +1374,28 @@ export const listPurchaseReceivedReferencesQueryOffsetMax = 1000000;
 export const listPurchaseReceivedReferencesQueryLimitDefault = 25;
 export const listPurchaseReceivedReferencesQueryLimitMax = 100;
 export const getPurchaseReceivedSourceResponseActiveReceiptCountDefault = 0;
+export const getPurchaseReceivedDocumentResponsePresentationResolvedTimeZoneMax = 80;
+export const getPurchaseReceivedDocumentResponsePresentationTimeZoneMax = 80;
+export const getPurchaseReceivedDocumentResponseRendererVersionDefault = 1;
+export const getPurchaseReceivedDocumentResponseSchemaVersionDefault = 1;
+export const editPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const editPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const editPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
+export const editPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
 export const editPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
 export const editPurchaseReceivedBodyLinesItemBatchNoMax = 120;
 export const editPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
 export const editPurchaseReceivedBodyLinesMax = 100;
 export const editPurchaseReceivedBodyOtherNameOneMax = 120;
+export const getPurchaseReceivedChangesQueryLimitDefault = 10;
+export const getPurchaseReceivedChangesQueryLimitMax = 50;
+export const getPurchaseReceivedChangesQueryOffsetDefault = 0;
+export const getPurchaseReceivedChangesQueryOffsetMin = 0;
+export const getPurchaseReceivedChangesQueryOffsetMax = 1000000;
+export const previewPurchaseReceivedEditBodyDocumentContextOnePresentationResolvedTimeZoneMax = 80;
+export const previewPurchaseReceivedEditBodyDocumentContextOnePresentationTimeZoneMax = 80;
+export const previewPurchaseReceivedEditBodyDocumentContextOneRendererVersionDefault = 1;
+export const previewPurchaseReceivedEditBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax = 11;
 export const previewPurchaseReceivedEditBodyLinesItemBatchNoMax = 120;
 export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyMax = 11;
@@ -22723,6 +22773,7 @@ export const ListPurchaseOrdersResponse = zod.object({
         .default(listPurchaseOrdersResponseItemsItemActiveReceiptCountDefault),
       createdAt: zod.string(),
       deletedAt: zod.union([zod.string(), zod.null()]),
+      documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
       expectedDate: zod.coerce.date(),
       gstAmount: zod.number().int(),
       id: zod.string().uuid(),
@@ -22819,6 +22870,45 @@ export const createPurchaseOrderBodyReviewTokenRegExp = new RegExp(
 );
 
 export const CreatePurchaseOrderBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              createPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              createPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            createPurchaseOrderBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            createPurchaseOrderBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   expectedDate: zod.coerce.date(),
   idempotencyKey: zod.string().uuid(),
   lines: zod
@@ -22852,6 +22942,7 @@ export const CreatePurchaseOrderResponse = zod.object({
     .default(createPurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   expectedDate: zod.coerce.date(),
   gstAmount: zod.number().int(),
   id: zod.string().uuid(),
@@ -23065,6 +23156,45 @@ export const previewPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
 );
 
 export const PreviewPurchaseOrderBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseOrderBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseOrderBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   expectedDate: zod.coerce.date(),
   lines: zod
     .array(
@@ -23230,6 +23360,7 @@ export const GetPurchaseOrderResponse = zod.object({
     .default(getPurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   expectedDate: zod.coerce.date(),
   gstAmount: zod.number().int(),
   id: zod.string().uuid(),
@@ -23324,6 +23455,7 @@ export const DeletePurchaseOrderResponse = zod.object({
     .default(deletePurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   expectedDate: zod.coerce.date(),
   gstAmount: zod.number().int(),
   id: zod.string().uuid(),
@@ -23400,6 +23532,53 @@ export const DeletePurchaseOrderResponse = zod.object({
 });
 
 /**
+ * @summary Document
+ */
+export const GetPurchaseOrderDocumentParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetPurchaseOrderDocumentQueryParams = zod.object({
+  revision: zod
+    .union([zod.coerce.number().int().min(1), zod.null()])
+    .optional(),
+});
+
+export const GetPurchaseOrderDocumentResponse = zod.object({
+  actor: zod.string(),
+  current: zod.boolean(),
+  eventId: zod.string().uuid(),
+  generatedAt: zod.string(),
+  latestRevision: zod.number().int().min(1),
+  model: zod.record(zod.string(), zod.unknown()),
+  presentation: zod.object({
+    clock: zod.enum(["12", "24"]),
+    dateFormat: zod.enum([
+      "dd-mmm-yyyy",
+      "mm-dd-yyyy",
+      "dd-mm-yyyy",
+      "yyyy-mm-dd",
+    ]),
+    resolvedTimeZone: zod
+      .string()
+      .min(1)
+      .max(getPurchaseOrderDocumentResponsePresentationResolvedTimeZoneMax),
+    timeZone: zod
+      .string()
+      .min(1)
+      .max(getPurchaseOrderDocumentResponsePresentationTimeZoneMax),
+  }),
+  rendererVersion: zod
+    .literal(1)
+    .default(getPurchaseOrderDocumentResponseRendererVersionDefault),
+  revision: zod.number().int().min(1),
+  schemaVersion: zod
+    .literal(1)
+    .default(getPurchaseOrderDocumentResponseSchemaVersionDefault),
+  templateId: zod.enum(["classic", "modern", "compact"]),
+});
+
+/**
  * @summary Edit
  */
 export const EditPurchaseOrderParams = zod.object({
@@ -23418,6 +23597,43 @@ export const editPurchaseOrderBodyReviewTokenRegExp = new RegExp(
 );
 
 export const EditPurchaseOrderBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              editPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              editPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            editPurchaseOrderBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(editPurchaseOrderBodyDocumentContextOneSchemaVersionDefault),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   expectedDate: zod.coerce.date(),
   expected_version: zod.number().int().min(1),
   idempotencyKey: zod.string().uuid(),
@@ -23452,6 +23668,7 @@ export const EditPurchaseOrderResponse = zod.object({
     .default(editPurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   expectedDate: zod.coerce.date(),
   gstAmount: zod.number().int(),
   id: zod.string().uuid(),
@@ -23528,6 +23745,47 @@ export const EditPurchaseOrderResponse = zod.object({
 });
 
 /**
+ * @summary History
+ */
+export const GetPurchaseOrderChangesParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetPurchaseOrderChangesQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getPurchaseOrderChangesQueryLimitMax)
+    .default(getPurchaseOrderChangesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getPurchaseOrderChangesQueryOffsetMin)
+    .max(getPurchaseOrderChangesQueryOffsetMax)
+    .default(getPurchaseOrderChangesQueryOffsetDefault),
+});
+
+export const GetPurchaseOrderChangesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      after: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      at: zod.string(),
+      before: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      id: zod.string().uuid(),
+      previousRevision: zod.union([zod.number().int(), zod.null()]),
+      revision: zod.union([zod.number().int(), zod.null()]),
+      summary: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Edit Preview
  */
 export const PreviewPurchaseOrderEditParams = zod.object({
@@ -23542,6 +23800,45 @@ export const previewPurchaseOrderEditBodyPlaceOfSupplyCodeOneRegExp =
   new RegExp("^\\d{2}$");
 
 export const PreviewPurchaseOrderEditBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseOrderEditBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseOrderEditBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseOrderEditBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseOrderEditBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   expectedDate: zod.coerce.date(),
   lines: zod
     .array(
@@ -23702,6 +23999,7 @@ export const ListPurchaseReceivedResponse = zod.object({
     zod.object({
       createdAt: zod.string(),
       deletedAt: zod.union([zod.string(), zod.null()]),
+      documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
       fulfillment: zod
         .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
         .optional(),
@@ -23763,6 +24061,45 @@ export const createPurchaseReceivedBodyReviewTokenRegExp = new RegExp(
 );
 
 export const CreatePurchaseReceivedBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              createPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              createPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            createPurchaseReceivedBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            createPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   idempotencyKey: zod.string().uuid(),
   lines: zod
     .array(
@@ -23801,6 +24138,7 @@ export const CreatePurchaseReceivedBody = zod.object({
 export const CreatePurchaseReceivedResponse = zod.object({
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   fulfillment: zod
     .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
     .optional(),
@@ -24121,6 +24459,7 @@ export const ExportPurchaseReceivedResponse = zod.object({
     zod.object({
       createdAt: zod.string(),
       deletedAt: zod.union([zod.string(), zod.null()]),
+      documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
       fulfillment: zod
         .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
         .optional(),
@@ -24247,6 +24586,45 @@ export const previewPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
 );
 
 export const PreviewPurchaseReceivedBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseReceivedBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   lines: zod
     .array(
       zod.object({
@@ -24368,6 +24746,7 @@ export const ReconcilePurchaseReceivedResponse = zod.object({
     zod.object({
       createdAt: zod.string(),
       deletedAt: zod.union([zod.string(), zod.null()]),
+      documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
       fulfillment: zod
         .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
         .optional(),
@@ -24430,6 +24809,7 @@ export const GetPurchaseReceivedSourceResponse = zod.object({
   balances: zod.record(zod.string(), zod.string()),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   expectedDate: zod.coerce.date(),
   fulfillment: zod.enum(["Open", "Partially Received", "Closed"]),
   gstAmount: zod.number().int(),
@@ -24477,6 +24857,7 @@ export const GetPurchaseReceivedSourceResponse = zod.object({
     zod.object({
       createdAt: zod.string(),
       deletedAt: zod.union([zod.string(), zod.null()]),
+      documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
       fulfillment: zod
         .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
         .optional(),
@@ -24559,6 +24940,7 @@ export const GetPurchaseReceivedParams = zod.object({
 export const GetPurchaseReceivedResponse = zod.object({
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   fulfillment: zod
     .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
     .optional(),
@@ -24613,6 +24995,7 @@ export const DeletePurchaseReceivedBody = zod.object({
 export const DeletePurchaseReceivedResponse = zod.object({
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   fulfillment: zod
     .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
     .optional(),
@@ -24653,6 +25036,53 @@ export const DeletePurchaseReceivedResponse = zod.object({
 });
 
 /**
+ * @summary Document
+ */
+export const GetPurchaseReceivedDocumentParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetPurchaseReceivedDocumentQueryParams = zod.object({
+  revision: zod
+    .union([zod.coerce.number().int().min(1), zod.null()])
+    .optional(),
+});
+
+export const GetPurchaseReceivedDocumentResponse = zod.object({
+  actor: zod.string(),
+  current: zod.boolean(),
+  eventId: zod.string().uuid(),
+  generatedAt: zod.string(),
+  latestRevision: zod.number().int().min(1),
+  model: zod.record(zod.string(), zod.unknown()),
+  presentation: zod.object({
+    clock: zod.enum(["12", "24"]),
+    dateFormat: zod.enum([
+      "dd-mmm-yyyy",
+      "mm-dd-yyyy",
+      "dd-mm-yyyy",
+      "yyyy-mm-dd",
+    ]),
+    resolvedTimeZone: zod
+      .string()
+      .min(1)
+      .max(getPurchaseReceivedDocumentResponsePresentationResolvedTimeZoneMax),
+    timeZone: zod
+      .string()
+      .min(1)
+      .max(getPurchaseReceivedDocumentResponsePresentationTimeZoneMax),
+  }),
+  rendererVersion: zod
+    .literal(1)
+    .default(getPurchaseReceivedDocumentResponseRendererVersionDefault),
+  revision: zod.number().int().min(1),
+  schemaVersion: zod
+    .literal(1)
+    .default(getPurchaseReceivedDocumentResponseSchemaVersionDefault),
+  templateId: zod.enum(["classic", "modern", "compact"]),
+});
+
+/**
  * @summary Edit
  */
 export const EditPurchaseReceivedParams = zod.object({
@@ -24672,6 +25102,45 @@ export const editPurchaseReceivedBodyReviewTokenRegExp = new RegExp(
 );
 
 export const EditPurchaseReceivedBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              editPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              editPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            editPurchaseReceivedBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            editPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   expected_version: zod.number().int().min(1),
   idempotencyKey: zod.string().uuid(),
   lines: zod
@@ -24711,6 +25180,7 @@ export const EditPurchaseReceivedBody = zod.object({
 export const EditPurchaseReceivedResponse = zod.object({
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
+  documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
   fulfillment: zod
     .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
     .optional(),
@@ -24751,6 +25221,47 @@ export const EditPurchaseReceivedResponse = zod.object({
 });
 
 /**
+ * @summary History
+ */
+export const GetPurchaseReceivedChangesParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetPurchaseReceivedChangesQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getPurchaseReceivedChangesQueryLimitMax)
+    .default(getPurchaseReceivedChangesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getPurchaseReceivedChangesQueryOffsetMin)
+    .max(getPurchaseReceivedChangesQueryOffsetMax)
+    .default(getPurchaseReceivedChangesQueryOffsetDefault),
+});
+
+export const GetPurchaseReceivedChangesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      after: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      at: zod.string(),
+      before: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      id: zod.string().uuid(),
+      previousRevision: zod.union([zod.number().int(), zod.null()]),
+      revision: zod.union([zod.number().int(), zod.null()]),
+      summary: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Edit Preview
  */
 export const PreviewPurchaseReceivedEditParams = zod.object({
@@ -24764,6 +25275,45 @@ export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
 
 export const PreviewPurchaseReceivedEditBody = zod.object({
+  documentContext: zod
+    .union([
+      zod.object({
+        presentation: zod.object({
+          clock: zod.enum(["12", "24"]),
+          dateFormat: zod.enum([
+            "dd-mmm-yyyy",
+            "mm-dd-yyyy",
+            "dd-mm-yyyy",
+            "yyyy-mm-dd",
+          ]),
+          resolvedTimeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseReceivedEditBodyDocumentContextOnePresentationResolvedTimeZoneMax,
+            ),
+          timeZone: zod
+            .string()
+            .min(1)
+            .max(
+              previewPurchaseReceivedEditBodyDocumentContextOnePresentationTimeZoneMax,
+            ),
+        }),
+        rendererVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseReceivedEditBodyDocumentContextOneRendererVersionDefault,
+          ),
+        schemaVersion: zod
+          .literal(1)
+          .default(
+            previewPurchaseReceivedEditBodyDocumentContextOneSchemaVersionDefault,
+          ),
+        templateId: zod.enum(["classic", "modern", "compact"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   lines: zod
     .array(
       zod.object({

@@ -11,6 +11,8 @@ from app.schemas.purchase_received import (
 )
 from app.services.auth import Identity
 from app.services import purchase_received as service
+from app.services import procurement_documents as documents
+from app.schemas.procurement_documents import SavedDocument, DocumentHistory
 from app.services import pr_batches
 from app.schemas.pr_batches import PRBatchSettingsWrite, PRBatchSettingsView, PRBatchAllocationInput, PRBatchAllocationView
 
@@ -111,6 +113,24 @@ def create(body: PRCreate, actor: Identity = Depends(manager), db: Session = Dep
 @router.get("/{record_id}", response_model=PRSaved, operation_id="getPurchaseReceived")
 def detail(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return service.transaction(db, actor, lambda _, c: service.projection(service.get_row(db, record_id), c))
+
+
+@router.get("/{record_id}/documents", response_model=SavedDocument, operation_id="getPurchaseReceivedDocument")
+def document(record_id: uuid.UUID, revision: int | None = Query(None, ge=1),
+             actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    def work(_, crypto):
+        service.get_row(db, record_id)
+        return documents.document_data(db, "pr", record_id, revision)
+    return service.transaction(db, actor, work)
+
+
+@router.get("/{record_id}/history", response_model=DocumentHistory, operation_id="getPurchaseReceivedChanges")
+def history(record_id: uuid.UUID, limit: int = Query(10, ge=1, le=50), offset: int = Query(0, ge=0, le=1000000),
+            actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    def work(_, crypto):
+        service.get_row(db, record_id)
+        return documents.history_data(db, "pr", record_id, limit, offset)
+    return service.transaction(db, actor, work)
 
 
 @router.post("/{record_id}/preview", response_model=PRReview, operation_id="previewPurchaseReceivedEdit")

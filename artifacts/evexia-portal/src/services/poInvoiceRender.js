@@ -97,6 +97,7 @@ function formatRupees(value) {
 }
 
 function formatDecimal(value, maxFractionDigits = 3) {
+  if (typeof value === 'string' && /^\d+(?:\.\d{1,3})?$/.test(value)) value = Number(value);
   if (typeof value !== 'number' || !Number.isFinite(value)) return EM_DASH;
   return new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 0,
@@ -223,7 +224,8 @@ function prepareLayout(model, template) {
   ];
   const footerAt = PAGE_HEIGHT - 68;
   const continueLimit = footerAt - 30;
-  const finalReserve = 202;
+  const componentCount = model.taxComponents ? Object.entries(model.taxComponents).filter(([, amount]) => amount !== 0).length : 0;
+  const finalReserve = 202 + componentCount * 27;
   const contentStart = tableY + config.headerHeight;
   const continueCapacity = continueLimit - contentStart;
   const finalCapacity = continueCapacity - finalReserve;
@@ -480,16 +482,17 @@ function drawFinalFooter(layout, colors, model, rowsEndY, pageNumber, pageCount)
   const valueX = contentRight - 10;
   const totals = [
     ['Taxable Amount', formatPaise(model.subtotal)],
+    ...Object.entries(model.taxComponents || {}).filter(([, amount]) => amount !== 0).map(([key, amount]) => [key.toUpperCase(), formatPaise(amount)]),
     ['GST Amount', formatPaise(model.gstAmount)],
     ['Total Amount', formatPaise(model.total)],
   ];
   const chunks = [];
   totals.forEach(([label, amount], index) => {
     const y = totalsTop + index * 27;
-    const fill = index === 2 ? colors.highlight : colors.pageFill;
+    const fill = index === totals.length - 1 ? colors.highlight : colors.pageFill;
     chunks.push(`<rect x="${totalsX}" y="${y - 18}" width="${totalsWidth}" height="25" fill="${fill}" stroke="${colors.grid}" stroke-width="0.75"/>`);
     chunks.push(textElement(labelX, y, label, {
-      size: config.metaFont + 0.1, fill: colors.ink, weight: index === 2 ? 700 : 600,
+      size: config.metaFont + 0.1, fill: colors.ink, weight: index === totals.length - 1 ? 700 : 600,
     }));
     chunks.push(textElement(valueX, y, amount, {
       size: config.metaFont + 0.1, fill: colors.ink, weight: 700, anchor: 'end',

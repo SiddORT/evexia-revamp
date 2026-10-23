@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Activity, BarChart3, ChevronDown, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
@@ -124,6 +125,7 @@ export default function PurchaseOrders() {
   const changePageSize = (size) => { setPageSize(size); setPage(1); setActivityPage(1); };
 
   const actions = (order) => <div className="po-actions">
+    <ProcurementDocumentActions key={order.id} kind="po" record={order} />
     <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View ${order.number}`} title={`View ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
     {order.status === 'open' && !order.activeReceiptCount && <>
       <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>

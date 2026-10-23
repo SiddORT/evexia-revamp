@@ -13,6 +13,7 @@ export interface POResponse {
   activeReceiptCount?: number;
   createdAt: string;
   deletedAt: string | null;
+  documentRevision?: number | null;
   expectedDate: Date;
   gstAmount: number;
   id: string;

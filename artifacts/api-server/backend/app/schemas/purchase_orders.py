@@ -2,6 +2,7 @@ import uuid
 from datetime import date
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from app.schemas.procurement_documents import DocumentContext
 
 
 class POLineInput(BaseModel):
@@ -12,6 +13,7 @@ class POLineInput(BaseModel):
 
 class POInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    documentContext: DocumentContext | None = None
     poDate: date
     expectedDate: date
     vendorId: uuid.UUID
@@ -104,6 +106,7 @@ class POResponse(POReviewOrder):
     updatedAt: str
     deletedAt: str | None
     activeReceiptCount: int = 0
+    documentRevision: int | None = None
 
 
 class POReview(BaseModel):

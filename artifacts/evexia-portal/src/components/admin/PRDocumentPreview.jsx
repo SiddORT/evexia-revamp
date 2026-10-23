@@ -5,10 +5,11 @@ import useDocumentPresentation from '../../hooks/useDocumentPresentation.js';
 import SelectIndicator from './SelectIndicator.jsx';
 import { formatCalendarDate } from '../../services/datePresentation.js';
 import '../../prDocument.css';
+import { downloadSavedDocument } from '../../services/savedProcurementDocuments.js';
 
 const logoUrl = `${import.meta.env.BASE_URL}images/evexia-logo.png`;
 
-export default function PRDocumentPreview({ document: sourceDocument, onClose }) {
+export default function PRDocumentPreview({ document: sourceDocument, onClose, returnFocusElement }) {
   const document = useDocumentPresentation(sourceDocument, 'pr');
   const date = (value) => formatCalendarDate(value, document.presentation);
   const dialogRef = useRef(null);
@@ -19,7 +20,7 @@ export default function PRDocumentPreview({ document: sourceDocument, onClose })
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    openerRef.current = window.document.activeElement;
+    openerRef.current = returnFocusElement || window.document.activeElement;
     if (dialog && !dialog.open) dialog.showModal();
     return () => {
       if (dialog?.open) dialog.close();
@@ -51,7 +52,8 @@ export default function PRDocumentPreview({ document: sourceDocument, onClose })
     setBusy(true);
     setError('');
     try {
-      await downloadPRDocument(document, `${document.number}.pdf`, logoUrl, { format: pdfFormat });
+      if (document.archived) await downloadSavedDocument(document, { format: pdfFormat });
+      else await downloadPRDocument(document, `${document.number}.pdf`, logoUrl, { format: pdfFormat });
     } catch (cause) {
       setError(cause?.message || 'Could not download this Purchase Received document. Please try again.');
     } finally {
@@ -104,6 +106,7 @@ export default function PRDocumentPreview({ document: sourceDocument, onClose })
     </header>
     <div className="pr-document-dialog__body">
       <p className="pr-document-dialog__note">
+        {document.archived && <strong>{document.statusText}. </strong>}
         Purchase Received record from saved receipt details only. This is not a financial invoice and does not post inventory quantities or create a stock-ledger entry.
         {' '}Searchable PDFs let you search and copy receipt text. Image-only PDFs preserve other scripts but do not support text search or copying.
       </p>

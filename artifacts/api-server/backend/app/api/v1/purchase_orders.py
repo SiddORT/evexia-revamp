@@ -11,6 +11,8 @@ from app.schemas.purchase_orders import (
 )
 from app.services.auth import Identity
 from app.services import purchase_orders as service
+from app.services import procurement_documents as documents
+from app.schemas.procurement_documents import SavedDocument, DocumentHistory
 
 router = APIRouter(prefix="/admin/purchase-orders", tags=["Purchase Orders"])
 manager = require_permissions("admin.access")
@@ -68,6 +70,24 @@ def create(body: POCreate, actor: Identity = Depends(manager), db: Session = Dep
 @router.get("/{record_id}", response_model=POResponse, operation_id="getPurchaseOrder")
 def detail(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return service.transaction(db, actor, lambda _: service.projection(db, service.find(db, record_id)))
+
+
+@router.get("/{record_id}/documents", response_model=SavedDocument, operation_id="getPurchaseOrderDocument")
+def document(record_id: uuid.UUID, revision: int | None = Query(None, ge=1),
+             actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    def work(_):
+        service.find(db, record_id)
+        return documents.document_data(db, "po", record_id, revision)
+    return service.transaction(db, actor, work)
+
+
+@router.get("/{record_id}/history", response_model=DocumentHistory, operation_id="getPurchaseOrderChanges")
+def history(record_id: uuid.UUID, limit: int = Query(10, ge=1, le=50), offset: int = Query(0, ge=0, le=1000000),
+            actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    def work(_):
+        service.find(db, record_id)
+        return documents.history_data(db, "po", record_id, limit, offset)
+    return service.transaction(db, actor, work)
 
 
 @router.post("/{record_id}/preview", response_model=POReview, operation_id="previewPurchaseOrderEdit")

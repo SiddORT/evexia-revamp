@@ -5,10 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { DocumentContext } from "./documentContext";
 import type { PRInputReceiverMode } from "./pRInputReceiverMode";
 import type { PRLineInput } from "./pRLineInput";
 
 export interface PRInput {
+  documentContext?: DocumentContext | null;
   /**
    * @minItems 1
    * @maxItems 100

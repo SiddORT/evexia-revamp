@@ -141,6 +141,7 @@ def ready(db):
         ["0061_immunotherapy_orders"],
         ["0062_kits_orders"],
         ["0063_spt_orders"],
+        ["0064_procurement_documents"],
     ):
         raise AccountCryptoError()
     current = crypto()
