@@ -1,6 +1,31 @@
 .imm { min-width: 0; }
 .imm .admin-page-head > div { min-width: 0; }
 .imm .admin-page-head h1, .imm .admin-page-head p { overflow-wrap: anywhere; }
+.imm .imm-list-head { flex-wrap: wrap; margin-bottom: 8px; }
+.imm-list-head > :first-child { flex: 1 1 300px; }
+.imm-list-head__actions { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end; gap: 10px; max-width: 100%; }
+.imm-list-head__actions .order-transfer-actions { max-width: 100%; }
+.imm-list-head__actions .admin-button, .imm-list-head__actions .order-transfer-format { max-width: 100%; white-space: normal; }
+.imm-list-head__actions .order-transfer-format select { max-width: 100%; min-width: 0; }
+.imm-listing .order-listing-filters--master { display: grid; gap: 12px; padding: 14px 16px; }
+.imm-listing .order-listing-disclosure { min-width: 0; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-state-link); }
+.imm-listing .order-listing-disclosure summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--admin-text); font-size: 12px; font-weight: 700; list-style: none; }
+.imm-listing .order-listing-disclosure summary::-webkit-details-marker { display: none; }
+.imm-listing .order-listing-disclosure summary svg { flex-shrink: 0; }
+.imm-listing .order-listing-disclosure summary svg:last-child { margin-left: auto; transition: transform .16s ease; }
+.imm-listing .order-listing-disclosure[open] summary svg:last-child { transform: rotate(180deg); }
+.imm-listing .order-listing-disclosure summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.imm-listing .order-listing-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; padding: 0 12px 12px; }
+.imm .imm-shipping-choices { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+.imm-shipping-choices .imm-radio > input { flex: 0 0 auto; }
+.imm-shipping-choices .imm-radio > span { min-width: 0; }
+@media (max-width: 600px) {
+  .imm-list-head__actions { width: 100%; justify-content: flex-start; }
+  .imm-list-head > :first-child { flex-basis: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .imm-listing .order-listing-disclosure summary svg:last-child { transition: none; }
+}
 .imm .admin-dialog__actions, .imm-print-portal .admin-dialog__actions { flex-wrap: wrap; }
 .imm *, .imm *::before, .imm *::after { box-sizing: border-box; }
 .imm-boundary { margin: 0 0 14px; padding: 9px 13px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-secondary); border-radius: 8px; background: var(--admin-state-link); color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }

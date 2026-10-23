@@ -7,7 +7,7 @@ import { ORDER_TRANSFER_TYPES, orderTemplate, orderTransferBlob, reviewOrderFile
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderTransfers.css';
 
-export default function OrderTransfers({ kind, rows, snapshot, store, adapter, total }) {
+export default function OrderTransfers({ kind, rows, snapshot, store, adapter, total, renderActions }) {
   const [format, setFormat] = useState('csv');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -80,14 +80,15 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
       setError(`${e.message || 'Import was not applied. Review the file again.'}${adapter && e.ambiguous ? ' Keep this review open and retry the identical confirmed import; do not create a new batch.' : ''}`);
     }
   }
-  return <div className="order-transfers">
-    <div className="order-transfer-actions">
+  const actions = <div className="order-transfer-actions">
       <label className="order-transfer-format">File format
         <select value={format} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
       </label>
       <button type="button" className="admin-button admin-button--secondary" disabled={adapter ? total === 0 : !rows.length} onClick={() => download()} data-testid={exportTestId}><Download size={15} aria-hidden="true" />Export</button>
       <button ref={trigger} type="button" className="admin-button admin-button--secondary" onClick={() => { setError(''); setMessage(''); setOpen(true); }}><Upload size={15} aria-hidden="true" />Import</button>
-    </div>
+    </div>;
+  return <div className="order-transfers">
+    {renderActions ? renderActions(actions) : actions}
     <p className="order-transfer-scope">{adapter ? 'Export reads all matching saved server orders, not just this section. Secure scan limit: 10,000 candidate records / 8 MB; narrow filters if exceeded. Imports: up to 500 orders / 1 MiB validated request, atomic server validation. ' : `Export: all ${rows.length} filtered orders across all pages, not only the current page. Local session data; `}Attachment metadata only, never file contents.</p>
     {message && <p role="status" className="order-transfer-message">{message}</p>}
     {error && !open && <p role="alert" className="order-transfer-error">{error}</p>}

@@ -99,20 +99,22 @@ export default function ImmunotherapyOrders() {
   ];
 
   return <AdminLayout title="IMMUNOTHERAPY"><div className="imm">
-    <div className="admin-page-head">
+    <OrderTransfers kind="immunotherapy" rows={rows} snapshot={snap} adapter={transferAdapter} total={result.filtered ?? result.total} renderActions={(actions) => <div className="admin-page-head imm-list-head">
       <div><p className="admin-page-head__eyebrow">Orders</p><h1>Immunotherapy</h1>
         <p className="admin-page-head__description">Review patient dosage and bottle composition for each order.</p></div>
-      <Link href={`${BASE}/new`} className="admin-button" data-testid="link-imm-add"><Plus size={16} aria-hidden="true" />Add Order</Link>
-    </div>
+      <div className="imm-list-head__actions">
+        {actions}
+        <Link href={`${BASE}/new`} className="admin-button" data-testid="link-imm-add"><Plus size={16} aria-hidden="true" />Add Order</Link>
+      </div>
+    </div>} />
     {error && <div className="imm-errors" role="alert">{error} <button type="button" className="imm-link-btn" onClick={() => setRevision((n) => n + 1)}>Retry</button></div>}
     {loading && <p role="status">Loading saved orders…</p>}
     <div className="imm-summary" aria-label="Order counts by status">
       <div className="imm-stat"><strong>{result.total}</strong><span>All orders</span></div>
       {counts.map(([s, n]) => <div className="imm-stat" key={s}><strong>{n}</strong><span>{s}</span></div>)}
     </div>
-    <OrderTransfers kind="immunotherapy" rows={rows} snapshot={snap} adapter={transferAdapter} total={result.filtered ?? result.total} />
     <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
-      <OrderListingFilters onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
+      <OrderListingFilters masterDisclosure onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
         <label className="imm-field imm-field--grow">Search
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 12, top: 13, color: 'var(--admin-muted)' }} />
             <input className="imm-input" style={{ paddingLeft: 35 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, patient, phone, doctor or MR" data-testid="input-imm-search" /></span></label>
@@ -139,13 +141,6 @@ export default function ImmunotherapyOrders() {
       </div>
       <DataTable columns={columns} rows={pager.pageRows} rowOffset={pager.startIndex} rowKey={(o) => o.id} label="Immunotherapy orders (scrolls horizontally)" testIdPrefix="imm"
         empty={<div className="imm-empty" data-testid="empty-imm"><ClipboardList size={28} aria-hidden="true" /><strong>{loading ? 'Loading…' : error ? 'Orders unavailable' : result.total ? 'No matches in this section' : 'No immunotherapy orders yet'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : result.total ? 'Adjust the search, status or dates.' : 'Add an order to begin.'}</p>{result.total ? <button type="button" className="admin-button admin-button--secondary" onClick={reset}>Reset filters</button> : <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
-      <div className="imm-toolbar imm-edges" style={{ borderTop: '1px solid var(--admin-border)', borderBottom: 0 }}>
-        <span>Server section {pager.page}{result.nextCursor ? ' · more available' : ''}</span>
-        <div className="imm-toolbar__actions">
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => pager.setPage(1)} disabled={pager.page === 1} data-testid="button-imm-first">First page</button>
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => pager.setPage(pager.page + 1)} disabled={!result.nextCursor || loading} data-testid="button-imm-last">Next section</button>
-        </div>
-      </div>
       <TablePagination cursorMode sectionCount={rows.length} page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} filtered={result.filtered} total={result.total} label="orders" testId="text-imm-count" onPageChange={pager.setPage} onPageSizeChange={pager.setPageSize} />
     </section>
     {printKind && <ImmPrintDialog kind={printKind} orders={printOrders} returnFocusRef={printTrigger} onClose={() => setPrintKind('')} />}
