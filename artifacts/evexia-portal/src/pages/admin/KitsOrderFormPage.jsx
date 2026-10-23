@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
@@ -9,7 +9,6 @@ import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 
-const BASE = '/admin/orders/kits-consumables';
 const LABELS = { orderFor: 'Order for', doctorId: 'Doctor', mrId: 'MR', products: 'Products', 'kit-product': 'Kit product', 'kit-custom': 'Custom value', 'kit-volume': 'Kit volume', 'kit-quantity': 'Kit quantity', lancets: 'Lancets', applicators: 'Applicators', tray: 'Tray', shipping: 'Shipping', 'other-name': 'Recipient name', 'other-phone': 'Recipient phone', 'other-line1': 'Address line 1', 'other-country': 'Country', 'other-state': 'State', 'other-city': 'City', 'other-pincode': 'Pincode', attachments: 'Attachments' };
 const Err = ({ id, text }) => (text ? <p className="kits-error" id={id} role="alert">{text}</p> : null);
 
@@ -21,6 +20,7 @@ function Facts({ person, empty, testId }) {
 }
 
 export default function KitsOrderFormPage({ id }) {
+  const BASE = useOrderBase('kits-consumables');
   const [order, setOrder] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(Boolean(id)), [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!id) return undefined;
@@ -41,6 +41,7 @@ export default function KitsOrderFormPage({ id }) {
 }
 
 function Summary({ order }) {
+  const BASE = useOrderBase('kits-consumables');
   const { date } = useAdminDateFormatters();
   const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
   const doctor = order.doctor, mr = order.mr;
@@ -81,12 +82,14 @@ function Summary({ order }) {
 }
 
 function Form() {
+  const BASE = useOrderBase('kits-consumables');
+  const { portal, mr: authenticatedMR } = useOrderPortal();
   const [, navigate] = useLocation();
-  const [v, setV] = useState(blankOrder);
+  const [v, setV] = useState(() => ({ ...blankOrder(), mrId: authenticatedMR?.id || '' }));
   const [errors, setErrors] = useState({});
   const [fileMsg, setFileMsg] = useState('');
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
-  const [doctor, setDoctor] = useState(null), [mr, setMr] = useState(null);
+  const [doctor, setDoctor] = useState(null), [mr, setMr] = useState(authenticatedMR);
   const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState('');
   const submission = useRef(null), saving = useRef(false), uploads = useRef(new Map());
   useEffect(() => {
@@ -192,8 +195,9 @@ function Form() {
       <div className="kits-side">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-people"><h2 id="kits-h-people">Doctor details</h2>
           <div className="kits-grid">
-            <KitsReferenceSelect disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: '' }); setMr(null); }} onPerson={setDoctor} />
-            <KitsReferenceSelect disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />
+            <KitsReferenceSelect disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: authenticatedMR?.id || '' }); setMr(authenticatedMR); }} onPerson={setDoctor} />
+            {portal === 'mr' ? <label className="kits-field" htmlFor="kits-mrId">MR (signed-in account)<input id="kits-mrId" readOnly value={authenticatedMR.name} /></label>
+              : <KitsReferenceSelect disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />}
             <KitsReferenceSelect disabled={busy || uncertain} id="kits-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />
             <p className="kits-hint">Patient is optional for supply orders. If selected, the Patient must belong to the billing Doctor. A selected MR must match that Doctor’s current assignment. No masters or clinical history are created.</p>
           </div></section>

@@ -17,7 +17,7 @@ from app.db.mr_models import MRDirectory
 from app.db.allergen_models import AllergenProduct
 from app.db.file_models import FileRecord
 from app.db.models import AuditEvent, Patient
-from app.services.allergens import authorize
+from app.services.mr_orders import authorize, scope, reference_scope, assignment as mr_assignment
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
 from app.core.security import utcnow
@@ -70,7 +70,7 @@ def transaction(db, actor, work):
 
 
 def find(db, record_id):
-    row = db.scalar(select(Order).where(Order.id == record_id).with_for_update())
+    row = db.scalar(select(Order).where(Order.id == record_id, *scope(db, Order)).with_for_update())
     if not row:
         raise ImmError("Order not found.", 404, "imm_not_found")
     return row
@@ -82,7 +82,8 @@ def project(keys, row):
 
 
 def eligible(db, kind, record_id):
-    row = db.scalar(select(MODELS[kind]).where(MODELS[kind].id == record_id).with_for_update())
+    row = db.scalar(select(MODELS[kind]).where(
+        MODELS[kind].id == record_id, *reference_scope(db, kind)).with_for_update())
     if not row or row.deleted_at or row.status != "active":
         raise ImmError(f"Selected {kind} reference is inactive, deleted or unavailable. Choose a current reference.", 409, "imm_reference")
     if kind == "patients":
@@ -113,6 +114,7 @@ def person(row, kind):
 
 def resolved(db, body, previous=None):
     """Retain historical identities unless the corresponding relationship changes."""
+    mr_assignment(db, body, previous)
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version"})
     value.pop("attachmentIds")
     value.pop("orderDate", None)
@@ -211,7 +213,10 @@ def idempotent(db, actor, keys, key, payload, work):
         saved = unseal(keys, "requests", key, prior.response_ciphertext)
         if encode(saved["request"]) != encode(payload):
             raise ImmError("Retry identity belongs to a different request. Retry the original unchanged submission.", 409, "imm_retry")
-        return saved["result"]
+        result = saved["result"]
+        for order in result.get("orders", [result]):
+            find(db, uuid.UUID(order["id"]))
+        return result
     result = work()
     db.add(Retry(key=key, actor_id=actor.user.id, response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))
     return result
@@ -232,7 +237,7 @@ def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cu
         started = time.monotonic()
         if from_date and to_date and from_date > to_date:
             raise ImmError("From date must not be after To date.", 422, "imm_dates")
-        clauses = []
+        clauses = scope(db, Order)
         if status:
             clauses.append(Order.status == status)
         if from_date:
@@ -270,7 +275,7 @@ def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cu
                     break
         finally:
             rows.close()
-        counts = dict(db.execute(select(Order.status, func.count()).group_by(Order.status)).all())
+        counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)
@@ -283,7 +288,8 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
     def work(a, keys):
         started = time.monotonic()
         model = MODELS[kind]
-        query = select(model).where(model.deleted_at.is_(None), model.status == "active").order_by(model.id)
+        query = select(model).where(model.deleted_at.is_(None), model.status == "active",
+                                    *reference_scope(db, kind)).order_by(model.id)
         if cursor:
             query = query.where(model.id > cursor)
         rows = list(db.scalars(query.limit(501)))
@@ -313,7 +319,7 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
         more = bool(last and (len(rows) > 500 or last != rows[-1].id))
         # Hydrate one selected eligible UUID, never traverse the directory.
         if selected and not any(i["id"] == str(selected) for i in items):
-            chosen = db.get(model, selected)
+            chosen = db.scalar(select(model).where(model.id == selected, *reference_scope(db, kind)))
             if chosen and not chosen.deleted_at and chosen.status == "active":
                 data = choice(chosen)
                 if data:

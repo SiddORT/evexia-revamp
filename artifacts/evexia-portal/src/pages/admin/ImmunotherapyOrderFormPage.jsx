@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Pencil, Plus, Trash2, UserPlus, Paperclip } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import PhoneInput from '../../components/admin/PhoneInput.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
@@ -15,7 +15,6 @@ import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import '../../excel-import.css';
 import '../../immunotherapy.css';
 
-const BASE = '/admin/orders/immunotherapy';
 const blankReg = () => ({ name: '', dateOfBirth: '', instructionsLanguage: '', gender: '', phone: '', dialCountry: 'IN', address: { line1: '', line2: '', landmark: '', pincode: '', city: '', state: '', country: 'India' }, doctorId: '' });
 const blank = () => ({ patientId: '', doctorId: '', mrId: '', dosage: '', histamine: '', saline: '', groups: [newGroup()], remarks: '', attachments: [], shipping: 'patient', status: 'Confirmed' });
 const fromOrder = (o) => structuredClone({ patientId: o.patientId, doctorId: o.doctorId, mrId: o.mrId, dosage: o.dosage, histamine: o.histamine, saline: o.saline, groups: o.groups, remarks: o.remarks || '', attachments: o.attachments || [], shipping: o.shipping, status: o.status });
@@ -27,6 +26,7 @@ const kb = (n) => n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(
 function Err({ id, text }) { return text ? <p className="imm-error" id={id} role="alert">{text}</p> : null; }
 
 export default function ImmunotherapyOrderFormPage({ id, mode }) {
+  const BASE = useOrderBase('immunotherapy');
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
@@ -44,10 +44,16 @@ export default function ImmunotherapyOrderFormPage({ id, mode }) {
 }
 
 function Editor({ order, mode }) {
+  const BASE = useOrderBase('immunotherapy');
+  const { portal, mr: authenticatedMR } = useOrderPortal();
+  const mrPortal = portal === 'mr';
+  const languageChoices = mrPortal
+    ? (params, signal) => request('/patient-languages', { params, signal })
+    : patientLanguageChoices;
   const [, navigate] = useLocation();
   const readOnly = mode === 'view';
   const isNew = !order;
-  const initial = useRef(order ? fromOrder(order) : blank());
+  const initial = useRef(order ? fromOrder(order) : { ...blank(), mrId: authenticatedMR?.id || '' });
   const [v, setV] = useState(initial.current);
   const [errors, setErrors] = useState({});
   const [groupMsg, setGroupMsg] = useState({});
@@ -99,7 +105,7 @@ function Editor({ order, mode }) {
     if (!reg) return undefined;
     const controller = new AbortController();
     setLanguageBusy(true); setLanguageError('');
-    const timer = setTimeout(() => patientLanguageChoices({ query: languageQuery, limit: 25 }, controller.signal)
+    const timer = setTimeout(() => languageChoices({ query: languageQuery, limit: 25 }, controller.signal)
       .then(setLanguages).catch((e) => { if (!controller.signal.aborted) setLanguageError(e.message); })
       .finally(() => { if (!controller.signal.aborted) setLanguageBusy(false); }), 200);
     return () => { clearTimeout(timer); controller.abort(); };
@@ -107,7 +113,7 @@ function Editor({ order, mode }) {
   async function moreLanguages() {
     if (!languages.nextCursor || languageBusy) return;
     setLanguageBusy(true);
-    try { const page = await patientLanguageChoices({ query: languageQuery, cursor: languages.nextCursor, limit: 25 }); setLanguages((p) => ({ ...page, items: [...p.items, ...page.items] })); }
+    try { const page = await languageChoices({ query: languageQuery, cursor: languages.nextCursor, limit: 25 }); setLanguages((p) => ({ ...page, items: [...p.items, ...page.items] })); }
     catch (e) { setLanguageError(e.message); }
     finally { setLanguageBusy(false); }
   }
@@ -146,9 +152,13 @@ function Editor({ order, mode }) {
   const recipient = recipientFor(v.shipping);
 
   function choosePatient(pid) {
+    if (mrPortal && order?.attachments?.length && pid !== order.patientId) {
+      setErrors({ patientId: 'This saved order has patient-bound prescriptions. Its patient cannot be changed in the MR portal.' });
+      return;
+    }
     setUploads([]);
-    const p = snap.patients.find((x) => x.id === pid);
-    const patch = { patientId: pid, shipping: 'patient', doctorId: p?.doctorId || '', mrId: p?.mrId || '', attachments: pid === v.patientId ? v.attachments : [] };
+    const p = (mrPortal && patients.liveItems.find((x) => x.id === pid)) || snap.patients.find((x) => x.id === pid);
+    const patch = { patientId: pid, shipping: 'patient', doctorId: p?.doctorId || '', mrId: authenticatedMR?.id || p?.mrId || '', attachments: pid === v.patientId ? v.attachments : [] };
     if (p && order && pid === order.patientId) { patch.dosage = initial.current.dosage; setExplain('Saved dosage for this order restored. You may change it.'); }
     else if (p) { const n = nextDose(p); patch.dosage = n.dosage; setExplain(n.explanation); }
     else { patch.dosage = ''; setExplain(''); }
@@ -206,7 +216,8 @@ function Editor({ order, mode }) {
     if (busy.current) return;
     busy.current = true; setPending('registration'); setRegErrors({});
     try {
-      const created = await createPatient({
+      const registerPatient = mrPortal ? (body) => request('/patient-registration', { body }) : createPatient;
+      const created = await registerPatient({
         name: reg.name, dateOfBirth: reg.dateOfBirth, gender: reg.gender, phone: reg.phone, dialCountry: reg.dialCountry,
         email: '', doctorId: reg.doctorId, instructionsLanguage: reg.instructionsLanguage, status: 'active',
         addressLine1: reg.address.line1, addressLine2: reg.address.line2, landmark: reg.address.landmark,
@@ -219,7 +230,7 @@ function Editor({ order, mode }) {
       setExplain('Patient Master record created. No administration history inferred; choose a dosage explicitly.');
       requestAnimationFrame(() => document.getElementById('imm-patientId')?.focus());
     } catch (cause) {
-      if (alive.current) setRegErrors({ form: `${cause.message} Registration was not confirmed; search Patient Master before retrying an uncertain registration.` });
+      if (alive.current) setRegErrors({ form: `${cause.message} Registration was not confirmed; search ${mrPortal ? 'the patient choices in this order' : 'Patient Master'} before retrying an uncertain registration.` });
     } finally {
       busy.current = false; if (alive.current) setPending('');
     }
@@ -301,16 +312,16 @@ function Editor({ order, mode }) {
           <p className="imm-hint">Search by name, ID or phone.</p>
           <div className="imm-grid" style={{ marginTop: 12 }}>
             <div className="imm-field"><label htmlFor="imm-patientId">Patient</label>
-              <SearchableSelect viewportMenu id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onSearch={patients.onSearch} searchOptions={() => patientOptions} onChange={choosePatient} placeholder="Find a patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
+              <SearchableSelect viewportMenu id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onSearch={patients.onSearch} searchOptions={() => mrPortal ? patients.liveItems.map((p) => ({ value: p.id, label: `${p.name} - ${p.id} - ${p.phone}` })) : patientOptions} onChange={choosePatient} placeholder="Find a patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
               {!readOnly && <ReferenceState source={patients} label="patients" />}
               <Err id="imm-patientId-err" text={errors.patientId} /></div>
             <div className="imm-field"><label htmlFor="imm-doctorId">Doctor</label>
-              <SearchableSelect viewportMenu id="imm-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onSearch={doctors.onSearch} searchOptions={() => doctorOptions} onChange={(x) => set({ doctorId: x, mrId: DOCTORS.find((d) => d.id === x)?.mrId || '' })} placeholder="Select doctor" invalid={errors.doctorId} describedBy={errors.doctorId ? 'imm-doctorId-err' : undefined} disabled={dis} />
+               <SearchableSelect viewportMenu id="imm-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onSearch={doctors.onSearch} searchOptions={() => mrPortal ? doctors.liveItems.map((d) => ({ value: d.id, label: d.name })) : doctorOptions} onChange={(x) => set({ doctorId: x, mrId: authenticatedMR?.id || DOCTORS.find((d) => d.id === x)?.mrId || '' })} placeholder="Select doctor" invalid={errors.doctorId} describedBy={errors.doctorId ? 'imm-doctorId-err' : undefined} disabled={dis} />
               {!readOnly && <ReferenceState source={doctors} label="doctors" />}
               <Err id="imm-doctorId-err" text={errors.doctorId} /></div>
             <div className="imm-field"><label htmlFor="imm-mrId">MR</label>
-              <SearchableSelect viewportMenu id="imm-mrId" label="MR" value={v.mrId} options={mrOptions} onSearch={mrs.onSearch} searchOptions={() => mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'imm-mrId-err' : undefined} disabled={dis} />
-              {!readOnly && <ReferenceState source={mrs} label="MRs" />}
+              {mrPortal ? <input id="imm-mrId" readOnly value={order?.mr?.name || authenticatedMR.name} aria-label="MR (signed-in account)" /> : <SearchableSelect viewportMenu id="imm-mrId" label="MR" value={v.mrId} options={mrOptions} onSearch={mrs.onSearch} searchOptions={() => mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'imm-mrId-err' : undefined} disabled={dis} />}
+              {!readOnly && !mrPortal && <ReferenceState source={mrs} label="MRs" />}
               <Err id="imm-mrId-err" text={errors.mrId} /></div>
           </div>
           {patient && <dl className="imm-facts" data-testid="imm-patient-facts"><div><dt>Name</dt><dd>{patient.name}</dd></div><div><dt>Age / gender</dt><dd>{patient.age} / {patient.gender}</dd></div><div><dt>Phone</dt><dd>{patient.phone}</dd></div><div><dt>Address</dt><dd>{addr(patient.address)}</dd></div></dl>}
@@ -327,7 +338,7 @@ function Editor({ order, mode }) {
               <Err id="imm-reg-phone-err" text={regErrors.phone} /></div>
             <div className="imm-grid">{af('line1', 'Address line 1')}{af('line2', 'Address line 2 (optional)')}{af('landmark', 'Landmark (optional)')}{af('pincode', 'PIN code')}{af('city', 'City')}{af('state', 'State')}{af('country', 'Country')}</div>
             <div className="imm-grid">
-              <label className="imm-field">Doctor<select id="imm-reg-doctor" value={reg.doctorId} onChange={(e) => setReg({ ...reg, doctorId: e.target.value })} aria-invalid={Boolean(regErrors.doctorId)} aria-describedby={regErrors.doctorId ? 'imm-reg-doctor-err' : undefined} data-testid="select-imm-reg-doctor"><option value="">Select</option>{DOCTORS.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select><Err id="imm-reg-doctor-err" text={regErrors.doctorId} /></label>
+              <label className="imm-field">Doctor<select id="imm-reg-doctor" value={reg.doctorId} onChange={(e) => setReg({ ...reg, doctorId: e.target.value })} aria-invalid={Boolean(regErrors.doctorId)} aria-describedby={regErrors.doctorId ? 'imm-reg-doctor-err' : undefined} data-testid="select-imm-reg-doctor"><option value="">Select</option>{(mrPortal ? doctors.liveItems : DOCTORS).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select><Err id="imm-reg-doctor-err" text={regErrors.doctorId} /></label>
               <div className="imm-field"><label htmlFor="imm-reg-language">Instructions language</label><SearchableSelect viewportMenu id="imm-reg-language" label="Instructions language" value={reg.instructionsLanguage} options={languages.items.map((l) => ({ value: l.name, label: l.name }))} onSearch={setLanguageQuery} searchOptions={() => languages.items.map((l) => ({ value: l.name, label: l.name }))} onChange={(x) => setReg({ ...reg, instructionsLanguage: x })} disabled={Boolean(pending)} />
                 {languageBusy && <span role="status">Loading languages…</span>}{languageError && <span role="alert">{languageError}</span>}
                 {!languageBusy && !languageError && !languages.items.length && <span>No saved languages found. Add a language in Language Master first.</span>}
@@ -388,10 +399,10 @@ function Editor({ order, mode }) {
           <Err id="imm-shipping-err" text={errors.shipping} />
           <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-files">Prescription files</label>
             {!readOnly && <label className="excel-import__picker"><Paperclip size={19} /><span>{pending === 'upload' ? 'Uploading privately…' : 'Choose prescription files'}</span><input id="imm-files" type="file" multiple disabled={dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
-            <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. Removing a selection detaches it when you save; it does not delete shared files.</p>
+            <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. {mrPortal ? 'Saved attachments must be retained. You can remove unsaved selections without deleting shared files.' : 'Removing a selection detaches it when you save; it does not delete shared files.'}</p>
             {policyError && <p role="alert">{policyError} <button type="button" className="imm-link-btn" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
             <Err id="imm-files-err" text={fileMsg || errors.attachments} /></div>
-          {v.attachments.length > 0 ? <ul className="imm-files" aria-label="Attached files">{v.attachments.map((f, i) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({kb(f.size)}) — Uploaded / verified</span><button type="button" className="imm-link-btn" onClick={() => downloadPrescription(f).catch((e) => setFileMsg(`Download unavailable: ${e.message}`))}>Download</button>{!dis && <button type="button" className="imm-link-btn" onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} aria-label={`Remove ${f.name}`}>Remove</button>}</li>)}</ul> : <p className="imm-hint">No files attached.</p>}
+          {v.attachments.length > 0 ? <ul className="imm-files" aria-label="Attached files">{v.attachments.map((f, i) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({kb(f.size)}) — Uploaded / verified</span><button type="button" className="imm-link-btn" onClick={() => downloadPrescription(f).catch((e) => setFileMsg(`Download unavailable: ${e.message}`))}>Download</button>{!dis && !(mrPortal && order?.attachments?.some((saved) => saved.id === f.id)) && <button type="button" className="imm-link-btn" onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} aria-label={`Remove ${f.name}`}>Remove</button>}</li>)}</ul> : <p className="imm-hint">No files attached.</p>}
           {uploads.length > 0 && <ul className="imm-files" aria-label="Pending or failed uploads">{uploads.map((u) => <li key={u.key}><span role={u.state === 'pending' ? 'status' : undefined}>{u.name}: {u.state === 'pending' ? 'Uploading — not attached yet' : u.message}</span>{!pending && !uncertain && <><button type="button" className="imm-link-btn" onClick={() => setUploads((rows) => rows.filter((r) => r.key !== u.key))}>Remove selection</button>{u.id ? <button type="button" className="imm-link-btn" onClick={async () => {
             try { const f = await prescriptionMetadata(u.id); if (f.state !== 'verified' || f.scanner_status !== 'clean') { setFileMsg(`Not attached: ${f.state}; scanner ${f.scanner_status}.`); return; } setV((cur) => ({ ...cur, attachments: [...cur.attachments, { id: f.id, name: f.display_name, size: f.size, type: f.content_type, state: f.state }] })); setUploads((rows) => rows.filter((r) => r.key !== u.key)); } catch (e) { setFileMsg(e.message); }
           }}>Check availability</button> : <button type="button" className="imm-link-btn" onClick={() => { setUploads((rows) => rows.filter((r) => r.key !== u.key)); addFiles([u.file]); }}>Retry upload</button>}</>}</li>)}</ul>}

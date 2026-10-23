@@ -48,6 +48,19 @@ processing.
 silently migrate fictional session orders, create master records, or require a
 Patient solely to give a file an owner.
 
+MR Immunotherapy and Kits & Consumables now have explicit authorization to reuse
+their corresponding live Admin workflows, with the authenticated MR fixed and
+all reads/mutations/transfers/files scoped to that MR. This supersedes the
+earlier exclusion of these two types from the MR portal, not other workflows.
+
+**Why:** The user requested these two saved workflows in the existing MR shell,
+including Admin-entered assigned orders, while keeping Dashboard, Targets and
+Payments fictional and SPT/Lupin backend work independent.
+
+**How to apply:** Preserve historical order snapshots and narrow owned-Doctor
+Patient registration. Do not infer broad Patient administration, cross-MR
+reassignment, live financial/stock processing or other portal activation.
+
 An order-transfer confirmation is permission to update matching session orders,
 not to reconcile divergent patient identity or administration history. Reject
 conflicting existing session patients even when order updates are confirmed.

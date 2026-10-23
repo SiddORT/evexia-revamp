@@ -12,7 +12,7 @@ import './mrWorkspace.css';
 import { Empty, WsContext } from './common.jsx';
 import { Dashboard, Settings, Targets } from './Screens.jsx';
 import { DoctorDetail, DoctorForm, DoctorImport, DoctorList } from './Doctors.jsx';
-import { OrderDetail, OrderForm, OrderList } from './Orders.jsx';
+import LiveOrders from './LiveOrders.jsx';
 import { PaymentDetail, PaymentForm, PaymentList } from './Payments.jsx';
 
 const NAV = [['Dashboard', '/mr/home', 'home'], ['Doctors', '/mr/doctors', 'doctors'], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets'], ['Payments', '/mr/payments', 'payments']];
@@ -42,7 +42,7 @@ function Routes() {
   const [a, b, c] = seg;
   if (seg.length === 0 || (a === 'home' && !b)) return <Dashboard />;
   if (a === 'doctors') { if (!b) return <DoctorList />; if (b === 'new' && !c) return <DoctorForm />; if (b === 'import' && !c) return <DoctorImport />; if (!c) return <DoctorDetail key={b} id={b} />; }
-  if (a === 'orders') { if (!b) return <OrderList />; if (b === 'new' && !c) return <OrderForm key="new" />; if (!c) return <OrderDetail id={b} />; if (c === 'edit' && seg.length === 3) return <OrderForm key={b} id={b} />; }
+  if (a === 'orders') return <LiveOrders />;
   if (a === 'targets' && !b) return <Targets />;
   if (a === 'payments') { if (!b) return <PaymentList />; if (b === 'new' && !c) return <PaymentForm />; if (!c) return <PaymentDetail id={b} />; }
   if (a === 'settings' && !b) return <Settings />;
@@ -107,7 +107,7 @@ function Shell() {
         </div>}
       </div>
     </div></header>
-    <div className="mrw-demo" data-testid="text-demo-notice">Doctors: live shared directory. Dashboard, Orders, Targets and Payments: separate fictional demos that reset on reload; not linked to live Doctors.</div>
+    <div className="mrw-demo" data-testid="text-demo-notice">Doctors, Immunotherapy orders and Kits &amp; Consumables orders: live shared records. Dashboard, Targets and Payments: separate fictional demos that reset on reload; not linked to live Doctors or orders.</div>
     <main className="mrw-main" ref={mainRef} data-testid="page-mr-home">
       {flash && <div className="mrw-flash" role="status" data-testid="text-flash">{flash.text}<button type="button" className="admin-button admin-button--secondary" onClick={() => setFlash(null)}>Dismiss</button></div>}
       <Routes />

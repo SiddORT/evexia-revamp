@@ -42,7 +42,8 @@ def get_record(db: Session, identity, file_id, action, *, lock=False, readable=F
     row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).execution_options(populate_existing=True))
     if not row:
         raise FileError(404, "not_found", "Object unavailable")
-    authorize(db, identity, action, row.patient_id, row.mr_id, lock=lock, kits_owner_id=row.kits_owner_id)
+    authorize(db, identity, action, row.patient_id, row.mr_id, lock=lock,
+              kits_owner_id=row.kits_owner_id, file_id=row.id)
     if lock:
         row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update().execution_options(populate_existing=True))
     if action in ("delete", "replace"):

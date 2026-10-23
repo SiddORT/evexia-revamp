@@ -1,4 +1,8 @@
-"""Super Admin Kits API. No staff grants or MR/Doctor portal access."""
+"""Shared Kits orders: protected Super Admin or mandatory authenticated MR scope.
+
+MR scope includes references, transfers and private uploads, not Staff grants,
+Doctor-portal access, attachment replacement or generic master administration.
+"""
 import asyncio
 import uuid
 from datetime import date

@@ -197,10 +197,14 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
     return transaction(db, work)
 
 
-def language_choices(db, actor, query="", limit=50, cursor=None):
+def language_choices(db, actor, query="", limit=50, cursor=None, *, order_workflow=False):
     """Patient-authorized name-only read; no catalogue administration/history."""
     def work():
-        authorize(db, actor, lock=False)
+        if order_workflow:
+            from app.services.mr_orders import authorize as authorize_orders
+            authorize_orders(db, actor)
+        else:
+            authorize(db, actor, lock=False)
         clauses = [Language.deleted_at.is_(None)]
         if query.strip():
             escaped = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
@@ -274,6 +278,11 @@ def insert(db, actor, body, code=None):
     from app.services.master_policy import master_allowed
     if not (master_allowed(actor, "patient", "add") or master_allowed(actor, "patient", "import")):
         raise PatientError("Access denied", 403, "access_denied")
+    return _insert(db, actor, body, code)
+
+
+def _insert(db, actor, body, code=None):
+    """Internal enrollment after the calling workflow's authorization."""
     validate_language(db, body)
     doctor, mr, _ = assignment(db, body.doctorId)
     domain._lock_mrs(db, {mr.id})
@@ -289,6 +298,25 @@ def insert(db, actor, body, code=None):
     db.flush()
     audit(db, actor, row, "create")
     return row
+
+
+def create_for_order(db, actor, body):
+    """Fresh active patient only; no generic master privilege or promotion."""
+    def work():
+        from app.services.mr_orders import authorize as authorize_orders
+        from app.services.immunotherapy import eligible
+        current = authorize_orders(db, actor)
+        if current.role != "mr":
+            raise PatientError("MR order registration requires an MR account.", 403, "access_denied")
+        eligible(db, "doctors", body.doctorId)
+        if body.status != "active":
+            raise PatientError("Order registration requires an active patient.", 422, "patient_status")
+        unique(db, body)
+        row = _insert(db, current, body)
+        result = projection(db, row)
+        db.commit()
+        return result
+    return transaction(db, work)
 
 
 def create(db, actor, body):

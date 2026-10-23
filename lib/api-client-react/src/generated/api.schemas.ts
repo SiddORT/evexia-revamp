@@ -11029,6 +11029,19 @@ export const ExportImmunotherapyOrdersStatus = {
   Returned: "Returned",
 } as const;
 
+export type MrOrderPatientLanguagesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  cursor?: string | null;
+};
+
 export type UploadImmunotherapyPrescriptionBody = {
   file: Blob | File;
 };

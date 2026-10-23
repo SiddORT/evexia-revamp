@@ -4,6 +4,7 @@ import { readOrderCsv, writeOrderCsv, decodeTransferCell, TRANSFER_MAX_BYTES } f
 import { readOrderWorkbook, writeOrderWorkbook } from './orderTransferWorkbook.js';
 import { exportDate } from './exportDatePresentation.js';
 import { downloadBlob } from './downloads.js';
+import { getSession, reportingIdentityGuard } from '../auth/adminSession.js';
 
 const HEADERS = ['Schema', 'Order type', 'Date context JSON', 'Order ID', 'Order number', 'Order date', 'Order details JSON', 'Patient snapshot JSON'];
 const SCHEMA = 'evexia.kits-orders/1';
@@ -18,23 +19,36 @@ function output(orders, preferences, format) {
   return blob;
 }
 export function createKitsTransferAdapter(filters, onSaved) {
+  const prepared = new WeakMap();
+  const ownerGuard = reportingIdentityGuard();
   return {
-    release: (blob, filename, template, format) => downloadBlob(blob, filename, { source: 'kits_orders', kind: template ? 'template' : 'export', format: format === 'xlsx' ? 'XLSX' : 'CSV' }),
-    instructions: 'Use the eight-column Kits template. Order details are JSON: doctorId (required real UUID), mrId and patientId (optional real UUIDs), orderFor (doctor/mr), kit (product, custom, volume, quantity as strings), lancets/applicators/tray (whole-count strings or blank), shipping (doctor/mr/other), other (name, phone, address), remarks, status and paymentStatus (Unpaid/Paid/Partial). No dosage, bottles or clinical history. Keep decimal values in quoted text and retain the declared date context, or use ISO YYYY-MM-DD. Patient snapshot JSON is informational only. New orders have blank ID/number and no files.',
+    release: (blob, filename, template, format) => {
+      const guard = prepared.get(blob);
+      if (!guard) throw new Error('Prepare this export again before downloading.');
+      return downloadBlob(blob, filename, { source: 'kits_orders', kind: template ? 'template' : 'export', format: format === 'xlsx' ? 'XLSX' : 'CSV' }, { guard });
+    },
+    instructions: `${getSession().user?.identity_kind === 'mr' ? `Every row must retain your signed-in saved MR ID (${getSession().user.mr_id}); other or empty MR assignments are rejected. ` : ''}Use the eight-column Kits template. Order details are JSON: doctorId (required real UUID), mrId and patientId (optional real UUIDs in Admin), orderFor (doctor/mr), kit (product, custom, volume, quantity as strings), lancets/applicators/tray (whole-count strings or blank), shipping (doctor/mr/other), other (name, phone, address), remarks, status and paymentStatus (Unpaid/Paid/Partial). No dosage, bottles or clinical history. Keep decimal values in quoted text and retain the declared date context, or use ISO YYYY-MM-DD. Patient snapshot JSON is informational only. New orders have blank ID/number and no files.`,
     async download(template, preferences, format) {
-      return output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      const guard = ownerGuard;
+      guard();
+      const blob = output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      guard(); prepared.set(blob, guard);
+      return blob;
     },
     async review(file) {
+      ownerGuard();
       if (!file.size || file.size > TRANSFER_MAX_BYTES) throw new Error('Choose a nonempty CSV/XLSX up to 8 MB.');
       let rows;
       if (/\.csv$/i.test(file.name)) rows = readOrderCsv(new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()));
       else if (/\.xlsx$/i.test(file.name)) rows = await readOrderWorkbook(file);
       else throw new Error('Choose CSV or genuine Excel (.xlsx).');
+      ownerGuard();
       if (rows.length < 2 || rows.length > 501) throw new Error('Review 1–500 orders per atomic server import.');
       if (rows[0].cells.length !== 8 || HEADERS.some((h, i) => rows[0].cells[i] !== h)) throw new Error('Keep the original eight Kits headers in order.');
       const entries = [], failures = [];
       let firstContext;
       for (const { line, cells } of rows.slice(1)) {
+        ownerGuard();
         try {
           if (cells.length !== 8) throw new Error('Expected eight columns.');
           const [schema, kind, rawContext, id, number, rawDate, rawDetails, rawPatient] = cells.map(decodeTransferCell);
@@ -61,10 +75,13 @@ export function createKitsTransferAdapter(filters, onSaved) {
       const payload = { entries, idempotencyKey: crypto.randomUUID(), reviewToken: '', confirmUpdates: false };
       if (new TextEncoder().encode(JSON.stringify(payload)).length > 1000000) throw new Error('Validated request exceeds 1 MiB. Import a smaller batch.');
       const reviewed = await request('/import/review', { body: payload });
+      ownerGuard();
       return { ...reviewed, payload: { ...payload, reviewToken: reviewed.reviewToken } };
     },
     async commit(review, confirmed) {
+      ownerGuard();
       const result = await request('/import/commit', { body: { ...review.payload, confirmUpdates: confirmed } });
+      ownerGuard();
       onSaved();
       return result;
     },

@@ -1,3 +1,9 @@
+"""Shared saved orders; MRs are restricted to their verified saved assignment.
+
+The existing Admin API paths remain stable. MR listings, exports, references,
+direct reads/edits and reviewed imports enforce ownership in the service before
+search/decryption. Patient registration/language assistance is workflow-specific.
+"""
 import uuid
 import asyncio
 from datetime import date
@@ -15,6 +21,8 @@ from app.services import files as file_service
 from app.services.file_policy import FileError
 from app.api.v1.files import storage_dependency
 from app.services.file_locks import operation
+from app.schemas.patients import PatientFields, PatientDirectoryResponse, PatientLanguageChoices
+from app.services import patients as patient_service
 
 router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"])
 MULTIPART = {
@@ -31,6 +39,17 @@ MULTIPART = {
         },
     }
 }
+
+
+@router.post("/patient-registration", response_model=PatientDirectoryResponse, operation_id="registerMrOrderPatient")
+def register_patient(body: PatientFields, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return patient_service.create_for_order(db, actor, body)
+
+
+@router.get("/patient-languages", response_model=PatientLanguageChoices, operation_id="mrOrderPatientLanguages")
+def patient_languages(query: str = Query("", max_length=200), limit: int = Query(25, ge=1, le=100),
+                      cursor: uuid.UUID | None = None, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return patient_service.language_choices(db, actor, query, limit, cursor, order_workflow=True)
 
 
 @router.get("/policy", response_model=ImmUploadPolicy, operation_id="immunotherapyUploadPolicy")
@@ -55,7 +74,6 @@ async def prescription_body(patient_id, request, actor, db, settings, storage_fa
     # Authorize before parsing the multipart body or constructing storage.
     await run_in_threadpool(service.authorize, db, actor)
     await run_in_threadpool(file_service.quota, db, actor, settings)
-    await run_in_threadpool(service.eligible, db, "patients", patient_id)
     db.rollback()  # No row lock is retained while receiving a request body.
     maximum = min(settings.max_upload_bytes, 10 * 1024 * 1024)
     async with asyncio.timeout(settings.file_request_timeout_seconds), request.form(max_files=1, max_fields=0, max_part_size=maximum) as form:
@@ -65,6 +83,8 @@ async def prescription_body(patient_id, request, actor, db, settings, storage_fa
             raise FileError(422, "prescription_file", "Supply exactly one prescription file")
         if not upload.size or upload.size > maximum:
             raise FileError(413, "prescription_size", "Prescription exceeds the enforced upload limit")
+        await run_in_threadpool(service.authorize, db, actor)
+        await run_in_threadpool(service.eligible, db, "patients", patient_id)
         body = UploadRequest(patient_id=patient_id, category="documents", filename=upload.filename)
         file_id = await run_in_threadpool(file_service.reserve, db, actor, body, upload.content_type, settings, request.state.request_id)
         request.state.file_id = str(file_id)

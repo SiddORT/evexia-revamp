@@ -3,6 +3,8 @@ import { safeJson, parseDate, readContext } from './orderTransfers.js';
 import { readOrderCsv, writeOrderCsv, decodeTransferCell, TRANSFER_MAX_BYTES } from './orderTransferCsv.js';
 import { readOrderWorkbook, writeOrderWorkbook } from './orderTransferWorkbook.js';
 import { exportDate } from './exportDatePresentation.js';
+import { getSession, reportingIdentityGuard } from '../auth/adminSession.js';
+import { releaseBlob } from './downloadRelease.js';
 
 const HEADERS = ['Schema', 'Order type', 'Date context JSON', 'Order ID', 'Order number', 'Order date', 'Order details JSON', 'Session patients JSON'];
 const SCHEMA = 'evexia.immunotherapy-orders/1';
@@ -17,28 +19,46 @@ function output(orders, preferences, format) {
   return blob;
 }
 export function createImmunotherapyTransferAdapter(filters, onSaved) {
+  const prepared = new WeakMap();
+  const ownerGuard = reportingIdentityGuard();
   return {
+    instructions: getSession().user?.identity_kind === 'mr'
+      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. New orders have blank ID/number and no files. Saved dates, versions and file associations must be retained. Patient snapshots never create masters.`
+      : undefined,
+    release(blob, filename) {
+      const guard = prepared.get(blob);
+      if (!guard) throw new Error('Prepare this export again before downloading.');
+      releaseBlob(blob, filename, guard);
+    },
     async download(template, preferences, format) {
       // Blank template: no fictional or automatically created personal records.
-      return output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      const guard = ownerGuard;
+      guard();
+      const blob = output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      guard(); prepared.set(blob, guard);
+      return blob;
     },
     async review(file) {
+      ownerGuard();
       if (!file.size || file.size > TRANSFER_MAX_BYTES) throw new Error('Choose a nonempty CSV/XLSX up to 8 MB.');
       let rows;
       if (/\.csv$/i.test(file.name)) rows = readOrderCsv(new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()));
       else if (/\.xlsx$/i.test(file.name)) rows = await readOrderWorkbook(file);
       else throw new Error('Choose CSV or genuine Excel (.xlsx).');
+      ownerGuard();
       if (rows.length < 2 || rows.length > 501) throw new Error('Review 1–500 orders per atomic server import.');
       if (HEADERS.some((h, i) => rows[0].cells[i] !== h) || rows[0].cells.length !== 8) throw new Error('Keep the original eight-column headers and order.');
       const entries = [];
       const failures = [];
       let firstContext;
       for (const { line, cells } of rows.slice(1)) {
+        ownerGuard();
         try {
           if (cells.length !== 8) throw new Error('Expected eight columns.');
           const decoded = cells.map((v) => decodeTransferCell(v));
           const [schema, kind, rawContext, id, number, rawDate, rawDetails, rawPatients] = decoded;
-          if (![SCHEMA, 'evexia.session-orders/1'].includes(schema) || kind !== 'immunotherapy') throw new Error('Not an Immunotherapy order transfer.');
+          const schemas = getSession().user?.identity_kind === 'mr' ? [SCHEMA] : [SCHEMA, 'evexia.session-orders/1'];
+          if (!schemas.includes(schema) || kind !== 'immunotherapy') throw new Error('Not a saved Immunotherapy order transfer. Fictional session transfers are not accepted in the MR portal.');
           const context = readContext(rawContext);
           if (firstContext && JSON.stringify(context) !== firstContext) throw new Error('Keep the same date context on every row.');
           firstContext = JSON.stringify(context);
@@ -65,10 +85,13 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
       const payload = { entries, idempotencyKey: crypto.randomUUID(), reviewToken: '', confirmUpdates: false };
       if (new TextEncoder().encode(JSON.stringify(payload)).length > 1000000) throw new Error('Validated request exceeds the server 1 MiB JSON limit. Import a smaller batch.');
       const reviewed = await request('/import/review', { body: payload });
+      ownerGuard();
       return { ...reviewed, payload: { ...payload, reviewToken: reviewed.reviewToken } };
     },
     async commit(review, confirmed) {
+      ownerGuard();
       const result = await request('/import/commit', { body: { ...review.payload, confirmUpdates: confirmed } });
+      ownerGuard();
       onSaved();
       return result;
     },

@@ -37,11 +37,11 @@ export function Dashboard() {
     </div>
     <div className="mrw-actions">
       <Link href="/mr/doctors/new" className="admin-button" data-testid="link-shortcut-onboard"><UserPlus size={16} aria-hidden="true" /> Add live Doctor</Link>
-      <Link href="/mr/orders/new" className="admin-button" data-testid="link-shortcut-order"><FilePlus2 size={16} aria-hidden="true" /> Place order</Link>
+      <Link href="/mr/orders" className="admin-button" data-testid="link-shortcut-order"><FilePlus2 size={16} aria-hidden="true" /> Live orders</Link>
       <Link href="/mr/payments/new" className="admin-button" data-testid="link-shortcut-payment"><Wallet size={16} aria-hidden="true" /> Add payment</Link>
     </div>
-    <div className="mrw-card"><h2>Recent demo activity</h2><p className="mrw-notice">These fictional events do not track live Doctor records.</p>{state.activity.length === 0 ? <Empty title="No demo activity yet" text="Create a demo order to begin. Live Doctors are managed separately." to="/mr/orders/new" action="New demo order" /> :
-      <ul className="mrw-list">{state.activity.slice(0, 6).map((a) => <li key={a.id}><Link href={a.href}><span>{a.label}</span><small>{date(a.date)}</small></Link></li>)}</ul>}</div>
+    <div className="mrw-card"><h2>Recent demo activity</h2><p className="mrw-notice">These fictional events do not track live Doctors or saved orders.</p>{state.activity.length === 0 ? <Empty title="No demo activity yet" text="Live Doctors and orders are managed separately and do not update these demo figures." /> :
+      <ul className="mrw-list">{state.activity.slice(0, 6).map((a) => <li key={a.id}>{a.href.startsWith('/mr/payments/') ? <Link href={a.href}><span>{a.label}</span><small>{date(a.date)}</small></Link> : <div className="mrw-line"><span>{a.label}</span><small>{date(a.date)}</small></div>}</li>)}</ul>}</div>
   </>;
 }
 

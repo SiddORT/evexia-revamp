@@ -932,7 +932,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const allowed = resource === 'spt-orders'
     ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : ['immunotherapy-orders', 'kits-orders'].includes(resource)
-    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
@@ -958,17 +958,18 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const owner = state.user?.id;
   const mutation = writing && !path.endsWith('/preview') && path !== '/import/review';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
+  const mrOrder = ['immunotherapy-orders', 'kits-orders'].includes(resource) && state.user?.identity_kind === 'mr';
   const check = () => {
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
     }
-    if (state.user.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access')) {
+    if (!mrOrder && (state.user.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access'))) {
       throw new SessionError('Purchase orders are restricted to the protected Super Admin.', 403);
     }
   };
   if (pending) await pending;
-  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, mrOrder ? 'mr' : 'admin');
   check();
   const downloadKey = `products/${path}/${new URLSearchParams(params)}`;
   const initiation = download ? (serverInitiations.get(downloadKey) || crypto.randomUUID()) : null;
@@ -1006,12 +1007,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
   if (!response.ok) {
     if (response.status === 401) {
-      await verifySession(true, 'admin');
+      await verifySession(true, mrOrder ? 'mr' : 'admin');
       const error = new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
       error.ambiguous = mutation;
       throw error;
     }
-    const error = new SessionError(response.status === 403 ? 'Purchase orders are restricted to the protected Super Admin.'
+    const error = new SessionError(response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
       : response.status >= 500 && !(batchOperation && typeof data?.error?.message === 'string') ? uncertain().message
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
@@ -1048,7 +1049,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version)
       || !data.doctor || !data.billing || !data.recipient || !Array.isArray(data.attachments)) throw uncertain();
   } else if (mutation && resource === 'immunotherapy-orders') {
-    if (path === '/import/commit') {
+    if (path === '/patient-registration') {
+      if (!data?.id || !data?.doctorId || data.mrId !== state.user?.mr_id) throw uncertain();
+    } else if (path === '/import/commit') {
       if (!Number.isInteger(data?.imported) || data.imported !== body.entries.length || !Array.isArray(data.orders)) throw uncertain();
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.groups)
       || !data.patient || !data.doctor || !data.mr || !Array.isArray(data.attachments)) throw uncertain();
@@ -1070,9 +1073,9 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   if (!/^(?:|\/[0-9a-f-]{36}(?:\/download)?)$/i.test(path)) throw new SessionError('Unsupported prescription operation.');
   const guard = reportingIdentityGuard();
   if (pending) await pending;
-  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, portalOf(state.user));
   guard();
-  if (state.user?.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access')) throw new SessionError('Access denied.', 403);
+  if (state.user?.identity_kind !== 'mr' && (state.user?.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access'))) throw new SessionError('Access denied.', 403);
   if (file && !kits && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
   const form = file ? new FormData() : null;
   if (form) form.append('file', file);
@@ -1084,7 +1087,7 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   const data = response.ok && download ? await response.blob() : await response.json();
   guard();
   if (!response.ok) {
-    if (response.status === 401) await verifySession(true, 'admin');
+    if (response.status === 401) await verifySession(true, portalOf(state.user));
     const error = new SessionError(data?.error?.message || (kits ? 'Kits attachment unavailable. Your order draft is preserved; retry explicitly.' : 'Prescription unavailable. Your order draft is preserved; retry explicitly.'), response.status);
     error.fileId = response.headers.get('X-File-ID');
     throw error;
@@ -1097,7 +1100,9 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!invitation && !['emails', 'summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
     throw new SessionError('Unsupported report.');
   }
-  if (state.user?.identity_kind === 'mr') throw new SessionError('Reporting access denied.', 403);
+  const mrKitsDownload = state.user?.identity_kind === 'mr' && resource === 'downloads/initiate'
+    && params.source === 'kits_orders' && ['template', 'export'].includes(params.kind) && ['CSV', 'XLSX'].includes(params.format);
+  if (state.user?.identity_kind === 'mr' && !mrKitsDownload) throw new SessionError('Reporting access denied.', 403);
   if (state.user?.identity_kind === 'staff' && !(resource === 'downloads/initiate'
       && ['sample', 'template'].includes(params.kind)
       && hasMasterPermission(state.user, params.source === 'storage_location' ? 'location' : params.source, 'import'))) {

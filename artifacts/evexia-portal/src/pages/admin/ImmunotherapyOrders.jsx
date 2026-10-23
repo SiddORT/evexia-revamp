@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { ClipboardList, Eye, Pencil, Plus, Printer, Search, ChevronDown } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -14,10 +14,10 @@ import { STATUSES, request, money, shippingRecipient, totalMinor } from '../../s
 import { createImmunotherapyTransferAdapter } from '../../services/immunotherapyTransfers.js';
 import '../../immunotherapy.css';
 
-const BASE = '/admin/orders/immunotherapy';
 export const StatusPill = ({ status }) => <span className={`imm-status imm-status--${status.replace(' ', '-')}`}>{status}</span>;
 
 export default function ImmunotherapyOrders() {
+  const BASE = useOrderBase('immunotherapy');
   const { date } = useAdminDateFormatters();
   const [result, setResult] = useState({ items: [], total: 0, counts: {}, nextCursor: null, filtered: null });
   const [loading, setLoading] = useState(true);

@@ -96,7 +96,12 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     if mr_doctor:
         from app.services.doctors import authorize
         authorize(db, verified, "import" if kind == "template" else "export")
-    if "admin.access" not in verified.permissions and not mr_private and not mr_doctor:
+    mr_kits = (verified.role == "mr" and source == "kits_orders" and provenance == "browser_reported"
+               and kind in ("template", "export") and format in ("CSV", "XLSX"))
+    if mr_kits:
+        from app.services.mr_orders import authorize
+        authorize(db, verified)
+    if "admin.access" not in verified.permissions and not mr_private and not mr_doctor and not mr_kits:
         action = ("import" if kind in ("sample", "template")
                   else "export" if kind == "export" and provenance == "server_prepared" else None)
         if (resource not in MASTERS or action is None

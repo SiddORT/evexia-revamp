@@ -45,12 +45,15 @@ changing the structured conflict signal without changing the underlying collisio
 **How to apply:** Keep deliberate database constraint identities stable and test the
 existing provisioning contract whenever introducing shared account guards.
 
-Live MR Doctor management must remain separate from the fictional MR Dashboard,
-Orders, Targets and Payments. Do not migrate demo contacts or infer their live
-identities from matching names.
+Live MR Doctors, Immunotherapy orders and Kits & Consumables orders must remain
+separate from the fictional MR Dashboard, Targets and Payments. Do not migrate
+demo contacts/orders or infer their live identities from matching names.
 
-**Why:** The user approved a real shared Doctor directory for MRs without approving
-real downstream transactions or migration of fictional/browser-local doctors.
+**Why:** The user separately approved the shared Doctor directory and these two
+MR order workflows, without approving live sales/payment summaries or migration
+of fictional/browser-local records.
 
-**How to apply:** Extend downstream live integrations only with separate explicit
-requirements; never pass shared Doctor IDs into demo order/payment mutations.
+**How to apply:** Keep new order-type, Dashboard/Targets/Payments and Doctor-portal
+integrations separately authorized. Never pass shared Doctor/order IDs into
+demo mutations. MR order identity is the verified saved account, non-reassignable
+in MR; no generic master administration or cross-MR delegation is implied.

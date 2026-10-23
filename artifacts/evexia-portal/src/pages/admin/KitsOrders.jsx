@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Plus, Search } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -12,9 +12,9 @@ import { request, STATUSES, PAYMENT_STATUSES, productSummary } from '../../servi
 import { createKitsTransferAdapter } from '../../services/kitsTransfers.js';
 import '../../kitsOrders.css';
 
-const BASE = '/admin/orders/kits-consumables';
 const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '', status: '', payment_status: '', order_for: '' };
 export default function KitsOrders() {
+  const BASE = useOrderBase('kits-consumables');
   const { date } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
   const [result, setResult] = useState({ items: [], total: 0, filtered: null, nextCursor: null });

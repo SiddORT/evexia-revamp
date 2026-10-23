@@ -285,6 +285,7 @@ import type {
   MovementReview,
   MovementSaved,
   MovementSummary,
+  MrOrderPatientLanguagesParams,
   OpeningActivityPage,
   OpeningBalanceDoctorChoicesParams,
   OpeningBalanceDoctorPage,
@@ -8717,6 +8718,228 @@ export const useReviewImmunotherapyImport = <
   TContext
 > => {
   return useMutation(getReviewImmunotherapyImportMutationOptions(options));
+};
+
+export const getMrOrderPatientLanguagesUrl = (
+  params?: MrOrderPatientLanguagesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/immunotherapy-orders/patient-languages?${stringifiedParams}`
+    : `/api/v1/admin/immunotherapy-orders/patient-languages`;
+};
+
+/**
+ * @summary Patient Languages
+ */
+export const mrOrderPatientLanguages = async (
+  params?: MrOrderPatientLanguagesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientLanguageChoices> => {
+  return customFetch<PatientLanguageChoices>(
+    getMrOrderPatientLanguagesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getMrOrderPatientLanguagesQueryKey = (
+  params?: MrOrderPatientLanguagesParams,
+) => {
+  return [
+    `/api/v1/admin/immunotherapy-orders/patient-languages`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getMrOrderPatientLanguagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof mrOrderPatientLanguages>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: MrOrderPatientLanguagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof mrOrderPatientLanguages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getMrOrderPatientLanguagesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof mrOrderPatientLanguages>>
+  > = ({ signal }) =>
+    mrOrderPatientLanguages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof mrOrderPatientLanguages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type MrOrderPatientLanguagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof mrOrderPatientLanguages>>
+>;
+export type MrOrderPatientLanguagesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Patient Languages
+ */
+
+export function useMrOrderPatientLanguages<
+  TData = Awaited<ReturnType<typeof mrOrderPatientLanguages>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: MrOrderPatientLanguagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof mrOrderPatientLanguages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getMrOrderPatientLanguagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRegisterMrOrderPatientUrl = () => {
+  return `/api/v1/admin/immunotherapy-orders/patient-registration`;
+};
+
+/**
+ * @summary Register Patient
+ */
+export const registerMrOrderPatient = async (
+  patientFields: PatientFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PatientDirectoryResponse>(getRegisterMrOrderPatientUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(patientFields),
+  });
+};
+
+export const getRegisterMrOrderPatientMutationKey = () =>
+  ["registerMrOrderPatient"] as const;
+
+export const getRegisterMrOrderPatientMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerMrOrderPatient>>,
+    TError,
+    RegisterMrOrderPatientMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerMrOrderPatient>>,
+  TError,
+  RegisterMrOrderPatientMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRegisterMrOrderPatientMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerMrOrderPatient>>,
+    RegisterMrOrderPatientMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerMrOrderPatient(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterMrOrderPatientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerMrOrderPatient>>
+>;
+export type RegisterMrOrderPatientMutationBody = BodyType<PatientFields>;
+export type RegisterMrOrderPatientMutationError = ErrorType<ErrorEnvelope>;
+export type RegisterMrOrderPatientMutationVariables = {
+  data: BodyType<PatientFields>;
+};
+
+/**
+ * @summary Register Patient
+ */
+export const useRegisterMrOrderPatient = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerMrOrderPatient>>,
+    TError,
+    RegisterMrOrderPatientMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerMrOrderPatient>>,
+  TError,
+  RegisterMrOrderPatientMutationVariables,
+  TContext
+> => {
+  return useMutation(getRegisterMrOrderPatientMutationOptions(options));
 };
 
 export const getImmunotherapyUploadPolicyUrl = () => {

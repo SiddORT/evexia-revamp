@@ -24,7 +24,7 @@ export function PaymentDetail({ id }) {
   const p = state.payments.find((x) => x.id === id);
   if (!p) return <div className="mrw-card"><Empty title="Payment not found" text="This demo payment is not in your workspace." to="/mr/payments" action="Back to payments" /></div>;
   return <><Head eyebrow="Payments" title={`Demo receipt ${p.id}`} text="In-app demo acknowledgement. Not a real invoice or receipt." />
-    <div className="mrw-card"><dl className="mrw-dl"><dt>Doctor</dt><dd>{state.doctors.find((d) => d.id === p.doctorId)?.name}</dd><dt>Type</dt><dd>{KINDS[p.kind]}</dd><dt>Applied to</dt><dd>{p.orderId ? <Link href={`/mr/orders/${encodeURIComponent(p.orderId)}`}>{p.orderId}</Link> : 'Unapplied advance credit'}</dd><dt>Amount</dt><dd><strong>{money(p.amount)}</strong></dd><dt>Date</dt><dd>{date(p.date)}</dd><dt>Method</dt><dd>{p.method}</dd><dt>Reference</dt><dd>{p.reference || '—'}</dd><dt>Remark</dt><dd>{p.remark || '—'}</dd></dl></div></>;
+    <div className="mrw-card"><dl className="mrw-dl"><dt>Doctor</dt><dd>{state.doctors.find((d) => d.id === p.doctorId)?.name}</dd><dt>Type</dt><dd>{KINDS[p.kind]}</dd><dt>Applied to</dt><dd>{p.orderId ? `${p.orderId} (fictional demo order)` : 'Unapplied advance credit'}</dd><dt>Amount</dt><dd><strong>{money(p.amount)}</strong></dd><dt>Date</dt><dd>{date(p.date)}</dd><dt>Method</dt><dd>{p.method}</dd><dt>Reference</dt><dd>{p.reference || '—'}</dd><dt>Remark</dt><dd>{p.remark || '—'}</dd></dl></div></>;
 }
 
 const rupees = (paise) => (paise / 100).toFixed(2);

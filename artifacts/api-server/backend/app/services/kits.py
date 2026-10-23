@@ -13,6 +13,7 @@ from app.db.kits_models import KitsOrder as Order, KitsAttachment as Attachment,
 from app.db.file_models import FileRecord
 from app.db.models import AuditEvent
 from app.services.immunotherapy import ImmError, encode, eligible, person as master_person, references as master_references, authorize
+from app.services.mr_orders import scope, assignment as mr_assignment
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
 from app.core.security import utcnow
@@ -65,7 +66,7 @@ def transaction(db, actor, work):
 
 
 def find(db, identity):
-    row = db.scalar(select(Order).where(Order.id == identity).with_for_update())
+    row = db.scalar(select(Order).where(Order.id == identity, *scope(db, Order)).with_for_update())
     if not row:
         raise ImmError("Kits order not found.", 404, "kits_not_found")
     return row
@@ -77,6 +78,7 @@ def project(keys, row):
 
 
 def resolved(db, actor, keys, body, previous=None):
+    mr_assignment(db, body, previous)
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "orderDate", "attachmentIds"})
     changed = {}
     for kind, field, key in (("doctors", "doctorId", "doctor"), ("mrs", "mrId", "mr"), ("patients", "patientId", "patient")):
@@ -158,7 +160,10 @@ def idempotent(db, actor, keys, key, payload, work):
         saved = unseal(keys, "requests", key, prior.response_ciphertext)
         if encode(saved["request"]) != encode(payload):
             raise ImmError("Retry the original unchanged submission.", 409, "kits_retry")
-        return saved["result"]
+        result = saved["result"]
+        for order in result.get("orders", [result]):
+            find(db, uuid.UUID(order["id"]))
+        return result
     result = work()
     db.add(Retry(key=key, actor_id=actor.user.id,
         response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))
@@ -183,6 +188,7 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
         clauses = [getattr(Order, field) == val for field, val in (
             ("status", status), ("payment_status", payment_status), ("order_for", order_for),
             ("doctor_id", doctor_id), ("mr_id", mr_id), ("patient_id", patient_id)) if val]
+        clauses.extend(scope(db, Order))
         if from_date:
             clauses.append(Order.date >= from_date)
         if to_date:
@@ -218,7 +224,7 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
                     break
         finally:
             rows.close()
-        counts = dict(db.execute(select(Order.status, func.count()).group_by(Order.status)).all())
+        counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)

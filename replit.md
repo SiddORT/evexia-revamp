@@ -311,6 +311,13 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
   Runtime behavior remains unverified. See `docs/spt-orders.md` for encryption,
   historical snapshots, Draft/Saved semantics and transfer/activation limits.
 
+- MR Immunotherapy and Kits & Consumables reuse the live Admin order services
+  with mandatory authenticated MR ownership and MR-shell navigation. Generic
+  Patient/Allergen administration is not granted. Dashboard, Targets and Payments
+  remain separate demos; SPT/Lupin are independent. Delivery is source-reviewed
+  only and untested at the user's request: no tests, builds, runtime checks,
+  service restarts, migrations or live writes. See `docs/mr-order-workflows.md`.
+
 - Admin Immunotherapy uses protected server orders and encrypted historical
   snapshots, not the retained legacy demo/transfer fixture module. Its backend
   delivery is source-only: no tests, builds, runtime checks, service restarts or
