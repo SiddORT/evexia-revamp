@@ -92,3 +92,35 @@ schema with no further pending migration, and the routed readiness endpoint
 returned HTTP 200. The public Admin login page rendered normally; authenticated
 UI flows and the full release gate were not run for this correction.
 This is not evidence of production activation or production approval.
+
+### Additional focused account-number regressions
+
+Separately authorized isolated testing adds:
+
+```sh
+sh scripts/test-staff-account-numbers.sh
+```
+
+All 13 focused tests passed on private disposable PostgreSQL with synthetic
+accounts and keys. They cover fresh installation, deterministic populated
+backfill and direct reruns, retained and unresolved identifiers, exact encrypted
+account/profile/session/refresh/history preservation, four concurrent committed
+Staff creates, rollback gaps, expansion through EVX-1000, rejected conflicts,
+protected Admin email login, and Staff label/Employee Code login separation.
+Both identity guards are checked for exact restoration after success and a
+simulated failure following partial in-transaction renames. Unexpected Staff
+guard definitions fail closed.
+
+This suite independently reproduced the immutable-username blocker before the
+correction was authorized in this task. The same correction arrived from the
+main project during synchronization; the merged source retains that single
+implementation rather than applying duplicate temporary-guard changes.
+
+The two test modules are included as a dedicated API stage in
+`scripts/validate-template-preferences.sh`, and hence in local release planning.
+The full release gate was not run by this focused task. This task did not access
+or migrate existing application databases, send mail, restart managed workflows,
+run browser checks, regenerate production catalog/release evidence or deploy.
+The original-development synchronization reported above is separate from this
+task's disposable test execution. Header/self-profile presentation and conflicts
+in live data remain outside this additional backend verification.

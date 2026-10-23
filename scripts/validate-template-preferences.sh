@@ -44,6 +44,7 @@ run node --test artifacts/evexia-portal/src/services/reportingCSV.test.js
 run node --test artifacts/evexia-portal/src/services/downloads.test.js
 run node --test artifacts/evexia-portal/src/services/staff.test.js
 run sh scripts/test-api-foundation.sh tests/test_staff.py tests/test_staff_search.py tests/test_staff_rotation.py tests/test_migration_staff.py tests/test_staff_lifecycle.py tests/test_migration_staff_designation.py
+run sh scripts/test-api-foundation.sh tests/test_staff_account_numbers.py tests/test_migration_staff_account_numbers.py
 run sh scripts/test-api-foundation.sh tests/test_directory_crypto.py tests/test_directory_staging.py tests/test_directory_retirement.py tests/test_directory_runtime.py tests/test_directory_rotation.py
 run sh scripts/test-api-foundation.sh tests/test_account_crypto.py
 run node --test artifacts/evexia-portal/src/services/serverHeadquarters.test.js

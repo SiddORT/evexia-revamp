@@ -40,6 +40,17 @@ replacement notices in failed browser tests before assuming chunk-loading
 latency or raising all timeouts. This is test-fixture isolation, not a reason to
 weaken the production single-session policy.
 
+Concurrent service tests acting as one administrator should share one genuinely
+authenticated session across their independent database connections.
+
+**Why:** Creating a new Admin login per worker exercises the intentional
+single-session replacement policy instead of the allocator or mutation race.
+
+**How to apply:** Establish and commit the session once before releasing the
+worker barrier. Construct each worker's identity from its own database Session
+with the same authenticated session identifier; do not bypass revalidation or
+relax the single-session policy.
+
 Commit synthetic ORM setup before invoking an API whose expected outcome is a
 transaction rollback, even when the fixture itself is protected by an outer
 disposable transaction.
