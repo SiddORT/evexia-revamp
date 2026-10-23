@@ -1,6 +1,6 @@
 ---
 name: Orders scope
-description: Admin SPT, Kits and Immunotherapy have separate backend authority; preserve unrelated order and portal boundaries.
+description: Independent order and portal authority, including Lupin's patient-count-versus-link rule.
 ---
 
 Admin Immunotherapy now has explicit user authorization for authenticated backend orders, real master references, historical snapshots, private prescription uploads and server-validated transfers. This supersedes its earlier session-only boundary, but does not expand any other order type or portal.
@@ -29,15 +29,34 @@ and fulfilment.
 and login identity. Saved is an immutable order status, never evidence of
 payment or treatment; do not silently migrate fictional fixtures.
 
-Lupin is also a fictional, frontend-memory-only evaluation workflow. It has a patient count, not a patient registry or individual clinical records. Its attachment picker keeps metadata only, and its filtered CSV must remain local with no backend export or upload.
+Admin Lupin now has explicit authorization for protected backend persistence,
+real Doctor/MR references, optional existing Patient links, encrypted historical
+identities, private attachments and server-reviewed transfers. This supersedes
+its earlier mock-only boundary without expanding other portals or order types.
+The manually entered patient count is independent of the optional Patient list:
+zero links is valid for a positive count, and links must never calculate,
+restrict or replace it. Never invent Patient records from a count.
 
-**Why:** The user explicitly requested a session-only Lupin mock and excluded live masters, processing, persistence and file transfer.
+**Why:** The user explicitly requested this Lupin backend conversion and
+clarified that only count × per-test price determines pricing.
 
-**How to apply:** Preserve this boundary when reusing shared infrastructure: the real download-reporting service is not appropriate for this deliberately offline demo. Adding live data or reporting requires separate requirements.
+**How to apply:** Preserve the separation in create, review, filters and
+transfers. Do not add master creation, medical history, financial or inventory
+processing, or Doctor/MR portal grants without separate requirements.
+
+Shared order/reference/file infrastructure may legitimately support MR access
+for other workflows. Reusing it does not authorize MR access to Lupin.
+
+**Why:** The Lupin request explicitly excludes expansion of MR/Doctor grants;
+authorization must not broaden indirectly when shared helpers gain MR support.
+
+**How to apply:** Keep an explicit protected-Admin gate before shared reference
+scope initialization, and keep Lupin private-file authorization independent
+of saved-order access allowed for other order domains.
 
 Admin Kits & Consumables now has separate authorization for shared persisted
 supply orders, optional existing Patient references, encrypted historical
-contacts and private uploads. This does not expand the SPT/Lupin or MR/Doctor
+contacts and private uploads. This does not expand other order or MR/Doctor
 portal boundaries. Patient is not mandatory, and no clinical history is inferred.
 
 **Why:** The user explicitly requested supply-order persistence while retaining

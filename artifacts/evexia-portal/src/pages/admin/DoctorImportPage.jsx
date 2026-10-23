@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
+import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { downloadDoctorFile, importDoctors, reviewDoctors, sampleDoctors } from '../../services/serverDoctors.js';
 import '../../excel-import.css';
@@ -107,7 +108,7 @@ export default function DoctorImportPage({ mr = false }) {
         {samplePending && <p role="status">Preparing {samplePending === 'xlsx' ? 'Excel' : 'CSV'} sample…</p>}
       </section>
       <section className="excel-import__card" aria-labelledby="excel-upload-title" aria-busy={Boolean(pending)}><span className="excel-import__number">02</span><div className="excel-import__icon"><Upload size={23} /></div><h2 id="excel-upload-title">Upload &amp; review</h2><p>CSV or genuine .xlsx, up to 2 MiB and 1,000 records. Create-only: every row must be valid; no upserts or partial imports.</p>
-        <label className="excel-import__picker"><FileSpreadsheet size={19} /><span>{file ? file.name : 'Choose CSV or Excel file'}</span><input ref={picker} aria-label="Doctor CSV or Excel file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={pending === 'commit'} onChange={(event) => replaceFile(event.target.files?.[0] || null)} data-testid="input-doctor-import" /></label>
+        <MasterFilePicker ref={picker} aria-label="Doctor CSV or Excel file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={pending === 'commit'} onChange={(event) => replaceFile(event.target.files?.[0] || null)} data-testid="input-doctor-import">{file ? file.name : 'Choose CSV or Excel file'}</MasterFilePicker>
         <button className="admin-button" type="button" disabled={!file || Boolean(pending)} onClick={() => run(false)} data-testid="button-review-doctor-import">{pending === 'review' ? 'Reviewing…' : pending === 'commit' ? 'Importing…' : uncertain ? 'Check current conflicts (no writes)' : 'Upload & review'}</button>
       </section>
     </div>

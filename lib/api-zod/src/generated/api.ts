@@ -692,6 +692,8 @@ export const getLanguageHistoryQueryOffsetDefault = 0;
 export const getLanguageHistoryQueryOffsetMin = 0;
 export const getLanguageHistoryQueryOffsetMax = 1000000;
 export const getLanguageHistoryResponseRecordNameMax = 200;
+
+export const listLupinOrdersQueryLimitDefault = 25;
 export const listMRDirectoryQueryQueryMax = 200;
 export const listMRDirectoryQueryLimitDefault = 10;
 export const listMRDirectoryQueryLimitMax = 100;
@@ -12619,6 +12621,11 @@ export const GetLanguageHistoryResponse = zod.object({
   total: zod.number().int(),
 });
 
+/**
+ * @summary Listing
+ */
+
+export const listLupinOrdersQuerySearchDefault = ``;
 /**
  * @summary Listing
  */
@@ -34189,6 +34196,9 @@ export const UploadFileQueryParams = zod.object({
   patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   kits_owner_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  lupin_owner_id: zod
+    .union([zod.coerce.string().uuid(), zod.null()])
+    .optional(),
   category: zod.enum(["profile", "documents"]),
   filename: zod.coerce.string().min(1).max(uploadFileQueryFilenameMax),
 });
@@ -34461,3 +34471,777 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+export const commitLupinImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+
+export const commitLupinImportResponseOrdersItemRemarksDefault = ``;
+
+export const reviewLupinImportBodyEntriesItemNumberMax = 48;
+
+export const getLupinOrderResponseAttachmentIdsMax = 10;
+
+export const ListLupinOrdersQueryParams = zod.object({
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listLupinOrdersQueryLimitMax)
+    .default(listLupinOrdersQueryLimitDefault),
+  search: zod.coerce
+    .string()
+    .max(listLupinOrdersQuerySearchMax)
+    .default(listLupinOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "Approved",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  payment_status: zod
+    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+/**
+ * @summary Review
+ */
+
+export const reviewLupinImportBodyEntriesItemNumberDefault = ``;
+
+export const listLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
+
+export const exportLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
+
+export const createLupinOrderResponseStatusDefault = `Confirmed`;
+
+/**
+ * @summary Cancel Upload
+ */
+export const CancelLupinUploadParams = zod.object({
+  upload_id: zod.coerce.string().uuid(),
+});
+
+export const reviewLupinImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+
+export const createLupinOrderBodyAttachmentIdsMax = 10;
+
+export const exportLupinOrdersResponseItemsItemPriceMax = 32;
+
+export const commitLupinImportBodyEntriesItemValuesPriceMax = 32;
+
+export const reviewLupinImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+
+export const listLupinOrdersResponseItemsItemRemarksMax = 4000;
+
+export const createLupinOrderBodyPriceMax = 32;
+
+export const commitLupinImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+
+export const reviewLupinImportBodyEntriesMax = 500;
+
+export const getLupinOrderResponsePatientCountMax = 1000000;
+
+export const CancelLupinUploadResponse = zod.object({
+  cancelled: zod.boolean(),
+  id: zod.string().uuid(),
+});
+
+export const exportLupinOrdersResponseItemsItemStatusDefault = `Confirmed`;
+
+export const createLupinOrderResponsePriceMax = 32;
+
+export const reviewLupinImportBodyReviewTokenDefault = ``;
+
+/**
+ * @summary Create
+ */
+
+export const createLupinOrderBodyPaymentStatusDefault = `Unpaid`;
+
+export const lupinReferencesQuerySearchDefault = ``;
+
+export const listLupinOrdersQueryLimitMax = 100;
+
+export const exportLupinOrdersResponseItemsItemPatientCountMax = 1000000;
+
+export const commitLupinImportBodyEntriesItemValuesRemarksMax = 4000;
+
+export const commitLupinImportBodyEntriesItemValuesPatientCountMax = 1000000;
+
+export const listLupinOrdersResponseItemsItemPriceMax = 32;
+
+export const commitLupinImportResponseOrdersItemPriceMax = 32;
+
+export const exportLupinOrdersQuerySearchMax = 200;
+
+export const UploadLupinAttachmentBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const reviewLupinImportBodyEntriesItemValuesPatientIdsMax = 200;
+
+export const reviewLupinImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
+
+export const getLupinOrderResponsePaymentStatusDefault = `Unpaid`;
+
+export const commitLupinImportBodyEntriesItemNumberMax = 48;
+
+export const GetLupinOrderResponse = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(getLupinOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  date: zod.string(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(getLupinOrderResponsePatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(getLupinOrderResponsePatientIdsMax)
+    .optional(),
+  patients: zod.array(zod.record(zod.string(), zod.unknown())),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(getLupinOrderResponsePaymentStatusDefault),
+  price: zod.string().max(getLupinOrderResponsePriceMax),
+  remarks: zod
+    .string()
+    .max(getLupinOrderResponseRemarksMax)
+    .default(getLupinOrderResponseRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "Approved",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(getLupinOrderResponseStatusDefault),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+export const CreateLupinOrderResponse = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  date: zod.string(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(createLupinOrderResponsePatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderResponsePatientIdsMax)
+    .optional(),
+  patients: zod.array(zod.record(zod.string(), zod.unknown())),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(createLupinOrderResponsePaymentStatusDefault),
+  price: zod.string().max(createLupinOrderResponsePriceMax),
+  remarks: zod
+    .string()
+    .max(createLupinOrderResponseRemarksMax)
+    .default(createLupinOrderResponseRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "Approved",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createLupinOrderResponseStatusDefault),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+export const lupinReferencesQueryLimitDefault = 25;
+
+export const ReviewLupinImportResponse = zod.object({
+  additions: zod.number().int(),
+  entries: zod.array(zod.record(zod.string(), zod.unknown())),
+  patientAdditions: zod.number().int(),
+  rejected: zod.number().int(),
+  reviewToken: zod.string(),
+  unchanged: zod.number().int(),
+  updates: zod.number().int(),
+  valid: zod.boolean(),
+});
+
+export const createLupinOrderBodyStatusDefault = `Confirmed`;
+
+/**
+ * @summary Detail
+ */
+export const GetLupinOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const createLupinOrderBodyRemarksMax = 4000;
+
+export const listLupinOrdersResponseItemsItemStatusDefault = `Confirmed`;
+
+export const listLupinOrdersResponseItemsItemPatientIdsMax = 200;
+
+export const exportLupinOrdersResponseItemsItemRemarksDefault = ``;
+
+export const commitLupinImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
+
+/**
+ * @summary References
+ */
+export const LupinReferencesParams = zod.object({
+  kind: zod.enum(["patients", "doctors", "mrs"]),
+});
+
+export const ExportLupinOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(exportLupinOrdersResponseItemsItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      mr: zod.record(zod.string(), zod.unknown()),
+      mrId: zod.string().uuid(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(exportLupinOrdersResponseItemsItemPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(exportLupinOrdersResponseItemsItemPatientIdsMax)
+        .optional(),
+      patients: zod.array(zod.record(zod.string(), zod.unknown())),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(exportLupinOrdersResponseItemsItemPaymentStatusDefault),
+      price: zod.string().max(exportLupinOrdersResponseItemsItemPriceMax),
+      remarks: zod
+        .string()
+        .max(exportLupinOrdersResponseItemsItemRemarksMax)
+        .default(exportLupinOrdersResponseItemsItemRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "Approved",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(exportLupinOrdersResponseItemsItemStatusDefault),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+export const exportLupinOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
+
+export const commitLupinImportBodyEntriesMax = 500;
+
+export const reviewLupinImportBodyConfirmUpdatesDefault = false;
+
+export const listLupinOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
+
+export const LupinReferencesResponse = zod.object({
+  items: zod.array(zod.record(zod.string(), zod.unknown())),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+export const commitLupinImportBodyReviewTokenMax = 256;
+
+export const commitLupinImportBodyEntriesItemValuesPatientIdsMax = 200;
+
+export const createLupinOrderBodyPatientIdsMax = 200;
+
+export const commitLupinImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const getLupinOrderResponsePriceMax = 32;
+
+export const LupinReferencesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(lupinReferencesQuerySearchMax)
+    .default(lupinReferencesQuerySearchDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(lupinReferencesQueryLimitMax)
+    .default(lupinReferencesQueryLimitDefault),
+  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const createLupinOrderBodyRemarksDefault = ``;
+
+/**
+ * @summary Export
+ */
+export const exportLupinOrdersQuerySearchDefault = ``;
+
+export const commitLupinImportBodyConfirmUpdatesDefault = false;
+
+export const reviewLupinImportBodyEntriesItemValuesPriceMax = 32;
+
+export const CommitLupinImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(commitLupinImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(commitLupinImportBodyEntriesItemNumberMax)
+          .default(commitLupinImportBodyEntriesItemNumberDefault),
+        values: zod.object({
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(commitLupinImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          mrId: zod.string().uuid(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patientCount: zod
+            .number()
+            .int()
+            .min(1)
+            .max(commitLupinImportBodyEntriesItemValuesPatientCountMax),
+          patientIds: zod
+            .array(zod.string().uuid())
+            .max(commitLupinImportBodyEntriesItemValuesPatientIdsMax)
+            .optional(),
+          paymentStatus: zod
+            .enum(["Unpaid", "Paid", "Partial"])
+            .default(
+              commitLupinImportBodyEntriesItemValuesPaymentStatusDefault,
+            ),
+          price: zod
+            .string()
+            .max(commitLupinImportBodyEntriesItemValuesPriceMax),
+          remarks: zod
+            .string()
+            .max(commitLupinImportBodyEntriesItemValuesRemarksMax)
+            .default(commitLupinImportBodyEntriesItemValuesRemarksDefault),
+          status: zod
+            .enum([
+              "Confirmed",
+              "Approved",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(commitLupinImportBodyEntriesItemValuesStatusDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(commitLupinImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(commitLupinImportBodyReviewTokenMax)
+    .default(commitLupinImportBodyReviewTokenDefault),
+});
+
+export const getLupinOrderResponseStatusDefault = `Confirmed`;
+
+export const commitLupinImportResponseOrdersItemRemarksMax = 4000;
+
+export const commitLupinImportResponseOrdersItemPatientCountMax = 1000000;
+
+export const commitLupinImportResponseOrdersItemPaymentStatusDefault = `Unpaid`;
+
+export const CommitLupinImportResponse = zod.object({
+  imported: zod.number().int(),
+  orders: zod.array(
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(commitLupinImportResponseOrdersItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      mr: zod.record(zod.string(), zod.unknown()),
+      mrId: zod.string().uuid(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(commitLupinImportResponseOrdersItemPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(commitLupinImportResponseOrdersItemPatientIdsMax)
+        .optional(),
+      patients: zod.array(zod.record(zod.string(), zod.unknown())),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(commitLupinImportResponseOrdersItemPaymentStatusDefault),
+      price: zod.string().max(commitLupinImportResponseOrdersItemPriceMax),
+      remarks: zod
+        .string()
+        .max(commitLupinImportResponseOrdersItemRemarksMax)
+        .default(commitLupinImportResponseOrdersItemRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "Approved",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(commitLupinImportResponseOrdersItemStatusDefault),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+export const ReviewLupinImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(reviewLupinImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(reviewLupinImportBodyEntriesItemNumberMax)
+          .default(reviewLupinImportBodyEntriesItemNumberDefault),
+        values: zod.object({
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(reviewLupinImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          mrId: zod.string().uuid(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patientCount: zod
+            .number()
+            .int()
+            .min(1)
+            .max(reviewLupinImportBodyEntriesItemValuesPatientCountMax),
+          patientIds: zod
+            .array(zod.string().uuid())
+            .max(reviewLupinImportBodyEntriesItemValuesPatientIdsMax)
+            .optional(),
+          paymentStatus: zod
+            .enum(["Unpaid", "Paid", "Partial"])
+            .default(
+              reviewLupinImportBodyEntriesItemValuesPaymentStatusDefault,
+            ),
+          price: zod
+            .string()
+            .max(reviewLupinImportBodyEntriesItemValuesPriceMax),
+          remarks: zod
+            .string()
+            .max(reviewLupinImportBodyEntriesItemValuesRemarksMax)
+            .default(reviewLupinImportBodyEntriesItemValuesRemarksDefault),
+          status: zod
+            .enum([
+              "Confirmed",
+              "Approved",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(reviewLupinImportBodyEntriesItemValuesStatusDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(reviewLupinImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(reviewLupinImportBodyReviewTokenMax)
+    .default(reviewLupinImportBodyReviewTokenDefault),
+});
+
+export const reviewLupinImportBodyEntriesItemValuesPatientCountMax = 1000000;
+
+export const reviewLupinImportBodyEntriesItemValuesRemarksDefault = ``;
+
+/**
+ * @summary Policy
+ */
+export const LupinUploadPolicyResponse = zod.object({
+  maxBytes: zod.number().int(),
+  maxFiles: zod.number().int(),
+  types: zod.array(zod.string()),
+});
+
+export const getLupinOrderResponseRemarksDefault = ``;
+
+export const createLupinOrderResponseAttachmentIdsMax = 10;
+
+export const createLupinOrderResponsePaymentStatusDefault = `Unpaid`;
+
+export const UploadLupinAttachmentResponse = zod.object({
+  category: zod.enum(["profile", "documents"]),
+  checksum: zod.union([zod.string(), zod.null()]),
+  content_type: zod.string(),
+  created_at: zod.coerce.date(),
+  display_name: zod.string(),
+  id: zod.string().uuid(),
+  mr_id: zod.union([zod.string().uuid(), zod.null()]),
+  patient_id: zod.union([zod.string().uuid(), zod.null()]),
+  scanner_status: zod.enum([
+    "pending",
+    "clean",
+    "infected",
+    "unavailable",
+    "error",
+  ]),
+  size: zod.number().int(),
+  state: zod.enum([
+    "uploading",
+    "quarantined",
+    "verified",
+    "rejected",
+    "pending_delete",
+    "deleted",
+  ]),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+export const commitLupinImportResponseOrdersItemAttachmentIdsMax = 10;
+
+export const commitLupinImportResponseOrdersItemStatusDefault = `Confirmed`;
+
+export const getLupinOrderResponseRemarksMax = 4000;
+
+/**
+ * @summary Commit
+ */
+
+export const commitLupinImportBodyEntriesItemNumberDefault = ``;
+
+export const commitLupinImportBodyReviewTokenDefault = ``;
+
+export const listLupinOrdersQuerySearchMax = 200;
+
+export const createLupinOrderResponsePatientCountMax = 1000000;
+
+export const createLupinOrderBodyPatientCountMax = 1000000;
+
+export const createLupinOrderResponseRemarksMax = 4000;
+
+export const exportLupinOrdersResponseItemsItemPatientIdsMax = 200;
+
+export const reviewLupinImportBodyEntriesItemValuesRemarksMax = 4000;
+
+export const lupinReferencesQuerySearchMax = 200;
+
+export const lupinReferencesQueryLimitMax = 100;
+
+export const getLupinOrderResponsePatientIdsMax = 200;
+
+export const exportLupinOrdersResponseItemsItemRemarksMax = 4000;
+
+export const commitLupinImportResponseOrdersItemPatientIdsMax = 200;
+
+export const reviewLupinImportBodyReviewTokenMax = 256;
+
+export const listLupinOrdersResponseItemsItemRemarksDefault = ``;
+
+export const listLupinOrdersResponseItemsItemPatientCountMax = 1000000;
+
+export const ListLupinOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(listLupinOrdersResponseItemsItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      mr: zod.record(zod.string(), zod.unknown()),
+      mrId: zod.string().uuid(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(listLupinOrdersResponseItemsItemPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(listLupinOrdersResponseItemsItemPatientIdsMax)
+        .optional(),
+      patients: zod.array(zod.record(zod.string(), zod.unknown())),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(listLupinOrdersResponseItemsItemPaymentStatusDefault),
+      price: zod.string().max(listLupinOrdersResponseItemsItemPriceMax),
+      remarks: zod
+        .string()
+        .max(listLupinOrdersResponseItemsItemRemarksMax)
+        .default(listLupinOrdersResponseItemsItemRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "Approved",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(listLupinOrdersResponseItemsItemStatusDefault),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+export const CreateLupinOrderBody = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderBodyAttachmentIdsMax)
+    .optional(),
+  doctorId: zod.string().uuid(),
+  idempotencyKey: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(createLupinOrderBodyPatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderBodyPatientIdsMax)
+    .optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(createLupinOrderBodyPaymentStatusDefault),
+  price: zod.string().max(createLupinOrderBodyPriceMax),
+  remarks: zod
+    .string()
+    .max(createLupinOrderBodyRemarksMax)
+    .default(createLupinOrderBodyRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "Approved",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createLupinOrderBodyStatusDefault),
+});
+
+export const createLupinOrderResponseRemarksDefault = ``;
+
+/**
+ * @summary Upload
+ */
+export const UploadLupinAttachmentQueryParams = zod.object({
+  upload_id: zod.coerce.string().uuid(),
+});
+
+export const createLupinOrderResponsePatientIdsMax = 200;
+
+export const ExportLupinOrdersQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(exportLupinOrdersQuerySearchMax)
+    .default(exportLupinOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "Approved",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  payment_status: zod
+    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});

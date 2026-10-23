@@ -3826,6 +3826,8 @@ export interface LoginRequest {
   remember_me?: boolean;
 }
 
+export type LupinInputPaymentStatus =
+  (typeof LupinInputPaymentStatus)[keyof typeof LupinInputPaymentStatus];
 export interface MRChoice {
   deleted?: boolean;
   id: string;
@@ -11475,6 +11477,25 @@ export type GetLanguageHistoryParams = {
   offset?: number;
 };
 
+export type ListLupinOrdersParams = {
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ListLupinOrdersStatus;
+  payment_status?: ListLupinOrdersPaymentStatus;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
 export type ListMRDirectoryParams = {
   /**
    * @maxLength 200
@@ -13380,6 +13401,7 @@ export type UploadFileParams = {
   patient_id?: string | null;
   mr_id?: string | null;
   kits_owner_id?: string | null;
+  lupin_owner_id?: string | null;
   category: UploadFileCategory;
   /**
    * @minLength 1
@@ -13418,3 +13440,264 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
+
+export type UploadLupinAttachmentParams = {
+  upload_id: string;
+};
+
+export type LupinInputStatus =
+  (typeof LupinInputStatus)[keyof typeof LupinInputStatus];
+
+export type LupinRecordPatientsItem = { [key: string]: unknown };
+
+export const ListLupinOrdersStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type UploadLupinAttachmentBody = {
+  file: Blob | File;
+};
+
+export type ExportLupinOrdersStatus =
+  (typeof ExportLupinOrdersStatus)[keyof typeof ExportLupinOrdersStatus] | null;
+
+export type ExportLupinOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ExportLupinOrdersStatus;
+  payment_status?: ExportLupinOrdersPaymentStatus;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type LupinRecordDoctor = { [key: string]: unknown };
+
+export const LupinWriteStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export const ExportLupinOrdersStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface LupinWrite {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinWritePaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinWriteStatus;
+}
+
+export const LupinWritePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export const LupinInputStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export const LupinRecordPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export interface LupinRecord {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  attachments: LupinRecordAttachmentsItem[];
+  date: string;
+  doctor: LupinRecordDoctor;
+  doctorId: string;
+  id: string;
+  mr: LupinRecordMr;
+  mrId: string;
+  number: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  patients: LupinRecordPatientsItem[];
+  paymentStatus?: LupinRecordPaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinRecordStatus;
+  total: string;
+  version: number;
+}
+
+export interface LupinUploadCancellation {
+  cancelled: boolean;
+  id: string;
+}
+
+export type ExportLupinOrdersPaymentStatus =
+  | (typeof ExportLupinOrdersPaymentStatus)[keyof typeof ExportLupinOrdersPaymentStatus]
+  | null;
+
+export type LupinRecordStatus =
+  (typeof LupinRecordStatus)[keyof typeof LupinRecordStatus];
+
+export const ListLupinOrdersPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export interface LupinImport {
+  confirmUpdates?: boolean;
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  entries: LupinImportEntry[];
+  idempotencyKey: string;
+  /** @maxLength 256 */
+  reviewToken?: string;
+}
+
+export interface LupinImportResult {
+  imported: number;
+  orders: LupinRecord[];
+}
+
+export const LupinInputPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export const LupinRecordStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ListLupinOrdersStatus =
+  (typeof ListLupinOrdersStatus)[keyof typeof ListLupinOrdersStatus] | null;
+
+export type LupinReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  selected?: string | null;
+};
+
+export type LupinPageCounts = { [key: string]: number };
+
+export type LupinRecordAttachmentsItem = { [key: string]: unknown };
+
+export type LupinWritePaymentStatus =
+  (typeof LupinWritePaymentStatus)[keyof typeof LupinWritePaymentStatus];
+
+export interface LupinPage {
+  counts: LupinPageCounts;
+  filtered: number | null;
+  items: LupinRecord[];
+  nextCursor: string | null;
+  total: number;
+}
+
+export type LupinRecordPaymentStatus =
+  (typeof LupinRecordPaymentStatus)[keyof typeof LupinRecordPaymentStatus];
+
+export interface LupinImportEntry {
+  expected_version?: number | null;
+  id?: string | null;
+  /** @maxLength 48 */
+  number?: string;
+  values: LupinInput;
+}
+
+export interface LupinInput {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinInputPaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinInputStatus;
+}
+
+export type ListLupinOrdersPaymentStatus =
+  | (typeof ListLupinOrdersPaymentStatus)[keyof typeof ListLupinOrdersPaymentStatus]
+  | null;
+
+export type LupinWriteStatus =
+  (typeof LupinWriteStatus)[keyof typeof LupinWriteStatus];
+
+export type LupinRecordMr = { [key: string]: unknown };
+
+export const ExportLupinOrdersPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;

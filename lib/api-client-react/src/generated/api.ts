@@ -140,6 +140,7 @@ import type {
   ExportImmunotherapyOrdersParams,
   ExportKitsOrdersParams,
   ExportLanguagesParams,
+  ExportLupinOrdersParams,
   ExportMRDirectoryParams,
   ExportOpeningBalancesParams,
   ExportOpeningStockParams,
@@ -226,6 +227,7 @@ import type {
   ListInventoryStockParams,
   ListKitsOrdersParams,
   ListLanguagesParams,
+  ListLupinOrdersParams,
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
   ListMRReferenceChoicesParams,
@@ -268,6 +270,13 @@ import type {
   LookupMRPincodeParams,
   LookupPatientPincodeParams,
   LookupStorageLocationPincodeParams,
+  LupinImport,
+  LupinImportResult,
+  LupinPage,
+  LupinRecord,
+  LupinReferencesParams,
+  LupinUploadCancellation,
+  LupinWrite,
   MRChoices,
   MRContact,
   MRCreate,
@@ -465,6 +474,8 @@ import type {
   UploadFileParams,
   UploadImmunotherapyPrescriptionBody,
   UploadKitsAttachmentBody,
+  UploadLupinAttachmentBody,
+  UploadLupinAttachmentParams,
   UserPage,
   VendorEdit,
   VendorFields,
@@ -12611,6 +12622,1022 @@ export function useGetLanguageHistory<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListLupinOrdersUrl = (params?: ListLupinOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/lupin-orders?${stringifiedParams}`
+    : `/api/v1/admin/lupin-orders`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listLupinOrders = async (
+  params?: ListLupinOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinPage> => {
+  return customFetch<LupinPage>(getListLupinOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLupinOrdersQueryKey = (params?: ListLupinOrdersParams) => {
+  return [`/api/v1/admin/lupin-orders`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLupinOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLupinOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListLupinOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLupinOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLupinOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLupinOrders>>> = ({
+    signal,
+  }) => listLupinOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLupinOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLupinOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLupinOrders>>
+>;
+export type ListLupinOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListLupinOrders<
+  TData = Awaited<ReturnType<typeof listLupinOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListLupinOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLupinOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLupinOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateLupinOrderUrl = () => {
+  return `/api/v1/admin/lupin-orders`;
+};
+
+/**
+ * @summary Create
+ */
+export const createLupinOrder = async (
+  lupinWrite: LupinWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LupinRecord>(getCreateLupinOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(lupinWrite),
+  });
+};
+
+export const getCreateLupinOrderMutationKey = () =>
+  ["createLupinOrder"] as const;
+
+export const getCreateLupinOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLupinOrder>>,
+    TError,
+    CreateLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLupinOrder>>,
+  TError,
+  CreateLupinOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateLupinOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLupinOrder>>,
+    CreateLupinOrderMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLupinOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLupinOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLupinOrder>>
+>;
+export type CreateLupinOrderMutationBody = BodyType<LupinWrite>;
+export type CreateLupinOrderMutationError = ErrorType<ErrorEnvelope>;
+export type CreateLupinOrderMutationVariables = { data: BodyType<LupinWrite> };
+
+/**
+ * @summary Create
+ */
+export const useCreateLupinOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLupinOrder>>,
+    TError,
+    CreateLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLupinOrder>>,
+  TError,
+  CreateLupinOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateLupinOrderMutationOptions(options));
+};
+
+export const getUploadLupinAttachmentUrl = (
+  params: UploadLupinAttachmentParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/lupin-orders/attachments?${stringifiedParams}`
+    : `/api/v1/admin/lupin-orders/attachments`;
+};
+
+/**
+ * @summary Upload
+ */
+export const uploadLupinAttachment = async (
+  uploadLupinAttachmentBody: UploadLupinAttachmentBody,
+  params: UploadLupinAttachmentParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FileResponse> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadLupinAttachmentBody.file);
+
+  return customFetch<FileResponse>(getUploadLupinAttachmentUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadLupinAttachmentMutationKey = () =>
+  ["uploadLupinAttachment"] as const;
+
+export const getUploadLupinAttachmentMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadLupinAttachment>>,
+    TError,
+    UploadLupinAttachmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadLupinAttachment>>,
+  TError,
+  UploadLupinAttachmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUploadLupinAttachmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadLupinAttachment>>,
+    UploadLupinAttachmentMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return uploadLupinAttachment(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadLupinAttachmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadLupinAttachment>>
+>;
+export type UploadLupinAttachmentMutationBody =
+  BodyType<UploadLupinAttachmentBody>;
+export type UploadLupinAttachmentMutationError = ErrorType<ErrorEnvelope>;
+export type UploadLupinAttachmentMutationVariables = {
+  data: BodyType<UploadLupinAttachmentBody>;
+  params: UploadLupinAttachmentParams;
+};
+
+/**
+ * @summary Upload
+ */
+export const useUploadLupinAttachment = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadLupinAttachment>>,
+    TError,
+    UploadLupinAttachmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadLupinAttachment>>,
+  TError,
+  UploadLupinAttachmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getUploadLupinAttachmentMutationOptions(options));
+};
+
+export const getCancelLupinUploadUrl = (uploadId: string) => {
+  return `/api/v1/admin/lupin-orders/attachments/${uploadId}/cancel`;
+};
+
+/**
+ * @summary Cancel Upload
+ */
+export const cancelLupinUpload = async (
+  uploadId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinUploadCancellation> => {
+  return customFetch<LupinUploadCancellation>(
+    getCancelLupinUploadUrl(uploadId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCancelLupinUploadMutationKey = () =>
+  ["cancelLupinUpload"] as const;
+
+export const getCancelLupinUploadMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelLupinUpload>>,
+    TError,
+    CancelLupinUploadMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelLupinUpload>>,
+  TError,
+  CancelLupinUploadMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCancelLupinUploadMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelLupinUpload>>,
+    CancelLupinUploadMutationVariables
+  > = (props) => {
+    const { uploadId } = props ?? {};
+
+    return cancelLupinUpload(uploadId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelLupinUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelLupinUpload>>
+>;
+
+export type CancelLupinUploadMutationError = ErrorType<ErrorEnvelope>;
+export type CancelLupinUploadMutationVariables = { uploadId: string };
+
+/**
+ * @summary Cancel Upload
+ */
+export const useCancelLupinUpload = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelLupinUpload>>,
+    TError,
+    CancelLupinUploadMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelLupinUpload>>,
+  TError,
+  CancelLupinUploadMutationVariables,
+  TContext
+> => {
+  return useMutation(getCancelLupinUploadMutationOptions(options));
+};
+
+export const getExportLupinOrdersUrl = (params?: ExportLupinOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/lupin-orders/export?${stringifiedParams}`
+    : `/api/v1/admin/lupin-orders/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportLupinOrders = async (
+  params?: ExportLupinOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinPage> => {
+  return customFetch<LupinPage>(getExportLupinOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportLupinOrdersQueryKey = (
+  params?: ExportLupinOrdersParams,
+) => {
+  return [
+    `/api/v1/admin/lupin-orders/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportLupinOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportLupinOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportLupinOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportLupinOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportLupinOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportLupinOrders>>
+  > = ({ signal }) => exportLupinOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportLupinOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportLupinOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportLupinOrders>>
+>;
+export type ExportLupinOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportLupinOrders<
+  TData = Awaited<ReturnType<typeof exportLupinOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportLupinOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportLupinOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportLupinOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitLupinImportUrl = () => {
+  return `/api/v1/admin/lupin-orders/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitLupinImport = async (
+  lupinImport: LupinImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinImportResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LupinImportResult>(getCommitLupinImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(lupinImport),
+  });
+};
+
+export const getCommitLupinImportMutationKey = () =>
+  ["commitLupinImport"] as const;
+
+export const getCommitLupinImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitLupinImport>>,
+    TError,
+    CommitLupinImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitLupinImport>>,
+  TError,
+  CommitLupinImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitLupinImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitLupinImport>>,
+    CommitLupinImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return commitLupinImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitLupinImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitLupinImport>>
+>;
+export type CommitLupinImportMutationBody = BodyType<LupinImport>;
+export type CommitLupinImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitLupinImportMutationVariables = {
+  data: BodyType<LupinImport>;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitLupinImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitLupinImport>>,
+    TError,
+    CommitLupinImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitLupinImport>>,
+  TError,
+  CommitLupinImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitLupinImportMutationOptions(options));
+};
+
+export const getReviewLupinImportUrl = () => {
+  return `/api/v1/admin/lupin-orders/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewLupinImport = async (
+  lupinImport: LupinImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmImportReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmImportReview>(getReviewLupinImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(lupinImport),
+  });
+};
+
+export const getReviewLupinImportMutationKey = () =>
+  ["reviewLupinImport"] as const;
+
+export const getReviewLupinImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewLupinImport>>,
+    TError,
+    ReviewLupinImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewLupinImport>>,
+  TError,
+  ReviewLupinImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewLupinImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewLupinImport>>,
+    ReviewLupinImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return reviewLupinImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewLupinImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewLupinImport>>
+>;
+export type ReviewLupinImportMutationBody = BodyType<LupinImport>;
+export type ReviewLupinImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewLupinImportMutationVariables = {
+  data: BodyType<LupinImport>;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewLupinImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewLupinImport>>,
+    TError,
+    ReviewLupinImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewLupinImport>>,
+  TError,
+  ReviewLupinImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewLupinImportMutationOptions(options));
+};
+
+export const getLupinUploadPolicyUrl = () => {
+  return `/api/v1/admin/lupin-orders/policy`;
+};
+
+/**
+ * @summary Policy
+ */
+export const lupinUploadPolicy = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmUploadPolicy> => {
+  return customFetch<ImmUploadPolicy>(getLupinUploadPolicyUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLupinUploadPolicyQueryKey = () => {
+  return [`/api/v1/admin/lupin-orders/policy`] as const;
+};
+
+export const getLupinUploadPolicyQueryOptions = <
+  TData = Awaited<ReturnType<typeof lupinUploadPolicy>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof lupinUploadPolicy>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLupinUploadPolicyQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lupinUploadPolicy>>
+  > = ({ signal }) => lupinUploadPolicy({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lupinUploadPolicy>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LupinUploadPolicyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lupinUploadPolicy>>
+>;
+export type LupinUploadPolicyQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Policy
+ */
+
+export function useLupinUploadPolicy<
+  TData = Awaited<ReturnType<typeof lupinUploadPolicy>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof lupinUploadPolicy>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLupinUploadPolicyQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getLupinReferencesUrl = (
+  kind: "patients" | "doctors" | "mrs",
+  params?: LupinReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/lupin-orders/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/lupin-orders/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const lupinReferences = async (
+  kind: "patients" | "doctors" | "mrs",
+  params?: LupinReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmReferencePage> => {
+  return customFetch<ImmReferencePage>(getLupinReferencesUrl(kind, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLupinReferencesQueryKey = (
+  kind: "patients" | "doctors" | "mrs",
+  params?: LupinReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/lupin-orders/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLupinReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof lupinReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs",
+  params?: LupinReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lupinReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLupinReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof lupinReferences>>> = ({
+    signal,
+  }) => lupinReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof lupinReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LupinReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lupinReferences>>
+>;
+export type LupinReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useLupinReferences<
+  TData = Awaited<ReturnType<typeof lupinReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs",
+  params?: LupinReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lupinReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLupinReferencesQueryOptions(kind, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetLupinOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/lupin-orders/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getLupinOrder = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinRecord> => {
+  return customFetch<LupinRecord>(getGetLupinOrderUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLupinOrderQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/lupin-orders/${recordId}`] as const;
+};
+
+export const getGetLupinOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLupinOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLupinOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLupinOrderQueryKey(recordId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLupinOrder>>> = ({
+    signal,
+  }) => getLupinOrder(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLupinOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLupinOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLupinOrder>>
+>;
+export type GetLupinOrderQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetLupinOrder<
+  TData = Awaited<ReturnType<typeof getLupinOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLupinOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLupinOrderQueryOptions(recordId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

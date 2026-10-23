@@ -931,6 +931,8 @@ export const productMasterRequest = (path, options) => purchaseOrderRequest(path
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
   const allowed = resource === 'spt-orders'
     ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    : resource === 'lupin-orders'
+    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36})$/i
     : ['immunotherapy-orders', 'kits-orders'].includes(resource)
     ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'products'
@@ -1046,6 +1048,15 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (path === '/patients') {
       if (!data?.id || data.source !== 'spt' || typeof data.name !== 'string') throw uncertain();
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.patients)) throw uncertain();
+  } else if (mutation && resource === 'lupin-orders') {
+    if (path.startsWith('/attachments/')) {
+      if (!data?.id || data.cancelled !== true) throw uncertain();
+    } else if (path === '/import/commit') {
+      if (data?.imported !== body.entries.length || !Array.isArray(data.orders) || data.orders.length !== data.imported) throw uncertain();
+    } else if (!data?.id || !data?.number || !Number.isInteger(data.version)
+      || !data.doctor || !data.mr || !Array.isArray(data.patients)
+      || !Array.isArray(data.attachments) || !Number.isInteger(data.patientCount)
+      || typeof data.price !== 'string' || typeof data.total !== 'string') throw uncertain();
   } else if (mutation && resource === 'kits-orders') {
     if (path === '/import/commit') {
       if (data?.imported !== body.entries.length || !Array.isArray(data.orders)) throw uncertain();
@@ -1072,17 +1083,18 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   return data;
 }
 
-export async function immunotherapyFileRequest(path = '', { file, patientId, signal, download = false, kits = false } = {}) {
+export async function immunotherapyFileRequest(path = '', { file, patientId, signal, download = false, kits = false, lupin = false, uploadId } = {}) {
   if (!/^(?:|\/[0-9a-f-]{36}(?:\/download)?)$/i.test(path)) throw new SessionError('Unsupported prescription operation.');
   const guard = reportingIdentityGuard();
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, portalOf(state.user));
   guard();
   if (state.user?.identity_kind !== 'mr' && (state.user?.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access'))) throw new SessionError('Access denied.', 403);
-  if (file && !kits && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
+  if (lupin && (state.user?.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access'))) throw new SessionError('Access denied.', 403);
+  if (file && !kits && !lupin && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
   const form = file ? new FormData() : null;
   if (form) form.append('file', file);
-  const response = await fetch(file ? (kits ? '/api/v1/admin/kits-orders/attachments' : `/api/v1/admin/immunotherapy-orders/prescriptions/${patientId}`) : `/api/v1/files${path}`, {
+  const response = await fetch(file ? (lupin ? `/api/v1/admin/lupin-orders/attachments?upload_id=${encodeURIComponent(uploadId || '')}` : kits ? '/api/v1/admin/kits-orders/attachments' : `/api/v1/admin/immunotherapy-orders/prescriptions/${patientId}`) : `/api/v1/files${path}`, {
     method: file ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
     headers: { Authorization: `Bearer ${token}` },
     ...(form ? { body: form } : {}), signal: signal || AbortSignal.timeout(60000),
@@ -1091,7 +1103,7 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   guard();
   if (!response.ok) {
     if (response.status === 401) await verifySession(true, portalOf(state.user));
-    const error = new SessionError(data?.error?.message || (kits ? 'Kits attachment unavailable. Your order draft is preserved; retry explicitly.' : 'Prescription unavailable. Your order draft is preserved; retry explicitly.'), response.status);
+    const error = new SessionError(data?.error?.message || (kits || lupin ? 'Order attachment unavailable. Your order draft is preserved; retry explicitly.' : 'Prescription unavailable. Your order draft is preserved; retry explicitly.'), response.status);
     error.fileId = response.headers.get('X-File-ID');
     throw error;
   }

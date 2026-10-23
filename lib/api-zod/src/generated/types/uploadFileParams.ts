@@ -11,6 +11,7 @@ export type UploadFileParams = {
   patient_id?: string | null;
   mr_id?: string | null;
   kits_owner_id?: string | null;
+  lupin_owner_id?: string | null;
   category: UploadFileCategory;
   /**
    * @minLength 1

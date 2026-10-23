@@ -45,6 +45,16 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+Admin Lupin now uses protected persisted orders, real Doctor/MR references,
+optional existing Patient links, encrypted historical identities and private
+verified uploads. Its manually entered patient count is independent of linked
+Patients and alone determines pricing with the exact per-test INR price.
+CSV/XLSX use server review and atomic confirmation, not session fixtures.
+`0065_lupin_orders` follows `0064_procurement_documents` under the existing automatic policy;
+this is source metadata, not proof of database activation. Implementation is
+source-only: no tests, builds, runtime/manual/browser checks, validation wrappers,
+restarts, migration execution, push or deployment. See `docs/lupin-orders.md`.
+
 Admin Kits & Consumables now uses protected shared backend orders with optional
 existing Patient selection, historical encrypted supply snapshots, private
 verified attachments and CSV/XLSX server review/atomic confirmation. Supply

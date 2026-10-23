@@ -15,9 +15,17 @@ class FileError(Exception):
         super().__init__(message)
 
 
-def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False, kits_owner_id=None, file_id=None):
+def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False, kits_owner_id=None, lupin_owner_id=None, file_id=None):
     current = revalidate_identity(db, identity, lock=lock)
     admin_access = "admin.access" in current.permissions
+    # Lupin is not an MR workflow. Check this before any saved-order MR access.
+    if lupin_owner_id:
+        if (not admin_access or not current.user.is_protected_system_admin
+                or current.role != "super_admin" or action not in ADMIN_FILE_ACTIONS):
+            raise FileError(403, "access_denied", "Access denied")
+        if action in ("upload", "replace") and lupin_owner_id != current.user.id:
+            raise FileError(403, "access_denied", "Access denied")
+        return current
     if current.role == "mr" and file_id and (patient_id or kits_owner_id) and action in ("read", "download"):
         # File UUID alone grants nothing. Saved order ownership is authoritative,
         # including historical Admin uploads after master ownership changes.

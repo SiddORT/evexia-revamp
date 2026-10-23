@@ -73,7 +73,7 @@ async def upload(
     settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency),
 ):
     # Live permission before quota, body read, adapter construction or calls.
-    await run_in_threadpool(authorize, db, identity, "upload", body.patient_id, body.mr_id, kits_owner_id=body.kits_owner_id)
+    await run_in_threadpool(authorize, db, identity, "upload", body.patient_id, body.mr_id, kits_owner_id=body.kits_owner_id, lupin_owner_id=body.lupin_owner_id)
     file_id = await run_in_threadpool(service.reserve, db, identity, body,
                                      request.headers.get("content-type", ""), settings, request.state.request_id)
     request.state.file_id = str(file_id)

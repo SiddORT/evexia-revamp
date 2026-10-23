@@ -16,7 +16,7 @@ from app.core.config import Settings
 
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 _KEY = re.compile(
-    rf"^(patients|mrs|kits)/({_UUID})/(profile|documents)/({_UUID})\.(jpg|jpeg|png|pdf|webp)$"
+    rf"^(patients|mrs|kits|lupin)/({_UUID})/(profile|documents)/({_UUID})\.(jpg|jpeg|png|pdf|webp)$"
 )
 _CONTENT_TYPES = {
     "jpg": "image/jpeg",
@@ -53,7 +53,7 @@ def object_key(
     extension: str,
 ) -> str:
     """Create a canonical, backend-independent key from trusted identifiers."""
-    if owner_type not in ("patients", "mrs", "kits"):
+    if owner_type not in ("patients", "mrs", "kits", "lupin"):
         raise ValueError("Unsupported private owner type")
     if category not in ("profile", "documents"):
         raise ValueError("Category must be profile or documents")

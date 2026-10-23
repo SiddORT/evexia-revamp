@@ -12,6 +12,7 @@ from app.services.master_policy import MASTERS, master_allowed
 MODULES = {
     "kits_orders": "Kits & Consumables",
     "spt_orders": "SPT",
+    "lupin_orders": "Lupin",
     "product": "Product Master",
     "opening_stock": "Opening Stock",
     "language": "Language Master",
@@ -30,6 +31,7 @@ MODULES = {
 BROWSER = {
     "kits_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     "spt_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
+    "lupin_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     **{s: {"export": {"CSV"}, "template": {"CSV"}} for s in (
         "designation", "vendor", "allergen", "opening_balance", "headquarter",
         "product_category", "sales_target")},

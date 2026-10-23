@@ -36,7 +36,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge",
     "0053_email_invitations", "0054_modern_email_tests", STAFF_MANAGER_REVISION,
     "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access",
-    "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents"})
+    "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -53,7 +53,7 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents"):
+    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -78,12 +78,14 @@ def _lock(db, exclusive=False):
         raise RotationError()
     if revisions[0] in RUNTIME_REVISIONS:
         db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
-    if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"]):
+    if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"]):
         db.execute(text(f"LOCK TABLE immunotherapy_orders,immunotherapy_requests IN {mode} MODE NOWAIT"))
-    if revisions in (["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"]):
+    if revisions in (["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"]):
         db.execute(text(f"LOCK TABLE kits_orders,kits_requests,files IN {mode} MODE NOWAIT"))
-    if revisions in (["0063_spt_orders"], ["0064_procurement_documents"]):
+    if revisions in (["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"]):
         db.execute(text(f"LOCK TABLE spt_orders,spt_patients,spt_requests IN {mode} MODE NOWAIT"))
+    if revisions == ["0065_lupin_orders"]:
+        db.execute(text(f"LOCK TABLE lupin_orders,lupin_requests IN {mode} MODE NOWAIT"))
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;
     # never accept an arbitrary newer head merely because it is newer.
@@ -224,7 +226,7 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders"):
         for name, (model, pk, field, domain) in _order_payloads(db).items():
             _, unseal = _order_crypto(name)
             cursor, count = None, 0
@@ -259,16 +261,20 @@ def _order_payloads(db):
         "immunotherapy_orders": (orders, orders.c.id, "snapshot_ciphertext", "orders"),
         "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
     }
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0062_kits_orders", "0063_spt_orders", "0064_procurement_documents"):
+    revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    if revision in ("0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders"):
         from app.db.kits_models import KitsOrder, KitsRequest
         from app.db.file_models import FileRecord
         orders, requests, files = KitsOrder.__table__, KitsRequest.__table__, FileRecord.__table__
+        # Preserve the predecessor filename inventory's exact field contract.
+        files = Table("files", MetaData(), autoload_with=db.connection(),
+            include_columns=[c.name for c in FileRecord.__table__.columns if not c.name.startswith("lupin_")])
         result.update({
             "kits_orders": (orders, orders.c.id, "snapshot_ciphertext", "orders"),
             "kits_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
             "kits_file_names": (files, files.c.id, "kits_name_ciphertext", "file_names"),
         })
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0063_spt_orders", "0064_procurement_documents"):
+    if revision in ("0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders"):
         from app.db.spt_models import SptOrder, SptPatient, SptRequest
         orders, patients, requests = SptOrder.__table__, SptPatient.__table__, SptRequest.__table__
         result.update({
@@ -276,11 +282,24 @@ def _order_payloads(db):
             "spt_patients": (patients, patients.c.id, "snapshot_ciphertext", "patients"),
             "spt_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
         })
+    if revision == "0065_lupin_orders":
+        from app.db.lupin_models import LupinOrder, LupinRequest
+        orders, requests = LupinOrder.__table__, LupinRequest.__table__
+        # Separate filename domains must not include each other's ciphertext.
+        files = Table("files", MetaData(), autoload_with=db.connection(),
+            include_columns=["id", "lupin_owner_id", "lupin_name_ciphertext"])
+        result.update({
+            "lupin_orders": (orders, orders.c.id, "snapshot_ciphertext", "orders"),
+            "lupin_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
+            "lupin_file_names": (files, files.c.id, "lupin_name_ciphertext", "file_names"),
+        })
     return result
 
 
 def _order_crypto(table):
-    if table.startswith("spt_"):
+    if table.startswith("lupin_"):
+        from app.services.lupin import seal, unseal
+    elif table.startswith("spt_"):
         from app.services.spt import seal, unseal
     elif table.startswith("kits_"):
         from app.services.kits import seal, unseal
@@ -381,7 +400,7 @@ def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=
 def batch(db, settings, *, table, limit=staging.BATCH_LIMIT):
     """Target configuration must match the durable plan; no external cursor is trusted."""
     try:
-        if table in ("immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests"):
+        if table in ("immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests", "lupin_orders", "lupin_requests", "lupin_file_names"):
             if type(limit) is not int or not 1 <= limit <= staging.BATCH_LIMIT:
                 raise RotationError()
             return _order_batch(db, settings, table, limit)
@@ -464,7 +483,7 @@ def main(argv=None):
     parser.add_argument("operation", choices=("encrypt", "configuration", "index", "batch", "verify", "finish"))
     parser.add_argument("--target-key-id")
     parser.add_argument("--runtime-role")
-    parser.add_argument("--table", choices=(*FIELDS, "immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests"))
+    parser.add_argument("--table", choices=(*FIELDS, "immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests", "lupin_orders", "lupin_requests", "lupin_file_names"))
     parser.add_argument("--limit", type=int, default=staging.BATCH_LIMIT)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--approval")

@@ -2,9 +2,9 @@ import SearchableSelect from './SearchableSelect.jsx';
 import useReferences from '../../hooks/useImmunotherapyReferences.js';
 import { request } from '../../services/serverKits.js';
 
-export default function KitsReferenceSelect({ kind, value, onChange, label, id, onPerson, disabled }) {
-  const source = useReferences(kind, [], value, request);
-  return <div className="kits-field"><label htmlFor={id}>{label}</label>
+export default function KitsReferenceSelect({ kind, value, onChange, label, id, onPerson, disabled, requester = request, fieldClass = 'kits-field' }) {
+  const source = useReferences(kind, [], value, requester);
+  return <div className={fieldClass}><label htmlFor={id}>{label}</label>
     <SearchableSelect viewportMenu id={id} label={label} value={value || ''} disabled={disabled}
       options={source.items.map((p) => ({ value: p.id, label: p.name }))}
       searchOptions={() => source.items.map((p) => ({ value: p.id, label: p.name }))}

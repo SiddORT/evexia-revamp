@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0064_procurement_documents",
+  "target": "0065_lupin_orders",
   "policy_sha256": "1ca47ac8d2e46ca71854c64f8bee15b76e4d45a6daf747e48d729f81d45a336f",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -73,7 +73,8 @@
     "0061_immunotherapy_orders": "217ddee888a193757ea1b8068bdbd2ec04907bd658f9d4f0ed6ae7e4fb8223b3",
     "0062_kits_orders": "c23d7ad6fce0b62b32557a8ddd63d4528aed215e9b5f0a808e91e712c61712b2",
     "0063_spt_orders": "4857554ff05c1459a4ad654c79c7d0a634331d1164b10494774dacb4b373a00c",
-    "0064_procurement_documents": "523c3e5f99ab85d090cee6f7c1217ff9ab2885d6a8b2544a8c2b3503ea960d5c"
+    "0064_procurement_documents": "523c3e5f99ab85d090cee6f7c1217ff9ab2885d6a8b2544a8c2b3503ea960d5c",
+    "0065_lupin_orders": "cb008e7f017322da2e020a2fe3d3980f855540de618e71f970cf39335d0fee71"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

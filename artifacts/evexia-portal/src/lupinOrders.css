@@ -45,5 +45,22 @@
 .lupin-entry__amounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; padding-top: 14px; border-top: 1px solid var(--admin-border); }
 .lupin-entry .lupin-more-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; }
 .lupin-entry .lupin-more-grid > div { display: grid; gap: 10px; }
+.lupin-form-fields { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.lupin-remarks { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.lupin-field select { width: 100%; min-width: 0; min-height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; padding: 8px 11px; background: var(--admin-surface); color: var(--admin-text); font: inherit; }
+.lupin-search-control { display: flex; position: relative; align-items: center; min-width: 0; }
+.lupin-search-control > svg { position: absolute; left: 11px; color: var(--admin-muted); pointer-events: none; }
+.lupin-field .lupin-search-control input { padding-left: 34px; }
+.lupin-listing .order-listing-extra > * { flex: 1 1 180px; max-width: 100%; min-width: 0; }
+.lupin-listing .admin-page-head { flex-wrap: wrap; gap: 14px; }
+.lupin-listing .admin-page-head > *, .lupin-listing .lupin-actions { min-width: 0; }
+.lupin-listing .lupin-actions { align-items: end; }
+.lupin-field .kits-link { border: 0; background: none; color: var(--admin-accent); font: inherit; text-align: left; cursor: pointer; text-decoration: underline; }
+.lupin-field .kits-link:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.lupin-field .kits-hint { color: var(--admin-text-soft); font-size: 12px; font-weight: 400; }
+.lupin-entry .excel-import__picker { position: relative; }
+.lupin-entry .excel-import__picker input[type="file"] { width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; }
+.lupin-entry .excel-import__picker:focus-within { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.lupin-entry .excel-import__picker:has(input:disabled) { cursor: not-allowed; opacity: .65; }
 @media (max-width: 1100px) { .lupin-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lupin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .lupin-filters, .lupin-grid, .lupin-more-grid { grid-template-columns: 1fr; } .lupin-actions > * { flex: 1 1 140px; } }

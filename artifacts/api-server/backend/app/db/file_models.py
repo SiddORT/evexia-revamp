@@ -12,7 +12,7 @@ from app.db.base import Base
 class FileRecord(Base):
     __tablename__ = "files"
     __table_args__ = (
-        CheckConstraint("num_nonnulls(patient_id, mr_id, kits_owner_id) = 1", name="file_exclusive_owner"),
+        CheckConstraint("num_nonnulls(patient_id, mr_id, kits_owner_id, lupin_owner_id) = 1", name="file_exclusive_owner"),
         CheckConstraint("category IN ('profile','documents')", name="file_category"),
         CheckConstraint("state IN ('uploading','quarantined','verified','rejected','pending_delete','deleted')", name="file_state"),
         CheckConstraint("size >= 0 AND size <= 104857600", name="file_size"),
@@ -24,10 +24,11 @@ class FileRecord(Base):
         CheckConstraint("scanner_status IN ('pending','clean','infected','unavailable','error')", name="file_scanner"),
         CheckConstraint("length(display_name) BETWEEN 1 AND 255", name="file_name"),
         CheckConstraint("kits_owner_id IS NULL OR (category = 'documents' AND kits_name_ciphertext IS NOT NULL AND display_name ~ '^attachment\\.(jpg|jpeg|png|pdf|webp)$')", name="file_kits_document"),
+        CheckConstraint("lupin_owner_id IS NULL OR (category = 'documents' AND lupin_name_ciphertext IS NOT NULL AND display_name ~ '^attachment\\.(jpg|jpeg|png|pdf|webp)$')", name="file_lupin_document"),
         CheckConstraint(
-            "object_key ~ '^(patients|mrs|kits)/[0-9a-f-]{36}/(profile|documents)/[0-9a-f-]{36}\\.(jpg|jpeg|png|pdf|webp)$'"
-            " AND split_part(object_key, '/', 1) = CASE WHEN patient_id IS NOT NULL THEN 'patients' WHEN mr_id IS NOT NULL THEN 'mrs' ELSE 'kits' END"
-            " AND split_part(object_key, '/', 2) = COALESCE(patient_id, mr_id, kits_owner_id)::text"
+            "object_key ~ '^(patients|mrs|kits|lupin)/[0-9a-f-]{36}/(profile|documents)/[0-9a-f-]{36}\\.(jpg|jpeg|png|pdf|webp)$'"
+            " AND split_part(object_key, '/', 1) = CASE WHEN patient_id IS NOT NULL THEN 'patients' WHEN mr_id IS NOT NULL THEN 'mrs' WHEN kits_owner_id IS NOT NULL THEN 'kits' ELSE 'lupin' END"
+            " AND split_part(object_key, '/', 2) = COALESCE(patient_id, mr_id, kits_owner_id, lupin_owner_id)::text"
             " AND split_part(object_key, '/', 3) = category"
             " AND split_part(split_part(object_key, '/', 4), '.', 1) = id::text",
             name="file_logical_key",
@@ -39,6 +40,8 @@ class FileRecord(Base):
     mr_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_profiles.id"), index=True)
     kits_owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
     kits_name_ciphertext: Mapped[str | None] = mapped_column(Text)
+    lupin_owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
+    lupin_name_ciphertext: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str] = mapped_column(String(16), nullable=False)
     object_key: Mapped[str] = mapped_column(String(160), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)

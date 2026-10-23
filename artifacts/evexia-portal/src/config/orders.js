@@ -1,5 +1,5 @@
-// Immunotherapy, SPT, Kits and Lupin are separate session-only demos.
-// None implements real order processing.
+// Order destinations have independent persistence and authorization boundaries.
+// A saved order does not imply payment, clinical work or fulfilment.
 export const ORDER_DESTINATIONS = [
   { slug: 'immunotherapy', label: 'IMMUNOTHERAPY' },
   { slug: 'kits-consumables', label: 'KITS & CONSUMABLES', keywords: 'kits consumables lancets applicators', description: 'Covers kits, lancets and applicators.' },
