@@ -7,7 +7,7 @@ import PhoneInput from '../../components/admin/PhoneInput.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { ALLERGENS, DOCTORS, DOSES, GENDERS, MRS, STATUSES, demoStore, groupingError, money, newGroup, nextDose, parseAmount, shippingRecipient, totalMinor, validateAttachments } from '../../services/immunotherapyDemo.js';
+import { ALLERGENS, DOCTORS, DOSES, GENDERS, MRS, PRELIMINARY_DOSES, STATUSES, demoStore, groupingError, money, newGroup, nextDose, parseAmount, shippingRecipient, totalMinor, validateAttachments } from '../../services/immunotherapyDemo.js';
 import '../../immunotherapy.css';
 
 const BASE = '/admin/orders/immunotherapy';
@@ -65,7 +65,7 @@ function Editor({ order, mode, snap }) {
   const patientOptions = useMemo(() => snap.patients.map((p) => ({ value: p.id, label: `${p.name} - ${p.id} - ${p.phone}` })), [snap.patients]);
   const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
   const mrOptions = MRS.map((m) => ({ value: m.id, label: m.name }));
-  const allergenOptions = ALLERGENS.map((a) => ({ value: a.id, label: `${a.name} (${a.mix ? 'Mix' : 'No Mix'})` }));
+  const allergenOptions = ALLERGENS.map((a) => ({ value: a.id, label: a.name }));
   const total = totalMinor(v.groups);
   const doctor = DOCTORS.find((d) => d.id === v.doctorId);
   const recipient = shippingRecipient({ ...v, id: order?.id }, snap.patients);
@@ -210,9 +210,9 @@ function Editor({ order, mode, snap }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-dose"><h2 id="imm-h-dose">Dosage and reactions</h2>
-          <p className="imm-hint">An illustrative mock sequence, not a clinical recommendation.</p>
-          <fieldset className="imm-chips" id="imm-dosage" style={{ marginTop: 12 }} aria-describedby={errors.dosage ? 'imm-dosage-err' : undefined}><legend>Dosage</legend>
-            {DOSES.map((d) => <label className="imm-chip" key={d}><input id={`imm-dose-${d}`} type="radio" name="dosage" value={d} checked={v.dosage === d} disabled={dis} onChange={() => set({ dosage: d })} data-testid={`radio-imm-dose-${d}`} /><span>{d}</span></label>)}</fieldset>
+          <p className="imm-hint" id="imm-dosage-hint">Choose one dosage. PD and DD are optional preliminary choices; you can start at B1 without either. The ordered series is B1 → B2 → B3 → B4 → B5 → B6 → B7 → B8. Manually editable; not a clinical recommendation.</p>
+          <fieldset className="imm-chips" id="imm-dosage" style={{ marginTop: 12 }} aria-describedby={`imm-dosage-hint${errors.dosage ? ' imm-dosage-err' : ''}`}><legend>Dosage (required)</legend>
+            {DOSES.map((d) => <label className="imm-chip" key={d}><input id={`imm-dose-${d}`} type="radio" name="dosage" value={d} checked={v.dosage === d} disabled={dis} onChange={() => set({ dosage: d })} data-testid={`radio-imm-dose-${d}`} /><span>{d}{PRELIMINARY_DOSES.includes(d) ? ' (optional preliminary)' : ''}</span></label>)}</fieldset>
           <Err id="imm-dosage-err" text={errors.dosage} />
           {explain && <p className="imm-explain" role="status" data-testid="text-imm-dose-explain">{explain}</p>}
           <div className="imm-grid" style={{ marginTop: 14 }}>
@@ -223,19 +223,18 @@ function Editor({ order, mode, snap }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-bottle"><h2 id="imm-h-bottle">Bottles and allergens</h2>
-          <p className="imm-hint">Mix allergens may share a bottle. No Mix allergens need a bottle of their own.</p>
+          <p className="imm-hint">Combine any available demo allergens in a bottle. Each allergen can appear only once per bottle.</p>
           <Err id="imm-groups-err" text={errors.groups} />
           <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
             {v.groups.map((g, gi) => {
               const err = groupMsg[g.id] || errors[`group-${g.id}`];
-              const solo = g.items.length === 1 && !ALLERGENS.find((a) => a.id === g.items[0].allergenId)?.mix;
               return <div className={`imm-bottle${err ? ' imm-bottle--error' : ''}`} key={g.id} data-testid={`imm-bottle-${gi}`}>
-                <div className="imm-bottle__head"><strong>Bottle {gi + 1}{g.items.length > 0 && <span className={`imm-tag${solo ? ' imm-tag--solo' : ''}`}>{solo ? 'Single (No Mix)' : g.items.length > 1 ? 'Mixed' : 'Single'}</span>}</strong>
+                <div className="imm-bottle__head"><strong>Bottle {gi + 1}{g.items.length > 0 && <span className="imm-tag">{g.items.length === 1 ? 'Single allergen' : `${g.items.length} allergens`}</span>}</strong>
                   <span className="imm-cell-sub" data-testid={`text-imm-group-id-${gi}`}>Bottle ID {g.id}</span>
                   {!dis && v.groups.length > 1 && <button type="button" className="admin-button admin-button--secondary" onClick={() => set({ groups: v.groups.filter((x) => x.id !== g.id) })} aria-label={`Remove bottle ${gi + 1}`}><Trash2 size={14} aria-hidden="true" />Remove bottle</button>}</div>
                 {g.items.map((it, ii) => { const a = ALLERGENS.find((x) => x.id === it.allergenId); const ek = `result-${g.id}-${it.allergenId}`;
                   return <div className="imm-item" key={it.allergenId}>
-                    <div className="imm-item__name">{a?.name}<span className={`imm-tag${a?.mix ? '' : ' imm-tag--solo'}`}>{a?.mix ? 'Mix' : 'No Mix'}</span></div>
+                    <div className="imm-item__name">{a?.name}</div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
                     {!dis && <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>{v.groups.length > 1 && <label className="imm-field">Move to<select value="" onChange={(e) => moveItem(g.id, it.allergenId, e.target.value)} aria-label={`Move ${a?.name} to another bottle`} data-testid={`select-imm-move-${gi}-${ii}`}><option value="">Choose</option>{v.groups.filter((x) => x.id !== g.id).map((x) => <option key={x.id} value={x.id}>Bottle {gIndex(x.id) + 1} ({x.id})</option>)}</select></label>}<button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${a?.name} from bottle ${gi + 1}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button></div>}
                   </div>; })}

@@ -1,6 +1,8 @@
 // Isolated, fictional evaluation state. No master services, storage or network.
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
-export const DOSES = Object.freeze(['PD', 'DD', ...Array.from({ length: 8 }, (_, i) => `B${i + 1}`)]);
+export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
+export const B_DOSES = Object.freeze(Array.from({ length: 8 }, (_, i) => `B${i + 1}`));
+export const DOSES = Object.freeze([...PRELIMINARY_DOSES, ...B_DOSES]);
 export const GENDERS = Object.freeze(['Male', 'Female', 'Other', 'Prefer not to say']);
 const address = (n, city = 'Demo City') => ({ line1: `${n} Fictional Lane`, line2: 'Example Quarter', landmark: 'Demo square', pincode: '000000', city, state: 'Example State', country: 'India' });
 const freeze = (value) => {
@@ -35,10 +37,11 @@ const seedPatients = freeze(['Asha Example', 'Rohan Fiction', 'Taylor Sample', '
   lastGiven: ['PD', 'DD', 'B1', null, 'B8', 'unknown', 'B3', null, 'B6', 'B2', null, 'B7'][i],
 })));
 export function nextDose(patient) {
-  const index = DOSES.indexOf(patient?.lastGiven);
+  if (PRELIMINARY_DOSES.includes(patient?.lastGiven)) return { dosage: 'B1', explanation: `Last-given demo administration: ${patient.lastGiven}. PD and DD are optional preliminary doses; neither is required before B1. B1 is suggested as the start of the B1–B8 series. Manually editable; not a clinical recommendation.` };
+  const index = B_DOSES.indexOf(patient?.lastGiven);
   if (index < 0) return { dosage: '', explanation: 'No known last-given demo administration. Choose a dosage explicitly. Order placement, shipping and delivery are not administration evidence.' };
-  if (index === DOSES.length - 1) return { dosage: '', explanation: 'Last-given demo history is B8, the end of this illustrative sequence. There is no automatic next item; choose explicitly.' };
-  return { dosage: DOSES[index + 1], explanation: `Last-given demo administration: ${patient.lastGiven}. ${DOSES[index + 1]} is selected using the illustrative PD → DD → B1–B8 sequence. Manually editable; not a clinical recommendation.` };
+  if (index === B_DOSES.length - 1) return { dosage: '', explanation: 'Last-given demo history is B8, the end of this illustrative sequence. There is no automatic next item; choose explicitly.' };
+  return { dosage: B_DOSES[index + 1], explanation: `Last-given demo administration: ${patient.lastGiven}. ${B_DOSES[index + 1]} is selected using the illustrative B1 → B2 → B3 → B4 → B5 → B6 → B7 → B8 sequence. PD and DD are optional preliminary doses. Manually editable; not a clinical recommendation.` };
 }
 export function parseAmount(value) {
   if (typeof value !== 'string' || value.length > 40 || !/^\d+(?:\.\d{1,2})?$/.test(value)) return null;
@@ -53,7 +56,6 @@ export const newGroup = () => ({ id: `IT-BOTTLE-${++groupSequence}`, mrp: '', it
 export function groupingError(items) {
   if (new Set(items.map((item) => item.allergenId)).size !== items.length) return 'Duplicate allergens within a bottle are not allowed.';
   if (items.some((item) => !ALLERGENS.some((a) => a.id === item.allergenId))) return 'Choose fictional allergens from this demo.';
-  if (items.length > 1 && items.some((item) => !ALLERGENS.find((a) => a.id === item.allergenId)?.mix)) return 'No Mix allergens must be alone in their bottle. Move to a separate bottle explicitly.';
   return '';
 }
 export function shippingRecipient(order, patients) {
