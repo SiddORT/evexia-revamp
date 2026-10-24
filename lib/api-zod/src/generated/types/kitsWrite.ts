@@ -6,22 +6,19 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { KitsConfiguration } from "./kitsConfiguration";
+import type { KitsPricingInput } from "./kitsPricingInput";
 import type { KitsRecipient } from "./kitsRecipient";
 import type { KitsWriteOrderFor } from "./kitsWriteOrderFor";
 import type { KitsWritePaymentStatus } from "./kitsWritePaymentStatus";
 import type { KitsWriteShipping } from "./kitsWriteShipping";
 import type { KitsWriteStatus } from "./kitsWriteStatus";
 
-import type { KitsPricingInput } from "./kitsPricingInput";
-
 export interface KitsWrite {
-  pricing?: KitsPricingInput | null;
-  businessParking?: string | null;
-  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
   attachmentIds?: string[];
+  businessParking?: string | null;
   doctorId: string;
   idempotencyKey: string;
   kit?: KitsConfiguration;
@@ -33,6 +30,8 @@ export interface KitsWrite {
   other?: KitsRecipient;
   patientId?: string | null;
   paymentStatus?: KitsWritePaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
   /** @maxLength 4000 */
   remarks?: string;
   shipping?: KitsWriteShipping;

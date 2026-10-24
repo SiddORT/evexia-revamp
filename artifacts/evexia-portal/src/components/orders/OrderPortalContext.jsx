@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import AdminLayout from '../admin/AdminLayout.jsx';
-import { getSession } from '../../auth/adminSession.js';
+import { contactReadScope, getSession } from '../../auth/adminSession.js';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { request } from '../../services/serverImmunotherapy.js';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 
@@ -24,6 +25,8 @@ export default function OrderPortalLayout(props) {
 }
 
 export function MROrderBoundary({ children }) {
+  const { user } = useAdminSession();
+  const scope = contactReadScope(user);
   const [mr, setMr] = useState(null), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
@@ -36,7 +39,7 @@ export function MROrderBoundary({ children }) {
         setMr(identity);
       }).catch((cause) => { if (!controller.signal.aborted) setError(cause.message); });
     return () => controller.abort();
-  }, [revision]);
+  }, [revision, scope]);
   if (!mr) return <section className="mrw-card"><h1>{error ? 'MR orders unavailable' : 'Loading your MR identity…'}</h1>
     {error ? <><p role="alert">{error}</p><button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></> : <p role="status">Checking your saved MR assignment.</p>}
     <Link href="/mr/home">Back to dashboard</Link></section>;

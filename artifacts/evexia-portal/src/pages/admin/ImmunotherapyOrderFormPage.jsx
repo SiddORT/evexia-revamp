@@ -239,7 +239,7 @@ function Editor({ order, mode }) {
         pincode: reg.address.pincode, city: reg.address.city, state: reg.address.state, country: reg.address.country,
       });
       if (!alive.current) return;
-      patients.remember({ ...created, address: { ...reg.address } });
+      patients.remember(mrPortal ? created : { ...created, address: { ...reg.address } });
       clearUploads();
       setReg(null); setRegErrors({});
       set({ patientId: created.id, doctorId: created.doctorId, mrId: created.mrId || '', dosage: '', shipping: 'patient', attachments: [] });

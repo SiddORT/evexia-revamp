@@ -51,6 +51,8 @@ def transaction(db, actor, work, *, action=None):
             result = work(current, keys)
         from app.services.order_audit import present
         result = present(db, current, result)
+        from app.services.person_contacts import order_result
+        result = order_result(current, result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -250,7 +252,11 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
         today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
         def choice(identity, source):
             try:
-                return patient_snapshot(db, keys, identity, source, today)
+                data = patient_snapshot(db, keys, identity, source, today)
+                if a.role == "mr":
+                    from app.services.person_contacts import person as masked_person
+                    data = masked_person(data)
+                return data
             except ImmError as error:
                 if error.code in ("imm_reference", "spt_patient_age", "spt_patient"):
                     return None

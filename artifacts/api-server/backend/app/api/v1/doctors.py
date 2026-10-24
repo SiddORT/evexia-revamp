@@ -63,7 +63,7 @@ def listing(query: str = Query("", max_length=200), status: Literal["all", "acti
     return doctors.listing(db, actor, query, status, reference(zone_id), reference(mr_id), state, limit, offset, cursor, headquarter_id)
 
 
-@router.post("", response_model=DoctorResponse, status_code=201, operation_id="createDoctorDirectory")
+@router.post("", response_model=DoctorResponse | MRDoctorRead, status_code=201, operation_id="createDoctorDirectory")
 def create(body: DoctorFields, actor=Depends(manager), db: Session = Depends(get_db)):
     return doctors.create(db, actor, body)
 

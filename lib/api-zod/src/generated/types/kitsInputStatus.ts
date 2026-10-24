@@ -11,6 +11,7 @@ export type KitsInputStatus =
 
 export const KitsInputStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",

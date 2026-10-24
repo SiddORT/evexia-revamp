@@ -6,11 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { SptPatientSnapshot } from "./sptPatientSnapshot";
+import type { SptRecordAudit } from "./sptRecordAudit";
 import type { SptRecordDoctor } from "./sptRecordDoctor";
 import type { SptRecordMr } from "./sptRecordMr";
 import type { SptRecordStatus } from "./sptRecordStatus";
 
 export interface SptRecord {
+  audit?: SptRecordAudit;
   date: string;
   doctor: SptRecordDoctor;
   doctorId: string | null;

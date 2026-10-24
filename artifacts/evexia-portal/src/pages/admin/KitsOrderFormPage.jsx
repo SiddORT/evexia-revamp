@@ -6,7 +6,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
-import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment, attachmentBlob } from '../../services/serverKits.js';
+import { KIT_PRODUCTS, STATUSES, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment, attachmentBlob } from '../../services/serverKits.js';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import KitsOrderEditor from './KitsOrderEditor.jsx';
@@ -231,7 +231,6 @@ function Form() {
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-bill"><h2 id="kits-h-bill">Billing details</h2>
           <p className="kits-hint">Always the selected doctor, independent of shipping.</p>
           <Facts person={doctor} empty="Choose a doctor to see billing details." testId="kits-billing-facts" />
-          {doctor && <span className="kits-sub" hidden>{addressText(doctor.address)}</span>}
         </section>
       </div>
     </fieldset>

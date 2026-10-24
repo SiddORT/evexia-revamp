@@ -75,6 +75,8 @@ def transaction(db, actor, work, *, action=None, resource="immunotherapy", respo
             from app.services.order_capabilities import public_result
             result = present_audit(db, current, result)
             result = public_result(current, resource, result)
+            from app.services.person_contacts import order_result
+            result = order_result(current, result)
             if response_model:
                 # Validate AND serialize the actual authorized projection before
                 # commit, not only in FastAPI after a write has already committed.
@@ -439,6 +441,9 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None,
                 data = choice(chosen)
                 if data:
                     items.append(data)
+        if a.role == "mr" and kind in {"doctors", "patients"}:
+            from app.services.person_contacts import person as masked_person
+            items = [masked_person(item) for item in items]
         return dict(items=items, nextCursor=str(last) if more else None, limit=limit)
     return transaction(db, actor, work, resource=resource)
 

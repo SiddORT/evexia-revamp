@@ -101,6 +101,8 @@ def transaction(db, actor, work, *, action=None):
         from app.services.order_audit import present
         result = present(db, current, result)
         result = public_result(current, "kits", result)
+        from app.services.person_contacts import order_result
+        result = order_result(current, result)
         db.commit()
         return result
     except SQLAlchemyError:

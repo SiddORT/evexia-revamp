@@ -115,5 +115,5 @@ function useContextFlash() {
 export default function MRWorkspace() {
   const { user } = useAdminSession();
   const owner = String(user?.id ?? user?.username ?? user?.email ?? '');
-  return <Provider key={owner} owner={owner}><Shell /></Provider>;
+  return <Provider key={`${owner}/${user?.identity_kind}/${user?.mr_id}`} owner={owner}><Shell /></Provider>;
 }

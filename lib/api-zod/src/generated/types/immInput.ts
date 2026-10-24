@@ -7,6 +7,7 @@
  */
 import type { ImmBottle } from "./immBottle";
 import type { ImmInputDosage } from "./immInputDosage";
+import type { ImmInputPricingBasis } from "./immInputPricingBasis";
 import type { ImmInputShipping } from "./immInputShipping";
 import type { ImmInputStatus } from "./immInputStatus";
 
@@ -26,6 +27,7 @@ export interface ImmInput {
   orderDate?: Date | null;
   patientId: string;
   poNumber?: string | null;
+  pricingBasis?: ImmInputPricingBasis;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

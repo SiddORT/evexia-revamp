@@ -257,6 +257,9 @@ def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", fo
         context = doctor_context(db, [row.id for row in rows])
         for row in rows:
             values = doctors.projection(db, row, context)
+            if current.role == "mr":
+                from app.services.person_contacts import person
+                values = person(values)
             mr = db.get(MRDirectory, row.mrId)
             profile = db.get(MRProfile, row.mrId)
             # Explicit durable server reference, not a potentially ambiguous display label.

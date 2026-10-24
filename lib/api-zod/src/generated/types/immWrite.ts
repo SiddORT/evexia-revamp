@@ -7,6 +7,7 @@
  */
 import type { ImmBottle } from "./immBottle";
 import type { ImmWriteDosage } from "./immWriteDosage";
+import type { ImmWritePricingBasis } from "./immWritePricingBasis";
 import type { ImmWriteShipping } from "./immWriteShipping";
 import type { ImmWriteStatus } from "./immWriteStatus";
 
@@ -28,6 +29,7 @@ export interface ImmWrite {
   orderDate?: Date | null;
   patientId: string;
   poNumber?: string | null;
+  pricingBasis?: ImmWritePricingBasis;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

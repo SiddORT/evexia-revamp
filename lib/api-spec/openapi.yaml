@@ -2467,10 +2467,13 @@
         "properties": {
           "display_name": {
             "anyOf": [
-              { "type": "string" },
-              { "type": "null" }
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "default": null,
             "title": "Display Name"
           },
           "email": {
@@ -6703,10 +6706,14 @@
           },
           "mrp": {
             "anyOf": [
-              { "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$", "type": "string" },
-              { "type": "null" }
+              {
+                "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "default": null,
             "title": "Mrp"
           }
         },
@@ -6933,11 +6940,31 @@
           },
           "poNumber": {
             "anyOf": [
-              { "type": "string", "minLength": 1, "maxLength": 100 },
-              { "type": "null" }
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "default": null,
             "title": "Ponumber"
+          },
+          "pricingBasis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "allergen_rates",
+                  "legacy_bottle_mrp"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricingbasis"
           },
           "remarks": {
             "default": "",
@@ -6996,16 +7023,32 @@
           },
           "rate": {
             "anyOf": [
-              { "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$", "type": "string" },
-              { "type": "null" }
+              {
+                "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "default": null,
             "title": "Rate"
           },
           "result": {
             "pattern": "^\\d{1,6}(?:\\.\\d{1,2})?$",
             "title": "Result",
             "type": "string"
+          },
+          "suborderId": {
+            "anyOf": [
+              {
+                "pattern": "^SUB-[0-9]{6,12}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suborderid"
           }
         },
         "required": [
@@ -7080,6 +7123,18 @@
             "title": "Attachments",
             "type": "array"
           },
+          "audit": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit"
+          },
           "date": {
             "title": "Date",
             "type": "string"
@@ -7140,14 +7195,24 @@
             "type": "string"
           },
           "poNumber": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Ponumber"
           },
-          "reviewDecision": {
-            "anyOf": [{ "type": "string", "enum": ["Approved", "Rejected"] }, { "type": "null" }],
-            "default": null,
-            "title": "Reviewdecision"
+          "pricingBasis": {
+            "default": "legacy_bottle_mrp",
+            "enum": [
+              "allergen_rates",
+              "legacy_bottle_mrp"
+            ],
+            "title": "Pricingbasis",
+            "type": "string"
           },
           "recipient": {
             "additionalProperties": true,
@@ -7157,6 +7222,21 @@
           "remarks": {
             "title": "Remarks",
             "type": "string"
+          },
+          "reviewDecision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Approved",
+                  "Rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewdecision"
           },
           "saline": {
             "title": "Saline",
@@ -7180,8 +7260,15 @@
             "type": "string"
           },
           "totalMinor": {
-            "title": "Totalminor",
-            "anyOf": [{ "type": "integer" }, { "type": "null" }]
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totalminor"
           },
           "version": {
             "title": "Version",
@@ -7246,6 +7333,83 @@
           "limit"
         ],
         "title": "ImmReferencePage",
+        "type": "object"
+      },
+      "ImmRegisteredPatient": {
+        "additionalProperties": false,
+        "description": "MR presentation only; masks must never be submitted as PatientFields.",
+        "properties": {
+          "address": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Address",
+            "type": "object"
+          },
+          "age": {
+            "title": "Age",
+            "type": "integer"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "format": "date",
+            "title": "Dateofbirth",
+            "type": "string"
+          },
+          "dialCountry": {
+            "title": "Dialcountry",
+            "type": "string"
+          },
+          "doctorId": {
+            "format": "uuid",
+            "title": "Doctorid",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "gender": {
+            "title": "Gender",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mrId": {
+            "format": "uuid",
+            "title": "Mrid",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "phone",
+          "dialCountry",
+          "email",
+          "address",
+          "dateOfBirth",
+          "gender",
+          "age",
+          "doctorId",
+          "mrId"
+        ],
+        "title": "ImmRegisteredPatient",
         "type": "object"
       },
       "ImmUploadPolicy": {
@@ -7362,11 +7526,31 @@
           },
           "poNumber": {
             "anyOf": [
-              { "type": "string", "minLength": 1, "maxLength": 100 },
-              { "type": "null" }
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "default": null,
             "title": "Ponumber"
+          },
+          "pricingBasis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "allergen_rates",
+                  "legacy_bottle_mrp"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricingbasis"
           },
           "remarks": {
             "default": "",
@@ -8989,9 +9173,6 @@
       "KitsInput": {
         "additionalProperties": false,
         "properties": {
-          "pricing": {"anyOf": [{"$ref": "#/components/schemas/KitsPricingInput"}, {"type": "null"}], "default": null},
-          "businessParking": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Businessparking"},
-          "poNumber": {"anyOf": [{"type": "string", "maxLength": 200}, {"type": "null"}], "default": null, "title": "Ponumber"},
           "applicators": {
             "default": "",
             "maxLength": 12,
@@ -9006,6 +9187,18 @@
             "maxItems": 10,
             "title": "Attachmentids",
             "type": "array"
+          },
+          "businessParking": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Businessparking"
           },
           "doctorId": {
             "format": "uuid",
@@ -9079,6 +9272,28 @@
             "title": "Paymentstatus",
             "type": "string"
           },
+          "poNumber": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ponumber"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitsPricingInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "remarks": {
             "default": "",
             "maxLength": 4000,
@@ -9099,6 +9314,7 @@
             "default": "Confirmed",
             "enum": [
               "Confirmed",
+              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -9178,69 +9394,202 @@
       },
       "KitsPricingInput": {
         "additionalProperties": false,
-        "type": "object",
-        "title": "KitsPricingInput",
-        "required": ["forwardingCharges", "discountType", "discountValue"],
         "properties": {
-          "kitRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Kitrate"},
-          "lancetsRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Lancetsrate"},
-          "applicatorsRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Applicatorsrate"},
-          "trayRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Trayrate"},
-          "forwardingCharges": {"type": "string", "maxLength": 32, "title": "Forwardingcharges"},
-          "discountType": {"type": "string", "enum": ["percent", "inr"], "title": "Discounttype"},
-          "discountValue": {"type": "string", "maxLength": 32, "title": "Discountvalue"}
-        }
+          "applicatorsRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicatorsrate"
+          },
+          "discountType": {
+            "enum": [
+              "percent",
+              "inr"
+            ],
+            "title": "Discounttype",
+            "type": "string"
+          },
+          "discountValue": {
+            "maxLength": 32,
+            "title": "Discountvalue",
+            "type": "string"
+          },
+          "forwardingCharges": {
+            "maxLength": 32,
+            "title": "Forwardingcharges",
+            "type": "string"
+          },
+          "kitRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kitrate"
+          },
+          "lancetsRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancetsrate"
+          },
+          "trayRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trayrate"
+          }
+        },
+        "required": [
+          "forwardingCharges",
+          "discountType",
+          "discountValue"
+        ],
+        "title": "KitsPricingInput",
+        "type": "object"
       },
       "KitsPricingSnapshot": {
         "additionalProperties": false,
-        "type": "object",
+        "properties": {
+          "applicatorsRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicatorsrate"
+          },
+          "discountAmount": {
+            "title": "Discountamount",
+            "type": "string"
+          },
+          "discountType": {
+            "enum": [
+              "percent",
+              "inr"
+            ],
+            "title": "Discounttype",
+            "type": "string"
+          },
+          "discountValue": {
+            "maxLength": 32,
+            "title": "Discountvalue",
+            "type": "string"
+          },
+          "discounted": {
+            "title": "Discounted",
+            "type": "string"
+          },
+          "forwardingCharges": {
+            "maxLength": 32,
+            "title": "Forwardingcharges",
+            "type": "string"
+          },
+          "gross": {
+            "title": "Gross",
+            "type": "string"
+          },
+          "gst": {
+            "title": "Gst",
+            "type": "string"
+          },
+          "kitRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kitrate"
+          },
+          "lancetsRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancetsrate"
+          },
+          "lineAmounts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Lineamounts",
+            "type": "object"
+          },
+          "taxPercentage": {
+            "title": "Taxpercentage",
+            "type": "string"
+          },
+          "taxable": {
+            "title": "Taxable",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          },
+          "trayRate": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trayrate"
+          }
+        },
+        "required": [
+          "forwardingCharges",
+          "discountType",
+          "discountValue",
+          "taxPercentage",
+          "lineAmounts",
+          "gross",
+          "discountAmount",
+          "discounted",
+          "taxable",
+          "gst",
+          "total"
+        ],
         "title": "KitsPricingSnapshot",
-        "required": ["forwardingCharges", "discountType", "discountValue", "taxPercentage", "lineAmounts", "gross", "discountAmount", "discounted", "taxable", "gst", "total"],
-        "properties": {
-          "kitRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Kitrate"},
-          "lancetsRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Lancetsrate"},
-          "applicatorsRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Applicatorsrate"},
-          "trayRate": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Trayrate"},
-          "forwardingCharges": {"type": "string", "maxLength": 32, "title": "Forwardingcharges"},
-          "discountType": {"type": "string", "enum": ["percent", "inr"], "title": "Discounttype"},
-          "discountValue": {"type": "string", "maxLength": 32, "title": "Discountvalue"},
-          "taxPercentage": {"type": "string", "title": "Taxpercentage"},
-          "lineAmounts": {"type": "object", "additionalProperties": {"type": "string"}, "title": "Lineamounts"},
-          "gross": {"type": "string", "title": "Gross"},
-          "discountAmount": {"type": "string", "title": "Discountamount"},
-          "discounted": {"type": "string", "title": "Discounted"},
-          "taxable": {"type": "string", "title": "Taxable"},
-          "gst": {"type": "string", "title": "Gst"},
-          "total": {"type": "string", "title": "Total"}
-        }
-      },
-      "KitsUpdate": {
-        "type": "object",
-        "additionalProperties": false,
-        "title": "KitsUpdate",
-        "required": ["doctorId", "idempotencyKey", "expected_version"],
-        "properties": {
-          "expected_version": {"type": "integer", "minimum": 1, "title": "Expected Version"},
-          "idempotencyKey": {"type": "string", "format": "uuid", "title": "Idempotencykey"},
-          "doctorId": {"type": "string", "format": "uuid", "title": "Doctorid"},
-          "mrId": {"anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}], "default": null, "title": "Mrid"},
-          "patientId": {"anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}], "default": null, "title": "Patientid"},
-          "orderDate": {"anyOf": [{"type": "string", "format": "date"}, {"type": "null"}], "default": null, "title": "Orderdate"},
-          "orderFor": {"type": "string", "enum": ["doctor", "mr"], "default": "doctor", "title": "Orderfor"},
-          "kit": {"$ref": "#/components/schemas/KitsConfiguration"},
-          "lancets": {"type": "string", "maxLength": 12, "default": "", "title": "Lancets"},
-          "applicators": {"type": "string", "maxLength": 12, "default": "", "title": "Applicators"},
-          "tray": {"type": "string", "maxLength": 12, "default": "", "title": "Tray"},
-          "shipping": {"type": "string", "enum": ["doctor", "mr", "other"], "default": "doctor", "title": "Shipping"},
-          "other": {"$ref": "#/components/schemas/KitsRecipient"},
-          "remarks": {"type": "string", "maxLength": 4000, "default": "", "title": "Remarks"},
-          "status": {"type": "string", "enum": ["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"], "default": "Confirmed", "title": "Status"},
-          "paymentStatus": {"type": "string", "enum": ["Unpaid", "Paid", "Partial"], "default": "Unpaid", "title": "Paymentstatus"},
-          "attachmentIds": {"type": "array", "items": {"type": "string", "format": "uuid"}, "maxItems": 10, "title": "Attachmentids"},
-          "pricing": {"anyOf": [{"$ref": "#/components/schemas/KitsPricingInput"}, {"type": "null"}], "default": null},
-          "businessParking": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Businessparking"},
-          "poNumber": {"anyOf": [{"type": "string", "maxLength": 200}, {"type": "null"}], "default": null, "title": "Ponumber"}
-        }
+        "type": "object"
       },
       "KitsRecipient": {
         "additionalProperties": false,
@@ -9267,9 +9616,6 @@
       "KitsRecord": {
         "additionalProperties": false,
         "properties": {
-          "pricing": {"anyOf": [{"$ref": "#/components/schemas/KitsPricingSnapshot"}, {"type": "null"}], "default": null},
-          "businessParking": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Businessparking"},
-          "poNumber": {"anyOf": [{"type": "string", "maxLength": 200}, {"type": "null"}], "default": null, "title": "Ponumber"},
           "applicators": {
             "default": "",
             "maxLength": 12,
@@ -9293,10 +9639,34 @@
             "title": "Attachments",
             "type": "array"
           },
+          "audit": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit"
+          },
           "billing": {
             "additionalProperties": true,
             "title": "Billing",
             "type": "object"
+          },
+          "businessParking": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Businessparking"
           },
           "date": {
             "title": "Date",
@@ -9412,6 +9782,28 @@
             "title": "Paymentstatus",
             "type": "string"
           },
+          "poNumber": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ponumber"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitsPricingSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "recipient": {
             "additionalProperties": true,
             "title": "Recipient",
@@ -9437,6 +9829,7 @@
             "default": "Confirmed",
             "enum": [
               "Confirmed",
+              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -9473,12 +9866,9 @@
         "title": "KitsRecord",
         "type": "object"
       },
-      "KitsWrite": {
+      "KitsUpdate": {
         "additionalProperties": false,
         "properties": {
-          "pricing": {"anyOf": [{"$ref": "#/components/schemas/KitsPricingInput"}, {"type": "null"}], "default": null},
-          "businessParking": {"anyOf": [{"type": "string", "maxLength": 32}, {"type": "null"}], "default": null, "title": "Businessparking"},
-          "poNumber": {"anyOf": [{"type": "string", "maxLength": 200}, {"type": "null"}], "default": null, "title": "Ponumber"},
           "applicators": {
             "default": "",
             "maxLength": 12,
@@ -9493,6 +9883,197 @@
             "maxItems": 10,
             "title": "Attachmentids",
             "type": "array"
+          },
+          "businessParking": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Businessparking"
+          },
+          "doctorId": {
+            "format": "uuid",
+            "title": "Doctorid",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "idempotencyKey": {
+            "format": "uuid",
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "kit": {
+            "$ref": "#/components/schemas/KitsConfiguration"
+          },
+          "lancets": {
+            "default": "",
+            "maxLength": 12,
+            "title": "Lancets",
+            "type": "string"
+          },
+          "mrId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mrid"
+          },
+          "orderDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orderdate"
+          },
+          "orderFor": {
+            "default": "doctor",
+            "enum": [
+              "doctor",
+              "mr"
+            ],
+            "title": "Orderfor",
+            "type": "string"
+          },
+          "other": {
+            "$ref": "#/components/schemas/KitsRecipient"
+          },
+          "patientId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patientid"
+          },
+          "paymentStatus": {
+            "default": "Unpaid",
+            "enum": [
+              "Unpaid",
+              "Paid",
+              "Partial"
+            ],
+            "title": "Paymentstatus",
+            "type": "string"
+          },
+          "poNumber": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ponumber"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitsPricingInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remarks": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Remarks",
+            "type": "string"
+          },
+          "shipping": {
+            "default": "doctor",
+            "enum": [
+              "doctor",
+              "mr",
+              "other"
+            ],
+            "title": "Shipping",
+            "type": "string"
+          },
+          "status": {
+            "default": "Confirmed",
+            "enum": [
+              "Confirmed",
+              "Approved",
+              "In process",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tray": {
+            "default": "",
+            "maxLength": 12,
+            "title": "Tray",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doctorId",
+          "idempotencyKey",
+          "expected_version"
+        ],
+        "title": "KitsUpdate",
+        "type": "object"
+      },
+      "KitsWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "applicators": {
+            "default": "",
+            "maxLength": 12,
+            "title": "Applicators",
+            "type": "string"
+          },
+          "attachmentIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Attachmentids",
+            "type": "array"
+          },
+          "businessParking": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Businessparking"
           },
           "doctorId": {
             "format": "uuid",
@@ -9571,6 +10152,28 @@
             "title": "Paymentstatus",
             "type": "string"
           },
+          "poNumber": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ponumber"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitsPricingInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "remarks": {
             "default": "",
             "maxLength": 4000,
@@ -9591,6 +10194,7 @@
             "default": "Confirmed",
             "enum": [
               "Confirmed",
+              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -11073,6 +11677,18 @@
             "title": "Attachments",
             "type": "array"
           },
+          "audit": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit"
+          },
           "date": {
             "title": "Date",
             "type": "string"
@@ -12534,7 +13150,7 @@
       },
       "MRDoctorRead": {
         "additionalProperties": false,
-        "description": "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.",
+        "description": "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nAddress fields contain display-only masks, including postal/geographic parts.",
         "properties": {
           "addressLine1": {
             "title": "Addressline1",
@@ -23586,6 +24202,18 @@
       "SptRecord": {
         "additionalProperties": false,
         "properties": {
+          "audit": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit"
+          },
           "date": {
             "title": "Date",
             "type": "string"
@@ -38404,7 +39032,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DoctorResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DoctorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MRDoctorRead"
+                    }
+                  ],
+                  "title": "Response Createdoctordirectory"
                 }
               }
             },
@@ -49860,7 +50496,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PatientDirectoryResponse"
+                  "$ref": "#/components/schemas/ImmRegisteredPatient"
                 }
               }
             },
@@ -56697,6 +57333,7 @@
                 {
                   "enum": [
                     "Confirmed",
+                    "Approved",
                     "In process",
                     "Shipped",
                     "Delivered",
@@ -57676,6 +58313,7 @@
                 {
                   "enum": [
                     "Confirmed",
+                    "Approved",
                     "In process",
                     "Shipped",
                     "Delivered",
@@ -59223,28 +59861,6 @@
         ]
       }
     },
-    "/v1/admin/kits-orders/{record_id}/edit": {
-      "post": {
-        "operationId": "updateKitsOrder",
-        "summary": "Edit",
-        "tags": ["kits"],
-        "parameters": [{"name": "record_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid", "title": "Record Id"}}],
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/KitsUpdate"}}}},
-        "responses": {
-          "200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/KitsRecord"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "400": {"description": "Bad Request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "401": {"description": "Unauthorized", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "403": {"description": "Forbidden", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "404": {"description": "Not Found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "409": {"description": "Conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "413": {"description": "Content Too Large", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "422": {"description": "Unprocessable Content", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "429": {"description": "Too Many Requests", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}},
-          "500": {"description": "Internal Server Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}, "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}}
-        },
-        "security": [{"HTTPBearer": []}]
-      }
-    },
     "/v1/admin/kits-orders/{record_id}": {
       "get": {
         "operationId": "getKitsOrder",
@@ -59515,6 +60131,291 @@
           }
         ],
         "summary": "Detail",
+        "tags": [
+          "kits"
+        ]
+      }
+    },
+    "/v1/admin/kits-orders/{record_id}/edit": {
+      "post": {
+        "operationId": "updateKitsOrder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KitsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitsRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Edit",
         "tags": [
           "kits"
         ]

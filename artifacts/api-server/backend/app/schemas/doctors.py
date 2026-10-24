@@ -197,6 +197,7 @@ class MRDoctorRead(BaseModel):
     """Read-only MR presentation DTO, deliberately independent of write validators.
 
     Contacts are never returned as writable phone/email fields on MR reads.
+    Address fields contain display-only masks, including postal/geographic parts.
     """
     model_config = ConfigDict(extra="forbid")
     id: uuid.UUID

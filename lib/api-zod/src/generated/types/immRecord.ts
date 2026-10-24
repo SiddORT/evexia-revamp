@@ -6,10 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ImmRecordAttachmentsItem } from "./immRecordAttachmentsItem";
+import type { ImmRecordAudit } from "./immRecordAudit";
 import type { ImmRecordDoctor } from "./immRecordDoctor";
 import type { ImmRecordGroupsItem } from "./immRecordGroupsItem";
 import type { ImmRecordMr } from "./immRecordMr";
 import type { ImmRecordPatient } from "./immRecordPatient";
+import type { ImmRecordPricingBasis } from "./immRecordPricingBasis";
 import type { ImmRecordRecipient } from "./immRecordRecipient";
 import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
 import type { ImmRecordStatus } from "./immRecordStatus";
@@ -19,6 +21,7 @@ import type { ImmRecordStatus } from "./immRecordStatus";
  */
 export interface ImmRecord {
   attachments: ImmRecordAttachmentsItem[];
+  audit?: ImmRecordAudit;
   date: string;
   doctor: ImmRecordDoctor;
   doctorId: string;
@@ -32,9 +35,10 @@ export interface ImmRecord {
   patient: ImmRecordPatient;
   patientId: string;
   poNumber?: string | null;
-  reviewDecision?: ImmRecordReviewDecision;
+  pricingBasis?: ImmRecordPricingBasis;
   recipient: ImmRecordRecipient;
   remarks: string;
+  reviewDecision?: ImmRecordReviewDecision;
   saline: string;
   shipping: string;
   status: ImmRecordStatus;

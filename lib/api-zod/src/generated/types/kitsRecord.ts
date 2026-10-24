@@ -6,8 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { KitsConfiguration } from "./kitsConfiguration";
+import type { KitsPricingSnapshot } from "./kitsPricingSnapshot";
 import type { KitsRecipient } from "./kitsRecipient";
 import type { KitsRecordAttachmentsItem } from "./kitsRecordAttachmentsItem";
+import type { KitsRecordAudit } from "./kitsRecordAudit";
 import type { KitsRecordBilling } from "./kitsRecordBilling";
 import type { KitsRecordDoctor } from "./kitsRecordDoctor";
 import type { KitsRecordMr } from "./kitsRecordMr";
@@ -18,18 +20,15 @@ import type { KitsRecordRecipient } from "./kitsRecordRecipient";
 import type { KitsRecordShipping } from "./kitsRecordShipping";
 import type { KitsRecordStatus } from "./kitsRecordStatus";
 
-import type { KitsPricingSnapshot } from "./kitsPricingSnapshot";
-
 export interface KitsRecord {
-  pricing?: KitsPricingSnapshot | null;
-  businessParking?: string | null;
-  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: KitsRecordAttachmentsItem[];
+  audit?: KitsRecordAudit;
   billing: KitsRecordBilling;
+  businessParking?: string | null;
   date: string;
   doctor: KitsRecordDoctor;
   doctorId: string;
@@ -46,6 +45,8 @@ export interface KitsRecord {
   patient: KitsRecordPatient;
   patientId?: string | null;
   paymentStatus?: KitsRecordPaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingSnapshot | null;
   recipient: KitsRecordRecipient;
   /** @maxLength 4000 */
   remarks?: string;

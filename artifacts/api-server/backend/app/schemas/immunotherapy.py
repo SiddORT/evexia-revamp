@@ -126,6 +126,22 @@ class ImmReferencePage(BaseModel):
     limit: int
 
 
+class ImmRegisteredPatient(Strict):
+    """MR presentation only; masks must never be submitted as PatientFields."""
+    id: uuid.UUID
+    code: str
+    name: str
+    phone: str
+    dialCountry: str
+    email: str
+    address: dict[str, str]
+    dateOfBirth: date
+    gender: str
+    age: int
+    doctorId: uuid.UUID
+    mrId: uuid.UUID
+
+
 class ImmUploadPolicy(BaseModel):
     maxFiles: int
     maxBytes: int

@@ -197,6 +197,7 @@ import type {
   ImmPage,
   ImmRecord,
   ImmReferencePage,
+  ImmRegisteredPatient,
   ImmUploadPolicy,
   ImmWrite,
   ImmunotherapyReferencesParams,
@@ -211,8 +212,8 @@ import type {
   KitsPage,
   KitsRecord,
   KitsReferencesParams,
-  KitsWrite,
   KitsUpdate,
+  KitsWrite,
   LanguageEdit,
   LanguageFields,
   LanguageHistory,
@@ -4697,7 +4698,7 @@ export const getCreateDoctorDirectoryUrl = () => {
 export const createDoctorDirectory = async (
   doctorFields: DoctorFields,
   options?: Parameters<typeof customFetch>[1],
-): Promise<DoctorResponse> => {
+): Promise<DoctorResponse | MRDoctorRead> => {
   const getHeaders = (
     h?: NonNullable<RequestInit["headers"]>,
   ): Record<string, string | readonly string[]> => {
@@ -4719,15 +4720,18 @@ export const createDoctorDirectory = async (
     }
     return headers;
   };
-  return customFetch<DoctorResponse>(getCreateDoctorDirectoryUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
+  return customFetch<DoctorResponse | MRDoctorRead>(
+    getCreateDoctorDirectoryUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(doctorFields),
     },
-    body: JSON.stringify(doctorFields),
-  });
+  );
 };
 
 export const getCreateDoctorDirectoryMutationKey = () =>
@@ -8875,7 +8879,7 @@ export const getRegisterMrOrderPatientUrl = () => {
 export const registerMrOrderPatient = async (
   patientFields: PatientFields,
   options?: Parameters<typeof customFetch>[1],
-): Promise<PatientDirectoryResponse> => {
+): Promise<ImmRegisteredPatient> => {
   const getHeaders = (
     h?: NonNullable<RequestInit["headers"]>,
   ): Record<string, string | readonly string[]> => {
@@ -8897,7 +8901,7 @@ export const registerMrOrderPatient = async (
     }
     return headers;
   };
-  return customFetch<PatientDirectoryResponse>(getRegisterMrOrderPatientUrl(), {
+  return customFetch<ImmRegisteredPatient>(getRegisterMrOrderPatientUrl(), {
     ...options,
     method: "POST",
     headers: {
@@ -12122,36 +12126,6 @@ export function useKitsReferences<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-// Coordinated source-only endpoint; generator/build/checks intentionally not run.
-export const getUpdateKitsOrderUrl = (recordId: string) =>
-  `/api/v1/admin/kits-orders/${recordId}/edit`;
-
-export const updateKitsOrder = async (
-  recordId: string,
-  data: KitsUpdate,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<KitsRecord> => customFetch<KitsRecord>(getUpdateKitsOrderUrl(recordId), {
-  ...options, method: "POST",
-  headers: { "Content-Type": "application/json", ...options?.headers },
-  body: JSON.stringify(data),
-});
-
-export const getUpdateKitsOrderMutationOptions = <TError = ErrorType<ErrorEnvelope>, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateKitsOrder>>, TError, { recordId: string; data: KitsUpdate }, TContext>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => ({
-  mutationKey: ["updateKitsOrder"],
-  mutationFn: ({ recordId, data }: { recordId: string; data: KitsUpdate }) =>
-    updateKitsOrder(recordId, data, options?.request),
-  ...options?.mutation,
-});
-
-export const useUpdateKitsOrder = <TError = ErrorType<ErrorEnvelope>, TContext = unknown>(
-  options?: Parameters<typeof getUpdateKitsOrderMutationOptions<TError, TContext>>[0],
-) => useMutation(getUpdateKitsOrderMutationOptions<TError, TContext>(options));
-
 export const getGetKitsOrderUrl = (recordId: string) => {
   return `/api/v1/admin/kits-orders/${recordId}`;
 };
@@ -12238,6 +12212,123 @@ export function useGetKitsOrder<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getUpdateKitsOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/kits-orders/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const updateKitsOrder = async (
+  recordId: string,
+  kitsUpdate: KitsUpdate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<KitsRecord>(getUpdateKitsOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(kitsUpdate),
+  });
+};
+
+export const getUpdateKitsOrderMutationKey = () => ["updateKitsOrder"] as const;
+
+export const getUpdateKitsOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateKitsOrder>>,
+    TError,
+    UpdateKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateKitsOrder>>,
+  TError,
+  UpdateKitsOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateKitsOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateKitsOrder>>,
+    UpdateKitsOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return updateKitsOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateKitsOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateKitsOrder>>
+>;
+export type UpdateKitsOrderMutationBody = BodyType<KitsUpdate>;
+export type UpdateKitsOrderMutationError = ErrorType<ErrorEnvelope>;
+export type UpdateKitsOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<KitsUpdate>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useUpdateKitsOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateKitsOrder>>,
+    TError,
+    UpdateKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateKitsOrder>>,
+  TError,
+  UpdateKitsOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateKitsOrderMutationOptions(options));
+};
 
 export const getListLanguagesUrl = (params?: ListLanguagesParams) => {
   const normalizedParams = new URLSearchParams();

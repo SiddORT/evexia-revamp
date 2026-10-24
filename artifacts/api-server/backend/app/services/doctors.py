@@ -99,13 +99,11 @@ def read_projection(db, actor, row, context=None):
     result = projection(db, row, context)
     if actor.role != "mr":
         return result
-    # Mask at the authorized read boundary, not in write validation or storage.
-    # Even very short legacy contacts must not be disclosed in their entirety.
+    from app.services.person_contacts import person
+    result = person(result)
     for field, display in (("phone", "phoneDisplay"), ("alternatePhone", "alternatePhoneDisplay")):
-        digits = "".join(c for c in result.pop(field) if c.isascii() and c.isdigit())
-        result[display] = ("********" + digits[-2:]) if len(digits) > 2 else ("********" if digits else "")
-    email = result.pop("email")
-    result["emailDisplay"] = "***@***" if email else ""
+        result[display] = result.pop(field)
+    result["emailDisplay"] = result.pop("email")
     return result
 
 
@@ -287,7 +285,7 @@ def create(db, actor, body):
         assigned = body.model_copy(update={"mrId": current.mr.id}) if current.role == "mr" else body
         assignment(db, assigned.mrId)
         unique(db, assigned.registrationNumber)
-        result = projection(db, insert(db, current, assigned))
+        result = read_projection(db, current, insert(db, current, assigned))
         db.commit()
         return result
     return transaction(db, work)

@@ -10,17 +10,15 @@ import type { KitsInputOrderFor } from "./kitsInputOrderFor";
 import type { KitsInputPaymentStatus } from "./kitsInputPaymentStatus";
 import type { KitsInputShipping } from "./kitsInputShipping";
 import type { KitsInputStatus } from "./kitsInputStatus";
-import type { KitsRecipient } from "./kitsRecipient";
 import type { KitsPricingInput } from "./kitsPricingInput";
+import type { KitsRecipient } from "./kitsRecipient";
 
 export interface KitsInput {
-  pricing?: KitsPricingInput | null;
-  businessParking?: string | null;
-  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
   attachmentIds?: string[];
+  businessParking?: string | null;
   doctorId: string;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
@@ -31,6 +29,8 @@ export interface KitsInput {
   other?: KitsRecipient;
   patientId?: string | null;
   paymentStatus?: KitsInputPaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
   /** @maxLength 4000 */
   remarks?: string;
   shipping?: KitsInputShipping;

@@ -14,14 +14,14 @@ from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
-from app.schemas.immunotherapy import ImmWrite, ImmImport, ImmRecord, ImmPage, Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview, ImmImportResult
+from app.schemas.immunotherapy import ImmWrite, ImmImport, ImmRecord, ImmPage, Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview, ImmImportResult, ImmRegisteredPatient
 from app.services import immunotherapy as service
 from app.core.config import get_settings
 from app.schemas.files import UploadRequest, FileResponse
 from app.services import files as file_service
 from app.services.file_policy import FileError
 from app.api.v1.files import storage_dependency, order_upload_operation
-from app.schemas.patients import PatientFields, PatientDirectoryResponse, PatientLanguageChoices
+from app.schemas.patients import PatientFields, PatientLanguageChoices
 from app.services import patients as patient_service
 
 router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"],
@@ -46,7 +46,7 @@ MULTIPART = {
 }
 
 
-@router.post("/patient-registration", response_model=PatientDirectoryResponse, operation_id="registerMrOrderPatient")
+@router.post("/patient-registration", response_model=ImmRegisteredPatient, operation_id="registerMrOrderPatient")
 def register_patient(body: PatientFields, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return patient_service.create_for_order(db, actor, body)
 

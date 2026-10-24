@@ -11,6 +11,7 @@ export type ExportKitsOrdersStatus =
 
 export const ExportKitsOrdersStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",

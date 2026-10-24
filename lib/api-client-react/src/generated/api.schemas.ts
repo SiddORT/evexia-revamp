@@ -2963,6 +2963,7 @@ export interface ImmItem {
   rate?: string | null;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
   result: string;
+  suborderId?: string | null;
 }
 
 export interface ImmBottle {
@@ -2993,6 +2994,14 @@ export const ImmInputDosage = {
   B6: "B6",
   B7: "B7",
   B8: "B8",
+} as const;
+
+export type ImmInputPricingBasis =
+  (typeof ImmInputPricingBasis)[keyof typeof ImmInputPricingBasis] | null;
+
+export const ImmInputPricingBasis = {
+  allergen_rates: "allergen_rates",
+  legacy_bottle_mrp: "legacy_bottle_mrp",
 } as const;
 
 export type ImmInputShipping =
@@ -3032,6 +3041,7 @@ export interface ImmInput {
   orderDate?: string | null;
   patientId: string;
   poNumber?: string | null;
+  pricingBasis?: ImmInputPricingBasis;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -3057,6 +3067,14 @@ export interface ImmImport {
   reviewToken?: string;
 }
 
+export type ImmRecordPricingBasis =
+  (typeof ImmRecordPricingBasis)[keyof typeof ImmRecordPricingBasis];
+
+export const ImmRecordPricingBasis = {
+  allergen_rates: "allergen_rates",
+  legacy_bottle_mrp: "legacy_bottle_mrp",
+} as const;
+
 export type ImmRecordReviewDecision =
   (typeof ImmRecordReviewDecision)[keyof typeof ImmRecordReviewDecision] | null;
 
@@ -3080,6 +3098,8 @@ export const ImmRecordStatus = {
 
 export type ImmRecordAttachmentsItem = { [key: string]: unknown };
 
+export type ImmRecordAudit = { [key: string]: unknown } | null;
+
 export type ImmRecordDoctor = { [key: string]: unknown };
 
 export type ImmRecordGroupsItem = { [key: string]: unknown };
@@ -3095,6 +3115,7 @@ export type ImmRecordRecipient = { [key: string]: unknown };
  */
 export interface ImmRecord {
   attachments: ImmRecordAttachmentsItem[];
+  audit?: ImmRecordAudit;
   date: string;
   doctor: ImmRecordDoctor;
   doctorId: string;
@@ -3108,9 +3129,10 @@ export interface ImmRecord {
   patient: ImmRecordPatient;
   patientId: string;
   poNumber?: string | null;
-  reviewDecision?: ImmRecordReviewDecision;
+  pricingBasis?: ImmRecordPricingBasis;
   recipient: ImmRecordRecipient;
   remarks: string;
+  reviewDecision?: ImmRecordReviewDecision;
   saline: string;
   shipping: string;
   status: ImmRecordStatus;
@@ -3154,6 +3176,26 @@ export interface ImmReferencePage {
   nextCursor: string | null;
 }
 
+export type ImmRegisteredPatientAddress = { [key: string]: string };
+
+/**
+ * MR presentation only; masks must never be submitted as PatientFields.
+ */
+export interface ImmRegisteredPatient {
+  address: ImmRegisteredPatientAddress;
+  age: number;
+  code: string;
+  dateOfBirth: string;
+  dialCountry: string;
+  doctorId: string;
+  email: string;
+  gender: string;
+  id: string;
+  mrId: string;
+  name: string;
+  phone: string;
+}
+
 export interface ImmUploadPolicy {
   maxBytes: number;
   maxFiles: number;
@@ -3174,6 +3216,14 @@ export const ImmWriteDosage = {
   B6: "B6",
   B7: "B7",
   B8: "B8",
+} as const;
+
+export type ImmWritePricingBasis =
+  (typeof ImmWritePricingBasis)[keyof typeof ImmWritePricingBasis] | null;
+
+export const ImmWritePricingBasis = {
+  allergen_rates: "allergen_rates",
+  legacy_bottle_mrp: "legacy_bottle_mrp",
 } as const;
 
 export type ImmWriteShipping =
@@ -3215,6 +3265,7 @@ export interface ImmWrite {
   orderDate?: string | null;
   patientId: string;
   poNumber?: string | null;
+  pricingBasis?: ImmWritePricingBasis;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -3537,6 +3588,26 @@ export const KitsInputPaymentStatus = {
   Partial: "Partial",
 } as const;
 
+export type KitsPricingInputDiscountType =
+  (typeof KitsPricingInputDiscountType)[keyof typeof KitsPricingInputDiscountType];
+
+export const KitsPricingInputDiscountType = {
+  percent: "percent",
+  inr: "inr",
+} as const;
+
+export interface KitsPricingInput {
+  applicatorsRate?: string | null;
+  discountType: KitsPricingInputDiscountType;
+  /** @maxLength 32 */
+  discountValue: string;
+  /** @maxLength 32 */
+  forwardingCharges: string;
+  kitRate?: string | null;
+  lancetsRate?: string | null;
+  trayRate?: string | null;
+}
+
 export type KitsInputShipping =
   (typeof KitsInputShipping)[keyof typeof KitsInputShipping];
 
@@ -3551,6 +3622,7 @@ export type KitsInputStatus =
 
 export const KitsInputStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3558,40 +3630,12 @@ export const KitsInputStatus = {
   Returned: "Returned",
 } as const;
 
-/** Source-only coordinated contract update; codegen/checks were not run. */
-export interface KitsPricingInput {
-  kitRate?: string | null;
-  lancetsRate?: string | null;
-  applicatorsRate?: string | null;
-  trayRate?: string | null;
-  forwardingCharges: string;
-  discountType: "percent" | "inr";
-  discountValue: string;
-}
-
-export interface KitsPricingSnapshot extends KitsPricingInput {
-  taxPercentage: string;
-  lineAmounts: Record<string, string>;
-  gross: string;
-  discountAmount: string;
-  discounted: string;
-  taxable: string;
-  gst: string;
-  total: string;
-}
-
-export interface KitsUpdate extends KitsWrite {
-  expected_version: number;
-}
-
 export interface KitsInput {
-  pricing?: KitsPricingInput | null;
-  businessParking?: string | null;
-  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
   attachmentIds?: string[];
+  businessParking?: string | null;
   doctorId: string;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
@@ -3602,6 +3646,8 @@ export interface KitsInput {
   other?: KitsRecipient;
   patientId?: string | null;
   paymentStatus?: KitsInputPaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
   /** @maxLength 4000 */
   remarks?: string;
   shipping?: KitsInputShipping;
@@ -3647,6 +3693,36 @@ export const KitsRecordPaymentStatus = {
   Partial: "Partial",
 } as const;
 
+export type KitsPricingSnapshotDiscountType =
+  (typeof KitsPricingSnapshotDiscountType)[keyof typeof KitsPricingSnapshotDiscountType];
+
+export const KitsPricingSnapshotDiscountType = {
+  percent: "percent",
+  inr: "inr",
+} as const;
+
+export type KitsPricingSnapshotLineAmounts = { [key: string]: string };
+
+export interface KitsPricingSnapshot {
+  applicatorsRate?: string | null;
+  discountAmount: string;
+  discountType: KitsPricingSnapshotDiscountType;
+  /** @maxLength 32 */
+  discountValue: string;
+  discounted: string;
+  /** @maxLength 32 */
+  forwardingCharges: string;
+  gross: string;
+  gst: string;
+  kitRate?: string | null;
+  lancetsRate?: string | null;
+  lineAmounts: KitsPricingSnapshotLineAmounts;
+  taxPercentage: string;
+  taxable: string;
+  total: string;
+  trayRate?: string | null;
+}
+
 export type KitsRecordShipping =
   (typeof KitsRecordShipping)[keyof typeof KitsRecordShipping];
 
@@ -3661,6 +3737,7 @@ export type KitsRecordStatus =
 
 export const KitsRecordStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3669,6 +3746,8 @@ export const KitsRecordStatus = {
 } as const;
 
 export type KitsRecordAttachmentsItem = { [key: string]: unknown };
+
+export type KitsRecordAudit = { [key: string]: unknown } | null;
 
 export type KitsRecordBilling = { [key: string]: unknown };
 
@@ -3681,15 +3760,14 @@ export type KitsRecordPatient = { [key: string]: unknown } | null;
 export type KitsRecordRecipient = { [key: string]: unknown };
 
 export interface KitsRecord {
-  pricing?: KitsPricingSnapshot | null;
-  businessParking?: string | null;
-  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: KitsRecordAttachmentsItem[];
+  audit?: KitsRecordAudit;
   billing: KitsRecordBilling;
+  businessParking?: string | null;
   date: string;
   doctor: KitsRecordDoctor;
   doctorId: string;
@@ -3706,6 +3784,8 @@ export interface KitsRecord {
   patient: KitsRecordPatient;
   patientId?: string | null;
   paymentStatus?: KitsRecordPaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingSnapshot | null;
   recipient: KitsRecordRecipient;
   /** @maxLength 4000 */
   remarks?: string;
@@ -3729,6 +3809,74 @@ export interface KitsPage {
   items: KitsRecord[];
   nextCursor: string | null;
   total: number;
+}
+
+export type KitsUpdateOrderFor =
+  (typeof KitsUpdateOrderFor)[keyof typeof KitsUpdateOrderFor];
+
+export const KitsUpdateOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type KitsUpdatePaymentStatus =
+  (typeof KitsUpdatePaymentStatus)[keyof typeof KitsUpdatePaymentStatus];
+
+export const KitsUpdatePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type KitsUpdateShipping =
+  (typeof KitsUpdateShipping)[keyof typeof KitsUpdateShipping];
+
+export const KitsUpdateShipping = {
+  doctor: "doctor",
+  mr: "mr",
+  other: "other",
+} as const;
+
+export type KitsUpdateStatus =
+  (typeof KitsUpdateStatus)[keyof typeof KitsUpdateStatus];
+
+export const KitsUpdateStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface KitsUpdate {
+  /** @maxLength 12 */
+  applicators?: string;
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  businessParking?: string | null;
+  doctorId: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  kit?: KitsConfiguration;
+  /** @maxLength 12 */
+  lancets?: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  orderFor?: KitsUpdateOrderFor;
+  other?: KitsRecipient;
+  patientId?: string | null;
+  paymentStatus?: KitsUpdatePaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
+  /** @maxLength 4000 */
+  remarks?: string;
+  shipping?: KitsUpdateShipping;
+  status?: KitsUpdateStatus;
+  /** @maxLength 12 */
+  tray?: string;
 }
 
 export type KitsWriteOrderFor =
@@ -3762,6 +3910,7 @@ export type KitsWriteStatus =
 
 export const KitsWriteStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3770,13 +3919,11 @@ export const KitsWriteStatus = {
 } as const;
 
 export interface KitsWrite {
-  pricing?: KitsPricingInput | null;
-  businessParking?: string | null;
-  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
   attachmentIds?: string[];
+  businessParking?: string | null;
   doctorId: string;
   idempotencyKey: string;
   kit?: KitsConfiguration;
@@ -3788,6 +3935,8 @@ export interface KitsWrite {
   other?: KitsRecipient;
   patientId?: string | null;
   paymentStatus?: KitsWritePaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
   /** @maxLength 4000 */
   remarks?: string;
   shipping?: KitsWriteShipping;
@@ -4242,6 +4391,8 @@ export const LupinRecordStatus = {
 
 export type LupinRecordAttachmentsItem = { [key: string]: unknown };
 
+export type LupinRecordAudit = { [key: string]: unknown } | null;
+
 export type LupinRecordDoctor = { [key: string]: unknown };
 
 export type LupinRecordMr = { [key: string]: unknown };
@@ -4252,6 +4403,7 @@ export interface LupinRecord {
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: LupinRecordAttachmentsItem[];
+  audit?: LupinRecordAudit;
   date: string;
   doctor: LupinRecordDoctor;
   doctorId: string;
@@ -5380,6 +5532,7 @@ export const MRDoctorReadVerification = {
  * Read-only MR presentation DTO, deliberately independent of write validators.
  *
  * Contacts are never returned as writable phone/email fields on MR reads.
+ * Address fields contain display-only masks, including postal/geographic parts.
  */
 export interface MRDoctorRead {
   addressLine1: string;
@@ -9439,11 +9592,14 @@ export const SptRecordStatus = {
   Saved: "Saved",
 } as const;
 
+export type SptRecordAudit = { [key: string]: unknown } | null;
+
 export type SptRecordDoctor = { [key: string]: unknown } | null;
 
 export type SptRecordMr = { [key: string]: unknown } | null;
 
 export interface SptRecord {
+  audit?: SptRecordAudit;
   date: string;
   doctor: SptRecordDoctor;
   doctorId: string | null;
@@ -12446,6 +12602,7 @@ export type ListKitsOrdersStatus =
 
 export const ListKitsOrdersStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -12495,6 +12652,7 @@ export type ExportKitsOrdersStatus =
 
 export const ExportKitsOrdersStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",

@@ -108,3 +108,4 @@
 - [Development upload storage](development-upload-storage.md) — user wants private project-local S3-compatible folders for now; generic CDN HEAD failures do not prove freshclam is blocked.
 - [Kits Business Parking](kits-business-parking.md) — independent entered amount; the legacy screenshot does not authorize a commission, deduction or link to totals.
 - [Private order viewing](private-order-viewing-scope.md) — MR saved previews and Super Admin Kits summary/editor previews are approved; other staff and unsaved uploads stay unchanged.
+- [MR contact masking scope](mr-contact-scope.md) — mask Doctor/Patient contacts only; preserve identities, demographics, MR self details and authoritative snapshots.

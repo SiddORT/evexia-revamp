@@ -29,6 +29,11 @@ function publish(next) {
 export const getSession = () => state;
 export const subscribeSession = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
 
+// A user ID alone does not distinguish privileged reads from MR-scoped reads.
+export const contactReadScope = (user = state.user) => JSON.stringify([
+  user?.id ?? null, user?.identity_kind ?? null, user?.mr_id ?? null,
+]);
+
 export function forgetSessionAfterPasswordReset() {
   restorationAllowed = false;
   clear('Your password was reset. Please sign in again.');
@@ -294,8 +299,9 @@ export async function logoutAdmin({ beforeRevoke } = {}) {
 export function reportingIdentityGuard() {
   const epoch = generation;
   const owner = state.user?.id;
+  const scope = contactReadScope();
   return () => {
-    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated') {
+    if (epoch !== generation || !owner || state.user?.id !== owner || scope !== contactReadScope() || state.status !== 'authenticated') {
       throw new SessionError('Your session changed. Export cancelled. Please retry after signing in.', 401);
     }
   };
@@ -732,12 +738,13 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;
+  const readScope = contactReadScope();
   const owner = state.user?.id;
   let languageCommitDispatched = false;
   let languageCommitRejected = false;
   const check = () => {
     signal?.throwIfAborted();
-    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+    if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
       const error = new SessionError('Your session changed. Sign in again before retrying.', 401);
       error.ambiguous = languageCommitDispatched && !languageCommitRejected;
       throw error;
@@ -979,13 +986,14 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   }
   const httpMethod = method || (writing ? 'POST' : 'GET');
   const epoch = generation;
+  const readScope = contactReadScope();
   const owner = state.user?.id;
   const mutation = writing && !path.endsWith('/preview') && path !== '/import/review';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && state.user?.identity_kind === 'mr';
   const check = () => {
     signal?.throwIfAborted();
-    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+    if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
     }
     if (!mrOrder && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {

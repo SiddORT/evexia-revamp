@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { LupinRecordAttachmentsItem } from "./lupinRecordAttachmentsItem";
+import type { LupinRecordAudit } from "./lupinRecordAudit";
 import type { LupinRecordDoctor } from "./lupinRecordDoctor";
 import type { LupinRecordMr } from "./lupinRecordMr";
 import type { LupinRecordPatientsItem } from "./lupinRecordPatientsItem";
@@ -16,6 +17,7 @@ export interface LupinRecord {
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: LupinRecordAttachmentsItem[];
+  audit?: LupinRecordAudit;
   date: string;
   doctor: LupinRecordDoctor;
   doctorId: string;

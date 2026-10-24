@@ -313,7 +313,11 @@ def create_for_order(db, actor, body):
             raise PatientError("Order registration requires an active patient.", 422, "patient_status")
         unique(db, body)
         row = _insert(db, current, body)
-        result = projection(db, row)
+        from app.services.immunotherapy import person
+        from app.services.person_contacts import person as masked_person
+        result = masked_person(person(row, "patients"))
+        doctor = db.get(Doctor, row.doctorId)
+        result["mrId"] = str(doctor.mrId)
         db.commit()
         return result
     return transaction(db, work)

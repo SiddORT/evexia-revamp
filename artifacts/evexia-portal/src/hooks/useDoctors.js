@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useDirectoryContinuation from './useDirectoryContinuation.js';
-import { getSession, reportingIdentityGuard, subscribeSession } from '../auth/adminSession.js';
+import { contactReadScope, reportingIdentityGuard, subscribeSession } from '../auth/adminSession.js';
 import { allDoctorMRChoices, bulkDoctors, createDoctor, deleteDoctor, doctorFilters, editDoctor, getDoctor, listDoctors, statusDoctor } from '../services/serverDoctors.js';
 
 export default function useDoctors(params = {}, detailId = null) {
@@ -19,9 +19,9 @@ export default function useDoctors(params = {}, detailId = null) {
   }, []);
   useEffect(() => {
     alive.current = true;
-    const owner = getSession().user?.id;
+    const owner = contactReadScope();
     const unsubscribe = subscribeSession(() => {
-      if (getSession().user?.id !== owner) setState({ records: [], doctor: null, mrs: [], zones: [], headquarters: [], states: [], total: 0, filtered: 0, loading: false, error: 'Session identity changed.' });
+      if (contactReadScope() !== owner) setState({ records: [], doctor: null, mrs: [], zones: [], headquarters: [], states: [], total: 0, filtered: 0, loading: false, error: 'Session identity changed.' });
     });
     return () => { alive.current = false; unsubscribe(); };
   }, []);
