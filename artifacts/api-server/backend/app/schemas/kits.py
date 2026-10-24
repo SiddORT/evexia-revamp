@@ -115,6 +115,7 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    audit: dict | None = None
     pricing: KitsPricingSnapshot | None = None
     id: uuid.UUID
     number: str

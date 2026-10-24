@@ -17,6 +17,7 @@ class ImmItem(Strict):
     allergenId: uuid.UUID
     result: Result
     rate: Amount | None = None
+    suborderId: str | None = Field(default=None, pattern=r"^SUB-[0-9]{6,12}$")
 
 
 class ImmBottle(Strict):
@@ -32,6 +33,7 @@ class ImmBottle(Strict):
 
 
 class ImmInput(Strict):
+    pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp"] | None = None
     orderDate: date | None = None
     patientId: uuid.UUID
     doctorId: uuid.UUID
@@ -97,6 +99,8 @@ class ImmRecord(BaseModel):
     groups: list[dict]
     attachments: list[dict]
     totalMinor: int | None
+    pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp"] = "legacy_bottle_mrp"
+    audit: dict | None = None
     poNumber: str | None = None
     reviewDecision: Literal["Approved", "Rejected"] | None = None
 

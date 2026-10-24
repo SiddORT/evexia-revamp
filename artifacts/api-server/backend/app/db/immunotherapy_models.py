@@ -1,7 +1,7 @@
 """Operational references only; all historical personal/order details are encrypted."""
 import uuid
-from datetime import date
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text
+from datetime import date, datetime
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -20,6 +20,8 @@ class ImmunotherapyOrder(Base):
     snapshot_ciphertext: Mapped[str] = mapped_column(Text)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class ImmunotherapyItem(Base):

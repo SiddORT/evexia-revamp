@@ -144,3 +144,15 @@
   body.imm-printing .imm-noprint { display: none !important; }
   body.imm-printing .imm-labels { grid-template-columns: repeat(2, 1fr); }
 }
+.imm-dialog--viewer { width: min(960px, 96vw); }
+.imm-viewer { min-height: 50dvh; max-height: 70dvh; display: grid; place-items: center; overflow: auto; border: 1px solid var(--admin-border); border-radius: 8px; }
+.imm-viewer__frame { width: 100%; height: 70dvh; border: 0; }
+.imm-viewer__image { max-width: 100%; max-height: 70dvh; object-fit: contain; }
+.imm-viewer__skeleton { padding: 40px; opacity: .7; }
+.imm-suborder { font-family: ui-monospace, monospace; font-size: .8rem; opacity: .85; }
+.imm-reprice { display: grid; gap: 6px; padding: 10px; border: 1px dashed var(--admin-border); border-radius: 8px; margin-top: 10px; }
+.imm-bottom { display: grid; gap: 12px; }
+.imm .imm-facts--side { grid-template-columns: minmax(0, 1fr); }
+.imm-allergen-results .imm-item:has([data-testid^="input-imm-rate-"]) { grid-template-columns: minmax(0, 1fr) minmax(100px, 135px) minmax(100px, 135px) auto; }
+@media (max-width: 700px) { .imm-allergen-results .imm-item:has([data-testid^="input-imm-rate-"]) { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 960px) { .imm-aside { order: 0; } }

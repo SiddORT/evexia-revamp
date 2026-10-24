@@ -1,5 +1,85 @@
 # Admin Immunotherapy orders
 
+## Super Admin review, suborders and audit metadata (source only)
+
+This section supersedes older bottle-MRP editing/pricing descriptions below.
+MR still submits unpriced Confirmed orders. Admin reviews the clinical details,
+private prescriptions and one INR rate per allergen occurrence, with saved
+patient/Doctor/MR/shipping/billing facts at the side and PO/decision actions at
+the bottom. Approval needs complete rates, PO and a verified patient-associated
+prescription. Rejection does not need invented prices. All writes and imports
+still need a verified prescription; old fileless records remain readable.
+
+New orders use `pricingBasis: "allergen_rates"`; their total is the exact
+minor-unit sum of all occurrence rates, bounded by the existing ₹10 crore cap.
+Any missing rate makes the total unavailable/“Awaiting pricing,” never zero.
+Bottle MRP is not a second editable amount. Existing orders without a basis are
+`legacy_bottle_mrp`. Their saved total and saved prices remain authoritative on
+read, export and print. An Admin must explicitly choose rate-based repricing
+and enter every required rate to change that basis on a supported save.
+Returning to legacy pricing is not allowed after that save.
+
+`groups[].items[].suborderId` is an order-local server-issued `SUB-000001` style
+identity, separate from the unchanged internal group ID. A version-checked,
+idempotent write alone issues missing identities. It retains IDs by the saved
+group/allergen occurrence and keeps an encrypted high-water mark so removal
+does not recycle identities. Reordering does not reassign IDs. Client-supplied
+replacement, moved or foreign IDs are rejected. Read/import-review/export
+never issue or persist IDs; old occurrences can remain “Not assigned” until a
+supported explicit write. Older transfer payloads can omit optional fields;
+existing saved occurrence IDs and financial basis are retained authoritatively.
+Retry comparison treats absent/null additive default fields equivalently so a
+pre-upgrade frozen submission can recover its saved result without reapplying
+the mutation. Non-null replacement IDs/bases still change the request identity.
+Import preview deliberately shows unissued IDs rather than promising numbers
+that have not yet been committed.
+
+The focused prescription viewer reuses the authenticated private-file download
+flow. Only verified allowlisted PDF/raster images can get temporary Blob URLs.
+PDF content is sandboxed without scripts, forms, same-origin privileges or
+navigation grants; images are not embedded as active documents. Loading,
+retry/restricted states and an explicit Download fallback are provided.
+Requests are aborted and temporary URLs revoked when closed/retried or access
+changes. File viewing does not upload, detach, delete or replace anything.
+No signed/public storage URL is exposed. Browser-native isolated PDF rendering
+may be blocked; Download remains available rather than relaxing the sandbox.
+
+All four Admin order listings expose `audit.createdBy`, `createdAt`,
+`updatedBy`, and `updatedAt`, rendered with portal timestamp preferences.
+Creator/updater labels are resolved from server-owned user references through
+encrypted account usernames, in bounded batches without loading credentials.
+MR responses do not disclose these labels. Imported display labels/order dates
+never control attribution. Missing identity or timestamp evidence is explicitly
+unavailable. Existing Kits/SPT/Lupin timestamps remain unchanged.
+
+### Unapplied schema and operational boundary
+
+`0071_order_review_audit` adds nullable Immunotherapy `created_at`/`updated_at`.
+It assigns no suborder IDs and does not decrypt or reprice historical orders.
+It recovers creation time only from exactly one matching successful durable
+creation event and matching creator. Only a never-edited version-1 row with
+matching actors and no update events may also inherit that time as update time;
+legacy later update times have no reliable mutation-version evidence and stay
+unavailable. Subsequent successful explicit writes stamp server UTC update
+time and never replace the original creator/creation time.
+
+The source schema declaration and readiness successor inherit the prior
+readiness chain and add nullable audit-column probes. The existing development
+migration review manifest has **not** been refreshed or approved: a later
+operator must review the migration source and activation before starting this
+revision. No migration command, startup hook or service restart was run here.
+The incoming main-branch generated API contract is retained during merge;
+regeneration of optional suborder/pricing-basis/audit declarations and generated
+clients is deferred because generation is not permitted under the source-only
+restriction. The authoritative Python schemas and the portal's handwritten
+service payloads/consumers contain these additive fields.
+
+**Verification is source/diff review only. No tests were added, changed or run.
+No builds, browser/manual runtime checks, release/validation wrappers, service
+restarts, workflow changes, runtime probes, migrations or deployments were
+performed. Runtime behavior, migration execution and browser PDF rendering
+remain unverified.**
+
 ## Current MR/Admin form refinement (source-reviewed only)
 
 The shared form now omits the duplicate reaction hints while retaining the mm

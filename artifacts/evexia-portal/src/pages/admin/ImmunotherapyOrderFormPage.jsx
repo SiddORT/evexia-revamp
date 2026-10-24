@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowLeft, Pencil, Plus, Trash2, UserPlus, Paperclip, X } from 'lucide-react';
+import { ArrowLeft, Eye, Pencil, Plus, Trash2, UserPlus, Paperclip, X } from 'lucide-react';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import PhoneInput from '../../components/admin/PhoneInput.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
+import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, saveOrder, downloadPrescription, groupingError, money, newGroup, bottleLabel, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, skinResultError, mrEditable } from '../../services/serverImmunotherapy.js';
+import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, saveOrder, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, prescriptionBlob, skinResultError, mrEditable } from '../../services/serverImmunotherapy.js';
 import { createPatient, patientLanguageChoices } from '../../services/serverPatients.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js';
@@ -19,13 +21,20 @@ import '../../excel-import.css';
 import '../../immunotherapy.css';
 
 const blankReg = () => ({ name: '', dateOfBirth: '', instructionsLanguage: '', gender: '', phone: '', dialCountry: 'IN', address: { line1: '', line2: '', landmark: '', pincode: '', city: '', state: '', country: 'India' }, doctorId: '' });
-const blank = () => ({ patientId: '', doctorId: '', mrId: '', dosage: '', histamine: '', saline: '', groups: [newGroup()], remarks: '', attachments: [], shipping: 'patient', status: 'Confirmed', poNumber: '' });
-const fromOrder = (o) => structuredClone({ patientId: o.patientId, doctorId: o.doctorId, mrId: o.mrId, dosage: o.dosage, histamine: o.histamine, saline: o.saline, groups: o.groups, remarks: o.remarks || '', attachments: o.attachments || [], shipping: o.shipping, status: o.status, poNumber: o.poNumber || '' });
+const blank = () => ({ patientId: '', doctorId: '', mrId: '', dosage: '', histamine: '', saline: '', groups: [newGroup()], remarks: '', attachments: [], shipping: 'patient', status: 'Confirmed', poNumber: '', pricingBasis: 'allergen_rates' });
+const fromOrder = (o) => structuredClone({ patientId: o.patientId, doctorId: o.doctorId, mrId: o.mrId, dosage: o.dosage, histamine: o.histamine, saline: o.saline, groups: o.groups, remarks: o.remarks || '', attachments: o.attachments || [], shipping: o.shipping, status: o.status, poNumber: o.poNumber || '', pricingBasis: o.pricingBasis || 'legacy_bottle_mrp' });
 const addr = (a) => a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 const nameOf = (list, id) => list.find((x) => x.id === id)?.name || '';
 const ERROR_LABEL = { form: 'Order', patientId: 'Patient', doctorId: 'Doctor', mrId: 'MR', dosage: 'Dosage', histamine: 'Histamine (mm)', saline: 'Saline (mm)', shipping: 'Shipping', groups: 'Allergen Details', attachments: 'Prescription files', status: 'Status', remarks: 'Remarks', registration: 'Patient registration', poNumber: 'PO number' };
 
 function Err({ id, text }) { return text ? <p className="imm-error" id={id} role="alert">{text}</p> : null; }
+function ReviewPerson({ title, person, patient = false }) {
+  const facts = [['Name', person?.name], ...(patient ? [['Age / gender', [person?.age, person?.gender].filter((x) => x != null && x !== '').join(' / ')]] : [['Email', person?.email]]),
+    ['Phone', person?.phone], ['Address', addr(person?.address)]];
+  return <section className="admin-panel imm-section"><h2>{title}</h2><dl className="imm-facts imm-facts--side">
+    {facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Unavailable'}</dd></div>)}
+  </dl></section>;
+}
 
 export default function ImmunotherapyOrderFormPage({ id, mode }) {
   const BASE = useOrderBase('immunotherapy');
@@ -47,6 +56,7 @@ export default function ImmunotherapyOrderFormPage({ id, mode }) {
 }
 
 function Editor({ order, mode }) {
+  const { date } = useAdminDateFormatters();
   const can = useOrderActions('immunotherapy');
   const BASE = useOrderBase('immunotherapy');
   const { portal, mr: authenticatedMR } = useOrderPortal();
@@ -157,7 +167,12 @@ function Editor({ order, mode }) {
   const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
   const mrOptions = MRS.map((m) => ({ value: m.id, label: m.name }));
   const allergenOptions = ALLERGENS.map((a) => ({ value: a.id, label: a.name }));
-  const total = totalMinor(v.groups);
+  const total = order && v.pricingBasis === 'legacy_bottle_mrp' ? orderTotalMinor(order) : totalMinor(v.groups, v.pricingBasis);
+  const legacy = v.pricingBasis === 'legacy_bottle_mrp';
+  const repriced = legacy ? totalMinor(v.groups, 'allergen_rates') : total;
+  const [viewing, setViewing] = useState(null);
+  const adminReview = !mrPortal;
+  const editRates = !legacy;
   const doctor = DOCTORS.find((d) => d.id === v.doctorId);
   const recipientFor = (shipping) => {
     if (order && shipping === order.shipping && v[`${shipping}Id`] === order[`${shipping}Id`]) return order.recipient;
@@ -199,7 +214,7 @@ function Editor({ order, mode }) {
     const entry = allergenEntries[gid] || {};
     const aid = entry.allergenId;
     const g = v.groups.find((x) => x.id === gid);
-    const items = [...g.items, { allergenId: aid, result: entry.result, allergen: entry.allergen }];
+    const items = [...g.items, { suborderId: null, allergenId: aid, result: entry.result, allergen: entry.allergen }];
     const problem = !DOSES.includes(v.dosage) ? 'Choose a dosage before adding an allergen.'
       : !aid || !entry.allergen ? 'Select an Allergen Name.'
         : skinResultError(entry.result || '') || groupingError(items)
@@ -279,10 +294,10 @@ function Editor({ order, mode }) {
   const gIndex = (gid) => v.groups.findIndex((g) => g.id === gid);
   const labelFor = (k) => {
     if (ERROR_LABEL[k]) return ERROR_LABEL[k];
-    if (k.startsWith('group-')) return `Bottle ${gIndex(k.slice(6)) + 1}`;
-    if (k.startsWith('mrp-')) return `Bottle ${gIndex(k.slice(4)) + 1} MRP`;
+    if (k.startsWith('group-')) return `Group ${gIndex(k.slice(6)) + 1}`;
+    if (k.startsWith('mrp-')) return 'Legacy bottle MRP';
     if (k.startsWith('rate-')) return 'Allergen rate (INR)';
-    if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = gi >= 0 ? k.slice(`result-${v.groups[gi].id}-`.length) : ''; return `Bottle ${gi + 1} ${nameOf(ALLERGENS, aid)} result`; }
+    if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = gi >= 0 ? k.slice(`result-${v.groups[gi].id}-`.length) : ''; return `${nameOf(ALLERGENS, aid)} result (group ${gi + 1})`; }
     return k;
   };
   const targetFor = (k) => {
@@ -292,7 +307,7 @@ function Editor({ order, mode }) {
     if (k === 'attachments') return readOnly || !can.upload_attachment || !policy || !v.patientId ? 'imm-files-hint' : 'imm-files';
     if (k === 'registration') return 'imm-reg-name';
     if (k.startsWith('group-')) return `imm-add-${gIndex(k.slice(6))}`;
-    if (k.startsWith('mrp-')) return `imm-mrp-${gIndex(k.slice(4))}`;
+    if (k.startsWith('mrp-')) return 'imm-h-allergens';
     if (k.startsWith('rate-')) return `imm-${k}`;
     if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = k.slice(`result-${v.groups[gi]?.id}-`.length); return `imm-r-${gi}-${v.groups[gi]?.items.findIndex((i) => i.allergenId === aid)}`; }
     return `imm-${k}`;
@@ -309,7 +324,7 @@ function Editor({ order, mode }) {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Orders / Immunotherapy</p>
         <h1>{isNew ? 'Add order' : `${readOnly ? 'Order' : 'Edit'} ${order.number}`}</h1>
-        <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
+        <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : adminReview && order ? 'Review clinical details, prescriptions and suborder rates before your decision.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
       <div className="imm-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-back"><ArrowLeft size={15} aria-hidden="true" />{readOnly ? 'Back' : 'Cancel'}</button>
         {order && readOnly && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
@@ -386,21 +401,22 @@ function Editor({ order, mode }) {
               const entry = allergenEntries[g.id] || { allergenId: '', result: '' };
               const editEntry = (patch) => setAllergenEntries((entries) => ({ ...entries, [g.id]: { allergenId: '', result: '', ...entries[g.id], ...patch } }));
               return <div className="imm-allergen-results" key={g.id}>
-                {!isNew && <h3 className="imm-hint">Saved bottle {gi + 1} — {bottleLabel(g, gi)}</h3>}
+                {v.groups.length > 1 && <h3 className="imm-hint">Saved group {gi + 1} (internal association retained)</h3>}
                 {!readOnly && <div className="imm-allergen-entry">
-                  <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Allergen Name</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label={v.groups.length > 1 ? `Allergen Name for saved bottle ${gi + 1}` : 'Allergen Name'} value={entry.allergenId} options={allergenOptions} onSearch={allergens.onSearch} searchOptions={() => allergenOptions} onChange={(aid) => editEntry({ allergenId: aid, allergen: ALLERGENS.find((a) => a.id === aid) })} placeholder="Select allergen" invalid={Boolean(err)} describedBy={err ? `group-${g.id}-err` : undefined} disabled={dis || !v.dosage} /></div>
+                  <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Allergen Name</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label={v.groups.length > 1 ? `Allergen Name for saved group ${gi + 1}` : 'Allergen Name'} value={entry.allergenId} options={allergenOptions} onSearch={allergens.onSearch} searchOptions={() => allergenOptions} onChange={(aid) => editEntry({ allergenId: aid, allergen: ALLERGENS.find((a) => a.id === aid) })} placeholder="Select allergen" invalid={Boolean(err)} describedBy={err ? `group-${g.id}-err` : undefined} disabled={dis || !v.dosage} /></div>
                   <label className="imm-field" htmlFor={`imm-entry-result-${gi}`}>Skin Test Result (mm)<input id={`imm-entry-result-${gi}`} inputMode="decimal" required value={entry.result} disabled={dis || !v.dosage} onChange={(e) => editEntry({ result: e.target.value })} aria-invalid={Boolean(err)} aria-describedby={err ? `group-${g.id}-err` : undefined} /></label>
-                  <button type="button" className="admin-button" disabled={dis || !v.dosage} onClick={() => addAllergen(g.id)} aria-label={v.groups.length > 1 ? `Add allergen to saved bottle ${gi + 1}` : 'Add allergen'}><Plus size={15} aria-hidden="true" />Add</button>
-                  {(entry.allergenId || entry.result) && <button type="button" className="imm-link-btn" disabled={dis} onClick={() => { editEntry({ allergenId: '', result: '', allergen: undefined }); setGroupMsg((messages) => ({ ...messages, [g.id]: '' })); }} aria-label={`Clear allergen entry${v.groups.length > 1 ? ` for saved bottle ${gi + 1}` : ''}`}>Clear entry</button>}
+                  <button type="button" className="admin-button" disabled={dis || !v.dosage} onClick={() => addAllergen(g.id)} aria-label={v.groups.length > 1 ? `Add allergen to saved group ${gi + 1}` : 'Add allergen'}><Plus size={15} aria-hidden="true" />Add</button>
+                  {(entry.allergenId || entry.result) && <button type="button" className="imm-link-btn" disabled={dis} onClick={() => { editEntry({ allergenId: '', result: '', allergen: undefined }); setGroupMsg((messages) => ({ ...messages, [g.id]: '' })); }} aria-label={`Clear allergen entry${v.groups.length > 1 ? ` for saved group ${gi + 1}` : ''}`}>Clear entry</button>}
                 </div>}
                 {!readOnly && !v.dosage && <p className="imm-hint">Choose a dosage to enable allergen entry.</p>}
                 <Err id={`group-${g.id}-err`} text={err} />
                 {!g.items.length && <p className="imm-hint">No allergens added.</p>}
                 {g.items.map((it, ii) => { const a = ALLERGENS.find((x) => x.id === it.allergenId); const ek = `result-${g.id}-${it.allergenId}`;
                   return <div className="imm-item" key={it.allergenId}>
-                    <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span></div>
+                    <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span><span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId || 'not assigned (issued on save)'}</span></div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Skin Test Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" required value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
-                    {!dis && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${it.allergen?.name || a?.name || 'saved allergen'}${v.groups.length > 1 ? ` from saved bottle ${gi + 1}` : ''}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
+                    {adminReview && (() => { const rk = `rate-${g.id}-${it.allergenId}`; const locked = dis || (legacy && !editRates); return <div className="imm-field"><label htmlFor={`imm-${rk}`}>Rate (INR)</label><input id={`imm-${rk}`} inputMode="decimal" required={v.status === 'Approved'} value={it.rate ?? ''} disabled={locked} aria-invalid={Boolean(errors[rk])} aria-describedby={errors[rk] ? `${rk}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, rate: e.target.value } : y) }))} data-testid={`input-imm-rate-${gi}-${ii}`} /><Err id={`${rk}-err`} text={errors[rk]} /></div>; })()}
+                    {!dis && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${it.allergen?.name || a?.name || 'saved allergen'}${v.groups.length > 1 ? ` from saved group ${gi + 1}` : ''}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
                   </div>; })}
               </div>; })}
           </div>
@@ -424,7 +440,7 @@ function Editor({ order, mode }) {
               const locked = mrPortal && order?.attachments?.some((saved) => saved.id === f.id);
               return <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadPrescription} locked={locked}
                 status={order?.attachments?.some((saved) => saved.id === f.id) ? 'Saved prescription — retained' : 'Uploaded / verified — selected for this save'}
-                actions={!readOnly && !locked && <button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => setV((current) => ({ ...current, attachments: current.attachments.filter((file) => file.id !== f.id) }))} aria-label={f.restricted || !can.read_attachment ? 'Remove restricted attachment' : `Remove ${f.name}`}><X size={16} aria-hidden="true" /></button>} />;
+                actions={<>{!mrPortal && can.read_attachment && !f.restricted && (f.state ?? 'verified') === 'verified' && <button type="button" className="admin-button admin-button--secondary" onClick={() => setViewing(f)} aria-label={`View ${f.name}`} data-testid={`button-imm-view-${f.id}`}><Eye size={15} aria-hidden="true" />View</button>}{!readOnly && !locked && <button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => setV((current) => ({ ...current, attachments: current.attachments.filter((file) => file.id !== f.id) }))} aria-label={f.restricted || !can.read_attachment ? 'Remove restricted attachment' : `Remove ${f.name}`}><X size={16} aria-hidden="true" /></button>}</>} />;
             })}
             {uploads.map((u) => <OrderFileRow key={u.key} name={u.name} size={u.size} progressing={['queued', 'uploading'].includes(u.state)}
               status={`${u.state === 'failed' ? 'Failed' : u.state === 'rejected' ? 'Rejected' : u.state === 'unverified' ? 'Awaiting verification' : u.state === 'queued' ? 'Queued' : 'Uploading'} — ${u.message}`}
@@ -433,8 +449,16 @@ function Editor({ order, mode }) {
           </OrderFileList>
         </section>
 
-        {!readOnly && <div className="imm-actions"><button type="button" className="admin-button" disabled={Boolean(pending)} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Update order'}</button>
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-cancel">Cancel</button></div>}
+        {!readOnly && <section className="admin-panel imm-section imm-bottom" aria-labelledby="imm-h-review"><h2 id="imm-h-review">{adminReview ? 'Purchase order and decision' : 'Submit order'}</h2>
+          {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} aria-describedby={errors.poNumber ? 'imm-poNumber-err' : undefined} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label>
+            <Err id="imm-poNumber-err" text={errors.poNumber} />
+            <p className="imm-hint">Approval requires a rate for every suborder, a PO number and a verified prescription for the patient. Rejection does not require prices.</p></>}
+          <div className="imm-btn-row">
+            {adminReview && !isNew && <button type="button" className="admin-button" disabled={dis} onClick={() => save('Approved')} data-testid="button-imm-approve">Approve</button>}
+            {adminReview && !isNew && <button type="button" className="admin-button admin-button--danger" disabled={dis} onClick={() => save('Rejected')} data-testid="button-imm-reject">Reject</button>}
+            <button type="button" className="admin-button" disabled={Boolean(pending)} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Update'}</button>
+            <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-cancel">Cancel</button></div>
+        </section>}
       </div>
       <aside className="imm-aside" aria-label="Order summary">
         <div className="admin-panel imm-section"><h2>Summary</h2>
@@ -442,34 +466,29 @@ function Editor({ order, mode }) {
             <div><dt>Patient</dt><dd>{patient?.name || 'Not chosen'}</dd></div>
             <div><dt>Doctor / MR</dt><dd>{nameOf(DOCTORS, v.doctorId) || '-'} / {nameOf(MRS, v.mrId) || '-'}</dd></div>
             <div><dt>Dosage</dt><dd>{v.dosage || 'Awaiting choice'}</dd></div>
+            {order && <><div><dt>Order</dt><dd>{order.number}</dd></div><div><dt>Order date</dt><dd>{date(order.date)}</dd></div></>}
             <div><dt>Ship to ({v.shipping})</dt><dd data-testid="text-imm-recipient">{recipient ? <>{recipient.name}<span className="imm-cell-sub">{recipient.phone}</span><span className="imm-cell-sub">{addr(recipient.address)}</span></> : '-'}</dd></div>
             <div><dt>Value</dt><dd>{money(total)}</dd></div>
             {order?.reviewDecision && <div><dt>Admin decision</dt><dd>{order.reviewDecision}</dd></div>}
             {order?.poNumber && <div><dt>Saved PO number</dt><dd>{order.poNumber}</dd></div>}
             {v.status === 'Confirmed' && <div><dt>Admin review</dt><dd>{total === null ? 'Awaiting review and pricing' : 'Awaiting decision'}</dd></div>}
             {order && <div><dt>Status</dt><dd><StatusPill status={v.status} /></dd></div>}</dl></div>
-        {!mrPortal && <div className="admin-panel imm-section"><h2>Admin review and pricing</h2>
-          <p className="imm-hint">Admin saves require MRP unless rejecting. Approval also requires every allergen rate and PO number. Rates are recorded independently; total remains the sum of bottle MRPs.</p>
-          <label className="imm-field" htmlFor="imm-poNumber">PO number<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} aria-describedby={errors.poNumber ? 'imm-poNumber-err' : undefined} onChange={(e) => set({ poNumber: e.target.value })} /></label>
-          <Err id="imm-poNumber-err" text={errors.poNumber} />
-          <div className="imm-pricing">{v.groups.map((g, gi) => <div key={g.id}>
-            <div className="imm-field"><label htmlFor={`imm-mrp-${gi}`}>{v.groups.length > 1 ? `Saved bottle ${gi + 1} MRP (INR)` : 'MRP (INR)'}</label><input id={`imm-mrp-${gi}`} inputMode="decimal" required={v.status !== 'Rejected'} value={g.mrp ?? ''} disabled={dis} aria-invalid={Boolean(errors[`mrp-${g.id}`])} aria-describedby={errors[`mrp-${g.id}`] ? `mrp-${g.id}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, mrp: e.target.value }))} data-testid={`input-imm-mrp-${gi}`} /><Err id={`mrp-${g.id}-err`} text={errors[`mrp-${g.id}`]} /></div>
-            {g.items.map((item) => { const key = `rate-${g.id}-${item.allergenId}`; return <div className="imm-field" key={item.allergenId}>
-              <label htmlFor={`imm-${key}`}>{item.allergen?.name || nameOf(ALLERGENS, item.allergenId) || 'Saved allergen'} rate (INR) — bottle {gi + 1}</label>
-              <input id={`imm-${key}`} inputMode="decimal" required={v.status === 'Approved'} value={item.rate ?? ''} disabled={dis} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `${key}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((i) => i.allergenId === item.allergenId ? { ...i, rate: e.target.value } : i) }))} />
-              <Err id={`${key}-err`} text={errors[key]} />{readOnly && item.rate == null && <span className="imm-hint">Not recorded</span>}
-            </div>; })}
-          </div>)}</div>
-          <div className="imm-totals">{v.groups.map((g, i) => <div key={g.id}><span>Bottle {i + 1}</span><span className="imm-num">{money(parseAmount(g.mrp))}</span></div>)}
-            <div className="imm-total"><span>Total</span><span className="imm-num" data-testid="text-imm-total">{money(total)}</span></div></div>
+        {adminReview && <div className="admin-panel imm-section"><h2>Pricing</h2>
+          <p className="imm-hint">{legacy ? 'Legacy pricing basis: saved bottle MRPs. Historical bottle MRPs cannot be changed here.' : 'Total is the sum of the rate entered for each suborder.'}</p>
+          <div className="imm-totals">{v.groups.flatMap((g) => g.items.map((it, ii) => <div key={`${g.id}-${ii}`}><span>{it.suborderId || 'New suborder'}</span><span className="imm-num">{legacy ? 'Legacy' : money(parseAmount(it.rate))}</span></div>))}
+            <div className="imm-total"><span>Total{legacy ? ' (legacy bottle MRP)' : ''}</span><span className="imm-num" data-testid="text-imm-total">{money(total)}</span></div></div>
+          {legacy && !readOnly && <label className="imm-reprice"><span><input type="checkbox" checked={false} disabled={dis} onChange={() => set({ pricingBasis: 'allergen_rates' })} data-testid="checkbox-imm-reprice" /> Reprice by allergen rates</span>
+            <span className="imm-hint">Switches this order to allergen rates. Resulting rate sum with the rates currently entered: {money(repriced)}. Historical bottle MRPs are not edited.</span></label>}
+          {!legacy && order && (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' && !readOnly && <button type="button" className="admin-button admin-button--secondary" disabled={dis} onClick={() => set({ pricingBasis: 'legacy_bottle_mrp', groups: v.groups.map((g) => ({ ...g, items: g.items.map((i) => ({ ...i, rate: order.groups.find((saved) => saved.id === g.id)?.items.find((saved) => saved.allergenId === i.allergenId)?.rate ?? null })) })) })}>Discard rate changes and keep legacy pricing</button>}
           <dl className="imm-facts" style={{ gridTemplateColumns: '1fr' }}><div><dt>Billing doctor</dt><dd data-testid="text-imm-billing-doctor">{doctor ? <>{doctor.name}<span className="imm-cell-sub">{doctor.phone}</span><span className="imm-cell-sub">{addr(doctor.address)}</span></> : 'Not chosen'}</dd></div></dl>
-          <p className="imm-hint">Missing MRPs mean awaiting pricing, not a zero-value order. No tax, payment or invoice.</p>
-          {!readOnly && <div className="imm-btn-row" style={{ marginTop: 12 }}>
-            <button type="button" className="admin-button" disabled={dis} onClick={() => save('Approved')}>Approve order</button>
-            <button type="button" className="admin-button admin-button--danger" disabled={dis} onClick={() => save('Rejected')}>Reject order</button>
-          </div>}</div>}
+          <p className="imm-hint">Missing rates mean awaiting pricing, not zero. No tax, payment or invoice.</p></div>}
+        {adminReview && <><ReviewPerson title={order && v.patientId === order.patientId ? 'Patient (saved facts)' : 'Patient'} person={patient} patient />
+          <ReviewPerson title={order && v.doctorId === order.doctorId ? 'Doctor (saved facts)' : 'Doctor'} person={doctor} />
+          <ReviewPerson title={order && v.mrId === order.mrId ? 'MR (saved facts)' : 'MR'} person={MRS.find((m) => m.id === v.mrId)} />
+          <ReviewPerson title="Shipping facts" person={recipient} /></>}
       </aside>
     </div>
+    {viewing && <PrescriptionViewer file={viewing} load={prescriptionBlob} download={downloadPrescription} allowed={can.read_attachment} onClose={() => setViewing(null)} />}
     {leave && <ImmDialog title="Leave without saving?" eyebrow="Unsaved changes" className="imm-dialog--sm" description={pending || uncertain ? 'A save or upload may still be unresolved. Keep this draft open and retry the same operation before leaving.' : 'Your unsaved edits will be lost. Patient Master records already registered are not undone.'} onClose={() => setLeave(null)} testId="dialog-imm-leave">
       <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setLeave(null)} data-testid="button-imm-stay">Keep editing</button>
         <button type="button" className="admin-button admin-button--danger" disabled={Boolean(pending) || uncertain} onClick={proceed} data-testid="button-imm-leave">Leave</button></div></ImmDialog>}

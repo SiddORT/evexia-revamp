@@ -63,6 +63,8 @@ def transaction(db, actor, work, *, action=None):
         with crypto_scope(db) as keys:
             result = work(current, keys)
         from app.services.order_capabilities import public_result
+        from app.services.order_audit import present
+        result = present(db, current, result)
         result = public_result(current, "lupin", result)
         db.commit()
         return result
@@ -82,7 +84,9 @@ def find(db, identity):
 
 
 def project(keys, row):
+    from app.services.order_audit import metadata
     return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "id": str(row.id),
+            "audit": metadata(row),
             "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 

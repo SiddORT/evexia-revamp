@@ -21,6 +21,7 @@ from app.services.mr_orders import authorize as authorize_order, scope, referenc
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
 from app.core.security import utcnow
+from app.services.order_audit import metadata as audit_metadata, present as present_audit
 
 MODELS = {"patients": PatientDirectory, "doctors": DoctorDirectory, "mrs": MRDirectory, "allergens": AllergenProduct}
 MAX_SCAN = 10000
@@ -64,6 +65,7 @@ def transaction(db, actor, work, *, action=None, resource="immunotherapy"):
         with crypto_scope(db) as keys:
             result = work(current, keys)
         from app.services.order_capabilities import public_result
+        result = present_audit(db, current, result)
         result = public_result(current, resource, result)
         db.commit()
         return result
@@ -84,13 +86,18 @@ def find(db, record_id):
 
 def project(keys, row):
     return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext),
+            "audit": audit_metadata(row),
             "id": str(row.id), "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 
 def review_policy(db, body, previous):
     """One boundary for direct writes and import review/commit, before resolution."""
     from app.services.mr_orders import scope_identity
+    from app.services.immunotherapy_pricing import basis, financials, RATE_BASIS, LEGACY_BASIS
     if scope_identity(db):
+        saved_basis = previous.get("pricingBasis", LEGACY_BASIS) if previous else RATE_BASIS
+        if body.pricingBasis is not None and body.pricingBasis != saved_basis:
+            raise ImmError("MR cannot change an order's financial basis.", 403, "imm_admin_review")
         if body.status != "Confirmed" or body.poNumber is not None or any(
             g.mrp is not None or any(i.rate is not None for i in g.items) for g in body.groups
         ):
@@ -110,20 +117,20 @@ def review_policy(db, body, previous):
     # and PO numbers. Any new approval/financial change needs the full contract.
     legacy_unchanged = previous and body.status == previous["status"] and body.status != "Approved" and (
         body.poNumber == previous.get("poNumber") and
-        [(g.id, g.mrp, [(str(i.allergenId), i.rate) for i in g.items]) for g in body.groups] ==
-        [(g["id"], g.get("mrp"), [(i["allergenId"], i.get("rate")) for i in g["items"]]) for g in previous["groups"]]
+        basis(body, previous) == previous.get("pricingBasis", LEGACY_BASIS) and
+        financials(body.model_dump(mode="json")["groups"]) == financials(previous["groups"])
     )
     if body.status in {"In process", "Shipped", "Delivered", "Returned"} and (
         not previous or previous["status"] in {"Confirmed", "Rejected"}
     ):
         raise ImmError("Approve this order explicitly before moving it to fulfillment.", 422, "imm_admin_review")
-    if body.status != "Rejected" and any(g.mrp is None for g in body.groups):
-        raise ImmError("Admin must enter each bottle MRP, or reject the order without pricing.", 422, "imm_pricing")
     if proceeding and not legacy_unchanged:
         if not body.poNumber or not body.poNumber.strip() or any(
-            g.mrp is None or any(i.rate is None for i in g.items) for g in body.groups
+            any(i.rate is None for i in g.items) for g in body.groups
         ):
-            raise ImmError("Approval/fulfillment requires MRP for every bottle, a rate for each allergen occurrence and a PO number.", 422, "imm_pricing")
+            raise ImmError("Approval/fulfillment requires a rate for every suborder and a PO number.", 422, "imm_pricing")
+    if proceeding and not legacy_unchanged and basis(body, previous) != RATE_BASIS:
+        raise ImmError("Explicitly select allergen-rate pricing before approving or repricing this historical order.", 422, "imm_pricing_basis")
 
 
 def eligible(db, kind, record_id):
@@ -169,6 +176,8 @@ def resolved(db, body, previous=None):
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version"})
     value.pop("attachmentIds")
     value.pop("orderDate", None)
+    from app.services.immunotherapy_pricing import prepare, RATE_BASIS
+    value["pricingBasis"], value["groups"] = prepare(body, previous, ImmError)
     changed = {}
     for kind, field, key in (("patients", "patientId", "patient"), ("doctors", "doctorId", "doctor"), ("mrs", "mrId", "mr")):
         changed[key] = not previous or previous[field] != str(getattr(body, field))
@@ -201,18 +210,21 @@ def resolved(db, body, previous=None):
     total = 0
     priced = True
     for group in value["groups"]:
-        if group["mrp"] is None:
-            priced = False
-        else:
+        if group["mrp"] is not None:
             group["mrp"] = format(Decimal(group["mrp"]), ".2f")
-            total += int(Decimal(group["mrp"]) * 100)
         for item in group["items"]:
             if item.get("rate") is not None:
                 item["rate"] = format(Decimal(item["rate"]), ".2f")
+                if value["pricingBasis"] == RATE_BASIS:
+                    total += int(Decimal(item["rate"]) * 100)
+            elif value["pricingBasis"] == RATE_BASIS:
+                priced = False
             item["allergen"] = retained.get(item["allergenId"]) or current[item["allergenId"]]
     if total > 10000000000:
         raise ImmError("Order value exceeds ₹10 crore.", 422, "imm_total")
-    value["totalMinor"] = total if priced else None
+    value["totalMinor"] = (total if priced else None) if value["pricingBasis"] == RATE_BASIS else previous["totalMinor"]
+    if previous:
+        value["nextSuborderNumber"] = previous.get("nextSuborderNumber", 1)
     value["reviewDecision"] = (body.status if body.status in {"Approved", "Rejected"}
                                else previous.get("reviewDecision") if previous else None)
     value["attachments"] = []
@@ -239,15 +251,19 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
         raise ImmError("Saved order date is immutable.", 422, "imm_date")
     db.info["imm_actor"] = actor.user.id
     data = resolved(db, body, previous)
+    from app.services.immunotherapy_pricing import issue
+    issue(data, previous)
+    now = utcnow()
     if not row:
         sequence = db.scalar(text("SELECT nextval('immunotherapy_order_number_seq')"))
         row = Order(id=uuid.uuid4(), number=f"IT-{sequence:08d}",
-            date=body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date(), version=1, created_by=actor.user.id)
+            date=body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date(), version=1, created_by=actor.user.id, created_at=now)
         db.add(row)
     else:
         row.version += 1
     row.patient_id, row.doctor_id, row.mr_id = body.patientId, body.doctorId, body.mrId
     row.status, row.updated_by = body.status, actor.user.id
+    row.updated_at = now
     row.snapshot_ciphertext = seal(keys, "orders", row.id, data)
     db.flush()
     db.execute(delete(Item).where(Item.order_id == row.id))
@@ -272,7 +288,8 @@ def idempotent(db, actor, keys, key, payload, work):
         if prior.actor_id != actor.user.id:
             raise ImmError("Retry identity belongs to a different request. Retry the original unchanged submission.", 409, "imm_retry")
         saved = unseal(keys, "requests", key, prior.response_ciphertext)
-        if encode(saved["request"]) != encode(payload):
+        from app.services.immunotherapy_pricing import retry_payload
+        if encode(retry_payload(saved["request"])) != encode(retry_payload(payload)):
             raise ImmError("Retry identity belongs to a different request. Retry the original unchanged submission.", 409, "imm_retry")
         result = saved["result"]
         # Recover the same mutation without replaying it or returning a stale

@@ -49,6 +49,8 @@ def transaction(db, actor, work, *, action=None):
         current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
+        from app.services.order_audit import present
+        result = present(db, current, result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -67,7 +69,9 @@ def find(db, identity):
 
 
 def project(keys, row):
+    from app.services.order_audit import metadata
     return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext),
+        "audit": metadata(row),
         "id": str(row.id), "sourceId": str(row.source_id), "number": row.number,
         "date": row.date.isoformat(), "version": row.version}
 

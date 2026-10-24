@@ -39,7 +39,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders",
     "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders",
     "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
-    "0070_mr_account_numbers"})
+    "0070_mr_account_numbers", "0071_order_review_audit"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -61,7 +61,7 @@ def _fields(db):
                     "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders",
                     "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner",
                     "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
-                    "0070_mr_account_numbers"):
+                    "0070_mr_account_numbers", "0071_order_review_audit"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -84,6 +84,10 @@ def _lock(db, exclusive=False):
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
+    # Reviewed nullable order audit metadata changes no encryption inventory.
+    # Reuse every predecessor lock rather than bypassing order-table protection.
+    if revisions == ["0071_order_review_audit"]:
+        revisions = ["0070_mr_account_numbers"]
     if revisions[0] in RUNTIME_REVISIONS:
         db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
     if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"], ["0069_workspace_permissions"], ["0070_mr_account_numbers"]):

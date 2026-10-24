@@ -29,14 +29,23 @@ a rename of the old bottle-management interface.
 adding bottle creation, removal or reassignment controls to the simplified form.
 
 MR submits an unpriced Confirmed order and has no Billing editor. Admin enters
-required MRP, an INR rate for each allergen occurrence in its saved group, and
-PO number before approval; rejection requires no fabricated financial values.
-Per-allergen rates are independently recorded: the existing total remains the
-sum of bottle MRPs, not an inferred rate/quantity/tax formula.
+one INR rate per allergen/suborder and a PO number before approval; rejection
+requires no fabricated financial values. New and explicitly repriced orders
+total the entered occurrence rates, not bottle MRPs. Historical saved totals
+and prices stay unchanged unless an Admin explicitly saves the changed basis
+with all required rates. Internal historical groups are not suborder identities.
 
-**Why:** The user explicitly superseded pricing during MR entry and the former
-omission of PO number. No alternative rate-to-MRP formula was approved.
+**Why:** The user explicitly confirmed rate-sum totals, superseding the earlier
+sum-of-bottle-MRPs rule; historical association and price retention still apply.
 
 **How to apply:** Keep financial/review authority on the Admin side across
 forms, imports and retries. Never infer historical missing rates or replace
 pending financial values with zero. Keep the verified-prescription boundary.
+
+For the four sales-order listings, “created and deleted” means Created By,
+Created At, Updated By and Updated At, not deletion, trash or restore features.
+
+**Why:** The user explicitly clarified this wording.
+
+**How to apply:** Use protected actor/time facts and mark unknown history
+unavailable; do not add deletion features to interpret that phrase.

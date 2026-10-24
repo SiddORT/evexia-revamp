@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Pencil, Plus, Search } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
+import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
+import AdminLayout, { useOrderBase, useOrderActions, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -39,7 +40,9 @@ export default function KitsOrders() {
     else if (next > 1 && !cursors[next - 1]) return;
     setPage(next);
   };
-  const columns = [
+  const { portal } = useOrderPortal();
+  const audit = useAuditColumns(portal);
+  const baseColumns = [
     { key: 'sr', label: 'Sr. No.', render: (_o, i) => i + 1 },
     { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="kits-sub">{date(o.date)}</span></> },
     { key: 'items', label: 'Order details', render: productSummary },
@@ -48,6 +51,8 @@ export default function KitsOrders() {
     { key: 'pay', label: 'Payment status', render: (o) => <span className="kits-pill">{o.paymentStatus}</span> },
     { key: 'act', label: 'Action', render: (o) => <div className="kits-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`}><Eye size={16} aria-hidden="true" /></Link>{can.protected && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
   ];
+  const columns = withAuditColumns(baseColumns, audit);
+
   return <AdminLayout title="KITS & CONSUMABLES"><div className="kits kits-listing">
     <OrderTransfers kind="kits" rows={result.items} adapter={createKitsTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">

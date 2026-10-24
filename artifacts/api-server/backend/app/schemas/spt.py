@@ -72,6 +72,7 @@ class SptPatientSnapshot(SptPatient):
 
 
 class SptRecord(Strict):
+    audit: dict | None = None
     id: uuid.UUID
     sourceId: uuid.UUID
     number: str

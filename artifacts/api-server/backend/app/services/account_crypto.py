@@ -151,6 +151,7 @@ def ready(db):
         # Explicit catalogue CHECK successor changes no encrypted account fields.
         ["0069_workspace_permissions"],
         ["0070_mr_account_numbers"],
+        ["0071_order_review_audit"],
     ):
         raise AccountCryptoError()
     current = crypto()

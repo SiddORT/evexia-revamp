@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'wouter';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Eye, Pencil } from 'lucide-react';
 import AdminLayout, { useOrderActions, useOrderBase, useOrderPortal } from '../orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../admin/adminPreferences.js';
 import { DownloadOrderFile, OrderFileList } from '../orders/OrderFiles.jsx';
-import { downloadPrescription, money, mrEditable, parseAmount, totalMinor } from '../../services/serverImmunotherapy.js';
+import { downloadPrescription, money, mrEditable, orderTotalMinor, parseAmount, prescriptionBlob } from '../../services/serverImmunotherapy.js';
+import PrescriptionViewer from './PrescriptionViewer.jsx';
 import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
 
@@ -28,6 +30,8 @@ export default function ImmunotherapyOrderSummary({ order }) {
   const { date } = useAdminDateFormatters();
   const mrPortal = portal === 'mr';
   const groups = order.groups || [];
+  const legacy = (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp';
+  const [viewing, setViewing] = useState(null);
   return <AdminLayout title="IMMUNOTHERAPY"><div className="kits imm-saved-order">
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Orders / Immunotherapy</p><h1>Order {order.number}</h1>
@@ -48,7 +52,7 @@ export default function ImmunotherapyOrderSummary({ order }) {
             // Keep MR's existing saved value/decision/PO presentation, without
             // adding the Admin-only per-bottle and per-allergen financial detail.
             ...(mrPortal ? [
-              ['Value', groups.length ? money(totalMinor(groups)) : 'Awaiting pricing'],
+              ['Value', groups.length ? money(orderTotalMinor(order)) : 'Awaiting pricing'],
               ['Saved review outcome', order.reviewDecision || (order.status === 'Confirmed' ? 'Awaiting Admin review' : 'Not recorded')],
               ['Saved PO number', order.poNumber],
             ] : []),
@@ -57,12 +61,12 @@ export default function ImmunotherapyOrderSummary({ order }) {
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-allergens"><h2 id="imm-s-allergens">Saved allergen composition and results</h2>
           <p className="kits-hint">Original bottle membership and saved allergen details are retained; missing history is not inferred from current masters.</p>
-          {groups.length ? groups.map((group, index) => <section className="imm-saved-order__bottle" key={group.id || index} aria-label={`Saved bottle ${index + 1}`}>
-            <h3>Saved bottle {index + 1}</h3>
-            <Facts rows={[['Bottle identity', group.id], ...(!mrPortal ? [['MRP', money(parseAmount(group.mrp))]] : [])]} />
+          {groups.length ? groups.map((group, index) => <section className="imm-saved-order__bottle" key={group.id || index} aria-label={`Saved group ${index + 1}`}>
+            <h3>Saved group {index + 1}</h3>
+            <Facts rows={[['Internal group', group.id], ...(!mrPortal && legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : [])]} />
             {group.items?.length ? <ul className="imm-saved-order__allergens">{group.items.map((item, itemIndex) => <li key={`${item.allergenId}-${itemIndex}`}>
               <Facts rows={[
-                ['Allergen', item.allergen?.name], ['Allergen identity', item.allergenId],
+                ['Suborder ID', item.suborderId || 'Not assigned'], ['Allergen', item.allergen?.name], ['Allergen identity', item.allergenId],
                 ['Concentration', item.allergen?.concentration], ['Skin test result (mm)', item.result],
                 ...(!mrPortal ? [['Rate (INR)', money(parseAmount(item.rate))]] : []),
               ]} />
@@ -74,7 +78,10 @@ export default function ImmunotherapyOrderSummary({ order }) {
           <h3>Private prescription files</h3>
           <OrderFileList label="Saved prescription files" empty="No prescription files recorded for this historical order.">
             {(order.attachments || []).map((file) => <DownloadOrderFile key={file.id} file={file} allowed={can.read_attachment}
-              download={downloadPrescription} status="Saved prescription" />)}
+              download={downloadPrescription} status="Saved prescription"
+              actions={!mrPortal && can.read_attachment && !file.restricted && file.state === 'verified'
+                ? <button type="button" className="admin-button admin-button--secondary" onClick={() => setViewing(file)} aria-label={`View ${file.name}`}><Eye size={15} aria-hidden="true" />View</button>
+                : null} />)}
           </OrderFileList>
         </section>
       </div>
@@ -85,12 +92,13 @@ export default function ImmunotherapyOrderSummary({ order }) {
         <section className="admin-panel kits-panel"><h2>MR (historical)</h2><Person person={order.mr} /></section>
         {!mrPortal && <section className="admin-panel kits-panel" aria-labelledby="imm-s-review"><h2 id="imm-s-review">Pricing and Admin review</h2>
           <Facts rows={[
-            ['Total', groups.length ? money(totalMinor(groups)) : 'Awaiting pricing'], ['PO number', order.poNumber],
+            ['Pricing basis', legacy ? 'Legacy bottle MRP' : 'Allergen rates'], ['Total', groups.length ? money(orderTotalMinor(order)) : 'Awaiting pricing'], ['PO number', order.poNumber],
             ['Saved review outcome', order.reviewDecision || (order.status === 'Confirmed' ? 'Awaiting Admin review' : 'Not recorded')],
           ]} />
-          <p className="kits-hint">Total is the sum of saved bottle MRPs. Missing prices mean awaiting pricing, not zero. No tax, payment or invoice is inferred.</p>
+          <p className="kits-hint">{legacy ? 'Legacy order: total is the sum of saved bottle MRPs.' : 'Total is the sum of saved allergen/suborder rates.'} Missing prices mean awaiting pricing, not zero. No tax, payment or invoice is inferred.</p>
         </section>}
       </div>
     </div>
+    {viewing && <PrescriptionViewer file={viewing} load={prescriptionBlob} download={downloadPrescription} allowed={can.read_attachment} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }

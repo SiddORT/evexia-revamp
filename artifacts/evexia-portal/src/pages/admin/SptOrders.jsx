@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ClipboardList, Plus, Search } from 'lucide-react';
+import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -18,7 +19,7 @@ const EMPTY = { search: '', status: '', from_date: '', to_date: '', doctor_id: '
 export default function SptOrders() {
   const can = useOrderActions('spt');
   const BASE = useOrderBase('spt');
-  const { mr } = useOrderPortal();
+  const { mr, portal } = useOrderPortal();
   const { date } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
   const [result, setResult] = useState({ items: [], total: 0, filtered: null, nextCursor: null });
@@ -49,7 +50,8 @@ export default function SptOrders() {
     setPage(next);
   };
 
-  const columns = [
+  const audit = useAuditColumns(portal);
+  const baseColumns = [
     { key: 'sr', label: 'Sr. No.', render: (_o, i) => i + 1 },
     { key: 'number', label: 'Order no.', render: (o) => <strong>{o.number}</strong> },
     { key: 'date', label: 'Date', render: (o) => date(o.date) },
@@ -60,6 +62,8 @@ export default function SptOrders() {
     { key: 'status', label: 'Status', render: (o) => <span className={`admin-badge${o.status === 'Draft' ? ' admin-badge--inactive' : ''}`}>{o.status}</span> },
     { key: 'action', label: 'Action', render: (o) => <Link className="spt-link" href={`${BASE}/${o.id}`} data-testid={`link-spt-open-${o.id}`}>{o.status === 'Draft' ? 'Resume' : 'Review'}<span className="sr-only"> {o.number}</span></Link> },
   ];
+  const columns = withAuditColumns(baseColumns, audit);
+
 
   return (
     <AdminLayout title="SPT">

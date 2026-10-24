@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Plus, Search } from 'lucide-react';
+import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -17,7 +18,7 @@ const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: ''
 export default function LupinOrders() {
   const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
-  const { mr } = useOrderPortal();
+  const { mr, portal } = useOrderPortal();
   const { date } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
   const [result, setResult] = useState({ items: [], total: 0, filtered: null, nextCursor: null });
@@ -42,7 +43,8 @@ export default function LupinOrders() {
     else if (next > 1 && !cursors[next - 1]) return;
     setPage(next);
   };
-  const columns = [
+  const audit = useAuditColumns(portal);
+  const baseColumns = [
     { key: 'sn', label: 'S.No', render: (_o, i) => i + 1 },
     { key: 'order', label: 'Order details', render: (o) => <><strong>{o.number}</strong><span className="lupin-sub">{date(o.date)}</span><span className="lupin-sub">{o.patientCount} patients, {amountMoney(o.total)}</span></> },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="lupin-sub">{o.mr.name}</span></> },
@@ -50,6 +52,8 @@ export default function LupinOrders() {
     { key: 'pay', label: 'Payment status', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },
     { key: 'act', label: 'Action', render: (o) => <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link> },
   ];
+  const columns = withAuditColumns(baseColumns, audit);
+
   return <AdminLayout title="LUPIN"><div className="lupin lupin-listing">
     <OrderTransfers kind="lupin" rows={result.items} adapter={createLupinTransferAdapter(applied, refresh)} total={loading || error ? undefined : result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">

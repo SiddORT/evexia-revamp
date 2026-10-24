@@ -24,7 +24,7 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
   return {
     instructions: getSession().user?.identity_kind === 'mr'
       ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update only unpriced Confirmed orders, not Admin-reviewed or historically priced orders. Do not supply MRP, allergen rates or PO number. Attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle IDs and file associations. Patient snapshots never create masters.`
-      : 'Create new orders in the order form and upload a verified prescription first. Imports follow the same Admin review rules: required MRP; approval also needs every allergen rate and PO number. Reject without fabricated prices. Fulfillment requires prior explicit approval. Older exports retain missing saved rates/PO without inventing values. Attachment metadata in a spreadsheet cannot attach files. Fileless historical orders remain viewable but must be edited in the order form to add a verified prescription before import. Retain saved dates, versions and bottle IDs.',
+      : 'Create new orders in the order form and upload a verified prescription first. New pricing totals one INR rate per suborder; approval requires every rate and PO number. Reject without fabricated prices. Historical bottle-MRP totals remain unchanged unless pricingBasis is explicitly changed to allergen_rates with every rate entered. Fulfillment requires prior explicit approval. Attachment metadata cannot attach files. Retain saved dates, versions, internal group IDs and issued suborder IDs; the server alone issues new identities on supported writes.',
     release(blob, filename) {
       const guard = prepared.get(blob);
       if (!guard) throw new Error('Prepare this export again before downloading.');
@@ -88,10 +88,12 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
            const groups = details.groups.map((g) => {
              const saved = previous.groups.find((p) => p.id === g.id);
              return { ...g, items: g.items.map((i) => ({ ...i,
+               suborderId: Object.hasOwn(i, 'suborderId') ? i.suborderId : saved?.items.find((p) => p.allergenId === i.allergenId)?.suborderId ?? null,
                rate: Object.hasOwn(i, 'rate') ? i.rate : saved?.items.find((p) => p.allergenId === i.allergenId)?.rate ?? null,
              })) };
            });
            const values = orderInput({ ...details, groups,
+             pricingBasis: details.pricingBasis || previous.pricingBasis || 'legacy_bottle_mrp',
              poNumber: Object.hasOwn(details, 'poNumber') ? details.poNumber : previous.poNumber ?? null,
              attachments: previous.attachments });
           values.orderDate = date;

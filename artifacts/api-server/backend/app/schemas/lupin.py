@@ -51,6 +51,7 @@ class LupinImport(Strict):
 
 
 class LupinRecord(LupinInput):
+    audit: dict | None = None
     id: uuid.UUID
     number: str
     date: str
