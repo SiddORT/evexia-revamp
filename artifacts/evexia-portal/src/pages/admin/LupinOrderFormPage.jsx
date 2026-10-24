@@ -51,15 +51,15 @@ function Review({ order }) {
     <section className="admin-panel lupin-section" aria-labelledby="lupin-h-sum"><h2 id="lupin-h-sum">Summary</h2>
       <dl className="lupin-facts">
         <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
-        <div><dt>Doctor (historical)</dt><dd>{order.doctor.name}<span className="lupin-sub">{order.doctorId}</span></dd></div>
-        <div><dt>MR (historical)</dt><dd>{order.mr.name}<span className="lupin-sub">{order.mrId}</span></dd></div>
+        <div><dt>Doctor (historical)</dt><dd>{order.doctor.name}{portal !== 'mr' && <span className="lupin-sub">{order.doctorId}</span>}</dd></div>
+        <div><dt>MR (historical)</dt><dd>{order.mr.name}{portal !== 'mr' && <span className="lupin-sub">{order.mrId}</span>}</dd></div>
         <div><dt>No. of Patients</dt><dd>{order.patientCount}</dd></div><div><dt>Price (per Test)</dt><dd>{amountMoney(order.price)}</dd></div>
         <div><dt>Total Amount</dt><dd data-testid="text-lupin-review-total">{amountMoney(order.total)}</dd></div>
         <div><dt>Order status</dt><dd>{order.status}</dd></div><div><dt>Payment status</dt><dd>{order.paymentStatus}</dd></div>
       </dl>
       <p className="lupin-hint">Patient count is the saved pricing quantity, not the number of links. Confirmed / Unpaid is an initial classification, not evidence of payment, clinical work or fulfilment.</p>
       <div><h2>Linked Patients (optional historical context)</h2>
-        {order.patients.length ? <ul className="lupin-files">{order.patients.map((p) => <li key={p.id}><span>{p.name}<span className="lupin-sub">{p.id}</span></span></li>)}</ul> : <p className="lupin-hint">No individual Patients were linked. This does not change the saved patient count.</p>}</div>
+        {order.patients.length ? <ul className="lupin-files">{order.patients.map((p) => <li key={p.id}><span>{p.name}{portal !== 'mr' && <span className="lupin-sub">{p.id}</span>}</span></li>)}</ul> : <p className="lupin-hint">No individual Patients were linked. This does not change the saved patient count.</p>}</div>
       <div><h2>Private attachments</h2>{order.attachments.length ? <ul className="lupin-files" aria-label="Saved attachments">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${fileSize(f.size)})`}</span>
         <div className="lupin-file-actions">
           {canPreview && !f.restricted && f.state === 'verified' && <button type="button" className="lupin-link" aria-label={`View ${f.name}`} onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }}>View</button>}
@@ -74,7 +74,7 @@ function Review({ order }) {
 function Form() {
   const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
-  const { mr } = useOrderPortal();
+  const { mr, portal } = useOrderPortal();
   const [, navigate] = useLocation();
   const [v, setV] = useState(() => ({ ...blankOrder(), mrId: mr?.id || '' })), [linked, setLinked] = useState([]), [patientChoice, setPatientChoice] = useState('');
   const [errors, setErrors] = useState({}), [fileMsg, setFileMsg] = useState(''), [progress, setProgress] = useState('');
@@ -239,7 +239,7 @@ function Form() {
         <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-patient" kind="patients" label="Find an existing Patient" value={patientChoice} onChange={setPatientChoice} onPerson={addPatient} disabled={locked || !v.doctorId} />
         <p className="lupin-hint">Zero links is valid, even with a positive patient count. Linked Patients must belong to the selected Doctor. Only explicitly selected identities are saved as historical context.</p>
         <Err text={errors.patients} />
-        {linked.length > 0 && <ul className="lupin-files" aria-label="Selected Patients">{linked.map((p) => <li key={p.id}><span>{p.name}<span className="lupin-sub">{p.id}</span></span>
+        {linked.length > 0 && <ul className="lupin-files" aria-label="Selected Patients">{linked.map((p) => <li key={p.id}><span>{p.name}{portal !== 'mr' && <span className="lupin-sub">{p.id}</span>}</span>
           <button type="button" className="lupin-link" aria-label={`Remove Patient ${p.name}`} onClick={() => { setLinked((current) => current.filter((x) => x.id !== p.id)); set({ patientIds: v.patientIds.filter((id) => id !== p.id) }); }}>Remove</button></li>)}</ul>}
       </section>
       <section className="admin-panel lupin-section" aria-labelledby="lupin-h-att"><h2 id="lupin-h-att">Attachments and remarks</h2>

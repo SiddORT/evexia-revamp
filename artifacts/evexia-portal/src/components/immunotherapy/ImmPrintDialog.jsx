@@ -4,6 +4,7 @@ import { exportDisplayPreferences, formatCalendarDate } from '../../services/dat
 import { createPortal } from 'react-dom';
 import { Printer } from 'lucide-react';
 import ImmDialog from './ImmDialog.jsx';
+import { useOrderPortal } from '../orders/OrderPortalContext.jsx';
 import { money, shippingRecipient, orderTotalMinor } from '../../services/serverImmunotherapy.js';
 
 export const PRINT_KINDS = [
@@ -16,6 +17,7 @@ export const PRINT_KINDS = [
 const addressText = (a) => typeof a === 'string' ? a : a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 
 export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocusRef }) {
+  const { portal } = useOrderPortal();
   const preferences = exportDisplayPreferences(useAdminPreferences());
   const date = (value) => formatCalendarDate(value, preferences);
   // This portal is outside the Admin shell. Copy its current semantic tokens,
@@ -39,7 +41,7 @@ export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocu
         <span key="b">{patient?.name}</span>, <br key="br1" />,
         <span key="c">Dosage {o.dosage}</span>, <br key="br2" />,
         <span key="d">{g.items.map((it) => `${it.allergen.name} (${it.allergen.concentration})`).join(', ') || 'No allergens'}</span>, <br key="br3" />,
-        <span key="id">Internal group {g.id} | Suborders: {g.items.map((it) => it.suborderId || 'Not assigned').join(', ')}</span>, <br key="br4" />,
+        <span key="id">{portal !== 'mr' && <>Internal group {g.id} | </>}Suborders: {g.items.map((it) => it.suborderId || 'Not assigned').join(', ')}</span>, <br key="br4" />,
          <span key="e">{(o.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' ? (g.mrp == null || g.mrp === '' ? 'Legacy bottle MRP awaiting pricing' : `Legacy bottle MRP INR ${g.mrp}`) : 'Priced by allergen rates'}</span>,
          <span key="po">PO: {o.poNumber || 'Not recorded'} | Admin: {o.reviewDecision || 'Not recorded'}</span>,
          <span key="rates">{g.items.map((it) => `${it.allergen.name} rate INR ${it.rate ?? 'not recorded'}`).join(', ')}</span>] }));

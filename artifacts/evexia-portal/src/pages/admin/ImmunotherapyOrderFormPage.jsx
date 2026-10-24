@@ -16,6 +16,7 @@ import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js'
 import useImmunotherapyReferences from '../../hooks/useImmunotherapyReferences.js';
 import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
+import ImmunotherapyConflictDetails from '../../components/immunotherapy/ImmunotherapyConflictDetails.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import '../../excel-import.css';
 import '../../immunotherapy.css';
@@ -25,6 +26,9 @@ const blank = () => ({ patientId: '', doctorId: '', mrId: '', dosage: '', histam
 const fromOrder = (o) => structuredClone({ patientId: o.patientId, doctorId: o.doctorId, mrId: o.mrId, dosage: o.dosage, histamine: o.histamine, saline: o.saline, groups: o.groups, remarks: o.remarks || '', attachments: o.attachments || [], shipping: o.shipping, status: o.status, poNumber: o.poNumber || '', pricingBasis: o.pricingBasis || 'legacy_bottle_mrp' });
 const addr = (a) => a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 const nameOf = (list, id) => list.find((x) => x.id === id)?.name || '';
+const patientLabel = (p, mrPortal) => mrPortal
+  ? [p.name || 'Patient name unavailable', p.phone].filter(Boolean).join(' - ')
+  : `${p.name} - ${p.id} - ${p.phone}`;
 const ERROR_LABEL = { form: 'Order', patientId: 'Patient', doctorId: 'Doctor', mrId: 'MR', dosage: 'Dosage', histamine: 'Histamine (mm)', saline: 'Saline (mm)', shipping: 'Shipping', groups: 'Allergen Details', attachments: 'Prescription files', status: 'Status', remarks: 'Remarks', registration: 'Patient registration', poNumber: 'PO number' };
 
 function Err({ id, text }) { return text ? <p className="imm-error" id={id} role="alert">{text}</p> : null; }
@@ -164,7 +168,7 @@ function Editor({ order, mode }) {
   const closeReg = () => { setReg(null); setRegErrors({}); requestAnimationFrame(() => openerRef.current?.isConnected && openerRef.current.focus()); };
 
   const patient = snap.patients.find((p) => p.id === v.patientId);
-  const patientOptions = useMemo(() => snap.patients.map((p) => ({ value: p.id, label: `${p.name} - ${p.id} - ${p.phone}` })), [snap.patients]);
+  const patientOptions = useMemo(() => snap.patients.map((p) => ({ value: p.id, label: patientLabel(p, mrPortal) })), [snap.patients, mrPortal]);
   const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
   const mrOptions = MRS.map((m) => ({ value: m.id, label: m.name }));
   const allergenOptions = ALLERGENS.map((a) => ({ value: a.id, label: a.name }));
@@ -309,7 +313,7 @@ function Editor({ order, mode }) {
     if (k.startsWith('mrp-')) return 'Legacy bottle MRP';
     if (k.startsWith('rate-')) return 'Allergen rate (INR)';
     if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = gi >= 0 ? k.slice(`result-${v.groups[gi].id}-`.length) : ''; return `${nameOf(ALLERGENS, aid)} result (group ${gi + 1})`; }
-    return k;
+    return mrPortal ? 'Order field' : k;
   };
   const targetFor = (k) => {
     if (k === 'dosage') return `imm-dose-${v.dosage || DOSES[0]}`;
@@ -357,7 +361,7 @@ function Editor({ order, mode }) {
           <p className="imm-hint">Search by name, ID or phone.</p>
           <div className="imm-grid" style={{ marginTop: 12 }}>
             <div className="imm-field"><label htmlFor="imm-patientId">Patient</label>
-              <SearchableSelect viewportMenu id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onSearch={patients.onSearch} searchOptions={() => mrPortal ? patients.liveItems.map((p) => ({ value: p.id, label: `${p.name} - ${p.id} - ${p.phone}` })) : patientOptions} onChange={choosePatient} placeholder="Find a patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
+               <SearchableSelect viewportMenu id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onSearch={patients.onSearch} searchOptions={() => mrPortal ? patients.liveItems.map((p) => ({ value: p.id, label: patientLabel(p, mrPortal) })) : patientOptions} onChange={choosePatient} placeholder="Find a patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
               {!readOnly && <ReferenceState source={patients} label="patients" />}
               <Err id="imm-patientId-err" text={errors.patientId} /></div>
             <div className="imm-field"><label htmlFor="imm-doctorId">Doctor</label>
@@ -516,8 +520,12 @@ function Editor({ order, mode }) {
       <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setLeave(null)} data-testid="button-imm-stay">Keep editing</button>
         <button type="button" className="admin-button admin-button--danger" disabled={Boolean(pending) || uncertain} onClick={proceed} data-testid="button-imm-leave">Leave</button></div></ImmDialog>}
     {conflict && <ImmDialog title="Reconcile a newer saved version" eyebrow="Order changed" description="Your draft has not been discarded or saved. Compare the latest saved record with your draft. Confirming below keeps your values for another explicit Save; it does not save immediately." onClose={() => setConflict(null)}>
-      <details><summary>Latest saved order — version {conflict.version}</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(conflict, null, 2)}</pre></details>
-      <details><summary>Your mounted draft</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(v, null, 2)}</pre></details>
+      <details><summary>Latest saved order — version {conflict.version}</summary>{mrPortal
+        ? <ImmunotherapyConflictDetails order={conflict} patient={conflict.patient} doctor={conflict.doctor} mr={conflict.mr} />
+        : <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(conflict, null, 2)}</pre>}</details>
+      <details><summary>Your mounted draft</summary>{mrPortal
+        ? <ImmunotherapyConflictDetails order={v} patient={patient} doctor={doctor} mr={MRS.find((m) => m.id === v.mrId)} />
+        : <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(v, null, 2)}</pre>}</details>
       <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setConflict(null)}>Keep draft without rebasing</button>
         <button type="button" className="admin-button" onClick={() => { saveBase.current = conflict; mutation.current = null; setConflict(null); setErrors({ form: 'Draft retained against the reviewed current version. Review your values, then save explicitly. Another concurrent change will be rejected again.' }); }}>Use reviewed version and keep my draft</button></div>
     </ImmDialog>}

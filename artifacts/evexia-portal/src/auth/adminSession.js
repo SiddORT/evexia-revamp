@@ -1138,13 +1138,14 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   guard();
   if (state.user?.identity_kind !== 'mr' && !hasCapability(state.user, lupin ? 'lupin' : kits ? 'kits' : 'immunotherapy',
     file ? 'upload_attachment' : 'read_attachment')) throw new SessionError('Access denied.', 403);
+  const mrPresentation = state.user?.identity_kind === 'mr';
   if (file && !kits && !lupin && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
   const form = file ? new FormData() : null;
   if (form) form.append('file', file);
   let response, data;
   const safeFailure = (code) => {
     const requestId = response?.headers.get('X-Request-ID') || data?.error?.request_id;
-    const error = new SessionError(`${privateUploadMessage(code, response?.status)} Your draft and selected files remain in this tab.${privateRequestReference(requestId)}`, response?.status || 0);
+    const error = new SessionError(`${privateUploadMessage(code, response?.status)} Your draft and selected files remain in this tab.${mrPresentation ? '' : privateRequestReference(requestId)}`, response?.status || 0);
     error.fileId = privateFileId(response?.headers.get('X-File-ID'));
     error.code = code;
     error.requestId = requestId;

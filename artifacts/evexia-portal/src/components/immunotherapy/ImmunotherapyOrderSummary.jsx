@@ -64,10 +64,11 @@ export default function ImmunotherapyOrderSummary({ order }) {
           <p className="kits-hint">Original bottle membership and saved allergen details are retained; missing history is not inferred from current masters.</p>
           {groups.length ? groups.map((group, index) => <section className="imm-saved-order__bottle" key={group.id || index} aria-label={`Saved group ${index + 1}`}>
             <h3>Saved group {index + 1}</h3>
-            <Facts rows={[['Internal group', group.id], ...(!mrPortal && legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : [])]} />
+            {!mrPortal && <Facts rows={[['Internal group', group.id], ...(legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : [])]} />}
             {group.items?.length ? <ul className="imm-saved-order__allergens">{group.items.map((item, itemIndex) => <li key={`${item.allergenId}-${itemIndex}`}>
               <Facts rows={[
-                ['Suborder ID', item.suborderId || 'Not assigned'], ['Allergen', item.allergen?.name], ['Allergen identity', item.allergenId],
+                ['Suborder ID', item.suborderId || 'Not assigned'], ['Allergen', item.allergen?.name],
+                ...(!mrPortal ? [['Allergen identity', item.allergenId]] : []),
                 ['Concentration', item.allergen?.concentration], ['Skin test result (mm)', item.result],
                 ...(!mrPortal ? [['Rate (INR)', money(parseAmount(item.rate))]] : []),
               ]} />

@@ -127,7 +127,8 @@ function OrderForm({ order }) {
   }
 
   const errorList = Object.entries(errors).filter(([, m]) => m);
-  const labelFor = (key) => key === 'form' ? 'Submission' : key === 'doctorId' ? 'Doctor' : key === 'mrId' ? 'MR' : key === 'patients' ? 'Patients' : `Amount for ${key.replace('amount-', '')}`;
+  const labelFor = (key) => key === 'form' ? 'Submission' : key === 'doctorId' ? 'Doctor' : key === 'mrId' ? 'MR' : key === 'patients' ? 'Patients'
+    : mr ? `Amount for ${patients.find((p) => key === `amount-${p.id}`)?.name || 'selected patient'}` : `Amount for ${key.replace('amount-', '')}`;
   const focusField = (key) => document.getElementById(key === 'doctorId' ? 'spt-doctor' : key === 'mrId' ? 'spt-mr' : key === 'patients' ? 'spt-patient' : `spt-${key}`)?.focus();
 
   const columns = [

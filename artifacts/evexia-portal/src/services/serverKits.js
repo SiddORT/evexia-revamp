@@ -1,9 +1,9 @@
-import { purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
+import { getSession, purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { privateUploadMessage } from '../auth/privateFileErrors.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function failure(error, stage) {
+function failure(error, stage, mrPresentation) {
   const upload = stage === 'upload';
   const messages = {
     kits_stale: 'Another save changed this order. Your draft is preserved. Open the saved View in a separate tab to compare; this draft will not overwrite the newer version.',
@@ -21,7 +21,7 @@ function failure(error, stage) {
       : error?.status === 429 ? 'The service is busy. Wait before retrying.'
       : !upload && error?.status === 422 ? 'Check kit product, positive volume and whole quantities, billing Doctor, MR shipping and any selected Patient’s assignment. Patient remains optional.'
       : 'The service could not complete or confirm this step. Check your connection; ask the operator to review the request if it persists.');
-  const reference = typeof error?.requestId === 'string' && UUID.test(error.requestId)
+  const reference = !mrPresentation && typeof error?.requestId === 'string' && UUID.test(error.requestId)
     ? ` Request reference: ${error.requestId}.` : '';
   const ambiguous = !upload && (Boolean(error?.ambiguous) || error?.code === 'kits_retry');
   const result = new Error(`${upload ? 'Attachment upload failed. The order request was not sent.' : 'Order save failed or could not be confirmed.'} ${detail} ${upload
@@ -36,6 +36,7 @@ function failure(error, stage) {
 export async function request(path = '', options) {
   // Other Kits reads/transfers keep their existing transport contract.
   if (path !== '' || options?.body === undefined) return purchaseOrderRequest(path, options, 'kits-orders');
+  const mrPresentation = getSession().user?.identity_kind === 'mr';
   try {
     const result = await purchaseOrderRequest(path, options, 'kits-orders');
     if (!UUID.test(result?.id || '')) {
@@ -46,16 +47,17 @@ export async function request(path = '', options) {
       throw error;
     }
     return result;
-  } catch (error) { throw failure(error, 'save'); }
+  } catch (error) { throw failure(error, 'save', mrPresentation); }
 }
 export async function updateOrder(id, body) {
+  const mrPresentation = getSession().user?.identity_kind === 'mr';
   try {
     const result = await purchaseOrderRequest(`/${id}/edit`, { body }, 'kits-orders');
     if (result?.id !== id || result.version !== body.expected_version + 1) {
       const error = new Error(); error.ambiguous = true; throw error;
     }
     return result;
-  } catch (error) { throw failure(error, 'save'); }
+  } catch (error) { throw failure(error, 'save', mrPresentation); }
 }
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
@@ -92,10 +94,11 @@ export const orderInput = (v) => ({
   attachmentIds: (v.attachments || []).map((f) => f.id),
 });
 export async function uploadAttachment(file) {
+  const mrPresentation = getSession().user?.identity_kind === 'mr';
   let result;
   try {
     result = await immunotherapyFileRequest('', { file, kits: true });
-  } catch (error) { throw failure(error, 'upload'); }
+  } catch (error) { throw failure(error, 'upload', mrPresentation); }
   if (!UUID.test(result?.id || '') || result.state !== 'verified' || result.scanner_status !== 'clean'
       || result.size !== file.size || result.content_type !== file.type) {
     const error = new Error('Attachment verification was not confirmed. The order request was not sent. Your values and files remain here. Ask the operator to check scanning and the upload response before retrying.');
