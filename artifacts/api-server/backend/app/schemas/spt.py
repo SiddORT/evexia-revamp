@@ -93,6 +93,7 @@ class SptRecord(Strict):
 class SptPage(Strict):
     items: list[SptRecord]
     total: int
+    counts: dict[str, int]
     filtered: int | None
     nextCursor: uuid.UUID | None
 

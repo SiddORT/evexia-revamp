@@ -5,9 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { SptPageCounts } from "./sptPageCounts";
 import type { SptRecord } from "./sptRecord";
 
 export interface SptPage {
+  counts: SptPageCounts;
   filtered: number | null;
   items: SptRecord[];
   nextCursor: string | null;

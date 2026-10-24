@@ -9,6 +9,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
 import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
@@ -48,9 +49,10 @@ export default function ImmunotherapyOrders() {
   const resetPage = () => { setPage(1); setCursors([null]); setSelected(new Set()); setKnown({}); };
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setResult((r) => ({ ...r, counts: null }));
     const timer = setTimeout(() => request('', { params: { ...filters, limit: pageSize, cursor: cursors[page - 1] }, signal: controller.signal })
       .then((data) => {
+        if (controller.signal.aborted) return;
         setResult(data); setKnown((current) => ({ ...current, ...Object.fromEntries(data.items.map((o) => [o.id, o])) }));
         setSelected((current) => new Set([...current].filter((id) => !data.items.some((o) => o.id === id && o.status !== 'In process'))));
       }).catch((e) => { if (!controller.signal.aborted) { setError(e.message); setResult((r) => ({ ...r, items: [], nextCursor: null })); } })
@@ -77,7 +79,6 @@ export default function ImmunotherapyOrders() {
   const toggle = (id) => setSelected((cur) => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const togglePage = () => setSelected((cur) => { const n = new Set(cur); pageEligible.forEach((o) => allPage ? n.delete(o.id) : n.add(o.id)); return n; });
   const chosen = Object.values(known).filter((o) => selected.has(o.id) && eligible(o));
-  const counts = STATUSES.map((s) => [s, result.counts[s] || 0]);
   async function openPrint(kind) {
     setError('');
     try {
@@ -118,10 +119,7 @@ export default function ImmunotherapyOrders() {
     </div>} />
     {error && <div className="imm-errors" role="alert">{error} <button type="button" className="imm-link-btn" onClick={() => setRevision((n) => n + 1)}>Retry</button></div>}
     {loading && <p role="status">Loading saved orders…</p>}
-    <div className="imm-summary" aria-label="Order counts by status">
-      <div className="imm-stat"><strong>{result.total}</strong><span>All orders</span></div>
-      {counts.map(([s, n]) => <div className="imm-stat" key={s}><strong>{n}</strong><span>{s}</span></div>)}
-    </div>
+    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
     <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
       <OrderListingFilters masterDisclosure onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
         <label className="imm-field imm-field--grow">

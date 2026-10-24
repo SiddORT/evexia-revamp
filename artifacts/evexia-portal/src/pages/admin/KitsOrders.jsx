@@ -8,6 +8,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { request, STATUSES, PAYMENT_STATUSES } from '../../services/serverKits.js';
 import { createKitsTransferAdapter } from '../../services/kitsTransfers.js';
@@ -50,9 +51,10 @@ export default function KitsOrders() {
   const set = (patch) => setDraft((v) => ({ ...v, ...patch }));
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setResult((r) => ({ ...r, counts: null }));
     request('', { params: { ...applied, limit: pageSize, cursor: cursors[page - 1] }, signal: controller.signal })
-      .then(setResult).catch((e) => { if (!controller.signal.aborted) { setError(e.message); setResult((r) => ({ ...r, items: [], nextCursor: null })); } })
+      .then((data) => { if (!controller.signal.aborted) setResult(data); })
+      .catch((e) => { if (!controller.signal.aborted) { setError(e.message); setResult((r) => ({ ...r, items: [], nextCursor: null })); } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [applied, page, pageSize, revision]); // Cursor changes accompany page changes only.
@@ -81,6 +83,7 @@ export default function KitsOrders() {
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Kits &amp; Consumables</h1><p className="admin-page-head__description">Skin prick kits, lancets, applicators and trays ordered for doctors and MRs.</p></div>
         <div className="kits-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
+    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
     <section className="admin-panel kits-panel kits-listing__panel" aria-label="Kits and consumables orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={

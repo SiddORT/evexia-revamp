@@ -1,6 +1,7 @@
 import { purchaseOrderRequest } from '../auth/adminSession.js';
 
 export const request = (path = '', options) => purchaseOrderRequest(path, options, 'spt-orders');
+export const STATUSES = Object.freeze(['Draft', 'Saved']);
 export const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 export function parseAmount(value) {
   if (typeof value !== 'string' || !/^\d{1,9}(?:\.\d{1,2})?$/.test(value)) return null;

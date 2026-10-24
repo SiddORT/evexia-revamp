@@ -32,10 +32,6 @@
 .imm-notice { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 10px 14px; border-left: 3px solid var(--admin-success); background: var(--admin-info-soft); color: var(--admin-text); font-size: 12px; border-radius: 0 8px 8px 0; }
 .imm-link-btn { border: 0; background: transparent; color: var(--admin-accent); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 4px; min-height: 28px; }
 .imm-link-btn:focus-visible, .imm input:focus-visible, .imm select:focus-visible, .imm textarea:focus-visible, .imm-chip input:focus-visible + span { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
-.imm-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px; margin-bottom: 14px; }
-.imm-stat { padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-surface); min-width: 0; }
-.imm-stat strong { display: block; font-family: var(--font-display); font-size: 24px; font-weight: 500; line-height: 1.1; color: var(--admin-text); }
-.imm-stat span { font-size: 11px; color: var(--admin-text-soft); overflow-wrap: anywhere; }
 .imm-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px 16px; border-bottom: 1px solid var(--admin-border); }
 .imm-field { display: grid; gap: 5px; min-width: 0; font-size: 11px; font-weight: 700; color: var(--admin-text-soft); }
 .imm-field--grow { flex: 1 1 220px; }

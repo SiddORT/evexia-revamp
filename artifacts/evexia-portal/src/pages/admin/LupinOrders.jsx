@@ -8,6 +8,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { request, STATUSES, PAYMENT_STATUSES, amountMoney } from '../../services/serverLupin.js';
 import { createLupinTransferAdapter } from '../../services/lupinTransfers.js';
@@ -30,7 +31,7 @@ export default function LupinOrders() {
   const set = (patch) => setDraft((v) => ({ ...v, ...patch }));
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setResult((r) => ({ ...r, counts: null }));
     request('', { params: { ...applied, limit: pageSize, cursor: cursors[page - 1] }, signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted) setResult(data); })
       .catch((e) => { if (!controller.signal.aborted) { setError(e.message); setResult((r) => ({ ...r, items: [], nextCursor: null })); } })
@@ -60,6 +61,7 @@ export default function LupinOrders() {
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Order Management – Lupin</h1><p className="admin-page-head__description">Review saved Lupin orders by Doctor, MR and status.</p></div>
         <div className="lupin-actions">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
+    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
     <section className="admin-panel" aria-label="Lupin orders">
       <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         resetTestId="button-lupin-reset" applyTestId="button-lupin-apply"

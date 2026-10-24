@@ -7,9 +7,10 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import DataTable from '../../components/admin/DataTable.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
-import { request } from '../../services/serverSpt.js';
+import { request, STATUSES } from '../../services/serverSpt.js';
 import { createSptTransferAdapter } from '../../services/sptTransfers.js';
 import '../../sptOrders.css';
 import '../../components/orders/orderListingLayout.css';
@@ -33,7 +34,7 @@ export default function SptOrders() {
   const set = (patch) => setDraft((v) => ({ ...v, ...patch }));
   useEffect(() => {
     const token = ++sequence.current, controller = new AbortController();
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setResult((r) => ({ ...r, counts: null }));
     request('', { params: { ...applied, limit: pageSize, cursor: cursors[page - 1] }, signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted && token === sequence.current) setResult(data); })
       .catch((e) => { if (!controller.signal.aborted && token === sequence.current) { setError(e.message); setResult((r) => ({ ...r, items: [], nextCursor: null })); } })
@@ -77,6 +78,7 @@ export default function SptOrders() {
           </div>
           <div className="spt-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
         </div>} />
+        <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
         <section className="admin-panel" aria-label="SPT orders">
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}
             onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
@@ -92,7 +94,7 @@ export default function SptOrders() {
             {[['doctors', 'doctor_id', 'Doctor'], ...(!mr ? [['mrs', 'mr_id', 'MR']] : []), ['patients', 'patient_id', 'Patient']].map(([kind, key, label]) => <SptReferenceSelect key={key} id={`spt-filter-${key}`} kind={kind} label={label} value={draft[key]} onChange={(id) => set({ [key]: id })} />)}
             <div className="spt-field"><label htmlFor="spt-filter-status">Status</label>
               <select id="spt-filter-status" value={draft.status} onChange={(e) => set({ status: e.target.value })} data-testid="select-spt-status">
-                <option value="">All</option><option>Draft</option><option>Saved</option>
+                <option value="">All</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
           </OrderListingFilters>

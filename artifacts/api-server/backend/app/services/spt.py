@@ -323,7 +323,8 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
                     break
         finally:
             rows.close()
-        return dict(items=items, total=db.scalar(select(func.count()).select_from(Order).where(*scope(db, Order))),
+        counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
+        return dict(items=items, total=sum(counts.values()), counts=counts,
             filtered=len(items) if complete else None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses)),
             nextCursor=str(last) if more and not complete else None)
     return transaction(db, actor, work, action="export" if complete else None)

@@ -24032,6 +24032,13 @@
       "SptPage": {
         "additionalProperties": false,
         "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
           "filtered": {
             "anyOf": [
               {
@@ -24070,6 +24077,7 @@
         "required": [
           "items",
           "total",
+          "counts",
           "filtered",
           "nextCursor"
         ],

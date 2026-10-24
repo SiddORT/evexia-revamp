@@ -9622,7 +9622,10 @@ export interface SptImportResult {
   orders: SptRecord[];
 }
 
+export type SptPageCounts = { [key: string]: number };
+
 export interface SptPage {
+  counts: SptPageCounts;
   filtered: number | null;
   items: SptRecord[];
   nextCursor: string | null;

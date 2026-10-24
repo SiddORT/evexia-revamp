@@ -31385,6 +31385,7 @@ export const ListSptOrdersQueryParams = zod.object({
 });
 
 export const ListSptOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
@@ -31510,6 +31511,7 @@ export const ExportSptOrdersQueryParams = zod.object({
 });
 
 export const ExportSptOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
