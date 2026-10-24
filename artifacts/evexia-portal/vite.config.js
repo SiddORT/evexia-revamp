@@ -61,6 +61,10 @@ export default defineConfig(({ command, isPreview }) => {
   root: dirname,
   build: { outDir: path.resolve(dirname, 'dist/public'), emptyOutDir: true },
   server: {
+    fs: {
+      // Local prescriptions and scanner state must never be served via /@fs.
+      deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/storage/**', '**/.local/**'],
+    },
     port, strictPort: true, host: '0.0.0.0', allowedHosts: exactHosts,
     ...(apiProxyTarget ? {
       proxy: { '/api': {

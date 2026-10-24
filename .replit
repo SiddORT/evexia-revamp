@@ -356,7 +356,7 @@ timeoutMs = 180000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cacert", "cargo", "enchant", "freetype", "hyphen", "icu74", "lcms2", "libavif", "libiconv", "libimagequant", "libjpeg", "libmanette", "libsecret", "libtiff", "libwebp", "libxcrypt", "nano", "openjpeg", "openssl", "patchelf", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "nginx", "firefox", "webkitgtk_4_1", "libjpeg8", "mesa"]
+packages = ["cacert", "cargo", "enchant", "freetype", "hyphen", "icu74", "lcms2", "libavif", "libiconv", "libimagequant", "libjpeg", "libmanette", "libsecret", "libtiff", "libwebp", "libxcrypt", "nano", "openjpeg", "openssl", "patchelf", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "nginx", "firefox", "webkitgtk_4_1", "libjpeg8", "mesa", "clamav"]
 
 [userenv]
 
@@ -366,3 +366,9 @@ EVEXIA_NIX_BROWSER_LOADER = "/repl/tools/qqiqd3ah10x8hzsif4j1y4xc1miw23nx-glibc-
 EVEXIA_NIX_DOWNLOAD_ENGINES = "1"
 CORS_ORIGINS = "https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk.sisko.replit.dev,https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk-jkv3ezgh.sisko.replit.dev,https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk-7nvu511b.sisko.replit.dev"
 PASSWORD_RECOVERY_URL = "https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk.sisko.replit.dev/reset-password"
+CLAMD_HOST = "127.0.0.1"
+CLAMD_PORT = "3310"
+LOCAL_STORAGE_ROOT = "/home/runner/workspace/storage/private-files"
+SCANNER_BACKEND = "clamd"
+STORAGE_BACKEND = "local"
+EVEXIA_DEVELOPMENT_LOCAL_UPLOADS = "1"

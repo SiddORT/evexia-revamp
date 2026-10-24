@@ -61,6 +61,8 @@ export default defineConfig({
     allowedHosts: true,
     fs: {
       strict: true,
+      // The sandbox shares the workspace, not access to private upload bytes.
+      deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "**/storage/**", "**/.local/**"],
     },
   },
   preview: {

@@ -105,3 +105,4 @@
 - [Historical inventory filters](historical-inventory-filters.md) — preserve saved assembly membership; finished-product openings without recipe evidence must not inherit today’s components.
 - [Immunotherapy prescription policy](immunotherapy-prescription-policy.md) — verified patient prescriptions are mandatory for writes; historical fileless reads and bottle IDs remain intact.
 - [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.
+- [Development upload storage](development-upload-storage.md) — user wants private project-local S3-compatible folders for now; generic CDN HEAD failures do not prove freshclam is blocked.
