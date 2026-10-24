@@ -51,16 +51,28 @@
 :is(.stock-list-table, .stock-history-table) .admin-table { table-layout: fixed; }
 :is(.stock-list-table, .stock-history-table) .admin-table :is(th, td) { padding: 10px; line-height: 1.4; }
 :is(.stock-list-table, .stock-history-table) .admin-table :is(th, td):first-child { text-align: left; }
-.stock-list-table .admin-table { min-width: 740px; }
-.stock-list-table .admin-table :is(th, td):nth-child(1) { width: 58px; text-align: center; }
-.stock-list-table .admin-table :is(th, td):nth-child(2) { width: 26%; }
-.stock-list-table .admin-table :is(th, td):nth-child(3) { width: 17%; }
-.stock-list-table .admin-table :is(th, td):nth-child(4) { width: 12%; }
-.stock-list-table .admin-table :is(th, td):nth-child(5) { width: 15%; text-align: right; white-space: nowrap; }
-.stock-list-table .admin-table :is(th, td):nth-child(6) { width: 14%; text-align: right; white-space: nowrap; }
-.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 12%; text-align: center; }
+.stock-list-table { min-width: 0; max-width: 100%; }
+.stock-list-table .admin-table-scroll { min-width: 0; max-width: 100%; }
+/* One 100% allocation: compact category/price, with room for quantity and
+   the full action group. Narrow screens scroll in DataTable's labelled region. */
+.stock-list-table .admin-table { min-width: 940px; }
+.stock-list-table .admin-table :is(th, td) { white-space: normal; overflow-wrap: anywhere; }
+.stock-list-table .admin-table :is(th, td):nth-child(1) { width: 6%; text-align: center; }
+.stock-list-table .admin-table :is(th, td):nth-child(2) { width: 23%; }
+.stock-list-table .admin-table :is(th, td):nth-child(3) { width: 14%; }
+.stock-list-table .admin-table :is(th, td):nth-child(4) { width: 9%; }
+.stock-list-table .admin-table :is(th, td):nth-child(5) { width: 10%; text-align: right; font-variant-numeric: tabular-nums; }
+.stock-list-table .admin-table :is(th, td):nth-child(6) { width: 19%; text-align: right; }
+.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 19%; text-align: center; }
 .stock-list-table .admin-table__name { display: block; }
 .stock-list-table .stock-sub { overflow-wrap: anywhere; }
+.stock-list-table .stock-quantity { display: block; }
+/* Keep ordinary quantity numbers together while units wrap independently;
+   unusually long numbers still have an emergency break inside their cell. */
+.stock-list-table .stock-quantity__number { display: inline-block; max-width: 100%; }
+.stock-list-table .stock-row-actions { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; justify-content: center; }
+.stock-list-table .stock-row-actions .admin-button { white-space: normal; overflow-wrap: anywhere; min-width: 0; min-height: 34px; height: auto; padding: 7px 9px; max-width: 100%; }
+.stock-list-table .stock-row-actions .admin-button > svg { flex: none; }
 .stock-history-table .admin-table { min-width: 780px; }
 .stock-history-table .admin-table :is(th, td):nth-child(1) { width: 14%; white-space: nowrap; }
 .stock-history-table .admin-table :is(th, td):nth-child(2) { width: 23%; }
@@ -127,10 +139,6 @@
   .stock-report thead { display: table-header-group; }
 }
 
-.stock-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.stock-list-table .admin-table { min-width: 940px; }
-.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 180px; }
-.stock-row-actions .admin-button { white-space: normal; min-height: 34px; height: auto; padding: 7px 9px; max-width: 100%; }
 .stock-ledger .admin-dialog, .admin-dialog.stock-ledger { width: min(1180px, 96vw); max-width: 96vw; }
 .stock-ledger, .stock-adjust { min-width: 0; overflow-wrap: anywhere; }
 .stock-ledger :is(input, select), .stock-adjust :is(input, select, textarea, fieldset) { min-width: 0; max-width: 100%; }
