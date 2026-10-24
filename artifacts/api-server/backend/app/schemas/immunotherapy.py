@@ -2,7 +2,7 @@
 import uuid
 from datetime import date
 from typing import Literal, Annotated
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Result = Annotated[str, Field(pattern=r"^\d{1,6}(?:\.\d{1,2})?$")]
 Amount = Annotated[str, Field(pattern=r"^\d{1,10}(?:\.\d{1,2})?$")]
@@ -47,6 +47,13 @@ class ImmInput(Strict):
     status: Status = "Confirmed"
     poNumber: str | None = Field(default=None, min_length=1, max_length=100)
     attachmentIds: list[uuid.UUID] = Field(default_factory=list, max_length=10)
+
+    @field_validator("poNumber", mode="before")
+    @classmethod
+    def optional_po(cls, value):
+        # Direct writes and both import stages share the same normalization.
+        # Keep nonblank values intact, including their original length bounds.
+        return None if isinstance(value, str) and not value.strip() else value
 
     @model_validator(mode="after")
     def unique(self):

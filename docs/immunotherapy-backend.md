@@ -6,9 +6,15 @@ This section supersedes older bottle-MRP editing/pricing descriptions below.
 MR still submits unpriced Confirmed orders. Admin reviews the clinical details,
 private prescriptions and one INR rate per allergen occurrence, with saved
 patient/Doctor/MR/shipping/billing facts at the side and PO/decision actions at
-the bottom. Approval needs complete rates, PO and a verified patient-associated
+the bottom. Approval needs complete rates and a verified patient-associated
 prescription. Rejection does not need invented prices. All writes and imports
 still need a verified prescription; old fileless records remain readable.
+PO number is optional for saving, approval and permitted fulfillment transitions.
+It may be cleared; empty/whitespace-only input becomes null in the handwritten
+client and the shared authoritative input schema (direct write/import review/
+import commit). Nonblank values retain the existing 1–100 character bounds.
+PO-only changes do not force an unchanged historical fulfillment order to
+convert its pricing basis. Missing saved values remain “Not recorded.”
 
 New orders use `pricingBasis: "allergen_rates"`; their total is the exact
 minor-unit sum of all occurrence rates, bounded by the existing ₹10 crore cap.
@@ -34,15 +40,76 @@ the mutation. Non-null replacement IDs/bases still change the request identity.
 Import preview deliberately shows unissued IDs rather than promising numbers
 that have not yet been committed.
 
-The focused prescription viewer reuses the authenticated private-file download
-flow. Only verified allowlisted PDF/raster images can get temporary Blob URLs.
-PDF content is sandboxed without scripts, forms, same-origin privileges or
-navigation grants; images are not embedded as active documents. Loading,
-retry/restricted states and an explicit Download fallback are provided.
-Requests are aborted and temporary URLs revoked when closed/retried or access
-changes. File viewing does not upload, detach, delete or replace anything.
-No signed/public storage URL is exposed. Browser-native isolated PDF rendering
-may be blocked; Download remains available rather than relaxing the sandbox.
+The shared Admin/MR prescription viewer reuses the authenticated private-file
+Blob loader. PDFs use pinned local PDF.js and its matching bundled worker, not
+the browser-native iframe. Only one page is rendered at a time, with page/zoom
+controls and bounded canvas dimensions/area. No PDF scripting manager, forms,
+XFA, annotation layer, links or embedded-file actions are created. Worker fetch
+and WASM decoding are disabled. A binary-resource factory accepts only bundled
+font/CMap filenames, never PDF-selected URLs; notices are bundled as inert text.
+Raster images use temporary URLs. Loading, retry/restricted/unsupported states,
+Download, Close and existing focus return remain shared across callers.
+
+“Open in new tab” creates an application-controlled blank tab, immediately
+removes its opener and renders the same privately fetched bytes as canvas/image
+content, never as an executable PDF. The URL carries no file identifier,
+credentials or private bytes. A restrictive CSP permits only image Blob URLs
+and local presentation styles in that tab. Blocked popups have an actionable
+message and the original authenticated Download fallback. Each separate view
+owns its renderer, worker/image resources, close handling and session
+subscription independently of the dialog: closing the dialog does not close the
+tab. Known sign-out/account change or departure from the parent portal disposes
+separate views, including backgrounded views. No browser storage is used.
+No signed/public storage URL is exposed; file viewing never mutates an order.
+
+The historical-pricing explanation and explicit **Enable rate editing / Reprice**
+action are beside the allergen fields, backed by the same draft basis as the
+side-card control. Rates remain read-only until this action; conversion remains
+unsaved until an explicit successful save with every rate. Discard/cancel retains
+the saved historical basis/total. Side-card children, facts, totals and long
+actions have scoped wrapping/shrink rules rather than global button changes.
+
+### Unconfirmed saves and source investigation
+
+Source tracing covers the editor, handwritten wire-payload preparation,
+authenticated dispatch/JSON decoding, authorized response projection and the
+encrypted advisory-lock-protected idempotency record. No live/read-only failure
+logs or runtime requests were used. The screenshot establishes an unknown
+outcome, not a particular transaction failure, PO validation failure or
+development-update cause; its specific cause cannot be established here.
+
+Two source-evidenced recovery weaknesses are addressed: retries previously
+reconstructed wire fields from session/form state, and a failed same-key
+attempt had no durable rejection to prevent a delayed original from committing
+afterwards. The editor now captures the exact wire payload, expected version,
+owner, route and key once. The nearby recovery panel retries only that request
+and preserves the locked mounted draft. Auth/permission errors, unreadable
+responses and server/transport failures during recovery do not clear unknown.
+
+For direct saves the server serializes by the original advisory lock, checks
+owner/payload equality and replays committed operations without repeating
+updates, audit events or occurrence issuance. Definitive service-level 4xx
+rejections roll back attempted changes in a savepoint and commit an encrypted
+rejection under that same lock/key. Only these committed failures carry
+`X-Immunotherapy-Outcome: rejected`; subsequent identical requests replay the
+failure. Pre-service schema/auth errors and missing retry records do not provide
+this evidence. A terminal rejection permits correction while preserving the
+draft; stale-version rejection retains explicit compare/rebase handling.
+
+The actual authorized/redacted direct-save response is validated and serialized
+against `ImmRecord` **before commit**, avoiding the previous post-commit-only
+FastAPI validation boundary. This is hardening of an identifiable failure window,
+not evidence that response serialization caused the screenshot. If the response
+is still lost, same-key replay recovers the result. No schema migration or
+public file endpoint is introduced. Import approval/fulfillment policy shares
+the optional-PO rule; import mutation recovery is otherwise unchanged.
+
+This revision is source/diff-reviewed only. No tests were added, modified or run;
+no builds, browser/manual runtime checks, validation/release wrappers, workflow
+changes, probes, service restarts, migration commands or deployments were run.
+Dependency resolution/lockfile updates used ignored lifecycle scripts. Local
+worker/asset packaging, PDF fidelity, popup lifecycle and save recovery remain
+unverified at runtime.
 
 All four Admin order listings expose `audit.createdBy`, `createdAt`,
 `updatedBy`, and `updatedAt`, rendered with portal timestamp preferences.
@@ -196,7 +263,8 @@ until maintenance authenticates and re-encrypts every dependent envelope.
   are integer paise, capped at ₹10 crore. Bounds are 100 bottles, 100 allergens
   per bottle, 1,000 items across the order and 10 attached files.
 - `IT-` order numbers are allocated by a database sequence; gaps are possible.
-  There is no Immunotherapy PO-number field.
+  The current Admin review form includes an optional Immunotherapy PO-number
+  field; it is not a prerequisite for approval or fulfillment.
 - Updates require the saved version. Conflicts keep the mounted draft and offer
   explicit comparison/reconciliation with the latest saved version.
 - Mutations serialize their request UUID and atomically persist both the order

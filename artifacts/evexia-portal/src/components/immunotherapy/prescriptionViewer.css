@@ -1,9 +1,16 @@
 .imm-dialog--viewer { width: min(960px, 100%); min-width: 0; overflow-wrap: anywhere; }
 .imm-viewer { min-height: 50dvh; max-height: 70dvh; display: grid; place-items: center; overflow: auto; border: 1px solid var(--admin-border); border-radius: 8px; }
-.imm-viewer__frame { width: 100%; height: 70dvh; border: 0; }
-.imm-viewer__image { max-width: 100%; max-height: 70dvh; object-fit: contain; }
 .imm-viewer__skeleton { padding: 40px; opacity: .7; }
 .imm-dialog--viewer .imm-hint { color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; margin: 4px 0 0; overflow-wrap: anywhere; }
 .imm-dialog--viewer .imm-error { color: var(--admin-danger); font-size: 12px; font-weight: 600; margin: 4px 0 0; overflow-wrap: anywhere; }
 .imm-dialog--viewer .admin-dialog__actions { flex-wrap: wrap; }
 .imm-dialog--viewer .admin-button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.imm-rendered-document { width: 100%; min-width: 0; padding: 10px; }
+.imm-pdf-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.imm-pdf-controls button { min-height: 44px; max-width: 100%; padding: 8px 12px; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-surface); color: var(--admin-text); font: inherit; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.imm-pdf-controls button:disabled { opacity: .5; cursor: default; }
+.imm-pdf-controls button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.imm-pdf-surface { overflow: auto; max-width: 100%; max-height: 55dvh; }
+.imm-pdf-surface canvas { display: block; background: white; max-width: none; }
+.imm-pdf-surface img { max-width: 100%; height: auto; }
+.imm-pdf-license { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 200px; overflow: auto; }

@@ -2,6 +2,7 @@ import { getSession, purchaseOrderRequest, immunotherapyFileRequest } from '../a
 import { downloadServerBlob } from './downloads.js';
 
 export const request = (path = '', options) => purchaseOrderRequest(path, options, 'immunotherapy-orders');
+const optionalPO = (value) => typeof value === 'string' && !value.trim() ? null : value || null;
 export const STATUSES = Object.freeze(['Confirmed', 'Approved', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
 export const DOSES = Object.freeze([...PRELIMINARY_DOSES, ...Array.from({ length: 8 }, (_, i) => `B${i + 1}`)]);
@@ -40,13 +41,24 @@ export function orderInput(v) {
       items: g.items.map(({ allergenId, result, rate, suborderId }) => ({ allergenId, result,
         ...(suborderId ? { suborderId } : {}), ...(!mr ? { rate: rate || null } : {}) })) })),
     remarks: v.remarks, shipping: v.shipping, status: mr ? 'Confirmed' : v.status,
-    ...(!mr ? { poNumber: v.poNumber || null } : {}),
+    ...(!mr ? { poNumber: optionalPO(v.poNumber) } : {}),
     attachmentIds: v.attachments.map((f) => f.id),
   }));
 }
-export const saveOrder = (v, order, key) => request(order ? `/${order.id}/edit` : '', { body: {
-  ...orderInput(v), idempotencyKey: key, expected_version: order?.version ?? null,
-} });
+// Capture wire values once: retrying never re-derives portal fields or version.
+export const prepareOrderSave = (v, order, key) => ({
+  path: order ? `/${order.id}/edit` : '', owner: getSession().user?.id,
+  body: structuredClone({ ...orderInput(v), idempotencyKey: key, expected_version: order?.version ?? null }),
+});
+export const submitOrderSave = (submission) => {
+  if (!submission.owner || getSession().user?.id !== submission.owner) {
+    const error = new Error('Only the original signed-in account can recover this save. Your draft is preserved.');
+    error.status = 401;
+    throw error;
+  }
+  return request(submission.path, { body: submission.body });
+};
+export const saveOrder = (v, order, key) => submitOrderSave(prepareOrderSave(v, order, key));
 
 const RESULT = /^\d{1,6}(?:\.\d{1,2})?$/;
 const RESULT_HELP = 'Enter a required non-negative result in mm, with up to six whole digits and two decimal places.';
@@ -80,10 +92,8 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
   if (enteredTotal > 10000000000n) errors.groups = 'Order value must not exceed ₹10 crore.';
   const sameFinancials = previous && v.status === previous.status && v.status !== 'Approved'
     && basis === (previous.pricingBasis || 'legacy_bottle_mrp')
-    && (v.poNumber || null) === (previous.poNumber || null)
     && financialFingerprint(v.groups) === financialFingerprint(previous.groups);
   if (!mr && ['Approved', 'In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && !sameFinancials) {
-    if (!v.poNumber?.trim()) errors.poNumber = 'Enter the PO number before approval or fulfillment.';
     for (const group of v.groups) {
       for (const item of group.items) if (parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter the INR rate for this allergen occurrence before approval.';
     }
@@ -95,7 +105,7 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
     }
   }
   if (!mr && ['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && (!previous || ['Confirmed', 'Rejected'].includes(previous.status))) errors.status = 'Approve this order explicitly before moving it to fulfillment.';
-  if ((v.poNumber || '').length > 100) errors.poNumber = 'Use at most 100 characters.';
+  if (optionalPO(v.poNumber)?.length > 100) errors.poNumber = 'Use at most 100 characters.';
   if ((v.remarks || '').length > 4000) errors.remarks = 'Use at most 4,000 characters.';
   if (!['patient', 'doctor'].includes(v.shipping)) errors.shipping = 'Choose Patient or Doctor for shipping.';
   if (!STATUSES.includes(v.status)) errors.status = 'Choose a listed order status.';
@@ -120,7 +130,7 @@ export function saveErrors(cause, v) {
     else if (key === 'shipping') errors.shipping = 'Choose Patient or Doctor for shipping.';
     else if (key === 'status') errors.status = 'Choose a listed order status.';
     else if (key === 'remarks') errors.remarks = 'Use at most 4,000 characters.';
-    else if (key === 'poNumber') errors.poNumber = 'Enter a PO number of 1–100 characters.';
+    else if (key === 'poNumber') errors.poNumber = 'Leave PO number blank, or use at most 100 characters.';
     else if (key === 'pricingBasis') errors.groups = 'Use a supported saved pricing basis. Historical repricing requires the explicit allergen-rate choice.';
     else if (/^attachmentIds(?:\.\d+)?$/.test(key)) errors.attachments = PRESCRIPTION_HELP;
     else if (key === 'groups') errors.groups = 'Use one to 100 saved groups, retaining their internal IDs, and at most 1,000 allergen suborders.';
@@ -144,7 +154,7 @@ export function saveErrors(cause, v) {
   }
   if (cause.code === 'mr_order_assignment') errors.mrId = 'The order must use your signed-in saved MR assignment. Re-select an associated patient and Doctor.';
   if (cause.code === 'imm_total') errors.groups = 'Order value must not exceed ₹10 crore.';
-  if (cause.code === 'imm_pricing') errors.form = 'Approval requires a rate for every suborder and a PO number. Reject without invented prices if the order will not proceed.';
+  if (cause.code === 'imm_pricing') errors.form = 'Approval requires a rate for every suborder. PO number is optional. Reject without invented prices if the order will not proceed.';
   if (cause.code === 'imm_pricing_basis') errors.groups = 'Historical pricing is preserved until you explicitly select allergen-rate pricing and enter every rate. Bottle MRP cannot be edited for rate-sum orders.';
   if (cause.code === 'imm_suborder') errors.groups = 'Retain saved suborder IDs and group associations. New occurrence identities are issued by the server on save. Your draft is preserved.';
   if (cause.code === 'imm_admin_review') errors.status = cause.status === 403

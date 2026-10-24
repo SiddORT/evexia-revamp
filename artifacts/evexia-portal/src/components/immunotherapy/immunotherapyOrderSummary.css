@@ -5,3 +5,5 @@
 .imm-saved-order__allergens > li { padding: 10px; background: var(--admin-state-link); border: 1px solid var(--admin-border); border-radius: 8px; min-width: 0; }
 .imm-saved-order .kits-hint { margin-top: 10px; line-height: 1.5; }
 .imm-saved-order .kits-facts dd { white-space: pre-wrap; }
+.imm-saved-order .kits-side, .imm-saved-order .kits-side > *, .imm-saved-order .kits-facts > *, .imm-saved-order .kits-facts dd { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.imm-saved-order .kits-side .admin-button { min-width: 0; max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; }

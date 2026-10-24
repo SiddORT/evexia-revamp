@@ -1042,6 +1042,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
+    if (resource === 'immunotherapy-orders') {
+      error.terminal = response.status >= 400 && response.status < 500
+        && response.headers.get('X-Immunotherapy-Outcome') === 'rejected';
+    }
     error.ambiguous = mutation && response.status >= 500;
     if (resource === 'kits-orders') error.requestId = response.headers.get('X-Request-ID') || data?.error?.request_id;
     if (resource === 'immunotherapy-orders' && response.status === 422) {
@@ -1054,9 +1058,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         .map(({ field, code }) => ({ field, code }));
       error.message = error.code === 'imm_prescription_required'
         ? 'Attach at least one verified prescription for the selected patient before saving or importing this order.'
-        : error.code === 'imm_pricing' ? 'Admin approval requires each bottle MRP, each allergen rate and a PO number. Rejection does not require pricing. Your draft is preserved.'
+        : error.code === 'imm_pricing' ? 'Admin approval requires every allergen/suborder rate and a verified prescription. PO number is optional. Rejection does not require pricing. Your draft is preserved.'
         : error.code === 'imm_admin_review' ? 'Review transitions are restricted. An order cannot return to Confirmed after review, and must be explicitly Approved before fulfillment. Your draft is preserved.'
-        : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, Admin pricing/PO, patient assignments and prescriptions. Your draft is preserved.';
+        : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, Admin rates, optional PO length, patient assignments and prescriptions. Your draft is preserved.';
     }
     if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');
     if (batchOperation && path === '/batch-settings') {

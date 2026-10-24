@@ -9,7 +9,7 @@ import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, saveOrder, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, prescriptionBlob, skinResultError, mrEditable } from '../../services/serverImmunotherapy.js';
+import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, prescriptionBlob, skinResultError, mrEditable } from '../../services/serverImmunotherapy.js';
 import { createPatient, patientLanguageChoices } from '../../services/serverPatients.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js';
@@ -82,6 +82,7 @@ function Editor({ order, mode }) {
   const [fileMsg, setFileMsg] = useState('');
   const [pending, setPending] = useState('');
   const [uncertain, setUncertain] = useState(false);
+  const [recoveryIssue, setRecoveryIssue] = useState('');
   const [policy, setPolicy] = useState(null);
   const [policyError, setPolicyError] = useState('');
   const [policyRevision, setPolicyRevision] = useState(0);
@@ -265,19 +266,29 @@ function Editor({ order, mode }) {
       const problems = orderErrors(submission, v.attachments.some((f) => verifiedFiles.current.get(f.id) === v.patientId), { mr: mrPortal, previous: saveBase.current });
       if (Object.keys(problems).length) { setErrors(problems); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
     }
+    const wasUncertain = uncertain;
     busy.current = true; setPending('save'); setErrors({});
-    if (!mutation.current) mutation.current = { values: structuredClone(submission), key: crypto.randomUUID() };
+    if (!mutation.current) mutation.current = prepareOrderSave(submission, saveBase.current, crypto.randomUUID());
     try {
-      await saveOrder(mutation.current.values, saveBase.current, mutation.current.key);
+      await submitOrderSave(mutation.current);
       if (!alive.current) return;
       initial.current = v; dirtyRef.current = false; setErrors({}); setUncertain(false);
       navigate(BASE);
     } catch (cause) {
       if (alive.current) {
-        setUncertain(Boolean(cause.ambiguous));
-        if (!cause.ambiguous) mutation.current = null;
-        setErrors(cause.ambiguous ? { form: cause.message } : saveErrors(cause, v));
-        if (cause.code === 'imm_stale' && order) {
+        // After a lost response, only an owner/key-bound terminal rejection
+        // under the server's mutation lock proves the original cannot commit.
+        // Schema/auth/transport failures before that lock cannot clear unknown.
+        const unresolved = Boolean(cause.ambiguous) || (wasUncertain && !cause.terminal);
+        setUncertain(unresolved);
+        setRecoveryIssue(unresolved && [401, 403].includes(cause.status)
+          ? 'Session or permission recovery is required. Only the original account with current edit access can recover this request; no replacement save has been created.'
+          : unresolved && cause.code === 'imm_retry'
+            ? 'The server could not match this request identity. Keep this draft open and ask the operator to investigate; do not create a replacement save.'
+            : '');
+        if (!unresolved) mutation.current = null;
+        setErrors(unresolved ? { form: cause.message } : saveErrors(cause, v));
+        if (!unresolved && cause.code === 'imm_stale' && order) {
           try { const latest = await request(`/${order.id}`); if (alive.current) setConflict(latest); }
           catch { /* The stale draft remains mounted; explicit retry can fetch again. */ }
         }
@@ -330,9 +341,15 @@ function Editor({ order, mode }) {
         {order && readOnly && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
       </div>
     </div>
-    {uncertain && <p role="alert" className="imm-boundary">Save outcome is unconfirmed. Editing is locked; retry the same submission below to recover it without creating a duplicate. Your draft remains mounted.</p>}
+    {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">
+      <h2 id="imm-recovery-title">Save outcome is unconfirmed</h2>
+      <p>{errors.form || 'The server response did not confirm the outcome.'}</p>
+      <p>Your draft is preserved and editing is locked. Retry the exact submitted request to recover a committed save or finish it safely. The payload, expected version and request key will not change. Do not reload, leave this page or create another order to dismiss this notice.</p>
+      {recoveryIssue && <p>{recoveryIssue}</p>}
+      <button type="button" className="admin-button" disabled={Boolean(pending)} onClick={() => save()}>{pending === 'save' ? 'Recovering same save…' : 'Recover this same save safely'}</button>
+    </section>}
     {mrPortal && order && !mrEditable(order) && <p className="imm-boundary">This saved order is read-only for MR because it has Admin review or historical pricing data.</p>}
-    {errList.length > 0 && <div className="imm-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="error-imm-summary"><strong>Fix {errList.length} problem{errList.length > 1 ? 's' : ''} before saving</strong>
+    {!uncertain && errList.length > 0 && <div className="imm-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="error-imm-summary"><strong>{errors.form && errList.length === 1 ? 'Save not completed — draft preserved' : `Fix ${errList.length} problem${errList.length > 1 ? 's' : ''} before saving`}</strong>
       <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="imm-link-btn" onClick={() => focusId(targetFor(k))} data-testid={`link-imm-error-${k}`}>{labelFor(k)}: {m}</button></li>)}</ul></div>}
     <div className="imm-layout">
       <div className="imm-main">
@@ -392,6 +409,12 @@ function Editor({ order, mode }) {
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-allergens"><h2 id="imm-h-allergens" tabIndex={-1}>Allergen Details</h2>
           <p className="imm-hint">Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same group.</p>
+          {adminReview && legacy && <div className="imm-reprice">
+            <strong>Historical bottle-MRP pricing — allergen rates are read-only</strong>
+            <p className="imm-hint">Enable rate editing explicitly to draft a sum of allergen/suborder rates. Every rate is required to save the conversion. Viewing or cancelling does not change the saved basis or total.</p>
+            {!readOnly && <button type="button" className="admin-button" disabled={dis} onClick={() => set({ pricingBasis: 'allergen_rates' })}>Enable rate editing / Reprice</button>}
+          </div>}
+          {adminReview && !legacy && order && (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' && <p className="imm-explain">Rate editing enabled for this draft only. Total: {money(total)}. Saving requires every rate; cancelling or discarding keeps historical pricing.</p>}
           {v.groups.length > 1 && <p className="imm-hint">Saved bottle associations are retained below. Results remain in their original group.</p>}
           {!readOnly && <ReferenceState source={allergens} label="allergens" />}
           <Err id="imm-groups-err" text={errors.groups} />
@@ -450,9 +473,9 @@ function Editor({ order, mode }) {
         </section>
 
         {!readOnly && <section className="admin-panel imm-section imm-bottom" aria-labelledby="imm-h-review"><h2 id="imm-h-review">{adminReview ? 'Purchase order and decision' : 'Submit order'}</h2>
-          {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} aria-describedby={errors.poNumber ? 'imm-poNumber-err' : undefined} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label>
+          {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number (optional)<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} aria-describedby={errors.poNumber ? 'imm-poNumber-err' : undefined} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label>
             <Err id="imm-poNumber-err" text={errors.poNumber} />
-            <p className="imm-hint">Approval requires a rate for every suborder, a PO number and a verified prescription for the patient. Rejection does not require prices.</p></>}
+            <p className="imm-hint">Approval requires a rate for every suborder and a verified prescription for the patient. PO number may be omitted or cleared. Rejection does not require prices.</p></>}
           <div className="imm-btn-row">
             {adminReview && !isNew && <button type="button" className="admin-button" disabled={dis} onClick={() => save('Approved')} data-testid="button-imm-approve">Approve</button>}
             {adminReview && !isNew && <button type="button" className="admin-button admin-button--danger" disabled={dis} onClick={() => save('Rejected')} data-testid="button-imm-reject">Reject</button>}

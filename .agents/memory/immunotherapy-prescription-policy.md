@@ -29,14 +29,17 @@ a rename of the old bottle-management interface.
 adding bottle creation, removal or reassignment controls to the simplified form.
 
 MR submits an unpriced Confirmed order and has no Billing editor. Admin enters
-one INR rate per allergen/suborder and a PO number before approval; rejection
+one INR rate per allergen/suborder before approval; PO number is optional for
+saving, approval and permitted fulfillment and may be omitted or cleared. Rejection
 requires no fabricated financial values. New and explicitly repriced orders
 total the entered occurrence rates, not bottle MRPs. Historical saved totals
 and prices stay unchanged unless an Admin explicitly saves the changed basis
 with all required rates. Internal historical groups are not suborder identities.
 
 **Why:** The user explicitly confirmed rate-sum totals, superseding the earlier
-sum-of-bottle-MRPs rule; historical association and price retention still apply.
+sum-of-bottle-MRPs rule, and later made PO numbers optional end to end,
+superseding the approval/fulfillment PO prerequisite. Historical association
+and price retention still apply.
 
 **How to apply:** Keep financial/review authority on the Admin side across
 forms, imports and retries. Never infer historical missing rates or replace

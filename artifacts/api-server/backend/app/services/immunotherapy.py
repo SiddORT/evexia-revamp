@@ -32,6 +32,13 @@ class ImmError(Exception):
         self.message, self.status, self.code = message, status, code
 
 
+class RejectedMutation:
+    """A terminal rejection stored under the original serialized request key."""
+    def __init__(self, failure):
+        self.error = ImmError(failure["message"], failure["status"], failure["code"])
+        self.error.terminal = True
+
+
 def encode(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
 
@@ -59,22 +66,29 @@ def authorize(db, actor, action=None):
     return authorize_order(db, actor, "immunotherapy", action)
 
 
-def transaction(db, actor, work, *, action=None, resource="immunotherapy"):
+def transaction(db, actor, work, *, action=None, resource="immunotherapy", response_model=None):
     try:
         current = authorize_order(db, actor, resource, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
-        from app.services.order_capabilities import public_result
-        result = present_audit(db, current, result)
-        result = public_result(current, resource, result)
+        if not isinstance(result, RejectedMutation):
+            from app.services.order_capabilities import public_result
+            result = present_audit(db, current, result)
+            result = public_result(current, resource, result)
+            if response_model:
+                # Validate AND serialize the actual authorized projection before
+                # commit, not only in FastAPI after a write has already committed.
+                result = response_model.model_validate(result).model_dump(mode="json")
         db.commit()
-        return result
     except SQLAlchemyError:
         db.rollback()
         raise ImmError() from None
     except Exception:
         db.rollback()
         raise
+    if isinstance(result, RejectedMutation):
+        raise result.error
+    return result
 
 
 def find(db, record_id):
@@ -114,9 +128,8 @@ def review_policy(db, body, previous):
         raise ImmError("A reviewed order cannot be reset to awaiting review.", 422, "imm_admin_review")
     proceeding = body.status in {"Approved", "In process", "Shipped", "Delivered", "Returned"}
     # Unchanged historical fulfillment snapshots can retain missing legacy rates
-    # and PO numbers. Any new approval/financial change needs the full contract.
+    # and PO numbers. PO-only edits do not force historical financial conversion.
     legacy_unchanged = previous and body.status == previous["status"] and body.status != "Approved" and (
-        body.poNumber == previous.get("poNumber") and
         basis(body, previous) == previous.get("pricingBasis", LEGACY_BASIS) and
         financials(body.model_dump(mode="json")["groups"]) == financials(previous["groups"])
     )
@@ -125,10 +138,10 @@ def review_policy(db, body, previous):
     ):
         raise ImmError("Approve this order explicitly before moving it to fulfillment.", 422, "imm_admin_review")
     if proceeding and not legacy_unchanged:
-        if not body.poNumber or not body.poNumber.strip() or any(
+        if any(
             any(i.rate is None for i in g.items) for g in body.groups
         ):
-            raise ImmError("Approval/fulfillment requires a rate for every suborder and a PO number.", 422, "imm_pricing")
+            raise ImmError("Approval/fulfillment requires a rate for every suborder. PO number is optional.", 422, "imm_pricing")
     if proceeding and not legacy_unchanged and basis(body, previous) != RATE_BASIS:
         raise ImmError("Explicitly select allergen-rate pricing before approving or repricing this historical order.", 422, "imm_pricing_basis")
 
@@ -281,7 +294,7 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     return project(keys, row)
 
 
-def idempotent(db, actor, keys, key, payload, work):
+def idempotent(db, actor, keys, key, payload, work, *, terminal_rejections=False):
     db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key.int % (2**63 - 1)})
     prior = db.get(Retry, key)
     if prior:
@@ -291,6 +304,8 @@ def idempotent(db, actor, keys, key, payload, work):
         from app.services.immunotherapy_pricing import retry_payload
         if encode(retry_payload(saved["request"])) != encode(retry_payload(payload)):
             raise ImmError("Retry identity belongs to a different request. Retry the original unchanged submission.", 409, "imm_retry")
+        if saved.get("failure"):
+            return RejectedMutation(saved["failure"])
         result = saved["result"]
         # Recover the same mutation without replaying it or returning a stale
         # Confirmed snapshot after an administrator has reviewed the order.
@@ -301,15 +316,31 @@ def idempotent(db, actor, keys, key, payload, work):
         else:
             result = current[0]
         return result
-    result = work()
+    if terminal_rejections:
+        try:
+            # The advisory lock predates this savepoint. Roll back attempted
+            # changes, but retain the lock until the rejection tombstone commits.
+            with db.begin_nested():
+                result = work()
+        except ImmError as error:
+            if not 400 <= error.status < 500:
+                raise
+            failure = dict(message=error.message, status=error.status, code=error.code)
+            db.add(Retry(key=key, actor_id=actor.user.id, response_ciphertext=seal(
+                keys, "requests", key, {"request": payload, "failure": failure})))
+            return RejectedMutation(failure)
+    else:
+        result = work()
     db.add(Retry(key=key, actor_id=actor.user.id, response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))
     return result
 
 
 def save(db, actor, body, record_id=None):
+    from app.schemas.immunotherapy import ImmRecord
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
         [str(record_id), body.model_dump(mode="json")],
-        lambda: apply(db, a, k, body, record_id, body.expected_version)), action="edit" if record_id else "add")
+        lambda: apply(db, a, k, body, record_id, body.expected_version), terminal_rejections=True),
+        action="edit" if record_id else "add", response_model=ImmRecord)
 
 
 def detail(db, actor, record_id):

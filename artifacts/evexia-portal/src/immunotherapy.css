@@ -70,6 +70,11 @@
 .imm-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
 .imm-main { display: grid; gap: 16px; min-width: 0; }
 .imm-aside { position: sticky; top: 12px; display: grid; gap: 12px; min-width: 0; }
+.imm-aside > *, .imm-aside .imm-facts > *, .imm-aside .imm-totals > *, .imm-aside .imm-totals > div > * { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.imm-aside .admin-button, .imm-reprice .admin-button, .imm-recovery .admin-button { min-width: 0; max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+.imm-aside .imm-status { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.imm-recovery h2 { margin: 0; font-size: 16px; }
+.imm-recovery:focus { outline: 2px solid var(--admin-focus); }
 .imm-section { padding: 18px; min-width: 0; }
 .imm-section > h2 { margin: 0 0 4px; font-size: 16px; color: var(--admin-text); font-family: var(--font-display); font-weight: 500; }
 .imm-section > .imm-hint { margin: 0 0 14px; }

@@ -330,7 +330,8 @@ def create_app() -> FastAPI:
     @app.exception_handler(ImmError)
     @app.exception_handler(POError)
     async def purchase_order_error(request: Request, exc: POError):
-        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+        headers = {"X-Immunotherapy-Outcome": "rejected"} if isinstance(exc, ImmError) and getattr(exc, "terminal", False) else None
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status, headers=headers)
 
     @app.exception_handler(MRError)
     async def mr_error(request: Request, exc: MRError):
