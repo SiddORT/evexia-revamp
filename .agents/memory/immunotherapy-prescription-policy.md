@@ -17,3 +17,13 @@ while preserving existing historical orders and their bottle associations.
 
 **How to apply:** Keep read compatibility separate from authoritative write
 validation; retain historical IDs when simplifying labels or transfer flows.
+
+New-order entry must not expose bottle-management controls. Use explicit
+Allergen Name, Skin Test Result (mm) and Add entry after dosage, with required
+pricing kept separately; historical multi-bottle associations remain intact.
+
+**Why:** The user explicitly requested removal of “Bottles and allergens,” not
+a rename of the old bottle-management interface.
+
+**How to apply:** Preserve the backend grouping contract internally without
+adding bottle creation, removal or reassignment controls to the simplified form.

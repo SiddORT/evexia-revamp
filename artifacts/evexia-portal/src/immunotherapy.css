@@ -96,6 +96,11 @@
 .imm-tag { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 50px; background: var(--admin-state-soft); color: var(--admin-secondary); font-size: 10px; font-weight: 700; }
 .imm-tag--solo { background: var(--admin-highlight-soft); color: var(--admin-danger); }
 .imm-item { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: end; padding: 8px 0; border-top: 1px solid var(--admin-border); }
+.imm-allergen-results .imm-item { grid-template-columns: minmax(0, 1fr) minmax(0, 165px) auto; }
+.imm-allergen-entry { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
+.imm-allergen-entry > .imm-field { flex: 1 1 180px; }
+.imm-allergen-results { min-width: 0; }
+.imm-pricing { display: grid; gap: 10px; margin: 12px 0; }
 .imm-item__name { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .imm-bottle__foot { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 10px; align-items: end; }
 .imm-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -104,6 +109,10 @@
 .imm-files { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .imm-files li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--admin-border); border-radius: 8px; font-size: 12px; min-width: 0; }
 .imm-files span { overflow-wrap: anywhere; min-width: 0; }
+.imm-file-description { display: grid; gap: 4px; flex: 1 1 180px; }
+.imm-file-description strong { overflow-wrap: anywhere; }
+.imm-file-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.imm-files li { flex-wrap: wrap; }
 .imm-errors { padding: 12px 14px; border: 1px solid var(--admin-danger); border-radius: 8px; background: var(--admin-highlight-soft); color: var(--admin-danger); margin-bottom: 14px; font-size: 12px; }
 .imm-errors ul { margin: 6px 0 0; padding-left: 18px; }
 .imm-errors:focus { outline: 2px solid var(--admin-focus); }
@@ -125,6 +134,7 @@
 .imm-print-note { margin: 0 0 6px; font-size: 12px; color: var(--admin-text-soft); }
 @media (max-width: 960px) { .imm-layout { grid-template-columns: minmax(0, 1fr); } .imm-aside { position: static; order: -1; } }
 @media (max-width: 560px) { .imm-item { grid-template-columns: minmax(0, 1fr); } .imm-bottle__foot { grid-template-columns: minmax(0, 1fr); } .imm-section { padding: 14px; } .imm-menu { right: auto; left: 0; } }
+@media (max-width: 560px) { .imm-allergen-results .imm-item { grid-template-columns: minmax(0, 1fr); } }
 @media print {
   body.imm-printing > *:not(.imm-print-portal) { display: none !important; }
   body.imm-printing .imm-print-portal { position: static; display: block !important; }

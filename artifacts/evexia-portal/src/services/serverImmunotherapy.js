@@ -38,6 +38,7 @@ export const saveOrder = (v, order, key) => request(order ? `/${order.id}/edit` 
 
 const RESULT = /^\d{1,6}(?:\.\d{1,2})?$/;
 const RESULT_HELP = 'Enter a required non-negative result in mm, with up to six whole digits and two decimal places.';
+export const skinResultError = (value) => RESULT.test(value) ? '' : RESULT_HELP;
 const PRICE_HELP = 'Enter a required non-negative MRP in INR, with up to ten whole digits and two decimal places.';
 export const PRESCRIPTION_HELP = 'Upload and attach at least one verified prescription for the selected patient. Pending, failed or removed files do not count.';
 
@@ -51,7 +52,7 @@ export function orderErrors(v, hasPrescription) {
   if (!v.groups.length || v.groups.length > 100) errors.groups = 'Use between one and 100 bottles.';
   if (v.groups.reduce((n, g) => n + g.items.length, 0) > 1000) errors.groups = 'Use at most 1,000 allergen items across all bottles.';
   for (const group of v.groups) {
-    if (!group.items.length || group.items.length > 100) errors[`group-${group.id}`] = 'Add between one and 100 allergens to this bottle, or remove the bottle.';
+    if (!group.items.length || group.items.length > 100) errors[`group-${group.id}`] = 'Add between one and 100 allergens to this group in Allergen Details.';
     else if (groupingError(group.items)) errors[`group-${group.id}`] = groupingError(group.items);
     if (parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
     for (const item of group.items) if (!RESULT.test(item.result)) errors[`result-${group.id}-${item.allergenId}`] = RESULT_HELP;
