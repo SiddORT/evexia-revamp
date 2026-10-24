@@ -81,7 +81,7 @@ def access_directory(db, actor, settings, offset, limit):
     def work():
         _, crypto = authorize(db, actor, settings, access_read=True)
         condition = (StaffProfile.deleted_at.is_(None), User.system_role.is_(None),
-                     User.is_protected_system_admin.is_(False), User.email.is_(None))
+                     User.is_protected_system_admin.is_(False), User.email_ciphertext.is_(None))
         base = select(StaffProfile).join(User, User.id == StaffProfile.user_id).where(*condition)
         total = db.scalar(select(func.count()).select_from(base.subquery()))
         rows = db.scalars(base.order_by(StaffProfile.created_at.desc(), StaffProfile.id).offset(offset).limit(limit))

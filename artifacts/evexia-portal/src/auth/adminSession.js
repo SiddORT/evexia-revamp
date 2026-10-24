@@ -319,6 +319,8 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     throw new SessionError('Unsupported staff operation.');
   }
   const mutation = body !== undefined && path !== '/search';
+  const accessDirectoryRead = accessDirectoryPath && !mutation;
+  const invalidAccessResponse = 'Staff Access returned an invalid response. Use Refresh access to retry.';
   const epoch = generation;
   const owner = state.user?.id;
   const check = () => {
@@ -353,7 +355,8 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   } catch {
     if (pending) await pending;
     checkResponse();
-    const error = new SessionError(!mutation ? 'Unable to load staff. Check your connection and retry.'
+    const error = new SessionError(accessDirectoryRead ? 'Unable to load Staff Access. Check your connection and use Refresh access to retry.'
+      : !mutation ? 'Unable to load staff. Check your connection and retry.'
       : 'Save outcome could not be confirmed. Refresh the directory before submitting again; the server may have saved it.');
     error.ambiguous = mutation;
     throw error;
@@ -363,7 +366,8 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   let data;
   try { data = await response.json(); }
   catch {
-    const error = new SessionError('Staff service returned an invalid response. Refresh the directory before submitting again.');
+    const error = new SessionError(accessDirectoryRead ? invalidAccessResponse
+      : 'Staff service returned an invalid response. Refresh the directory before submitting again.');
     error.ambiguous = mutation;
     throw error;
   }
@@ -374,7 +378,10 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     if (response.status === 401) { restorationAllowed = false; clear(); }
     const code = data?.error?.code;
     const error = new SessionError(
-      code === 'staff_stale' ? 'This staff record changed. Your draft is still here. Review current details before retrying.'
+      accessDirectoryRead ? (response.status === 401 ? 'Your session expired. Please sign in again.'
+        : response.status === 403 ? 'Staff Management access denied.'
+        : 'Unable to load Staff Access because the service is unavailable. Use Refresh access to retry.')
+        : code === 'staff_stale' ? 'This staff record changed. Your draft is still here. Review current details before retrying.'
         : code === 'staff_role_invalid' ? 'The selected role is no longer available. Your draft is still here. Search current roles and choose again.'
         : code === 'staff_designation_invalid' ? 'The selected designation is no longer active or available. Your draft is still here. Search designations and choose again.'
         : code === 'role_deleted' || code === 'role_not_found' ? 'The selected role no longer exists. Your choices are still here. Reload roles and choose another or remove the assignment.'
@@ -391,6 +398,19 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     error.code = code;
     error.ambiguous = mutation && response.status >= 500 && code !== 'staff_unavailable';
     throw error;
+  }
+  if (accessDirectoryRead) {
+    const params = new URLSearchParams(path.split('?')[1]);
+    const offset = Number(params.get('offset'));
+    const limit = Number(params.get('limit'));
+    if (!Array.isArray(data?.items) || !Number.isSafeInteger(data.total) || data.total < 0
+        || data.items.length !== Math.min(limit, Math.max(0, data.total - offset))
+        || data.items.some((row) => !row || typeof row.id !== 'string' || typeof row.name !== 'string'
+          || !(row.employeeCode === null || typeof row.employeeCode === 'string')
+          || !['active', 'inactive'].includes(row.status) || typeof row.role !== 'string'
+          || typeof row.workspace_login_enabled !== 'boolean')) {
+      throw new SessionError(invalidAccessResponse);
+    }
   }
   return data;
 }
