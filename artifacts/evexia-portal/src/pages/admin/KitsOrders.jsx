@@ -21,17 +21,22 @@ function OrderItemDetails({ order }) {
   const consumables = [['lancets', 'Lancets'], ['applicators', 'Applicators'], ['tray', 'Tray']]
     .filter(([key]) => order[key]);
   return <ul className="kits-listing__items" role="list">
-    {kit?.product && <li>
+    {kit?.product && <li className="kits-listing__kit">
       <strong>Stallergo Skin Prick Kit</strong>
-      <span>Configuration: {kit.product}</span>
-      <span>Volume: {kit.volume} ml</span>
-      <span>Qty: {kit.quantity}</span>
-      {kit.product === 'Customized' && kit.custom && <span className="kits-listing__custom">{kit.custom}</span>}
+      <dl className="kits-listing__kit-facts">
+        <div><dt>Configuration:</dt><dd>{kit.product}
+          {kit.product === 'Customized' && kit.custom && <span className="kits-listing__custom">{kit.custom}</span>}
+        </dd></div>
+        <div><dt>Volume:</dt><dd>{kit.volume} ml</dd></div>
+        <div><dt>Qty:</dt><dd>{kit.quantity}</dd></div>
+      </dl>
     </li>}
     {consumables.length > 0 && <li>
-      {consumables.map(([key, label]) => <span key={key}>
-        <strong>{label}</strong>{' '}Qty: {order[key]}
-      </span>)}
+      <dl className="kits-listing__consumables">
+        {consumables.map(([key, label]) => <div key={key}>
+          <dt>{label} Qty:</dt><dd>{order[key]}</dd>
+        </div>)}
+      </dl>
     </li>}
   </ul>;
 }

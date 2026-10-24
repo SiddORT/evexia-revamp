@@ -74,12 +74,28 @@
 .kits-entry .kits-file-remove:disabled { opacity: .6; cursor: not-allowed; }
 /* Listing-owned layout: direct entry must not rely on another order route's CSS. */
 .kits-listing { gap: 16px; }
-.kits-listing .admin-table td:nth-child(3) { width: 600px; min-width: 600px; max-width: 600px; }
+.kits-listing .admin-table { table-layout: auto; }
+/* These leading columns are shared by MR/Admin; audit columns are inserted
+   after payment, so only Action is addressed from the end. */
+.kits-listing .admin-table :is(th, td):nth-child(2) { width: 1%; white-space: nowrap; }
+.kits-listing .admin-table :is(th, td):nth-child(3) { width: 44%; min-width: 30rem; max-width: none; white-space: normal; overflow-wrap: anywhere; }
+.kits-listing .admin-table :is(th, td):nth-child(4) { width: 22%; min-width: 12rem; white-space: normal; overflow-wrap: anywhere; }
+.kits-listing .admin-table :is(th, td):nth-child(5),
+.kits-listing .admin-table :is(th, td):nth-child(6),
+.kits-listing .admin-table :is(th, td):last-child { width: 1%; white-space: nowrap; }
+.kits-listing .admin-table td:last-child .kits-actions { flex-wrap: nowrap; }
+.kits-listing .admin-table td:last-child .kits-actions > * { flex: none; }
 .kits-listing .kits-listing__items { display: grid; gap: 4px; min-width: 0; margin: 0; padding: 0; list-style: none; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
-.kits-listing .kits-listing__items > li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; }
-.kits-listing .kits-listing__items > li > * { min-width: 0; max-width: 100%; }
+.kits-listing .kits-listing__items > li { min-width: 0; }
+.kits-listing .kits-listing__kit { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 12px; }
+.kits-listing .kits-listing__items dl { margin: 0; min-width: 0; }
+.kits-listing .kits-listing__kit-facts { display: grid; grid-template-columns: minmax(0, 1fr) max-content max-content; align-items: baseline; gap: 12px; }
+.kits-listing .kits-listing__consumables { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 20px; }
+.kits-listing .kits-listing__items dl > div { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: .35em; min-width: 0; }
+.kits-listing .kits-listing__items dt { color: var(--admin-text-soft); font-weight: 400; white-space: nowrap; }
+.kits-listing .kits-listing__items dd { margin: 0; min-width: 0; color: var(--admin-text); font-weight: 600; }
 .kits-listing .kits-listing__items strong { color: var(--admin-text); font-weight: 600; }
-.kits-listing .kits-listing__custom { white-space: pre-wrap; }
+.kits-listing .kits-listing__custom { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
 .kits-listing .order-transfers { margin-bottom: 0; }
 .kits-listing .admin-page-head { align-items: flex-end; gap: 16px 24px; }
 .kits-listing .admin-page-head > :first-child { flex: 1 1 340px; }
