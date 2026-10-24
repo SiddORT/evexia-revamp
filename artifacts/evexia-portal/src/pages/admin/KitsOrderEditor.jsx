@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowLeft, Eye } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
+import { ArrowLeft, Eye, Paperclip } from 'lucide-react';
+import AdminLayout, { useOrderBase, useOrderActions, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { DownloadOrderFile, OrderFileList } from '../../components/orders/OrderFiles.jsx';
-import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, attachmentBlob, updateOrder } from '../../services/serverKits.js';
+import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, attachmentBlob, updateOrder, request, uploadAttachment, validateAttachments, fileSize } from '../../services/serverKits.js';
+import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { blankPricing, calculateKitsPricing, pricingInput, moneyText, normalizeKitsAmount } from '../../services/kitsPricing.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
-import { setNavigationGuard } from '../../auth/navigationGuard.js';
+import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 
@@ -37,6 +38,8 @@ function hydrate(o) {
 
 export default function KitsOrderEditor({ order }) {
   const can = useOrderActions('kits');
+  const { portal } = useOrderPortal();
+  const mrPortal = portal === 'mr';
   const BASE = useOrderBase('kits-consumables');
   const [, navigate] = useLocation();
   const { date } = useAdminDateFormatters();
@@ -48,16 +51,26 @@ export default function KitsOrderEditor({ order }) {
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
   const [errors, setErrors] = useState({}), [done, setDone] = useState(false);
   const [viewing, setViewing] = useState(null);
+  const [files, setFiles] = useState([]), [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState('');
+  const uploads = useRef(new Map());
   const viewerOpener = useRef(null);
   const submission = useRef(null), saving = useRef(false), summaryRef = useRef(null);
   const tax = order.pricing?.taxPercentage || '5.00';
-  const protectedOk = Boolean(can.protected);
+  const protectedOk = Boolean(can.protected || (mrPortal && can.edit && order.mrEditable));
+  useEffect(() => {
+    if (!can.upload_attachment) return undefined;
+    const controller = new AbortController();
+    request('/policy', { signal: controller.signal }).then(setPolicy)
+      .catch((cause) => { if (!controller.signal.aborted) setPolicyError(cause.message); });
+    return () => controller.abort();
+  }, [can.upload_attachment]);
 
-  useEffect(() => setNavigationGuard(() => {
-    if (!saving.current && !submission.current) return false;
-    setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
-    return true;
-  }), []);
+  const initialDraft = useRef(JSON.stringify({ v, pricing, parking, po }));
+  const leaveDialog = useOrderDraftNavigation({
+    dirty: !done && (files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })),
+    pending: busy || uncertain,
+    onBlocked: () => setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' }),
+  });
 
   const set = (p) => setV((c) => ({ ...c, ...p }));
   const setKit = (p) => setV((c) => ({ ...c, kit: { ...c.kit, ...p } }));
@@ -83,21 +96,29 @@ export default function KitsOrderEditor({ order }) {
     if (saving.current || done || !protectedOk) return;
     if (!submission.current) {
       const e = {};
-      try { normalizeKitsAmount(parking); } catch { e.parking = 'Enter Business Parking as a non-negative amount up to 999999999.99; 0 is valid.'; }
-      if (calc.error) e.pricing = calc.error;
+      if (!mrPortal) {
+        try { normalizeKitsAmount(parking); } catch { e.parking = 'Enter Business Parking as a non-negative amount up to 999999999.99; 0 is valid.'; }
+        if (calc.error) e.pricing = calc.error;
+      }
       if (Object.keys(e).length) { setErrors(e); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
     }
     saving.current = true; setBusy(true); setErrors({});
     try {
       if (!submission.current) {
-        submission.current = { ...orderInput(v), pricing: pricingInput(pricing), businessParking: parking, poNumber: po, expected_version: order.version, idempotencyKey: crypto.randomUUID() };
+        const attachments = [...v.attachments];
+        for (const file of files) {
+          if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
+          attachments.push(uploads.current.get(file));
+        }
+        submission.current = { ...orderInput({ ...v, attachments }), ...(!mrPortal ? { pricing: pricingInput(pricing), businessParking: parking, poNumber: po } : {}), expected_version: order.version, idempotencyKey: crypto.randomUUID() };
       }
       await updateOrder(order.id, submission.current);
       submission.current = null; setUncertain(false); setDone(true);
       navigate(`${BASE}/${order.id}`);
     } catch (error) {
-      setUncertain(Boolean(error.ambiguous));
-      if (!error.ambiguous) submission.current = null;
+      const keep = uncertain || Boolean(error.ambiguous);
+      setUncertain(keep);
+      if (!keep) submission.current = null;
       setErrors({ [error.stage || 'save']: error.message || 'Order was not saved. Your draft is preserved; retry.' });
       requestAnimationFrame(() => summaryRef.current?.focus());
     } finally { saving.current = false; setBusy(false); }
@@ -111,7 +132,7 @@ export default function KitsOrderEditor({ order }) {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Edit order {order.number}</h1>
       <p className="admin-page-head__description">Saved date: {date(order.date)}. Historical people, shipping and billing stay as saved unless you change them.</p></div>
       <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
-    {!protectedOk && <p role="alert" className="kits-error">Pricing is restricted to Super Admin. Editing is unavailable.</p>}
+    {!protectedOk && <p role="alert" className="kits-error">This order cannot be edited by your account. Your draft is preserved.</p>}
     {done && <p role="status" className="kito-done">Order saved. <Link href={`${BASE}/${order.id}`} className="kits-link">View order</Link></p>}
     {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef}><strong>{errors.save ? 'Order save needs attention' : 'Fix before saving'}</strong>
       <ul>{errList.map(([k, m]) => <li key={k}>{m}</li>)}</ul>
@@ -121,18 +142,18 @@ export default function KitsOrderEditor({ order }) {
         <section className="admin-panel kits-panel" aria-labelledby="kito-items"><h2 id="kito-items">Order details</h2>
           <label className="kits-field">Order for<select value={v.orderFor} onChange={(e) => set({ orderFor: e.target.value })}><option value="doctor">Doctor</option><option value="mr">MR</option></select></label>
           <div className="kito-scroll" tabIndex={0} role="region" aria-label="Order items and rates">
-            <table className="kito-table"><thead><tr><th>Test</th><th>Products</th><th>ml</th><th>Quantity</th><th>Rate</th><th>Line amount</th></tr></thead>
+            <table className="kito-table"><thead><tr><th>Test</th><th>Products</th><th>ml</th><th>Quantity</th>{!mrPortal && <><th>Rate</th><th>Line amount</th></>}</tr></thead>
               <tbody>
                 <tr><th scope="row">Stallergo Skin Prick Kit</th>
                   <td><select aria-label="Kit product" value={v.kit.product} onChange={(e) => setKit(e.target.value ? { product: e.target.value, custom: e.target.value === 'Customized' ? v.kit.custom : '' } : { product: '', custom: '', volume: '', quantity: '' })}><option value="">No kit</option>{KIT_PRODUCTS.map((p) => <option key={p}>{p}</option>)}</select>
                     {v.kit.product === 'Customized' && <input aria-label="Custom value" value={v.kit.custom} onChange={(e) => setKit({ custom: e.target.value })} />}</td>
                   <td><input aria-label="Kit volume (ml)" inputMode="decimal" value={v.kit.volume} onChange={(e) => setKit({ volume: e.target.value })} /></td>
                   <td><input aria-label="Kit quantity" inputMode="numeric" value={v.kit.quantity} onChange={(e) => setKit({ quantity: e.target.value })} /></td>
-                  <td>{rate('kitRate', 'Kit')}</td><td>{L.kit ? moneyText(L.kit) : '-'}</td></tr>
+                  {!mrPortal && <><td>{rate('kitRate', 'Kit')}</td><td>{L.kit ? moneyText(L.kit) : '-'}</td></>}</tr>
                 {[['lancets', 'Lancets', 'lancetsRate'], ['applicators', 'Applicators', 'applicatorsRate'], ['tray', 'Tray', 'trayRate']].map(([k, l, r]) =>
-                  <tr key={k}><th scope="row">{l}</th><td>{count(k, l)}</td><td /><td /><td>{rate(r, l)}</td><td>{L[k] ? moneyText(L[k]) : '-'}</td></tr>)}
+                  <tr key={k}><th scope="row">{l}</th><td>{count(k, l)}</td><td /><td />{!mrPortal && <><td>{rate(r, l)}</td><td>{L[k] ? moneyText(L[k]) : '-'}</td></>}</tr>)}
               </tbody></table></div>
-          {calc.error && <Err text={calc.error} />}
+          {!mrPortal && <>{calc.error && <Err text={calc.error} />}
           <div className="kito-fin">
             <div className="kits-field"><label htmlFor="kito-fwd">Forwarding charges</label><input id="kito-fwd" inputMode="decimal" value={pricing.forwardingCharges} onChange={(e) => setP({ forwardingCharges: e.target.value })} /></div>
             <div className="kits-field"><label htmlFor="kito-dv">Discount</label><div className="kito-disc"><input id="kito-dv" inputMode="decimal" value={pricing.discountValue} onChange={(e) => setP({ discountValue: e.target.value })} />
@@ -142,7 +163,7 @@ export default function KitsOrderEditor({ order }) {
             {[['Gross value', 'gross'], ['Discount', 'discountAmount'], ['Discounted value', 'discounted'], ['Taxable value', 'taxable'], [`GST (${tax}%)`, 'gst']].map(([l, k]) => <div key={k}><dt>{l}</dt><dd>{snap ? moneyText(snap[k]) : '-'}</dd></div>)}
             <div className="kpr-total"><dt>Total amount</dt><dd>{snap ? moneyText(snap.total) : '-'}</dd></div></dl>
           <p className="kits-hint">{order.pricing ? 'Preview only; the server recalculates every total on save.' : 'Not yet priced. Enter rates to price this order; the server recalculates totals on save.'}</p>
-          <p className="kits-hint">Quantity × unit rate for each included item, plus forwarding = gross. Discount is applied once to gross; discounted value is taxable. GST is added last. Products and ml do not multiply prices.</p>
+          <p className="kits-hint">Quantity × unit rate for each included item, plus forwarding = gross. Discount is applied once to gross; discounted value is taxable. GST is added last. Products and ml do not multiply prices.</p></>}
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="kito-more"><h2 id="kito-more">Remarks and attachments</h2>
           <div className="kits-field"><label htmlFor="kito-remarks">Remarks</label><textarea id="kito-remarks" rows={3} maxLength={4000} value={v.remarks} onChange={(e) => set({ remarks: e.target.value })} /></div>
@@ -151,18 +172,30 @@ export default function KitsOrderEditor({ order }) {
             actions={protectedOk && can.read_attachment && !f.restricted && f.state === 'verified'
               ? <button type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }} aria-label={`View ${f.name}`}><Eye size={15} aria-hidden="true" />View</button>
               : null} />)}</OrderFileList>
+          {can.upload_attachment && <div className="kits-field"><span>Add attachments (optional)</span>
+            <MasterFilePicker id="kito-new-files" icon={Paperclip} multiple disabled={!policy || frozen} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-label="Add private attachments" onChange={(event) => {
+              const selected = [...event.target.files]; event.target.value = '';
+              const problem = validateAttachments(selected, [...v.attachments, ...files])
+                || (selected.some((file) => !policy.types.includes(file.type) || file.size > policy.maxBytes) ? `Choose supported files up to ${fileSize(policy.maxBytes)} each.` : '')
+                || (v.attachments.length + files.length + selected.length > policy.maxFiles ? `Use at most ${policy.maxFiles} attachments.` : '');
+              if (problem) setErrors((current) => ({ ...current, upload: problem }));
+              else { setFiles((current) => [...current, ...selected]); setErrors((current) => ({ ...current, upload: undefined })); }
+            }}>Choose PDF or image files</MasterFilePicker>
+            {policyError && <p role="alert">{policyError} <button type="button" className="kits-link" onClick={() => request('/policy').then((value) => { setPolicy(value); setPolicyError(''); }).catch((cause) => setPolicyError(cause.message))}>Retry upload policy</button></p>}
+            {files.length > 0 && <ul className="kits-files">{files.map((file, index) => <li key={index}>{file.name} <button type="button" className="kits-link" disabled={uploads.current.has(file)} onClick={() => setFiles((current) => current.filter((_, i) => i !== index))} aria-label={`Remove selected ${file.name}`}>{uploads.current.has(file) ? 'Verified upload retained' : 'Remove'}</button></li>)}</ul>}
+          </div>}
         </section>
-        <section className="admin-panel kits-panel" aria-labelledby="kito-bp"><h2 id="kito-bp">Parking and PO</h2>
+        {!mrPortal && <section className="admin-panel kits-panel" aria-labelledby="kito-bp"><h2 id="kito-bp">Parking and PO</h2>
           <div className="kits-grid">
             <div className="kits-field"><label htmlFor="kito-parking">Business Parking (INR)</label><input id="kito-parking" inputMode="decimal" aria-invalid={Boolean(errors.parking)} aria-describedby="kito-parking-hint" value={parking} onChange={(e) => setParking(e.target.value)} placeholder="Not entered" /></div>
             <div className="kits-field"><label htmlFor="kito-po">PO Number (optional)</label><input id="kito-po" maxLength={200} value={po} onChange={(e) => setPo(e.target.value)} placeholder="Enter PO number" /></div>
-          </div><p id="kito-parking-hint" className="kits-hint">Independently entered amount. Not a commission, deduction or part of the order total.</p></section>
+          </div><p id="kito-parking-hint" className="kits-hint">Independently entered amount. Not a commission, deduction or part of the order total.</p></section>}
       </div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Doctor details</h2>
           <div className="kits-grid">
             <KitsReferenceSelect historicalPerson={order.doctor} showClearAction={false} disabled={frozen} id="kito-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => set({ doctorId: x })} onPerson={setDoctor} />
-            <KitsReferenceSelect historicalPerson={order.mr} disabled={frozen} id="kito-mrId" kind="mrs" label="MR" value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />
+            {mrPortal ? <label className="kits-field">MR<input readOnly value={order.mr?.name || ''} /></label> : <KitsReferenceSelect historicalPerson={order.mr} disabled={frozen} id="kito-mrId" kind="mrs" label="MR" value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />}
             <KitsReferenceSelect historicalPerson={order.patient} disabled={frozen} id="kito-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />
             <p className="kits-hint">Saved: {order.doctor?.name || '-'} / MR {order.mr?.name || 'none'} / Patient {order.patient?.name || 'none'}. Only a changed selection replaces the historical person.</p>
           </div></section>
@@ -179,5 +212,6 @@ export default function KitsOrderEditor({ order }) {
     <div className="kits-actions"><button type="button" className="admin-button" disabled={!protectedOk || busy || done} onClick={save}>{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save changes'}</button>
       {!busy && !uncertain && !done && <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary">Cancel</Link>}</div>
     {protectedOk && can.read_attachment && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
+    {leaveDialog}
   </div></AdminLayout>;
 }

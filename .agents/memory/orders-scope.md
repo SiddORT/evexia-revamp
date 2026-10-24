@@ -69,6 +69,18 @@ ownership as distinct permissions. An Admin-created registration's snapshot
 on an assigned MR order is reviewable, but that historical assignment must not
 make the underlying registration globally selectable or reusable on new orders.
 
+The user explicitly approved adding Admin approval to Kits and SPT so owning
+MRs can edit all four sales-order types until approval. Submission is not
+approval; payment and fulfilment are not substitutes for approval evidence.
+Do not infer missing historical decisions or reopen terminal records.
+
+**Why:** This is an explicit expansion of the approved order workflow, not a
+generic staff permission grant or authority inferred from a portal label.
+
+**How to apply:** Preserve existing approval meanings and actor-owned evidence.
+Kits retains protected financial authority; pending MR edits must not erase
+Admin-owned data merely to become editable.
+
 Hiding MR Doctor creation and Doctor/order transfer controls is presentation
 scope only, not revocation of the underlying routes or backend permissions.
 Admin controls and MR Add Order remain independently available.

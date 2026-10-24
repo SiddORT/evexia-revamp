@@ -36,6 +36,10 @@ class LupinWrite(LupinInput):
     idempotencyKey: uuid.UUID
 
 
+class LupinUpdate(LupinWrite):
+    expected_version: int = Field(ge=1, strict=True)
+
+
 class LupinImportEntry(Strict):
     id: uuid.UUID | None = None
     number: str = Field(default="", max_length=48)
@@ -51,6 +55,8 @@ class LupinImport(Strict):
 
 
 class LupinRecord(LupinInput):
+    approval: dict | None = None
+    mrEditable: bool = False
     audit: dict | None = None
     id: uuid.UUID
     number: str

@@ -9,11 +9,13 @@ from app.db.session import get_db
 from app.schemas.spt import SptWrite, SptRegistration, SptPatient, SptRecord, SptPage, SptImport, SptImportResult, Status
 from app.schemas.immunotherapy import ImmReferencePage, ImmImportReview
 from app.services import spt as service
+from app.schemas.order_approval import OrderApproval
+from app.services.order_approval import approve as approve_order
 
 router = APIRouter(prefix="/admin/spt-orders", tags=["spt"],
     dependencies=[Depends(operation_router("spt", {
         "listing": None, "detail": None, "references": None, "export": "export",
-        "review": "import", "commit": "import", "create": "add", "edit": "edit",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit",
         "register": ("add", "import"),
     }, allow_mr=True))])
 
@@ -23,6 +25,11 @@ def filters(search: str = Query("", max_length=200), status: Status | None = Non
             patient_id: uuid.UUID | None = None, from_date: date | None = None, to_date: date | None = None):
     return dict(search=search, status=status, doctor_id=doctor_id, mr_id=mr_id,
         patient_id=patient_id, from_date=from_date, to_date=to_date)
+
+
+@router.post("/{record_id}/approve", response_model=SptRecord, operation_id="approveSptOrder")
+def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "spt")
 
 
 @router.get("", response_model=SptPage, operation_id="listSptOrders")

@@ -27,10 +27,24 @@ def financials(groups):
     }) for g in groups}
 
 
-def prepare(body, previous, error):
+def prepare(body, previous, error, *, mr=False):
     chosen = basis(body, previous)
     old_basis = previous.get("pricingBasis", LEGACY_BASIS) if previous else None
     groups = body.model_dump(mode="json")["groups"]
+    if mr and previous:
+        old_groups = {g["id"]: g for g in previous["groups"]}
+        clinical_same = all(previous.get(k) == getattr(body, k) for k in ("dosage", "histamine", "saline")) and previous["patientId"] == str(body.patientId)
+        for group in groups:
+            saved = old_groups.get(group["id"], {})
+            group["mrp"] = saved.get("mrp")
+            old_items = {i["allergenId"]: i for i in saved.get("items", [])}
+            for item in group["items"]:
+                old = old_items.get(item["allergenId"], {})
+                if item.get("suborderId") is not None and item["suborderId"] != old.get("suborderId"):
+                    raise error("Retain the saved occurrence identity.", 409, "imm_suborder")
+                item["suborderId"] = old.get("suborderId")
+                item["rate"] = old.get("rate") if clinical_same and item.get("result") == old.get("result") else None
+        return chosen, groups
     if chosen == LEGACY_BASIS:
         unpriced = previous and previous.get("totalMinor") is None and all(
             g.get("mrp") is None and all(i.get("rate") is None for i in g["items"])

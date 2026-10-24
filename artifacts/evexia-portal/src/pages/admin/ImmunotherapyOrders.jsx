@@ -102,8 +102,8 @@ export default function ImmunotherapyOrders() {
     { key: 'ship', label: 'Ship to', render: (o) => <>{shippingRecipient(o, snap.patients)?.name || '-'}<span className="imm-cell-sub">{o.shipping === 'doctor' ? 'Doctor' : 'Patient'}</span></> },
     { key: 'status', label: 'Status', render: (o) => <><StatusPill status={o.status} />{o.status === 'Confirmed' && <span className="imm-cell-sub">Awaiting Admin review</span>}{o.reviewDecision && o.reviewDecision !== o.status && <span className="imm-cell-sub">Admin: {o.reviewDecision}</span>}{o.poNumber && <span className="imm-cell-sub">PO: {o.poNumber}</span>}</> },
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
-      <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
-      {can.edit && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
+      <Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
+      {can.edit && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
       {can.documents && eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
   ];  const columns = withAuditColumns(baseColumns, audit);
 

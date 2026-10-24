@@ -41,12 +41,13 @@ def finances(actor, body, previous):
         if key in supplied:
             values[key] = getattr(body, key)
     if values.get("pricing") is not None:
-        if not is_super_admin(actor) and previous and any(
-            (previous["kit"].get("quantity") if key == "kit" else previous[key]) !=
-            (body.kit.quantity if key == "kit" else getattr(body, key))
-            for key in ("kit", "lancets", "applicators", "tray")
-        ):
-            raise ImmError("Only the protected Super Admin may change priced quantities.", 403, "access_denied")
+        if actor.role == "mr" and previous and (
+            previous["kit"] != body.kit.model_dump(mode="json") or any(
+                previous[key] != getattr(body, key) for key in ("lancets", "applicators", "tray"))):
+            # A changed pending supply basis needs explicit Admin repricing;
+            # MR never submits replacement rates or implicitly reprices history.
+            values["pricing"] = None
+            return values
         try:
             raw = values["pricing"]
             price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
@@ -122,12 +123,16 @@ def find(db, identity):
 
 def project(keys, row):
     from app.services.order_audit import metadata
-    return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "id": str(row.id),
+    from app.services.order_approval import editable
+    value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    return {**value, "approval": value.get("approval"), "mrEditable": editable("kits", value), "id": str(row.id),
             "audit": metadata(row),
             "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 
 def resolved(db, actor, keys, body, previous=None):
+    from app.services.order_approval import protect
+    protect(db, "kits", body, previous)
     mr_assignment(db, body, previous)
     financial = finances(actor, body, previous)
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version", "orderDate", "attachmentIds", *FINANCIAL_FIELDS})
@@ -185,6 +190,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     from app.services.order_capabilities import attachment_changes
     attachment_changes(actor, "kits", body.attachmentIds, previous)
     data = resolved(db, actor, keys, body, previous)
+    from app.services.order_approval import preserve
+    preserve(actor, "kits", data, previous)
     if not row:
         number = db.scalar(text("SELECT nextval('kits_order_number_seq')"))
         row = Order(id=uuid.uuid4(), number=f"KIT-{number:08d}", version=1,
@@ -234,12 +241,12 @@ def save(db, actor, body):
 
 def update(db, actor, identity, body):
     def work(a, keys):
-        if not is_super_admin(a):
+        if not is_super_admin(a) and a.role != "mr":
             raise ImmError("Only the protected Super Admin may edit a saved Kits order.", 403, "access_denied")
         payload = {"operation": "kits_update", "id": str(identity), "values": body.model_dump(mode="json", exclude_unset=True)}
         return idempotent(db, a, keys, body.idempotencyKey, payload,
             lambda: apply(db, a, keys, body, identity, body.expected_version))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="edit")
 
 
 def detail(db, actor, identity):

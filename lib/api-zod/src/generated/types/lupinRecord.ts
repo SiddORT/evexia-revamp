@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { LupinRecordApproval } from "./lupinRecordApproval";
 import type { LupinRecordAttachmentsItem } from "./lupinRecordAttachmentsItem";
 import type { LupinRecordAudit } from "./lupinRecordAudit";
 import type { LupinRecordDoctor } from "./lupinRecordDoctor";
@@ -14,6 +15,7 @@ import type { LupinRecordPaymentStatus } from "./lupinRecordPaymentStatus";
 import type { LupinRecordStatus } from "./lupinRecordStatus";
 
 export interface LupinRecord {
+  approval?: LupinRecordApproval;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: LupinRecordAttachmentsItem[];
@@ -23,6 +25,7 @@ export interface LupinRecord {
   doctorId: string;
   id: string;
   mr: LupinRecordMr;
+  mrEditable?: boolean;
   mrId: string;
   number: string;
   orderDate?: Date | null;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
-import { ClipboardList, Plus, Search } from 'lucide-react';
+import { ClipboardList, Eye, Pencil, Plus, Search } from 'lucide-react';
 import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
@@ -61,7 +61,7 @@ export default function SptOrders() {
     { key: 'count', label: 'Patients', render: (o) => o.patients.length },
     { key: 'total', label: 'Total (INR)', render: (o) => <span className="spt-num">{o.total}</span> },
     { key: 'status', label: 'Status', render: (o) => <span className={`admin-badge${o.status === 'Draft' ? ' admin-badge--inactive' : ''}`}>{o.status}</span> },
-    { key: 'action', label: 'Action', render: (o) => <Link className="spt-link" href={`${BASE}/${o.id}`} data-testid={`link-spt-open-${o.id}`}>{o.status === 'Draft' ? 'Resume' : 'Review'}<span className="sr-only"> {o.number}</span></Link> },
+    { key: 'action', label: 'Action', render: (o) => <div className="spt-actions"><Link className="admin-icon-button order-view-action" href={`${BASE}/${o.id}`} aria-label={`View ${o.number}`} data-testid={`link-spt-open-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`${o.status === 'Draft' ? 'Resume draft' : 'Edit'} ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);
 

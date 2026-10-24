@@ -87,14 +87,18 @@ def find(db, identity):
 
 def project(keys, row):
     from app.services.order_audit import metadata
-    return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "id": str(row.id),
+    from app.services.order_approval import editable
+    value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    return {**value, "approval": value.get("approval"), "mrEditable": editable("lupin", value), "id": str(row.id),
             "audit": metadata(row),
             "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 
 def resolved(db, actor, keys, body, previous=None):
+    from app.services.order_approval import protect
+    protect(db, "lupin", body, previous)
     require_assignment(db, body.mrId)
-    value = body.model_dump(mode="json", exclude={"idempotencyKey", "orderDate", "attachmentIds"})
+    value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version", "orderDate", "attachmentIds"})
     changed = not previous or previous["doctorId"] != str(body.doctorId) or previous["mrId"] != str(body.mrId)
     old_patients = {p["id"]: p for p in previous["patients"]} if previous else {}
     new_patients = [p for p in body.patientIds if str(p) not in old_patients]
@@ -142,9 +146,13 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     if row and body.orderDate and row.date != body.orderDate:
         raise ImmError("Saved order date is immutable.", 422, "lupin_date")
     previous = project(keys, row) if row else None
+    if previous and (body.status != previous["status"] or body.paymentStatus != previous["paymentStatus"]):
+        raise ImmError("Use the explicit Admin approval action; editing cannot change order or payment decisions.", 422, "lupin_decision")
     from app.services.order_capabilities import attachment_changes
     attachment_changes(actor, "lupin", body.attachmentIds, previous)
     data = resolved(db, actor, keys, body, previous)
+    from app.services.order_approval import preserve
+    preserve(actor, "lupin", data, previous)
     if not row:
         number = db.scalar(text("SELECT nextval('lupin_order_number_seq')"))
         row = Order(id=uuid.uuid4(), number=f"LUP-{number:08d}", version=1,
@@ -205,6 +213,12 @@ def save(db, actor, body):
 
 def detail(db, actor, identity):
     return transaction(db, actor, lambda a, k: project(k, find(db, identity)))
+
+
+def update(db, actor, identity, body):
+    return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
+        {"operation": "edit", "id": str(identity), "body": body.model_dump(mode="json")},
+        lambda: apply(db, a, k, body, identity, body.expected_version)), action="edit")
 
 
 def upload_digest(stream, maximum):

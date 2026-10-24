@@ -72,7 +72,7 @@ export default function KitsOrders() {
     { key: 'who', label: 'Doctor / MR / Patient', render: (o) => <>{o.doctor.name}<span className="kits-sub">{o.orderFor === 'mr' ? 'MR order' : 'Doctor order'}</span><span className="kits-sub">MR: {o.mr?.name || 'Not selected'}</span><span className="kits-sub">Patient: {o.patient?.name || 'Not selected'}</span></> },
     { key: 'status', label: 'Status', render: (o) => <span className="kits-pill">{o.status}</span> },
     { key: 'pay', label: 'Payment status', render: (o) => <span className="kits-pill">{o.paymentStatus}</span> },
-    { key: 'act', label: 'Action', render: (o) => <div className="kits-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`}><Eye size={16} aria-hidden="true" /></Link>{can.protected && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
+    { key: 'act', label: 'Action', render: (o) => <div className="kits-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`}><Eye size={16} aria-hidden="true" /></Link>{(can.protected || (portal === 'mr' && can.edit && o.mrEditable)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);
 

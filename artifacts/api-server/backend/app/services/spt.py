@@ -72,7 +72,9 @@ def find(db, identity):
 
 def project(keys, row):
     from app.services.order_audit import metadata
-    return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext),
+    from app.services.order_approval import editable
+    value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    return {**value, "approval": value.get("approval"), "mrEditable": editable("spt", value),
         "audit": metadata(row),
         "id": str(row.id), "sourceId": str(row.source_id), "number": row.number,
         "date": row.date.isoformat(), "version": row.version}
@@ -100,6 +102,8 @@ def patient_snapshot(db, keys, identity, source, order_date):
 
 
 def resolve(db, keys, body, previous, order_date):
+    from app.services.order_approval import protect
+    protect(db, "spt", body, previous)
     require_assignment(db, body.mrId)
     value = dict(doctorId=str(body.doctorId) if body.doctorId else None,
         mrId=str(body.mrId) if body.mrId else None, status=body.status, remarks=body.remarks)
@@ -143,13 +147,16 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
     if row:
         if row.version != expected:
             raise ImmError("This draft changed. Your entries are preserved; load the latest version separately before retrying.", 409, "spt_stale")
-        if row.status == "Saved":
-            raise ImmError("Saved SPT orders are read-only.", 409, "spt_readonly")
+        from app.services.order_approval import editable
+        if not editable("spt", project(keys, row)):
+            raise ImmError("Approved SPT orders are read-only. Your draft is preserved.", 409, "spt_readonly")
         if body.orderDate and row.date != body.orderDate:
             raise ImmError("Order date cannot be changed.", 422, "spt_date")
     previous = project(keys, row) if row else None
     order_date = row.date if row else body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date()
     data = resolve(db, keys, body, previous, order_date)
+    from app.services.order_approval import preserve
+    preserve(actor, "spt", data, previous)
     if not row:
         identity = uuid.uuid4()
         number = db.scalar(text("SELECT nextval('spt_order_number_seq')"))
@@ -356,8 +363,9 @@ def batch(db, actor, body, commit=False):
                 order_date = entry.values.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date()
                 value = resolve(db, keys, entry.values, previous, order_date)
                 changes = [key for key in value if previous and previous.get(key) != value[key]]
-                if previous and previous["status"] == "Saved" and changes:
-                    raise ImmError("Saved orders are read-only, including imports.", 409, "spt_readonly")
+                from app.services.order_approval import editable
+                if previous and not editable("spt", previous) and changes:
+                    raise ImmError("Approved orders are read-only, including imports.", 409, "spt_readonly")
                 values.append(value)
                 entries.append(dict(line=index + 2, action=("update" if changes else "unchanged") if previous else "add",
                     order={**value, "number": entry.number or "Assigned on save"}, previous=previous, changed=changes, errors=[], patients=[]))

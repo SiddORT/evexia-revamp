@@ -23,12 +23,12 @@ export default function LiveOrders() {
   else if (kind === 'lupin' && parts.length === 1) screen = <LupinOrders />;
   else if (kind === 'immunotherapy' && id && parts.length <= 3 && (!action || (action === 'edit' && id !== 'new'))) {
     screen = <ImmunotherapyForm key={`${id}-${action || 'view'}`} id={id === 'new' ? undefined : id} mode={id === 'new' || action === 'edit' ? 'edit' : 'view'} />;
-  } else if (kind === 'kits-consumables' && id && parts.length === 2) {
-    screen = <KitsForm key={id} id={id === 'new' ? undefined : id} />;
+  } else if (kind === 'kits-consumables' && id && (parts.length === 2 || (parts.length === 3 && action === 'edit' && id !== 'new'))) {
+    screen = <KitsForm key={`${id}-${action || 'view'}`} id={id === 'new' ? undefined : id} mode={action === 'edit' ? 'edit' : 'view'} />;
   } else if (kind === 'spt' && id && (parts.length === 2 || (parts.length === 3 && action === 'edit' && id !== 'new'))) {
-    screen = <SptForm key={id} id={id === 'new' ? undefined : id} />;
-  } else if (kind === 'lupin' && id && parts.length === 2) {
-    screen = <LupinForm key={id} id={id === 'new' ? undefined : id} />;
+    screen = <SptForm key={`${id}-${action || 'view'}`} id={id === 'new' ? undefined : id} mode={action === 'edit' ? 'edit' : 'view'} />;
+  } else if (kind === 'lupin' && id && (parts.length === 2 || (parts.length === 3 && action === 'edit' && id !== 'new'))) {
+    screen = <LupinForm key={`${id}-${action || 'view'}`} id={id === 'new' ? undefined : id} mode={action === 'edit' ? 'edit' : 'view'} />;
   } else screen = <section className="mrw-card"><h1>Order page not found</h1><Link href="/mr/orders">Back to Orders</Link></section>;
   return <MROrderBoundary>{screen}</MROrderBoundary>;
 }

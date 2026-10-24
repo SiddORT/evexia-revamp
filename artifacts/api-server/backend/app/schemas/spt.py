@@ -72,6 +72,8 @@ class SptPatientSnapshot(SptPatient):
 
 
 class SptRecord(Strict):
+    approval: dict | None = None
+    mrEditable: bool = False
     audit: dict | None = None
     id: uuid.UUID
     sourceId: uuid.UUID

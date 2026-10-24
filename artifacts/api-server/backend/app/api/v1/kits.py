@@ -21,6 +21,8 @@ from app.schemas.files import UploadRequest, FileResponse
 from app.services.file_policy import FileError
 from app.api.v1.files import storage_dependency, order_upload_operation
 from app.api.v1.immunotherapy import MULTIPART
+from app.schemas.order_approval import OrderApproval
+from app.services.order_approval import approve as approve_order
 
 router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
     dependencies=[Depends(operation_router("kits", {
@@ -36,6 +38,11 @@ def filters(search: str = Query("", max_length=200), status: Status | None = Non
             from_date: date | None = None, to_date: date | None = None):
     return dict(search=search, status=status, payment_status=payment_status, order_for=order_for,
         doctor_id=doctor_id, mr_id=mr_id, patient_id=patient_id, from_date=from_date, to_date=to_date)
+
+
+@router.post("/{record_id}/approve", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="approveKitsOrder")
+def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "kits")
 
 
 @router.get("", response_model=KitsPage, response_model_exclude_unset=True, operation_id="listKitsOrders")

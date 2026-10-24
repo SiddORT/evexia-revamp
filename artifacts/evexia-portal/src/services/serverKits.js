@@ -7,6 +7,9 @@ function failure(error, stage, mrPresentation) {
   const upload = stage === 'upload';
   const messages = {
     kits_stale: 'Another save changed this order. Your draft is preserved. Open the saved View in a separate tab to compare; this draft will not overwrite the newer version.',
+    order_edit_closed: 'Admin approved or closed this order. It can no longer be edited by MR. Your mounted draft is preserved.',
+    order_stale: 'The saved order changed. Reopen View before approving; no newer order will be overwritten.',
+    order_approval: 'Only a complete submitted pending order can be approved.',
     kits_pricing: 'Enter unit rates for each included item, valid nonnegative amounts, and a percent discount from 0–100 or fixed discount no greater than gross.',
     kits_relationship: 'Review the current Doctor/MR assignment and any selected Patient’s billing Doctor.',
     mr_order_assignment: 'The order MR must be your signed-in MR. Ask an administrator to review your saved assignment.',

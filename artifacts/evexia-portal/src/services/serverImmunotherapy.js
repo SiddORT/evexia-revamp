@@ -19,8 +19,7 @@ export const totalMinor = (groups, basis = 'legacy_bottle_mrp') => {
 // Read/print/export consumers use the authoritative saved amount, never reprice.
 export const orderTotalMinor = (order) => order.totalMinor == null ? null : BigInt(order.totalMinor);
 export const money = (minor) => minor === null ? 'Awaiting pricing' : `₹${(minor / 100n).toLocaleString('en-IN')}.${String(minor % 100n).padStart(2, '0')}`;
-export const mrEditable = (order) => order.status === 'Confirmed' && !order.reviewDecision && !order.poNumber
-  && order.groups.every((g) => g.mrp == null && g.items.every((i) => i.rate == null));
+export const mrEditable = (order) => order.status === 'Confirmed' && !order.reviewDecision && !order.approval;
 // Callers retain issued IDs for the editor lifetime, including removed bottles.
 export function newGroup(issuedIds = []) {
   const used = new Set(issuedIds);

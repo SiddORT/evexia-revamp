@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { Eye, Plus, Search } from 'lucide-react';
+import { Eye, Pencil, Plus, Search } from 'lucide-react';
 import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
@@ -51,7 +51,7 @@ export default function LupinOrders() {
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="lupin-sub">{o.mr.name}</span></> },
     { key: 'status', label: 'Order status', render: (o) => <span className="lupin-pill">{o.status}</span> },
     { key: 'pay', label: 'Payment status', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },
-    { key: 'act', label: 'Action', render: (o) => <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link> },
+    { key: 'act', label: 'Action', render: (o) => <div className="lupin-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);
 

@@ -17,11 +17,14 @@ from app.services.file_policy import FileError
 from app.services.file_locks import operation
 from app.api.v1.files import storage_dependency
 from app.api.v1.immunotherapy import MULTIPART
+from app.schemas.lupin import LupinUpdate
+from app.schemas.order_approval import OrderApproval
+from app.services.order_approval import approve as approve_order
 
 router = APIRouter(prefix="/admin/lupin-orders", tags=["lupin"],
     dependencies=[Depends(operation_router("lupin", {
         "listing": None, "detail": None, "references": None, "export": "export",
-        "review": "import", "commit": "import", "create": "add",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit",
         "policy": "upload_attachment", "upload": "upload_attachment", "cancel_upload": "upload_attachment",
     }, allow_mr=True))])
 
@@ -32,6 +35,16 @@ def filters(search: str = Query("", max_length=200), status: LupinStatus | None 
             from_date: date | None = None, to_date: date | None = None):
     return dict(search=search, status=status, payment_status=payment_status,
         doctor_id=doctor_id, mr_id=mr_id, patient_id=patient_id, from_date=from_date, to_date=to_date)
+
+
+@router.post("/{record_id}/edit", response_model=LupinRecord, operation_id="updateLupinOrder")
+def edit(record_id: uuid.UUID, body: LupinUpdate, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return service.update(db, actor, record_id, body)
+
+
+@router.post("/{record_id}/approve", response_model=LupinRecord, operation_id="approveLupinOrder")
+def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "lupin")
 
 
 @router.get("", response_model=LupinPage, operation_id="listLupinOrders")

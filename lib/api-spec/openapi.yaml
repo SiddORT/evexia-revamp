@@ -7113,8 +7113,19 @@
         "type": "object"
       },
       "ImmRecord": {
-        "description": "Encrypted document projected only after protected authorization.",
         "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval"
+          },
           "attachments": {
             "items": {
               "additionalProperties": true,
@@ -9622,6 +9633,18 @@
             "title": "Applicators",
             "type": "string"
           },
+          "approval": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval"
+          },
           "attachmentIds": {
             "items": {
               "format": "uuid",
@@ -9707,6 +9730,11 @@
               }
             ],
             "title": "Mr"
+          },
+          "mrEditable": {
+            "default": false,
+            "title": "Mreditable",
+            "type": "boolean"
           },
           "mrId": {
             "anyOf": [
@@ -11660,6 +11688,18 @@
       "LupinRecord": {
         "additionalProperties": false,
         "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval"
+          },
           "attachmentIds": {
             "items": {
               "format": "uuid",
@@ -11712,6 +11752,11 @@
             "additionalProperties": true,
             "title": "Mr",
             "type": "object"
+          },
+          "mrEditable": {
+            "default": false,
+            "title": "Mreditable",
+            "type": "boolean"
           },
           "mrId": {
             "format": "uuid",
@@ -11816,6 +11861,111 @@
           "attachments"
         ],
         "title": "LupinRecord",
+        "type": "object"
+      },
+      "LupinUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "attachmentIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Attachmentids",
+            "type": "array"
+          },
+          "doctorId": {
+            "format": "uuid",
+            "title": "Doctorid",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "idempotencyKey": {
+            "format": "uuid",
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "mrId": {
+            "format": "uuid",
+            "title": "Mrid",
+            "type": "string"
+          },
+          "orderDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orderdate"
+          },
+          "patientCount": {
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Patientcount",
+            "type": "integer"
+          },
+          "patientIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Patientids",
+            "type": "array"
+          },
+          "paymentStatus": {
+            "default": "Unpaid",
+            "enum": [
+              "Unpaid",
+              "Paid",
+              "Partial"
+            ],
+            "title": "Paymentstatus",
+            "type": "string"
+          },
+          "price": {
+            "maxLength": 32,
+            "title": "Price",
+            "type": "string"
+          },
+          "remarks": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Remarks",
+            "type": "string"
+          },
+          "status": {
+            "default": "Confirmed",
+            "enum": [
+              "Confirmed",
+              "Approved",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doctorId",
+          "mrId",
+          "patientCount",
+          "price",
+          "idempotencyKey",
+          "expected_version"
+        ],
+        "title": "LupinUpdate",
         "type": "object"
       },
       "LupinUploadCancellation": {
@@ -16757,6 +16907,27 @@
           "scope"
         ],
         "title": "OpeningSummary",
+        "type": "object"
+      },
+      "OrderApproval": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "idempotencyKey": {
+            "format": "uuid",
+            "title": "Idempotencykey",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "idempotencyKey"
+        ],
+        "title": "OrderApproval",
         "type": "object"
       },
       "POActivityEvent": {
@@ -24389,6 +24560,18 @@
       "SptRecord": {
         "additionalProperties": false,
         "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval"
+          },
           "audit": {
             "anyOf": [
               {
@@ -24449,6 +24632,11 @@
               }
             ],
             "title": "Mr"
+          },
+          "mrEditable": {
+            "default": false,
+            "title": "Mreditable",
+            "type": "boolean"
           },
           "mrId": {
             "anyOf": [
@@ -60323,6 +60511,291 @@
         ]
       }
     },
+    "/v1/admin/kits-orders/{record_id}/approve": {
+      "post": {
+        "operationId": "approveKitsOrder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitsRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve",
+        "tags": [
+          "kits"
+        ]
+      }
+    },
     "/v1/admin/kits-orders/{record_id}/edit": {
       "post": {
         "operationId": "updateKitsOrder",
@@ -66659,6 +67132,576 @@
           }
         ],
         "summary": "Detail",
+        "tags": [
+          "lupin"
+        ]
+      }
+    },
+    "/v1/admin/lupin-orders/{record_id}/approve": {
+      "post": {
+        "operationId": "approveLupinOrder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LupinRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve",
+        "tags": [
+          "lupin"
+        ]
+      }
+    },
+    "/v1/admin/lupin-orders/{record_id}/edit": {
+      "post": {
+        "operationId": "updateLupinOrder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LupinUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LupinRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Edit",
         "tags": [
           "lupin"
         ]
@@ -115016,6 +116059,291 @@
           }
         ],
         "summary": "Detail",
+        "tags": [
+          "spt"
+        ]
+      }
+    },
+    "/v1/admin/spt-orders/{record_id}/approve": {
+      "post": {
+        "operationId": "approveSptOrder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SptRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve",
         "tags": [
           "spt"
         ]

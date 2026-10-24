@@ -118,11 +118,8 @@ def review_policy(db, body, previous):
             g.mrp is not None or any(i.rate is not None for i in g.items) for g in body.groups
         ):
             raise ImmError("MR submissions must be Confirmed and omit Admin pricing and PO number.", 403, "imm_admin_review")
-        if previous and (previous["status"] != "Confirmed" or previous.get("reviewDecision") is not None
-                         or previous.get("poNumber") is not None
-                         or any(g.get("mrp") is not None or any(i.get("rate") is not None for i in g["items"])
-                                for g in previous["groups"])):
-            raise ImmError("This order has Admin or historical pricing/review data and cannot be edited by MR.", 403, "imm_admin_review")
+        from app.services.order_approval import protect
+        protect(db, "immunotherapy", body, previous)
         return
     # Existing edit/import capability grants the Admin-side operation. MRs never
     # reach this branch; imports do not gain a separate review authority.
@@ -192,7 +189,10 @@ def resolved(db, body, previous=None):
     value.pop("attachmentIds")
     value.pop("orderDate", None)
     from app.services.immunotherapy_pricing import prepare, RATE_BASIS
-    value["pricingBasis"], value["groups"] = prepare(body, previous, ImmError)
+    from app.services.mr_orders import scope_identity
+    value["pricingBasis"], value["groups"] = prepare(body, previous, ImmError, mr=bool(scope_identity(db)))
+    if scope_identity(db) and previous:
+        value["poNumber"] = previous.get("poNumber")
     changed = {}
     for kind, field, key in (("patients", "patientId", "patient"), ("doctors", "doctorId", "doctor"), ("mrs", "mrId", "mr")):
         changed[key] = not previous or previous[field] != str(getattr(body, field))
@@ -266,6 +266,10 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
         raise ImmError("Saved order date is immutable.", 422, "imm_date")
     db.info["imm_actor"] = actor.user.id
     data = resolved(db, body, previous)
+    from app.services.order_approval import evidence
+    data["approval"] = previous.get("approval") if previous else None
+    if body.status == "Approved" and (not previous or previous["status"] != "Approved"):
+        data["approval"] = evidence(actor)
     from app.services.immunotherapy_pricing import issue
     issue(data, previous)
     now = utcnow()

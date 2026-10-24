@@ -42,7 +42,7 @@ export default function ImmunotherapyOrderSummary({ order }) {
         {can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
       </div>
     </div>
-    {mrPortal && !mrEditable(order) && <p className="kits-boundary">This saved order is read-only for MR because it has Admin review or historical pricing data.</p>}
+    {mrPortal && !mrEditable(order) && <p className="kits-boundary">This order has been reviewed or closed and is read-only for MR.</p>}
     <div className="kits-layout">
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-order"><h2 id="imm-s-order">Order details</h2>

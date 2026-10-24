@@ -5,21 +5,22 @@ import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../.
 import DataTable from '../../components/admin/DataTable.jsx';
 import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
 import { request, GENDERS, money, totalMinor, validateOrder, orderInput } from '../../services/serverSpt.js';
-import { setNavigationGuard } from '../../auth/navigationGuard.js';
+import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
 import '../../sptOrders.css';
 import '../../orderEntry.css';
+import OrderApproval from '../../components/orders/OrderApproval.jsx';
 
 function Shell({ children, entry = false }) {
   return <AdminLayout title="SPT"><div className={`spt spt-form${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
 }
 
-function OrderForm({ order }) {
+function OrderForm({ order, mode }) {
   const can = useOrderActions('spt');
   const BASE = useOrderBase('spt');
   const { portal, mr } = useOrderPortal();
   const mrPortal = portal === 'mr';
   const [record, setRecord] = useState(order);
-  const readOnly = record?.status === 'Saved' || !(record ? can.edit : can.add);
+  const readOnly = record ? mode !== 'edit' || !record.mrEditable || !can.edit : !can.add;
   const [doctorId, setDoctorId] = useState(order?.doctorId || '');
   const [mrId, setMrId] = useState(order?.mrId || mr?.id || '');
   const [patients, setPatients] = useState(() => order ? order.patients.map((p) => ({ ...p })) : []);
@@ -41,18 +42,12 @@ function OrderForm({ order }) {
   const [registered, setRegistered] = useState([]);
   const total = totalMinor(patients);
   const values = { doctorId, mrId, patients, remarks };
-  useEffect(() => {
-    const release = setNavigationGuard(() => {
-      if (!sending.current && !submission.current) return false;
-      setErrors({ form: 'Submission outcome is not yet confirmed. Keep this page open and retry the unchanged submission.' });
-      return true;
-    });
-    const beforeUnload = (event) => {
-      if (sending.current || submission.current) { event.preventDefault(); event.returnValue = ''; }
-    };
-    window.addEventListener('beforeunload', beforeUnload);
-    return () => { release(); window.removeEventListener('beforeunload', beforeUnload); };
-  }, []);
+  const initialDraft = useRef(JSON.stringify(values));
+  const leaveDialog = useOrderDraftNavigation({
+    dirty: !readOnly && initialDraft.current !== JSON.stringify(values),
+    pending: busy || uncertain,
+    onBlocked: () => setErrors({ form: 'Submission outcome is not yet confirmed. Keep this page open and retry the unchanged submission.' }),
+  });
 
   function add() {
     if (!preview || patients.some((p) => p.id === preview.id) || patients.length >= 200) return;
@@ -83,6 +78,7 @@ function OrderForm({ order }) {
         setPending(result.id); setPreview(result); closeRegister();
         setSuccess(`${result.code} registered for SPT. Select Add patient to include this patient in the order. No Patient Master or login account was created.`);
       } else {
+        initialDraft.current = JSON.stringify({ doctorId: result.doctorId || '', mrId: result.mrId || '', patients: result.patients, remarks: result.remarks });
         setRecord(result); setPatients(result.patients);
         setSuccess(`${result.number} ${result.status === 'Draft' ? 'saved as Draft' : 'saved'}. Total INR ${result.total}.`);
       }
@@ -147,12 +143,14 @@ function OrderForm({ order }) {
       <div className="admin-page-head">
         <div>
           <p className="admin-page-head__eyebrow">Orders / SPT</p>
-          <h1>{readOnly ? `Review ${record.number}` : record ? `Edit draft ${record.number}` : 'Add Order'}</h1>
-          <p className="admin-page-head__description">{readOnly ? 'This Saved order is read-only. People are shown as recorded at order entry.' : mr ? 'Your MR is fixed. Choose Doctor and patients, then enter amounts. Save as Draft to keep incomplete entries.' : 'Choose Doctor, MR and patients, then enter amounts. Save as Draft to keep incomplete entries.'}</p>
+          <h1>{readOnly ? `View ${record.number}` : record ? `Edit ${record.number}` : 'Add Order'}</h1>
+          <p className="admin-page-head__description">{readOnly ? 'Saved order details.' : mr ? 'Your MR is fixed. Choose Doctor and patients, then enter amounts.' : 'Choose Doctor, MR and patients, then enter amounts.'}</p>
         </div>
         <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-spt-back"><ArrowLeft size={16} aria-hidden="true" />All orders</Link>
       </div>
       {success && <p className="spt-notice" role="status">{success}</p>}
+      {record && readOnly && <>{can.edit && record.mrEditable && <Link href={`${BASE}/${record.id}/edit`} className="admin-button">{record.status === 'Draft' ? 'Resume draft' : 'Edit order'}</Link>}
+        <OrderApproval kind="spt" order={record} request={request} onApproved={setRecord} /></>}
       {busy && <p role="status">Saving on the server… Keep this page open.</p>}
       {errorList.length > 0 && <div className="spt-summary" role="alert" tabIndex={-1} ref={summaryRef} data-testid="status-spt-errors">
         <strong>Please fix the following before saving:</strong>
@@ -231,14 +229,15 @@ function OrderForm({ order }) {
       </fieldset>
         <div className="spt-actions">
           {readOnly ? <Link href={BASE} className="admin-button">All orders</Link> : <>
-            <button type="button" disabled={busy || uncertain} className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>
+            {record?.status !== 'Saved' && <button type="button" disabled={busy || uncertain} className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>}
             <button type="button" disabled={busy || uncertain} className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">Save</button></>}
         </div>
+      {leaveDialog}
     </Shell>
   );
 }
 
-export default function SptOrderFormPage({ id }) {
+export default function SptOrderFormPage({ id, mode = 'view' }) {
   const BASE = useOrderBase('spt');
   const [order, setOrder] = useState(null), [loading, setLoading] = useState(Boolean(id));
   const [error, setError] = useState(''), [revision, setRevision] = useState(0);
@@ -261,5 +260,5 @@ export default function SptOrderFormPage({ id }) {
       </div>
     </Shell>;
   }
-  return <OrderForm key={id || 'new'} order={order} id={id} />;
+  return <OrderForm key={`${id || 'new'}-${mode}`} order={order} mode={mode} />;
 }

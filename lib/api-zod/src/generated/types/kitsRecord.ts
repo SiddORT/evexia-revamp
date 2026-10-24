@@ -8,6 +8,7 @@
 import type { KitsConfiguration } from "./kitsConfiguration";
 import type { KitsPricingSnapshot } from "./kitsPricingSnapshot";
 import type { KitsRecipient } from "./kitsRecipient";
+import type { KitsRecordApproval } from "./kitsRecordApproval";
 import type { KitsRecordAttachmentsItem } from "./kitsRecordAttachmentsItem";
 import type { KitsRecordAudit } from "./kitsRecordAudit";
 import type { KitsRecordBilling } from "./kitsRecordBilling";
@@ -23,6 +24,7 @@ import type { KitsRecordStatus } from "./kitsRecordStatus";
 export interface KitsRecord {
   /** @maxLength 12 */
   applicators?: string;
+  approval?: KitsRecordApproval;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: KitsRecordAttachmentsItem[];
@@ -37,6 +39,7 @@ export interface KitsRecord {
   /** @maxLength 12 */
   lancets?: string;
   mr: KitsRecordMr;
+  mrEditable?: boolean;
   mrId?: string | null;
   number: string;
   orderDate?: Date | null;

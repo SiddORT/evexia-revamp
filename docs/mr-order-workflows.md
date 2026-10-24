@@ -11,16 +11,17 @@ No fictional records are migrated.
 
 MR UI paths are `/mr/orders/immunotherapy` and
 `/mr/orders/kits-consumables`, `/mr/orders/spt` and `/mr/orders/lupin`,
-with their corresponding `new` and detail paths. Immunotherapy and SPT also
-accept `/:id/edit`; SPT detail resumes Drafts and reviews Saved orders.
-Lupin detail remains read-only. Shared API paths retain their existing
+with their corresponding `new` and read-only detail paths. All four also
+accept `/:id/edit` for eligible owned orders; Draft Resume is a separate action.
+Shared API paths retain their existing
 `/api/v1/admin/{immunotherapy,kits,spt,lupin}-orders` prefixes
 for compatibility. A path prefix is not the authorization boundary.
 
 ## Server boundary
 
-- Only a protected Super Admin or revalidated MR account can use these order
-  services. The shared Allergen/Master authorization gates are unchanged.
+- Order services require existing Admin-side resource authority or a revalidated
+  owning MR account. Protected Kits administration remains Super-Admin-only.
+  The shared Allergen/Master authorization gates are unchanged.
 - MR authorization resolves the authenticated account's active MR profile,
   directory record and usable Zone. A missing/unusable identity is an error,
   not a name match or a browser demo fallback.
@@ -94,8 +95,49 @@ Admin-created registrations have no inferred MR owner. Their snapshots remain
 readable only as retained membership on an authorized assigned order; this does
 not make their directory entries selectable or reusable on another MR order.
 Existing Patient Master choices still require both MR and Doctor eligibility.
-Unique patient membership, quoted exact amounts, server totals and immutable
-Saved orders are unchanged.
+Unique patient membership, quoted exact amounts and server totals are unchanged.
+Saved means submitted, not approved; incomplete Drafts cannot be approved.
+
+## Owning-MR editing and explicit Admin approval
+
+- MR edits require the current owner, expected version and an unreviewed pending
+  order under the same row lock used for approval. Immunotherapy/Lupin/Kits
+  terminal statuses remain closed; submitted SPT can be edited until approval,
+  but cannot be changed back to Draft.
+- Kits and SPT approval is separate server-owned evidence, not a payment or
+  fulfilment classification. Their existing status vocabularies and scoped
+  summary counts remain unchanged. Lupin approval also sets its existing
+  Approved status. Immunotherapy keeps its existing rate-complete Admin decision
+  workflow.
+- Approval actor/time lives in the existing authenticated encrypted snapshot and
+  is accompanied by a protected audit event. No new table/column, readiness
+  migration or historical approval backfill is needed. Missing evidence is
+  represented as absent, including historical terminal orders.
+- Kits approval retains protected Super Admin authority. SPT/Lupin approval
+  requires existing Admin-side edit authority, revalidated on the server; MR
+  authority is explicitly rejected regardless of the displayed portal.
+- Direct writes and import review/commit share MR decision/ownership protection.
+  Exact actor-bound requests retain their original keys and replay their
+  original results. A stale draft never overwrites a newer save or approval.
+- Saved MR files cannot be detached/replaced. Additional files use existing
+  private upload verification/scanning; Immunotherapy writes still require a
+  verified prescription for the selected Patient.
+- Pending Immunotherapy edits preserve Admin PO, basis and compatible
+  occurrence rates from server history, not client replacements. Changed
+  clinical context/results invalidate affected occurrence rates. Issued
+  occurrence IDs and legacy totals keep their historical contracts. Changes
+  to a pending Kits item basis invalidate its price snapshot for explicit Admin
+  repricing without clearing the independent PO or Business Parking values.
+
+### Source-only delivery review
+
+No tests, automated browser checks, builds, release/validation wrappers,
+workflows, migrations, uploads, order decisions or production operations were
+run for this refinement. Generated API contracts are source artifacts only.
+No authenticated manual preview was available through the permitted tools;
+responsive layout is source-reviewed only, not visually verified at runtime.
+No new database migrations were authored or applied; services were not
+restarted, so running previews are not evidence of the changed backend.
 
 The additive source migration `0066_spt_registration_owner` follows
 `0065_lupin_orders`. It adds a nullable operational MR reference/index, with no

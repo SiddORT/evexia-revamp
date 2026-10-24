@@ -6,12 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { SptPatientSnapshot } from "./sptPatientSnapshot";
+import type { SptRecordApproval } from "./sptRecordApproval";
 import type { SptRecordAudit } from "./sptRecordAudit";
 import type { SptRecordDoctor } from "./sptRecordDoctor";
 import type { SptRecordMr } from "./sptRecordMr";
 import type { SptRecordStatus } from "./sptRecordStatus";
 
 export interface SptRecord {
+  approval?: SptRecordApproval;
   audit?: SptRecordAudit;
   date: string;
   doctor: SptRecordDoctor;
@@ -19,6 +21,7 @@ export interface SptRecord {
   doctorName: string;
   id: string;
   mr: SptRecordMr;
+  mrEditable?: boolean;
   mrId: string | null;
   mrName: string;
   number: string;

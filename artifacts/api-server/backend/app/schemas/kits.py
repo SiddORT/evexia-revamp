@@ -115,6 +115,8 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    approval: dict | None = None
+    mrEditable: bool = False
     audit: dict | None = None
     pricing: KitsPricingSnapshot | None = None
     id: uuid.UUID

@@ -288,6 +288,7 @@ import type {
   LupinPage,
   LupinRecord,
   LupinReferencesParams,
+  LupinUpdate,
   LupinUploadCancellation,
   LupinWrite,
   MRChoices,
@@ -336,6 +337,7 @@ import type {
   OpeningReview,
   OpeningSaved,
   OpeningSummary,
+  OrderApproval,
   POActivityPage,
   POAnalytics,
   POCreate,
@@ -12213,6 +12215,124 @@ export function useGetKitsOrder<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getApproveKitsOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/kits-orders/${recordId}/approve`;
+};
+
+/**
+ * @summary Approve
+ */
+export const approveKitsOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<KitsRecord>(getApproveKitsOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getApproveKitsOrderMutationKey = () =>
+  ["approveKitsOrder"] as const;
+
+export const getApproveKitsOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveKitsOrder>>,
+    TError,
+    ApproveKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveKitsOrder>>,
+  TError,
+  ApproveKitsOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getApproveKitsOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveKitsOrder>>,
+    ApproveKitsOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return approveKitsOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveKitsOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveKitsOrder>>
+>;
+export type ApproveKitsOrderMutationBody = BodyType<OrderApproval>;
+export type ApproveKitsOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ApproveKitsOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Approve
+ */
+export const useApproveKitsOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveKitsOrder>>,
+    TError,
+    ApproveKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveKitsOrder>>,
+  TError,
+  ApproveKitsOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getApproveKitsOrderMutationOptions(options));
+};
+
 export const getUpdateKitsOrderUrl = (recordId: string) => {
   return `/api/v1/admin/kits-orders/${recordId}/edit`;
 };
@@ -14419,6 +14539,242 @@ export function useGetLupinOrder<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getApproveLupinOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/lupin-orders/${recordId}/approve`;
+};
+
+/**
+ * @summary Approve
+ */
+export const approveLupinOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LupinRecord>(getApproveLupinOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getApproveLupinOrderMutationKey = () =>
+  ["approveLupinOrder"] as const;
+
+export const getApproveLupinOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveLupinOrder>>,
+    TError,
+    ApproveLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveLupinOrder>>,
+  TError,
+  ApproveLupinOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getApproveLupinOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveLupinOrder>>,
+    ApproveLupinOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return approveLupinOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveLupinOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveLupinOrder>>
+>;
+export type ApproveLupinOrderMutationBody = BodyType<OrderApproval>;
+export type ApproveLupinOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ApproveLupinOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Approve
+ */
+export const useApproveLupinOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveLupinOrder>>,
+    TError,
+    ApproveLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveLupinOrder>>,
+  TError,
+  ApproveLupinOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getApproveLupinOrderMutationOptions(options));
+};
+
+export const getUpdateLupinOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/lupin-orders/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const updateLupinOrder = async (
+  recordId: string,
+  lupinUpdate: LupinUpdate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LupinRecord>(getUpdateLupinOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(lupinUpdate),
+  });
+};
+
+export const getUpdateLupinOrderMutationKey = () =>
+  ["updateLupinOrder"] as const;
+
+export const getUpdateLupinOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLupinOrder>>,
+    TError,
+    UpdateLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLupinOrder>>,
+  TError,
+  UpdateLupinOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateLupinOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLupinOrder>>,
+    UpdateLupinOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return updateLupinOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLupinOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLupinOrder>>
+>;
+export type UpdateLupinOrderMutationBody = BodyType<LupinUpdate>;
+export type UpdateLupinOrderMutationError = ErrorType<ErrorEnvelope>;
+export type UpdateLupinOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<LupinUpdate>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useUpdateLupinOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLupinOrder>>,
+    TError,
+    UpdateLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateLupinOrder>>,
+  TError,
+  UpdateLupinOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateLupinOrderMutationOptions(options));
+};
 
 export const getListMRDirectoryUrl = (params?: ListMRDirectoryParams) => {
   const normalizedParams = new URLSearchParams();
@@ -31567,6 +31923,123 @@ export function useGetSptOrder<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getApproveSptOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/spt-orders/${recordId}/approve`;
+};
+
+/**
+ * @summary Approve
+ */
+export const approveSptOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptRecord>(getApproveSptOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getApproveSptOrderMutationKey = () => ["approveSptOrder"] as const;
+
+export const getApproveSptOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveSptOrder>>,
+    TError,
+    ApproveSptOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveSptOrder>>,
+  TError,
+  ApproveSptOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getApproveSptOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveSptOrder>>,
+    ApproveSptOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return approveSptOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveSptOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveSptOrder>>
+>;
+export type ApproveSptOrderMutationBody = BodyType<OrderApproval>;
+export type ApproveSptOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ApproveSptOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Approve
+ */
+export const useApproveSptOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveSptOrder>>,
+    TError,
+    ApproveSptOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveSptOrder>>,
+  TError,
+  ApproveSptOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getApproveSptOrderMutationOptions(options));
+};
 
 export const getEditSptDraftUrl = (recordId: string) => {
   return `/api/v1/admin/spt-orders/${recordId}/edit`;

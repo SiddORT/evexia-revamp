@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ImmRecordApproval } from "./immRecordApproval";
 import type { ImmRecordAttachmentsItem } from "./immRecordAttachmentsItem";
 import type { ImmRecordAudit } from "./immRecordAudit";
 import type { ImmRecordDoctor } from "./immRecordDoctor";
@@ -16,10 +17,8 @@ import type { ImmRecordRecipient } from "./immRecordRecipient";
 import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
 import type { ImmRecordStatus } from "./immRecordStatus";
 
-/**
- * Encrypted document projected only after protected authorization.
- */
 export interface ImmRecord {
+  approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;
   date: string;

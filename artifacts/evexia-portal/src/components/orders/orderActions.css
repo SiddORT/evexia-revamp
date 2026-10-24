@@ -1,0 +1,9 @@
+.admin-icon-button.order-view-action {
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.admin-icon-button.order-view-action:focus-visible {
+  outline: 2px solid var(--admin-focus);
+  outline-offset: 2px;
+}

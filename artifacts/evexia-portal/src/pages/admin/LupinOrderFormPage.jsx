@@ -12,10 +12,11 @@ import { continueNavigation, setNavigationGuard } from '../../auth/navigationGua
 import { request, blankOrder, totalMinor, money, amountMoney, validateAttachments, fileSize, orderInput, uploadAttachment, downloadAttachment, attachmentBlob, removeUpload } from '../../services/serverLupin.js';
 import '../../lupinOrders.css';
 import '../../orderEntry.css';
+import OrderApproval from '../../components/orders/OrderApproval.jsx';
 
 const Err = ({ id, text }) => text ? <p className="lupin-error" id={id} role="alert">{text}</p> : null;
 
-export default function LupinOrderFormPage({ id }) {
+export default function LupinOrderFormPage({ id, mode = 'view' }) {
   const BASE = useOrderBase('lupin');
   const [order, setOrder] = useState(null), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -32,10 +33,11 @@ export default function LupinOrderFormPage({ id }) {
     {error && <><p role="alert">{error}</p><button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></>}
     <Link href={BASE} className="admin-button">Back to orders</Link>
   </div></div></AdminLayout>;
-  return order ? <Review key={order.id} order={order} /> : <Form />;
+  return order ? mode === 'edit' ? <Form key={`${order.id}-edit`} order={order} /> : <Review key={order.id} order={order} /> : <Form />;
 }
 
-function Review({ order }) {
+function Review({ order: initialOrder }) {
+  const [order, setOrder] = useState(initialOrder);
   const can = useOrderActions('lupin');
   const { portal } = useOrderPortal();
   const canPreview = portal === 'mr' && can.read_attachment;
@@ -44,39 +46,46 @@ function Review({ order }) {
   const BASE = useOrderBase('lupin');
   const { date } = useAdminDateFormatters();
   const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
-  return <AdminLayout title="LUPIN"><div className="lupin">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>Order {order.number}</h1><p className="admin-page-head__description">Read-only saved order with historical Doctor, MR and explicitly linked Patient identities.</p></div>
-      <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-lupin-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
+  return <AdminLayout title="LUPIN"><div className="lupin lupin-review">
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>Order {order.number}</h1></div>
+      <div className="lupin-actions">{can.edit && order.mrEditable && <Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link>}
+      <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-lupin-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div></div>
     {error && <p role="alert" className="lupin-error">{error}</p>}
-    <section className="admin-panel lupin-section" aria-labelledby="lupin-h-sum"><h2 id="lupin-h-sum">Summary</h2>
+    <section className="admin-panel lupin-section" aria-labelledby="lupin-h-sum"><h2 id="lupin-h-sum">Order details</h2>
       <dl className="lupin-facts">
         <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
-        <div><dt>Doctor (historical)</dt><dd>{order.doctor.name}{portal !== 'mr' && <span className="lupin-sub">{order.doctorId}</span>}</dd></div>
-        <div><dt>MR (historical)</dt><dd>{order.mr.name}{portal !== 'mr' && <span className="lupin-sub">{order.mrId}</span>}</dd></div>
-        <div><dt>No. of Patients</dt><dd>{order.patientCount}</dd></div><div><dt>Price (per Test)</dt><dd>{amountMoney(order.price)}</dd></div>
-        <div><dt>Total Amount</dt><dd data-testid="text-lupin-review-total">{amountMoney(order.total)}</dd></div>
+        <div><dt>Doctor</dt><dd>{order.doctor.name}</dd></div>
+        <div><dt>MR</dt><dd>{order.mr.name}</dd></div>
         <div><dt>Order status</dt><dd>{order.status}</dd></div><div><dt>Payment status</dt><dd>{order.paymentStatus}</dd></div>
       </dl>
-      <p className="lupin-hint">Patient count is the saved pricing quantity, not the number of links. Confirmed / Unpaid is an initial classification, not evidence of payment, clinical work or fulfilment.</p>
-      <div><h2>Linked Patients (optional historical context)</h2>
-        {order.patients.length ? <ul className="lupin-files">{order.patients.map((p) => <li key={p.id}><span>{p.name}{portal !== 'mr' && <span className="lupin-sub">{p.id}</span>}</span></li>)}</ul> : <p className="lupin-hint">No individual Patients were linked. This does not change the saved patient count.</p>}</div>
-      <div><h2>Private attachments</h2>{order.attachments.length ? <ul className="lupin-files" aria-label="Saved attachments">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${fileSize(f.size)})`}</span>
+      <OrderApproval kind="lupin" order={order} request={request} onApproved={setOrder} />
+    </section>
+    <section className="admin-panel lupin-section" aria-labelledby="lupin-pricing"><h2 id="lupin-pricing">Pricing</h2>
+      <dl className="lupin-facts lupin-review-pricing">
+        <div><dt>No. of Patients</dt><dd>{order.patientCount}</dd></div>
+        <div><dt>Price per test</dt><dd>{amountMoney(order.price)}</dd></div>
+        <div className="lupin-review-total"><dt>Total amount</dt><dd data-testid="text-lupin-review-total">{amountMoney(order.total)}</dd></div>
+      </dl>
+    </section>
+    {order.patients.length > 0 && <section className="admin-panel lupin-section"><h2>Linked Patients</h2>
+      <ul className="lupin-files">{order.patients.map((p) => <li key={p.id}>{p.name}</li>)}</ul></section>}
+    <section className="admin-panel lupin-section" aria-labelledby="lupin-saved-files"><h2 id="lupin-saved-files">Saved attachments</h2>{order.attachments.length ? <ul className="lupin-files" aria-label="Saved attachments">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={16} aria-hidden="true" /> {f.name}{!f.restricted && <span className="lupin-sub">{fileSize(f.size)}</span>}</span>
         <div className="lupin-file-actions">
           {canPreview && !f.restricted && f.state === 'verified' && <button type="button" className="lupin-link" aria-label={`View ${f.name}`} onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }}>View</button>}
           <button type="button" className="lupin-link" disabled={downloading || !can.read_attachment || f.restricted} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button>
-        </div></li>)}</ul> : <p className="lupin-hint">No files attached. Imported orders may have no attachments; transfer metadata cannot restore files.</p>}</div>
-      <div><h2>Remarks</h2><p className="lupin-remarks">{order.remarks || 'No remarks.'}</p></div>
+         </div></li>)}</ul> : <p>No files attached.</p>}
     </section>
+    {order.remarks?.trim() && <section className="admin-panel lupin-section"><h2>Remarks</h2><p className="lupin-remarks">{order.remarks}</p></section>}
     {canPreview && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }
 
-function Form() {
+function Form({ order }) {
   const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
   const { mr, portal } = useOrderPortal();
   const [, navigate] = useLocation();
-  const [v, setV] = useState(() => ({ ...blankOrder(), mrId: mr?.id || '' })), [linked, setLinked] = useState([]), [patientChoice, setPatientChoice] = useState('');
+  const [v, setV] = useState(() => order ? { ...order, patientCount: String(order.patientCount) } : { ...blankOrder(), mrId: mr?.id || '' }), [linked, setLinked] = useState(order?.patients || []), [patientChoice, setPatientChoice] = useState('');
   const [errors, setErrors] = useState({}), [fileMsg, setFileMsg] = useState(''), [progress, setProgress] = useState('');
   const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState(''), [policyRevision, setPolicyRevision] = useState(0);
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false), [leave, setLeave] = useState(null);
@@ -87,7 +96,8 @@ function Form() {
   const uploadKeys = useRef(new Map());
   const initial = useRef(JSON.stringify(v));
   dirty.current = JSON.stringify(v) !== initial.current || uploads.current.size > 0 || failedUploads.current.size > 0 || busy || uncertain;
-  const locked = busy || uncertain || ownerChanged || !can.add;
+  const eligible = order ? can.edit && order.mrEditable : can.add;
+  const locked = busy || uncertain || ownerChanged || !eligible;
   const set = (patch) => setV((current) => ({ ...current, ...patch }));
   useEffect(() => {
     alive.current = true;
@@ -130,7 +140,7 @@ function Form() {
     for (const id of new Set(ids)) await removeUpload(id);
   }
   async function removeFile(file) {
-    if (locked) return;
+    if (locked || order?.attachments.some((f) => f.id === file.id)) return;
     saving.current = true; setBusy(true);
     try {
       const id = uploads.current.get(file)?.id || uploadKeys.current.get(file);
@@ -174,6 +184,7 @@ function Form() {
         }
         const attachments = [];
         for (const [i, file] of v.attachments.entries()) {
+          if (file.id) { attachments.push(file); continue; }
           setProgress(`Uploading and verifying file ${i + 1} of ${v.attachments.length}: ${file.name}`);
           if (!uploads.current.has(file)) {
             if (!uploadKeys.current.has(file)) uploadKeys.current.set(file, crypto.randomUUID());
@@ -185,15 +196,15 @@ function Form() {
           }
           attachments.push(uploads.current.get(file));
         }
-        submission.current = { ...orderInput({ ...v, attachments }), idempotencyKey: crypto.randomUUID() };
+        submission.current = { ...orderInput({ ...v, attachments }), ...(order ? { expected_version: order.version } : {}), idempotencyKey: crypto.randomUUID() };
       }
       setProgress('Saving order…');
-      const order = await request('', { body: submission.current });
+      const saved = await request(order ? `/${order.id}/edit` : '', { body: submission.current });
       guard();
       if (!alive.current) return;
       submission.current = null; uploads.current.clear(); failedUploads.current.clear(); uploadKeys.current.clear();
       dirty.current = false; initial.current = JSON.stringify(v); saving.current = false;
-      navigate(`${BASE}/${order.id}`);
+      navigate(`${BASE}/${saved.id}`);
     } catch (e) {
       try { guard(); } catch { return; }
       if (alive.current) {
@@ -216,15 +227,16 @@ function Form() {
   const field = (key, label, props = {}) => <div className="lupin-field"><label htmlFor={`lupin-${key}`}>{label} <span aria-hidden="true">*</span></label>
     <input id={`lupin-${key}`} value={v[key]} onChange={(e) => set({ [key]: e.target.value })} required aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `lupin-${key}-err` : undefined} data-testid={`input-lupin-${key}`} {...props} />
     <Err id={`lupin-${key}-err`} text={errors[key]} /></div>;
-  return <AdminLayout title="LUPIN"><form className="lupin order-entry lupin-entry" onSubmit={save} noValidate aria-label="Add Lupin Order">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>Add Lupin Order</h1></div></div>
+  return <AdminLayout title="LUPIN"><form className="lupin order-entry lupin-entry" onSubmit={save} noValidate aria-label={order ? 'Edit Lupin Order' : 'Add Lupin Order'}>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>{order ? `Edit ${order.number}` : 'Add Lupin Order'}</h1></div></div>
+    {!eligible && <p role="alert">This order cannot be edited. Saved details remain viewable; any mounted draft is preserved.</p>}
     {policyError && <p role="alert">{policyError} <button type="button" className="lupin-link" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
     {uncertain && <p className="lupin-notice" role="alert">Order outcome is unconfirmed. Editing is locked. Retry the unchanged save to recover the same order without a duplicate.</p>}
     {Object.keys(errors).length > 0 && <div className="lupin-errors" role="alert" tabIndex={-1} ref={summary} data-testid="lupin-errors"><strong>Unable to save</strong><ul>{Object.entries(errors).map(([key, text]) => <li key={key}>{text}</li>)}</ul></div>}
     <fieldset disabled={locked} className="lupin-form-fields">
       <section className="admin-panel lupin-section" aria-labelledby="lupin-h-det"><h2 id="lupin-h-det">Order details</h2>
         <div className="lupin-entry__identity">
-          <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-doctorId" kind="doctors" label="Doctor (required)" value={v.doctorId} onChange={chooseDoctor} onPerson={(p) => { if (!mr && p?.mrId) set({ mrId: p.mrId }); }} disabled={locked} />
+          <KitsReferenceSelect historicalPerson={order?.doctor} requester={request} fieldClass="lupin-field" id="lupin-doctorId" kind="doctors" label="Doctor (required)" value={v.doctorId} onChange={chooseDoctor} onPerson={(p) => { if (!mr && p?.mrId) set({ mrId: p.mrId }); }} disabled={locked} />
           {mr ? <div className="lupin-field"><label htmlFor="lupin-mrId">MR (required)</label><input id="lupin-mrId" readOnly value={mr.name} /><p className="lupin-hint">Your verified saved MR identity. Assignment cannot be changed.</p></div> : <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-mrId" kind="mrs" label="MR (required)" value={v.mrId} onChange={(id) => set({ mrId: id })} disabled={locked} />}
         </div>
         <p className="lupin-hint">The MR must match this Doctor’s current assignment. No master or account is created.</p>
@@ -251,7 +263,7 @@ function Form() {
             <Err id="lupin-files-err" text={fileMsg || errors.attachments} />
             {fileMsg && <button type="button" className="lupin-link" onClick={() => setFileMsg('')}>Dismiss rejected files</button>}
           </div>
-          {v.attachments.length > 0 ? <ul className="lupin-files" aria-label="Selected files">{v.attachments.map((f, i) => <li key={`${f.name}-${i}`}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span><button type="button" className="lupin-link" onClick={() => removeFile(f)} aria-label={`Remove ${f.name}`}>Remove</button></li>)}</ul> : <p className="lupin-hint">No files selected.</p>}
+          {v.attachments.length > 0 ? <ul className="lupin-files" aria-label="Selected files">{v.attachments.map((f, i) => <li key={`${f.name}-${i}`}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span>{f.id ? <span>Retained</span> : <button type="button" className="lupin-link" onClick={() => removeFile(f)} aria-label={`Remove ${f.name}`}>Remove</button>}</li>)}</ul> : <p className="lupin-hint">No files selected.</p>}
         </div>
           <label className="lupin-field">Remarks<textarea id="lupin-remarks" maxLength={4000} value={v.remarks} onChange={(e) => set({ remarks: e.target.value })} data-testid="input-lupin-remarks" /></label>
         </div>
@@ -259,7 +271,7 @@ function Form() {
     </fieldset>
     {progress && <p className="lupin-hint" role="status" aria-live="polite">{progress}</p>}
     {!can.upload_attachment && <p role="status">Upload Attachment permission is required for this form's mandatory attachment. Your draft remains in this tab.</p>}
-    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={!can.add || !can.upload_attachment || busy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
+    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={!eligible || !can.upload_attachment || busy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : order ? 'Save changes' : 'Save order'}</button>
       {!busy && !uncertain && <button type="button" className="admin-button admin-button--secondary" onClick={() => dirty.current ? setLeave({ kind: 'href', href: BASE }) : navigate(BASE)} data-testid="link-lupin-cancel">Cancel</button>}
     </div>
     {leave && <ImmDialog title="Discard this Lupin draft?" description="Selected files and unsaved details will be discarded. Known private uploads will be removed before leaving." onClose={() => { if (!busy) setLeave(null); }} returnFocusRef={saveButton}>

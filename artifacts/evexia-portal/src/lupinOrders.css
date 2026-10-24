@@ -48,6 +48,19 @@
 .lupin-entry .lupin-more-grid > div { display: grid; gap: 10px; }
 .lupin-form-fields { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
 .lupin-remarks { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.lupin-review { font-size: 1rem; line-height: 1.5; }
+.lupin-review .admin-page-head { flex-wrap: wrap; gap: 16px; }
+.lupin-review .admin-page-head > * { min-width: 0; max-width: 100%; }
+.lupin-review .admin-page-head h1 { font-size: 1.5rem; overflow-wrap: anywhere; }
+.lupin-review .lupin-section { gap: 18px; }
+.lupin-review .lupin-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 20px; }
+.lupin-review .lupin-facts dt { font-size: .875rem; font-weight: 500; margin-bottom: 5px; }
+.lupin-review .lupin-facts dd { font-size: 1rem; font-weight: 600; }
+.lupin-review .lupin-review-total dd { font-size: 1.5rem; color: var(--admin-accent); }
+.lupin-review .lupin-files li { flex-wrap: wrap; font-size: 1rem; gap: 12px; padding: 12px; }
+.lupin-review .lupin-files li > span { flex: 1 1 180px; overflow-wrap: anywhere; }
+.lupin-review .lupin-file-actions { flex: 0 1 auto; max-width: 100%; justify-content: flex-start; }
+.lupin-review .lupin-link { min-height: 44px; padding: 8px; overflow-wrap: anywhere; }
 .lupin-field select { width: 100%; min-width: 0; min-height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; padding: 8px 11px; background: var(--admin-surface); color: var(--admin-text); font: inherit; }
 .lupin-search-control { display: flex; position: relative; align-items: center; min-width: 0; }
 .lupin-search-control > svg { position: absolute; left: 11px; color: var(--admin-muted); pointer-events: none; }

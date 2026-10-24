@@ -527,7 +527,7 @@ function Editor({ order, mode }) {
         ? <ImmunotherapyConflictDetails order={v} patient={patient} doctor={doctor} mr={MRS.find((m) => m.id === v.mrId)} />
         : <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(v, null, 2)}</pre>}</details>
       <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setConflict(null)}>Keep draft without rebasing</button>
-        <button type="button" className="admin-button" onClick={() => { saveBase.current = conflict; mutation.current = null; setConflict(null); setErrors({ form: 'Draft retained against the reviewed current version. Review your values, then save explicitly. Another concurrent change will be rejected again.' }); }}>Use reviewed version and keep my draft</button></div>
+        <button type="button" className="admin-button" disabled={mrPortal && !mrEditable(conflict)} onClick={() => { saveBase.current = conflict; mutation.current = null; setConflict(null); setErrors({ form: 'Draft retained against the reviewed current version. Review your values, then save explicitly. Another concurrent change will be rejected again.' }); }}>Use reviewed version and keep my draft</button></div>
     </ImmDialog>}
   </div></AdminLayout>;
 }

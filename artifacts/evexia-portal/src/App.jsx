@@ -104,6 +104,7 @@ function App() {
       <Route path="/admin/orders/immunotherapy/:id">{(params) => <ImmunotherapyOrderFormPage key={params.id} id={params.id} mode="view" />}</Route>
       <Route path="/admin/orders/spt" component={SptOrders} />
       <Route path="/admin/orders/spt/new">{() => <SptOrderFormPage key="new" />}</Route>
+      <Route path="/admin/orders/spt/:id/edit">{(params) => <SptOrderFormPage key={`${params.id}-edit`} id={params.id} mode="edit" />}</Route>
       <Route path="/admin/orders/spt/:id">{(params) => <SptOrderFormPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/orders/kits-consumables" component={KitsOrders} />
       <Route path="/admin/orders/kits-consumables/new">{() => <KitsOrderFormPage key="new" />}</Route>
@@ -111,6 +112,7 @@ function App() {
       <Route path="/admin/orders/kits-consumables/:id">{(params) => <KitsOrderFormPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/orders/lupin" component={LupinOrders} />
       <Route path="/admin/orders/lupin/new">{() => <LupinOrderFormPage key="new" />}</Route>
+      <Route path="/admin/orders/lupin/:id/edit">{(params) => <LupinOrderFormPage key={`${params.id}-edit`} id={params.id} mode="edit" />}</Route>
       <Route path="/admin/orders/lupin/:id">{(params) => <LupinOrderFormPage key={params.id} id={params.id} />}</Route>
       {ORDER_DESTINATIONS.filter((destination) => !['spt', 'immunotherapy', 'kits-consumables', 'lupin'].includes(destination.slug)).map((destination) => (
         <Route key={destination.slug} path={`/admin/orders/${destination.slug}`}>

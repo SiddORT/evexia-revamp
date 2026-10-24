@@ -85,6 +85,7 @@ class ImmImport(Strict):
 
 
 class ImmRecord(BaseModel):
+    approval: dict | None = None
     """Encrypted document projected only after protected authorization."""
     id: uuid.UUID
     number: str

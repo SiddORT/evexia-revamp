@@ -13,6 +13,7 @@ import KitsOrderEditor from './KitsOrderEditor.jsx';
 import KitsPricingSummary from '../../components/orders/KitsPricingSummary.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
+import OrderApproval from '../../components/orders/OrderApproval.jsx';
 
 const LABELS = { orderFor: 'Order for', doctorId: 'Doctor', mrId: 'MR', products: 'Products', 'kit-product': 'Kit product', 'kit-custom': 'Custom value', 'kit-volume': 'Kit volume', 'kit-quantity': 'Kit quantity', lancets: 'Lancets', applicators: 'Applicators', tray: 'Tray', shipping: 'Shipping', 'other-name': 'Recipient name', 'other-phone': 'Recipient phone', 'other-line1': 'Address line 1', 'other-country': 'Country', 'other-state': 'State', 'other-city': 'City', 'other-pincode': 'Pincode', attachments: 'Attachments' };
 const Err = ({ id, text }) => (text ? <p className="kits-error" id={id} role="alert">{text}</p> : null);
@@ -29,14 +30,14 @@ export default function KitsOrderFormPage({ id, mode = 'view' }) {
   const can = useOrderActions('kits');
   const [order, setOrder] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(Boolean(id)), [revision, setRevision] = useState(0);
   useEffect(() => {
-    if (!id || (mode === 'edit' && !can.protected)) return undefined;
+    if (!id || (mode === 'edit' && !can.edit)) return undefined;
     const controller = new AbortController();
     setLoading(true); setError(''); setOrder(null);
     request(`/${id}`, { signal: controller.signal }).then(setOrder).catch((e) => { if (!controller.signal.aborted) setError(e.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [id, revision, mode, can.protected]);
-  if (mode === 'edit' && !can.protected) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><section className="admin-panel kits-panel"><h1>Edit access denied</h1><p role="alert">Only the protected Super Admin can edit saved Kits orders and pricing.</p><Link href={BASE}>Back to orders</Link></section></div></AdminLayout>;
+  }, [id, revision, mode, can.edit]);
+  if (mode === 'edit' && !can.edit) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><section className="admin-panel kits-panel"><h1>Edit access denied</h1><p role="alert">You do not have access to edit this order.</p><Link href={BASE}>Back to orders</Link></section></div></AdminLayout>;
   if (id) {
     if (!order) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><div className="admin-panel kits-panel kits-empty" data-testid="kits-missing">
       <h1>{loading ? 'Loading saved order…' : 'Order not available'}</h1>{error && <p role="alert">{error}</p>}
@@ -47,7 +48,8 @@ export default function KitsOrderFormPage({ id, mode = 'view' }) {
   return <Form />;
 }
 
-function Summary({ order }) {
+function Summary({ order: initialOrder }) {
+  const [order, setOrder] = useState(initialOrder);
   const can = useOrderActions('kits');
   const { portal } = useOrderPortal();
   const canPreview = (portal === 'mr' || can.protected) && can.read_attachment;
@@ -67,6 +69,8 @@ function Summary({ order }) {
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
           {can.protected && <><Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link><KitsPricingSummary order={order} /></>}
+          {portal === 'mr' && can.edit && order.mrEditable && <Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link>}
+          <OrderApproval kind="kits" order={order} request={request} onApproved={setOrder} />
           <dl className="kits-facts" data-testid="kits-summary-items">
             <div><dt>Summary</dt><dd>{productSummary(order)}</dd></div>
             <div><dt>Order for</dt><dd>{order.orderFor === 'mr' ? `MR: ${mr?.name || '-'}` : `Doctor: ${doctor?.name || '-'}`}</dd></div>

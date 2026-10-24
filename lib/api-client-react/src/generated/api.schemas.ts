@@ -3096,6 +3096,8 @@ export const ImmRecordStatus = {
   Returned: "Returned",
 } as const;
 
+export type ImmRecordApproval = { [key: string]: unknown } | null;
+
 export type ImmRecordAttachmentsItem = { [key: string]: unknown };
 
 export type ImmRecordAudit = { [key: string]: unknown } | null;
@@ -3110,10 +3112,8 @@ export type ImmRecordPatient = { [key: string]: unknown };
 
 export type ImmRecordRecipient = { [key: string]: unknown };
 
-/**
- * Encrypted document projected only after protected authorization.
- */
 export interface ImmRecord {
+  approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;
   date: string;
@@ -3745,6 +3745,8 @@ export const KitsRecordStatus = {
   Returned: "Returned",
 } as const;
 
+export type KitsRecordApproval = { [key: string]: unknown } | null;
+
 export type KitsRecordAttachmentsItem = { [key: string]: unknown };
 
 export type KitsRecordAudit = { [key: string]: unknown } | null;
@@ -3762,6 +3764,7 @@ export type KitsRecordRecipient = { [key: string]: unknown };
 export interface KitsRecord {
   /** @maxLength 12 */
   applicators?: string;
+  approval?: KitsRecordApproval;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: KitsRecordAttachmentsItem[];
@@ -3776,6 +3779,7 @@ export interface KitsRecord {
   /** @maxLength 12 */
   lancets?: string;
   mr: KitsRecordMr;
+  mrEditable?: boolean;
   mrId?: string | null;
   number: string;
   orderDate?: string | null;
@@ -4389,6 +4393,8 @@ export const LupinRecordStatus = {
   Returned: "Returned",
 } as const;
 
+export type LupinRecordApproval = { [key: string]: unknown } | null;
+
 export type LupinRecordAttachmentsItem = { [key: string]: unknown };
 
 export type LupinRecordAudit = { [key: string]: unknown } | null;
@@ -4400,6 +4406,7 @@ export type LupinRecordMr = { [key: string]: unknown };
 export type LupinRecordPatientsItem = { [key: string]: unknown };
 
 export interface LupinRecord {
+  approval?: LupinRecordApproval;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: LupinRecordAttachmentsItem[];
@@ -4409,6 +4416,7 @@ export interface LupinRecord {
   doctorId: string;
   id: string;
   mr: LupinRecordMr;
+  mrEditable?: boolean;
   mrId: string;
   number: string;
   orderDate?: string | null;
@@ -4443,6 +4451,51 @@ export interface LupinPage {
   items: LupinRecord[];
   nextCursor: string | null;
   total: number;
+}
+
+export type LupinUpdatePaymentStatus =
+  (typeof LupinUpdatePaymentStatus)[keyof typeof LupinUpdatePaymentStatus];
+
+export const LupinUpdatePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinUpdateStatus =
+  (typeof LupinUpdateStatus)[keyof typeof LupinUpdateStatus];
+
+export const LupinUpdateStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface LupinUpdate {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinUpdatePaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinUpdateStatus;
 }
 
 export interface LupinUploadCancellation {
@@ -6656,6 +6709,12 @@ export interface OpeningReview {
   reviewToken: string;
   rows: OpeningReviewedRow[];
   summary: OpeningSummary;
+}
+
+export interface OrderApproval {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
 }
 
 export interface POActivityEvent {
@@ -9650,6 +9709,8 @@ export const SptRecordStatus = {
   Saved: "Saved",
 } as const;
 
+export type SptRecordApproval = { [key: string]: unknown } | null;
+
 export type SptRecordAudit = { [key: string]: unknown } | null;
 
 export type SptRecordDoctor = { [key: string]: unknown } | null;
@@ -9657,6 +9718,7 @@ export type SptRecordDoctor = { [key: string]: unknown } | null;
 export type SptRecordMr = { [key: string]: unknown } | null;
 
 export interface SptRecord {
+  approval?: SptRecordApproval;
   audit?: SptRecordAudit;
   date: string;
   doctor: SptRecordDoctor;
@@ -9664,6 +9726,7 @@ export interface SptRecord {
   doctorName: string;
   id: string;
   mr: SptRecordMr;
+  mrEditable?: boolean;
   mrId: string | null;
   mrName: string;
   number: string;
