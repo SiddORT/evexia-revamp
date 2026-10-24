@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { MRDoctorOverview } from "./mRDoctorOverview";
 import type { MRDoctorReadContactRequirement } from "./mRDoctorReadContactRequirement";
 import type { MRDoctorReadDialCountry } from "./mRDoctorReadDialCountry";
 import type { MRDoctorReadInvoiceType } from "./mRDoctorReadInvoiceType";
@@ -15,7 +16,7 @@ import type { MRDoctorReadVerification } from "./mRDoctorReadVerification";
  * Read-only MR presentation DTO, deliberately independent of write validators.
  *
  * Contacts are never returned as writable phone/email fields on MR reads.
- * Address fields contain display-only masks, including postal/geographic parts.
+ * Saved addresses remain visible under the shared MR contact policy.
  */
 export interface MRDoctorRead {
   addressLine1: string;
@@ -44,6 +45,8 @@ export interface MRDoctorRead {
   name: string;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
   orderDiscount: string;
+  /** MR-scoped saved-order summary on list/detail reads only. Not a payment ledger. */
+  orderSummary?: MRDoctorOverview | null;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
   paymentLimit: string;
   phoneDisplay: string;

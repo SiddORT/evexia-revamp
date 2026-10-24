@@ -193,11 +193,38 @@ class DoctorPage(SearchSection):
     offset: int
 
 
+class MRDoctorOverviewDomain(BaseModel):
+    kind: Literal["immunotherapy", "kits", "spt", "lupin"]
+    orderCount: int
+    pendingFulfillment: int | None
+
+
+class MRDoctorOverviewPaymentFlags(BaseModel):
+    paid: int
+    unpaid: int
+    partial: int
+    notTracked: int
+
+
+class MRDoctorOverview(BaseModel):
+    orderCount: int
+    pendingFulfillment: int
+    fulfillmentUntracked: int
+    knownValueMinor: str | None = Field(description="Exact INR minor-unit subtotal of known saved prices; never an outstanding balance.")
+    pricedOrders: int | None
+    unpricedOrders: int | None
+    valueAvailability: Literal["available", "unavailable"]
+    valueUnavailableReason: Literal["scan_limit", "snapshot_unreadable", "scope_changed"] | None
+    paymentFlags: MRDoctorOverviewPaymentFlags
+    balanceAvailability: Literal["not_tracked"]
+    domains: list[MRDoctorOverviewDomain]
+
+
 class MRDoctorRead(BaseModel):
     """Read-only MR presentation DTO, deliberately independent of write validators.
 
     Contacts are never returned as writable phone/email fields on MR reads.
-    Address fields contain display-only masks, including postal/geographic parts.
+    Saved addresses remain visible under the shared MR contact policy.
     """
     model_config = ConfigDict(extra="forbid")
     id: uuid.UUID
@@ -238,6 +265,7 @@ class MRDoctorRead(BaseModel):
     updatedBy: str
     createdAt: datetime
     updatedAt: datetime
+    orderSummary: MRDoctorOverview | None = Field(default=None, description="MR-scoped saved-order summary on list/detail reads only. Not a payment ledger.")
 
 
 class MRDoctorReadPage(SearchSection):

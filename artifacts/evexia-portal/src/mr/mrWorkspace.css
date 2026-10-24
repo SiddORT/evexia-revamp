@@ -188,3 +188,32 @@ textarea.mrw-input { padding: 10px 12px; min-height: 88px; }
   .mrw-main { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
   .mrw-bar .admin-button { flex: 1 1 auto; }
 }
+
+/* Doctor overview */
+.mrw-do-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 650px) { .mrw-do-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .mrw-do-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mrw-do-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 12px; }
+.mrw-do-card header { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.mrw-do-card header > div { min-width: 0; }
+.mrw-do-card header > .mrw-pill { flex: none; }
+.mrw-do-card h2 { margin: 0; font-size: 16px; }
+.mrw-do-card p { margin: 0; }
+.mrw-do-clinic { font-weight: 700; }
+.mrw-do-loc, .mrw-do-secondary { color: var(--admin-text-soft); font-size: 12px; }
+.mrw-do-view { margin-top: auto; justify-content: center; }
+.mrw-do-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0; padding: 10px; background: var(--admin-state-row); border-radius: 8px; }
+.mrw-do-metric { min-width: 0; }
+.mrw-do-metric dt { font-size: 11px; font-weight: 700; color: var(--admin-text-soft); }
+.mrw-do-metric dd { margin: 2px 0 0; font-weight: 700; }
+.mrw-do-metric small { display: block; font-weight: 400; font-size: 11px; color: var(--admin-text-soft); }
+.mrw-do-link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--admin-accent); }
+.mrw-do-table td { padding: 10px 8px; }
+.mrw-do-table th:first-child, .mrw-do-table td:first-child { text-align: left; }
+.mrw-do-detail { display: grid; gap: 16px; }
+.mrw-do-section .mrw-do-summary { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.mrw-do-explain { margin-top: 12px; font-size: 12px; color: var(--admin-text-soft); display: grid; gap: 6px; }
+.mrw-do-explain p { margin: 0; }
+.mrw-do-domains { min-width: 0; margin-top: 12px; table-layout: fixed; }
+.mrw-do-domains td, .mrw-do-domains th { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .mrw-do-summary { grid-template-columns: minmax(0, 1fr); } .mrw-doctor-table.mrw-do-table td, .mrw-doctor-table.mrw-do-table td:first-child { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); text-align: left; } }

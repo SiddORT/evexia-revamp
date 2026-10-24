@@ -165,6 +165,11 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", l
         rows = list(rows)
         context = doctor_context(db, [row.id for row in rows])
         result = dict(items=[read_projection(db, current, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset, **meta)
+        if current.role == "mr" and rows:
+            from app.services.doctor_overview import summaries
+            overview = summaries(db, current, [row.id for row in rows])
+            for item, row in zip(result["items"], rows):
+                item["orderSummary"] = overview[row.id]
         db.commit()
         return result
     return transaction(db, work)
@@ -184,6 +189,9 @@ def detail(db, actor, record_id):
     def work():
         current = authorize(db, actor, lock=False)
         result = read_projection(db, current, find(db, record_id, actor=current))
+        if current.role == "mr":
+            from app.services.doctor_overview import summaries
+            result["orderSummary"] = summaries(db, current, [record_id])[record_id]
         db.commit()
         return result
     return transaction(db, work)

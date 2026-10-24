@@ -8,9 +8,9 @@ import DirectorySearchStatus from '../components/admin/DirectorySearchStatus.jsx
 import useDoctors from '../hooks/useDoctors.js';
 import useConfirmedNavigation from '../auth/useConfirmedNavigation.js';
 import { usePlatformConfirm } from '../components/PlatformConfirmation.jsx';
-import { Head, statusPill, useWs } from './common.jsx';
+import { Head, useWs } from './common.jsx';
+import { DoctorDetailView, DoctorGrid, DoctorTable } from './DoctorOverview.jsx';
 
-const dash = (value) => String(value ?? '').trim() || '--';
 
 export function DoctorList() {
   const [search, setSearch] = useState('');
@@ -19,7 +19,7 @@ export function DoctorList() {
   const [zoneId, setZoneId] = useState('');
   const [headquarterId, setHeadquarterId] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('grid');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   useEffect(() => { const timer = setTimeout(() => { setQuery(search.trim()); setPage(1); }, 250); return () => clearTimeout(timer); }, [search]);
@@ -34,7 +34,7 @@ export function DoctorList() {
   const serial = (index) => (data.partial ? index + 1 : (page - 1) * pageSize + index + 1);
   const reset = () => { setSearch(''); setQuery(''); setStatus(''); setZoneId(''); setHeadquarterId(''); setPage(1); };
   return <>
-    <Head eyebrow="My Doctors" title="My Doctors" text="Your assigned doctors from the shared server directory." />
+    <Head eyebrow="My Doctors" title="My Doctors" text="Assigned doctors, saved-order coverage and configured business limits." />
     <div className="mrw-bar mrw-doctor-bar">
       <button type="button" className="admin-button admin-button--secondary" onClick={data.retry} disabled={data.loading}>Refresh</button>
       <input type="search" maxLength={200} aria-label="Search doctors" placeholder="Search name, registration, clinic or contact" value={search} onChange={(event) => setSearch(event.target.value)} />
@@ -51,28 +51,8 @@ export function DoctorList() {
     {data.error ? <div className="mrw-card" role="alert"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry loading doctors</button></div>
       : data.loading ? <p role="status">Loading doctors…</p>
         : !data.records.length ? <div className="mrw-card"><p>{data.partial ? 'No matches in this search section. Continue below.' : 'No assigned doctors match this scope.'}</p></div>
-          : view === 'grid' ? <div className="mrw-grid">{data.records.map((doctor) => <Link className="mrw-card" key={doctor.id} href={`/mr/doctors/${doctor.id}`}><h2>{doctor.name}</h2><p>{dash(doctor.doctorNumber)} · {dash(doctor.registrationNumber)}</p><p>{dash(doctor.qualification)} · {dash(doctor.clinicName)}</p><p>{dash(doctor.phoneDisplay)} · {dash(doctor.emailDisplay)}</p><p>{dash(doctor.city)}, {dash(doctor.state)}</p>{statusPill(doctor.status)}</Link>)}</div>
-            : <div className="mrw-card mrw-doctor-list" role="region" aria-label="Assigned doctor list">
-              <table className="mrw-table mrw-doctor-table" role="table">
-                <caption className="sr-only">{data.partial ? 'Serial numbers restart in each bounded search section.' : 'Assigned doctors, numbered across pages.'} On narrow screens, each record is shown with labeled fields.</caption>
-                <colgroup>{[5, 16, 11, 13, 10, 10, 13, 8, 8, 6].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
-                <thead role="rowgroup"><tr role="row">{['Sr. No.', 'Name', 'Phone No.', 'Email', 'Reg. No.', 'Qualification', 'Clinic Name', 'City', 'State', 'Status'].map((label) => <th key={label} scope="col" role="columnheader">{label}</th>)}</tr></thead>
-                <tbody role="rowgroup">{data.records.map((doctor, index) => <tr key={doctor.id} role="row">
-                  {[
-                    ['Sr. No.', serial(index)],
-                    ['Name', <><Link href={`/mr/doctors/${doctor.id}`}>{dash(doctor.name)}</Link><div className="mrw-doctor-number">{dash(doctor.doctorNumber)}</div></>],
-                    ['Phone No.', dash(doctor.phoneDisplay)],
-                    ['Email', dash(doctor.emailDisplay)],
-                    ['Reg. No.', dash(doctor.registrationNumber)],
-                    ['Qualification', dash(doctor.qualification)],
-                    ['Clinic Name', dash(doctor.clinicName)],
-                    ['City', dash(doctor.city)],
-                    ['State', dash(doctor.state)],
-                    ['Status', statusPill(doctor.status)],
-                  ].map(([label, value]) => <td key={label} role="cell"><span className="mrw-doctor-label" aria-hidden="true">{label}</span><div className="mrw-doctor-value">{value}</div></td>)}
-                </tr>)}</tbody>
-              </table>
-            </div>}
+          : view === 'grid' ? <DoctorGrid records={data.records} />
+            : <DoctorTable records={data.records} partial={data.partial} serial={serial} />}
     {!data.error && !data.loading && (data.partial
       ? <DirectorySearchStatus count={data.records.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={data.loading} onNext={data.continueSearch} onRestart={data.restartSearch} />
       : <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={data.filtered} total={data.total} label="doctors" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />)}
@@ -83,15 +63,8 @@ export function DoctorDetail({ id }) {
   const data = useDoctors({}, id);
   const doctor = data.doctor;
   return <>
-    <Head title={doctor && !data.error ? doctor.name : 'Doctor profile'} text="Read-only shared directory record. Demo orders and payments are not linked."><Link className="admin-button admin-button--secondary" href="/mr/doctors">Back to My Doctors</Link></Head>
-    {data.loading ? <p role="status">Loading doctor…</p> : data.error ? <div role="alert" className="mrw-card"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry</button></div> : doctor && <div className="mrw-card"><dl className="mrw-dl">{[
-      ['Doctor number', doctor.doctorNumber], ['Registration number', doctor.registrationNumber], ['Qualification', doctor.qualification],
-      ['Clinic', doctor.clinicName], ['Phone', doctor.phoneDisplay], ['Alternate phone', doctor.alternatePhoneDisplay], ['Email', doctor.emailDisplay],
-      ['Date of joining', doctor.dateOfJoining], ['Assigned MR', doctor.mrName], ['Zone', doctor.zoneName],
-      ['Status', doctor.status], ['Verification', doctor.verification], ['Invoice type', doctor.invoiceType], ['GST number', doctor.gstNumber],
-      ['Drug licence number', doctor.drugLicenceNumber], ['Order discount (%)', doctor.orderDiscount], ['Days limit', doctor.daysLimit],
-      ['Payment limit', doctor.paymentLimit], ['Address', [doctor.addressLine1, doctor.addressLine2, doctor.landmark, doctor.city, doctor.state, doctor.pincode, doctor.country].filter(Boolean).join(', ')],
-    ].map(([label, value]) => <div className="mrw-profile-field" key={label}><dt>{label}</dt><dd>{String(value ?? '').trim() || '--'}</dd></div>)}</dl></div>}
+    <Head title={doctor && !data.error ? doctor.name : 'Doctor profile'} text="Read-only shared directory record with a saved-order summary."><Link className="admin-button admin-button--secondary" href="/mr/doctors">Back to My Doctors</Link></Head>
+    {data.loading ? <p role="status">Loading doctor…</p> : data.error ? <div role="alert" className="mrw-card"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry</button></div> : doctor && <DoctorDetailView doctor={doctor} />}
   </>;
 }
 

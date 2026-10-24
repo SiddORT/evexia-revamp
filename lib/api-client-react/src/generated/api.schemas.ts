@@ -5237,6 +5237,62 @@ export interface MRDoctorChoice {
   zoneName: string;
 }
 
+export type MRDoctorOverviewValueAvailability =
+  (typeof MRDoctorOverviewValueAvailability)[keyof typeof MRDoctorOverviewValueAvailability];
+
+export const MRDoctorOverviewValueAvailability = {
+  available: "available",
+  unavailable: "unavailable",
+} as const;
+
+export type MRDoctorOverviewValueUnavailableReason =
+  | (typeof MRDoctorOverviewValueUnavailableReason)[keyof typeof MRDoctorOverviewValueUnavailableReason]
+  | null;
+
+export const MRDoctorOverviewValueUnavailableReason = {
+  scan_limit: "scan_limit",
+  snapshot_unreadable: "snapshot_unreadable",
+  scope_changed: "scope_changed",
+} as const;
+
+export type MRDoctorOverviewDomainKind =
+  (typeof MRDoctorOverviewDomainKind)[keyof typeof MRDoctorOverviewDomainKind];
+
+export const MRDoctorOverviewDomainKind = {
+  immunotherapy: "immunotherapy",
+  kits: "kits",
+  spt: "spt",
+  lupin: "lupin",
+} as const;
+
+export interface MRDoctorOverviewDomain {
+  kind: MRDoctorOverviewDomainKind;
+  orderCount: number;
+  pendingFulfillment: number | null;
+}
+
+export interface MRDoctorOverviewPaymentFlags {
+  notTracked: number;
+  paid: number;
+  partial: number;
+  unpaid: number;
+}
+
+export interface MRDoctorOverview {
+  balanceAvailability: "not_tracked";
+  domains: MRDoctorOverviewDomain[];
+  fulfillmentUntracked: number;
+  /** Exact INR minor-unit subtotal of known saved prices; never an outstanding balance. */
+  knownValueMinor: string | null;
+  orderCount: number;
+  paymentFlags: MRDoctorOverviewPaymentFlags;
+  pendingFulfillment: number;
+  pricedOrders: number | null;
+  unpricedOrders: number | null;
+  valueAvailability: MRDoctorOverviewValueAvailability;
+  valueUnavailableReason: MRDoctorOverviewValueUnavailableReason;
+}
+
 export interface MRDoctorPage {
   filtered: number;
   items: MRDoctorChoice[];
@@ -5532,7 +5588,7 @@ export const MRDoctorReadVerification = {
  * Read-only MR presentation DTO, deliberately independent of write validators.
  *
  * Contacts are never returned as writable phone/email fields on MR reads.
- * Address fields contain display-only masks, including postal/geographic parts.
+ * Saved addresses remain visible under the shared MR contact policy.
  */
 export interface MRDoctorRead {
   addressLine1: string;
@@ -5561,6 +5617,8 @@ export interface MRDoctorRead {
   name: string;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
   orderDiscount: string;
+  /** MR-scoped saved-order summary on list/detail reads only. Not a payment ledger. */
+  orderSummary?: MRDoctorOverview | null;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
   paymentLimit: string;
   phoneDisplay: string;

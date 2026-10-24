@@ -13112,6 +13112,174 @@
         "title": "MRDoctorChoice",
         "type": "object"
       },
+      "MRDoctorOverview": {
+        "properties": {
+          "balanceAvailability": {
+            "const": "not_tracked",
+            "title": "Balanceavailability",
+            "type": "string"
+          },
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/MRDoctorOverviewDomain"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "fulfillmentUntracked": {
+            "title": "Fulfillmentuntracked",
+            "type": "integer"
+          },
+          "knownValueMinor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exact INR minor-unit subtotal of known saved prices; never an outstanding balance.",
+            "title": "Knownvalueminor"
+          },
+          "orderCount": {
+            "title": "Ordercount",
+            "type": "integer"
+          },
+          "paymentFlags": {
+            "$ref": "#/components/schemas/MRDoctorOverviewPaymentFlags"
+          },
+          "pendingFulfillment": {
+            "title": "Pendingfulfillment",
+            "type": "integer"
+          },
+          "pricedOrders": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricedorders"
+          },
+          "unpricedOrders": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpricedorders"
+          },
+          "valueAvailability": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Valueavailability",
+            "type": "string"
+          },
+          "valueUnavailableReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "scan_limit",
+                  "snapshot_unreadable",
+                  "scope_changed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valueunavailablereason"
+          }
+        },
+        "required": [
+          "orderCount",
+          "pendingFulfillment",
+          "fulfillmentUntracked",
+          "knownValueMinor",
+          "pricedOrders",
+          "unpricedOrders",
+          "valueAvailability",
+          "valueUnavailableReason",
+          "paymentFlags",
+          "balanceAvailability",
+          "domains"
+        ],
+        "title": "MRDoctorOverview",
+        "type": "object"
+      },
+      "MRDoctorOverviewDomain": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "immunotherapy",
+              "kits",
+              "spt",
+              "lupin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "orderCount": {
+            "title": "Ordercount",
+            "type": "integer"
+          },
+          "pendingFulfillment": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pendingfulfillment"
+          }
+        },
+        "required": [
+          "kind",
+          "orderCount",
+          "pendingFulfillment"
+        ],
+        "title": "MRDoctorOverviewDomain",
+        "type": "object"
+      },
+      "MRDoctorOverviewPaymentFlags": {
+        "properties": {
+          "notTracked": {
+            "title": "Nottracked",
+            "type": "integer"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "integer"
+          },
+          "partial": {
+            "title": "Partial",
+            "type": "integer"
+          },
+          "unpaid": {
+            "title": "Unpaid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "paid",
+          "unpaid",
+          "partial",
+          "notTracked"
+        ],
+        "title": "MRDoctorOverviewPaymentFlags",
+        "type": "object"
+      },
       "MRDoctorPage": {
         "properties": {
           "filtered": {
@@ -13150,7 +13318,7 @@
       },
       "MRDoctorRead": {
         "additionalProperties": false,
-        "description": "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nAddress fields contain display-only masks, including postal/geographic parts.",
+        "description": "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nSaved addresses remain visible under the shared MR contact policy.",
         "properties": {
           "addressLine1": {
             "title": "Addressline1",
@@ -13521,6 +13689,17 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Orderdiscount",
             "type": "string"
+          },
+          "orderSummary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MRDoctorOverview"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "MR-scoped saved-order summary on list/detail reads only. Not a payment ledger."
           },
           "paymentLimit": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",

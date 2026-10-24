@@ -4078,6 +4078,52 @@ export const ListDoctorDirectoryResponse = zod.union([
           orderDiscount: zod
             .string()
             .regex(listDoctorDirectoryResponseTwoItemsItemOrderDiscountRegExp),
+          orderSummary: zod
+            .union([
+              zod.object({
+                balanceAvailability: zod.literal("not_tracked"),
+                domains: zod.array(
+                  zod.object({
+                    kind: zod.enum(["immunotherapy", "kits", "spt", "lupin"]),
+                    orderCount: zod.number().int(),
+                    pendingFulfillment: zod.union([
+                      zod.number().int(),
+                      zod.null(),
+                    ]),
+                  }),
+                ),
+                fulfillmentUntracked: zod.number().int(),
+                knownValueMinor: zod
+                  .union([zod.string(), zod.null()])
+                  .describe(
+                    "Exact INR minor-unit subtotal of known saved prices; never an outstanding balance.",
+                  ),
+                orderCount: zod.number().int(),
+                paymentFlags: zod.object({
+                  notTracked: zod.number().int(),
+                  paid: zod.number().int(),
+                  partial: zod.number().int(),
+                  unpaid: zod.number().int(),
+                }),
+                pendingFulfillment: zod.number().int(),
+                pricedOrders: zod.union([zod.number().int(), zod.null()]),
+                unpricedOrders: zod.union([zod.number().int(), zod.null()]),
+                valueAvailability: zod.enum(["available", "unavailable"]),
+                valueUnavailableReason: zod.union([
+                  zod.enum([
+                    "scan_limit",
+                    "snapshot_unreadable",
+                    "scope_changed",
+                  ]),
+                  zod.null(),
+                ]),
+              }),
+              zod.null(),
+            ])
+            .optional()
+            .describe(
+              "MR-scoped saved-order summary on list/detail reads only. Not a payment ledger.",
+            ),
           paymentLimit: zod
             .string()
             .regex(listDoctorDirectoryResponseTwoItemsItemPaymentLimitRegExp),
@@ -4095,7 +4141,7 @@ export const ListDoctorDirectoryResponse = zod.union([
           zoneName: zod.string(),
         })
         .describe(
-          "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nAddress fields contain display-only masks, including postal/geographic parts.",
+          "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nSaved addresses remain visible under the shared MR contact policy.",
         ),
     ),
     limit: zod.number().int(),
@@ -5126,6 +5172,45 @@ export const CreateDoctorDirectoryResponse = zod.union([
       orderDiscount: zod
         .string()
         .regex(createDoctorDirectoryResponseTwoOrderDiscountRegExp),
+      orderSummary: zod
+        .union([
+          zod.object({
+            balanceAvailability: zod.literal("not_tracked"),
+            domains: zod.array(
+              zod.object({
+                kind: zod.enum(["immunotherapy", "kits", "spt", "lupin"]),
+                orderCount: zod.number().int(),
+                pendingFulfillment: zod.union([zod.number().int(), zod.null()]),
+              }),
+            ),
+            fulfillmentUntracked: zod.number().int(),
+            knownValueMinor: zod
+              .union([zod.string(), zod.null()])
+              .describe(
+                "Exact INR minor-unit subtotal of known saved prices; never an outstanding balance.",
+              ),
+            orderCount: zod.number().int(),
+            paymentFlags: zod.object({
+              notTracked: zod.number().int(),
+              paid: zod.number().int(),
+              partial: zod.number().int(),
+              unpaid: zod.number().int(),
+            }),
+            pendingFulfillment: zod.number().int(),
+            pricedOrders: zod.union([zod.number().int(), zod.null()]),
+            unpricedOrders: zod.union([zod.number().int(), zod.null()]),
+            valueAvailability: zod.enum(["available", "unavailable"]),
+            valueUnavailableReason: zod.union([
+              zod.enum(["scan_limit", "snapshot_unreadable", "scope_changed"]),
+              zod.null(),
+            ]),
+          }),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "MR-scoped saved-order summary on list/detail reads only. Not a payment ledger.",
+        ),
       paymentLimit: zod
         .string()
         .regex(createDoctorDirectoryResponseTwoPaymentLimitRegExp),
@@ -5143,7 +5228,7 @@ export const CreateDoctorDirectoryResponse = zod.union([
       zoneName: zod.string(),
     })
     .describe(
-      "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nAddress fields contain display-only masks, including postal/geographic parts.",
+      "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nSaved addresses remain visible under the shared MR contact policy.",
     ),
 ]);
 
@@ -6405,6 +6490,45 @@ export const GetDoctorDirectoryResponse = zod.union([
       orderDiscount: zod
         .string()
         .regex(getDoctorDirectoryResponseTwoOrderDiscountRegExp),
+      orderSummary: zod
+        .union([
+          zod.object({
+            balanceAvailability: zod.literal("not_tracked"),
+            domains: zod.array(
+              zod.object({
+                kind: zod.enum(["immunotherapy", "kits", "spt", "lupin"]),
+                orderCount: zod.number().int(),
+                pendingFulfillment: zod.union([zod.number().int(), zod.null()]),
+              }),
+            ),
+            fulfillmentUntracked: zod.number().int(),
+            knownValueMinor: zod
+              .union([zod.string(), zod.null()])
+              .describe(
+                "Exact INR minor-unit subtotal of known saved prices; never an outstanding balance.",
+              ),
+            orderCount: zod.number().int(),
+            paymentFlags: zod.object({
+              notTracked: zod.number().int(),
+              paid: zod.number().int(),
+              partial: zod.number().int(),
+              unpaid: zod.number().int(),
+            }),
+            pendingFulfillment: zod.number().int(),
+            pricedOrders: zod.union([zod.number().int(), zod.null()]),
+            unpricedOrders: zod.union([zod.number().int(), zod.null()]),
+            valueAvailability: zod.enum(["available", "unavailable"]),
+            valueUnavailableReason: zod.union([
+              zod.enum(["scan_limit", "snapshot_unreadable", "scope_changed"]),
+              zod.null(),
+            ]),
+          }),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "MR-scoped saved-order summary on list/detail reads only. Not a payment ledger.",
+        ),
       paymentLimit: zod
         .string()
         .regex(getDoctorDirectoryResponseTwoPaymentLimitRegExp),
@@ -6422,7 +6546,7 @@ export const GetDoctorDirectoryResponse = zod.union([
       zoneName: zod.string(),
     })
     .describe(
-      "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nAddress fields contain display-only masks, including postal/geographic parts.",
+      "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.\nSaved addresses remain visible under the shared MR contact policy.",
     ),
 ]);
 
