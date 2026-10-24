@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowLeft, Paperclip, X } from 'lucide-react';
+import { ArrowLeft, Eye, Paperclip, X } from 'lucide-react';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
-import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
+import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment, attachmentBlob } from '../../services/serverKits.js';
+import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import KitsOrderEditor from './KitsOrderEditor.jsx';
 import KitsPricingSummary from '../../components/orders/KitsPricingSummary.jsx';
@@ -48,6 +49,9 @@ export default function KitsOrderFormPage({ id, mode = 'view' }) {
 
 function Summary({ order }) {
   const can = useOrderActions('kits');
+  const { portal } = useOrderPortal();
+  const [viewing, setViewing] = useState(null);
+  const viewerOpener = useRef(null);
   const BASE = useOrderBase('kits-consumables');
   const { date } = useAdminDateFormatters();
   const doctor = order.doctor, mr = order.mr;
@@ -77,14 +81,19 @@ function Summary({ order }) {
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
           <h2 style={{ marginTop: 16 }}>Private attachments</h2>
-          <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment" />)}</OrderFileList>
+          <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment"
+            actions={portal === 'mr' && can.read_attachment && !f.restricted && f.state === 'verified'
+              ? <button type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }} aria-label={`View ${f.name}`}><Eye size={15} aria-hidden="true" />View</button>
+              : null} />)}</OrderFileList>
         </section></div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Shipping ({order.shipping})</h2><Facts person={rec} empty="Recipient unavailable." testId="kits-summary-shipping" /></section>
         <section className="admin-panel kits-panel"><h2>Billing doctor</h2><Facts person={order.billing || doctor} empty="Billing doctor unavailable." testId="kits-summary-billing" /></section>
         {order.patient && <section className="admin-panel kits-panel"><h2>Patient (historical)</h2><Facts person={order.patient} empty="Not selected." /></section>}
       </div>
-    </div></div></AdminLayout>;
+    </div>
+    {portal === 'mr' && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
+    </div></AdminLayout>;
 }
 
 function Form() {

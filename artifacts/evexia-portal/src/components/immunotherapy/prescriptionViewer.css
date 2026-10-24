@@ -1,0 +1,9 @@
+.imm-dialog--viewer { width: min(960px, 100%); min-width: 0; overflow-wrap: anywhere; }
+.imm-viewer { min-height: 50dvh; max-height: 70dvh; display: grid; place-items: center; overflow: auto; border: 1px solid var(--admin-border); border-radius: 8px; }
+.imm-viewer__frame { width: 100%; height: 70dvh; border: 0; }
+.imm-viewer__image { max-width: 100%; max-height: 70dvh; object-fit: contain; }
+.imm-viewer__skeleton { padding: 40px; opacity: .7; }
+.imm-dialog--viewer .imm-hint { color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; margin: 4px 0 0; overflow-wrap: anywhere; }
+.imm-dialog--viewer .imm-error { color: var(--admin-danger); font-size: 12px; font-weight: 600; margin: 4px 0 0; overflow-wrap: anywhere; }
+.imm-dialog--viewer .admin-dialog__actions { flex-wrap: wrap; }
+.imm-dialog--viewer .admin-button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

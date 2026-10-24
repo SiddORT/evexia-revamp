@@ -104,7 +104,20 @@ export async function uploadAttachment(file) {
   }
   return { id: result.id, name: file.name, size: result.size, type: result.content_type, state: result.state };
 }
-export async function downloadAttachment(file) {
-  const blob = await immunotherapyFileRequest(`/${file.id}/download`, { download: true, kits: true });
+export async function downloadAttachment(file, signal) {
+  const blob = await immunotherapyFileRequest(`/${file.id}/download`, { download: true, kits: true, signal });
+  signal?.throwIfAborted();
   downloadServerBlob(blob, file.name);
+}
+export async function attachmentBlob(file, signal) {
+  if (file.restricted || file.state !== 'verified') throw new Error('This attachment is restricted or is not verified.');
+  const blob = await immunotherapyFileRequest(`/${file.id}/download`, { download: true, kits: true, signal });
+  signal?.throwIfAborted();
+  if (!blob.size) throw new Error('The attachment is empty.');
+  if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(blob.type)) {
+    const error = new Error('This attachment type cannot be previewed. Use Download instead.');
+    error.code = 'unsupported_file_type';
+    throw error;
+  }
+  return blob;
 }

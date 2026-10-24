@@ -107,3 +107,4 @@
 - [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.
 - [Development upload storage](development-upload-storage.md) — user wants private project-local S3-compatible folders for now; generic CDN HEAD failures do not prove freshclam is blocked.
 - [Kits Business Parking](kits-business-parking.md) — independent entered amount; the legacy screenshot does not authorize a commission, deduction or link to totals.
+- [Private order viewing](private-order-viewing-scope.md) — MR saved Immunotherapy and Kits previews are approved; ownership, entry/edit screens and Admin Kits scope stay unchanged.

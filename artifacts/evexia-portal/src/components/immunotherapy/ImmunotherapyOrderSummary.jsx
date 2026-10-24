@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ArrowLeft, Eye, Pencil } from 'lucide-react';
 import AdminLayout, { useOrderActions, useOrderBase, useOrderPortal } from '../orders/OrderPortalContext.jsx';
@@ -32,6 +32,7 @@ export default function ImmunotherapyOrderSummary({ order }) {
   const groups = order.groups || [];
   const legacy = (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp';
   const [viewing, setViewing] = useState(null);
+  const viewerOpener = useRef(null);
   return <AdminLayout title="IMMUNOTHERAPY"><div className="kits imm-saved-order">
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Orders / Immunotherapy</p><h1>Order {order.number}</h1>
@@ -79,8 +80,8 @@ export default function ImmunotherapyOrderSummary({ order }) {
           <OrderFileList label="Saved prescription files" empty="No prescription files recorded for this historical order.">
             {(order.attachments || []).map((file) => <DownloadOrderFile key={file.id} file={file} allowed={can.read_attachment}
               download={downloadPrescription} status="Saved prescription"
-              actions={!mrPortal && can.read_attachment && !file.restricted && file.state === 'verified'
-                ? <button type="button" className="admin-button admin-button--secondary" onClick={() => setViewing(file)} aria-label={`View ${file.name}`}><Eye size={15} aria-hidden="true" />View</button>
+              actions={can.read_attachment && !file.restricted && file.state === 'verified'
+                ? <button type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(file); }} aria-label={`View ${file.name}`}><Eye size={15} aria-hidden="true" />View</button>
                 : null} />)}
           </OrderFileList>
         </section>
@@ -99,6 +100,6 @@ export default function ImmunotherapyOrderSummary({ order }) {
         </section>}
       </div>
     </div>
-    {viewing && <PrescriptionViewer file={viewing} load={prescriptionBlob} download={downloadPrescription} allowed={can.read_attachment} onClose={() => setViewing(null)} />}
+    {viewing && <PrescriptionViewer file={viewing} load={prescriptionBlob} download={downloadPrescription} allowed={can.read_attachment} returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }

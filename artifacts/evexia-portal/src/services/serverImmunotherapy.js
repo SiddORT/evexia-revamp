@@ -154,15 +154,20 @@ export function saveErrors(cause, v) {
     ? 'Order details were rejected. Check all required fields, allergen suborders and prescriptions. Your draft is preserved.'
     : cause.message };
 }
-export async function downloadPrescription(file) {
-  const blob = await immunotherapyFileRequest(`/${file.id}/download`, { download: true });
+export async function downloadPrescription(file, signal) {
+  const blob = await immunotherapyFileRequest(`/${file.id}/download`, { download: true, signal });
+  signal?.throwIfAborted();
   downloadServerBlob(blob, file.name);
 }
 export async function prescriptionBlob(file, signal) {
   if (file.restricted || file.state !== 'verified') throw new Error('This prescription is restricted or is not verified.');
   const blob = await immunotherapyFileRequest(`/${file.id}/download`, { download: true, signal });
-  if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(blob.type) || !blob.size) {
-    throw new Error('Only verified PDF, JPEG, PNG and WebP prescriptions can be viewed. Use Download if the viewer is unavailable.');
+  signal?.throwIfAborted();
+  if (!blob.size) throw new Error('The prescription is empty.');
+  if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(blob.type)) {
+    const error = new Error('Only verified PDF, JPEG, PNG and WebP prescriptions can be viewed. Use Download if the viewer is unavailable.');
+    error.code = 'unsupported_file_type';
+    throw error;
   }
   return blob;
 }
