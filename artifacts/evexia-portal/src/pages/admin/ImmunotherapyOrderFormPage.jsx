@@ -342,11 +342,11 @@ function Editor({ order, mode }) {
     <input id={`imm-reg-${k}`} disabled={Boolean(pending)} value={reg.address[k]} onChange={(e) => setReg({ ...reg, address: { ...reg.address, [k]: e.target.value } })} aria-invalid={Boolean(regErrors[`address-${k}`])} aria-describedby={regErrors[`address-${k}`] ? `imm-reg-a-${k}-err` : undefined} data-testid={`input-imm-reg-${k}`} />
     <Err id={`imm-reg-a-${k}-err`} text={regErrors[`address-${k}`]} /></label>;
 
-  return <AdminLayout title="IMMUNOTHERAPY"><div className="imm">
+  return <AdminLayout title="IMMUNOTHERAPY"><div className="imm imm-editor">
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Orders / Immunotherapy</p>
         <h1>{isNew ? 'Add order' : `${readOnly ? 'Order' : 'Edit'} ${order.number}`}</h1>
-        <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : adminReview && order ? 'Review suborder MRP, child composition and private prescriptions before your decision.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
+        <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : adminReview && order ? 'Edit SUB pricing, child composition and private prescriptions. Save all pending changes together.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
       <div className="imm-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-back"><ArrowLeft size={15} aria-hidden="true" />{readOnly ? 'Back' : 'Cancel'}</button>
         {order && readOnly && !orderLocked(order) && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
@@ -425,7 +425,7 @@ function Editor({ order, mode }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-allergens"><h2 id="imm-h-allergens" tabIndex={-1}>Allergen Details</h2>
-          <p className="imm-hint">{canonical ? 'Each SUB has one MRP, regardless of child count. Extract and dilution are independent ml entries, not calculated recipes. Empty values remain not recorded. Complete all review values before approval.' : 'Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same saved group.'}</p>
+          <p className="imm-hint">{canonical ? 'Each SUB has one MRP, regardless of child count. Extract and dilution are independent ml entries, not calculated recipes. These quantities may remain blank when saving a draft.' : 'Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same saved group.'}</p>
           {!canonical && adminReview && order && !readOnly && <div className="imm-reprice">
             <strong>{legacy ? 'Legacy pricing is shown read-only' : 'Previous grouping is shown read-only'}</strong>
             <p className="imm-hint">Adopt one header MRP per existing SUB, initially containing its own saved allergen. Existing SUB numbers and original bottle history are preserved, never merged. Occurrence rates become header MRPs; bottle MRPs are not distributed or inferred. Opening Edit or Cancel changes nothing. The new total below is saved only when you explicitly Update/save.</p>
@@ -433,7 +433,7 @@ function Editor({ order, mode }) {
             <button type="button" className="admin-button" disabled={dis} onClick={convert} data-testid="button-imm-convert">Adopt suborder MRP in this draft</button>
             {convertMsg && <p className="imm-error" role="alert">{convertMsg}</p>}
           </div>}
-          {!canonical && !order && <p className="imm-hint">Suborder IDs are issued by the server on first save; then you can convert to suborder MRP review.</p>}
+          {!canonical && !order && <p className="imm-hint">Suborder IDs are issued by the server on first save; Admin can then adopt suborder MRP for pricing edits.</p>}
           {!readOnly && <ReferenceState source={allergens} label="allergens" />}
           <Err id="imm-groups-err" text={errors.groups} />
           {canonical ? <SuborderCards groups={v.groups} onChange={(groups) => set({ groups })} errors={errors} disabled={dis} readOnly={readOnly} admin={adminReview}
@@ -467,7 +467,7 @@ function Editor({ order, mode }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-more"><h2 id="imm-h-more">Details and shipping</h2>
-          {order && <p className="imm-hint">Saved status: {v.status}. Save this draft before using the separate Approve / Reject actions.</p>}
+          {order && <p className="imm-hint">Saved status: {v.status}. Saving changes keeps this status unchanged.</p>}
           <div className="imm-field"><label htmlFor="imm-remarks">Remarks</label><textarea id="imm-remarks" value={v.remarks} disabled={dis} onChange={(e) => set({ remarks: e.target.value })} aria-invalid={Boolean(errors.remarks)} data-testid="input-imm-remarks" /><Err text={errors.remarks} /></div>
           <fieldset className="imm-chips imm-shipping-choices" style={{ marginTop: 14, display: 'grid' }} id="imm-shipping"><legend>Ship to</legend>
             {['patient', 'doctor'].map((s) => <label className="imm-radio" key={s}><input id={`imm-ship-${s}`} type="radio" name="shipping" checked={v.shipping === s} disabled={dis} onChange={() => set({ shipping: s })} /><span>{s === 'patient' ? 'Patient' : 'Doctor'}<span className="imm-cell-sub">{recipientFor(s)?.name || 'Not chosen'}</span></span></label>)}</fieldset>
@@ -493,8 +493,8 @@ function Editor({ order, mode }) {
         {!readOnly && <section className="admin-panel imm-section imm-bottom" aria-labelledby="imm-h-review"><h2 id="imm-h-review">{adminReview ? 'Purchase order and review' : 'Submit order'}</h2>
           {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number (optional)<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label><Err text={errors.poNumber} />
             <p className="imm-hint">Approval requires one MRP per SUB, extract and dilution for every child, valid composition and a verified patient prescription. PO may be omitted. Draft saves may be incomplete; rejection requires no invented prices or clinical quantities.</p></>}
-          <p className="imm-hint">Update or Save writes the whole order atomically, including all other pending edits. Nothing is final until the server confirms success; approval and rejection remain separate.</p>
-          <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Save changes before review'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>
+          <p className="imm-hint">Update or Save writes the whole order atomically, including all other pending edits. Changes are saved only after the server confirms success. Saving does not approve or reject the order.</p>
+          <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Save changes'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>
         </section>}
       </div>
       <aside className="imm-aside" aria-label="Order summary">

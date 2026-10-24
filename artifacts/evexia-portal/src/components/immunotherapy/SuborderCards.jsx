@@ -69,7 +69,7 @@ export default function SuborderCards({ groups, onChange, errors, disabled, read
             <button type="button" className="admin-button" disabled={!dosage} onClick={() => add(g)} data-testid={`button-imm-add-allergen-${gi}`}><Plus size={15} aria-hidden="true" />Add Allergen</button>
             {(e.allergenId || e.result) && <button type="button" className="imm-link-btn" onClick={() => setEntries((s) => ({ ...s, [g.id]: { allergenId: '', result: '' } }))}>Clear entry</button>}
           </div>}
-          {admin && !readOnly && <div className="imm-sub__update"><p className="imm-hint">Update saves this SUB and all other pending order edits together. Success is shown only after the server confirms; approval remains separate.</p><button type="button" className="admin-button" disabled={disabled} onClick={onUpdate} aria-label={`Update ${g.id} and all pending order edits`}>Update</button></div>}
+          {admin && !readOnly && <div className="imm-sub__update"><p className="imm-hint">Update saves this SUB’s MRP and all other pending order edits together, without a separate pricing approval. Extract and dilution may remain blank in a draft. Changes are saved only after the server confirms success; order status stays unchanged.</p><button type="button" className="admin-button" disabled={disabled} onClick={onUpdate} aria-label={`Update ${g.id} and all pending order edits`}>Update</button></div>}
           {msg[g.id] && <p className="imm-error" role="alert">{msg[g.id]}</p>}
           {errors[`group-${g.id}`] && <p className="imm-error" role="alert">{errors[`group-${g.id}`]}</p>}
         </div>}

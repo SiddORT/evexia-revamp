@@ -67,3 +67,13 @@ identities to exist before Admin review while preserving historical identities.
 **How to apply:** Treat pending draft rows and saved business numbers separately;
 keep older formats compatible and assign missing history only on an explicit
 supported save.
+
+Save SUB rates directly; keep overall order approval. SUB Update saves the
+whole order, including other pending edits, rather than a separately approved
+price change. Do not introduce a pricing approval step or automatically approve
+an order when its rates are saved.
+
+**Why:** The user explicitly clarified this separation.
+
+**How to apply:** Keep pricing-save guidance distinct from overall order review;
+retain existing protected draft-save and order-decision requirements.

@@ -77,6 +77,21 @@
 .imm-section { padding: 18px; min-width: 0; }
 .imm-section > h2 { margin: 0 0 4px; font-size: 16px; color: var(--admin-text); font-family: var(--font-display); font-weight: 500; }
 .imm-section > .imm-hint { margin: 0 0 14px; }
+/* Editor only: match the portal's sans-serif panel hierarchy, not saved
+   summaries, listings, prescription dialogs or document templates. */
+.imm-editor { font-family: var(--font-sans); font-size: 13px; font-weight: 400; line-height: 1.5; }
+.imm-editor .imm-section > h2 { font-family: var(--font-sans); font-size: 1rem; font-weight: 600; line-height: 1.4; }
+.imm-editor .imm-field { font-size: 12px; font-weight: 600; line-height: 1.5; }
+.imm-editor .imm-field :is(input, select, textarea),
+.imm-editor .imm-sub input { font-family: var(--font-sans); font-size: 13px; font-weight: 400; line-height: 1.5; }
+.imm-editor .searchable-select__control input,
+.imm-editor :is(.searchable-select__option, .searchable-select__empty) { font-size: 13px; font-weight: 400; line-height: 1.5; }
+.imm-editor .imm-sub__toggle { font-size: 13px; line-height: 1.5; }
+.imm-editor :is(.imm-sub__id b, .imm-sub__name, .imm-sub__mrp) { font-weight: 600; }
+.imm-editor .imm-sub__mrp input { font-weight: 400; }
+.imm-editor .imm-suborder { font-family: var(--font-sans); font-size: 12px; line-height: 1.5; }
+.imm-editor .imm-facts dd { font-weight: 400; line-height: 1.5; }
+.imm-editor .imm-totals .imm-total { font-weight: 600; line-height: 1.5; }
 .imm-hint { color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; margin: 4px 0 0; overflow-wrap: anywhere; }
 .imm-error { color: var(--admin-danger); font-size: 12px; font-weight: 600; margin: 4px 0 0; overflow-wrap: anywhere; }
 .imm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; }
