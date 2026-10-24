@@ -13,13 +13,30 @@ export function parseAmount(value) {
   const [whole, fraction = ''] = value.split('.');
   return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
 }
+export const SUBORDER_BASIS = 'suborder_mrp_v1';
+export const QTY = /^[0-9]{1,6}(?:\.[0-9]{1,3})?$/;
+export const QTY_HELP = 'Enter a quantity in ml with up to six whole digits and three decimals, or leave it empty until approval.';
+export const quantityError = (value) => value == null || value === '' || QTY.test(value) ? '' : QTY_HELP;
+// Explicit Admin conversion: each previous occurrence becomes its own suborder; nothing is merged.
+export function convertToSuborders(groups, basis) {
+  const missing = groups.some((g) => g.items.some((i) => !i.suborderId));
+  if (missing) return { error: 'Save the order first so every existing occurrence has an issued suborder ID, then convert.' };
+  return { groups: groups.flatMap((g) => g.items.map((i) => ({
+    id: i.suborderId, mrp: basis === 'allergen_rates' && i.rate ? i.rate : null,
+    items: [{ ...i, rate: null, suborderId: null, extract: null, dilution: null }] }))) };
+}
 export const totalMinor = (groups, basis = 'legacy_bottle_mrp') => {
+  if (basis === SUBORDER_BASIS) {
+    const present = groups.map((g) => g.mrp);
+    return !present.length || present.some((m) => parseAmount(m) === null) ? null : present.reduce((n, m) => n + parseAmount(m), 0n);
+  }
   const amounts = basis === 'allergen_rates' ? groups.flatMap((g) => g.items.map((i) => i.rate)) : groups.map((g) => g.mrp);
   return !amounts.length || amounts.some((value) => parseAmount(value) === null) ? null : amounts.reduce((sum, value) => sum + parseAmount(value), 0n);
 };
 // Read/print/export consumers use the authoritative saved amount, never reprice.
 export const orderTotalMinor = (order) => order.totalMinor == null ? null : BigInt(order.totalMinor);
 export const money = (minor) => minor === null ? 'Awaiting pricing' : `₹${(minor / 100n).toLocaleString('en-IN')}.${String(minor % 100n).padStart(2, '0')}`;
+export const orderLocked = (o) => Boolean(o && (o.approval || ['In process', 'Shipped', 'Delivered', 'Returned'].includes(o.status)));
 export const mrEditable = (order) => Boolean(order.mrEditable);
 // Callers retain issued IDs for the editor lifetime, including removed bottles.
 export function newGroup(issuedIds = []) {
@@ -29,15 +46,18 @@ export function newGroup(issuedIds = []) {
   return { id: `BOT-${String(number).padStart(3, '0')}`, mrp: '', items: [] };
 }
 export const bottleLabel = (group, index) => /^BOT-\d{3,6}$/.test(group.id) ? group.id : `Saved bottle ${index + 1}`;
-export const groupingError = (items) => new Set(items.map((i) => i.allergenId)).size === items.length ? '' : 'Duplicate allergens within a bottle are not allowed.';
+export const groupingError = (items) => new Set(items.map((i) => i.allergenId)).size === items.length ? '' : 'Duplicate allergens within the same SUB or saved group are not allowed.';
 export const nextDose = () => ({ dosage: '', explanation: 'No administration history is recorded by this order workflow. Choose a dosage explicitly; order status is not evidence of a given dose.' });
 export function shippingRecipient(order) { return order.recipient || order[order.shipping] || null; }
 export function orderInput(v) {
   const mr = getSession().user?.identity_kind === 'mr';
   return Object.fromEntries(Object.entries({
     patientId: v.patientId, doctorId: v.doctorId, mrId: v.mrId, dosage: v.dosage, histamine: v.histamine, saline: v.saline,
-    ...(!mr && v.pricingBasis ? { pricingBasis: v.pricingBasis } : {}),
-    groups: v.groups.map((g) => ({ id: g.id, ...(!mr ? { mrp: g.mrp || null } : {}),
+    ...(v.pricingBasis === SUBORDER_BASIS || (!mr && v.pricingBasis) ? { pricingBasis: v.pricingBasis } : {}),
+    groups: v.pricingBasis === SUBORDER_BASIS && mr ? v.groups.map((g) => ({ id: g.id, items: g.items.map(({ allergenId, result }) => ({ allergenId, result })) }))
+    : v.pricingBasis === SUBORDER_BASIS ? v.groups.map((g) => ({ id: g.id, mrp: g.mrp || null,
+      items: g.items.map(({ allergenId, result, extract, dilution }) => ({ allergenId, result, extract: extract || null, dilution: dilution || null })) }))
+    : v.groups.map((g) => ({ id: g.id, ...(!mr ? { mrp: g.mrp || null } : {}),
       items: g.items.map(({ allergenId, result, rate, suborderId }) => ({ allergenId, result,
         ...(suborderId ? { suborderId } : {}), ...(!mr ? { rate: rate || null } : {}) })) })),
     remarks: v.remarks, shipping: v.shipping, status: v.status || 'Confirmed',
@@ -77,7 +97,7 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
   }
   if (!DOSES.includes(v.dosage)) errors.dosage = 'Choose a dosage from PD, DD or B1–B8.';
   for (const field of ['histamine', 'saline']) if (!RESULT.test(v[field])) errors[field] = RESULT_HELP;
-  if (!v.groups.length || v.groups.length > 100) errors.groups = 'Use between one and 100 saved groups.';
+  if (!v.groups.length || v.groups.length > (v.pricingBasis === SUBORDER_BASIS ? 1000 : 100)) errors.groups = v.pricingBasis === SUBORDER_BASIS ? 'Use between one and 1,000 suborders.' : 'Use between one and 100 saved groups.';
   if (v.groups.reduce((n, g) => n + g.items.length, 0) > 1000) errors.groups = 'Use at most 1,000 allergen suborders across all saved groups.';
   for (const group of v.groups) {
     if (!group.items.length || group.items.length > 100) errors[`group-${group.id}`] = 'Add between one and 100 allergens to this group in Allergen Details.';
@@ -85,6 +105,31 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
     if (!mr && group.mrp != null && group.mrp !== '' && parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
     for (const item of group.items) if (!mr && item.rate != null && item.rate !== '' && parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter a non-negative INR rate with up to ten whole digits and two decimal places.';
     for (const item of group.items) if (!RESULT.test(item.result)) errors[`result-${group.id}-${item.allergenId}`] = RESULT_HELP;
+  }
+  const suborder = v.pricingBasis === SUBORDER_BASIS;
+  if (suborder) {
+    if (!mr && ['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status)) {
+      for (const group of v.groups) if (parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = 'Enter the header MRP before approval.';
+    }
+    for (const group of v.groups) for (const item of group.items) {
+      const k = `${group.id}-${item.allergenId}`;
+      if (quantityError(item.extract)) errors[`extract-${k}`] = QTY_HELP;
+      if (quantityError(item.dilution)) errors[`dilution-${k}`] = QTY_HELP;
+      if (['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && !mr) {
+        if (!item.extract) errors[`extract-${k}`] = 'Enter the extract quantity before approval.';
+        if (!item.dilution) errors[`dilution-${k}`] = 'Enter the dilution quantity before approval.';
+      }
+    }
+    if (v.groups.reduce((n, g) => n + (parseAmount(g.mrp) ?? 0n), 0n) > 10000000000n) errors.groups = 'Order value must not exceed ₹10 crore.';
+    for (const k of Object.keys(errors)) if (k.startsWith('rate-')) delete errors[k];
+    if (!mr && ['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && (!previous || ['Confirmed', 'Rejected'].includes(previous.status))) errors.status = 'Approve this order explicitly before moving it to fulfillment.';
+    if (optionalPO(v.poNumber)?.length > 100) errors.poNumber = 'Use at most 100 characters.';
+    if ((v.remarks || '').length > 4000) errors.remarks = 'Use at most 4,000 characters.';
+    if (!['patient', 'doctor'].includes(v.shipping)) errors.shipping = 'Choose Patient or Doctor for shipping.';
+    if (!STATUSES.includes(v.status)) errors.status = 'Choose a listed order status.';
+    if (!hasPrescription) errors.attachments = PRESCRIPTION_HELP;
+    if (v.attachments.length > 10) errors.attachments = 'Attach at most ten verified prescriptions.';
+    return errors;
   }
   const basis = v.pricingBasis || previous?.pricingBasis || (previous ? 'legacy_bottle_mrp' : 'allergen_rates');
   const enteredTotal = v.groups.reduce((sum, g) => sum + (basis === 'allergen_rates'
@@ -97,12 +142,7 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
     for (const group of v.groups) {
       for (const item of group.items) if (parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter the INR rate for this allergen occurrence before approval.';
     }
-    if (basis !== 'allergen_rates') errors.groups = 'Explicitly select allergen-rate pricing and enter every suborder rate before approval or a new fulfillment decision.';
-  }
-  if (!mr && previous && (previous.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' && basis === 'allergen_rates') {
-    for (const group of v.groups) for (const item of group.items) {
-      if (parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter every rate before changing the historical pricing basis.';
-    }
+    errors.groups = 'Explicitly adopt suborder MRP and complete header pricing and child clinical quantities before approval.';
   }
   if (!mr && ['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && (!previous || ['Confirmed', 'Rejected'].includes(previous.status))) errors.status = 'Approve this order explicitly before moving it to fulfillment.';
   if (optionalPO(v.poNumber)?.length > 100) errors.poNumber = 'Use at most 100 characters.';
@@ -131,15 +171,16 @@ export function saveErrors(cause, v) {
     else if (key === 'status') errors.status = 'Choose a listed order status.';
     else if (key === 'remarks') errors.remarks = 'Use at most 4,000 characters.';
     else if (key === 'poNumber') errors.poNumber = 'Leave PO number blank, or use at most 100 characters.';
-    else if (key === 'pricingBasis') errors.groups = 'Use a supported saved pricing basis. Historical repricing requires the explicit allergen-rate choice.';
+    else if (key === 'pricingBasis') errors.groups = 'Use a supported saved pricing basis. Admin review changes require explicit suborder-MRP adoption.';
     else if (/^attachmentIds(?:\.\d+)?$/.test(key)) errors.attachments = PRESCRIPTION_HELP;
     else if (key === 'groups') errors.groups = 'Use one to 100 saved groups, retaining their internal IDs, and at most 1,000 allergen suborders.';
     else {
-      const match = /^groups\.(\d+)(?:\.(id|mrp|items)(?:\.(\d+)(?:\.(allergenId|result|rate|suborderId))?)?)?$/.exec(key);
+      const match = /^groups\.(\d+)(?:\.(id|mrp|items)(?:\.(\d+)(?:\.(allergenId|result|rate|suborderId|extract|dilution))?)?)?$/.exec(key);
       const group = match && v.groups[Number(match[1])];
       const item = group && match[3] !== undefined && group.items[Number(match[3])];
       if (group) {
-        if (match[2] === 'mrp') errors[`group-${group.id}`] = 'Historical bottle MRP is read-only. Use the explicit allergen-rate pricing choice rather than editing it.';
+        if (match[2] === 'mrp') errors[`mrp-${group.id}`] = 'Enter a non-negative INR MRP with at most ten whole digits and two decimals, or leave it empty until approval.';
+        else if (item && ['extract', 'dilution'].includes(match[4])) errors[`${match[4]}-${group.id}-${item.allergenId}`] = QTY_HELP;
         else if (item && match[4] === 'result') errors[`result-${group.id}-${item.allergenId}`] = RESULT_HELP;
         else if (item && match[4] === 'rate') errors[`rate-${group.id}-${item.allergenId}`] = 'Enter a non-negative INR rate with at most two decimal places.';
         else errors[`group-${group.id}`] = match[2] === 'id'
@@ -154,9 +195,9 @@ export function saveErrors(cause, v) {
   }
   if (cause.code === 'mr_order_assignment') errors.mrId = 'The order must use your signed-in saved MR assignment. Re-select an associated patient and Doctor.';
   if (cause.code === 'imm_total') errors.groups = 'Order value must not exceed ₹10 crore.';
-  if (cause.code === 'imm_pricing') errors.form = 'Approval requires a rate for every suborder. PO number is optional. Reject without invented prices if the order will not proceed.';
-  if (cause.code === 'imm_pricing_basis') errors.groups = 'Historical pricing is preserved until you explicitly select allergen-rate pricing and enter every rate. Bottle MRP cannot be edited for rate-sum orders.';
-  if (cause.code === 'imm_suborder') errors.groups = 'Retain saved suborder IDs and group associations. New occurrence identities are issued by the server on save. Your draft is preserved.';
+  if (cause.code === 'imm_pricing') errors.form = 'Approval requires one MRP per SUB, extract/dilution for every child and a verified patient prescription. PO is optional. Drafts and rejection need no invented values.';
+  if (cause.code === 'imm_pricing_basis') errors.groups = 'Historical pricing stays unchanged until Admin explicitly adopts suborder MRP. Individual historical rates and bottle MRPs are read-only.';
+  if (cause.code === 'imm_suborder') errors.groups = 'Retain exact saved SUB identities, each separately with its initial allergen when converting. Save the initial submission first to issue missing SUBs. Your draft is preserved.';
   if (cause.code === 'imm_admin_review') errors.status = cause.status === 403
     ? 'MR cannot change reviewed or historically priced orders, Admin prices, PO numbers or decisions. Reopen the saved order to see the current status.'
     : 'A reviewed order cannot return to Confirmed. Explicitly approve the order before moving it to fulfillment.';

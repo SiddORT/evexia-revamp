@@ -21,7 +21,7 @@ export interface ImmWrite {
   expected_version?: number | null;
   /**
    * @minItems 1
-   * @maxItems 100
+   * @maxItems 1000
    */
   groups: ImmBottle[];
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

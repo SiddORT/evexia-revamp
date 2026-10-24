@@ -13,13 +13,14 @@ export default function ImmunotherapyConflictDetails({ order, patient, doctor, m
   return <div>
     <dl className="imm-facts">{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{recorded(value)}</dd></div>)}</dl>
     {(order.groups || []).map((group, index) => <section key={group.id || index} aria-label={`Saved group ${index + 1}`}>
-      <h3>Saved group {index + 1}</h3>
+      <h3>{order.pricingBasis === 'suborder_mrp_v1' ? `Suborder ${group.id}` : `Saved group ${index + 1}`}</h3>
       {group.items?.length ? <ul>{group.items.map((item, itemIndex) => <li key={itemIndex}>
         <strong>{item.allergen?.name || 'Allergen name unavailable'}</strong>
         <dl className="imm-facts">
-          <div><dt>Suborder ID</dt><dd>{item.suborderId || 'Not assigned'}</dd></div>
+          <div><dt>Suborder ID</dt><dd>{order.pricingBasis === 'suborder_mrp_v1' ? group.id : item.suborderId || 'Not assigned'}</dd></div>
           <div><dt>Concentration</dt><dd>{recorded(item.allergen?.concentration)}</dd></div>
           <div><dt>Skin test result (mm)</dt><dd>{recorded(item.result)}</dd></div>
+          {order.pricingBasis === 'suborder_mrp_v1' && <><div><dt>Extract (ml)</dt><dd>{recorded(item.extract)}</dd></div><div><dt>Dilution (ml)</dt><dd>{recorded(item.dilution)}</dd></div></>}
         </dl>
       </li>)}</ul> : <p>No allergens recorded.</p>}
     </section>)}

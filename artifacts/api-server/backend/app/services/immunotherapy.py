@@ -115,6 +115,8 @@ def review_policy(db, body, previous):
     """One boundary for direct writes and import review/commit, before resolution."""
     from app.services.mr_orders import scope_identity
     from app.services.immunotherapy_pricing import basis, financials, RATE_BASIS, LEGACY_BASIS
+    if previous and (previous.get("approval") or previous["status"] in {"In process", "Shipped", "Delivered", "Returned"}):
+        raise ImmError("Approved or closed orders are read-only.", 409, "order_edit_closed")
     decision = getattr(body, "decision", None)
     if decision:
         raise ImmError("Save changes first, then use the version-bound Approve or Reject action.", 422, "imm_admin_review")
@@ -123,7 +125,7 @@ def review_policy(db, body, previous):
         if body.pricingBasis is not None and body.pricingBasis != saved_basis:
             raise ImmError("MR cannot change an order's financial basis.", 403, "imm_admin_review")
         if body.status != (previous["status"] if previous else "Confirmed") or body.poNumber is not None or any(
-            g.mrp is not None or any(i.rate is not None for i in g.items) for g in body.groups
+            g.mrp is not None or any(i.rate is not None or i.extract is not None or i.dilution is not None for i in g.items) for g in body.groups
         ):
             raise ImmError("MR saves must retain the current review status and omit Admin pricing and PO number.", 403, "imm_admin_review")
         from app.services.order_approval import protect
@@ -198,9 +200,10 @@ def resolved(db, body, previous=None):
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version"})
     value.pop("attachmentIds")
     value.pop("orderDate", None)
-    from app.services.immunotherapy_pricing import prepare, RATE_BASIS
+    from app.services.immunotherapy_pricing import prepare, retain_provenance, RATE_BASIS, SUBORDER_BASIS
     from app.services.mr_orders import scope_identity
     value["pricingBasis"], value["groups"] = prepare(body, previous, ImmError, mr=bool(scope_identity(db)))
+    retain_provenance(value, previous)
     if scope_identity(db) and previous:
         value["poNumber"] = previous.get("poNumber")
     changed = {}
@@ -226,10 +229,20 @@ def resolved(db, body, previous=None):
         value["recipient"] = person(eligible(db, recipient_kind, recipient_id), recipient_kind)
     else:
         value["recipient"] = value[recipient_key]
-    retained = {item["allergenId"]: item["allergen"] for group in previous["groups"] for item in group["items"]} if previous else {}
+    # Retain each occurrence's actual saved snapshot. The same allergen in two
+    # SUBs may legitimately have different historical master descriptions.
+    retained = {}
+    retained_by_id = {}
+    if previous:
+        for group in previous["groups"]:
+            for item in group["items"]:
+                retained[(group["id"], item["allergenId"])] = item["allergen"]
+                retained_by_id.setdefault(item["allergenId"], item["allergen"])
+                if item.get("suborderId"):
+                    retained[(item["suborderId"], item["allergenId"])] = item["allergen"]
     current = {}
     for aid in sorted({item.allergenId for g in body.groups for item in g.items}):
-        if str(aid) not in retained:
+        if str(aid) not in retained_by_id:
             a = eligible(db, "allergens", aid)
             current[str(aid)] = dict(id=str(a.id), name=a.name, concentration=a.concentration)
     total = 0
@@ -237,6 +250,10 @@ def resolved(db, body, previous=None):
     for group in value["groups"]:
         if group["mrp"] is not None:
             group["mrp"] = format(Decimal(group["mrp"]), ".2f")
+            if value["pricingBasis"] == SUBORDER_BASIS:
+                total += int(Decimal(group["mrp"]) * 100)
+        elif value["pricingBasis"] == SUBORDER_BASIS:
+            priced = False
         for item in group["items"]:
             if item.get("rate") is not None:
                 item["rate"] = format(Decimal(item["rate"]), ".2f")
@@ -244,10 +261,10 @@ def resolved(db, body, previous=None):
                     total += int(Decimal(item["rate"]) * 100)
             elif value["pricingBasis"] == RATE_BASIS:
                 priced = False
-            item["allergen"] = retained.get(item["allergenId"]) or current[item["allergenId"]]
+            item["allergen"] = retained.get((group["id"], item["allergenId"])) or retained_by_id.get(item["allergenId"]) or current[item["allergenId"]]
     if total > 10000000000:
         raise ImmError("Order value exceeds ₹10 crore.", 422, "imm_total")
-    value["totalMinor"] = (total if priced else None) if value["pricingBasis"] == RATE_BASIS else previous["totalMinor"]
+    value["totalMinor"] = (total if priced else None) if value["pricingBasis"] in {RATE_BASIS, SUBORDER_BASIS} else previous["totalMinor"]
     if previous:
         value["nextSuborderNumber"] = previous.get("nextSuborderNumber", 1)
     value.pop("decision", None)
@@ -487,7 +504,7 @@ def batch(db, actor, body, commit=False):
                 changes = [key for key in values if previous and values[key] != previous.get(key)]
                 # An explicit import commit may issue missing historical IDs too;
                 # review must flag that write rather than skip it as unchanged.
-                if previous and "groups" not in changes and any(
+                if values["pricingBasis"] != "suborder_mrp_v1" and previous and "groups" not in changes and any(
                     not item.get("suborderId") for group in values["groups"] for item in group["items"]
                 ):
                     changes.append("groups")

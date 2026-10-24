@@ -100,15 +100,18 @@ def saved_pricing(kind, previous):
         raise ValueError("Changed pricing basis requires Admin review")
     if kind == "immunotherapy":
         from app.schemas.immunotherapy import ImmInput
-        from app.services.immunotherapy_pricing import RATE_BASIS
-        if previous.get("pricingBasis") != RATE_BASIS or any(
-            i.get("rate") is None for g in previous["groups"] for i in g["items"]
+        from app.services.immunotherapy_pricing import SUBORDER_BASIS
+        if previous.get("pricingBasis") != SUBORDER_BASIS or any(
+            g.get("mrp") is None or any(i.get("extract") is None or i.get("dilution") is None for i in g["items"])
+            for g in previous["groups"]
         ):
-            raise ValueError("Missing saved rates")
+            raise ValueError("Save one MRP per SUB and extract/dilution for every child")
         ImmInput.model_validate(imm_values(previous))
         if not previous["attachments"]:
             raise ValueError("Missing prescription")
-        total = sum((Decimal(i["rate"]) for g in previous["groups"] for i in g["items"]), Decimal(0))
+        from app.services.immunotherapy_pricing import prepare_suborders
+        prepare_suborders(imm_values(previous)["groups"], previous, ImmError)
+        total = sum((Decimal(g["mrp"]) for g in previous["groups"]), Decimal(0))
         if total * 100 != previous.get("totalMinor") or total > Decimal("100000000"):
             raise ValueError("Stale saved total")
         return
@@ -147,8 +150,10 @@ def eligibility(kind, previous):
     if reviewable:
         try:
             saved_pricing(kind, previous)
-        except (ValueError, KeyError, TypeError, ArithmeticError):
-            reason = "Save complete, valid pricing for the current saved items/patients before approving. Reopen Edit order to review pricing."
+        except (ValueError, KeyError, TypeError, ArithmeticError, ImmError):
+            reason = ("Save suborder-MRP pricing, valid composition, extract and dilution for every allergen, and a verified patient prescription before approving. Reopen Edit order."
+                      if kind == "immunotherapy" else
+                      "Save complete, valid pricing for the current saved items/patients before approving. Reopen Edit order to review pricing.")
         if kind == "lupin" and not previous.get("attachments"):
             reason = "Attach a verified Lupin document and save the order before approving. Reopen Edit order."
     else:

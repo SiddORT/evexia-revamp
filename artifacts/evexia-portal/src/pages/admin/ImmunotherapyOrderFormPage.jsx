@@ -9,7 +9,7 @@ import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, prescriptionBlob, skinResultError, mrEditable } from '../../services/serverImmunotherapy.js';
+import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, prescriptionBlob, skinResultError, mrEditable, orderLocked, convertToSuborders, SUBORDER_BASIS } from '../../services/serverImmunotherapy.js';
 import { createPatient, patientLanguageChoices } from '../../services/serverPatients.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js';
@@ -17,6 +17,7 @@ import useImmunotherapyReferences from '../../hooks/useImmunotherapyReferences.j
 import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
 import ImmunotherapyConflictDetails from '../../components/immunotherapy/ImmunotherapyConflictDetails.jsx';
+import SuborderCards from '../../components/immunotherapy/SuborderCards.jsx';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import '../../excel-import.css';
@@ -72,7 +73,7 @@ function Editor({ order, mode }) {
     ? (params, signal) => request('/patient-languages', { params, signal })
     : patientLanguageChoices;
   const [, navigate] = useLocation();
-  const readOnly = mode === 'view' || !(order ? can.edit : can.add) || (mrPortal && order && !mrEditable(order));
+  const readOnly = mode === 'view' || orderLocked(order) || !(order ? can.edit : can.add) || (mrPortal && order && !mrEditable(order));
   const isNew = !order;
   const initial = useRef(order ? fromOrder(order) : { ...blank(), mrId: authenticatedMR?.id || '' });
   // Only server-loaded saved associations or successful verified uploads count.
@@ -175,12 +176,13 @@ function Editor({ order, mode }) {
   const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
   const mrOptions = MRS.map((m) => ({ value: m.id, label: m.name }));
   const allergenOptions = ALLERGENS.map((a) => ({ value: a.id, label: a.name }));
+  const canonical = v.pricingBasis === SUBORDER_BASIS;
   const total = order && v.pricingBasis === 'legacy_bottle_mrp' ? orderTotalMinor(order) : totalMinor(v.groups, v.pricingBasis);
   const legacy = v.pricingBasis === 'legacy_bottle_mrp';
-  const repriced = legacy ? totalMinor(v.groups, 'allergen_rates') : total;
+  const [convertMsg, setConvertMsg] = useState('');
+  const convert = () => { const r = convertToSuborders(v.groups, v.pricingBasis); if (r.error) { setConvertMsg(r.error); return; } setConvertMsg(''); set({ groups: r.groups, pricingBasis: SUBORDER_BASIS }); };
   const [viewing, setViewing] = useState(null);
   const adminReview = !mrPortal;
-  const editRates = !legacy;
   const doctor = DOCTORS.find((d) => d.id === v.doctorId);
   const recipientFor = (shipping) => {
     if (order && shipping === order.shipping && v[`${shipping}Id`] === order[`${shipping}Id`]) return order.recipient;
@@ -313,7 +315,8 @@ function Editor({ order, mode }) {
   const labelFor = (k) => {
     if (ERROR_LABEL[k]) return ERROR_LABEL[k];
     if (k.startsWith('group-')) return `Group ${gIndex(k.slice(6)) + 1}`;
-    if (k.startsWith('mrp-')) return 'Legacy bottle MRP';
+    if (k.startsWith('mrp-')) return 'Suborder MRP (INR)';
+    if (k.startsWith('extract-') || k.startsWith('dilution-')) return 'Clinical quantity (ml)';
     if (k.startsWith('rate-')) return 'Allergen rate (INR)';
     if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = gi >= 0 ? k.slice(`result-${v.groups[gi].id}-`.length) : ''; return `${nameOf(ALLERGENS, aid)} result (group ${gi + 1})`; }
     return mrPortal ? 'Order field' : k;
@@ -325,7 +328,8 @@ function Editor({ order, mode }) {
     if (k === 'attachments') return readOnly || !can.upload_attachment || !policy || !v.patientId ? 'imm-files-hint' : 'imm-files';
     if (k === 'registration') return 'imm-reg-name';
     if (k.startsWith('group-')) return `imm-add-${gIndex(k.slice(6))}`;
-    if (k.startsWith('mrp-')) return 'imm-h-allergens';
+    if (k.startsWith('mrp-')) return `imm-${k}`;
+    if (k.startsWith('extract-') || k.startsWith('dilution-')) return `imm-${k}`;
     if (k.startsWith('rate-')) return `imm-${k}`;
     if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = k.slice(`result-${v.groups[gi]?.id}-`.length); return `imm-r-${gi}-${v.groups[gi]?.items.findIndex((i) => i.allergenId === aid)}`; }
     return `imm-${k}`;
@@ -342,10 +346,10 @@ function Editor({ order, mode }) {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Orders / Immunotherapy</p>
         <h1>{isNew ? 'Add order' : `${readOnly ? 'Order' : 'Edit'} ${order.number}`}</h1>
-        <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : adminReview && order ? 'Review clinical details, prescriptions and suborder rates before your decision.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
+        <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : adminReview && order ? 'Review suborder MRP, child composition and private prescriptions before your decision.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
       <div className="imm-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-back"><ArrowLeft size={15} aria-hidden="true" />{readOnly ? 'Back' : 'Cancel'}</button>
-        {order && readOnly && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
+        {order && readOnly && !orderLocked(order) && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
       </div>
     </div>
     {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">
@@ -421,24 +425,28 @@ function Editor({ order, mode }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-allergens"><h2 id="imm-h-allergens" tabIndex={-1}>Allergen Details</h2>
-          <p className="imm-hint">Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same group.</p>
-          {adminReview && legacy && <div className="imm-reprice">
-            <strong>Historical bottle-MRP pricing — allergen rates are read-only</strong>
-            <p className="imm-hint">Enable rate editing explicitly to draft a sum of allergen/suborder rates. Every rate is required to save the conversion. Viewing or cancelling does not change the saved basis or total.</p>
-            {!readOnly && <button type="button" className="admin-button" disabled={dis} onClick={() => set({ pricingBasis: 'allergen_rates' })}>Enable rate editing / Reprice</button>}
+          <p className="imm-hint">{canonical ? 'Each SUB has one MRP, regardless of child count. Extract and dilution are independent ml entries, not calculated recipes. Empty values remain not recorded. Complete all review values before approval.' : 'Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same saved group.'}</p>
+          {!canonical && adminReview && order && !readOnly && <div className="imm-reprice">
+            <strong>{legacy ? 'Legacy pricing is shown read-only' : 'Previous grouping is shown read-only'}</strong>
+            <p className="imm-hint">Adopt one header MRP per existing SUB, initially containing its own saved allergen. Existing SUB numbers and original bottle history are preserved, never merged. Occurrence rates become header MRPs; bottle MRPs are not distributed or inferred. Opening Edit or Cancel changes nothing. The new total below is saved only when you explicitly Update/save.</p>
+            <p className="imm-hint">Saved total: {money(orderTotalMinor(order))}. Proposed initial SUB total: {(() => { const r = convertToSuborders(v.groups, v.pricingBasis); return r.error ? 'Save first to issue missing SUBs' : money(totalMinor(r.groups, SUBORDER_BASIS)); })()}</p>
+            <button type="button" className="admin-button" disabled={dis} onClick={convert} data-testid="button-imm-convert">Adopt suborder MRP in this draft</button>
+            {convertMsg && <p className="imm-error" role="alert">{convertMsg}</p>}
           </div>}
-          {adminReview && !legacy && order && (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' && <p className="imm-explain">Rate editing enabled for this draft only. Total: {money(total)}. Saving requires every rate; cancelling or discarding keeps historical pricing.</p>}
-          {v.groups.length > 1 && <p className="imm-hint">Saved bottle associations are retained below. Results remain in their original group.</p>}
+          {!canonical && !order && <p className="imm-hint">Suborder IDs are issued by the server on first save; then you can convert to suborder MRP review.</p>}
           {!readOnly && <ReferenceState source={allergens} label="allergens" />}
           <Err id="imm-groups-err" text={errors.groups} />
-          <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
+          {canonical ? <SuborderCards groups={v.groups} onChange={(groups) => set({ groups })} errors={errors} disabled={dis} readOnly={readOnly} admin={adminReview}
+            allergenOptions={allergenOptions} allergens={allergens} allergenList={ALLERGENS} dosage={v.dosage}
+            entries={allergenEntries} setEntries={setAllergenEntries} onUpdate={() => save()} />
+          : <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
             {v.groups.map((g, gi) => {
               const err = groupMsg[g.id] || errors[`group-${g.id}`];
               const entry = allergenEntries[g.id] || { allergenId: '', result: '' };
               const editEntry = (patch) => setAllergenEntries((entries) => ({ ...entries, [g.id]: { allergenId: '', result: '', ...entries[g.id], ...patch } }));
               return <div className="imm-allergen-results" key={g.id}>
                 {v.groups.length > 1 && <h3 className="imm-hint">Saved group {gi + 1} (internal association retained)</h3>}
-                {!readOnly && <div className="imm-allergen-entry">
+                {!readOnly && (!adminReview || !order) && <div className="imm-allergen-entry">
                   <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Allergen Name</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label={v.groups.length > 1 ? `Allergen Name for saved group ${gi + 1}` : 'Allergen Name'} value={entry.allergenId} options={allergenOptions} onSearch={allergens.onSearch} searchOptions={() => allergenOptions} onChange={(aid) => editEntry({ allergenId: aid, allergen: ALLERGENS.find((a) => a.id === aid) })} placeholder="Select allergen" invalid={Boolean(err)} describedBy={err ? `group-${g.id}-err` : undefined} disabled={dis || !v.dosage} /></div>
                   <label className="imm-field" htmlFor={`imm-entry-result-${gi}`}>Skin Test Result (mm)<input id={`imm-entry-result-${gi}`} inputMode="decimal" required value={entry.result} disabled={dis || !v.dosage} onChange={(e) => editEntry({ result: e.target.value })} aria-invalid={Boolean(err)} aria-describedby={err ? `group-${g.id}-err` : undefined} /></label>
                   <button type="button" className="admin-button" disabled={dis || !v.dosage} onClick={() => addAllergen(g.id)} aria-label={v.groups.length > 1 ? `Add allergen to saved group ${gi + 1}` : 'Add allergen'}><Plus size={15} aria-hidden="true" />Add</button>
@@ -451,24 +459,22 @@ function Editor({ order, mode }) {
                   return <div className="imm-item" key={it.allergenId}>
                     <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span><span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId || 'pending save (server-assigned)'}</span></div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Skin Test Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" required value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
-                    {adminReview && (() => { const rk = `rate-${g.id}-${it.allergenId}`; const locked = dis || (legacy && !editRates); return <div className="imm-field"><label htmlFor={`imm-${rk}`}>Rate (INR)</label><input id={`imm-${rk}`} inputMode="decimal" required={v.status === 'Approved'} value={it.rate ?? ''} disabled={locked} aria-invalid={Boolean(errors[rk])} aria-describedby={errors[rk] ? `${rk}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, rate: e.target.value } : y) }))} data-testid={`input-imm-rate-${gi}-${ii}`} /><Err id={`${rk}-err`} text={errors[rk]} /></div>; })()}
-                    {!dis && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${it.allergen?.name || a?.name || 'saved allergen'}${v.groups.length > 1 ? ` from saved group ${gi + 1}` : ''}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
+                    {adminReview && <div className="imm-field"><span>Historical rate (INR)</span><span>{money(parseAmount(it.rate))}</span></div>}
+                    {!dis && (!adminReview || !order) && !it.suborderId && g.items.length > 1 && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove unsaved ${it.allergen?.name || a?.name || 'allergen'}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
                   </div>; })}
               </div>; })}
-          </div>
+          </div>}
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-more"><h2 id="imm-h-more">Details and shipping</h2>
-          <div className="imm-grid" style={{ marginTop: 12 }}>
-            {!isNew && !mrPortal && <div className="imm-field"><label htmlFor="imm-status">Status</label><select id="imm-status" value={v.status} disabled={dis} onChange={(e) => set({ status: e.target.value })} aria-invalid={Boolean(errors.status)} aria-describedby={errors.status ? 'imm-status-err' : undefined} data-testid="select-imm-order-status">{STATUSES.filter((s) => s !== 'Confirmed' || order.status === 'Confirmed').map((s) => <option key={s}>{s}</option>)}</select><Err id="imm-status-err" text={errors.status} /><p className="imm-hint">Order tracking only; does not record treatment administration, stock or payments.</p></div>}
-          </div>
-          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-remarks">Remarks</label><textarea id="imm-remarks" value={v.remarks} disabled={dis} onChange={(e) => set({ remarks: e.target.value })} aria-invalid={Boolean(errors.remarks)} aria-describedby={errors.remarks ? 'imm-remarks-err' : undefined} data-testid="input-imm-remarks" /><Err id="imm-remarks-err" text={errors.remarks} /></div>
-          <fieldset className={`imm-chips${isNew ? ' imm-shipping-choices' : ''}`} style={{ marginTop: 14, display: 'grid' }} id="imm-shipping" aria-describedby={errors.shipping ? 'imm-shipping-err' : undefined}><legend>Ship to</legend>
-            {['patient', 'doctor'].map((s) => <label className="imm-radio" key={s}><input id={`imm-ship-${s}`} type="radio" name="shipping" checked={v.shipping === s} disabled={dis} onChange={() => set({ shipping: s })} data-testid={`radio-imm-ship-${s}`} /><span>{s === 'patient' ? 'Patient' : 'Doctor'}{(() => { const r = recipientFor(s); return r ? <span className="imm-cell-sub">{r.name}, {addr(r.address)}</span> : <span className="imm-cell-sub">Choose a {s} first</span>; })()}</span></label>)}</fieldset>
-          <Err id="imm-shipping-err" text={errors.shipping} />
-          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-files">Prescription files{!readOnly && ' (required)'}</label>
-            {!readOnly && <label className="excel-import__picker"><Paperclip size={19} /><span>{pending === 'upload' ? 'Uploading privately…' : 'Choose prescription files'}</span><input id="imm-files" type="file" multiple disabled={!can.upload_attachment || dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-required="true" aria-invalid={Boolean(errors.attachments)} aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
-            <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{!readOnly && 'At least one verified prescription for the selected patient is required to save. '}{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. {mrPortal ? 'Saved attachments must be retained. You can remove unsaved selections without deleting shared files.' : 'Removing a selection detaches it when you save; it does not delete shared files.'}</p>
+          {order && <p className="imm-hint">Saved status: {v.status}. Save this draft before using the separate Approve / Reject actions.</p>}
+          <div className="imm-field"><label htmlFor="imm-remarks">Remarks</label><textarea id="imm-remarks" value={v.remarks} disabled={dis} onChange={(e) => set({ remarks: e.target.value })} aria-invalid={Boolean(errors.remarks)} data-testid="input-imm-remarks" /><Err text={errors.remarks} /></div>
+          <fieldset className="imm-chips imm-shipping-choices" style={{ marginTop: 14, display: 'grid' }} id="imm-shipping"><legend>Ship to</legend>
+            {['patient', 'doctor'].map((s) => <label className="imm-radio" key={s}><input id={`imm-ship-${s}`} type="radio" name="shipping" checked={v.shipping === s} disabled={dis} onChange={() => set({ shipping: s })} /><span>{s === 'patient' ? 'Patient' : 'Doctor'}<span className="imm-cell-sub">{recipientFor(s)?.name || 'Not chosen'}</span></span></label>)}</fieldset>
+          <Err text={errors.shipping} />
+          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-files">Private prescription files{!readOnly && ' (required)'}</label>
+            {!readOnly && <label className="excel-import__picker"><Paperclip size={19} aria-hidden="true" /><span>Choose prescription files</span><input id="imm-files" type="file" multiple disabled={!can.upload_attachment || dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-required="true" aria-invalid={Boolean(errors.attachments)} aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
+            <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>At least one verified prescription for the selected patient is required to save. {policy ? `Up to ${policy.maxFiles} files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Pending or unverified uploads do not count. Removing a selection does not delete shared files.</p>
             {policyError && <p role="alert">{policyError} <button type="button" className="imm-link-btn" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
             <Err id="imm-files-err" text={errors.attachments || fileMsg} /></div>
           <OrderFileList label="Prescription selections" empty="No files selected or attached.">
@@ -476,65 +482,51 @@ function Editor({ order, mode }) {
               const locked = mrPortal && order?.attachments?.some((saved) => saved.id === f.id);
               return <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadPrescription} locked={locked}
                 status={order?.attachments?.some((saved) => saved.id === f.id) ? 'Saved prescription — retained' : 'Uploaded / verified — selected for this save'}
-                actions={<>{!mrPortal && can.read_attachment && !f.restricted && (f.state ?? 'verified') === 'verified' && <button type="button" className="admin-button admin-button--secondary" onClick={() => setViewing(f)} aria-label={`View ${f.name}`} data-testid={`button-imm-view-${f.id}`}><Eye size={15} aria-hidden="true" />View</button>}{!readOnly && !locked && <button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => setV((current) => ({ ...current, attachments: current.attachments.filter((file) => file.id !== f.id) }))} aria-label={f.restricted || !can.read_attachment ? 'Remove restricted attachment' : `Remove ${f.name}`}><X size={16} aria-hidden="true" /></button>}</>} />;
+                actions={<>{!mrPortal && can.read_attachment && !f.restricted && (f.state ?? 'verified') === 'verified' && <button type="button" className="admin-button admin-button--secondary" onClick={() => setViewing(f)} aria-label={`View ${f.name}`}><Eye size={15} aria-hidden="true" />View</button>}{!readOnly && !locked && <button type="button" className="admin-icon-button" disabled={dis} onClick={() => setV((current) => ({ ...current, attachments: current.attachments.filter((file) => file.id !== f.id) }))} aria-label="Remove prescription selection"><X size={16} aria-hidden="true" /></button>}</>} />;
             })}
             {uploads.map((u) => <OrderFileRow key={u.key} name={u.name} size={u.size} progressing={['queued', 'uploading'].includes(u.state)}
-              status={`${u.state === 'failed' ? 'Failed' : u.state === 'rejected' ? 'Rejected' : u.state === 'unverified' ? 'Awaiting verification' : u.state === 'queued' ? 'Queued' : 'Uploading'} — ${u.message}`}
-              actions={<><button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => removeUpload(u.key)} aria-label={`Remove ${u.name}`}><X size={16} aria-hidden="true" /></button>
-                {!['queued', 'uploading'].includes(u.state) && <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(pending) || uncertain || !can.upload_attachment || !policy || !v.patientId} onClick={() => retryUpload(u.key)} aria-label={`${u.id ? 'Check availability of' : 'Retry upload of'} ${u.name}`}>{u.id ? 'Check availability' : 'Retry upload'}</button>}</>} />)}
+              status={`${u.state} — ${u.message}`} actions={<><button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => removeUpload(u.key)} aria-label={`Remove ${u.name}`}><X size={16} aria-hidden="true" /></button>
+                {!['queued', 'uploading'].includes(u.state) && <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(pending) || uncertain || !can.upload_attachment || !policy || !v.patientId} onClick={() => retryUpload(u.key)}>{u.id ? 'Check availability' : 'Retry upload'}</button>}</>} />)}
           </OrderFileList>
         </section>
 
-        {!readOnly && <section className="admin-panel imm-section imm-bottom" aria-labelledby="imm-h-review"><h2 id="imm-h-review">{adminReview ? 'Purchase order and decision' : 'Submit order'}</h2>
-          {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number (optional)<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} aria-describedby={errors.poNumber ? 'imm-poNumber-err' : undefined} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label>
-            <Err id="imm-poNumber-err" text={errors.poNumber} />
-            <p className="imm-hint">Approval requires a rate for every suborder and a verified prescription for the patient. PO number may be omitted or cleared. Rejection does not require prices.</p></>}
-          <div className="imm-btn-row">
-            <button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Save changes before review'}</button>
-            <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-cancel">Cancel</button></div>
+        {!readOnly && <section className="admin-panel imm-section imm-bottom" aria-labelledby="imm-h-review"><h2 id="imm-h-review">{adminReview ? 'Purchase order and review' : 'Submit order'}</h2>
+          {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number (optional)<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label><Err text={errors.poNumber} />
+            <p className="imm-hint">Approval requires one MRP per SUB, extract and dilution for every child, valid composition and a verified patient prescription. PO may be omitted. Draft saves may be incomplete; rejection requires no invented prices or clinical quantities.</p></>}
+          <p className="imm-hint">Update or Save writes the whole order atomically, including all other pending edits. Nothing is final until the server confirms success; approval and rejection remain separate.</p>
+          <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Save changes before review'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>
         </section>}
       </div>
       <aside className="imm-aside" aria-label="Order summary">
-        <div className="admin-panel imm-section"><h2>Summary</h2>
-          <dl className="imm-facts" style={{ gridTemplateColumns: '1fr' }}>
-            <div><dt>Patient</dt><dd>{patient?.name || 'Not chosen'}</dd></div>
-            <div><dt>Doctor / MR</dt><dd>{nameOf(DOCTORS, v.doctorId) || '-'} / {nameOf(MRS, v.mrId) || '-'}</dd></div>
-            <div><dt>Dosage</dt><dd>{v.dosage || 'Awaiting choice'}</dd></div>
-            {order && <><div><dt>Order</dt><dd>{order.number}</dd></div><div><dt>Order date</dt><dd>{date(order.date)}</dd></div></>}
-            <div><dt>Ship to ({v.shipping})</dt><dd data-testid="text-imm-recipient">{recipient ? <>{recipient.name}<span className="imm-cell-sub">{recipient.phone}</span><span className="imm-cell-sub">{addr(recipient.address)}</span></> : '-'}</dd></div>
-            <div><dt>Value</dt><dd>{money(total)}</dd></div>
-            {order?.reviewDecision && <div><dt>Admin decision</dt><dd>{order.reviewDecision}</dd></div>}
-            {order?.poNumber && <div><dt>Saved PO number</dt><dd>{order.poNumber}</dd></div>}
-            {v.status === 'Confirmed' && <div><dt>Admin review</dt><dd>{total === null ? 'Awaiting review and pricing' : 'Awaiting decision'}</dd></div>}
-            {order && <div><dt>Status</dt><dd><StatusPill status={v.status} /></dd></div>}</dl></div>
+        <div className="admin-panel imm-section"><h2>Summary</h2><dl className="imm-facts imm-facts--side">
+          <div><dt>Patient</dt><dd>{patient?.name || 'Not chosen'}</dd></div>
+          <div><dt>Doctor / MR</dt><dd>{nameOf(DOCTORS, v.doctorId) || '-'} / {nameOf(MRS, v.mrId) || '-'}</dd></div>
+          <div><dt>Dosage</dt><dd>{v.dosage || 'Awaiting choice'}</dd></div>
+          {order && <><div><dt>Order</dt><dd>{order.number}</dd></div><div><dt>Order date</dt><dd>{date(order.date)}</dd></div><div><dt>Status</dt><dd><StatusPill status={v.status} /></dd></div></>}
+          <div><dt>Ship to ({v.shipping})</dt><dd data-testid="text-imm-recipient">{recipient?.name || 'Not chosen'}</dd></div>
+          <div><dt>Value</dt><dd>{money(total)}</dd></div>
+        </dl></div>
         {adminReview && <div className="admin-panel imm-section"><h2>Pricing</h2>
-          <p className="imm-hint">{legacy ? 'Legacy pricing basis: saved bottle MRPs. Historical bottle MRPs cannot be changed here.' : 'Total is the sum of the rate entered for each suborder.'}</p>
-          <div className="imm-totals">{v.groups.flatMap((g) => g.items.map((it, ii) => <div key={`${g.id}-${ii}`}><span>{it.suborderId || 'Suborder pending save'}</span><span className="imm-num">{legacy ? 'Legacy' : money(parseAmount(it.rate))}</span></div>))}
-            <div className="imm-total"><span>Total{legacy ? ' (legacy bottle MRP)' : ''}</span><span className="imm-num" data-testid="text-imm-total">{money(total)}</span></div></div>
-          {legacy && !readOnly && <label className="imm-reprice"><span><input type="checkbox" checked={false} disabled={dis} onChange={() => set({ pricingBasis: 'allergen_rates' })} data-testid="checkbox-imm-reprice" /> Reprice by allergen rates</span>
-            <span className="imm-hint">Switches this order to allergen rates. Resulting rate sum with the rates currently entered: {money(repriced)}. Historical bottle MRPs are not edited.</span></label>}
-          {!legacy && order && (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' && !readOnly && <button type="button" className="admin-button admin-button--secondary" disabled={dis} onClick={() => set({ pricingBasis: 'legacy_bottle_mrp', groups: v.groups.map((g) => ({ ...g, items: g.items.map((i) => ({ ...i, rate: order.groups.find((saved) => saved.id === g.id)?.items.find((saved) => saved.allergenId === i.allergenId)?.rate ?? null })) })) })}>Discard rate changes and keep legacy pricing</button>}
-          <dl className="imm-facts" style={{ gridTemplateColumns: '1fr' }}><div><dt>Billing doctor</dt><dd data-testid="text-imm-billing-doctor">{doctor ? <>{doctor.name}<span className="imm-cell-sub">{doctor.phone}</span><span className="imm-cell-sub">{addr(doctor.address)}</span></> : 'Not chosen'}</dd></div></dl>
-          <p className="imm-hint">Missing rates mean awaiting pricing, not zero. No tax, payment or invoice.</p></div>}
-        {adminReview && <><ReviewPerson title={order && v.patientId === order.patientId ? 'Patient (saved facts)' : 'Patient'} person={patient} patient />
-          <ReviewPerson title={order && v.doctorId === order.doctorId ? 'Doctor (saved facts)' : 'Doctor'} person={doctor} />
-          <ReviewPerson title={order && v.mrId === order.mrId ? 'MR (saved facts)' : 'MR'} person={MRS.find((m) => m.id === v.mrId)} />
-          <ReviewPerson title="Shipping facts" person={recipient} /></>}
+          <p className="imm-hint">{canonical ? 'One MRP per SUB, once irrespective of child count.' : 'Historical pricing is retained until an explicit saved conversion.'}</p>
+          <div className="imm-totals">
+            {canonical ? v.groups.map((g) => <div key={g.id}><span>{g.id}</span><span>{money(parseAmount(g.mrp))}</span></div>)
+              : legacy ? v.groups.map((g) => <div key={g.id}><span>{g.id} (historical)</span><span>{money(parseAmount(g.mrp))}</span></div>)
+                : v.groups.flatMap((g) => g.items.map((i) => <div key={`${g.id}-${i.allergenId}`}><span>{i.suborderId || 'Pending save'}</span><span>{money(parseAmount(i.rate))}</span></div>))}
+            <div className="imm-total"><span>Total{dirty ? ' (draft)' : ''}</span><span data-testid="text-imm-total">{money(total)}</span></div>
+          </div>
+          <p className="imm-hint">A missing MRP means Awaiting pricing, not zero. No tax, payment, invoice or stock movement is inferred.</p>
+        </div>}
+        {adminReview && order && <><ReviewPerson title="Patient (historical)" person={order.patient} patient /><ReviewPerson title="Billing doctor (historical)" person={order.doctor} /></>}
       </aside>
     </div>
     {viewing && <PrescriptionViewer file={viewing} load={prescriptionBlob} download={downloadPrescription} allowed={can.read_attachment} onClose={() => setViewing(null)} />}
-    {leave && <ImmDialog title="Leave without saving?" eyebrow="Unsaved changes" className="imm-dialog--sm" description={pending || uncertain || reviewBusy ? 'A save, decision or upload may still be unresolved. Keep this draft open and retry the same operation before leaving.' : 'Your unsaved edits will be lost. Patient Master records already registered are not undone.'} onClose={() => setLeave(null)} testId="dialog-imm-leave">
-      <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setLeave(null)} data-testid="button-imm-stay">Keep editing</button>
-        <button type="button" className="admin-button admin-button--danger" disabled={Boolean(pending) || uncertain || reviewBusy} onClick={proceed} data-testid="button-imm-leave">Leave</button></div></ImmDialog>}
-    {conflict && <ImmDialog title="Reconcile a newer saved version" eyebrow="Order changed" description="Your draft has not been discarded or saved. Compare the latest saved record with your draft. Confirming below keeps your values for another explicit Save; it does not save immediately." onClose={() => setConflict(null)}>
-      <details><summary>Latest saved order — version {conflict.version}</summary>{mrPortal
-        ? <ImmunotherapyConflictDetails order={conflict} patient={conflict.patient} doctor={conflict.doctor} mr={conflict.mr} />
-        : <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(conflict, null, 2)}</pre>}</details>
-      <details><summary>Your mounted draft</summary>{mrPortal
-        ? <ImmunotherapyConflictDetails order={v} patient={patient} doctor={doctor} mr={MRS.find((m) => m.id === v.mrId)} />
-        : <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(v, null, 2)}</pre>}</details>
+    {leave && <ImmDialog title={uncertain ? 'Save outcome is still unconfirmed' : 'Leave this order?'} onClose={() => setLeave(null)} description={uncertain ? 'Keep this draft open and recover the exact same save before leaving.' : 'Unsaved edits will be lost.'}>
+      <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setLeave(null)}>Keep editing</button>{!uncertain && !pending && !reviewBusy && <button type="button" className="admin-button" onClick={proceed}>Discard draft and leave</button>}</div>
+    </ImmDialog>}
+    {conflict && <ImmDialog title="Order changed — draft preserved" onClose={() => setConflict(null)} className="imm-dialog">
+      <ImmunotherapyConflictDetails order={conflict} patient={conflict.patient} doctor={conflict.doctor} mr={conflict.mr} />
       <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setConflict(null)}>Keep draft without rebasing</button>
-        <button type="button" className="admin-button" disabled={mrPortal && !mrEditable(conflict)} onClick={() => { saveBase.current = conflict; mutation.current = null; setConflict(null); setErrors({ form: 'Draft retained against the reviewed current version. Review your values, then save explicitly. Another concurrent change will be rejected again.' }); }}>Use reviewed version and keep my draft</button></div>
+        <button type="button" className="admin-button" disabled={orderLocked(conflict) || (mrPortal && !mrEditable(conflict))} onClick={() => { saveBase.current = conflict; mutation.current = null; setConflict(null); setErrors({ form: 'Draft retained against the reviewed current version. Review your values and save explicitly.' }); }}>Use reviewed version and keep my draft</button></div>
     </ImmDialog>}
   </div></AdminLayout>;
 }

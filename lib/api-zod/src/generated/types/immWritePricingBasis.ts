@@ -12,4 +12,5 @@ export type ImmWritePricingBasis =
 export const ImmWritePricingBasis = {
   allergen_rates: "allergen_rates",
   legacy_bottle_mrp: "legacy_bottle_mrp",
+  suborder_mrp_v1: "suborder_mrp_v1",
 } as const;

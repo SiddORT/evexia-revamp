@@ -6906,7 +6906,7 @@
             "items": {
               "$ref": "#/components/schemas/ImmBottle"
             },
-            "maxItems": 100,
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Groups",
             "type": "array"
@@ -6956,7 +6956,8 @@
               {
                 "enum": [
                   "allergen_rates",
-                  "legacy_bottle_mrp"
+                  "legacy_bottle_mrp",
+                  "suborder_mrp_v1"
                 ],
                 "type": "string"
               },
@@ -7019,6 +7020,30 @@
             "format": "uuid",
             "title": "Allergenid",
             "type": "string"
+          },
+          "dilution": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilution"
+          },
+          "extract": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extract"
           },
           "rate": {
             "anyOf": [
@@ -7192,6 +7217,43 @@
             "title": "Histamine",
             "type": "string"
           },
+          "historicalGroups": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historicalgroups"
+          },
+          "historicalPricingBasis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historicalpricingbasis"
+          },
+          "historicalTotalMinor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historicaltotalminor"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -7241,7 +7303,8 @@
             "default": "legacy_bottle_mrp",
             "enum": [
               "allergen_rates",
-              "legacy_bottle_mrp"
+              "legacy_bottle_mrp",
+              "suborder_mrp_v1"
             ],
             "title": "Pricingbasis",
             "type": "string"
@@ -7558,7 +7621,7 @@
             "items": {
               "$ref": "#/components/schemas/ImmBottle"
             },
-            "maxItems": 100,
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Groups",
             "type": "array"
@@ -7613,7 +7676,8 @@
               {
                 "enum": [
                   "allergen_rates",
-                  "legacy_bottle_mrp"
+                  "legacy_bottle_mrp",
+                  "suborder_mrp_v1"
                 ],
                 "type": "string"
               },

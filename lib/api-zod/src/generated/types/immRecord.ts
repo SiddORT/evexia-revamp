@@ -11,6 +11,7 @@ import type { ImmRecordAudit } from "./immRecordAudit";
 import type { ImmRecordDecisionEligibility } from "./immRecordDecisionEligibility";
 import type { ImmRecordDoctor } from "./immRecordDoctor";
 import type { ImmRecordGroupsItem } from "./immRecordGroupsItem";
+import type { ImmRecordHistoricalGroups } from "./immRecordHistoricalGroups";
 import type { ImmRecordMr } from "./immRecordMr";
 import type { ImmRecordPatient } from "./immRecordPatient";
 import type { ImmRecordPricingBasis } from "./immRecordPricingBasis";
@@ -32,6 +33,9 @@ export interface ImmRecord {
   dosage: string;
   groups: ImmRecordGroupsItem[];
   histamine: string;
+  historicalGroups?: ImmRecordHistoricalGroups;
+  historicalPricingBasis?: string | null;
+  historicalTotalMinor?: number | null;
   id: string;
   mr: ImmRecordMr;
   mrEditable?: boolean;

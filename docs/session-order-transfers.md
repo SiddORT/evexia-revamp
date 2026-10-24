@@ -58,6 +58,19 @@ links, macros or embedded media/objects are rejected.
   age, gender, phone/country, address, doctor/MR and explicit `lastGiven`.
   `lastGiven` is never derived from order status. PD/DD and B-series behavior
   and the existing relaxed bottle-composition rules are unchanged.
+  Current protected Admin review additionally supports explicit
+  `suborder_mrp_v1`: `groups[].id` is the exact issued SUB header,
+  `groups[].mrp` is its single nullable INR price, and children carry
+  `allergenId`, result (mm), nullable `extract` and `dilution` decimal-string
+  ml quantities. No per-child rate or second SUB is supplied. Retain every
+  original SUB separately when converting. CSV/XLSX still use the original
+  eight columns; JSON carries the additive contract. The server retains
+  original bottle provenance and saved totals until explicit conversion.
+  Absent fields in an older matching legacy export retain saved optional
+  values. Older occurrence-shaped exports cannot overwrite a canonical order:
+  export the current version again. MR imports reject supplied Admin prices
+  and clinical review quantities; attachments remain authoritative server
+  associations, not spreadsheet claims. See `immunotherapy-backend.md`.
 - **Kits:** order-for and doctor/MR relationships, complete kit configuration
   (including custom product and volume), all consumable counts, shipping,
   other-recipient fields, **saved recipient and billing snapshots**, status,

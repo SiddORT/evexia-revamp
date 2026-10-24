@@ -15,7 +15,7 @@ _CODES = {
     "date_parsing", "date_type", "json_invalid", "bool_parsing", "bool_type",
 }
 _NESTED = re.compile(
-    r"(?:groups(?:\.\d{1,3}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result|rate|suborderId))?)?))?)?"
+    r"(?:groups(?:\.\d{1,4}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result|rate|suborderId|extract|dilution))?)?))?)?"
     r"|attachmentIds(?:\.\d{1,2})?)"
 )
 

@@ -16,7 +16,7 @@ import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmP
 import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
-import { STATUSES, request, money, shippingRecipient, orderTotalMinor, mrEditable } from '../../services/serverImmunotherapy.js';
+import { STATUSES, request, money, shippingRecipient, orderTotalMinor, mrEditable, orderLocked } from '../../services/serverImmunotherapy.js';
 import { createImmunotherapyTransferAdapter } from '../../services/immunotherapyTransfers.js';
 import '../../immunotherapy.css';
 
@@ -100,13 +100,13 @@ export default function ImmunotherapyOrders() {
     { key: 'patient', label: 'Patient', render: (o) => <><strong>{o.patient.name}</strong><span className="imm-cell-sub">{o.patient.phone}</span></> },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="imm-cell-sub">{o.mr.name}</span></> },
     { key: 'dosage', label: 'Dosage', render: (o) => o.dosage },
-    { key: 'suborders', label: 'Suborders', render: (o) => o.groups.reduce((count, group) => count + group.items.length, 0) },
+    { key: 'suborders', label: 'Suborders', render: (o) => o.pricingBasis === 'suborder_mrp_v1' ? o.groups.length : o.groups.reduce((count, group) => count + group.items.length, 0) },
     { key: 'value', label: 'Value', render: (o) => <span className="imm-num">{money(orderTotalMinor(o))}</span> },
     { key: 'ship', label: 'Ship to', render: (o) => <>{shippingRecipient(o, snap.patients)?.name || '-'}<span className="imm-cell-sub">{o.shipping === 'doctor' ? 'Doctor' : 'Patient'}</span></> },
     { key: 'status', label: 'Status', render: (o) => <><StatusPill status={o.status} /><span className="imm-cell-sub">{reviewLabel(o)}</span>{o.poNumber && <span className="imm-cell-sub">PO: {o.poNumber}</span>}</> },
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
       <Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
-      {can.edit && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
+      {can.edit && !orderLocked(o) && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
       {can.documents && eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
   ];  const columns = withAuditColumns(baseColumns, audit);
 

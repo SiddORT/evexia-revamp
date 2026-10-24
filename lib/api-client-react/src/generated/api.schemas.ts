@@ -2960,6 +2960,8 @@ export type HealthStatus = typeof HealthStatusValue;
 
 export interface ImmItem {
   allergenId: string;
+  dilution?: string | null;
+  extract?: string | null;
   rate?: string | null;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
   result: string;
@@ -3002,6 +3004,7 @@ export type ImmInputPricingBasis =
 export const ImmInputPricingBasis = {
   allergen_rates: "allergen_rates",
   legacy_bottle_mrp: "legacy_bottle_mrp",
+  suborder_mrp_v1: "suborder_mrp_v1",
 } as const;
 
 export type ImmInputShipping =
@@ -3031,7 +3034,7 @@ export interface ImmInput {
   dosage: ImmInputDosage;
   /**
    * @minItems 1
-   * @maxItems 100
+   * @maxItems 1000
    */
   groups: ImmBottle[];
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -3072,6 +3075,7 @@ export type ImmRecordPricingBasis =
 export const ImmRecordPricingBasis = {
   allergen_rates: "allergen_rates",
   legacy_bottle_mrp: "legacy_bottle_mrp",
+  suborder_mrp_v1: "suborder_mrp_v1",
 } as const;
 
 export type ImmRecordReviewDecision =
@@ -3106,6 +3110,8 @@ export type ImmRecordDoctor = { [key: string]: unknown };
 
 export type ImmRecordGroupsItem = { [key: string]: unknown };
 
+export type ImmRecordHistoricalGroups = { [key: string]: unknown }[] | null;
+
 export type ImmRecordMr = { [key: string]: unknown };
 
 export type ImmRecordPatient = { [key: string]: unknown };
@@ -3128,6 +3134,9 @@ export interface ImmRecord {
   dosage: string;
   groups: ImmRecordGroupsItem[];
   histamine: string;
+  historicalGroups?: ImmRecordHistoricalGroups;
+  historicalPricingBasis?: string | null;
+  historicalTotalMinor?: number | null;
   id: string;
   mr: ImmRecordMr;
   mrEditable?: boolean;
@@ -3242,6 +3251,7 @@ export type ImmWritePricingBasis =
 export const ImmWritePricingBasis = {
   allergen_rates: "allergen_rates",
   legacy_bottle_mrp: "legacy_bottle_mrp",
+  suborder_mrp_v1: "suborder_mrp_v1",
 } as const;
 
 export type ImmWriteShipping =
@@ -3273,7 +3283,7 @@ export interface ImmWrite {
   expected_version?: number | null;
   /**
    * @minItems 1
-   * @maxItems 100
+   * @maxItems 1000
    */
   groups: ImmBottle[];
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

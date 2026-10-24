@@ -1,6 +1,83 @@
 # Admin Immunotherapy orders
 
-## Super Admin review, suborders and audit metadata (source only)
+## Suborder-header review contract (current, source-only backend delivery)
+
+This section supersedes all per-occurrence-rate editing and historical
+repricing instructions below. MR initial saves remain unpriced submissions:
+the server assigns a compact SUB number per initial allergen occurrence on
+the first successful save. Saved `SUB001` and older `SUB-000001` spellings are
+never changed. Admin adopts `pricingBasis: "suborder_mrp_v1"` explicitly in an
+editable saved order, not by opening Edit. No historical backfill runs.
+
+In that version, `groups` is the single writable canonical suborder list.
+Each `groups[].id` is an exact previously issued SUB identity, with one
+nullable `mrp` and `items` containing allergen reference, required skin-test
+`result` (mm), and nullable `extract` / `dilution` (ml). Children have no
+separate price or SUB identity. Quantities are decimal strings: nonnegative,
+up to six whole digits and three fractional digits, separately validated from
+mm results and two-decimal INR. Null stays not recorded, never zero.
+
+Conversion requires all original SUBs separately, each retaining its original
+allergen as its initial child; additional children can be appended to that
+same SUB. An old occurrence rate can be the initial header MRP; bottle MRPs
+are never distributed among SUBs. Header identity cannot be invented,
+renumbered, merged or recycled. Removed SUBs cannot be reintroduced through
+this editor. Conversion preserves full original groups, snapshots, rates and
+bottle associations in server-owned encrypted `historicalGroups`, together
+with `historicalPricingBasis` and `historicalTotalMinor`. These are read-only
+provenance, not a second independently writable composition. Reads issue no
+identities and perform no conversion.
+
+The exact total is one MRP per header, independent of child count. Any missing
+MRP means Awaiting pricing; zero is valid. The existing ₹10 crore cap applies
+even to partially priced drafts. Approval requires the new basis, complete
+header pricing, valid distinct children within each SUB, extract/dilution for
+each child and a currently verified prescription associated with the patient.
+The same allergen in different SUBs is legitimate. PO is optional. Incomplete
+review drafts may be saved, and rejection does not require fabricated prices
+or volumes. Approved/closed orders are read-only, including old completed
+orders: reading them never requires conversion, new clinical values or
+reapproval. Existing rejection/correction/resubmission evidence stays intact.
+
+Direct writes and both import stages share the same authority boundary. MR
+cannot adopt the basis or set MRP, rates, extract/dilution, PO or decisions.
+MR corrections omit Admin fields and retain matching saved review values;
+composition changes follow existing review invalidation. Admin does not edit
+historical occurrence rates or bottle MRPs; explicit canonical adoption is
+required for pricing changes. Persisted pre-upgrade retries compare absent
+and null additive defaults equivalently and recover the original request
+under its actor/key/version mechanism.
+
+Each card Update uses the existing versioned atomic whole-order save, and
+explicitly warns that other pending edits are saved too. Failed, stale or
+ambiguous outcomes retain the mounted draft; ambiguous recovery keeps the
+same frozen payload/key. Approval and rejection use their separate existing
+version-bound actions. Summary/list/authorized print/CSV/XLSX consumers use
+saved totals and canonical header counts. Imports of older exports retain
+absent optional values for matching legacy records, but an older
+occurrence-shaped export cannot overwrite an already-converted order.
+
+There is no authorized inventory-to-allergen quantity mapping here; available
+quantity is therefore Unavailable. No inventory allocation or stock movement
+is performed. The existing operational item index uses the canonical header
+ordinal and includes every child; historical bottle membership is recoverable
+from the encrypted provenance. No SQL migration or bulk rewrite is authored
+or applied for this additive encrypted-document change.
+
+Verification was limited to disposable synthetic presentation fixtures of the
+real changed editor and saved summary in Chromium at 1440, 768, 390 and 320px;
+the editor also used actual doubled computed text sizes (16px to 32px for SUB
+labels). Expanded/collapsed cards, multiple children, long names, a clinical
+error, dropdown and Update/overall controls were inspected, with no page-wide
+overflow. All API responses were synthetic; order mutations and unknown API
+requests were denied. This is not evidence of backend persistence,
+authorization, imports, prescription verification, approval, concurrency,
+retry recovery or operational index behavior. No regression/release runners,
+compatibility checks, live order writes, managed restarts, migrations or
+deployment workflows were run. API contracts/clients were generated without
+the codegen wrapper's broad typecheck step.
+
+## Previous occurrence-rate model (historical documentation only)
 
 This section supersedes older bottle-MRP editing/pricing descriptions below.
 MR still submits unpriced Confirmed orders. Admin reviews the clinical details,

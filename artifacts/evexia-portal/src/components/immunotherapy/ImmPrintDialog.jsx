@@ -37,21 +37,21 @@ export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocu
     const patient = o.patient;
     if (kind === 'bottle') {
       o.groups.forEach((g, i) => labels.push({ key: `${o.id}-${g.id}`, cls: '', lines: [
-        <b key="a">{o.number} - Bottle {i + 1} of {o.groups.length}</b>,
+        <b key="a">{o.number} - {o.pricingBasis === 'suborder_mrp_v1' ? `Suborder ${g.id}` : `Bottle ${i + 1}`} of {o.groups.length}</b>,
         <span key="b">{patient?.name}</span>, <br key="br1" />,
         <span key="c">Dosage {o.dosage}</span>, <br key="br2" />,
         <span key="d">{g.items.map((it) => `${it.allergen.name} (${it.allergen.concentration})`).join(', ') || 'No allergens'}</span>, <br key="br3" />,
-        <span key="id">{portal !== 'mr' && <>Internal group {g.id} | </>}Suborders: {g.items.map((it) => it.suborderId || 'Not assigned').join(', ')}</span>, <br key="br4" />,
-         <span key="e">{(o.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' ? (g.mrp == null || g.mrp === '' ? 'Legacy bottle MRP awaiting pricing' : `Legacy bottle MRP INR ${g.mrp}`) : 'Priced by allergen rates'}</span>,
+        <span key="id">{o.pricingBasis === 'suborder_mrp_v1' ? `Suborder: ${g.id}` : <>{portal !== 'mr' && <>Internal group {g.id} | </>}Suborders: {g.items.map((it) => it.suborderId || 'Not assigned').join(', ')}</>}</span>, <br key="br4" />,
+         <span key="e">{o.pricingBasis === 'suborder_mrp_v1' ? (g.mrp == null || g.mrp === '' ? 'MRP not recorded' : `MRP INR ${g.mrp}`) : (o.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp' ? (g.mrp == null || g.mrp === '' ? 'Legacy bottle MRP awaiting pricing' : `Legacy bottle MRP INR ${g.mrp}`) : 'Priced by allergen rates'}</span>,
          <span key="po">PO: {o.poNumber || 'Not recorded'} | Admin: {o.reviewDecision || 'Not recorded'}</span>,
-         <span key="rates">{g.items.map((it) => `${it.allergen.name} rate INR ${it.rate ?? 'not recorded'}`).join(', ')}</span>] }));
+         <span key="rates">{g.items.map((it) => `${it.allergen.name} ${o.pricingBasis === 'suborder_mrp_v1' ? `extract ${it.extract ?? '-'} ml, dilution ${it.dilution ?? '-'} ml` : `rate INR ${it.rate ?? 'not recorded'}`}`).join(', ')}</span>] }));
     } else if (kind === 'shipping') {
       const r = shippingRecipient(o) || {};
       labels.push({ key: o.id, cls: 'imm-label--ship', lines: [<b key="a">Ship to: {r.name}</b>, <span key="b">{r.phone}</span>, <br key="b2" />, <span key="c">{addressText(r.address)}</span>, <br key="c2" />, <span key="d">Ref {o.number}</span>] });
     } else if (kind === 'newbox') {
-      labels.push({ key: o.id, cls: '', lines: [<b key="a">{o.number}</b>, <span key="b">{patient?.name}, {patient?.age} / {patient?.gender}</span>, <br key="b2" />, <span key="c">{o.doctor.name} | MR {o.mr.name}</span>, <br key="c2" />, <span key="d">Dosage {o.dosage} | {o.groups.length} bottle(s) | {money(orderTotalMinor(o))}</span>, <span key="po">PO: {o.poNumber || 'Not recorded'} | Admin: {o.reviewDecision || 'Not recorded'}</span>] });
+      labels.push({ key: o.id, cls: '', lines: [<b key="a">{o.number}</b>, <span key="b">{patient?.name}, {patient?.age} / {patient?.gender}</span>, <br key="b2" />, <span key="c">{o.doctor.name} | MR {o.mr.name}</span>, <br key="c2" />, <span key="d">Dosage {o.dosage} | {o.groups.length} {o.pricingBasis === 'suborder_mrp_v1' ? 'suborder(s)' : 'bottle(s)'} | {money(orderTotalMinor(o))}</span>, <span key="po">PO: {o.poNumber || 'Not recorded'} | Admin: {o.reviewDecision || 'Not recorded'}</span>] });
     } else {
-      labels.push({ key: o.id, cls: 'imm-label--old', lines: [<b key="a">{o.number} ({date(o.date)})</b>, <span key="b">{patient?.name}</span>, <br key="b2" />, <span key="c">Dosage {o.dosage} | {o.groups.length} bottle(s)</span>] });
+      labels.push({ key: o.id, cls: 'imm-label--old', lines: [<b key="a">{o.number} ({date(o.date)})</b>, <span key="b">{patient?.name}</span>, <br key="b2" />, <span key="c">Dosage {o.dosage} | {o.groups.length} {o.pricingBasis === 'suborder_mrp_v1' ? 'suborder(s)' : 'bottle(s)'}</span>] });
     }
   });
   return createPortal(<div className="imm-print-portal" style={palette} data-admin-theme={shell?.dataset.adminTheme} data-admin-appearance={shell?.dataset.adminAppearance}>

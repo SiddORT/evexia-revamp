@@ -23,8 +23,8 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
   const ownerGuard = reportingIdentityGuard();
   return {
     instructions: getSession().user?.identity_kind === 'mr'
-      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update only unpriced Confirmed orders, not Admin-reviewed or historically priced orders. Do not supply MRP, allergen rates or PO number. Attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle IDs and file associations. Patient snapshots never create masters.`
-      : 'Create new orders in the order form and upload a verified prescription first. New pricing totals one INR rate per suborder; approval requires every rate. PO number is optional and blank values mean not recorded. Reject without fabricated prices. Historical bottle-MRP totals remain unchanged unless pricingBasis is explicitly changed to allergen_rates with every rate entered. Fulfillment requires prior explicit approval. Attachment metadata cannot attach files. Retain saved dates, versions, internal group IDs and issued suborder IDs; the server alone issues new identities on supported writes.',
+      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update only unpriced Confirmed orders, not Admin-reviewed or historically priced orders. Do not supply MRP, allergen rates, extract, dilution or PO number. Attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle/SUB identities and file associations. Patient snapshots never create masters.`
+      : 'Create new orders in the form with a verified patient prescription first. Admin explicitly adopts suborder_mrp_v1: retain every issued SUB as its own header with one MRP and child allergens, each with result (mm), optional extract and dilution (ml). Approval requires complete header pricing and clinical quantities. Empty values remain not recorded. PO is optional. Historical bottle/occurrence prices and totals remain unchanged without explicit conversion. Original groups are retained by the server. Retain saved dates, versions, IDs and prescription associations. Approved/closed orders are read-only.',
     release(blob, filename) {
       const guard = prepared.get(blob);
       if (!guard) throw new Error('Prepare this export again before downloading.');
@@ -81,19 +81,29 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
           if (!previous?.attachments?.length) throw new Error('A verified prescription is required. Use the order form to create this order or add a prescription to the existing order, then export and review again.');
            if (getSession().user?.identity_kind === 'mr' && (
              !mrEditable(previous) || details.status !== 'Confirmed' || details.poNumber != null
-             || details.groups.some((g) => g.mrp != null || g.items.some((i) => i.rate != null))
+             || details.groups.some((g) => g.mrp != null || g.items.some((i) => i.rate != null || i.extract != null || i.dilution != null))
            )) throw new Error('MR imports may only update unpriced Confirmed orders and cannot supply Admin pricing, PO number or review decisions.');
            // Older exports lack new optional fields. Retain saved financial data
            // by occurrence instead of clearing it or inferring historical rates.
+           if (previous.pricingBasis === 'suborder_mrp_v1' && details.pricingBasis !== 'suborder_mrp_v1') throw new Error('This saved order now uses suborder MRP. Export it again; older bottle/occurrence exports cannot overwrite its composition.');
+           if (details.pricingBasis === 'suborder_mrp_v1' && details.groups.some((g) => g.items.some((i) => i.rate != null || i.suborderId != null))) throw new Error('Canonical suborder children have no separate price or SUB identity. Keep the issued SUB on its header.');
+           if (details.pricingBasis !== 'suborder_mrp_v1' && details.groups.some((g) => g.items.some((i) => i.extract != null || i.dilution != null))) throw new Error('Adopt suborder MRP explicitly before recording extract or dilution; review quantities cannot be added to a historical bottle contract.');
            const groups = details.groups.map((g) => {
              const saved = previous.groups.find((p) => p.id === g.id);
-             return { ...g, items: g.items.map((i) => ({ ...i,
+             const canonical = details.pricingBasis === 'suborder_mrp_v1';
+             if (canonical) return { ...g, mrp: Object.hasOwn(g, 'mrp') ? g.mrp : saved?.mrp ?? null, items: g.items.map((i) => {
+               const old = saved?.items.find((p) => p.allergenId === i.allergenId);
+               return { allergenId: i.allergenId, result: i.result, allergen: i.allergen,
+                 extract: Object.hasOwn(i, 'extract') ? i.extract : old?.extract ?? null,
+                 dilution: Object.hasOwn(i, 'dilution') ? i.dilution : old?.dilution ?? null };
+             }) };
+             return { ...g, mrp: Object.hasOwn(g, 'mrp') ? g.mrp : saved?.mrp ?? null, items: g.items.map((i) => ({ ...i,
                suborderId: Object.hasOwn(i, 'suborderId') ? i.suborderId : saved?.items.find((p) => p.allergenId === i.allergenId)?.suborderId ?? null,
                rate: Object.hasOwn(i, 'rate') ? i.rate : saved?.items.find((p) => p.allergenId === i.allergenId)?.rate ?? null,
              })) };
            });
            const values = orderInput({ ...details, groups,
-             pricingBasis: details.pricingBasis || previous.pricingBasis || 'legacy_bottle_mrp',
+             pricingBasis: previous.pricingBasis === 'suborder_mrp_v1' ? 'suborder_mrp_v1' : details.pricingBasis || previous.pricingBasis || 'legacy_bottle_mrp',
              poNumber: Object.hasOwn(details, 'poNumber') ? details.poNumber : previous.poNumber ?? null,
              attachments: previous.attachments });
           values.orderDate = date;

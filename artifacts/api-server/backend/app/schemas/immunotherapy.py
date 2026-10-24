@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 Result = Annotated[str, Field(pattern=r"^\d{1,6}(?:\.\d{1,2})?$")]
 Amount = Annotated[str, Field(pattern=r"^\d{1,10}(?:\.\d{1,2})?$")]
+Volume = Annotated[str, Field(pattern=r"^[0-9]{1,6}(?:\.[0-9]{1,3})?$")]
 Status = Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
 
 
@@ -17,6 +18,8 @@ class ImmItem(Strict):
     allergenId: uuid.UUID
     result: Result
     rate: Amount | None = None
+    extract: Volume | None = None
+    dilution: Volume | None = None
     suborderId: str | None = Field(default=None, pattern=r"^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$")
 
 
@@ -33,7 +36,7 @@ class ImmBottle(Strict):
 
 
 class ImmInput(Strict):
-    pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp"] | None = None
+    pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"] | None = None
     orderDate: date | None = None
     patientId: uuid.UUID
     doctorId: uuid.UUID
@@ -41,7 +44,7 @@ class ImmInput(Strict):
     dosage: Literal["PD", "DD", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"]
     histamine: Result
     saline: Result
-    groups: list[ImmBottle] = Field(min_length=1, max_length=100)
+    groups: list[ImmBottle] = Field(min_length=1, max_length=1000)
     remarks: str = Field(default="", max_length=4000)
     shipping: Literal["patient", "doctor"]
     status: Status = "Confirmed"
@@ -114,7 +117,10 @@ class ImmRecord(BaseModel):
     groups: list[dict]
     attachments: list[dict]
     totalMinor: int | None
-    pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp"] = "legacy_bottle_mrp"
+    pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"] = "legacy_bottle_mrp"
+    historicalGroups: list[dict] | None = None
+    historicalPricingBasis: str | None = None
+    historicalTotalMinor: int | None = None
     audit: dict | None = None
     poNumber: str | None = None
     reviewDecision: Literal["Approved", "Rejected"] | None = None

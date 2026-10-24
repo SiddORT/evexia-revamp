@@ -410,6 +410,12 @@ Necessary contract generation/formatting is not runtime verification.
   delivery is source-only: no tests, builds, runtime checks, service restarts or
   migrations were run. Normal authorized development activation remains
   separate from source completion. See `docs/immunotherapy-backend.md`.
+  Current Admin review explicitly adopts stable SUB-header cards with one
+  MRP and multiple child allergens carrying independently entered extract and
+  dilution (ml). Original bottle/occurrence history remains encrypted and
+  read-only. Only synthetic presentation layout checks were performed for
+  this contract change; backend behavior remains unverified. No schema
+  migration is needed or applied for the additive encrypted representation.
 
 - Date displays must use the shared subscribed browser presentation helpers; pure
   documents receive an explicit preference snapshot. Keep native input values,

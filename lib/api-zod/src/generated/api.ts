@@ -437,7 +437,7 @@ export const listImmunotherapyOrdersResponseItemsItemPricingNeedsReviewDefault =
 export const createImmunotherapyOrderBodyAttachmentIdsMax = 10;
 export const createImmunotherapyOrderBodyGroupsItemIdMax = 100;
 export const createImmunotherapyOrderBodyGroupsItemItemsMax = 100;
-export const createImmunotherapyOrderBodyGroupsMax = 100;
+export const createImmunotherapyOrderBodyGroupsMax = 1000;
 export const createImmunotherapyOrderBodyPoNumberOneMax = 100;
 export const createImmunotherapyOrderBodyRemarksMax = 4000;
 export const createImmunotherapyOrderResponseCorrectionSavedDefault = false;
@@ -451,7 +451,7 @@ export const commitImmunotherapyImportBodyConfirmUpdatesDefault = false;
 export const commitImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax = 10;
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax = 100;
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax = 100;
-export const commitImmunotherapyImportBodyEntriesItemValuesGroupsMax = 100;
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsMax = 1000;
 export const commitImmunotherapyImportBodyEntriesItemValuesPoNumberOneMax = 100;
 export const commitImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
 export const commitImmunotherapyImportBodyEntriesMax = 500;
@@ -462,7 +462,7 @@ export const reviewImmunotherapyImportBodyConfirmUpdatesDefault = false;
 export const reviewImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax = 10;
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax = 100;
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax = 100;
-export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsMax = 100;
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsMax = 1000;
 export const reviewImmunotherapyImportBodyEntriesItemValuesPoNumberOneMax = 100;
 export const reviewImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
 export const reviewImmunotherapyImportBodyEntriesMax = 500;
@@ -495,7 +495,7 @@ export const approveImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const editImmunotherapyOrderBodyAttachmentIdsMax = 10;
 export const editImmunotherapyOrderBodyGroupsItemIdMax = 100;
 export const editImmunotherapyOrderBodyGroupsItemItemsMax = 100;
-export const editImmunotherapyOrderBodyGroupsMax = 100;
+export const editImmunotherapyOrderBodyGroupsMax = 1000;
 export const editImmunotherapyOrderBodyPoNumberOneMax = 100;
 export const editImmunotherapyOrderBodyRemarksMax = 4000;
 export const editImmunotherapyOrderResponseCorrectionSavedDefault = false;
@@ -9600,6 +9600,13 @@ export const ListImmunotherapyOrdersResponse = zod.object({
       dosage: zod.string(),
       groups: zod.array(zod.record(zod.string(), zod.unknown())),
       histamine: zod.string(),
+      historicalGroups: zod
+        .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+        .optional(),
+      historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+      historicalTotalMinor: zod
+        .union([zod.number().int(), zod.null()])
+        .optional(),
       id: zod.string().uuid(),
       mr: zod.record(zod.string(), zod.unknown()),
       mrEditable: zod
@@ -9611,7 +9618,7 @@ export const ListImmunotherapyOrdersResponse = zod.object({
       patientId: zod.string().uuid(),
       poNumber: zod.union([zod.string(), zod.null()]).optional(),
       pricingBasis: zod
-        .enum(["allergen_rates", "legacy_bottle_mrp"])
+        .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
         .default(listImmunotherapyOrdersResponseItemsItemPricingBasisDefault),
       pricingNeedsReview: zod
         .boolean()
@@ -9651,6 +9658,10 @@ export const ListImmunotherapyOrdersResponse = zod.object({
  * @summary Create
  */
 
+export const createImmunotherapyOrderBodyGroupsItemItemsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const createImmunotherapyOrderBodyGroupsItemItemsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 export const createImmunotherapyOrderBodyGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
@@ -9706,6 +9717,26 @@ export const CreateImmunotherapyOrderBody = zod.object({
           .array(
             zod.object({
               allergenId: zod.string().uuid(),
+              dilution: zod
+                .union([
+                  zod
+                    .string()
+                    .regex(
+                      createImmunotherapyOrderBodyGroupsItemItemsItemDilutionOneRegExp,
+                    ),
+                  zod.null(),
+                ])
+                .optional(),
+              extract: zod
+                .union([
+                  zod
+                    .string()
+                    .regex(
+                      createImmunotherapyOrderBodyGroupsItemItemsItemExtractOneRegExp,
+                    ),
+                  zod.null(),
+                ])
+                .optional(),
               rate: zod
                 .union([
                   zod
@@ -9759,7 +9790,10 @@ export const CreateImmunotherapyOrderBody = zod.object({
     ])
     .optional(),
   pricingBasis: zod
-    .union([zod.enum(["allergen_rates", "legacy_bottle_mrp"]), zod.null()])
+    .union([
+      zod.enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"]),
+      zod.null(),
+    ])
     .optional(),
   remarks: zod
     .string()
@@ -9801,6 +9835,11 @@ export const CreateImmunotherapyOrderResponse = zod.object({
   dosage: zod.string(),
   groups: zod.array(zod.record(zod.string(), zod.unknown())),
   histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
@@ -9812,7 +9851,7 @@ export const CreateImmunotherapyOrderResponse = zod.object({
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
   pricingBasis: zod
-    .enum(["allergen_rates", "legacy_bottle_mrp"])
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
     .default(createImmunotherapyOrderResponsePricingBasisDefault),
   pricingNeedsReview: zod
     .boolean()
@@ -9895,6 +9934,13 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
       dosage: zod.string(),
       groups: zod.array(zod.record(zod.string(), zod.unknown())),
       histamine: zod.string(),
+      historicalGroups: zod
+        .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+        .optional(),
+      historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+      historicalTotalMinor: zod
+        .union([zod.number().int(), zod.null()])
+        .optional(),
       id: zod.string().uuid(),
       mr: zod.record(zod.string(), zod.unknown()),
       mrEditable: zod
@@ -9906,7 +9952,7 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
       patientId: zod.string().uuid(),
       poNumber: zod.union([zod.string(), zod.null()]).optional(),
       pricingBasis: zod
-        .enum(["allergen_rates", "legacy_bottle_mrp"])
+        .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
         .default(exportImmunotherapyOrdersResponseItemsItemPricingBasisDefault),
       pricingNeedsReview: zod
         .boolean()
@@ -9946,6 +9992,10 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
  * @summary Commit
  */
 
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
@@ -10009,6 +10059,26 @@ export const CommitImmunotherapyImportBody = zod.object({
                   .array(
                     zod.object({
                       allergenId: zod.string().uuid(),
+                      dilution: zod
+                        .union([
+                          zod
+                            .string()
+                            .regex(
+                              commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemDilutionOneRegExp,
+                            ),
+                          zod.null(),
+                        ])
+                        .optional(),
+                      extract: zod
+                        .union([
+                          zod
+                            .string()
+                            .regex(
+                              commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemExtractOneRegExp,
+                            ),
+                          zod.null(),
+                        ])
+                        .optional(),
                       rate: zod
                         .union([
                           zod
@@ -10075,7 +10145,11 @@ export const CommitImmunotherapyImportBody = zod.object({
             .optional(),
           pricingBasis: zod
             .union([
-              zod.enum(["allergen_rates", "legacy_bottle_mrp"]),
+              zod.enum([
+                "allergen_rates",
+                "legacy_bottle_mrp",
+                "suborder_mrp_v1",
+              ]),
               zod.null(),
             ])
             .optional(),
@@ -10139,6 +10213,13 @@ export const CommitImmunotherapyImportResponse = zod.object({
       dosage: zod.string(),
       groups: zod.array(zod.record(zod.string(), zod.unknown())),
       histamine: zod.string(),
+      historicalGroups: zod
+        .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+        .optional(),
+      historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+      historicalTotalMinor: zod
+        .union([zod.number().int(), zod.null()])
+        .optional(),
       id: zod.string().uuid(),
       mr: zod.record(zod.string(), zod.unknown()),
       mrEditable: zod
@@ -10150,7 +10231,7 @@ export const CommitImmunotherapyImportResponse = zod.object({
       patientId: zod.string().uuid(),
       poNumber: zod.union([zod.string(), zod.null()]).optional(),
       pricingBasis: zod
-        .enum(["allergen_rates", "legacy_bottle_mrp"])
+        .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
         .default(
           commitImmunotherapyImportResponseOrdersItemPricingBasisDefault,
         ),
@@ -10190,6 +10271,10 @@ export const CommitImmunotherapyImportResponse = zod.object({
  * @summary Review
  */
 
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
@@ -10253,6 +10338,26 @@ export const ReviewImmunotherapyImportBody = zod.object({
                   .array(
                     zod.object({
                       allergenId: zod.string().uuid(),
+                      dilution: zod
+                        .union([
+                          zod
+                            .string()
+                            .regex(
+                              reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemDilutionOneRegExp,
+                            ),
+                          zod.null(),
+                        ])
+                        .optional(),
+                      extract: zod
+                        .union([
+                          zod
+                            .string()
+                            .regex(
+                              reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemExtractOneRegExp,
+                            ),
+                          zod.null(),
+                        ])
+                        .optional(),
                       rate: zod
                         .union([
                           zod
@@ -10319,7 +10424,11 @@ export const ReviewImmunotherapyImportBody = zod.object({
             .optional(),
           pricingBasis: zod
             .union([
-              zod.enum(["allergen_rates", "legacy_bottle_mrp"]),
+              zod.enum([
+                "allergen_rates",
+                "legacy_bottle_mrp",
+                "suborder_mrp_v1",
+              ]),
               zod.null(),
             ])
             .optional(),
@@ -10821,6 +10930,11 @@ export const GetImmunotherapyOrderResponse = zod.object({
   dosage: zod.string(),
   groups: zod.array(zod.record(zod.string(), zod.unknown())),
   histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
@@ -10832,7 +10946,7 @@ export const GetImmunotherapyOrderResponse = zod.object({
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
   pricingBasis: zod
-    .enum(["allergen_rates", "legacy_bottle_mrp"])
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
     .default(getImmunotherapyOrderResponsePricingBasisDefault),
   pricingNeedsReview: zod
     .boolean()
@@ -10894,6 +11008,11 @@ export const ApproveImmunotherapyOrderResponse = zod.object({
   dosage: zod.string(),
   groups: zod.array(zod.record(zod.string(), zod.unknown())),
   histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
@@ -10905,7 +11024,7 @@ export const ApproveImmunotherapyOrderResponse = zod.object({
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
   pricingBasis: zod
-    .enum(["allergen_rates", "legacy_bottle_mrp"])
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
     .default(approveImmunotherapyOrderResponsePricingBasisDefault),
   pricingNeedsReview: zod
     .boolean()
@@ -10940,6 +11059,10 @@ export const EditImmunotherapyOrderParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
 
+export const editImmunotherapyOrderBodyGroupsItemItemsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const editImmunotherapyOrderBodyGroupsItemItemsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 export const editImmunotherapyOrderBodyGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
@@ -10992,6 +11115,26 @@ export const EditImmunotherapyOrderBody = zod.object({
           .array(
             zod.object({
               allergenId: zod.string().uuid(),
+              dilution: zod
+                .union([
+                  zod
+                    .string()
+                    .regex(
+                      editImmunotherapyOrderBodyGroupsItemItemsItemDilutionOneRegExp,
+                    ),
+                  zod.null(),
+                ])
+                .optional(),
+              extract: zod
+                .union([
+                  zod
+                    .string()
+                    .regex(
+                      editImmunotherapyOrderBodyGroupsItemItemsItemExtractOneRegExp,
+                    ),
+                  zod.null(),
+                ])
+                .optional(),
               rate: zod
                 .union([
                   zod
@@ -11045,7 +11188,10 @@ export const EditImmunotherapyOrderBody = zod.object({
     ])
     .optional(),
   pricingBasis: zod
-    .union([zod.enum(["allergen_rates", "legacy_bottle_mrp"]), zod.null()])
+    .union([
+      zod.enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"]),
+      zod.null(),
+    ])
     .optional(),
   remarks: zod
     .string()
@@ -11087,6 +11233,11 @@ export const EditImmunotherapyOrderResponse = zod.object({
   dosage: zod.string(),
   groups: zod.array(zod.record(zod.string(), zod.unknown())),
   histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
@@ -11098,7 +11249,7 @@ export const EditImmunotherapyOrderResponse = zod.object({
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
   pricingBasis: zod
-    .enum(["allergen_rates", "legacy_bottle_mrp"])
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
     .default(editImmunotherapyOrderResponsePricingBasisDefault),
   pricingNeedsReview: zod
     .boolean()
@@ -11161,6 +11312,11 @@ export const RejectImmunotherapyOrderResponse = zod.object({
   dosage: zod.string(),
   groups: zod.array(zod.record(zod.string(), zod.unknown())),
   histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
@@ -11172,7 +11328,7 @@ export const RejectImmunotherapyOrderResponse = zod.object({
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
   pricingBasis: zod
-    .enum(["allergen_rates", "legacy_bottle_mrp"])
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
     .default(rejectImmunotherapyOrderResponsePricingBasisDefault),
   pricingNeedsReview: zod
     .boolean()
@@ -11234,6 +11390,11 @@ export const ResubmitImmunotherapyOrderResponse = zod.object({
   dosage: zod.string(),
   groups: zod.array(zod.record(zod.string(), zod.unknown())),
   histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
@@ -11245,7 +11406,7 @@ export const ResubmitImmunotherapyOrderResponse = zod.object({
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
   pricingBasis: zod
-    .enum(["allergen_rates", "legacy_bottle_mrp"])
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
     .default(resubmitImmunotherapyOrderResponsePricingBasisDefault),
   pricingNeedsReview: zod
     .boolean()

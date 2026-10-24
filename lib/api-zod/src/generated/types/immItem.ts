@@ -8,6 +8,8 @@
 
 export interface ImmItem {
   allergenId: string;
+  dilution?: string | null;
+  extract?: string | null;
   rate?: string | null;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
   result: string;
