@@ -8,7 +8,13 @@ from app.db.base import Base
 
 class ImmunotherapyOrder(Base):
     __tablename__ = "immunotherapy_orders"
-    __table_args__ = (CheckConstraint("version > 0", name="ck_imm_version"),)
+    __table_args__ = (
+        CheckConstraint("version > 0", name="ck_imm_version"),
+        CheckConstraint(
+            "status IN ('Confirmed','Approved','In process','Shipped','Delivered','Rejected','Returned')",
+            name="ck_imm_status",
+        ),
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     number: Mapped[str] = mapped_column(String(48), unique=True)
     date: Mapped[date] = mapped_column(Date)

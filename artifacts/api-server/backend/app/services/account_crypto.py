@@ -152,6 +152,8 @@ def ready(db):
         ["0069_workspace_permissions"],
         ["0070_mr_account_numbers"],
         ["0071_order_review_audit"],
+        # Immunotherapy status CHECK expansion changes no account storage/keys.
+        ["0072_imm_approved_status"],
     ):
         raise AccountCryptoError()
     current = crypto()

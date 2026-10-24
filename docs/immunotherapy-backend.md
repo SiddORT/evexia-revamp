@@ -272,6 +272,62 @@ until maintenance authenticates and re-encrypts every dependent envelope.
   reusing a key for another actor/payload is rejected. The UI keeps an unconfirmed
   submission unchanged and offers an explicit same-key retry.
 
+## Approval status constraint correction (source only)
+
+The application accepts `Approved`, but the original
+`0061_immunotherapy_orders` database CHECK `ck_imm_status` omitted it. The
+reported existing API logs showed three edit POSTs returning 503. Source tracing
+shows that assigning `Approved` reaches `db.flush()`, where a CHECK violation
+would be rolled back and translated from `SQLAlchemyError` to a generic 503.
+The actual serving database constraint and underlying exception were not queried:
+this is a confirmed source defect consistent with the observed 503s, not a
+runtime-confirmed diagnosis of each request.
+
+Forward revision `0072_imm_approved_status`, after `0071_order_review_audit`,
+atomically replaces only this CHECK. It accepts exactly `Confirmed`, `Approved`,
+`In process`, `Shipped`, `Delivered`, `Rejected`, and `Returned`; every prior
+valid state remains valid and unsupported states remain excluded. The ORM
+declares the same CHECK. Historical migrations remain unchanged. Fresh migration
+chains converge on this same constraint. Downgrade refuses to narrow the
+constraint rather than rewriting or deleting approved history.
+
+This migration changes no saved rows, prices, snapshots, audit timestamps,
+versions, prescription links, bottle IDs, suborder IDs or retry records.
+Approval still requires verified patient prescriptions, valid rates, authoritative
+permissions and the expected version; PO number remains optional. Order changes,
+encrypted snapshots, success audit events and the encrypted request outcome
+remain in one transaction.
+
+The mounted unresolved editor must retain its exact frozen payload and UUID.
+No unlock, reload, payload normalization change or replacement request identity
+is part of this correction. Once the compatible backend/schema is active, the
+existing **Recover this same save safely** action can submit that unchanged
+request. A prior SQL failure rolls back the order and retry outcome together,
+so an absent committed outcome can execute the original request subject to
+current authorization, prescription and version checks. A committed outcome is
+found under the actor/payload-bound key before mutation work and returns the
+current authorized order without another approval, audit event or ID issuance.
+Neither a 503 nor an absent response alone proves that nothing committed.
+
+Delivery is source-only under the explicit no-tests restriction. No tests were
+added, changed or executed; no builds, validation/release wrappers, browser
+checks, runtime probes, live order mutations, service restarts, deployments or
+manual migrations were performed. Development source-integrity metadata is
+generated offline; this is not runtime validation or activation evidence.
+The migration remains unapplied by this work, prepared for the existing
+automatic startup/post-merge/deployment lifecycle. The serving schema was not
+inspected, and approval success has not been runtime-verified. Do not reload
+the unresolved editor as part of activation.
+
+The PostgreSQL fresh-install catalog and production release-review pins remain
+at their existing evidenced target. The release metadata generator requires a
+reproduced catalog for the new head; obtaining one would violate this task's
+no-execution restriction. Do not relabel an old catalog or fabricate a digest,
+attestation or passing check. A separately authorized disposable catalog capture
+and subsequent release metadata refresh are still required before fresh-install
+release verification can claim coverage of this head. Existing release gates
+remain fail-closed.
+
 ## Reads and selectors
 
 `/api/v1/admin/immunotherapy-orders` exposes list/create, detail and versioned

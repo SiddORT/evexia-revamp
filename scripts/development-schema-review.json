@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0071_order_review_audit",
+  "target": "0072_imm_approved_status",
   "policy_sha256": "1ca47ac8d2e46ca71854c64f8bee15b76e4d45a6daf747e48d729f81d45a336f",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -80,7 +80,8 @@
     "0068_category_description": "d4ddfee10d023bab49ea370c2f6352be09ff4ce7b46dc1bfea8dd2b263a9493a",
     "0069_workspace_permissions": "7db5d91d956c63c559102fc0cd90efd5a79610dc33751568e96f6e963c341568",
     "0070_mr_account_numbers": "653fc7610f71f8c371e25f187192d7925bd517c876ea7c0fd76d5b749be1b865",
-    "0071_order_review_audit": "5441af9113ab33b1d277cd31b2a653eafdabb58fdba8461e3c80802cb41c11aa"
+    "0071_order_review_audit": "5441af9113ab33b1d277cd31b2a653eafdabb58fdba8461e3c80802cb41c11aa",
+    "0072_imm_approved_status": "85c6bcc6ad6e135b86722fb9e20dc1691a5a36292b067ea83ad554b5f77f715f"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

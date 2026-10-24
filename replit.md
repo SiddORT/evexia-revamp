@@ -45,6 +45,17 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+Immunotherapy approval constraint repair is source-only: forward
+`0072_imm_approved_status` adds the application's existing `Approved` state to
+the database CHECK without changing historical migrations or saved orders.
+Do not run tests, builds, validation/release wrappers, runtime/browser probes,
+live order mutations, migrations or service activation for this repair.
+Keep the unresolved editor mounted with its exact frozen request/key.
+Automatic migration lifecycle is unchanged; this work does not apply the
+migration or verify approval at runtime. Fresh-install catalog/release evidence
+for the new head remains unavailable under this restriction; do not fabricate it.
+See `docs/immunotherapy-backend.md`.
+
 Signed-in MR/Admin/staff profiles use saved names above actual saved account
 numbers. `0070_mr_account_numbers` prepares encrypted, reservation-preserving
 conversion of explicitly directory-backed legacy MR logins; identity-only
