@@ -111,6 +111,44 @@ confirm that no saved Kits association exists first (also enforced server-side).
 
 ## Verification boundary
 
+### Kits save error investigation
+
+Source tracing confirms that selected native files upload before the create
+request. A confirmed upload defect was the internally constructed
+`UploadRequest`: Pydantic filename validation errors were not request-parsing
+errors and therefore escaped to the generic 500 handler. Kits now converts
+that failure to a safe 422 before reservation/storage. The filename constraints,
+owner selection, byte/type limits, clean-scanner requirement and encrypted
+filename/snapshot lifecycle are unchanged.
+
+The Kits form now distinguishes upload, order-validation and order-save
+failures. It displays allowlisted guidance and a UUID-shaped request reference
+when provided, not arbitrary server exception text. Native files and verified
+uploads stay in the mounted draft. A create response without a usable order ID
+is treated as uncertain, retaining the original payload/key rather than clearing
+it and navigating to an unidentified order. Retry conflicts likewise retain
+that original identity. Shared transport edits only attach diagnostic metadata
+for Kits; Immunotherapy authorization and request behavior are unchanged.
+
+No source evidence establishes that filename validation caused the reported
+screenshot incident: its filename, failing response and request reference are
+not available. Patient remains optional in both the client payload and server
+schema; authenticated MR enforcement and Doctor/Patient/shipping relationship
+checks remain unchanged. No order persistence is claimed as verified.
+
+To identify the original incident, obtain only the failing operation
+(`POST /api/v1/admin/kits-orders/attachments` or
+`POST /api/v1/admin/kits-orders`), HTTP status, safe error code and
+`X-Request-ID`/`error.request_id`, then correlate that reference with the actual
+serving process's existing sanitized error record. If it is only a generic
+unhandled-error record, an operator will still need a sanitized exception class
+and failing source location. Do not collect filenames, file contents, payloads,
+credentials, SQL parameters or raw tracebacks.
+
+This investigation and correction used source inspection only. No tests were
+added, changed or run; no builds, type checks, browser/manual scenarios, runtime
+probes, release/validation wrappers, restarts, migrations or deployments ran.
+
 This work is source-inspection-only at the user's request. Only narrow OpenAPI,
 client and development source-metadata generation was performed. No tests,
 builds, type checks, browser/manual scenarios, validation/release suites, live

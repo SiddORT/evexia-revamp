@@ -8,6 +8,7 @@ import uuid
 from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from app.api.deps import current_identity, operation_router
@@ -76,7 +77,13 @@ async def upload(request: Request, actor=Depends(current_identity), db: Session 
             file = form.get("file")
             if len(form) != 1 or not file or not hasattr(file, "file") or not file.size or file.size > maximum:
                 raise FileError(422, "kits_attachment", "Supply one nonempty PDF/image within the upload limit")
-            body = UploadRequest(kits_owner_id=actor.user.id, category="documents", filename=file.filename)
+            try:
+                body = UploadRequest(kits_owner_id=actor.user.id, category="documents", filename=file.filename)
+            except ValidationError:
+                # This model is constructed inside the route, not parsed by
+                # FastAPI: invalid multipart filenames otherwise escape as 500s.
+                raise FileError(422, "kits_attachment_metadata",
+                                "Use a nonempty PDF/image filename of at most 255 characters.") from None
             file_id = await run_in_threadpool(file_service.reserve, db, actor, body, file.content_type, settings, request.state.request_id)
             request.state.file_id = str(file_id)
             lease = operation(db, settings, file_id)

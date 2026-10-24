@@ -146,7 +146,7 @@ function Form() {
     } catch (error) {
       setUncertain(Boolean(error.ambiguous));
       if (!error.ambiguous) submission.current = null;
-      setErrors({ save: error.message || 'Order was not saved. Your draft is preserved; retry.' });
+      setErrors({ [error.stage || 'save']: error.message || 'Order was not saved. Your draft is preserved; retry.' });
       requestAnimationFrame(() => summaryRef.current?.focus());
     } finally { saving.current = false; setBusy(false); }
   }
@@ -165,8 +165,8 @@ function Form() {
       <p className="admin-page-head__description">Choose who the order is for, configure the kit and consumables, then set shipping.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     {policyError && <p role="alert">{policyError} <button type="button" className="kits-link" onClick={() => { setPolicyError(''); request('/policy').then(setPolicy).catch((e) => setPolicyError(e.message)); }}>Retry upload policy</button></p>}
-    {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="kits-error-summary"><strong>Fix {errList.length} problem{errList.length > 1 ? 's' : ''} before saving</strong>
-      <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="kits-link" onClick={() => focusId(k === 'orderFor' ? `orderFor-${v.orderFor}` : k === 'shipping' ? `shipping-${v.shipping}` : k === 'products' ? 'kit-product' : k)} data-testid={`kits-error-${k}`}>{LABELS[k] || k}: {m}</button></li>)}</ul></div>}
+    {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="kits-error-summary"><strong>{e.upload ? 'Attachment upload needs attention' : e.save ? 'Order save needs attention' : e.validation ? 'Order validation needs attention' : `Fix ${errList.length} problem${errList.length > 1 ? 's' : ''} before saving`}</strong>
+      <ul>{errList.map(([k, m]) => <li key={k}>{['upload', 'save', 'validation'].includes(k) ? <span data-testid={`kits-error-${k}`}>{m}</span> : <button type="button" className="kits-link" onClick={() => focusId(k === 'orderFor' ? `orderFor-${v.orderFor}` : k === 'shipping' ? `shipping-${v.shipping}` : k === 'products' ? 'kit-product' : k)} data-testid={`kits-error-${k}`}>{LABELS[k] || k}: {m}</button>}</li>)}</ul></div>}
     <fieldset className="kits-layout kits-form-fields" disabled={!can.add || busy || uncertain}>
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-order"><h2 id="kits-h-order">Order details</h2>

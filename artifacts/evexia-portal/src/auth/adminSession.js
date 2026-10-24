@@ -1042,6 +1042,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
     error.ambiguous = mutation && response.status >= 500;
+    if (resource === 'kits-orders') error.requestId = response.headers.get('X-Request-ID') || data?.error?.request_id;
     if (resource === 'immunotherapy-orders' && response.status === 422) {
       // Retain only known structural locations and machine codes, never server
       // validator messages, input values or untrusted extra-property names.
@@ -1137,6 +1138,10 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
     if (response.status === 401) await verifySession(true, portalOf(state.user));
     const error = new SessionError(data?.error?.message || (kits || lupin ? 'Order attachment unavailable. Your order draft is preserved; retry explicitly.' : 'Prescription unavailable. Your order draft is preserved; retry explicitly.'), response.status);
     error.fileId = response.headers.get('X-File-ID');
+    if (kits) {
+      error.code = data?.error?.code;
+      error.requestId = response.headers.get('X-Request-ID') || data?.error?.request_id;
+    }
     throw error;
   }
   if (download) serverDownloads.set(data, guard);

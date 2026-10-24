@@ -1,6 +1,59 @@
 import { purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
-export const request = (path = '', options) => purchaseOrderRequest(path, options, 'kits-orders');
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function failure(error, stage) {
+  const upload = stage === 'upload';
+  const messages = upload ? {
+    invalid_filename: 'Use a supported PDF or image filename.',
+    kits_attachment_metadata: 'Use a nonempty PDF or image filename of at most 255 characters.',
+    unsupported_type: 'Choose a matching PDF, JPEG, PNG or WebP file.',
+    invalid_file: 'File verification failed. Choose a supported, nonempty PDF or image within the upload limit.',
+    file_rate_limit: 'Too many file operations. Wait before retrying this draft.',
+    file_capacity: 'The upload service is busy. Wait before retrying this draft.',
+    operation_busy: 'A file operation is already running. Wait before retrying.',
+    storage_write_failed: 'Private storage is unavailable. Ask the operator to check storage before retrying.',
+    kits_upload_timeout: 'The upload timed out. Retry explicitly when the connection is available.',
+  } : {
+    kits_relationship: 'Review the current Doctor/MR assignment and any selected Patient’s billing Doctor.',
+    mr_order_assignment: 'The order MR must be your signed-in MR. Ask an administrator to review your saved assignment.',
+    kits_attachment: 'An attachment is no longer eligible. Ask the operator to review its private upload state.',
+    kits_retry: 'Keep this draft unchanged. Ask the operator to review the original submission before starting another order.',
+  };
+  const detail = (Object.hasOwn(messages, error?.code) ? messages[error.code] : '')
+    || (error?.status === 401 ? 'Check your sign-in before retrying this draft.'
+      : error?.status === 403 ? 'Access was denied. Ask an administrator to review your access.'
+      : error?.status === 413 ? 'The request exceeds the service limit. Review the selected file sizes.'
+      : error?.status === 429 ? 'The service is busy. Wait before retrying.'
+      : !upload && error?.status === 422 ? 'Check kit product, positive volume and whole quantities, billing Doctor, MR shipping and any selected Patient’s assignment. Patient remains optional.'
+      : 'The service could not complete or confirm this step. Check your connection; ask the operator to review the request if it persists.');
+  const reference = typeof error?.requestId === 'string' && UUID.test(error.requestId)
+    ? ` Request reference: ${error.requestId}.` : '';
+  const ambiguous = !upload && (Boolean(error?.ambiguous) || error?.code === 'kits_retry');
+  const result = new Error(`${upload ? 'Attachment upload failed. The order request was not sent.' : 'Order save failed or could not be confirmed.'} ${detail} ${upload
+    ? 'Your values and selected files remain here; previously verified uploads will be reused.'
+    : ambiguous ? 'Keep this draft open and use Retry unchanged save; do not start a duplicate order.'
+      : 'Your draft and verified uploads remain here.'}${reference}`);
+  result.stage = !upload && error?.status === 422 ? 'validation' : stage;
+  result.ambiguous = ambiguous;
+  return result;
+}
+
+export async function request(path = '', options) {
+  // Other Kits reads/transfers keep their existing transport contract.
+  if (path !== '' || options?.body === undefined) return purchaseOrderRequest(path, options, 'kits-orders');
+  try {
+    const result = await purchaseOrderRequest(path, options, 'kits-orders');
+    if (!UUID.test(result?.id || '')) {
+      // A successful HTTP status alone does not identify the persisted order.
+      // Keep the original key/payload when a committed result cannot be read.
+      const error = new Error();
+      error.ambiguous = true;
+      throw error;
+    }
+    return result;
+  } catch (error) { throw failure(error, 'save'); }
+}
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Partial']);
@@ -36,9 +89,15 @@ export const orderInput = (v) => ({
   attachmentIds: (v.attachments || []).map((f) => f.id),
 });
 export async function uploadAttachment(file) {
-  const result = await immunotherapyFileRequest('', { file, kits: true });
-  if (result.state !== 'verified' || result.scanner_status !== 'clean') {
-    throw new Error('File is quarantined or rejected and cannot be attached. Keep the original file and retry only when scanning is available.');
+  let result;
+  try {
+    result = await immunotherapyFileRequest('', { file, kits: true });
+  } catch (error) { throw failure(error, 'upload'); }
+  if (!UUID.test(result?.id || '') || result.state !== 'verified' || result.scanner_status !== 'clean'
+      || result.size !== file.size || result.content_type !== file.type) {
+    const error = new Error('Attachment verification was not confirmed. The order request was not sent. Your values and files remain here. Ask the operator to check scanning and the upload response before retrying.');
+    error.stage = 'upload';
+    throw error;
   }
   return { id: result.id, name: file.name, size: result.size, type: result.content_type, state: result.state };
 }
