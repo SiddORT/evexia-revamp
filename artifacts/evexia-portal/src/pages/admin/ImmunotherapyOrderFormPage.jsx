@@ -353,8 +353,8 @@ function Editor({ order, mode }) {
               <Err id="imm-mrId-err" text={errors.mrId} /></div>
           </div>
           {patient && <dl className="imm-facts" data-testid="imm-patient-facts"><div><dt>Name</dt><dd>{patient.name}</dd></div><div><dt>Age / gender</dt><dd>{patient.age} / {patient.gender}</dd></div><div><dt>Phone</dt><dd>{patient.phone}</dd></div><div><dt>Address</dt><dd>{addr(patient.address)}</dd></div></dl>}
-          {!dis && !reg && (mrPortal || can.protected) && <div className="imm-btn-row" style={{ marginTop: 14 }}><button type="button" className="admin-button admin-button--secondary" onClick={(e) => { openerRef.current = e.currentTarget; setReg({ ...blankReg(), doctorId: v.doctorId }); setRegErrors({}); }} data-testid="button-imm-register"><UserPlus size={15} aria-hidden="true" />Register patient</button></div>}
-          {reg && <form className="imm-reg" onSubmit={register} noValidate aria-label="Register patient" data-testid="form-imm-register"><fieldset disabled={Boolean(pending)} style={{ display: 'contents', border: 0, padding: 0, margin: 0 }}>
+          {!dis && !reg && !mrPortal && can.protected && <div className="imm-btn-row" style={{ marginTop: 14 }}><button type="button" className="admin-button admin-button--secondary" onClick={(e) => { openerRef.current = e.currentTarget; setReg({ ...blankReg(), doctorId: v.doctorId }); setRegErrors({}); }} data-testid="button-imm-register"><UserPlus size={15} aria-hidden="true" />Register patient</button></div>}
+          {!mrPortal && reg && <form className="imm-reg" onSubmit={register} noValidate aria-label="Register patient" data-testid="form-imm-register"><fieldset disabled={Boolean(pending)} style={{ display: 'contents', border: 0, padding: 0, margin: 0 }}>
             <h3>Register patient</h3>
             <p className="imm-hint">Creates a real Patient Master record using its existing validation and Doctor/MR assignments. Patient Master creation is separate from saving this order. Enter the postal address manually.</p>
             {regErrors.form && <p role="alert" className="imm-error">{regErrors.form}</p>}

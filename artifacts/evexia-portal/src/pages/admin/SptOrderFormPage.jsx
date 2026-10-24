@@ -16,7 +16,8 @@ function Shell({ children, entry = false }) {
 function OrderForm({ order }) {
   const can = useOrderActions('spt');
   const BASE = useOrderBase('spt');
-  const { mr } = useOrderPortal();
+  const { portal, mr } = useOrderPortal();
+  const mrPortal = portal === 'mr';
   const [record, setRecord] = useState(order);
   const readOnly = record?.status === 'Saved' || !(record ? can.edit : can.add);
   const [doctorId, setDoctorId] = useState(order?.doctorId || '');
@@ -182,7 +183,7 @@ function OrderForm({ order }) {
               invalid={Boolean(errors.patients)} describedBy={errors.patients ? 'spt-err-patients' : undefined} />
             <div className="spt-picker__actions">
               <button type="button" className="admin-button" onClick={add} disabled={!preview || patients.length >= 200} data-testid="button-spt-add-patient">Add patient</button>
-              <button type="button" ref={registerBtn} className="admin-button admin-button--secondary" onClick={openRegister} aria-expanded={registering} data-testid="button-spt-register"><UserPlus size={16} aria-hidden="true" />Register Patient</button>
+              {!mrPortal && <button type="button" ref={registerBtn} className="admin-button admin-button--secondary" onClick={openRegister} aria-expanded={registering} data-testid="button-spt-register"><UserPlus size={16} aria-hidden="true" />Register Patient</button>}
             </div>
           </div>
           {errors.patients && <p className="spt-error" id="spt-err-patients">{errors.patients}</p>}
@@ -190,7 +191,7 @@ function OrderForm({ order }) {
             <div><dt>ID</dt><dd>{preview.code} · {preview.source === 'spt' ? 'SPT' : 'Patient Master'}</dd></div><div><dt>Name</dt><dd>{preview.name}</dd></div>
             <div><dt>Gender</dt><dd>{preview.gender}</dd></div><div><dt>Age</dt><dd>{preview.age}</dd></div>
           </dl>}
-          {registering && <form className="spt-register" onSubmit={submitRegister} aria-labelledby="spt-h-reg" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); closeRegister(); } }} data-testid="form-spt-register">
+          {!mrPortal && registering && <form className="spt-register" onSubmit={submitRegister} aria-labelledby="spt-h-reg" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); closeRegister(); } }} data-testid="form-spt-register">
             <h3 id="spt-h-reg">Register SPT patient</h3>
             {Object.keys(regErrors).length > 0 && <p role="alert" className="spt-error">Check the highlighted patient fields.</p>}
             <p className="spt-card__sub" style={{ margin: 0 }}>Saved for future SPT orders only. This does not create a Patient Master record or login account.</p>
@@ -215,7 +216,7 @@ function OrderForm({ order }) {
         {patients.length > 0 && <p className="spt-scroll-hint">Scroll horizontally to see all patient columns. Keyboard: focus the table region and use arrow keys.</p>}
         <div className="spt-patient-table">
         <DataTable columns={columns} rows={patients} rowKey={(p) => p.id} label="Selected patients (scrolls horizontally)" testIdPrefix="spt-patient"
-          empty={<div className="spt-empty"><strong>No patients added</strong><p>{readOnly ? 'This order has no patients.' : 'Select an existing patient above, or register an SPT patient.'}</p></div>} />
+          empty={<div className="spt-empty"><strong>No patients added</strong><p>{readOnly ? 'This order has no patients.' : mrPortal ? 'Select an existing patient above.' : 'Select an existing patient above, or register an SPT patient.'}</p></div>} />
         </div>
         {patients.length > 0 && <div className="spt-total">
           <span>{readOnly ? 'Saved total' : 'Entry total'}</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">{readOnly ? `INR ${record.total}` : money(total)}</span></div>}
