@@ -13,6 +13,8 @@ import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js';
 import useImmunotherapyReferences from '../../hooks/useImmunotherapyReferences.js';
 import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
+import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
+import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import '../../excel-import.css';
 import '../../immunotherapy.css';
 
@@ -22,7 +24,6 @@ const fromOrder = (o) => structuredClone({ patientId: o.patientId, doctorId: o.d
 const addr = (a) => a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 const nameOf = (list, id) => list.find((x) => x.id === id)?.name || '';
 const ERROR_LABEL = { form: 'Order', patientId: 'Patient', doctorId: 'Doctor', mrId: 'MR', dosage: 'Dosage', histamine: 'Histamine (mm)', saline: 'Saline (mm)', shipping: 'Shipping', groups: 'Allergen Details', attachments: 'Prescription files', status: 'Status', remarks: 'Remarks', registration: 'Patient registration', poNumber: 'PO number' };
-const kb = (n) => n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 
 function Err({ id, text }) { return text ? <p className="imm-error" id={id} role="alert">{text}</p> : null; }
 
@@ -41,6 +42,7 @@ export default function ImmunotherapyOrderFormPage({ id, mode }) {
   if (id && !order) return <AdminLayout title="IMMUNOTHERAPY"><div className="imm admin-panel imm-empty">
     <h1>{error ? 'Order unavailable' : 'Loading order…'}</h1>{error && <><p role="alert">{error}</p><button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></>}
     <Link href={BASE}>Back to orders</Link></div></AdminLayout>;
+  if (order && mode === 'view') return <ImmunotherapyOrderSummary key={order.id} order={order} />;
   return <Editor key={`${id || 'new'}-${mode}`} order={order} mode={mode} />;
 }
 
@@ -417,17 +419,18 @@ function Editor({ order, mode }) {
             <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{!readOnly && 'At least one verified prescription for the selected patient is required to save. '}{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. {mrPortal ? 'Saved attachments must be retained. You can remove unsaved selections without deleting shared files.' : 'Removing a selection detaches it when you save; it does not delete shared files.'}</p>
             {policyError && <p role="alert">{policyError} <button type="button" className="imm-link-btn" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
             <Err id="imm-files-err" text={errors.attachments || fileMsg} /></div>
-          {(v.attachments.length > 0 || uploads.length > 0) ? <ul className="imm-files" aria-label="Prescription selections">
+          <OrderFileList label="Prescription selections" empty="No files selected or attached.">
             {v.attachments.map((f) => {
               const locked = mrPortal && order?.attachments?.some((saved) => saved.id === f.id);
-              return <li key={f.id}><span className="imm-file-description"><strong>{f.name}</strong><span>{f.restricted ? 'Saved attachment — retained' : `${kb(f.size)} — Uploaded / verified`}{locked && ' — Locked: saved attachments must be retained.'}</span></span>
-                <div className="imm-file-actions"><button type="button" className="imm-link-btn" disabled={!can.read_attachment || f.restricted} onClick={() => downloadPrescription(f).catch((e) => setFileMsg(`Download unavailable: ${e.message}`))} aria-label={`Download ${f.name}`}>Download</button>
-                  {!readOnly && !locked && <button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => setV((current) => ({ ...current, attachments: current.attachments.filter((file) => file.id !== f.id) }))} aria-label={`Remove ${f.name}`}><X size={16} aria-hidden="true" /></button>}</div></li>;
+              return <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadPrescription} locked={locked}
+                status={order?.attachments?.some((saved) => saved.id === f.id) ? 'Saved prescription — retained' : 'Uploaded / verified — selected for this save'}
+                actions={!readOnly && !locked && <button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => setV((current) => ({ ...current, attachments: current.attachments.filter((file) => file.id !== f.id) }))} aria-label={f.restricted || !can.read_attachment ? 'Remove restricted attachment' : `Remove ${f.name}`}><X size={16} aria-hidden="true" /></button>} />;
             })}
-            {uploads.map((u) => <li key={u.key}><span className="imm-file-description"><strong>{u.name}</strong><span role={['queued', 'uploading'].includes(u.state) ? 'status' : undefined}>{u.state === 'failed' ? 'Failed' : u.state === 'rejected' ? 'Rejected' : u.state === 'unverified' ? 'Awaiting verification' : u.state === 'queued' ? 'Queued' : 'Uploading'} — {u.message}</span></span>
-              <div className="imm-file-actions"><button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => removeUpload(u.key)} aria-label={`Remove ${u.name}`}><X size={16} aria-hidden="true" /></button>
-                {!['queued', 'uploading'].includes(u.state) && <button type="button" className="imm-link-btn" disabled={Boolean(pending) || uncertain || !can.upload_attachment || !policy || !v.patientId} onClick={() => retryUpload(u.key)} aria-label={`${u.id ? 'Check availability of' : 'Retry upload of'} ${u.name}`}>{u.id ? 'Check availability' : 'Retry upload'}</button>}</div></li>)}
-          </ul> : <p className="imm-hint">No files selected or attached.</p>}
+            {uploads.map((u) => <OrderFileRow key={u.key} name={u.name} size={u.size} progressing={['queued', 'uploading'].includes(u.state)}
+              status={`${u.state === 'failed' ? 'Failed' : u.state === 'rejected' ? 'Rejected' : u.state === 'unverified' ? 'Awaiting verification' : u.state === 'queued' ? 'Queued' : 'Uploading'} — ${u.message}`}
+              actions={<><button type="button" className="admin-icon-button" disabled={uncertain || Boolean(pending && pending !== 'upload')} onClick={() => removeUpload(u.key)} aria-label={`Remove ${u.name}`}><X size={16} aria-hidden="true" /></button>
+                {!['queued', 'uploading'].includes(u.state) && <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(pending) || uncertain || !can.upload_attachment || !policy || !v.patientId} onClick={() => retryUpload(u.key)} aria-label={`${u.id ? 'Check availability of' : 'Retry upload of'} ${u.name}`}>{u.id ? 'Check availability' : 'Retry upload'}</button>}</>} />)}
+          </OrderFileList>
         </section>
 
         {!readOnly && <div className="imm-actions"><button type="button" className="admin-button" disabled={Boolean(pending)} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Update order'}</button>

@@ -1,0 +1,7 @@
+.imm-saved-order__actions { display: flex; flex-wrap: wrap; gap: 10px; max-width: 100%; }
+.imm-saved-order__bottle { border-top: 1px solid var(--admin-border); margin-top: 16px; padding-top: 12px; min-width: 0; }
+.imm-saved-order h3 { font-size: 14px; margin: 14px 0 8px; overflow-wrap: anywhere; }
+.imm-saved-order__allergens { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 12px; }
+.imm-saved-order__allergens > li { padding: 10px; background: var(--admin-state-link); border: 1px solid var(--admin-border); border-radius: 8px; min-width: 0; }
+.imm-saved-order .kits-hint { margin-top: 10px; line-height: 1.5; }
+.imm-saved-order .kits-facts dd { white-space: pre-wrap; }

@@ -5,6 +5,7 @@ import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../.
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
+import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import '../../kitsOrders.css';
@@ -45,7 +46,6 @@ function Summary({ order }) {
   const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
   const { date } = useAdminDateFormatters();
-  const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
   const doctor = order.doctor, mr = order.mr;
   const k = order.kit || {};
   const kitOn = k.product || k.custom || k.volume || k.quantity;
@@ -54,7 +54,6 @@ function Summary({ order }) {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Order {order.number}</h1>
       <p className="admin-page-head__description">Read-only saved order with historical billing, shipping and personal details.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
-    {error && <p role="alert">{error}</p>}
     <div className="kits-layout">
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
@@ -73,7 +72,7 @@ function Summary({ order }) {
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
           <h2 style={{ marginTop: 16 }}>Private attachments</h2>
-          {order.attachments?.length ? <ul className="kits-files">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${fileSize(f.size)})`}</span><button type="button" className="kits-link" disabled={downloading || !can.read_attachment || f.restricted} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
+          <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment" />)}</OrderFileList>
         </section></div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Shipping ({order.shipping})</h2><Facts person={rec} empty="Recipient unavailable." testId="kits-summary-shipping" /></section>
@@ -192,8 +191,9 @@ function Form() {
             <p className="kits-hint" id="kits-files-hint">Up to 10 PDF, JPEG, PNG or WebP files, {policy ? fileSize(policy.maxBytes) : '10 MB'} each. Files upload privately when saving and must pass verification and scanning before attachment. Import/export excludes file contents.</p>
             <Err id="kits-attachments-err" text={fileMsg || e.attachments} />
             {fileMsg && <button type="button" className="kits-link kits-file-dismiss" onClick={() => { setFileMsg(''); setErrors((current) => ({ ...current, attachments: undefined })); }}>Continue without rejected files</button>}</div>
-          {v.attachments.length > 0 ? <ul className="kits-files" aria-label="Attached files" data-testid="kits-file-list">{v.attachments.map((f, i) => <li key={`${f.name}-${i}`}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span>
-            <button type="button" className="kits-file-remove" aria-label={`Remove ${f.name}`} onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} data-testid={`kits-remove-file-${i}`}><X size={16} aria-hidden="true" /></button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
+          <OrderFileList label="Selected attachments" empty="No files selected." data-testid="kits-file-list">{v.attachments.map((f, i) => <OrderFileRow key={`${f.name}-${i}`} name={f.name} size={f.size}
+            status="Selected locally — uploads and verification occur when saving."
+            actions={<button type="button" className="admin-icon-button" aria-label={`Remove ${f.name}`} onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} data-testid={`kits-remove-file-${i}`}><X size={16} aria-hidden="true" /></button>} />)}</OrderFileList>
         </section>
       </div>
       <div className="kits-side">

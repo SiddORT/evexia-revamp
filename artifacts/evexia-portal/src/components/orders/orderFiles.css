@@ -1,0 +1,10 @@
+.order-files { list-style: none; display: grid; gap: 8px; padding: 0; margin: 12px 0 0; min-width: 0; }
+.order-file { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); min-width: 0; font-size: 13px; }
+.order-file__icon { flex: 0 0 auto; color: var(--admin-muted); }
+.order-file__description { display: grid; gap: 4px; min-width: 0; flex: 1 1 180px; overflow-wrap: anywhere; }
+.order-file__description > span, .order-files-empty { color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
+.order-files-empty { margin: 10px 0 0; }
+.order-file__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 100%; margin-left: auto; }
+.order-file__actions button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.order-file__actions button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.order-file__description .order-file__error { display: block; color: var(--admin-danger); }
