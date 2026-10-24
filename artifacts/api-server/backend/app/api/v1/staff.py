@@ -8,7 +8,7 @@ from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.schemas.staff import StaffCreated, StaffCreate, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess, StaffDeletion
 from app.schemas.staff import StaffBusinessRole, StaffBusinessStatus, StaffDirectoryFilters, StaffDesignationChoices, StaffRoleChoices
-from app.schemas.staff import StaffAccessPage, StaffDesignationReferencePage
+from app.schemas.staff import StaffAccessPage, StaffAccessSearch, StaffAccessSearchPage, StaffDesignationReferencePage
 from app.services.auth import Identity
 from app.services import staff as service
 
@@ -17,10 +17,19 @@ manager = require_capability("staff")
 
 
 @router.get("/access-directory", response_model=StaffAccessPage, operation_id="listStaffAccess")
-def access_directory(offset: int = Query(0, ge=0, le=10000), limit: int = Query(25, ge=1, le=100),
+def access_directory(offset: int = Query(0, ge=0), limit: int = Query(25, ge=1, le=100),
+                     status: StaffBusinessStatus | None = None, workspace_login_enabled: bool | None = None,
                      actor: Identity = Depends(require_capability("staff_access", "view")),
                      db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
-    return service.access_directory(db, actor, settings, offset, limit)
+    return service.access_directory(db, actor, settings, offset, limit, status, workspace_login_enabled)
+
+
+@router.post("/access-directory/search", response_model=StaffAccessSearchPage, operation_id="searchStaffAccessDirectory")
+def search_access_directory(body: StaffAccessSearch,
+                            actor: Identity = Depends(require_capability("staff_access", "view")),
+                            db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
+    """Read-only bounded search; personal search terms never belong in URLs."""
+    return service.search_access_directory(db, actor, settings, body)
 
 
 @router.get("/designation-references", response_model=StaffDesignationReferencePage, operation_id="getStaffDesignationReferences")

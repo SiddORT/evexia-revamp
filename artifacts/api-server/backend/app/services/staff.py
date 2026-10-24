@@ -77,23 +77,68 @@ def projection(db, profile, crypto, designation_name=None, role_name=None, role_
     )
 
 
-def access_directory(db, actor, settings, offset, limit):
+def access_directory_base(status=None, workspace_login_enabled=None):
+    # Keep exactly the existing access-directory eligibility exclusions, separate
+    # from Staff Management's broader projection and authorization.
+    stmt = (select(StaffProfile, CustomRole.name, CustomRole.deleted_at)
+            .join(User, User.id == StaffProfile.user_id)
+            .outerjoin(CustomRole, CustomRole.id == StaffProfile.custom_role_id)
+            .where(StaffProfile.deleted_at.is_(None), User.system_role.is_(None),
+                   User.is_protected_system_admin.is_(False), User.email_ciphertext.is_(None)))
+    if status is not None:
+        stmt = stmt.where(StaffProfile.status == status)
+    if workspace_login_enabled is not None:
+        stmt = stmt.where(StaffProfile.workspace_login_enabled == workspace_login_enabled)
+    return stmt
+
+
+def access_projection(row, role_name, role_deleted, crypto):
+    return dict(id=row.id, name=crypto.decrypt(row.id, "name", row.name_ciphertext),
+                employeeCode=row.employee_code, status=row.status,
+                role=role_name if role_name and role_deleted is None else "No available role",
+                workspace_login_enabled=row.workspace_login_enabled)
+
+
+def access_directory(db, actor, settings, offset, limit, status=None, workspace_login_enabled=None):
     def work():
+        db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
+        db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
         _, crypto = authorize(db, actor, settings, access_read=True)
-        condition = (StaffProfile.deleted_at.is_(None), User.system_role.is_(None),
-                     User.is_protected_system_admin.is_(False), User.email_ciphertext.is_(None))
-        base = select(StaffProfile).join(User, User.id == StaffProfile.user_id).where(*condition)
-        total = db.scalar(select(func.count()).select_from(base.subquery()))
-        rows = db.scalars(base.order_by(StaffProfile.created_at.desc(), StaffProfile.id).offset(offset).limit(limit))
-        items = []
-        for row in rows:
-            role = db.get(CustomRole, row.custom_role_id) if row.custom_role_id else None
-            items.append(dict(id=row.id, name=crypto.decrypt(row.id, "name", row.name_ciphertext),
-                              employeeCode=row.employee_code, status=row.status,
-                              role=role.name if role and role.deleted_at is None else "No available role",
-                              workspace_login_enabled=row.workspace_login_enabled))
+        total = db.scalar(select(func.count()).select_from(access_directory_base().subquery()))
+        base = access_directory_base(status, workspace_login_enabled)
+        filtered = total if status is None and workspace_login_enabled is None else db.scalar(
+            select(func.count()).select_from(base.subquery()))
+        rows = db.execute(base.order_by(StaffProfile.created_at.desc(), StaffProfile.id).offset(offset).limit(limit))
+        items = [access_projection(row, role_name, deleted, crypto) for row, role_name, deleted in rows]
         db.commit()
-        return dict(items=items, total=total)
+        return dict(items=items, total=total, filtered=filtered)
+    return transaction(work, db)
+
+
+def search_access_directory(db, actor, settings, body):
+    def work():
+        db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
+        db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
+        _, crypto = authorize(db, actor, settings, access_read=True)
+        stmt = access_directory_base(body.status, body.workspace_login_enabled)
+        if body.cursor is not None:
+            stmt = stmt.where(StaffProfile.id > body.cursor)
+        rows = list(db.execute(stmt.order_by(StaffProfile.id).limit(SEARCH_SCAN_LIMIT + 1)))
+        term = body.query.casefold()
+        items, scanned, last_id = [], 0, None
+        for row, role_name, deleted in rows[:SEARCH_SCAN_LIMIT]:
+            record = access_projection(row, role_name, deleted, crypto)
+            scanned += 1
+            last_id = row.id
+            if term in record["name"].casefold() or term in (record["employeeCode"] or "").casefold():
+                items.append(record)
+                if len(items) == body.limit:
+                    break
+        has_more = len(rows) > scanned
+        result = dict(items=items, has_more=has_more, next_cursor=last_id if has_more else None,
+                      scanned=scanned, scan_limit=SEARCH_SCAN_LIMIT, limit=body.limit)
+        db.commit()
+        return result
     return transaction(work, db)
 
 

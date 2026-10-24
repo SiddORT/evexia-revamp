@@ -8,6 +8,7 @@
 import type { StaffAccessRecord } from "./staffAccessRecord";
 
 export interface StaffAccessPage {
+  filtered: number;
   items: StaffAccessRecord[];
   total: number;
 }

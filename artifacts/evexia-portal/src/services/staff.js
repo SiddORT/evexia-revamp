@@ -12,6 +12,17 @@ export const STAFF_COLUMNS = [
 ];
 const INPUTS = STAFF_COLUMNS.map(([key]) => key === 'designationName' ? 'designation_id' : key === 'role' ? 'custom_role_id' : key);
 
+// Dedicated no-store transport: do not put decrypted access rows in query caches.
+export function loadStaffAccess({ query = '', status = '', login = '', cursor = null, offset = 0, pageSize = 10 }, signal) {
+  const filters = {
+    ...(status ? { status } : {}),
+    ...(login ? { workspace_login_enabled: login === 'enabled' } : {}),
+  };
+  if (query) return staffRequest('/access-directory/search', { query, cursor, limit: 100, ...filters }, { signal });
+  const params = new URLSearchParams({ offset: String(offset), limit: String(pageSize), ...filters });
+  return staffRequest(`/access-directory?${params}`, undefined, { signal });
+}
+
 export function validateStaff(values, _records = [], _exceptId = null, designations = [], roles = []) {
   const fields = Object.fromEntries(INPUTS.map((key) => [key, typeof values[key] === 'string' ? values[key].trim() : '']));
   const errors = {};

@@ -33,6 +33,32 @@ class StaffAccessRecord(BaseModel):
 class StaffAccessPage(BaseModel):
     items: list[StaffAccessRecord]
     total: int
+    filtered: int
+
+
+class StaffAccessSearch(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    query: str = Field(min_length=2, max_length=200)
+    status: StaffBusinessStatus | None = None
+    workspace_login_enabled: bool | None = None
+    cursor: uuid.UUID | None = None
+    limit: int = Field(default=100, ge=1, le=100)
+
+    @field_validator("query")
+    @classmethod
+    def safe_query(cls, value):
+        if any(ord(c) < 32 or ord(c) == 127 for c in value):
+            raise ValueError("Invalid search")
+        return value
+
+
+class StaffAccessSearchPage(BaseModel):
+    items: list[StaffAccessRecord]
+    has_more: bool
+    next_cursor: uuid.UUID | None
+    scanned: int
+    scan_limit: int
+    limit: int
 
 
 class StaffDesignationReferencePage(BaseModel):

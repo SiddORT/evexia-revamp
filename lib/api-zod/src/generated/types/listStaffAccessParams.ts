@@ -5,11 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ListStaffAccessStatus } from "./listStaffAccessStatus";
 
 export type ListStaffAccessParams = {
   /**
    * @minimum 0
-   * @maximum 10000
    */
   offset?: number;
   /**
@@ -17,4 +17,6 @@ export type ListStaffAccessParams = {
    * @maximum 100
    */
   limit?: number;
+  status?: ListStaffAccessStatus;
+  workspace_login_enabled?: boolean | null;
 };

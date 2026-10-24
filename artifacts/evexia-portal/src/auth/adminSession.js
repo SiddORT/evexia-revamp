@@ -310,7 +310,12 @@ export function reportingIdentityGuard() {
 // Dedicated authenticated staff transport. Never replay mutations: a lost create
 // response may already have committed and its initial password is unrecoverable.
 export async function staffRequest(path = '', body, { signal } = {}) {
-  const accessDirectoryPath = /^\/access-directory\?offset=\d+&limit=\d+$/.test(path);
+  const accessSearchPath = path === '/access-directory/search';
+  const accessListPath = /^\/access-directory\?offset=\d+&limit=\d+(?:&status=(?:active|inactive))?(?:&workspace_login_enabled=(?:true|false))?$/.test(path);
+  const accessDirectoryPath = accessListPath || accessSearchPath;
+  if ((accessSearchPath && body === undefined) || (accessListPath && body !== undefined)) {
+    throw new SessionError('Unsupported Staff Access read.');
+  }
   const designationReferencePath = /^\/designation-references\?query=[^&]*&offset=\d+$/.test(path);
   const encodedRole = '(?:[A-Za-z0-9_.!~*\\x27()-]|%[0-9A-Fa-f]{2}|\\+){1,1200}';
   const listingPath = new RegExp(`^\\?limit=\\d+&offset=\\d+(?:&status=(?:active|inactive))?(?:&designation_id=[0-9a-f-]{36})?(?:&role=${encodedRole})?$`).test(path);
@@ -318,7 +323,7 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   if (!accessDirectoryPath && !designationReferencePath && !listingPath && !roleChoicesPath && !/^(?:|\/search|\/filter-designations(?:\?cursor=[0-9a-f-]{36})?|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?)$/.test(path)) {
     throw new SessionError('Unsupported staff operation.');
   }
-  const mutation = body !== undefined && path !== '/search';
+  const mutation = body !== undefined && path !== '/search' && !accessSearchPath;
   const accessDirectoryRead = accessDirectoryPath && !mutation;
   const invalidAccessResponse = 'Staff Access returned an invalid response. Use Refresh access to retry.';
   const epoch = generation;
@@ -400,15 +405,29 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     throw error;
   }
   if (accessDirectoryRead) {
-    const params = new URLSearchParams(path.split('?')[1]);
-    const offset = Number(params.get('offset'));
-    const limit = Number(params.get('limit'));
-    if (!Array.isArray(data?.items) || !Number.isSafeInteger(data.total) || data.total < 0
-        || data.items.length !== Math.min(limit, Math.max(0, data.total - offset))
+    const params = new URLSearchParams(path.split('?')[1] || '');
+    const limit = accessSearchPath ? (body.limit ?? 100) : Number(params.get('limit'));
+    const expectedStatus = accessSearchPath ? body.status : params.get('status');
+    const expectedLogin = accessSearchPath ? body.workspace_login_enabled
+      : params.has('workspace_login_enabled') ? params.get('workspace_login_enabled') === 'true' : null;
+    const validCount = (value) => Number.isSafeInteger(value) && value >= 0;
+    const metadataValid = accessSearchPath
+      ? data?.limit === limit && data.scan_limit === 500 && validCount(data.scanned)
+        && data.scanned <= data.scan_limit && data.items?.length <= data.scanned
+        && typeof data.has_more === 'boolean'
+        && (data.has_more
+          ? data.scanned > 0 && typeof data.next_cursor === 'string'
+            && /^[0-9a-f-]{36}$/.test(data.next_cursor) && data.next_cursor !== body.cursor
+          : data.next_cursor === null)
+      : validCount(data?.total) && validCount(data.filtered) && data.filtered <= data.total
+        && data.items?.length === Math.min(limit, Math.max(0, data.filtered - Number(params.get('offset'))));
+    if (!metadataValid || !Array.isArray(data?.items) || data.items.length > limit
         || data.items.some((row) => !row || typeof row.id !== 'string' || typeof row.name !== 'string'
           || !(row.employeeCode === null || typeof row.employeeCode === 'string')
           || !['active', 'inactive'].includes(row.status) || typeof row.role !== 'string'
-          || typeof row.workspace_login_enabled !== 'boolean')) {
+          || typeof row.workspace_login_enabled !== 'boolean'
+          || (expectedStatus && row.status !== expectedStatus)
+          || (expectedLogin != null && row.workspace_login_enabled !== expectedLogin))) {
       throw new SessionError(invalidAccessResponse);
     }
   }

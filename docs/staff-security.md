@@ -413,6 +413,67 @@ Other browser-local masters remain unchanged. No VAPT certification is claimed.
 
 ### Directory-wide search privacy and resource review
 
+#### Read-only Staff Access directory
+
+Staff Access uses its existing **View Access** grant for both
+`GET /api/v1/admin/staff/access-directory` and the read-only
+`POST /api/v1/admin/staff/access-directory/search`. Every request, including
+continuations, revalidates that grant; a cursor never grants access. Neither
+operation uses Staff Management authorization or its broader projection.
+Deleted staff and the same protected/system-account exclusions remain in place.
+The five saved display fields remain name, Employee Code, saved role, staff
+status and workspace login enabled. Role labels are joined once, with the
+existing unavailable-role fallback; the directory does not offer mutations.
+
+The ordinary list accepts exact optional `status` and
+`workspace_login_enabled` filters and returns `total` (all eligible staff)
+and `filtered` (eligible staff satisfying both filters). Numbered shared
+pagination and page-size controls use those verified counts. List offsets no
+longer stop at 10,000, so the displayed exact totals do not advertise
+unreachable pages; each request remains limited to at most 100 returned records
+and uses transaction-local two-second statement / one-second lock timeouts.
+
+The search term is a 2–200-character JSON-body value, never a URL parameter.
+Literal case-insensitive substring matching covers **only displayed name and
+Employee Code**, not email, phone, role or management-only data. It uses
+the same eligibility and exact status/login predicates as the list, UUID
+keyset positions, at most 501 fetched profiles (one lookahead), at most 500
+name decryptions, and at most 100 returned matches. The existing authorization
+key check still decrypts one saved email solely to validate the index key.
+Missing/corrupt ciphertext fails the entire request even for a nonmatching row.
+No new indexes, schema changes, plaintext persistence, search logs, audit
+payloads, stored search sessions or decrypted-result caches are introduced.
+The browser uses the existing authenticated no-store transport rather than
+generated query-cache hooks; the shared read-response guard recognizes this
+POST as a read, including malformed-response and network-error handling.
+
+Search metadata reports only this section's scanned count, continuation cursor
+and whether later eligible records remain. There is no directory-wide search
+match count. Shared numbered pagination covers only matches in the loaded
+section; separate explicit previous/next-section actions refetch positions,
+never cached results. Zero matches do not disable a valid continuation.
+No automatic traversal or background decryption occurs. Lists and search
+sections are not snapshots: concurrent edits may change membership; Refresh
+retries the current applied criteria and current section. Reset, filter,
+search submission and page-size changes restart section/page positions.
+Draft edits hide and discard previous rows; replaced requests are aborted,
+and displayed rows and counts are bound to their owner and full request scope.
+Failed requests display no zero totals, old rows or working pagination.
+
+This Staff Access change was reviewed **in source and diffs only**, including
+the shared components, authorization/projection boundaries, generated contracts,
+request transitions and page-scoped CSS for approximately 360, 768, 1024 and
+1440-pixel layouts, long content, focus styles and enlarged-text wrapping.
+No authenticated already-running Staff Access preview session was available
+for permitted visual inspection. Actual rendered layouts, keyboard behavior,
+light/dark contrast, API behavior and browser interactions remain unverified.
+Only contract export, code generation and generated-file formatting were run;
+no regression tests, release checks, smoke checks, validation wrappers,
+type checks, builds, browser scenarios, service starts/restarts, migrations
+or record mutations were added or run for this change.
+
+#### Staff Management directory search
+
 `POST /api/v1/admin/staff/search` accepts a 2–200-character term in the JSON
 body, never in a URL. The same protected Super Admin permission and locked
 session revalidation apply on every continuation. No query or match is written

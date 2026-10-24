@@ -1996,9 +1996,12 @@ export const createStaffResponseRecordRoleAvailableDefault = false;
 export const createStaffResponseRecordRoleResolutionRequiredDefault = false;
 export const listStaffAccessQueryOffsetDefault = 0;
 export const listStaffAccessQueryOffsetMin = 0;
-export const listStaffAccessQueryOffsetMax = 10000;
 export const listStaffAccessQueryLimitDefault = 25;
 export const listStaffAccessQueryLimitMax = 100;
+export const searchStaffAccessDirectoryBodyLimitDefault = 100;
+export const searchStaffAccessDirectoryBodyLimitMax = 100;
+export const searchStaffAccessDirectoryBodyQueryMin = 2;
+export const searchStaffAccessDirectoryBodyQueryMax = 200;
 export const getStaffDesignationReferencesQueryQueryMax = 200;
 export const getStaffDesignationReferencesQueryOffsetDefault = 0;
 export const getStaffDesignationReferencesQueryOffsetMin = 0;
@@ -35334,7 +35337,6 @@ export const ListStaffAccessQueryParams = zod.object({
     .number()
     .int()
     .min(listStaffAccessQueryOffsetMin)
-    .max(listStaffAccessQueryOffsetMax)
     .default(listStaffAccessQueryOffsetDefault),
   limit: zod.coerce
     .number()
@@ -35342,9 +35344,14 @@ export const ListStaffAccessQueryParams = zod.object({
     .min(1)
     .max(listStaffAccessQueryLimitMax)
     .default(listStaffAccessQueryLimitDefault),
+  status: zod.union([zod.enum(["active", "inactive"]), zod.null()]).optional(),
+  workspace_login_enabled: zod
+    .union([zod.coerce.boolean(), zod.null()])
+    .optional(),
 });
 
 export const ListStaffAccessResponse = zod.object({
+  filtered: zod.number().int(),
   items: zod.array(
     zod.object({
       employeeCode: zod.union([zod.string(), zod.null()]),
@@ -35356,6 +35363,45 @@ export const ListStaffAccessResponse = zod.object({
     }),
   ),
   total: zod.number().int(),
+});
+
+/**
+ * Read-only bounded search; personal search terms never belong in URLs.
+ * @summary Search Access Directory
+ */
+
+export const SearchStaffAccessDirectoryBody = zod.object({
+  cursor: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  limit: zod
+    .number()
+    .int()
+    .min(1)
+    .max(searchStaffAccessDirectoryBodyLimitMax)
+    .default(searchStaffAccessDirectoryBodyLimitDefault),
+  query: zod
+    .string()
+    .min(searchStaffAccessDirectoryBodyQueryMin)
+    .max(searchStaffAccessDirectoryBodyQueryMax),
+  status: zod.union([zod.enum(["active", "inactive"]), zod.null()]).optional(),
+  workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
+});
+
+export const SearchStaffAccessDirectoryResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      employeeCode: zod.union([zod.string(), zod.null()]),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      role: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      workspace_login_enabled: zod.boolean(),
+    }),
+  ),
+  limit: zod.number().int(),
+  next_cursor: zod.union([zod.string().uuid(), zod.null()]),
+  scan_limit: zod.number().int(),
+  scanned: zod.number().int(),
 });
 
 /**

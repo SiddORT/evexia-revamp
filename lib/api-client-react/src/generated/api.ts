@@ -480,6 +480,8 @@ import type {
   SptWrite,
   StaffAccess,
   StaffAccessPage,
+  StaffAccessSearch,
+  StaffAccessSearchPage,
   StaffCreate,
   StaffCreated,
   StaffDeletion,
@@ -33645,6 +33647,127 @@ export function useListStaffAccess<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getSearchStaffAccessDirectoryUrl = () => {
+  return `/api/v1/admin/staff/access-directory/search`;
+};
+
+/**
+ * Read-only bounded search; personal search terms never belong in URLs.
+ * @summary Search Access Directory
+ */
+export const searchStaffAccessDirectory = async (
+  staffAccessSearch: StaffAccessSearch,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StaffAccessSearchPage> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<StaffAccessSearchPage>(
+    getSearchStaffAccessDirectoryUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(staffAccessSearch),
+    },
+  );
+};
+
+export const getSearchStaffAccessDirectoryMutationKey = () =>
+  ["searchStaffAccessDirectory"] as const;
+
+export const getSearchStaffAccessDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchStaffAccessDirectory>>,
+    TError,
+    SearchStaffAccessDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof searchStaffAccessDirectory>>,
+  TError,
+  SearchStaffAccessDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSearchStaffAccessDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof searchStaffAccessDirectory>>,
+    SearchStaffAccessDirectoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return searchStaffAccessDirectory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SearchStaffAccessDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof searchStaffAccessDirectory>>
+>;
+export type SearchStaffAccessDirectoryMutationBody =
+  BodyType<StaffAccessSearch>;
+export type SearchStaffAccessDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type SearchStaffAccessDirectoryMutationVariables = {
+  data: BodyType<StaffAccessSearch>;
+};
+
+/**
+ * @summary Search Access Directory
+ */
+export const useSearchStaffAccessDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchStaffAccessDirectory>>,
+    TError,
+    SearchStaffAccessDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof searchStaffAccessDirectory>>,
+  TError,
+  SearchStaffAccessDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getSearchStaffAccessDirectoryMutationOptions(options));
+};
 
 export const getGetStaffDesignationReferencesUrl = (
   params?: GetStaffDesignationReferencesParams,

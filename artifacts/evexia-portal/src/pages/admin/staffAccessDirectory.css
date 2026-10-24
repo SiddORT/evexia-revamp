@@ -1,0 +1,37 @@
+/* Cold-route-owned refinements; shared Masters components keep their own theme. */
+.staff-access { min-width: 0; }
+.staff-access .admin-toolbar__fields { flex: 1 1 580px; }
+.staff-access__search { display: flex; flex: 1 1 300px; flex-wrap: wrap; align-items: end; gap: 8px; min-width: 0; max-width: 100%; }
+.staff-access .admin-search { min-width: 0; max-width: none; flex: 1 1 200px; }
+.staff-access .admin-search input { height: auto; min-height: 40px; padding-top: .65em; padding-bottom: .65em; line-height: 1.5; }
+.staff-access .admin-filter { min-width: 0; max-width: 100%; flex: 1 1 190px; }
+.staff-access .admin-select { height: auto; min-height: 40px; min-width: 0; padding-top: .55em; padding-bottom: .55em; font-family: var(--font-sans); line-height: 1.5; }
+.staff-access .admin-button { height: auto; min-height: 40px; max-width: 100%; padding-top: .6em; padding-bottom: .6em; white-space: normal; overflow-wrap: anywhere; }
+.staff-access .admin-button svg { flex: none; }
+.staff-access__note, .staff-access__section { margin: 0; padding: 10px 16px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.staff-access__section { border-top: 1px solid var(--admin-border); background: var(--admin-table-head); }
+.staff-access__section p { margin: 0 0 10px; }
+.staff-access__section-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.staff-access .admin-table { table-layout: fixed; min-width: 700px; }
+.staff-access .admin-table th, .staff-access .admin-table td { white-space: normal; overflow-wrap: anywhere; text-align: left; }
+.staff-access .admin-table th:first-child, .staff-access .admin-table td:first-child { width: 24%; }
+.staff-access .admin-table th:nth-child(2) { width: 20%; }
+.staff-access .admin-table th:nth-child(3) { width: 24%; }
+.staff-access .admin-table th:nth-child(4), .staff-access .admin-table th:nth-child(5) { width: 16%; }
+.staff-access .admin-zone-card__title { flex: 1 1 0; }
+.staff-access .admin-zone-card__meta dd { color: var(--admin-text); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.staff-access .admin-zone-card__meta dt { overflow-wrap: anywhere; }
+.staff-access .admin-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.staff-access .admin-badge::before { flex: none; }
+.staff-access .admin-empty { overflow-wrap: anywhere; }
+.staff-access .admin-empty .admin-button { margin-top: 16px; }
+.staff-access .admin-pagination__total { white-space: normal; overflow-wrap: anywhere; }
+.staff-access .admin-pagination__size { min-width: 0; }
+.staff-access .admin-pagination__size .admin-select-indicator { max-width: 100%; }
+@media (max-width: 600px) {
+  .staff-access .admin-toolbar__fields, .staff-access__search { flex-basis: 100%; }
+  .staff-access .admin-search { flex-basis: 100%; width: 100%; }
+  .staff-access .admin-filter { flex-basis: 100%; }
+  .staff-access .admin-zone-card__meta { grid-template-columns: minmax(0, 1fr); }
+  .staff-access .admin-pagination__controls { flex-basis: 100%; }
+}

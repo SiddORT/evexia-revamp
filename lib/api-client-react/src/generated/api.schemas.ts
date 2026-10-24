@@ -9957,8 +9957,42 @@ export interface StaffAccessRecord {
 }
 
 export interface StaffAccessPage {
+  filtered: number;
   items: StaffAccessRecord[];
   total: number;
+}
+
+export type StaffAccessSearchStatus =
+  (typeof StaffAccessSearchStatus)[keyof typeof StaffAccessSearchStatus] | null;
+
+export const StaffAccessSearchStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffAccessSearch {
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minLength 2
+   * @maxLength 200
+   */
+  query: string;
+  status?: StaffAccessSearchStatus;
+  workspace_login_enabled?: boolean | null;
+}
+
+export interface StaffAccessSearchPage {
+  has_more: boolean;
+  items: StaffAccessRecord[];
+  limit: number;
+  next_cursor: string | null;
+  scan_limit: number;
+  scanned: number;
 }
 
 export type StaffCreateDialCountry =
@@ -14745,7 +14779,6 @@ export const ListStaffStatus = {
 export type ListStaffAccessParams = {
   /**
    * @minimum 0
-   * @maximum 10000
    */
   offset?: number;
   /**
@@ -14753,7 +14786,17 @@ export type ListStaffAccessParams = {
    * @maximum 100
    */
   limit?: number;
+  status?: ListStaffAccessStatus;
+  workspace_login_enabled?: boolean | null;
 };
+
+export type ListStaffAccessStatus =
+  (typeof ListStaffAccessStatus)[keyof typeof ListStaffAccessStatus] | null;
+
+export const ListStaffAccessStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
 
 export type GetStaffDesignationReferencesParams = {
   /**
