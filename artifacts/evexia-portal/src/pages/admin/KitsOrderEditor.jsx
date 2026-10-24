@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye } from 'lucide-react';
 import AdminLayout, { useOrderBase, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { DownloadOrderFile, OrderFileList } from '../../components/orders/OrderFiles.jsx';
-import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, updateOrder } from '../../services/serverKits.js';
+import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, attachmentBlob, updateOrder } from '../../services/serverKits.js';
+import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { blankPricing, calculateKitsPricing, pricingInput, moneyText, normalizeKitsAmount } from '../../services/kitsPricing.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
@@ -46,6 +47,8 @@ export default function KitsOrderEditor({ order }) {
   const [doctor, setDoctor] = useState(null), [mr, setMr] = useState(null);
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
   const [errors, setErrors] = useState({}), [done, setDone] = useState(false);
+  const [viewing, setViewing] = useState(null);
+  const viewerOpener = useRef(null);
   const submission = useRef(null), saving = useRef(false), summaryRef = useRef(null);
   const tax = order.pricing?.taxPercentage || '5.00';
   const protectedOk = Boolean(can.protected);
@@ -144,7 +147,10 @@ export default function KitsOrderEditor({ order }) {
         <section className="admin-panel kits-panel" aria-labelledby="kito-more"><h2 id="kito-more">Remarks and attachments</h2>
           <div className="kits-field"><label htmlFor="kito-remarks">Remarks</label><textarea id="kito-remarks" rows={3} maxLength={4000} value={v.remarks} onChange={(e) => set({ remarks: e.target.value })} /></div>
           <h3 className="kito-sub">Retained attachments</h3>
-          <OrderFileList empty="No attachments saved.">{(v.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment, retained" locked />)}</OrderFileList>
+          <OrderFileList empty="No attachments saved.">{(v.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment, retained" locked
+            actions={protectedOk && can.read_attachment && !f.restricted && f.state === 'verified'
+              ? <button type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }} aria-label={`View ${f.name}`}><Eye size={15} aria-hidden="true" />View</button>
+              : null} />)}</OrderFileList>
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="kito-bp"><h2 id="kito-bp">Parking and PO</h2>
           <div className="kits-grid">
@@ -172,5 +178,6 @@ export default function KitsOrderEditor({ order }) {
     </fieldset>
     <div className="kits-actions"><button type="button" className="admin-button" disabled={!protectedOk || busy || done} onClick={save}>{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save changes'}</button>
       {!busy && !uncertain && !done && <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary">Cancel</Link>}</div>
+    {protectedOk && can.read_attachment && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }

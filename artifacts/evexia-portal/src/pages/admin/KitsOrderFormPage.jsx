@@ -50,6 +50,7 @@ export default function KitsOrderFormPage({ id, mode = 'view' }) {
 function Summary({ order }) {
   const can = useOrderActions('kits');
   const { portal } = useOrderPortal();
+  const canPreview = (portal === 'mr' || can.protected) && can.read_attachment;
   const [viewing, setViewing] = useState(null);
   const viewerOpener = useRef(null);
   const BASE = useOrderBase('kits-consumables');
@@ -82,7 +83,7 @@ function Summary({ order }) {
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
           <h2 style={{ marginTop: 16 }}>Private attachments</h2>
           <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment"
-            actions={portal === 'mr' && can.read_attachment && !f.restricted && f.state === 'verified'
+            actions={canPreview && !f.restricted && f.state === 'verified'
               ? <button type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }} aria-label={`View ${f.name}`}><Eye size={15} aria-hidden="true" />View</button>
               : null} />)}</OrderFileList>
         </section></div>
@@ -92,7 +93,7 @@ function Summary({ order }) {
         {order.patient && <section className="admin-panel kits-panel"><h2>Patient (historical)</h2><Facts person={order.patient} empty="Not selected." /></section>}
       </div>
     </div>
-    {portal === 'mr' && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
+    {canPreview && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
     </div></AdminLayout>;
 }
 
