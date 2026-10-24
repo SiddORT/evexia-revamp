@@ -13,7 +13,12 @@ import RemoteSelect from '../../components/admin/RemoteSelect.jsx';
 import { internationalPhone } from '../../services/phoneCountries.js';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { staffDesignationPage } from '../../services/serverDesignations.js';
+import { staffRequest } from '../../auth/adminSession.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
+const staffDesignationPage = async (query, offset, signal) => {
+  const page = await staffRequest(`/designation-references?query=${encodeURIComponent(query)}&offset=${offset}`, undefined, { signal });
+  return { items: page.items.map((row) => ({ value: row.id, label: row.name, raw: row })), total: page.total };
+};
 import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
 import { STAFF_COLUMNS, loadStaff, searchStaff, staffDesignationChoices, staffRoleChoices, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, deleteStaff, exportStaffCSV } from '../../services/staff.js';
 import '../../staff.css';
@@ -34,7 +39,7 @@ function downloadCSV(text) {
 }
 
 function audit(by, at) {
-  return <span className="admin-staff-audit"><strong title={by}>Verified Super Admin</strong><time dateTime={at}>{formatAdminTimestamp(at)}</time></span>;
+  return <span className="admin-staff-audit"><strong title={by}>Authenticated actor</strong><time dateTime={at}>{formatAdminTimestamp(at)}</time></span>;
 }
 
 function StaffPhone({ record, mobile = false }) {
@@ -42,6 +47,8 @@ function StaffPhone({ record, mobile = false }) {
 }
 
 function StaffForm({ record, onSave, onClose }) {
+  const can = useResourceActions('staff');
+  const mutationAllowed = record ? can.edit : can.add;
   const [credentials, setCredentials] = useState(() => ({ password: '', confirmPassword: '', generationError: '' }));
   const [visible, setVisible] = useState(false);
   const [values, setValues] = useState(() => record ? safeFields(record) : { ...INITIAL });
@@ -64,7 +71,11 @@ function StaffForm({ record, onSave, onClose }) {
     if (gate.current || uncertain || conflicted) return;
     const result = validateStaff(values, record ? [record] : [], record?.id,
       designationChoice?.raw ? [designationChoice.raw] : [], roleChoice?.raw ? [roleChoice.raw] : []);
-    if (!record && (credentials.password || credentials.confirmPassword)) {
+    if (!can.protected) {
+      delete result.errors.custom_role_id;
+      delete result.fields.custom_role_id;
+    }
+    if (!record && can.protected && (credentials.password || credentials.confirmPassword)) {
       const problem = validateReset(credentials.password, credentials.confirmPassword);
       if (problem) result.errors.password = problem;
     }
@@ -78,7 +89,7 @@ function StaffForm({ record, onSave, onClose }) {
     setSaving(true);
     setMessage('');
     try {
-      await onSave({ ...result.fields, ...(!record && credentials.password ? { initialPassword: credentials.password } : {}) }, record);
+      await onSave({ ...result.fields, ...(!record && can.protected && credentials.password ? { initialPassword: credentials.password } : {}) }, record);
     } catch (cause) {
       if (cause.code === 'staff_email_duplicate' || cause.code === 'staff_email_invalid') setErrors((old) => ({ ...old, email: cause.message }));
       if (cause.code === 'staff_employee_code_duplicate' || cause.code === 'staff_employee_code_invalid') setErrors((old) => ({ ...old, employeeCode: cause.message }));
@@ -94,8 +105,9 @@ function StaffForm({ record, onSave, onClose }) {
   return <Dialog title={record ? 'Edit staff member' : 'Add staff member'} eyebrow="Staff Management"
     description="Role assigns workspace permissions. Login is enabled separately in Access; saving never changes the password or login setting."
     onClose={() => { if (!gate.current) onClose(); }} className="admin-staff-edit-dialog"
-     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff">Cancel</button><button type="submit" form="staff-management-form" className="admin-button" disabled={saving || uncertain || conflicted} data-testid="button-save-staff">{saving ? 'Saving…' : record ? 'Save changes' : 'Add staff member'}</button></>}>
+     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff">Close</button><button type="submit" form="staff-management-form" className="admin-button" disabled={!mutationAllowed || saving || uncertain || conflicted} data-testid="button-save-staff">{!mutationAllowed ? 'Read-only' : saving ? 'Saving…' : record ? 'Save changes' : 'Add staff member'}</button></>}>
     <form ref={formRef} id="staff-management-form" className="admin-staff-form" onSubmit={save} noValidate aria-busy={saving}>
+      <fieldset disabled={!mutationAllowed} style={{ display: 'contents' }}>
       {['name', 'phone', 'employeeCode', 'email'].map((key) => {
         const inputProps = { id: `staff-${key}`, name: key, value: values[key], onChange: (event) => change(key, event.target.value),
           disabled: saving, 'aria-required': true, 'aria-invalid': Boolean(errors[key]),
@@ -109,11 +121,11 @@ function StaffForm({ record, onSave, onClose }) {
           {errors[key] && <span id={`staff-error-${key}`} className="admin-staff-field__error" role="alert">{errors[key]}</span>}
         </div>;
       })}
-      <label className="admin-staff-field"><span>Status <span aria-hidden="true">*</span></span><select value={values.status} onChange={(event) => change('status', event.target.value)} disabled={saving} data-testid="select-staff-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <span role="alert">{errors.status}</span>}</label>
+      <label className="admin-staff-field"><span>Status <span aria-hidden="true">*</span></span><select value={values.status} onChange={(event) => change('status', event.target.value)} disabled={saving || Boolean(record && !can.status)} data-testid="select-staff-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <span role="alert">{errors.status}</span>}</label>
       <div className="admin-staff-field">
-        <label htmlFor="staff-custom_role_id">Role {!record && <span aria-hidden="true">*</span>}</label>
+        <label htmlFor="staff-custom_role_id">Role — assignment is Super Admin-only</label>
         <RemoteSelect id="staff-custom_role_id" label="Role" value={values.custom_role_id} selected={roleChoice}
-          fetchPage={staffRoleChoices} placeholder={record ? 'No role — no workspace permissions' : 'Select a saved role'} emptyText="No current roles match. Clear the search or create a role in Roles & Permissions." required={!record} disabled={saving}
+          fetchPage={staffRoleChoices} placeholder={record ? 'No role — no workspace permissions' : 'Super Admin assigns a role separately'} emptyText="No current roles match." required={!record && can.protected} disabled={saving || !can.protected}
           invalid={errors.custom_role_id} describedBy={errors.custom_role_id ? 'staff-error-role' : undefined}
           onChange={(item) => { setRoleChoice(item); change('custom_role_id', item?.value || ''); }} />
         {errors.custom_role_id && <span id="staff-error-role" className="admin-staff-field__error" role="alert">{errors.custom_role_id}</span>}
@@ -131,7 +143,7 @@ function StaffForm({ record, onSave, onClose }) {
           onClick={() => { setDesignationChoice({ value: record.designation_id, label: record.designationName }); change('designation_id', record.designation_id); }}>Keep saved designation</button>}
       </div>
       <label className="admin-staff-field"><span>Date of joining <span aria-hidden="true">*</span></span><input type="date" value={values.dateOfJoining} onChange={(event) => change('dateOfJoining', event.target.value)} disabled={saving} data-testid="input-staff-dateOfJoining" />{errors.dateOfJoining && <span className="admin-staff-field__error" role="alert">{errors.dateOfJoining}</span>}</label>
-      {record ? <>{!record.login_identifiers_ready && <div className="admin-feedback admin-staff-form__wide">Email or Employee Code needs correction before these login identifiers can be used. Saving valid, unique values resolves this without changing the password or login setting.</div>}</> :
+      {record ? <>{record.login_identifiers_ready === false && <div className="admin-feedback admin-staff-form__wide">Email or Employee Code needs correction before these login identifiers can be used. Saving valid, unique values resolves this without changing the password or login setting.</div>}</> : can.protected ?
         <div className="admin-staff-form__wide mr-form__password-note">
           <div className="admin-staff-form">{[['password', 'Password (optional)'], ['confirmPassword', 'Confirm password']].map(([key, label]) =>
             <div className="mr-form__field" key={key}><label className="mr-form__label" htmlFor={`staff-${key}`}>{label}</label>
@@ -151,11 +163,11 @@ function StaffForm({ record, onSave, onClose }) {
           <p id="staff-password-help" className="admin-staff-field__hint">Manual passwords use 12–128 characters; confirm spaces exactly. Auto-generate fills both fields with the same random 12-character candidate containing uppercase, lowercase, a digit and a special character. If both are blank, the server generates a password with that same length and composition and requires email password setup before login. No email is sent by saving. Workspace access must be configured separately.</p>
           {credentials.generationError && <p role="alert">{credentials.generationError}</p>}
           {errors.password && <p role="alert" className="admin-staff-field__error">{errors.password}</p>}
-        </div>}
+        </div> : <p className="admin-staff-form__wide">Credential setup, role assignment and enabling workspace login are Super Admin-only. This creates an ordinary staff profile without workspace access.</p>}
       {message && <div className="admin-feedback admin-feedback--error admin-staff-form__wide" role="alert" data-testid="status-staff-save-error">{message}</div>}
       {uncertain && <div className="admin-feedback admin-staff-form__wide">Do not repeat this submission. Close this form and refresh the directory to confirm whether it saved. A lost initial password cannot be retrieved.</div>}
       {conflicted && <div className="admin-staff-form__wide"><button type="button" className="admin-button admin-button--secondary" onClick={reviewCurrent}>Review current record</button>{current && <><dl>{STAFF_COLUMNS.filter(([key]) => key !== 'userId').map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{current[key]}</dd></div>)}</dl><p>Your draft remains above. To edit the current version, cancel and reopen the refreshed record; this form cannot overwrite it.</p></>}</div>}
-    </form>
+      </fieldset></form>
   </Dialog>;
 }
 
@@ -178,6 +190,7 @@ function Credentials({ credentials, onClose }) {
 
 export default function StaffManagement() {
   useAdminPreferences();
+  const can = useResourceActions('staff');
   const [records, setRecords] = useState([]);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -264,11 +277,15 @@ export default function StaffManagement() {
   }
   useEffect(() => {
     alive.current = true;
+    const owner = getSession().user?.id;
     void refresh(0);
     void refreshFilterChoices();
     const unsubscribe = subscribeSession(() => {
       if (getSession().status !== 'authenticated') setCredentials(null);
-      if (!getSession().user) { filterChoiceSequence.current++; setFilterChoices([]); setFilterChoiceCursor(null); setFilterChoiceError(''); setFilters(EMPTY_FILTERS); filtersRef.current = EMPTY_FILTERS; request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setEditing(undefined); setAccessFor(null); setDeleteFor(null); }
+      if (!getSession().user) { filterChoiceSequence.current++; setFilterChoices([]); setFilterChoiceCursor(null); setFilterChoiceError(''); setFilters(EMPTY_FILTERS); filtersRef.current = EMPTY_FILTERS; request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setDeleteFor(null); }
+      // Retain owner-bound editor drafts through a revoked session, not fetched
+      // directory data or one-time credentials. A different owner never inherits them.
+      if (getSession().user?.id && getSession().user.id !== owner) { setEditing(undefined); setAccessFor(null); }
     });
     return () => { alive.current = false; request.current?.abort(); unsubscribe(); };
   }, []);
@@ -282,8 +299,10 @@ export default function StaffManagement() {
       guard();
       if (!alive.current) return;
       setEditing(undefined);
-      setFeedback(record ? 'Staff member updated.' : 'Staff member created. Credentials are shown once.');
-      if (!record) setCredentials({ email: response.record.email, employeeCode: response.record.employeeCode, password: response.initial_password });
+      setFeedback(record ? 'Staff member updated.' : response.initial_password
+        ? 'Staff member created. Credentials are shown once.'
+        : 'Staff profile created without workspace access. Super Admin must configure credentials, assign a role and enable login separately.');
+      if (!record && response.initial_password) setCredentials({ email: response.record.email, employeeCode: response.record.employeeCode, password: response.initial_password });
       // The credentials remain visible even if the following list reload fails.
       void refresh(0, directory ? { query: directory.query, cursor: null, checked: 0 } : null);
     } finally { mutationGate.current = false; if (alive.current) setBusy(false); }
@@ -346,7 +365,7 @@ export default function StaffManagement() {
     catch (cause) { setActionError(cause.message); }
   }
   async function confirmDelete() {
-    if (mutationGate.current || deleteUncertain) return;
+    if (!can.delete || mutationGate.current || deleteUncertain) return;
     mutationGate.current = true;
     setBusy(true);
     setDeleteError('');
@@ -366,14 +385,20 @@ export default function StaffManagement() {
       }
     } finally { mutationGate.current = false; if (alive.current) setBusy(false); }
   }
-  const rowActions = (record, mobile = false) => <><InviteAccountButton kind="staff" record={record} disabled={blocked} /><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button></>;
+  const rowActions = (record, mobile = false) => <>
+    {!can.edit && <button type="button" className="admin-icon-button" title={`View ${record.name}`} aria-label={`View ${record.name}`} disabled={blocked} onClick={() => edit(record)}><Eye size={16} aria-hidden="true" /></button>}
+    {can.protected && <InviteAccountButton kind="staff" record={record} disabled={blocked} />}
+    <button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || !can.edit} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button>
+    <button type="button" className="admin-icon-button" title="Assign Role and Enable / Disable Login are Super Admin-only" aria-label={`Access for ${record.name}`} disabled={blocked || !can.protected} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button>
+    <button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked || !can.delete} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button>
+  </>;
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Staff / Employee Code', render: (record) => <span className="admin-staff-identity"><strong data-testid={`text-staff-name-${record.id}`}>{record.name}</strong><span><span className="admin-staff-cell-label">Employee Code</span>{record.employeeCode || 'Needs correction'}</span></span> },
     { key: 'contact', label: 'Contact', render: (record) => <span className="admin-staff-cell-stack"><span><span className="admin-staff-cell-label">Phone No.</span><StaffPhone record={record} /></span><span><span className="admin-staff-cell-label">Email ID</span><a href={`mailto:${record.email}`} className="admin-staff-link">{record.email}</a></span></span> },
     { key: 'role', label: 'Role / Designation', render: (record) => <span className="admin-staff-cell-stack"><span><span className="admin-staff-cell-label">Role</span>{record.role}{record.role_resolution_required && <small className="admin-staff-resolution">Resolve legacy role</small>}</span><span><span className="admin-staff-cell-label">Designation</span>{record.designationName}</span></span> },
     { key: 'dateOfJoining', label: 'Date of joining', render: (record) => formatAdminDate(record.dateOfJoining) },
-    { key: 'access', label: 'Status / Login', render: (record) => <span className="admin-staff-cell-stack"><button type="button" role="switch" aria-checked={record.status === 'active'} aria-label={`${record.name}: ${record.status}. Change status`} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button><span data-testid={`text-staff-access-${record.id}`}>Workspace login {record.workspace_login_enabled ? 'enabled' : 'disabled'}{!record.login_identifiers_ready && <small className="admin-staff-resolution">Login identifiers need correction</small>}</span></span> },
+    { key: 'access', label: 'Status / Login', render: (record) => <span className="admin-staff-cell-stack"><button type="button" role="switch" aria-checked={record.status === 'active'} aria-label={`${record.name}: ${record.status}. Change status`} className="admin-staff-status" disabled={blocked || !can.status} onClick={() => toggle(record)} data-testid={`switch-staff-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button><span data-testid={`text-staff-access-${record.id}`}>Workspace login {record.workspace_login_enabled === null ? 'restricted — View Access required' : record.workspace_login_enabled ? 'enabled' : 'disabled'}{record.login_identifiers_ready === false && <small className="admin-staff-resolution">Login identifiers need correction</small>}</span></span> },
     { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => audit(record.updatedBy, record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => <div className="admin-staff-row-actions">{rowActions(record)}</div> },
@@ -381,8 +406,8 @@ export default function StaffManagement() {
   return <AdminLayout title="Staff Management">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Directory</p><h1>Staff Management</h1><p className="admin-page-head__description">Role controls workspace permissions. Enable login separately in Access; staff sign in with Email ID or Employee Code and their password.</p></div><div className="admin-staff-actions">
       <button type="button" className="admin-button admin-button--secondary" disabled title="CSV bulk account provisioning is unavailable in this phase." data-testid="button-import-staff"><Upload size={16} aria-hidden="true" /> Import unavailable</button>
-       <button type="button" className="admin-button admin-button--secondary" onClick={exportRows} disabled={blocked || !records.length} title="CSV: loaded result section only, under the applied search and filters." data-testid="button-export-staff"><Download size={16} aria-hidden="true" /> Export loaded section</button>
-      <button type="button" className="admin-button" onClick={() => edit(null)} disabled={blocked} data-testid="button-add-staff"><Plus size={16} aria-hidden="true" /> Add staff</button>
+       {can.protected && <button type="button" className="admin-button admin-button--secondary" onClick={exportRows} disabled={blocked || !records.length} title="CSV: loaded result section only, under the applied search and filters." data-testid="button-export-staff"><Download size={16} aria-hidden="true" /> Export loaded section</button>}
+      <button type="button" className="admin-button" onClick={() => edit(null)} disabled={blocked || !can.add} data-testid="button-add-staff"><Plus size={16} aria-hidden="true" /> Add staff</button>
     </div></div>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-staff-action-error">{actionError}</div>}
@@ -432,7 +457,7 @@ export default function StaffManagement() {
     {credentials && <Credentials credentials={credentials} onClose={() => setCredentials(null)} />}
     {deleteFor && <Dialog title="Delete staff member?" eyebrow="Staff Management" description={`Delete ${deleteFor.name}? This removes them from the directory and immediately revokes workspace sessions. Status, encrypted records, relationships and history are retained. There is no restore action.`}
       onClose={() => { if (!mutationGate.current) setDeleteFor(null); }}
-      footer={<><button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => setDeleteFor(null)}>Cancel</button><button type="button" className="admin-button" disabled={busy || deleteUncertain} onClick={confirmDelete} data-testid="button-confirm-delete-staff">{busy ? 'Deleting…' : 'Delete staff member'}</button></>}>
+      footer={<><button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => setDeleteFor(null)}>Cancel</button><button type="button" className="admin-button" disabled={busy || deleteUncertain || !can.delete} onClick={confirmDelete} data-testid="button-confirm-delete-staff">{busy ? 'Deleting…' : 'Delete staff member'}</button></>}>
       {deleteError && <p role="alert">{deleteError}</p>}
       {deleteUncertain && <p role="status">Close this confirmation and refresh the directory to review the current outcome before taking another action.</p>}
     </Dialog>}

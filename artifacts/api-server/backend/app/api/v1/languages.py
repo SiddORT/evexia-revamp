@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_zone
+from app.api.deps import master_router
 from app.db.session import get_db
 from app.schemas.languages import LanguageFields, LanguageEdit, LanguageVersion, LanguageResponse, LanguagePage, LanguageHistory
 from app.schemas.languages import LanguageReview, LanguageImportResult
@@ -16,8 +16,7 @@ from app.services import languages, language_transfer
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/languages", tags=["Language Master"])
-# Reuse the protected singleton gate, never the assignable Zone grants.
-manager = require_zone(protected=True)
+manager = master_router("language")
 OVERHEAD = 64 * 1024
 FILE_RESPONSES = {200: {"content": {
     "text/csv": {"schema": {"type": "string", "format": "binary"}},
@@ -49,7 +48,7 @@ def export(query: str = Query("", max_length=200), format: Literal["csv", "xlsx"
 @router.get("/sample", operation_id="downloadLanguageSample", responses=FILE_RESPONSES, response_class=Response)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    languages.transaction(db, lambda: languages.authorize(db, actor))
+    languages.transaction(db, lambda: languages.authorize(db, actor, "import"))
     return download_response(db, actor, language_transfer.sample(format), format, initiation_id, "template")
 
 

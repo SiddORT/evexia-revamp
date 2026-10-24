@@ -26,5 +26,5 @@ export interface MovementSaved {
   source: MovementLocation;
   staffId: string | null;
   staffVersion: number | null;
-  summary: MovementSummary;
+  summary: MovementSummary | null;
 }

@@ -6,12 +6,12 @@ from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.core.master_catalogue import MASTER_ACTIONS
+from app.core.master_catalogue import ASSIGNABLE_ACTIONS
 from app.db.models import Timestamps
 
 
 class CustomRole(Timestamps, Base):
-    """Custom roles have only explicit allowlisted Zone grants."""
+    """Custom roles contain only explicit assignable workspace grants."""
     __tablename__ = "custom_roles"
     __table_args__ = (
         UniqueConstraint("normalized_name", name="uq_custom_roles_name"),
@@ -19,8 +19,8 @@ class CustomRole(Timestamps, Base):
         CheckConstraint("length(description) <= 1000", name="ck_custom_roles_description"),
         CheckConstraint("version >= 1", name="ck_custom_roles_version"),
         CheckConstraint(
-            "permissions <@ ARRAY[" + ",".join(f"'{key}'" for key in sorted(MASTER_ACTIONS))
-            + "]::varchar[] AND cardinality(permissions) <= 40 AND array_position(permissions, NULL) IS NULL",
+            "permissions <@ ARRAY[" + ",".join(f"'{key}'" for key in sorted(ASSIGNABLE_ACTIONS))
+            + f"]::varchar[] AND cardinality(permissions) <= {len(ASSIGNABLE_ACTIONS)} AND array_position(permissions, NULL) IS NULL",
             name="ck_custom_roles_permissions"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

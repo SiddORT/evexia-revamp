@@ -125,7 +125,7 @@ def review_digest(actor, data, filename):
 
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     def work():
-        current = balances.authorize(db, actor)
+        current = balances.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         saved_review = db.get(OpeningBalanceImportReview, current.session_id, with_for_update=True)
         if confirm:
@@ -141,13 +141,13 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
             if not accepted:
                 raise balances.OpeningBalanceError("Review expired, replaced or consumed; file/session may have changed. Review again.",
                                                   409, "opening_balance_review_changed")
-            current = balances.authorize(db, actor)
+            current = balances.authorize(db, actor, "import")
         elif saved_review:
             # Even an invalid replacement invalidates the older review.
             db.delete(saved_review)
             db.commit()
             saved_review = None
-            current = balances.authorize(db, actor)
+            current = balances.authorize(db, actor, "import")
         mrs.graph_lock(db)
         rows = parse(data, filename)
         registrations = [r["registrationNumber"].lower() for r in rows]
@@ -201,7 +201,7 @@ def sample(format):
 @present_export
 def export(db, actor, query, status, format):
     def work():
-        balances.authorize(db, actor)
+        balances.authorize(db, actor, "export")
         records = balances.encrypted.complete(db, Balance, balances.predicates("", status), None,
             prepare=lambda rows: balances.search_matcher(db, query, rows))
         if len(records) > EXPORT_LIMIT:

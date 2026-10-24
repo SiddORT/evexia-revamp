@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ArrowLeft, Trash2, UserPlus } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
 import { request, GENDERS, money, totalMinor, validateOrder, orderInput } from '../../services/serverSpt.js';
@@ -14,10 +14,11 @@ function Shell({ children, entry = false }) {
 }
 
 function OrderForm({ order }) {
+  const can = useOrderActions('spt');
   const BASE = useOrderBase('spt');
   const { mr } = useOrderPortal();
   const [record, setRecord] = useState(order);
-  const readOnly = record?.status === 'Saved';
+  const readOnly = record?.status === 'Saved' || !(record ? can.edit : can.add);
   const [doctorId, setDoctorId] = useState(order?.doctorId || '');
   const [mrId, setMrId] = useState(order?.mrId || mr?.id || '');
   const [patients, setPatients] = useState(() => order ? order.patients.map((p) => ({ ...p })) : []);

@@ -5,7 +5,8 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ZonePermissionMatrix, { countLabel } from '../../components/admin/ZonePermissionMatrix.jsx';
-import { MASTER_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
+import { ASSIGNABLE_KEYS as ZONE_KEYS, canReadResource, hasCapability } from '../../auth/capabilities.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import { listRoles, getRole, createRole, updateRole, deleteRole, setRolePermissions, samePermissions, validateRoleName, validateRoleDescription, ROLE_NAME_LIMIT, ROLE_DESCRIPTION_LIMIT } from '../../services/rolePermissions.js';
@@ -21,6 +22,7 @@ const mergeRoles = (known, incoming) => {
 };
 
 function RoleForm({ form, setForm, busy, blocked, error, current, onSubmit, onClose, onReview, onAdopt, onUseCurrent, reviewing, onRefresh, refreshing }) {
+  const can = useResourceActions('role');
   useAdminPreferences();
   const edit = form.mode === 'edit';
   const deleted = error?.code === 'role_deleted';
@@ -28,7 +30,7 @@ function RoleForm({ form, setForm, busy, blocked, error, current, onSubmit, onCl
   const fieldError = form.touched ? (validateRoleName(form.name) || validateRoleDescription(form.description)) : '';
   const dup = error?.code === 'role_duplicate';
   const set = (patch) => setForm((f) => ({ ...f, ...patch, touched: false }));
-  const locked = busy || reviewing || blocked || deleted || stale || refreshing;
+  const locked = busy || reviewing || blocked || deleted || stale || refreshing || !(edit ? can.edit : can.add);
   return <Dialog title={edit ? 'Edit role' : 'Add role'} eyebrow="Roles & Permissions" onClose={onClose}
     description="Name and description only. Saving this form never changes the role's permissions."
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={busy} data-testid="button-cancel-role">Cancel</button>
@@ -64,7 +66,13 @@ function RoleForm({ form, setForm, busy, blocked, error, current, onSubmit, onCl
 
 export default function RolesPermissions() {
   useAdminPreferences();
-  const [tab, setTab] = useState('roles');
+  const can = useResourceActions('role');
+  const permissionAccess = useResourceActions('permissions');
+  const tabs = [...(can.read ? ['roles'] : []), ...(permissionAccess.view ? ['permissions'] : [])];
+  const [tab, setTab] = useState(() => can.read ? 'roles' : 'permissions');
+  useEffect(() => {
+    if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
+  }, [tab, can.read, permissionAccess.view]);
   const [page, setPage] = useState({ items: [], has_more: false, next_cursor: null });
   const [append, setAppend] = useState({ loading: false, error: '' });
   const [status, setStatus] = useState('loading');
@@ -219,7 +227,8 @@ export default function RolesPermissions() {
     load();
     const unsubscribe = subscribeSession(() => {
       const session = getSession();
-      if (session.status !== 'authenticated' || !session.user?.permissions.includes('roles.manage')) {
+      if (session.status !== 'authenticated'
+          || !(canReadResource(session.user, 'role') || hasCapability(session.user, 'permissions', 'view'))) {
         // Renewal can preserve this mounted editor. Do not leave an aborted
         // explicit reconciliation permanently stuck in its loading state.
         if (requestKind.current === 'refresh') {
@@ -305,11 +314,13 @@ export default function RolesPermissions() {
   };
   const selectRole = (id) => { if (id === selectedId || busyRef.current) return; if (guarded) setLeave({ kind: 'role', id }); else { setDraft(null); setSelectedId(id); setNotice(''); } };
   const mutateRole = (run) => { if (busyRef.current) return; if (guarded) setLeave({ kind: 'run', run }); else { setDraft(null); run(); } };
-  const changeTab = (next, focus = false) => { setTab(next); if (focus) document.getElementById(`rp-tab-${next}`)?.focus(); };
+  const changeTab = (next, focus = false) => { if (!tabs.includes(next)) return; setTab(next); if (focus) document.getElementById(`rp-tab-${next}`)?.focus(); };
   const tabKeys = (e) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
-    changeTab(e.key === 'Home' ? 'roles' : e.key === 'End' ? 'permissions' : tab === 'roles' ? 'permissions' : 'roles', true);
+    const index = tabs.indexOf(tab);
+    changeTab(e.key === 'Home' ? tabs[0] : e.key === 'End' ? tabs.at(-1)
+      : tabs[(index + (e.key === 'ArrowLeft' ? -1 : 1) + tabs.length) % tabs.length], true);
   };
   const revealKeyboardTab = (e) => {
     const target = e.currentTarget;
@@ -400,7 +411,7 @@ export default function RolesPermissions() {
   const useCurrent = () => { setForm((f) => ({ ...f, version: current.version, name: current.name, description: current.description })); setFormError(null); setCurrent(null); };
 
   async function confirmDelete() {
-    if (busyRef.current || blocked || !del) return;
+    if (!can.delete || busyRef.current || blocked || !del) return;
     setBusyBoth(true); setFormError(null);
     try {
       await deleteRole(del.id, del.version);
@@ -422,11 +433,11 @@ export default function RolesPermissions() {
 
   const loading = status === 'loading';
   return <AdminLayout title="Roles & Permissions">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Roles and permissions</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">Manage role names, descriptions and master permissions. Staff only receive a role's permissions when a Super Admin explicitly assigns it in Staff Management. The server records an audit entry for every change.</p></div></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Roles and permissions</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">Manage role metadata and approved workspace permissions. Staff only receive a role's permissions when a Super Admin explicitly assigns it in Staff Management. Permission changes and access management remain Super Admin-only.</p></div></div>
     {blocked && <div className="rp-alert rp-alert--page" role="alert" data-testid="status-roles-blocked">A previous change had an unknown result. Refresh roles to confirm the current state before submitting again.</div>}
     {notice && <div className="admin-feedback rp-feedback" role="status" data-testid="status-roles-notice">{notice}</div>}
     <div className="rp-tabs" role="tablist" aria-label="Roles and permissions">
-      {['roles', 'permissions'].map((key) => <button key={key} type="button" id={`rp-tab-${key}`} role="tab" aria-selected={tab === key} aria-controls={`rp-panel-${key}`} tabIndex={tab === key ? 0 : -1} onFocus={revealKeyboardTab} onKeyDown={tabKeys} onClick={() => changeTab(key)} data-testid={`tab-${key}`}>{key === 'roles' ? 'Roles' : 'Permissions'}</button>)}
+      {tabs.map((key) => <button key={key} type="button" id={`rp-tab-${key}`} role="tab" aria-selected={tab === key} aria-controls={`rp-panel-${key}`} tabIndex={tab === key ? 0 : -1} onFocus={revealKeyboardTab} onKeyDown={tabKeys} onClick={() => changeTab(key)} data-testid={`tab-${key}`}>{key === 'roles' ? 'Roles' : 'Permissions'}</button>)}
     </div>
     {guarded && tab === 'roles' && <div className="rp-scope" role="status">A permission draft for {role?.name} is kept. <button type="button" className="admin-button admin-button--secondary" onClick={() => changeTab('permissions')}>Review permission draft</button> Save or discard it before changing roles.</div>}
     <div id={`rp-panel-${tab}`} role="tabpanel" aria-labelledby={`rp-tab-${tab}`} className={`rp rp--${tab === 'roles' ? 'directory' : 'permissions'}`}>
@@ -437,10 +448,10 @@ export default function RolesPermissions() {
         {status === 'unavailable' && <div className="rp-alert" role="alert" data-testid="status-roles-unavailable"><strong>Roles could not be refreshed</strong><p>{listError}</p><p>Loaded roles are kept. Use Refresh roles to try again.</p></div>}
         {status === 'ready' && page.items.length === 0 && <div className="admin-empty" role="status" data-testid="status-roles-empty"><strong>No roles yet</strong><p>Create the first business role.</p></div>}
         <ul ref={listElement} className="rp-roles__list">{page.items.map((r) => <li key={r.id} className="rp-role-card"><button type="button" className={`rp-role${role && r.id === role.id ? ' rp-role--active' : ''}`} aria-pressed={Boolean(role && r.id === role.id)} disabled={busy} onClick={() => selectRole(r.id)} data-testid={`button-role-${r.id}`}>
-            <strong>{r.name}</strong><small data-testid={`text-role-permissions-${r.id}`}>{countLabel(r.permissions.length)} saved</small></button>
+            <strong>{r.name}</strong><small data-testid={`text-role-permissions-${r.id}`}>{permissionAccess.view && r.permissions_visible ? `${countLabel(r.permissions.length)} saved` : 'Permission details restricted'}</small></button>
             {tab === 'roles' && <div className="rp-card-actions">
-              <button type="button" className="admin-button admin-button--secondary" aria-label={`Edit ${r.name}`} disabled={loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => openForm('edit', r))} data-testid={r.id === selectedId ? 'button-edit-role' : `button-edit-role-${r.id}`}><Pencil size={14} aria-hidden="true" /> Edit</button>
-              <button type="button" className="admin-button admin-button--secondary" aria-label={`Delete ${r.name}`} disabled={loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => { setFormError(null); setDel(r); })} data-testid={r.id === selectedId ? 'button-delete-role' : `button-delete-role-${r.id}`}><Trash2 size={14} aria-hidden="true" /> Delete</button>
+              <button type="button" className="admin-button admin-button--secondary" aria-label={`Edit ${r.name}`} disabled={!can.edit || loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => openForm('edit', r))} data-testid={r.id === selectedId ? 'button-edit-role' : `button-edit-role-${r.id}`}><Pencil size={14} aria-hidden="true" /> Edit</button>
+              <button type="button" className="admin-button admin-button--secondary" aria-label={`Delete ${r.name}`} disabled={!can.delete || loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => { setFormError(null); setDel(r); })} data-testid={r.id === selectedId ? 'button-delete-role' : `button-delete-role-${r.id}`}><Trash2 size={14} aria-hidden="true" /> Delete</button>
             </div>}</li>)}</ul>
         <div className="rp-roles__progress" role="status" aria-live="polite" aria-atomic="true" data-testid="status-roles-append">
           {append.loading ? 'Loading more roles…' : !append.error && status === 'ready' ? `${page.items.length} roles loaded.${page.has_more ? ' Scroll for more.' : ''}` : ''}
@@ -452,7 +463,7 @@ export default function RolesPermissions() {
         </div>
         <div className="rp-roles__footer">
         <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={loading || permBusy} data-testid="button-refresh-roles"><RefreshCw size={14} aria-hidden="true" /> Refresh roles</button>
-        {tab === 'roles' && <button type="button" className="rp-add" disabled={loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => { setNotice(''); openForm('add'); })} data-testid="button-add-role"><Plus size={15} aria-hidden="true" /> Add role</button>}
+        {tab === 'roles' && <button type="button" className="rp-add" disabled={!can.add || loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => { setNotice(''); openForm('add'); })} data-testid="button-add-role"><Plus size={15} aria-hidden="true" /> Add role</button>}
         </div>
       </aside>
 
@@ -461,18 +472,19 @@ export default function RolesPermissions() {
           <div className="rp-head" hidden={tab === 'permissions'}>
             <div className="rp-head__main"><h2 data-testid="text-active-role">{role.name}</h2></div>
             {tab === 'roles' && !found && <div className="rp-head__actions">
-              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => openForm('edit', role))} data-testid="button-edit-role"><Pencil size={14} aria-hidden="true" /> Edit</button>
-              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => { setFormError(null); setDel(role); })} data-testid="button-delete-role"><Trash2 size={14} aria-hidden="true" /> Delete</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={!can.edit || loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => openForm('edit', role))} data-testid="button-edit-role"><Pencil size={14} aria-hidden="true" /> Edit</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={!can.delete || loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => { setFormError(null); setDel(role); })} data-testid="button-delete-role"><Trash2 size={14} aria-hidden="true" /> Delete</button>
             </div>}
           </div>
           {tab === 'roles' && <dl className="rp-meta">
             <dt>Description</dt><dd>{role.description || 'No description'}</dd>
-            <dt>Permissions</dt><dd><span data-testid="text-permission-count">{countLabel(role.permissions.length)}</span> saved</dd>
+            <dt>Permissions</dt><dd><span data-testid="text-permission-count">{permissionAccess.view && role.permissions_visible ? `${countLabel(role.permissions.length)} saved` : 'View Permissions required'}</span></dd>
             <dt>Created</dt><dd>{fmt(role.created_at)}</dd>
             <dt>Updated</dt><dd>{fmt(role.updated_at)} (version {role.version})</dd>
           </dl>}
-          <div hidden={tab !== 'permissions'}>
-          <ZonePermissionMatrix roleName={role.name} selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={busy || blocked || status !== 'ready' || gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
+          <div hidden={tab !== 'permissions' || !permissionAccess.view}>
+          {!can.protected && <p role="status">Read-only permissions. Change Role Permissions is Super Admin-only.</p>}
+          <ZonePermissionMatrix roleName={role.name} selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={!can.protected || busy || blocked || status !== 'ready' || gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
             onToggle={toggle} onSelect={edit} onAll={() => edit([...ZONE_KEYS])} onNone={() => edit([])} onSave={savePermissions} onCancel={() => setDraft(null)}>
             <div aria-live="polite">
               {gone && <div className="rp-alert" role="alert" data-testid="status-permissions-deleted"><strong>This role was deleted</strong><p>Nothing was saved. Your unsaved selection is shown for reference only. Discard it to continue.</p><div className="rp-alert__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setDraft(null)} data-testid="button-discard-permission-draft">Discard draft</button></div></div>}
@@ -496,7 +508,7 @@ export default function RolesPermissions() {
         <button type="button" className="admin-button rp-danger" onClick={proceed} disabled={permBusy} data-testid="button-discard-permissions-continue">Discard and continue</button></>}><p>Use Save permissions on the role to keep them.</p></Dialog>}
     {del && <Dialog title="Delete role" eyebrow="Roles & Permissions" onClose={closeDelete} description={`Delete "${del.name}"? The role record and saved permissions are retained, but the role becomes unavailable and grants no access. Any staff assignment blocks deletion, including inactive, login-disabled and deleted staff. Explicitly unassign or reassign editable staff in Staff Management; retained deleted-staff links require operator resolution.`}
       footer={<><button type="button" className="admin-button admin-button--secondary" onClick={closeDelete} disabled={busy} data-testid="button-cancel-role">Cancel</button>
-        <button type="button" className="admin-button rp-danger" onClick={confirmDelete} disabled={busy || blocked || delGone} data-testid="button-confirm-delete-role">{busy ? 'Deleting...' : 'Delete role'}</button></>}>
+        <button type="button" className="admin-button rp-danger" onClick={confirmDelete} disabled={!can.delete || busy || blocked || delGone} data-testid="button-confirm-delete-role">{busy ? 'Deleting...' : 'Delete role'}</button></>}>
       <div aria-live="polite">{formError && <div className="rp-alert" role="alert" data-testid="text-role-error">
         <strong>{formError.code === 'role_deleted' ? 'Already deleted' : formError.code === 'role_stale' ? 'Role changed elsewhere' : formError.ambiguous ? 'Result unknown' : 'Not deleted'}</strong>
         <p>{formError.message}</p>

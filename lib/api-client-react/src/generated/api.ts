@@ -152,6 +152,7 @@ import type {
   ExportOpeningStockParams,
   ExportPatientDirectoryParams,
   ExportProductCategoriesParams,
+  ExportPurchaseOrdersParams,
   ExportPurchaseReceivedParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
@@ -175,6 +176,7 @@ import type {
   GetPurchaseReceivedFiltersParams,
   GetPurchaseReceivedSourceParams,
   GetSalesTargetChoicesParams,
+  GetStaffDesignationReferencesParams,
   GetStockProductActivityParams,
   GetStockProductAssembliesParams,
   GetStockProductFilterReferencesParams,
@@ -258,6 +260,7 @@ import type {
   ListReportingUsersParams,
   ListSalesTargetsParams,
   ListSptOrdersParams,
+  ListStaffAccessParams,
   ListStaffBusinessRoleChoicesParams,
   ListStaffFilterDesignationsParams,
   ListStaffParams,
@@ -467,10 +470,12 @@ import type {
   SptRegistration,
   SptWrite,
   StaffAccess,
+  StaffAccessPage,
   StaffCreate,
   StaffCreated,
   StaffDeletion,
   StaffDesignationChoices,
+  StaffDesignationReferencePage,
   StaffEdit,
   StaffPage,
   StaffResponse,
@@ -23628,6 +23633,109 @@ export function useGetPurchaseOrderAnalytics<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getExportPurchaseOrdersUrl = (
+  params?: ExportPurchaseOrdersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-orders/export?${stringifiedParams}`
+    : `/api/v1/admin/purchase-orders/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportPurchaseOrders = async (
+  params?: ExportPurchaseOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<POPage> => {
+  return customFetch<POPage>(getExportPurchaseOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportPurchaseOrdersQueryKey = (
+  params?: ExportPurchaseOrdersParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-orders/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportPurchaseOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportPurchaseOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportPurchaseOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportPurchaseOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportPurchaseOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportPurchaseOrders>>
+  > = ({ signal }) =>
+    exportPurchaseOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportPurchaseOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportPurchaseOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportPurchaseOrders>>
+>;
+export type ExportPurchaseOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportPurchaseOrders<
+  TData = Awaited<ReturnType<typeof exportPurchaseOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportPurchaseOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportPurchaseOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportPurchaseOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getListPurchaseOrderFilterOptionsUrl = (
   kind: "vendors" | "products",
   params?: ListPurchaseOrderFilterOptionsParams,
@@ -31653,6 +31761,212 @@ export const useCreateStaff = <
 > => {
   return useMutation(getCreateStaffMutationOptions(options));
 };
+
+export const getListStaffAccessUrl = (params?: ListStaffAccessParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/staff/access-directory?${stringifiedParams}`
+    : `/api/v1/admin/staff/access-directory`;
+};
+
+/**
+ * @summary Access Directory
+ */
+export const listStaffAccess = async (
+  params?: ListStaffAccessParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StaffAccessPage> => {
+  return customFetch<StaffAccessPage>(getListStaffAccessUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStaffAccessQueryKey = (params?: ListStaffAccessParams) => {
+  return [
+    `/api/v1/admin/staff/access-directory`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListStaffAccessQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStaffAccess>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListStaffAccessParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStaffAccess>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListStaffAccessQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listStaffAccess>>> = ({
+    signal,
+  }) => listStaffAccess(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStaffAccess>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStaffAccessQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStaffAccess>>
+>;
+export type ListStaffAccessQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Access Directory
+ */
+
+export function useListStaffAccess<
+  TData = Awaited<ReturnType<typeof listStaffAccess>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListStaffAccessParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStaffAccess>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStaffAccessQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetStaffDesignationReferencesUrl = (
+  params?: GetStaffDesignationReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/staff/designation-references?${stringifiedParams}`
+    : `/api/v1/admin/staff/designation-references`;
+};
+
+/**
+ * @summary Designation References
+ */
+export const getStaffDesignationReferences = async (
+  params?: GetStaffDesignationReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StaffDesignationReferencePage> => {
+  return customFetch<StaffDesignationReferencePage>(
+    getGetStaffDesignationReferencesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStaffDesignationReferencesQueryKey = (
+  params?: GetStaffDesignationReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/staff/designation-references`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetStaffDesignationReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStaffDesignationReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetStaffDesignationReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStaffDesignationReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStaffDesignationReferencesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStaffDesignationReferences>>
+  > = ({ signal }) =>
+    getStaffDesignationReferences(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStaffDesignationReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStaffDesignationReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStaffDesignationReferences>>
+>;
+export type GetStaffDesignationReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Designation References
+ */
+
+export function useGetStaffDesignationReferences<
+  TData = Awaited<ReturnType<typeof getStaffDesignationReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetStaffDesignationReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStaffDesignationReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStaffDesignationReferencesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getListStaffFilterDesignationsUrl = (
   params?: ListStaffFilterDesignationsParams,

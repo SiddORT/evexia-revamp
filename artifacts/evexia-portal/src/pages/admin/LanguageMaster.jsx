@@ -15,6 +15,7 @@ import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import useLanguages from '../../hooks/useLanguages.js';
 import { exportLanguages, downloadLanguageFile } from '../../services/serverLanguages.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import '../../language-master.css';
 
 function details(by, at, timestamp) {
@@ -23,11 +24,13 @@ function details(by, at, timestamp) {
 
 export default function LanguageMaster() {
   const { user } = useAdminSession();
-  if (user?.identity_kind !== 'super_admin' || !user.permissions.includes('admin.access')) return <AccessDenied title="Language Master" heading="Language Master is not available" testId="status-language-denied" message="Language Master is restricted to the protected Super Admin." />;
+  const can = useResourceActions('language');
+  if (!can.read) return <AccessDenied title="Language Master" heading="Language Master is not available" testId="status-language-denied" message="Your saved role does not allow Language Master." />;
   return <LanguageWorkspace key={user.id} />;
 }
 
 function LanguageWorkspace() {
+  const can = useResourceActions('language');
   const [, navigate] = useLocation();
   const { theme, appearance } = useAdminPreferences();
   const { timestamp } = useAdminDateFormatters();
@@ -105,9 +108,9 @@ function LanguageWorkspace() {
     const cls = mobile ? 'admin-zone-card__action' : 'admin-icon-button';
     const size = mobile ? 14 : 16;
     return <fieldset disabled={loading || pending} style={{ border: 0, padding: 0, margin: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={cls} aria-label={`View details and history for ${language.name}`} title="Details and history" onClick={() => setDrawer(language)} data-testid={`button-details-language-${language.id}`}><ScrollText size={size} aria-hidden="true" />{mobile && <span>History</span>}</button>
-      <button type="button" className={cls} aria-label={`Edit ${language.name}`} title="Edit" onClick={() => { clearFeedback(); setEditing(language); }} data-testid={`button-edit-language-${language.id}`}><Pencil size={size} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${language.name}`} title="Delete" onClick={() => requestDelete(language)} data-testid={`button-delete-language-${language.id}`}><Trash2 size={size} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      <button type="button" disabled={!can.protected} className={cls} aria-label={`View details and history for ${language.name}`} title="History is Super Admin-only" onClick={() => setDrawer(language)} data-testid={`button-details-language-${language.id}`}><ScrollText size={size} aria-hidden="true" />{mobile && <span>History</span>}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`Edit ${language.name}`} title="Edit" onClick={() => { clearFeedback(); setEditing(language); }} data-testid={`button-edit-language-${language.id}`}><Pencil size={size} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" disabled={!can.delete} className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${language.name}`} title="Delete" onClick={() => requestDelete(language)} data-testid={`button-delete-language-${language.id}`}><Trash2 size={size} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
     </fieldset>;
   }
 
@@ -124,10 +127,10 @@ function LanguageWorkspace() {
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Geography & Logistics</p><h1>Language Master</h1></div>
         <div className="language-master-actions">
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/language')} data-testid="button-import-languages"><Upload size={16} aria-hidden="true" /> Import data</button>
+          <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/language')} data-testid="button-import-languages"><Upload size={16} aria-hidden="true" /> Import data</button>
           <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
             <DropdownMenu.Trigger asChild>
-              <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-languages"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-languages"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
               <DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Language export format">
@@ -136,11 +139,11 @@ function LanguageWorkspace() {
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
-          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-language"><Plus size={16} aria-hidden="true" /> Add language</button>
+          <button type="button" className="admin-button" disabled={!can.add || Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-language"><Plus size={16} aria-hidden="true" /> Add language</button>
         </div>
       </div>
       {exporting && <p role="status">Preparing all matching languages across every page…</p>}
-      {feedback && <div className="admin-feedback" role="status" data-testid="status-language-feedback">{feedback}{deleted && feedback.startsWith('Language deleted') && <> <button type="button" className="admin-button admin-button--secondary" onClick={() => setDrawer(deleted)} data-testid="button-view-deleted-language-history">View deleted language history</button></>}</div>}
+      {feedback && <div className="admin-feedback" role="status" data-testid="status-language-feedback">{feedback}{can.protected && deleted && feedback.startsWith('Language deleted') && <> <button type="button" className="admin-button admin-button--secondary" onClick={() => setDrawer(deleted)} data-testid="button-view-deleted-language-history">View deleted language history</button></>}</div>}
       {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-language-action-error">{actionError}</div>}
       <section className="admin-panel" aria-label="Language list">
         <div className="admin-toolbar master-filter-toolbar">

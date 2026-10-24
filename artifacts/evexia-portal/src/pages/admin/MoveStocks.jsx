@@ -3,6 +3,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import { useLocation } from 'wouter';
 import { ArrowLeftRight, ChevronDown, Eye, Filter, Plus, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import MovementDrawer from '../../components/admin/MovementDrawer.jsx';
@@ -19,6 +20,7 @@ const BASE = '/admin/inventory/move-stocks';
 const UNALLOCATED = [{ value: 'unallocated', label: 'Unallocated (opening stock, no location)' }];
 
 export default function MoveStocks() {
+  const can = useResourceActions('stock_movement');
   const { date: displayDate } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const m = useMoveStocks();
@@ -37,7 +39,7 @@ export default function MoveStocks() {
 
   return <AdminLayout title="Move Stocks"><div className="move-stocks-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks</p><h1>Move stocks</h1><p className="admin-page-head__description">Append-only transfers of receipt lots between storage locations.</p></div>
-      <div className="ms-head-actions"><button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-move"><Plus size={16} /> Move stock</button></div></div>
+      <div className="ms-head-actions"><button type="button" className="admin-button" disabled={!can.create} onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-move"><Plus size={16} /> Move stock</button></div></div>
     <section className="admin-panel" aria-label="Stock movement list">
       <div className="admin-allergen-toolbar">
         <div className="admin-allergen-toolbar__top master-filter-toolbar">
@@ -60,7 +62,7 @@ export default function MoveStocks() {
       {m.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{m.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={m.reload}>Retry</button></div>}
       <div className="ms-table-wrap">
         {!m.error && <DataTable columns={columns} rows={m.rows} rowOffset={m.startIndex} rowKey={(r) => r.id} label="Stock movements" testIdPrefix="move" loading={m.loading}
-          empty={<div className="admin-empty"><span className="admin-empty__icon"><ArrowLeftRight size={21} /></span><strong>{m.query || m.activeFilters ? 'No movements match' : 'No stock movements yet'}</strong><p>{m.query || m.activeFilters ? 'Change the search or reset filters to see every movement.' : 'Committed server movements appear here.'}</p>{!m.query && !m.activeFilters && <button type="button" className="admin-button" style={{ marginTop: 14 }} onClick={() => navigate(`${BASE}/new`)}>Move stock</button>}</div>} />}
+          empty={<div className="admin-empty"><span className="admin-empty__icon"><ArrowLeftRight size={21} /></span><strong>{m.query || m.activeFilters ? 'No movements match' : 'No stock movements yet'}</strong><p>{m.query || m.activeFilters ? 'Change the search or reset filters to see every movement.' : 'Committed server movements appear here.'}</p>{can.create && !m.query && !m.activeFilters && <button type="button" className="admin-button" style={{ marginTop: 14 }} onClick={() => navigate(`${BASE}/new`)}>Move stock</button>}</div>} />}
       </div>
       {!m.error && <TablePagination page={m.page} pageCount={m.pageCount} pageSize={m.pageSize} filtered={m.filtered} total={m.total} label={m.filtered === 1 ? 'movement' : 'movements'} onPageChange={m.setPage} onPageSizeChange={m.setPageSize} testId="text-move-count" />}
     </section>

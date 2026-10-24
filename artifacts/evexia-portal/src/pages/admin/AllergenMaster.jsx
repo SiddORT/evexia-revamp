@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
@@ -23,6 +24,7 @@ const refName = (name, status) => <span className="admin-allergen-reference">{na
 const dash = (value) => value === null || value === undefined || value === '' ? '—' : value;
 
 export default function AllergenMaster() {
+  const can = useResourceActions('allergen');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
@@ -98,9 +100,9 @@ export default function AllergenMaster() {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     const cls = mobile ? 'admin-zone-card__action' : 'admin-icon-button';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={cls} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST_PATH}/${record.id}`)} data-testid={`button-edit-allergen-${record.id}`}><Pencil size={16} />{mobile && 'Edit'}</button>
-      <button type="button" className={cls} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-status-allergen-${record.id}`}><CirclePower size={16} />{mobile && toggle}</button>
-      <button type="button" className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-allergen-${record.id}`}><Trash2 size={16} />{mobile && 'Delete'}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST_PATH}/${record.id}`)} data-testid={`button-edit-allergen-${record.id}`}><Pencil size={16} />{mobile && 'Edit'}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-status-allergen-${record.id}`}><CirclePower size={16} />{mobile && toggle}</button>
+      <button type="button" disabled={!can.delete} className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-allergen-${record.id}`}><Trash2 size={16} />{mobile && 'Delete'}</button>
     </fieldset>;
   }
   const columns = [
@@ -122,10 +124,10 @@ export default function AllergenMaster() {
   return <AdminLayout title="Allergen Master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Allergen Master</h1><p className="admin-page-head__description">Mix / No Mix is catalogue metadata only.</p></div>
       <div className="admin-mr-head-actions admin-allergen-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/allergen')} data-testid="button-import-allergens"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/allergen')} data-testid="button-import-allergens"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
-            <button type="button" className="admin-button admin-button--secondary" disabled={loading || Boolean(error) || invalid} aria-disabled={exporting || undefined} data-testid="button-export-allergens"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+            <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || loading || Boolean(error) || invalid} aria-disabled={exporting || undefined} data-testid="button-export-allergens"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Allergen export format">
@@ -134,7 +136,7 @@ export default function AllergenMaster() {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" onClick={() => navigate(`${LIST_PATH}/new`)} data-testid="button-add-allergen"><Plus size={16} aria-hidden="true" /> Add product</button>
+        <button type="button" disabled={!can.add} className="admin-button" onClick={() => navigate(`${LIST_PATH}/new`)} data-testid="button-add-allergen"><Plus size={16} aria-hidden="true" /> Add product</button>
       </div>
     </div>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}

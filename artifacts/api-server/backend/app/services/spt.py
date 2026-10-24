@@ -13,7 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.db.spt_models import SptOrder as Order, SptPatient as Registered, SptMembership as Membership, SptRequest as Retry
 from app.db.patient_models import PatientDirectory
 from app.db.models import AuditEvent
-from app.services.immunotherapy import ImmError, encode, eligible, person, references as master_references, authorize
+from app.services.immunotherapy import ImmError, encode, eligible, person, references as master_references
+from app.services.mr_orders import authorize as authorize_order
 from app.services.mr_orders import scope, scope_identity, reference_scope, require_assignment, retry_scope, check_retry_scope
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
@@ -39,9 +40,13 @@ def unseal(keys, table, identity, value):
         raise DirectoryCryptoError() from None
 
 
-def transaction(db, actor, work):
+def authorize(db, actor, action=None):
+    return authorize_order(db, actor, "spt", action)
+
+
+def transaction(db, actor, work, *, action=None):
     try:
-        current = authorize(db, actor)
+        current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
         db.commit()
@@ -195,7 +200,7 @@ def idempotent(db, actor, keys, key, payload, work):
 def save(db, actor, body, identity=None):
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
         {"operation": "save", "id": str(identity) if identity else None, "body": body.model_dump(mode="json")},
-        lambda: apply(db, a, k, body, identity, body.expected_version)))
+        lambda: apply(db, a, k, body, identity, body.expected_version)), action="edit" if identity else "add")
 
 
 def register(db, actor, body):
@@ -212,7 +217,7 @@ def register(db, actor, body):
             return {**data, "id": str(identity), "code": row.code, "source": "spt"}
         return idempotent(db, a, keys, body.idempotencyKey,
             {"operation": "register", "body": body.model_dump(mode="json")}, create)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action=("add", "import"))
 
 
 def detail(db, actor, identity):
@@ -221,7 +226,7 @@ def detail(db, actor, identity):
 
 def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
     if kind != "patients":
-        result = master_references(db, actor, kind, search, cursor, limit, selected)
+        result = master_references(db, actor, kind, search, cursor, limit, selected, resource="spt")
         result["items"] = [{k: p[k] for k in ("id", "name", "mrId", "doctorNumber", "employeeCode") if k in p} for p in result["items"]]
         return result
     def work(a, keys):
@@ -311,7 +316,7 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
         return dict(items=items, total=db.scalar(select(func.count()).select_from(Order).where(*scope(db, Order))),
             filtered=len(items) if complete else None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses)),
             nextCursor=str(last) if more and not complete else None)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="export" if complete else None)
 
 
 def batch(db, actor, body, commit=False):
@@ -363,4 +368,4 @@ def batch(db, actor, body, commit=False):
         return dict(valid=True, entries=entries, reviewToken=token, rejected=0, patientAdditions=0,
             additions=sum(e["action"] == "add" for e in entries), updates=sum(e["action"] == "update" for e in entries),
             unchanged=sum(e["action"] == "unchanged" for e in entries))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="import")

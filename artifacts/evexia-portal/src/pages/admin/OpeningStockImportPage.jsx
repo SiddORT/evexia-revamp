@@ -35,7 +35,7 @@ function LocationGuide() {
   function run(offset, replace) {
     const mine = ++seq.current;
     setState((s) => ({ ...s, loading: true, error: '', items: replace ? [] : s.items }));
-    listReference('locations', { query: query.trim(), offset, limit: 25 }).then((d) => {
+    listReference('locations', { query: query.trim(), offset, limit: 25, purpose: 'opening_stock' }).then((d) => {
       if (mine === seq.current) setState((s) => ({ items: replace ? d.items : [...s.items, ...d.items], filtered: d.filtered, loading: false, error: '' }));
     }).catch((e) => { if (mine === seq.current) setState((s) => ({ ...s, loading: false, error: e.message || 'Locations could not be loaded.' })); });
   }
@@ -96,7 +96,8 @@ export default function OpeningStockImportPage() {
     try {
       const r = await reviewImport(file); setReview(r); setResult(null);
       try {
-        const [items, locs] = await Promise.all([loadAll(listItemReferences, 'items'), loadAll(listReference, 'locations')]);
+        const [items, locs] = await Promise.all([loadAll(listItemReferences, 'items'),
+          loadAll((kind, params, signal) => listReference(kind, { ...params, purpose: 'opening_stock' }, signal), 'locations')]);
         setNames({ items: new Map(items.map((i) => [`${i.itemKind}:${i.id}`, i])), locations: new Map(locs.map((l) => [l.id, l.name])), error: '' });
       } catch (e) { setNames({ items: new Map(), locations: new Map(), error: 'Readable item and location names could not be loaded; identifiers are shown instead.' }); }
     }

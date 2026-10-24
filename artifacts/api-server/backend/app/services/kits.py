@@ -12,7 +12,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.db.kits_models import KitsOrder as Order, KitsAttachment as Attachment, KitsRequest as Retry
 from app.db.file_models import FileRecord
 from app.db.models import AuditEvent
-from app.services.immunotherapy import ImmError, encode, eligible, person as master_person, references as master_references, authorize
+from app.services.immunotherapy import ImmError, encode, eligible, person as master_person, references as master_references
+from app.services.mr_orders import authorize as authorize_order
 from app.services.mr_orders import scope, assignment as mr_assignment
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
@@ -25,8 +26,12 @@ def person(row, kind):
     return {k: data[k] for k in ("id", "name", "phone", "dialCountry", "email", "address")}
 
 
-def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
-    result = master_references(db, actor, kind, search, cursor, limit, selected)
+def authorize(db, actor, action=None):
+    return authorize_order(db, actor, "kits", action)
+
+
+def references(db, actor, kind, search="", cursor=None, limit=25, selected=None, *, resource="kits"):
+    result = master_references(db, actor, kind, search, cursor, limit, selected, resource=resource)
     result["items"] = [{k: p[k] for k in ("id", "name", "phone", "address", "doctorId", "mrId") if k in p}
                        for p in result["items"]]
     return result
@@ -50,11 +55,13 @@ def unseal(keys, table, identity, value):
         raise DirectoryCryptoError() from None
 
 
-def transaction(db, actor, work):
+def transaction(db, actor, work, *, action=None):
     try:
-        current = authorize(db, actor)
+        current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
+        from app.services.order_capabilities import public_result
+        result = public_result(current, "kits", result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -127,6 +134,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     if row and body.orderDate and row.date != body.orderDate:
         raise ImmError("Saved order date is immutable.", 422, "kits_date")
     previous = project(keys, row) if row else None
+    from app.services.order_capabilities import attachment_changes
+    attachment_changes(actor, "kits", body.attachmentIds, previous)
     data = resolved(db, actor, keys, body, previous)
     if not row:
         number = db.scalar(text("SELECT nextval('kits_order_number_seq')"))
@@ -172,7 +181,7 @@ def idempotent(db, actor, keys, key, payload, work):
 
 def save(db, actor, body):
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
-        body.model_dump(mode="json"), lambda: apply(db, a, k, body)))
+        body.model_dump(mode="json"), lambda: apply(db, a, k, body)), action="add")
 
 
 def detail(db, actor, identity):
@@ -228,7 +237,7 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="export" if complete else None)
 
 
 def batch(db, actor, body, commit=False):
@@ -274,4 +283,4 @@ def batch(db, actor, body, commit=False):
         return dict(valid=True, entries=entries, reviewToken=token, rejected=0, patientAdditions=0,
             additions=sum(e["action"] == "add" for e in entries), updates=sum(e["action"] == "update" for e in entries),
             unchanged=sum(e["action"] == "unchanged" for e in entries))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="import")

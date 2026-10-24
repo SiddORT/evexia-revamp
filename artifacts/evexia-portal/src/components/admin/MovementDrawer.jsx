@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import ComboProvenance from './ComboProvenance.jsx';
 import { X } from 'lucide-react';
 import { containDialogTab } from './dialogKeyboard.js';
@@ -8,6 +9,7 @@ import '../../poActivityDrawer.css';
 import '../../inventoryServer.css';
 
 export default function MovementDrawer({ id, onClose, returnFocusTo }) {
+  const can = useResourceActions('stock_movement');
   const { date, timestamp } = useAdminDateFormatters();
   const dialogRef = useRef(null);
   const [state, setState] = useState({ data: null, loading: true, error: '' });
@@ -64,11 +66,11 @@ export default function MovementDrawer({ id, onClose, returnFocusTo }) {
               {l.itemKind === 'combo' && l.source !== 'opening' && <tr><td colSpan={5}><ComboProvenance item={l} /></td></tr>}</Fragment>)}</tbody></table></div>
           <p className="mr-form__hint">Allergens use procurement quantity units; finished products use whole combos. Quantities are not summed across products. Opening value describes the original opening quantity, not the transferred quantity or current valuation.</p>
         </section>
-        <section className="inv-drawer-section"><h3>Server activity</h3>
+        {can.activity && <section className="inv-drawer-section"><h3>Server activity</h3>
           {m.activity?.length ? <div className="po-activity">{m.activity.map((a, i) => <article className="po-event" key={`${a.at}-${i}`}><div><strong className="po-activity-drawer__action">{a.action}</strong><p>{timestamp(a.at)} · {a.actor}{a.requestId ? ` · request ${a.requestId}` : ''}</p></div></article>)}</div>
             : <p>No activity recorded.</p>}
-        </section>
-        <section className="inv-drawer-section"><h3>Scope</h3><p>{m.summary?.movements} movement, {m.summary?.lots} lot line{m.summary?.lots === 1 ? '' : 's'}. {m.summary?.scope}</p></section>
+        </section>}
+        {can.analytics && <section className="inv-drawer-section"><h3>Scope</h3><p>{m.summary?.movements} movement, {m.summary?.lots} lot line{m.summary?.lots === 1 ? '' : 's'}. {m.summary?.scope}</p></section>}
       </>}
     </div>
   </dialog>;

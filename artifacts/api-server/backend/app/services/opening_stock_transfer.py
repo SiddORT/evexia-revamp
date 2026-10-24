@@ -133,7 +133,7 @@ def review(db, actor, data, filename):
             alreadyImportedCount=sum(r["state"] == "already_imported" and not r["errors"] for r in output),
             reviewToken=token, command=command,
             summary=service.summary([{**r, "mode": "import"} for r in reviewed if r["state"] == "ready"]))
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("opening_stock", "import"))
 
 
 def encoded(rows, format):
@@ -153,7 +153,7 @@ def sample(db, actor, format):
         source = str(uuid.uuid4())
         return encoded([HEADERS] + [[source, str(uuid.uuid4()), r["itemKind"], r["id"], r["name"], r["unit"],
             "", "", "", "", "", GUIDANCE] for r in catalogue], format)
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("opening_stock", "import"))
 
 
 @present_export
@@ -165,4 +165,4 @@ def export(db, actor, query, format):
         return encoded([HEADERS] + [[r["sourceId"], r["rowId"], r["itemKind"], r["itemId"], r["productName"],
             r["unit"], r["quantity"], r["unitRate"], r["locationId"] or "",
             r["location"]["name"] if r["locationId"] else "", r["recordedDate"], GUIDANCE] for r in rows], format)
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("opening_stock", "export"))

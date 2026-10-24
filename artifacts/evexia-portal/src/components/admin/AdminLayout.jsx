@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
-import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity } from '../../auth/capabilities.js';
+import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
 import { interceptNavigation } from '../../auth/navigationGuard.js';
 import { logoutAdmin } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
@@ -35,8 +35,8 @@ const MASTER_GROUPS = [
   { label: 'Products & Supply', links: [
     { label: 'Product Category', href: '/admin/masters/product-categories', testId: 'link-admin-product-categories', Icon: Boxes, nested: true },
     { label: 'Allergen Master', href: '/admin/masters/allergens', testId: 'link-admin-allergens', Icon: FlaskConical, nested: true },
-    { label: 'Product Master', href: '/admin/masters/products', testId: 'link-admin-products', Icon: Layers, nested: true, superOnly: true },
-    { label: 'Opening Stock', href: '/admin/masters/opening-stock', testId: 'link-admin-opening-stock', Icon: Layers, nested: true, superOnly: true },
+    { label: 'Product Master', href: '/admin/masters/products', testId: 'link-admin-products', Icon: Layers, nested: true },
+    { label: 'Opening Stock', href: '/admin/masters/opening-stock', testId: 'link-admin-opening-stock', Icon: Layers, nested: true },
     { label: 'Vendor Master', href: '/admin/masters/vendors', testId: 'link-admin-vendors', Icon: BriefcaseBusiness },
   ] },
   { label: 'Finance & Performance', links: [
@@ -85,22 +85,25 @@ export default function AdminLayout({ title, children }) {
   const query = search.trim().toLocaleLowerCase();
   const searching = query.length > 0;
   const showDashboard = !staff && (!searching || 'dashboard'.includes(query));
-  const showStaff = !staff && (!searching || 'user management'.includes(query) || 'staff management'.includes(query));
-  const showRoles = !staff && (!searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query));
-  const showUserManagement = showStaff || showRoles;
+  const showStaff = canReadResource(user, 'staff') && (!searching || 'user management'.includes(query) || 'staff management'.includes(query));
+  const showRoles = (canReadResource(user, 'role') || hasCapability(user, 'permissions', 'view'))
+    && (!searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query));
+  const showAccess = hasCapability(user, 'staff_access', 'view') && (!searching || 'user management staff access login'.includes(query));
+  const showUserManagement = showStaff || showRoles || showAccess;
   const showAllMasters = !staff && (!searching || 'all masters'.includes(query));
-  const showPO = !staff && (!searching || 'inventory purchase orders po'.includes(query));
-  const showPR = !staff && (!searching || 'inventory purchase received pr receipts'.includes(query));
-  const showMoveStocks = !staff && (!searching || 'inventory move stocks transfer'.includes(query));
-  const showStockStatus = !staff && (!searching || 'inventory stock status allergens'.includes(query));
+  const showPO = canReadResource(user, 'purchase_order') && (!searching || 'inventory purchase orders po'.includes(query));
+  const showPR = canReadResource(user, 'purchase_received') && (!searching || 'inventory purchase received pr receipts'.includes(query));
+  const showMoveStocks = canReadResource(user, 'stock_movement') && (!searching || 'inventory move stocks transfer'.includes(query));
+  const showStockStatus = canReadResource(user, 'stock_status') && (!searching || 'inventory stock status allergens'.includes(query));
   const showInventory = showPO || showPR || showMoveStocks || showStockStatus;
-  const visibleOrders = staff ? [] : ORDER_DESTINATIONS.filter((destination) =>
-    !searching || 'orders'.includes(query) || `${destination.label} ${destination.keywords || ''}`.toLocaleLowerCase().includes(query));
+  const visibleOrders = ORDER_DESTINATIONS.filter((destination) =>
+    (!staff || canReadResource(user, ({ 'kits-consumables': 'kits', immunotherapy: 'immunotherapy', spt: 'spt', lupin: 'lupin' })[destination.slug]))
+    && (!searching || 'orders'.includes(query) || `${destination.label} ${destination.keywords || ''}`.toLocaleLowerCase().includes(query)));
   const showOrders = visibleOrders.length > 0;
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
     links: group.links.filter((link) => !staff || MASTER_CATALOGUE.some((master) =>
-      link.href === `/admin/masters/${master.path}` && canViewMaster(user, master.key)))
+      (link.href === `/admin/masters/${master.path}` || (master.key === 'language' && link.href === '/admin/languages')) && canViewMaster(user, master.key)))
       .filter((link) => !searching || link.label.toLocaleLowerCase().includes(query)),
   })).filter((group) => group.links.length > 0);
   const showMasters = staff ? visibleGroups.length > 0 : (!searching || showAllMasters || visibleGroups.length > 0);
@@ -274,6 +277,7 @@ export default function AdminLayout({ title, children }) {
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
           <div id="admin-user-management-subnav" className="admin-nav__sub" hidden={!showUserSubnav}>
+            {showAccess && <Link href="/admin/staff-access" className={`admin-nav__item${location === '/admin/staff-access' ? ' admin-nav__item--active' : ''}`} aria-current={location === '/admin/staff-access' ? 'page' : undefined} onClick={() => closeDrawer(false)}><ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Staff Access</span></Link>}
             {showStaff && <Link href="/admin/staff" className={`admin-nav__item${location.startsWith('/admin/staff') ? ' admin-nav__item--active' : ''}`} aria-label="Staff Management" aria-current={location === '/admin/staff' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-staff">
               <UsersRound size={16} aria-hidden="true" /><span className="admin-nav__label">Staff Management</span>
             </Link>}

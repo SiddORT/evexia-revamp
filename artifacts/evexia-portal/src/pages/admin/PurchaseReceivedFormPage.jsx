@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { ArrowLeft, ClipboardCheck, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
@@ -34,6 +35,8 @@ function rowsFor(po, receipt) {
 }
 
 function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, onDraftDirty, onSaveStateChange, saveBlocked }) {
+  const can = useResourceActions('purchase_received');
+  saveBlocked = saveBlocked || !(receipt ? can.edit : can.add);
   const confirm = usePlatformConfirm();
   const { date: displayDate } = useAdminDateFormatters();
   const isNew = !receipt;
@@ -243,6 +246,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
 }
 
 export default function PurchaseReceivedFormPage({ id }) {
+  const can = useResourceActions('purchase_received');
   const { date: displayDate, timestamp: stamp } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const search = useSearch();
@@ -348,7 +352,7 @@ export default function PurchaseReceivedFormPage({ id }) {
     setPendingPoId(null);
   }
   async function remove() {
-    if (deletingRef.current) return; deletingRef.current = true; setDeleting(true);
+    if (!can.delete || deletingRef.current) return; deletingRef.current = true; setDeleting(true);
     const attempt = { key: crypto.randomUUID(), id, operation: 'delete' };
     let journaled = false;
     try {
@@ -384,7 +388,7 @@ export default function PurchaseReceivedFormPage({ id }) {
           <div className="po-actions">
              <button type="button" className="admin-button admin-button--secondary" onClick={() => setShowActivity((v) => !v)} aria-expanded={showActivity} data-testid="button-pr-activity"><History size={15} /> Activity ({snapshot.record.eventTotal})</button>
             <ProcurementDocumentActions key={record.id} kind="pr" record={record} />
-            {record.status === 'active' && <><button type="button" className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-pr"><Pencil size={15} /> Edit</button><button type="button" className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-pr"><Trash2 size={15} /> Delete</button></>}
+            {record.status === 'active' && <><button type="button" disabled={!can.edit} className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-pr"><Pencil size={15} /> Edit</button><button type="button" disabled={!can.delete} className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-pr"><Trash2 size={15} /> Delete</button></>}
           </div></div>
         <div className="po-review pr-lines-content">
           {record.status === 'deleted' && <p className="pr-note pr-warn">This receipt is deleted. Its accepted quantities no longer count toward the PO balance.</p>}
@@ -397,6 +401,6 @@ export default function PurchaseReceivedFormPage({ id }) {
       </section>
     </>}
      {pendingPoId !== null && isNew && <ConfirmationDialog title="Switch purchase order?" description="The link changed to another purchase order while this receipt has unsaved changes. Switching discards this draft. Choose Cancel to keep the draft and return the URL to the purchase order it was started with." actionLabel="Switch PO and discard" destructive onConfirm={switchPo} onClose={keepDraft} />}
-      {confirmDelete && record && <ConfirmationDialog title={`Delete ${record.number}?`} description="Its accepted quantities return to the PO balance. Details and activity remain on the server." actionLabel={deleting ? 'Deleting…' : 'Delete receipt'} destructive onConfirm={remove} onClose={() => { if (!deleting) { setConfirmDelete(false); setActionError(''); } }} error={actionError} />}
+      {confirmDelete && record && <ConfirmationDialog title={`Delete ${record.number}?`} description="Its accepted quantities return to the PO balance. Details and activity remain on the server." actionLabel={deleting ? 'Deleting…' : 'Delete receipt'} destructive blocked={!can.delete} pending={deleting} onConfirm={remove} onClose={() => { if (!deleting) { setConfirmDelete(false); setActionError(''); } }} error={!can.delete ? 'Delete permission is required.' : actionError} />}
   </div></AdminLayout>;
 }

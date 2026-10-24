@@ -12,6 +12,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useServerDesignations from '../../hooks/useDesignations.js';
 import { exportDesignations, downloadDesignationFile } from '../../services/serverDesignations.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import '../../designation.css';
 
 function details(by, at) {
@@ -19,6 +20,7 @@ function details(by, at) {
 }
 
 export default function DesignationMaster() {
+  const can = useResourceActions('designation');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
@@ -87,9 +89,9 @@ export default function DesignationMaster() {
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/designations/${record.id}`); }} data-testid={`button-edit-designation-${record.id}`}><Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-designation-${record.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-designation-${record.id}`}><Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      <button type="button" disabled={!can.edit} className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/designations/${record.id}`); }} data-testid={`button-edit-designation-${record.id}`}><Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" disabled={!can.edit} className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-designation-${record.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
+      <button type="button" disabled={!can.delete} className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-designation-${record.id}`}><Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
     </fieldset>;
   }
   const columns = [
@@ -106,11 +108,11 @@ export default function DesignationMaster() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters</p><h1>Designation Master</h1><p className="admin-page-head__description">Designation labels do not grant staff permissions or change payroll.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/designation')} data-testid="button-import-designations"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/designation')} data-testid="button-import-designations"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
             {/* Remain focusable while pending so closing the menu can return focus. */}
-            <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-designations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+            <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-designations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Designation export format">
@@ -119,7 +121,7 @@ export default function DesignationMaster() {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/designations/new'); }} data-testid="button-add-designation"><Plus size={16} aria-hidden="true" /> Add designation</button>
+        <button type="button" className="admin-button" disabled={!can.add || Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/designations/new'); }} data-testid="button-add-designation"><Plus size={16} aria-hidden="true" /> Add designation</button>
       </div>
     </div>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-designation-feedback">{feedback}</div>}

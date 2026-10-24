@@ -56,6 +56,7 @@ const SalesTargetMaster = lazyRoute(() => import('./pages/admin/SalesTargetMaste
 const OpeningBalanceMaster = lazyRoute(() => import('./pages/admin/OpeningBalanceMaster.jsx'));
 const OpeningBalanceFormPage = lazyRoute(() => import('./pages/admin/OpeningBalanceFormPage.jsx'));
 const StaffManagement = lazyRoute(() => import('./pages/admin/StaffManagement.jsx'));
+const StaffAccessDirectory = lazyRoute(() => import('./pages/admin/StaffAccessDirectory.jsx'));
 const RolesPermissions = lazyRoute(() => import('./pages/admin/RolesPermissions.jsx'));
 const AdminSettings = lazyRoute(() => import('./pages/admin/AdminSettings.jsx'));
 const PurchaseOrders = lazyRoute(() => import('./pages/admin/PurchaseOrders.jsx'));
@@ -86,6 +87,7 @@ function App() {
       <Route path="/admin/download-logs" component={DownloadLogs} />
       <Route path="/admin/email-logs" component={EmailLogs} />
       <Route path="/admin/staff" component={StaffManagement} />
+      <Route path="/admin/staff-access" component={StaffAccessDirectory} />
       <Route path="/admin/roles-permissions" component={RolesPermissions} />
       <Route path="/admin/inventory/purchase-orders" component={PurchaseOrders} />
       <Route path="/admin/inventory/purchase-orders/new">{() => <PurchaseOrderFormPage />}</Route>

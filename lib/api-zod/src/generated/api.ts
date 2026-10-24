@@ -717,8 +717,61 @@ export const getLanguageHistoryQueryOffsetDefault = 0;
 export const getLanguageHistoryQueryOffsetMin = 0;
 export const getLanguageHistoryQueryOffsetMax = 1000000;
 export const getLanguageHistoryResponseRecordNameMax = 200;
-
 export const listLupinOrdersQueryLimitDefault = 25;
+export const listLupinOrdersQueryLimitMax = 100;
+export const listLupinOrdersQuerySearchMax = 200;
+export const listLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
+export const listLupinOrdersResponseItemsItemPatientCountMax = 1000000;
+export const listLupinOrdersResponseItemsItemPatientIdsMax = 200;
+export const listLupinOrdersResponseItemsItemPriceMax = 32;
+export const listLupinOrdersResponseItemsItemRemarksMax = 4000;
+export const createLupinOrderBodyAttachmentIdsMax = 10;
+export const createLupinOrderBodyPatientCountMax = 1000000;
+export const createLupinOrderBodyPatientIdsMax = 200;
+export const createLupinOrderBodyPriceMax = 32;
+export const createLupinOrderBodyRemarksMax = 4000;
+export const createLupinOrderResponseAttachmentIdsMax = 10;
+export const createLupinOrderResponsePatientCountMax = 1000000;
+export const createLupinOrderResponsePatientIdsMax = 200;
+export const createLupinOrderResponsePriceMax = 32;
+export const createLupinOrderResponseRemarksMax = 4000;
+export const exportLupinOrdersQuerySearchMax = 200;
+export const exportLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
+export const exportLupinOrdersResponseItemsItemPatientCountMax = 1000000;
+export const exportLupinOrdersResponseItemsItemPatientIdsMax = 200;
+export const exportLupinOrdersResponseItemsItemPriceMax = 32;
+export const exportLupinOrdersResponseItemsItemRemarksMax = 4000;
+export const commitLupinImportBodyConfirmUpdatesDefault = false;
+export const commitLupinImportBodyEntriesItemNumberMax = 48;
+export const commitLupinImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+export const commitLupinImportBodyEntriesItemValuesPatientCountMax = 1000000;
+export const commitLupinImportBodyEntriesItemValuesPatientIdsMax = 200;
+export const commitLupinImportBodyEntriesItemValuesPriceMax = 32;
+export const commitLupinImportBodyEntriesItemValuesRemarksMax = 4000;
+export const commitLupinImportBodyEntriesMax = 500;
+export const commitLupinImportBodyReviewTokenMax = 256;
+export const commitLupinImportResponseOrdersItemAttachmentIdsMax = 10;
+export const commitLupinImportResponseOrdersItemPatientCountMax = 1000000;
+export const commitLupinImportResponseOrdersItemPatientIdsMax = 200;
+export const commitLupinImportResponseOrdersItemPriceMax = 32;
+export const commitLupinImportResponseOrdersItemRemarksMax = 4000;
+export const reviewLupinImportBodyConfirmUpdatesDefault = false;
+export const reviewLupinImportBodyEntriesItemNumberMax = 48;
+export const reviewLupinImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+export const reviewLupinImportBodyEntriesItemValuesPatientCountMax = 1000000;
+export const reviewLupinImportBodyEntriesItemValuesPatientIdsMax = 200;
+export const reviewLupinImportBodyEntriesItemValuesPriceMax = 32;
+export const reviewLupinImportBodyEntriesItemValuesRemarksMax = 4000;
+export const reviewLupinImportBodyEntriesMax = 500;
+export const reviewLupinImportBodyReviewTokenMax = 256;
+export const lupinReferencesQuerySearchMax = 200;
+export const lupinReferencesQueryLimitDefault = 25;
+export const lupinReferencesQueryLimitMax = 100;
+export const getLupinOrderResponseAttachmentIdsMax = 10;
+export const getLupinOrderResponsePatientCountMax = 1000000;
+export const getLupinOrderResponsePatientIdsMax = 200;
+export const getLupinOrderResponsePriceMax = 32;
+export const getLupinOrderResponseRemarksMax = 4000;
 export const listMRDirectoryQueryQueryMax = 200;
 export const listMRDirectoryQueryLimitDefault = 10;
 export const listMRDirectoryQueryLimitMax = 100;
@@ -1289,6 +1342,8 @@ export const listPurchaseOrderActivityQueryLimitMax = 100;
 export const listPurchaseOrderActivityQueryOffsetDefault = 0;
 export const listPurchaseOrderActivityQueryOffsetMin = 0;
 export const listPurchaseOrderActivityQueryOffsetMax = 1000000;
+export const exportPurchaseOrdersQueryQueryMax = 200;
+export const exportPurchaseOrdersResponseItemsItemActiveReceiptCountDefault = 0;
 export const listPurchaseOrderFilterOptionsQueryQueryMax = 200;
 export const listPurchaseOrderFilterOptionsQueryLimitDefault = 25;
 export const listPurchaseOrderFilterOptionsQueryLimitMax = 100;
@@ -1483,27 +1538,27 @@ export const listCustomRolesQueryLimitDefault = 50;
 export const listCustomRolesQueryLimitMax = 100;
 export const listCustomRolesResponseItemsItemDescriptionMax = 1000;
 export const listCustomRolesResponseItemsItemNameMax = 100;
-export const listCustomRolesResponseItemsItemPermissionsMax = 40;
+export const listCustomRolesResponseItemsItemPermissionsMax = 154;
 export const createCustomRoleBodyDescriptionMax = 1000;
 export const createCustomRoleBodyNameMax = 100;
 export const createCustomRoleResponseDescriptionMax = 1000;
 export const createCustomRoleResponseNameMax = 100;
-export const createCustomRoleResponsePermissionsMax = 40;
+export const createCustomRoleResponsePermissionsMax = 154;
 export const getCustomRoleResponseDescriptionMax = 1000;
 export const getCustomRoleResponseNameMax = 100;
-export const getCustomRoleResponsePermissionsMax = 40;
+export const getCustomRoleResponsePermissionsMax = 154;
 export const deleteCustomRoleResponseDescriptionMax = 1000;
 export const deleteCustomRoleResponseNameMax = 100;
-export const deleteCustomRoleResponsePermissionsMax = 40;
+export const deleteCustomRoleResponsePermissionsMax = 154;
 export const editCustomRoleBodyDescriptionMax = 1000;
 export const editCustomRoleBodyNameMax = 100;
 export const editCustomRoleResponseDescriptionMax = 1000;
 export const editCustomRoleResponseNameMax = 100;
-export const editCustomRoleResponsePermissionsMax = 40;
-export const saveCustomRolePermissionsBodyPermissionsMax = 40;
+export const editCustomRoleResponsePermissionsMax = 154;
+export const saveCustomRolePermissionsBodyPermissionsMax = 154;
 export const saveCustomRolePermissionsResponseDescriptionMax = 1000;
 export const saveCustomRolePermissionsResponseNameMax = 100;
-export const saveCustomRolePermissionsResponsePermissionsMax = 40;
+export const saveCustomRolePermissionsResponsePermissionsMax = 154;
 export const listSalesTargetsQueryLimitDefault = 10;
 export const listSalesTargetsQueryLimitMax = 100;
 export const listSalesTargetsQueryOffsetDefault = 0;
@@ -1598,12 +1653,10 @@ export const listStaffQueryOffsetMin = 0;
 export const listStaffQueryOffsetMax = 10000;
 export const listStaffQueryRoleOneMax = 100;
 export const listStaffResponseItemsItemEmailMax = 320;
-export const listStaffResponseItemsItemLoginIdentifiersReadyDefault = false;
 export const listStaffResponseItemsItemNameMax = 200;
 export const listStaffResponseItemsItemPhoneMax = 30;
 export const listStaffResponseItemsItemRoleAvailableDefault = false;
 export const listStaffResponseItemsItemRoleResolutionRequiredDefault = false;
-export const listStaffResponseItemsItemWorkspaceLoginEnabledDefault = false;
 export const createStaffBodyEmailMax = 320;
 export const createStaffBodyEmployeeCodeMax = 64;
 export const createStaffBodyInitialPasswordOneMin = 12;
@@ -1611,12 +1664,19 @@ export const createStaffBodyInitialPasswordOneMax = 128;
 export const createStaffBodyNameMax = 200;
 export const createStaffBodyPhoneMax = 30;
 export const createStaffResponseRecordEmailMax = 320;
-export const createStaffResponseRecordLoginIdentifiersReadyDefault = false;
 export const createStaffResponseRecordNameMax = 200;
 export const createStaffResponseRecordPhoneMax = 30;
 export const createStaffResponseRecordRoleAvailableDefault = false;
 export const createStaffResponseRecordRoleResolutionRequiredDefault = false;
-export const createStaffResponseRecordWorkspaceLoginEnabledDefault = false;
+export const listStaffAccessQueryOffsetDefault = 0;
+export const listStaffAccessQueryOffsetMin = 0;
+export const listStaffAccessQueryOffsetMax = 10000;
+export const listStaffAccessQueryLimitDefault = 25;
+export const listStaffAccessQueryLimitMax = 100;
+export const getStaffDesignationReferencesQueryQueryMax = 200;
+export const getStaffDesignationReferencesQueryOffsetDefault = 0;
+export const getStaffDesignationReferencesQueryOffsetMin = 0;
+export const getStaffDesignationReferencesQueryOffsetMax = 10000;
 export const listStaffBusinessRoleChoicesQueryQueryMax = 100;
 export const listStaffBusinessRoleChoicesQueryOffsetDefault = 0;
 export const listStaffBusinessRoleChoicesQueryOffsetMin = 0;
@@ -1628,51 +1688,39 @@ export const searchStaffDirectoryBodyQueryMin = 2;
 export const searchStaffDirectoryBodyQueryMax = 200;
 export const searchStaffDirectoryBodyRoleOneMax = 100;
 export const searchStaffDirectoryResponseItemsItemEmailMax = 320;
-export const searchStaffDirectoryResponseItemsItemLoginIdentifiersReadyDefault = false;
 export const searchStaffDirectoryResponseItemsItemNameMax = 200;
 export const searchStaffDirectoryResponseItemsItemPhoneMax = 30;
 export const searchStaffDirectoryResponseItemsItemRoleAvailableDefault = false;
 export const searchStaffDirectoryResponseItemsItemRoleResolutionRequiredDefault = false;
-export const searchStaffDirectoryResponseItemsItemWorkspaceLoginEnabledDefault = false;
 export const getStaffResponseEmailMax = 320;
-export const getStaffResponseLoginIdentifiersReadyDefault = false;
 export const getStaffResponseNameMax = 200;
 export const getStaffResponsePhoneMax = 30;
 export const getStaffResponseRoleAvailableDefault = false;
 export const getStaffResponseRoleResolutionRequiredDefault = false;
-export const getStaffResponseWorkspaceLoginEnabledDefault = false;
 export const setStaffWorkspaceAccessResponseEmailMax = 320;
-export const setStaffWorkspaceAccessResponseLoginIdentifiersReadyDefault = false;
 export const setStaffWorkspaceAccessResponseNameMax = 200;
 export const setStaffWorkspaceAccessResponsePhoneMax = 30;
 export const setStaffWorkspaceAccessResponseRoleAvailableDefault = false;
 export const setStaffWorkspaceAccessResponseRoleResolutionRequiredDefault = false;
-export const setStaffWorkspaceAccessResponseWorkspaceLoginEnabledDefault = false;
 export const deleteStaffResponseEmailMax = 320;
-export const deleteStaffResponseLoginIdentifiersReadyDefault = false;
 export const deleteStaffResponseNameMax = 200;
 export const deleteStaffResponsePhoneMax = 30;
 export const deleteStaffResponseRoleAvailableDefault = false;
 export const deleteStaffResponseRoleResolutionRequiredDefault = false;
-export const deleteStaffResponseWorkspaceLoginEnabledDefault = false;
 export const editStaffBodyEmailMax = 320;
 export const editStaffBodyEmployeeCodeMax = 64;
 export const editStaffBodyNameMax = 200;
 export const editStaffBodyPhoneMax = 30;
 export const editStaffResponseEmailMax = 320;
-export const editStaffResponseLoginIdentifiersReadyDefault = false;
 export const editStaffResponseNameMax = 200;
 export const editStaffResponsePhoneMax = 30;
 export const editStaffResponseRoleAvailableDefault = false;
 export const editStaffResponseRoleResolutionRequiredDefault = false;
-export const editStaffResponseWorkspaceLoginEnabledDefault = false;
 export const setStaffStatusResponseEmailMax = 320;
-export const setStaffStatusResponseLoginIdentifiersReadyDefault = false;
 export const setStaffStatusResponseNameMax = 200;
 export const setStaffStatusResponsePhoneMax = 30;
 export const setStaffStatusResponseRoleAvailableDefault = false;
 export const setStaffStatusResponseRoleResolutionRequiredDefault = false;
-export const setStaffStatusResponseWorkspaceLoginEnabledDefault = false;
 export const listStorageLocationsQueryQueryMax = 200;
 export const listStorageLocationsQueryLimitDefault = 10;
 export const listStorageLocationsQueryLimitMax = 100;
@@ -9960,20 +10008,26 @@ export const ListInventoryMovementsResponse = zod.object({
       }),
       staffId: zod.union([zod.string().uuid(), zod.null()]),
       staffVersion: zod.union([zod.number().int(), zod.null()]),
-      summary: zod.object({
-        lots: zod.number().int(),
-        movements: zod.number().int(),
-        scope: zod.string(),
-      }),
+      summary: zod.union([
+        zod.object({
+          lots: zod.number().int(),
+          movements: zod.number().int(),
+          scope: zod.string(),
+        }),
+        zod.null(),
+      ]),
     }),
   ),
   limit: zod.number().int(),
   offset: zod.number().int(),
-  summary: zod.object({
-    lots: zod.number().int(),
-    movements: zod.number().int(),
-    scope: zod.string(),
-  }),
+  summary: zod.union([
+    zod.object({
+      lots: zod.number().int(),
+      movements: zod.number().int(),
+      scope: zod.string(),
+    }),
+    zod.null(),
+  ]),
   total: zod.number().int(),
 });
 
@@ -10142,11 +10196,14 @@ export const CreateInventoryMovementResponse = zod.object({
   }),
   staffId: zod.union([zod.string().uuid(), zod.null()]),
   staffVersion: zod.union([zod.number().int(), zod.null()]),
-  summary: zod.object({
-    lots: zod.number().int(),
-    movements: zod.number().int(),
-    scope: zod.string(),
-  }),
+  summary: zod.union([
+    zod.object({
+      lots: zod.number().int(),
+      movements: zod.number().int(),
+      scope: zod.string(),
+    }),
+    zod.null(),
+  ]),
 });
 
 /**
@@ -10434,11 +10491,14 @@ export const GetInventoryMovementResponse = zod.object({
   }),
   staffId: zod.union([zod.string().uuid(), zod.null()]),
   staffVersion: zod.union([zod.number().int(), zod.null()]),
-  summary: zod.object({
-    lots: zod.number().int(),
-    movements: zod.number().int(),
-    scope: zod.string(),
-  }),
+  summary: zod.union([
+    zod.object({
+      lots: zod.number().int(),
+      movements: zod.number().int(),
+      scope: zod.string(),
+    }),
+    zod.null(),
+  ]),
 });
 
 /**
@@ -10487,6 +10547,8 @@ export const GetInventoryReferencesParams = zod.object({
 
 export const getInventoryReferencesQueryQueryDefault = ``;
 
+export const getInventoryReferencesQueryPurposeDefault = `movement`;
+
 export const GetInventoryReferencesQueryParams = zod.object({
   query: zod.coerce
     .string()
@@ -10508,6 +10570,9 @@ export const GetInventoryReferencesQueryParams = zod.object({
   unallocated: zod.coerce
     .boolean()
     .default(getInventoryReferencesQueryUnallocatedDefault),
+  purpose: zod
+    .enum(["movement", "opening_stock"])
+    .default(getInventoryReferencesQueryPurposeDefault),
 });
 
 export const GetInventoryReferencesResponse = zod.object({
@@ -10731,11 +10796,14 @@ export const ReconcileInventoryMovementResponse = zod.object({
       }),
       staffId: zod.union([zod.string().uuid(), zod.null()]),
       staffVersion: zod.union([zod.number().int(), zod.null()]),
-      summary: zod.object({
-        lots: zod.number().int(),
-        movements: zod.number().int(),
-        scope: zod.string(),
-      }),
+      summary: zod.union([
+        zod.object({
+          lots: zod.number().int(),
+          movements: zod.number().int(),
+          scope: zod.string(),
+        }),
+        zod.null(),
+      ]),
     }),
     zod.null(),
   ]),
@@ -13113,6 +13181,673 @@ export const GetLanguageHistoryResponse = zod.object({
  */
 
 export const listLupinOrdersQuerySearchDefault = ``;
+
+export const ListLupinOrdersQueryParams = zod.object({
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listLupinOrdersQueryLimitMax)
+    .default(listLupinOrdersQueryLimitDefault),
+  search: zod.coerce
+    .string()
+    .max(listLupinOrdersQuerySearchMax)
+    .default(listLupinOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "Approved",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  payment_status: zod
+    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const listLupinOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
+
+export const listLupinOrdersResponseItemsItemRemarksDefault = ``;
+
+export const listLupinOrdersResponseItemsItemStatusDefault = `Confirmed`;
+
+export const ListLupinOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(listLupinOrdersResponseItemsItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      mr: zod.record(zod.string(), zod.unknown()),
+      mrId: zod.string().uuid(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(listLupinOrdersResponseItemsItemPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(listLupinOrdersResponseItemsItemPatientIdsMax)
+        .optional(),
+      patients: zod.array(zod.record(zod.string(), zod.unknown())),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(listLupinOrdersResponseItemsItemPaymentStatusDefault),
+      price: zod.string().max(listLupinOrdersResponseItemsItemPriceMax),
+      remarks: zod
+        .string()
+        .max(listLupinOrdersResponseItemsItemRemarksMax)
+        .default(listLupinOrdersResponseItemsItemRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "Approved",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(listLupinOrdersResponseItemsItemStatusDefault),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const createLupinOrderBodyPaymentStatusDefault = `Unpaid`;
+
+export const createLupinOrderBodyRemarksDefault = ``;
+
+export const createLupinOrderBodyStatusDefault = `Confirmed`;
+
+export const CreateLupinOrderBody = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderBodyAttachmentIdsMax)
+    .optional(),
+  doctorId: zod.string().uuid(),
+  idempotencyKey: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(createLupinOrderBodyPatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderBodyPatientIdsMax)
+    .optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(createLupinOrderBodyPaymentStatusDefault),
+  price: zod.string().max(createLupinOrderBodyPriceMax),
+  remarks: zod
+    .string()
+    .max(createLupinOrderBodyRemarksMax)
+    .default(createLupinOrderBodyRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "Approved",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createLupinOrderBodyStatusDefault),
+});
+
+export const createLupinOrderResponsePaymentStatusDefault = `Unpaid`;
+
+export const createLupinOrderResponseRemarksDefault = ``;
+
+export const createLupinOrderResponseStatusDefault = `Confirmed`;
+
+export const CreateLupinOrderResponse = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  date: zod.string(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(createLupinOrderResponsePatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(createLupinOrderResponsePatientIdsMax)
+    .optional(),
+  patients: zod.array(zod.record(zod.string(), zod.unknown())),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(createLupinOrderResponsePaymentStatusDefault),
+  price: zod.string().max(createLupinOrderResponsePriceMax),
+  remarks: zod
+    .string()
+    .max(createLupinOrderResponseRemarksMax)
+    .default(createLupinOrderResponseRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "Approved",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createLupinOrderResponseStatusDefault),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Upload
+ */
+export const UploadLupinAttachmentQueryParams = zod.object({
+  upload_id: zod.coerce.string().uuid(),
+});
+
+export const UploadLupinAttachmentBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const UploadLupinAttachmentResponse = zod.object({
+  category: zod.enum(["profile", "documents"]),
+  checksum: zod.union([zod.string(), zod.null()]),
+  content_type: zod.string(),
+  created_at: zod.coerce.date(),
+  display_name: zod.string(),
+  id: zod.string().uuid(),
+  mr_id: zod.union([zod.string().uuid(), zod.null()]),
+  patient_id: zod.union([zod.string().uuid(), zod.null()]),
+  scanner_status: zod.enum([
+    "pending",
+    "clean",
+    "infected",
+    "unavailable",
+    "error",
+  ]),
+  size: zod.number().int(),
+  state: zod.enum([
+    "uploading",
+    "quarantined",
+    "verified",
+    "rejected",
+    "pending_delete",
+    "deleted",
+  ]),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Cancel Upload
+ */
+export const CancelLupinUploadParams = zod.object({
+  upload_id: zod.coerce.string().uuid(),
+});
+
+export const CancelLupinUploadResponse = zod.object({
+  cancelled: zod.boolean(),
+  id: zod.string().uuid(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportLupinOrdersQuerySearchDefault = ``;
+
+export const ExportLupinOrdersQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(exportLupinOrdersQuerySearchMax)
+    .default(exportLupinOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "Approved",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  payment_status: zod
+    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const exportLupinOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
+
+export const exportLupinOrdersResponseItemsItemRemarksDefault = ``;
+
+export const exportLupinOrdersResponseItemsItemStatusDefault = `Confirmed`;
+
+export const ExportLupinOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(exportLupinOrdersResponseItemsItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      mr: zod.record(zod.string(), zod.unknown()),
+      mrId: zod.string().uuid(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(exportLupinOrdersResponseItemsItemPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(exportLupinOrdersResponseItemsItemPatientIdsMax)
+        .optional(),
+      patients: zod.array(zod.record(zod.string(), zod.unknown())),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(exportLupinOrdersResponseItemsItemPaymentStatusDefault),
+      price: zod.string().max(exportLupinOrdersResponseItemsItemPriceMax),
+      remarks: zod
+        .string()
+        .max(exportLupinOrdersResponseItemsItemRemarksMax)
+        .default(exportLupinOrdersResponseItemsItemRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "Approved",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(exportLupinOrdersResponseItemsItemStatusDefault),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Commit
+ */
+
+export const commitLupinImportBodyEntriesItemNumberDefault = ``;
+
+export const commitLupinImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
+
+export const commitLupinImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const commitLupinImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+
+export const commitLupinImportBodyReviewTokenDefault = ``;
+
+export const CommitLupinImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(commitLupinImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(commitLupinImportBodyEntriesItemNumberMax)
+          .default(commitLupinImportBodyEntriesItemNumberDefault),
+        values: zod.object({
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(commitLupinImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          mrId: zod.string().uuid(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patientCount: zod
+            .number()
+            .int()
+            .min(1)
+            .max(commitLupinImportBodyEntriesItemValuesPatientCountMax),
+          patientIds: zod
+            .array(zod.string().uuid())
+            .max(commitLupinImportBodyEntriesItemValuesPatientIdsMax)
+            .optional(),
+          paymentStatus: zod
+            .enum(["Unpaid", "Paid", "Partial"])
+            .default(
+              commitLupinImportBodyEntriesItemValuesPaymentStatusDefault,
+            ),
+          price: zod
+            .string()
+            .max(commitLupinImportBodyEntriesItemValuesPriceMax),
+          remarks: zod
+            .string()
+            .max(commitLupinImportBodyEntriesItemValuesRemarksMax)
+            .default(commitLupinImportBodyEntriesItemValuesRemarksDefault),
+          status: zod
+            .enum([
+              "Confirmed",
+              "Approved",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(commitLupinImportBodyEntriesItemValuesStatusDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(commitLupinImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(commitLupinImportBodyReviewTokenMax)
+    .default(commitLupinImportBodyReviewTokenDefault),
+});
+
+export const commitLupinImportResponseOrdersItemPaymentStatusDefault = `Unpaid`;
+
+export const commitLupinImportResponseOrdersItemRemarksDefault = ``;
+
+export const commitLupinImportResponseOrdersItemStatusDefault = `Confirmed`;
+
+export const CommitLupinImportResponse = zod.object({
+  imported: zod.number().int(),
+  orders: zod.array(
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(commitLupinImportResponseOrdersItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      mr: zod.record(zod.string(), zod.unknown()),
+      mrId: zod.string().uuid(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(commitLupinImportResponseOrdersItemPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(commitLupinImportResponseOrdersItemPatientIdsMax)
+        .optional(),
+      patients: zod.array(zod.record(zod.string(), zod.unknown())),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(commitLupinImportResponseOrdersItemPaymentStatusDefault),
+      price: zod.string().max(commitLupinImportResponseOrdersItemPriceMax),
+      remarks: zod
+        .string()
+        .max(commitLupinImportResponseOrdersItemRemarksMax)
+        .default(commitLupinImportResponseOrdersItemRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "Approved",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(commitLupinImportResponseOrdersItemStatusDefault),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Review
+ */
+
+export const reviewLupinImportBodyEntriesItemNumberDefault = ``;
+
+export const reviewLupinImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
+
+export const reviewLupinImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const reviewLupinImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+
+export const reviewLupinImportBodyReviewTokenDefault = ``;
+
+export const ReviewLupinImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(reviewLupinImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(reviewLupinImportBodyEntriesItemNumberMax)
+          .default(reviewLupinImportBodyEntriesItemNumberDefault),
+        values: zod.object({
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(reviewLupinImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          mrId: zod.string().uuid(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patientCount: zod
+            .number()
+            .int()
+            .min(1)
+            .max(reviewLupinImportBodyEntriesItemValuesPatientCountMax),
+          patientIds: zod
+            .array(zod.string().uuid())
+            .max(reviewLupinImportBodyEntriesItemValuesPatientIdsMax)
+            .optional(),
+          paymentStatus: zod
+            .enum(["Unpaid", "Paid", "Partial"])
+            .default(
+              reviewLupinImportBodyEntriesItemValuesPaymentStatusDefault,
+            ),
+          price: zod
+            .string()
+            .max(reviewLupinImportBodyEntriesItemValuesPriceMax),
+          remarks: zod
+            .string()
+            .max(reviewLupinImportBodyEntriesItemValuesRemarksMax)
+            .default(reviewLupinImportBodyEntriesItemValuesRemarksDefault),
+          status: zod
+            .enum([
+              "Confirmed",
+              "Approved",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(reviewLupinImportBodyEntriesItemValuesStatusDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(reviewLupinImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(reviewLupinImportBodyReviewTokenMax)
+    .default(reviewLupinImportBodyReviewTokenDefault),
+});
+
+export const ReviewLupinImportResponse = zod.object({
+  additions: zod.number().int(),
+  entries: zod.array(zod.record(zod.string(), zod.unknown())),
+  patientAdditions: zod.number().int(),
+  rejected: zod.number().int(),
+  reviewToken: zod.string(),
+  unchanged: zod.number().int(),
+  updates: zod.number().int(),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Policy
+ */
+export const LupinUploadPolicyResponse = zod.object({
+  maxBytes: zod.number().int(),
+  maxFiles: zod.number().int(),
+  types: zod.array(zod.string()),
+});
+
+/**
+ * @summary References
+ */
+export const LupinReferencesParams = zod.object({
+  kind: zod.enum(["patients", "doctors", "mrs"]),
+});
+
+export const lupinReferencesQuerySearchDefault = ``;
+
+export const LupinReferencesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(lupinReferencesQuerySearchMax)
+    .default(lupinReferencesQuerySearchDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(lupinReferencesQueryLimitMax)
+    .default(lupinReferencesQueryLimitDefault),
+  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const LupinReferencesResponse = zod.object({
+  items: zod.array(zod.record(zod.string(), zod.unknown())),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetLupinOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getLupinOrderResponsePaymentStatusDefault = `Unpaid`;
+
+export const getLupinOrderResponseRemarksDefault = ``;
+
+export const getLupinOrderResponseStatusDefault = `Confirmed`;
+
+export const GetLupinOrderResponse = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(getLupinOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  date: zod.string(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(getLupinOrderResponsePatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(getLupinOrderResponsePatientIdsMax)
+    .optional(),
+  patients: zod.array(zod.record(zod.string(), zod.unknown())),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(getLupinOrderResponsePaymentStatusDefault),
+  price: zod.string().max(getLupinOrderResponsePriceMax),
+  remarks: zod
+    .string()
+    .max(getLupinOrderResponseRemarksMax)
+    .default(getLupinOrderResponseRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "Approved",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(getLupinOrderResponseStatusDefault),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
 /**
  * @summary Listing
  */
@@ -23589,6 +24324,124 @@ export const GetPurchaseOrderAnalyticsResponse = zod.object({
 });
 
 /**
+ * @summary Export
+ */
+export const exportPurchaseOrdersQueryQueryDefault = ``;
+
+export const exportPurchaseOrdersQueryStatusDefault = `open`;
+export const exportPurchaseOrdersQuerySortDefault = `recent`;
+
+export const ExportPurchaseOrdersQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportPurchaseOrdersQueryQueryMax)
+    .default(exportPurchaseOrdersQueryQueryDefault),
+  status: zod
+    .enum(["open", "deleted", "all"])
+    .default(exportPurchaseOrdersQueryStatusDefault),
+  vendor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  product_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  sort: zod
+    .enum(["recent", "oldest"])
+    .default(exportPurchaseOrdersQuerySortDefault),
+});
+
+export const ExportPurchaseOrdersResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      activeReceiptCount: zod
+        .number()
+        .int()
+        .default(
+          exportPurchaseOrdersResponseItemsItemActiveReceiptCountDefault,
+        ),
+      createdAt: zod.string(),
+      deletedAt: zod.union([zod.string(), zod.null()]),
+      documentRevision: zod.union([zod.number().int(), zod.null()]).optional(),
+      expectedDate: zod.coerce.date(),
+      gstAmount: zod.number().int(),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          componentRates: zod
+            .union([
+              zod.object({
+                cgst: zod.string(),
+                igst: zod.string(),
+                sgst: zod.string(),
+                utgst: zod.string(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
+          gst: zod.string(),
+          gstAmount: zod.number().int(),
+          id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          quantity: zod.string(),
+          subtotal: zod.number().int(),
+          taxComponents: zod
+            .union([
+              zod.object({
+                cgst: zod.number().int(),
+                igst: zod.number().int(),
+                sgst: zod.number().int(),
+                utgst: zod.number().int(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
+          total: zod.number().int(),
+          unitPrice: zod.string(),
+        }),
+      ),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      number: zod.string(),
+      poDate: zod.coerce.date(),
+      status: zod.string(),
+      subtotal: zod.number().int(),
+      taxBasis: zod
+        .union([
+          zod.object({
+            placeOfSupplyCode: zod.string(),
+            placeOfSupplyName: zod.string(),
+            supplierGstin: zod.string(),
+            supplierStateCode: zod.string(),
+            supplierStateName: zod.string(),
+            treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      total: zod.number().int(),
+      updatedAt: zod.string(),
+      vendorId: zod.string().uuid(),
+      vendorName: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Filters
  */
 export const ListPurchaseOrderFilterOptionsParams = zod.object({
@@ -26595,50 +27448,165 @@ export const ListCustomRolesResponse = zod.object({
       permissions: zod
         .array(
           zod.enum([
-            "zone.add",
-            "zone.edit",
-            "zone.delete",
-            "zone.export",
-            "zone.import",
-            "headquarter.add",
-            "headquarter.edit",
-            "headquarter.delete",
-            "headquarter.export",
-            "headquarter.import",
-            "mr.add",
-            "mr.edit",
-            "mr.delete",
-            "mr.export",
-            "mr.import",
-            "patient.add",
-            "patient.edit",
-            "patient.delete",
-            "patient.export",
-            "patient.import",
-            "doctor.add",
-            "doctor.edit",
-            "doctor.delete",
-            "doctor.export",
-            "doctor.import",
-            "product_category.add",
-            "product_category.edit",
-            "product_category.delete",
-            "product_category.export",
-            "product_category.import",
-            "location.add",
-            "location.edit",
-            "location.delete",
-            "location.export",
-            "location.import",
+            "allergen.add",
+            "allergen.delete",
+            "allergen.edit",
+            "allergen.export",
+            "allergen.import",
+            "allergen.view",
             "courier.add",
-            "courier.edit",
             "courier.delete",
+            "courier.edit",
             "courier.export",
             "courier.import",
+            "courier.view",
+            "designation.add",
+            "designation.delete",
+            "designation.edit",
+            "designation.export",
+            "designation.import",
+            "designation.view",
+            "doctor.add",
+            "doctor.delete",
+            "doctor.edit",
+            "doctor.export",
+            "doctor.import",
+            "doctor.view",
+            "headquarter.add",
+            "headquarter.delete",
+            "headquarter.edit",
+            "headquarter.export",
+            "headquarter.import",
+            "headquarter.view",
+            "immunotherapy.add",
+            "immunotherapy.edit",
+            "immunotherapy.export",
+            "immunotherapy.import",
+            "immunotherapy.read_attachment",
+            "immunotherapy.upload_attachment",
+            "immunotherapy.view",
+            "kits.add",
+            "kits.export",
+            "kits.import",
+            "kits.read_attachment",
+            "kits.upload_attachment",
+            "kits.view",
+            "language.add",
+            "language.delete",
+            "language.edit",
+            "language.export",
+            "language.import",
+            "language.view",
+            "location.add",
+            "location.delete",
+            "location.edit",
+            "location.export",
+            "location.import",
+            "location.view",
+            "lupin.add",
+            "lupin.export",
+            "lupin.import",
+            "lupin.read_attachment",
+            "lupin.upload_attachment",
+            "lupin.view",
+            "mr.add",
+            "mr.delete",
+            "mr.edit",
+            "mr.export",
+            "mr.import",
+            "mr.view",
+            "opening_balance.add",
+            "opening_balance.delete",
+            "opening_balance.edit",
+            "opening_balance.export",
+            "opening_balance.import",
+            "opening_balance.view",
+            "opening_stock.add",
+            "opening_stock.export",
+            "opening_stock.import",
+            "opening_stock.view",
+            "patient.add",
+            "patient.delete",
+            "patient.edit",
+            "patient.export",
+            "patient.import",
+            "patient.view",
+            "permissions.view",
+            "product.add",
+            "product.delete",
+            "product.edit",
+            "product.export",
+            "product.import",
+            "product.view",
+            "product_category.add",
+            "product_category.delete",
+            "product_category.edit",
+            "product_category.export",
+            "product_category.import",
+            "product_category.view",
+            "purchase_order.activity",
+            "purchase_order.add",
+            "purchase_order.analytics",
+            "purchase_order.delete",
+            "purchase_order.edit",
+            "purchase_order.export",
+            "purchase_order.history",
+            "purchase_order.print",
+            "purchase_order.view",
+            "purchase_received.activity",
+            "purchase_received.add",
+            "purchase_received.analytics",
+            "purchase_received.delete",
+            "purchase_received.edit",
+            "purchase_received.export",
+            "purchase_received.history",
+            "purchase_received.print",
+            "purchase_received.view",
+            "role.add",
+            "role.delete",
+            "role.edit",
+            "role.view",
+            "sales_target.add",
+            "sales_target.delete",
+            "sales_target.edit",
+            "sales_target.export",
+            "sales_target.import",
+            "sales_target.view",
+            "spt.add",
+            "spt.edit",
+            "spt.export",
+            "spt.import",
+            "spt.view",
+            "staff.add",
+            "staff.delete",
+            "staff.edit",
+            "staff.status",
+            "staff.view",
+            "staff_access.view",
+            "stock_movement.activity",
+            "stock_movement.analytics",
+            "stock_movement.create",
+            "stock_movement.view",
+            "stock_status.export",
+            "stock_status.history",
+            "stock_status.view",
+            "vendor.add",
+            "vendor.delete",
+            "vendor.edit",
+            "vendor.export",
+            "vendor.import",
+            "vendor.view",
+            "zone.add",
+            "zone.delete",
+            "zone.edit",
+            "zone.export",
+            "zone.import",
+            "zone.view",
           ]),
         )
         .max(listCustomRolesResponseItemsItemPermissionsMax)
         .optional(),
+      permissions_visible: zod.boolean(),
       updated_at: zod.coerce.date(),
       updated_by: zod.string().uuid(),
       version: zod.number().int(),
@@ -26677,50 +27645,165 @@ export const CreateCustomRoleResponse = zod.object({
   permissions: zod
     .array(
       zod.enum([
-        "zone.add",
-        "zone.edit",
-        "zone.delete",
-        "zone.export",
-        "zone.import",
-        "headquarter.add",
-        "headquarter.edit",
-        "headquarter.delete",
-        "headquarter.export",
-        "headquarter.import",
-        "mr.add",
-        "mr.edit",
-        "mr.delete",
-        "mr.export",
-        "mr.import",
-        "patient.add",
-        "patient.edit",
-        "patient.delete",
-        "patient.export",
-        "patient.import",
-        "doctor.add",
-        "doctor.edit",
-        "doctor.delete",
-        "doctor.export",
-        "doctor.import",
-        "product_category.add",
-        "product_category.edit",
-        "product_category.delete",
-        "product_category.export",
-        "product_category.import",
-        "location.add",
-        "location.edit",
-        "location.delete",
-        "location.export",
-        "location.import",
+        "allergen.add",
+        "allergen.delete",
+        "allergen.edit",
+        "allergen.export",
+        "allergen.import",
+        "allergen.view",
         "courier.add",
-        "courier.edit",
         "courier.delete",
+        "courier.edit",
         "courier.export",
         "courier.import",
+        "courier.view",
+        "designation.add",
+        "designation.delete",
+        "designation.edit",
+        "designation.export",
+        "designation.import",
+        "designation.view",
+        "doctor.add",
+        "doctor.delete",
+        "doctor.edit",
+        "doctor.export",
+        "doctor.import",
+        "doctor.view",
+        "headquarter.add",
+        "headquarter.delete",
+        "headquarter.edit",
+        "headquarter.export",
+        "headquarter.import",
+        "headquarter.view",
+        "immunotherapy.add",
+        "immunotherapy.edit",
+        "immunotherapy.export",
+        "immunotherapy.import",
+        "immunotherapy.read_attachment",
+        "immunotherapy.upload_attachment",
+        "immunotherapy.view",
+        "kits.add",
+        "kits.export",
+        "kits.import",
+        "kits.read_attachment",
+        "kits.upload_attachment",
+        "kits.view",
+        "language.add",
+        "language.delete",
+        "language.edit",
+        "language.export",
+        "language.import",
+        "language.view",
+        "location.add",
+        "location.delete",
+        "location.edit",
+        "location.export",
+        "location.import",
+        "location.view",
+        "lupin.add",
+        "lupin.export",
+        "lupin.import",
+        "lupin.read_attachment",
+        "lupin.upload_attachment",
+        "lupin.view",
+        "mr.add",
+        "mr.delete",
+        "mr.edit",
+        "mr.export",
+        "mr.import",
+        "mr.view",
+        "opening_balance.add",
+        "opening_balance.delete",
+        "opening_balance.edit",
+        "opening_balance.export",
+        "opening_balance.import",
+        "opening_balance.view",
+        "opening_stock.add",
+        "opening_stock.export",
+        "opening_stock.import",
+        "opening_stock.view",
+        "patient.add",
+        "patient.delete",
+        "patient.edit",
+        "patient.export",
+        "patient.import",
+        "patient.view",
+        "permissions.view",
+        "product.add",
+        "product.delete",
+        "product.edit",
+        "product.export",
+        "product.import",
+        "product.view",
+        "product_category.add",
+        "product_category.delete",
+        "product_category.edit",
+        "product_category.export",
+        "product_category.import",
+        "product_category.view",
+        "purchase_order.activity",
+        "purchase_order.add",
+        "purchase_order.analytics",
+        "purchase_order.delete",
+        "purchase_order.edit",
+        "purchase_order.export",
+        "purchase_order.history",
+        "purchase_order.print",
+        "purchase_order.view",
+        "purchase_received.activity",
+        "purchase_received.add",
+        "purchase_received.analytics",
+        "purchase_received.delete",
+        "purchase_received.edit",
+        "purchase_received.export",
+        "purchase_received.history",
+        "purchase_received.print",
+        "purchase_received.view",
+        "role.add",
+        "role.delete",
+        "role.edit",
+        "role.view",
+        "sales_target.add",
+        "sales_target.delete",
+        "sales_target.edit",
+        "sales_target.export",
+        "sales_target.import",
+        "sales_target.view",
+        "spt.add",
+        "spt.edit",
+        "spt.export",
+        "spt.import",
+        "spt.view",
+        "staff.add",
+        "staff.delete",
+        "staff.edit",
+        "staff.status",
+        "staff.view",
+        "staff_access.view",
+        "stock_movement.activity",
+        "stock_movement.analytics",
+        "stock_movement.create",
+        "stock_movement.view",
+        "stock_status.export",
+        "stock_status.history",
+        "stock_status.view",
+        "vendor.add",
+        "vendor.delete",
+        "vendor.edit",
+        "vendor.export",
+        "vendor.import",
+        "vendor.view",
+        "zone.add",
+        "zone.delete",
+        "zone.edit",
+        "zone.export",
+        "zone.import",
+        "zone.view",
       ]),
     )
     .max(createCustomRoleResponsePermissionsMax)
     .optional(),
+  permissions_visible: zod.boolean(),
   updated_at: zod.coerce.date(),
   updated_by: zod.string().uuid(),
   version: zod.number().int(),
@@ -26749,50 +27832,165 @@ export const GetCustomRoleResponse = zod.object({
   permissions: zod
     .array(
       zod.enum([
-        "zone.add",
-        "zone.edit",
-        "zone.delete",
-        "zone.export",
-        "zone.import",
-        "headquarter.add",
-        "headquarter.edit",
-        "headquarter.delete",
-        "headquarter.export",
-        "headquarter.import",
-        "mr.add",
-        "mr.edit",
-        "mr.delete",
-        "mr.export",
-        "mr.import",
-        "patient.add",
-        "patient.edit",
-        "patient.delete",
-        "patient.export",
-        "patient.import",
-        "doctor.add",
-        "doctor.edit",
-        "doctor.delete",
-        "doctor.export",
-        "doctor.import",
-        "product_category.add",
-        "product_category.edit",
-        "product_category.delete",
-        "product_category.export",
-        "product_category.import",
-        "location.add",
-        "location.edit",
-        "location.delete",
-        "location.export",
-        "location.import",
+        "allergen.add",
+        "allergen.delete",
+        "allergen.edit",
+        "allergen.export",
+        "allergen.import",
+        "allergen.view",
         "courier.add",
-        "courier.edit",
         "courier.delete",
+        "courier.edit",
         "courier.export",
         "courier.import",
+        "courier.view",
+        "designation.add",
+        "designation.delete",
+        "designation.edit",
+        "designation.export",
+        "designation.import",
+        "designation.view",
+        "doctor.add",
+        "doctor.delete",
+        "doctor.edit",
+        "doctor.export",
+        "doctor.import",
+        "doctor.view",
+        "headquarter.add",
+        "headquarter.delete",
+        "headquarter.edit",
+        "headquarter.export",
+        "headquarter.import",
+        "headquarter.view",
+        "immunotherapy.add",
+        "immunotherapy.edit",
+        "immunotherapy.export",
+        "immunotherapy.import",
+        "immunotherapy.read_attachment",
+        "immunotherapy.upload_attachment",
+        "immunotherapy.view",
+        "kits.add",
+        "kits.export",
+        "kits.import",
+        "kits.read_attachment",
+        "kits.upload_attachment",
+        "kits.view",
+        "language.add",
+        "language.delete",
+        "language.edit",
+        "language.export",
+        "language.import",
+        "language.view",
+        "location.add",
+        "location.delete",
+        "location.edit",
+        "location.export",
+        "location.import",
+        "location.view",
+        "lupin.add",
+        "lupin.export",
+        "lupin.import",
+        "lupin.read_attachment",
+        "lupin.upload_attachment",
+        "lupin.view",
+        "mr.add",
+        "mr.delete",
+        "mr.edit",
+        "mr.export",
+        "mr.import",
+        "mr.view",
+        "opening_balance.add",
+        "opening_balance.delete",
+        "opening_balance.edit",
+        "opening_balance.export",
+        "opening_balance.import",
+        "opening_balance.view",
+        "opening_stock.add",
+        "opening_stock.export",
+        "opening_stock.import",
+        "opening_stock.view",
+        "patient.add",
+        "patient.delete",
+        "patient.edit",
+        "patient.export",
+        "patient.import",
+        "patient.view",
+        "permissions.view",
+        "product.add",
+        "product.delete",
+        "product.edit",
+        "product.export",
+        "product.import",
+        "product.view",
+        "product_category.add",
+        "product_category.delete",
+        "product_category.edit",
+        "product_category.export",
+        "product_category.import",
+        "product_category.view",
+        "purchase_order.activity",
+        "purchase_order.add",
+        "purchase_order.analytics",
+        "purchase_order.delete",
+        "purchase_order.edit",
+        "purchase_order.export",
+        "purchase_order.history",
+        "purchase_order.print",
+        "purchase_order.view",
+        "purchase_received.activity",
+        "purchase_received.add",
+        "purchase_received.analytics",
+        "purchase_received.delete",
+        "purchase_received.edit",
+        "purchase_received.export",
+        "purchase_received.history",
+        "purchase_received.print",
+        "purchase_received.view",
+        "role.add",
+        "role.delete",
+        "role.edit",
+        "role.view",
+        "sales_target.add",
+        "sales_target.delete",
+        "sales_target.edit",
+        "sales_target.export",
+        "sales_target.import",
+        "sales_target.view",
+        "spt.add",
+        "spt.edit",
+        "spt.export",
+        "spt.import",
+        "spt.view",
+        "staff.add",
+        "staff.delete",
+        "staff.edit",
+        "staff.status",
+        "staff.view",
+        "staff_access.view",
+        "stock_movement.activity",
+        "stock_movement.analytics",
+        "stock_movement.create",
+        "stock_movement.view",
+        "stock_status.export",
+        "stock_status.history",
+        "stock_status.view",
+        "vendor.add",
+        "vendor.delete",
+        "vendor.edit",
+        "vendor.export",
+        "vendor.import",
+        "vendor.view",
+        "zone.add",
+        "zone.delete",
+        "zone.edit",
+        "zone.export",
+        "zone.import",
+        "zone.view",
       ]),
     )
     .max(getCustomRoleResponsePermissionsMax)
     .optional(),
+  permissions_visible: zod.boolean(),
   updated_at: zod.coerce.date(),
   updated_by: zod.string().uuid(),
   version: zod.number().int(),
@@ -26826,50 +28024,165 @@ export const DeleteCustomRoleResponse = zod.object({
   permissions: zod
     .array(
       zod.enum([
-        "zone.add",
-        "zone.edit",
-        "zone.delete",
-        "zone.export",
-        "zone.import",
-        "headquarter.add",
-        "headquarter.edit",
-        "headquarter.delete",
-        "headquarter.export",
-        "headquarter.import",
-        "mr.add",
-        "mr.edit",
-        "mr.delete",
-        "mr.export",
-        "mr.import",
-        "patient.add",
-        "patient.edit",
-        "patient.delete",
-        "patient.export",
-        "patient.import",
-        "doctor.add",
-        "doctor.edit",
-        "doctor.delete",
-        "doctor.export",
-        "doctor.import",
-        "product_category.add",
-        "product_category.edit",
-        "product_category.delete",
-        "product_category.export",
-        "product_category.import",
-        "location.add",
-        "location.edit",
-        "location.delete",
-        "location.export",
-        "location.import",
+        "allergen.add",
+        "allergen.delete",
+        "allergen.edit",
+        "allergen.export",
+        "allergen.import",
+        "allergen.view",
         "courier.add",
-        "courier.edit",
         "courier.delete",
+        "courier.edit",
         "courier.export",
         "courier.import",
+        "courier.view",
+        "designation.add",
+        "designation.delete",
+        "designation.edit",
+        "designation.export",
+        "designation.import",
+        "designation.view",
+        "doctor.add",
+        "doctor.delete",
+        "doctor.edit",
+        "doctor.export",
+        "doctor.import",
+        "doctor.view",
+        "headquarter.add",
+        "headquarter.delete",
+        "headquarter.edit",
+        "headquarter.export",
+        "headquarter.import",
+        "headquarter.view",
+        "immunotherapy.add",
+        "immunotherapy.edit",
+        "immunotherapy.export",
+        "immunotherapy.import",
+        "immunotherapy.read_attachment",
+        "immunotherapy.upload_attachment",
+        "immunotherapy.view",
+        "kits.add",
+        "kits.export",
+        "kits.import",
+        "kits.read_attachment",
+        "kits.upload_attachment",
+        "kits.view",
+        "language.add",
+        "language.delete",
+        "language.edit",
+        "language.export",
+        "language.import",
+        "language.view",
+        "location.add",
+        "location.delete",
+        "location.edit",
+        "location.export",
+        "location.import",
+        "location.view",
+        "lupin.add",
+        "lupin.export",
+        "lupin.import",
+        "lupin.read_attachment",
+        "lupin.upload_attachment",
+        "lupin.view",
+        "mr.add",
+        "mr.delete",
+        "mr.edit",
+        "mr.export",
+        "mr.import",
+        "mr.view",
+        "opening_balance.add",
+        "opening_balance.delete",
+        "opening_balance.edit",
+        "opening_balance.export",
+        "opening_balance.import",
+        "opening_balance.view",
+        "opening_stock.add",
+        "opening_stock.export",
+        "opening_stock.import",
+        "opening_stock.view",
+        "patient.add",
+        "patient.delete",
+        "patient.edit",
+        "patient.export",
+        "patient.import",
+        "patient.view",
+        "permissions.view",
+        "product.add",
+        "product.delete",
+        "product.edit",
+        "product.export",
+        "product.import",
+        "product.view",
+        "product_category.add",
+        "product_category.delete",
+        "product_category.edit",
+        "product_category.export",
+        "product_category.import",
+        "product_category.view",
+        "purchase_order.activity",
+        "purchase_order.add",
+        "purchase_order.analytics",
+        "purchase_order.delete",
+        "purchase_order.edit",
+        "purchase_order.export",
+        "purchase_order.history",
+        "purchase_order.print",
+        "purchase_order.view",
+        "purchase_received.activity",
+        "purchase_received.add",
+        "purchase_received.analytics",
+        "purchase_received.delete",
+        "purchase_received.edit",
+        "purchase_received.export",
+        "purchase_received.history",
+        "purchase_received.print",
+        "purchase_received.view",
+        "role.add",
+        "role.delete",
+        "role.edit",
+        "role.view",
+        "sales_target.add",
+        "sales_target.delete",
+        "sales_target.edit",
+        "sales_target.export",
+        "sales_target.import",
+        "sales_target.view",
+        "spt.add",
+        "spt.edit",
+        "spt.export",
+        "spt.import",
+        "spt.view",
+        "staff.add",
+        "staff.delete",
+        "staff.edit",
+        "staff.status",
+        "staff.view",
+        "staff_access.view",
+        "stock_movement.activity",
+        "stock_movement.analytics",
+        "stock_movement.create",
+        "stock_movement.view",
+        "stock_status.export",
+        "stock_status.history",
+        "stock_status.view",
+        "vendor.add",
+        "vendor.delete",
+        "vendor.edit",
+        "vendor.export",
+        "vendor.import",
+        "vendor.view",
+        "zone.add",
+        "zone.delete",
+        "zone.edit",
+        "zone.export",
+        "zone.import",
+        "zone.view",
       ]),
     )
     .max(deleteCustomRoleResponsePermissionsMax)
     .optional(),
+  permissions_visible: zod.boolean(),
   updated_at: zod.coerce.date(),
   updated_by: zod.string().uuid(),
   version: zod.number().int(),
@@ -26909,50 +28222,165 @@ export const EditCustomRoleResponse = zod.object({
   permissions: zod
     .array(
       zod.enum([
-        "zone.add",
-        "zone.edit",
-        "zone.delete",
-        "zone.export",
-        "zone.import",
-        "headquarter.add",
-        "headquarter.edit",
-        "headquarter.delete",
-        "headquarter.export",
-        "headquarter.import",
-        "mr.add",
-        "mr.edit",
-        "mr.delete",
-        "mr.export",
-        "mr.import",
-        "patient.add",
-        "patient.edit",
-        "patient.delete",
-        "patient.export",
-        "patient.import",
-        "doctor.add",
-        "doctor.edit",
-        "doctor.delete",
-        "doctor.export",
-        "doctor.import",
-        "product_category.add",
-        "product_category.edit",
-        "product_category.delete",
-        "product_category.export",
-        "product_category.import",
-        "location.add",
-        "location.edit",
-        "location.delete",
-        "location.export",
-        "location.import",
+        "allergen.add",
+        "allergen.delete",
+        "allergen.edit",
+        "allergen.export",
+        "allergen.import",
+        "allergen.view",
         "courier.add",
-        "courier.edit",
         "courier.delete",
+        "courier.edit",
         "courier.export",
         "courier.import",
+        "courier.view",
+        "designation.add",
+        "designation.delete",
+        "designation.edit",
+        "designation.export",
+        "designation.import",
+        "designation.view",
+        "doctor.add",
+        "doctor.delete",
+        "doctor.edit",
+        "doctor.export",
+        "doctor.import",
+        "doctor.view",
+        "headquarter.add",
+        "headquarter.delete",
+        "headquarter.edit",
+        "headquarter.export",
+        "headquarter.import",
+        "headquarter.view",
+        "immunotherapy.add",
+        "immunotherapy.edit",
+        "immunotherapy.export",
+        "immunotherapy.import",
+        "immunotherapy.read_attachment",
+        "immunotherapy.upload_attachment",
+        "immunotherapy.view",
+        "kits.add",
+        "kits.export",
+        "kits.import",
+        "kits.read_attachment",
+        "kits.upload_attachment",
+        "kits.view",
+        "language.add",
+        "language.delete",
+        "language.edit",
+        "language.export",
+        "language.import",
+        "language.view",
+        "location.add",
+        "location.delete",
+        "location.edit",
+        "location.export",
+        "location.import",
+        "location.view",
+        "lupin.add",
+        "lupin.export",
+        "lupin.import",
+        "lupin.read_attachment",
+        "lupin.upload_attachment",
+        "lupin.view",
+        "mr.add",
+        "mr.delete",
+        "mr.edit",
+        "mr.export",
+        "mr.import",
+        "mr.view",
+        "opening_balance.add",
+        "opening_balance.delete",
+        "opening_balance.edit",
+        "opening_balance.export",
+        "opening_balance.import",
+        "opening_balance.view",
+        "opening_stock.add",
+        "opening_stock.export",
+        "opening_stock.import",
+        "opening_stock.view",
+        "patient.add",
+        "patient.delete",
+        "patient.edit",
+        "patient.export",
+        "patient.import",
+        "patient.view",
+        "permissions.view",
+        "product.add",
+        "product.delete",
+        "product.edit",
+        "product.export",
+        "product.import",
+        "product.view",
+        "product_category.add",
+        "product_category.delete",
+        "product_category.edit",
+        "product_category.export",
+        "product_category.import",
+        "product_category.view",
+        "purchase_order.activity",
+        "purchase_order.add",
+        "purchase_order.analytics",
+        "purchase_order.delete",
+        "purchase_order.edit",
+        "purchase_order.export",
+        "purchase_order.history",
+        "purchase_order.print",
+        "purchase_order.view",
+        "purchase_received.activity",
+        "purchase_received.add",
+        "purchase_received.analytics",
+        "purchase_received.delete",
+        "purchase_received.edit",
+        "purchase_received.export",
+        "purchase_received.history",
+        "purchase_received.print",
+        "purchase_received.view",
+        "role.add",
+        "role.delete",
+        "role.edit",
+        "role.view",
+        "sales_target.add",
+        "sales_target.delete",
+        "sales_target.edit",
+        "sales_target.export",
+        "sales_target.import",
+        "sales_target.view",
+        "spt.add",
+        "spt.edit",
+        "spt.export",
+        "spt.import",
+        "spt.view",
+        "staff.add",
+        "staff.delete",
+        "staff.edit",
+        "staff.status",
+        "staff.view",
+        "staff_access.view",
+        "stock_movement.activity",
+        "stock_movement.analytics",
+        "stock_movement.create",
+        "stock_movement.view",
+        "stock_status.export",
+        "stock_status.history",
+        "stock_status.view",
+        "vendor.add",
+        "vendor.delete",
+        "vendor.edit",
+        "vendor.export",
+        "vendor.import",
+        "vendor.view",
+        "zone.add",
+        "zone.delete",
+        "zone.edit",
+        "zone.export",
+        "zone.import",
+        "zone.view",
       ]),
     )
     .max(editCustomRoleResponsePermissionsMax)
     .optional(),
+  permissions_visible: zod.boolean(),
   updated_at: zod.coerce.date(),
   updated_by: zod.string().uuid(),
   version: zod.number().int(),
@@ -26970,46 +28398,160 @@ export const SaveCustomRolePermissionsBody = zod.object({
   permissions: zod
     .array(
       zod.enum([
-        "zone.add",
-        "zone.edit",
-        "zone.delete",
-        "zone.export",
-        "zone.import",
-        "headquarter.add",
-        "headquarter.edit",
-        "headquarter.delete",
-        "headquarter.export",
-        "headquarter.import",
-        "mr.add",
-        "mr.edit",
-        "mr.delete",
-        "mr.export",
-        "mr.import",
-        "patient.add",
-        "patient.edit",
-        "patient.delete",
-        "patient.export",
-        "patient.import",
-        "doctor.add",
-        "doctor.edit",
-        "doctor.delete",
-        "doctor.export",
-        "doctor.import",
-        "product_category.add",
-        "product_category.edit",
-        "product_category.delete",
-        "product_category.export",
-        "product_category.import",
-        "location.add",
-        "location.edit",
-        "location.delete",
-        "location.export",
-        "location.import",
+        "allergen.add",
+        "allergen.delete",
+        "allergen.edit",
+        "allergen.export",
+        "allergen.import",
+        "allergen.view",
         "courier.add",
-        "courier.edit",
         "courier.delete",
+        "courier.edit",
         "courier.export",
         "courier.import",
+        "courier.view",
+        "designation.add",
+        "designation.delete",
+        "designation.edit",
+        "designation.export",
+        "designation.import",
+        "designation.view",
+        "doctor.add",
+        "doctor.delete",
+        "doctor.edit",
+        "doctor.export",
+        "doctor.import",
+        "doctor.view",
+        "headquarter.add",
+        "headquarter.delete",
+        "headquarter.edit",
+        "headquarter.export",
+        "headquarter.import",
+        "headquarter.view",
+        "immunotherapy.add",
+        "immunotherapy.edit",
+        "immunotherapy.export",
+        "immunotherapy.import",
+        "immunotherapy.read_attachment",
+        "immunotherapy.upload_attachment",
+        "immunotherapy.view",
+        "kits.add",
+        "kits.export",
+        "kits.import",
+        "kits.read_attachment",
+        "kits.upload_attachment",
+        "kits.view",
+        "language.add",
+        "language.delete",
+        "language.edit",
+        "language.export",
+        "language.import",
+        "language.view",
+        "location.add",
+        "location.delete",
+        "location.edit",
+        "location.export",
+        "location.import",
+        "location.view",
+        "lupin.add",
+        "lupin.export",
+        "lupin.import",
+        "lupin.read_attachment",
+        "lupin.upload_attachment",
+        "lupin.view",
+        "mr.add",
+        "mr.delete",
+        "mr.edit",
+        "mr.export",
+        "mr.import",
+        "mr.view",
+        "opening_balance.add",
+        "opening_balance.delete",
+        "opening_balance.edit",
+        "opening_balance.export",
+        "opening_balance.import",
+        "opening_balance.view",
+        "opening_stock.add",
+        "opening_stock.export",
+        "opening_stock.import",
+        "opening_stock.view",
+        "patient.add",
+        "patient.delete",
+        "patient.edit",
+        "patient.export",
+        "patient.import",
+        "patient.view",
+        "permissions.view",
+        "product.add",
+        "product.delete",
+        "product.edit",
+        "product.export",
+        "product.import",
+        "product.view",
+        "product_category.add",
+        "product_category.delete",
+        "product_category.edit",
+        "product_category.export",
+        "product_category.import",
+        "product_category.view",
+        "purchase_order.activity",
+        "purchase_order.add",
+        "purchase_order.analytics",
+        "purchase_order.delete",
+        "purchase_order.edit",
+        "purchase_order.export",
+        "purchase_order.history",
+        "purchase_order.print",
+        "purchase_order.view",
+        "purchase_received.activity",
+        "purchase_received.add",
+        "purchase_received.analytics",
+        "purchase_received.delete",
+        "purchase_received.edit",
+        "purchase_received.export",
+        "purchase_received.history",
+        "purchase_received.print",
+        "purchase_received.view",
+        "role.add",
+        "role.delete",
+        "role.edit",
+        "role.view",
+        "sales_target.add",
+        "sales_target.delete",
+        "sales_target.edit",
+        "sales_target.export",
+        "sales_target.import",
+        "sales_target.view",
+        "spt.add",
+        "spt.edit",
+        "spt.export",
+        "spt.import",
+        "spt.view",
+        "staff.add",
+        "staff.delete",
+        "staff.edit",
+        "staff.status",
+        "staff.view",
+        "staff_access.view",
+        "stock_movement.activity",
+        "stock_movement.analytics",
+        "stock_movement.create",
+        "stock_movement.view",
+        "stock_status.export",
+        "stock_status.history",
+        "stock_status.view",
+        "vendor.add",
+        "vendor.delete",
+        "vendor.edit",
+        "vendor.export",
+        "vendor.import",
+        "vendor.view",
+        "zone.add",
+        "zone.delete",
+        "zone.edit",
+        "zone.export",
+        "zone.import",
+        "zone.view",
       ]),
     )
     .max(saveCustomRolePermissionsBodyPermissionsMax),
@@ -27031,50 +28573,165 @@ export const SaveCustomRolePermissionsResponse = zod.object({
   permissions: zod
     .array(
       zod.enum([
-        "zone.add",
-        "zone.edit",
-        "zone.delete",
-        "zone.export",
-        "zone.import",
-        "headquarter.add",
-        "headquarter.edit",
-        "headquarter.delete",
-        "headquarter.export",
-        "headquarter.import",
-        "mr.add",
-        "mr.edit",
-        "mr.delete",
-        "mr.export",
-        "mr.import",
-        "patient.add",
-        "patient.edit",
-        "patient.delete",
-        "patient.export",
-        "patient.import",
-        "doctor.add",
-        "doctor.edit",
-        "doctor.delete",
-        "doctor.export",
-        "doctor.import",
-        "product_category.add",
-        "product_category.edit",
-        "product_category.delete",
-        "product_category.export",
-        "product_category.import",
-        "location.add",
-        "location.edit",
-        "location.delete",
-        "location.export",
-        "location.import",
+        "allergen.add",
+        "allergen.delete",
+        "allergen.edit",
+        "allergen.export",
+        "allergen.import",
+        "allergen.view",
         "courier.add",
-        "courier.edit",
         "courier.delete",
+        "courier.edit",
         "courier.export",
         "courier.import",
+        "courier.view",
+        "designation.add",
+        "designation.delete",
+        "designation.edit",
+        "designation.export",
+        "designation.import",
+        "designation.view",
+        "doctor.add",
+        "doctor.delete",
+        "doctor.edit",
+        "doctor.export",
+        "doctor.import",
+        "doctor.view",
+        "headquarter.add",
+        "headquarter.delete",
+        "headquarter.edit",
+        "headquarter.export",
+        "headquarter.import",
+        "headquarter.view",
+        "immunotherapy.add",
+        "immunotherapy.edit",
+        "immunotherapy.export",
+        "immunotherapy.import",
+        "immunotherapy.read_attachment",
+        "immunotherapy.upload_attachment",
+        "immunotherapy.view",
+        "kits.add",
+        "kits.export",
+        "kits.import",
+        "kits.read_attachment",
+        "kits.upload_attachment",
+        "kits.view",
+        "language.add",
+        "language.delete",
+        "language.edit",
+        "language.export",
+        "language.import",
+        "language.view",
+        "location.add",
+        "location.delete",
+        "location.edit",
+        "location.export",
+        "location.import",
+        "location.view",
+        "lupin.add",
+        "lupin.export",
+        "lupin.import",
+        "lupin.read_attachment",
+        "lupin.upload_attachment",
+        "lupin.view",
+        "mr.add",
+        "mr.delete",
+        "mr.edit",
+        "mr.export",
+        "mr.import",
+        "mr.view",
+        "opening_balance.add",
+        "opening_balance.delete",
+        "opening_balance.edit",
+        "opening_balance.export",
+        "opening_balance.import",
+        "opening_balance.view",
+        "opening_stock.add",
+        "opening_stock.export",
+        "opening_stock.import",
+        "opening_stock.view",
+        "patient.add",
+        "patient.delete",
+        "patient.edit",
+        "patient.export",
+        "patient.import",
+        "patient.view",
+        "permissions.view",
+        "product.add",
+        "product.delete",
+        "product.edit",
+        "product.export",
+        "product.import",
+        "product.view",
+        "product_category.add",
+        "product_category.delete",
+        "product_category.edit",
+        "product_category.export",
+        "product_category.import",
+        "product_category.view",
+        "purchase_order.activity",
+        "purchase_order.add",
+        "purchase_order.analytics",
+        "purchase_order.delete",
+        "purchase_order.edit",
+        "purchase_order.export",
+        "purchase_order.history",
+        "purchase_order.print",
+        "purchase_order.view",
+        "purchase_received.activity",
+        "purchase_received.add",
+        "purchase_received.analytics",
+        "purchase_received.delete",
+        "purchase_received.edit",
+        "purchase_received.export",
+        "purchase_received.history",
+        "purchase_received.print",
+        "purchase_received.view",
+        "role.add",
+        "role.delete",
+        "role.edit",
+        "role.view",
+        "sales_target.add",
+        "sales_target.delete",
+        "sales_target.edit",
+        "sales_target.export",
+        "sales_target.import",
+        "sales_target.view",
+        "spt.add",
+        "spt.edit",
+        "spt.export",
+        "spt.import",
+        "spt.view",
+        "staff.add",
+        "staff.delete",
+        "staff.edit",
+        "staff.status",
+        "staff.view",
+        "staff_access.view",
+        "stock_movement.activity",
+        "stock_movement.analytics",
+        "stock_movement.create",
+        "stock_movement.view",
+        "stock_status.export",
+        "stock_status.history",
+        "stock_status.view",
+        "vendor.add",
+        "vendor.delete",
+        "vendor.edit",
+        "vendor.export",
+        "vendor.import",
+        "vendor.view",
+        "zone.add",
+        "zone.delete",
+        "zone.edit",
+        "zone.export",
+        "zone.import",
+        "zone.view",
       ]),
     )
     .max(saveCustomRolePermissionsResponsePermissionsMax)
     .optional(),
+  permissions_visible: zod.boolean(),
   updated_at: zod.coerce.date(),
   updated_by: zod.string().uuid(),
   version: zod.number().int(),
@@ -28472,8 +30129,8 @@ export const ListStaffResponse = zod.object({
       id: zod.string().uuid(),
       legacy_role: zod.union([zod.string(), zod.null()]).optional(),
       login_identifiers_ready: zod
-        .boolean()
-        .default(listStaffResponseItemsItemLoginIdentifiersReadyDefault),
+        .union([zod.boolean(), zod.null()])
+        .optional(),
       name: zod.string().min(1).max(listStaffResponseItemsItemNameMax),
       phone: zod.string().min(1).max(listStaffResponseItemsItemPhoneMax),
       role: zod.string(),
@@ -28488,8 +30145,8 @@ export const ListStaffResponse = zod.object({
       updatedBy: zod.string(),
       version: zod.number().int(),
       workspace_login_enabled: zod
-        .boolean()
-        .default(listStaffResponseItemsItemWorkspaceLoginEnabledDefault),
+        .union([zod.boolean(), zod.null()])
+        .optional(),
     }),
   ),
   limit: zod.number().int(),
@@ -28506,7 +30163,7 @@ export const createStaffBodyEmployeeCodeRegExp = new RegExp(
 );
 
 export const CreateStaffBody = zod.object({
-  custom_role_id: zod.string().uuid(),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
   designation_id: zod.string().uuid(),
   dialCountry: zod
@@ -28781,7 +30438,7 @@ export const CreateStaffBody = zod.object({
 export const createStaffResponseRecordDialCountryDefault = `IN`;
 
 export const CreateStaffResponse = zod.object({
-  initial_password: zod.string(),
+  initial_password: zod.union([zod.string(), zod.null()]),
   record: zod.object({
     createdAt: zod.coerce.date(),
     createdBy: zod.string(),
@@ -29044,9 +30701,7 @@ export const CreateStaffResponse = zod.object({
     employeeCode: zod.union([zod.string(), zod.null()]),
     id: zod.string().uuid(),
     legacy_role: zod.union([zod.string(), zod.null()]).optional(),
-    login_identifiers_ready: zod
-      .boolean()
-      .default(createStaffResponseRecordLoginIdentifiersReadyDefault),
+    login_identifiers_ready: zod.union([zod.boolean(), zod.null()]).optional(),
     name: zod.string().min(1).max(createStaffResponseRecordNameMax),
     phone: zod.string().min(1).max(createStaffResponseRecordPhoneMax),
     role: zod.string(),
@@ -29060,10 +30715,71 @@ export const CreateStaffResponse = zod.object({
     updatedAt: zod.coerce.date(),
     updatedBy: zod.string(),
     version: zod.number().int(),
-    workspace_login_enabled: zod
-      .boolean()
-      .default(createStaffResponseRecordWorkspaceLoginEnabledDefault),
+    workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
   }),
+});
+
+/**
+ * @summary Access Directory
+ */
+
+export const ListStaffAccessQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listStaffAccessQueryOffsetMin)
+    .max(listStaffAccessQueryOffsetMax)
+    .default(listStaffAccessQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listStaffAccessQueryLimitMax)
+    .default(listStaffAccessQueryLimitDefault),
+});
+
+export const ListStaffAccessResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      employeeCode: zod.union([zod.string(), zod.null()]),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      role: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      workspace_login_enabled: zod.boolean(),
+    }),
+  ),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Designation References
+ */
+export const getStaffDesignationReferencesQueryQueryDefault = ``;
+
+export const GetStaffDesignationReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getStaffDesignationReferencesQueryQueryMax)
+    .default(getStaffDesignationReferencesQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getStaffDesignationReferencesQueryOffsetMin)
+    .max(getStaffDesignationReferencesQueryOffsetMax)
+    .default(getStaffDesignationReferencesQueryOffsetDefault),
+});
+
+export const GetStaffDesignationReferencesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+  ),
+  total: zod.number().int(),
 });
 
 /**
@@ -29429,10 +31145,8 @@ export const SearchStaffDirectoryResponse = zod.object({
       id: zod.string().uuid(),
       legacy_role: zod.union([zod.string(), zod.null()]).optional(),
       login_identifiers_ready: zod
-        .boolean()
-        .default(
-          searchStaffDirectoryResponseItemsItemLoginIdentifiersReadyDefault,
-        ),
+        .union([zod.boolean(), zod.null()])
+        .optional(),
       name: zod
         .string()
         .min(1)
@@ -29455,10 +31169,8 @@ export const SearchStaffDirectoryResponse = zod.object({
       updatedBy: zod.string(),
       version: zod.number().int(),
       workspace_login_enabled: zod
-        .boolean()
-        .default(
-          searchStaffDirectoryResponseItemsItemWorkspaceLoginEnabledDefault,
-        ),
+        .union([zod.boolean(), zod.null()])
+        .optional(),
     }),
   ),
   limit: zod.number().int(),
@@ -29738,9 +31450,7 @@ export const GetStaffResponse = zod.object({
   employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   legacy_role: zod.union([zod.string(), zod.null()]).optional(),
-  login_identifiers_ready: zod
-    .boolean()
-    .default(getStaffResponseLoginIdentifiersReadyDefault),
+  login_identifiers_ready: zod.union([zod.boolean(), zod.null()]).optional(),
   name: zod.string().min(1).max(getStaffResponseNameMax),
   phone: zod.string().min(1).max(getStaffResponsePhoneMax),
   role: zod.string(),
@@ -29752,9 +31462,7 @@ export const GetStaffResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
-  workspace_login_enabled: zod
-    .boolean()
-    .default(getStaffResponseWorkspaceLoginEnabledDefault),
+  workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
 });
 
 /**
@@ -30034,9 +31742,7 @@ export const SetStaffWorkspaceAccessResponse = zod.object({
   employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   legacy_role: zod.union([zod.string(), zod.null()]).optional(),
-  login_identifiers_ready: zod
-    .boolean()
-    .default(setStaffWorkspaceAccessResponseLoginIdentifiersReadyDefault),
+  login_identifiers_ready: zod.union([zod.boolean(), zod.null()]).optional(),
   name: zod.string().min(1).max(setStaffWorkspaceAccessResponseNameMax),
   phone: zod.string().min(1).max(setStaffWorkspaceAccessResponsePhoneMax),
   role: zod.string(),
@@ -30050,9 +31756,7 @@ export const SetStaffWorkspaceAccessResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
-  workspace_login_enabled: zod
-    .boolean()
-    .default(setStaffWorkspaceAccessResponseWorkspaceLoginEnabledDefault),
+  workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
 });
 
 /**
@@ -30330,9 +32034,7 @@ export const DeleteStaffResponse = zod.object({
   employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   legacy_role: zod.union([zod.string(), zod.null()]).optional(),
-  login_identifiers_ready: zod
-    .boolean()
-    .default(deleteStaffResponseLoginIdentifiersReadyDefault),
+  login_identifiers_ready: zod.union([zod.boolean(), zod.null()]).optional(),
   name: zod.string().min(1).max(deleteStaffResponseNameMax),
   phone: zod.string().min(1).max(deleteStaffResponsePhoneMax),
   role: zod.string(),
@@ -30346,9 +32048,7 @@ export const DeleteStaffResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
-  workspace_login_enabled: zod
-    .boolean()
-    .default(deleteStaffResponseWorkspaceLoginEnabledDefault),
+  workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
 });
 
 /**
@@ -30365,7 +32065,7 @@ export const editStaffBodyEmployeeCodeRegExp = new RegExp(
 );
 
 export const EditStaffBody = zod.object({
-  custom_role_id: zod.union([zod.string().uuid(), zod.null()]),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
   designation_id: zod.string().uuid(),
   dialCountry: zod
@@ -30893,9 +32593,7 @@ export const EditStaffResponse = zod.object({
   employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   legacy_role: zod.union([zod.string(), zod.null()]).optional(),
-  login_identifiers_ready: zod
-    .boolean()
-    .default(editStaffResponseLoginIdentifiersReadyDefault),
+  login_identifiers_ready: zod.union([zod.boolean(), zod.null()]).optional(),
   name: zod.string().min(1).max(editStaffResponseNameMax),
   phone: zod.string().min(1).max(editStaffResponsePhoneMax),
   role: zod.string(),
@@ -30907,9 +32605,7 @@ export const EditStaffResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
-  workspace_login_enabled: zod
-    .boolean()
-    .default(editStaffResponseWorkspaceLoginEnabledDefault),
+  workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
 });
 
 /**
@@ -31188,9 +32884,7 @@ export const SetStaffStatusResponse = zod.object({
   employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   legacy_role: zod.union([zod.string(), zod.null()]).optional(),
-  login_identifiers_ready: zod
-    .boolean()
-    .default(setStaffStatusResponseLoginIdentifiersReadyDefault),
+  login_identifiers_ready: zod.union([zod.boolean(), zod.null()]).optional(),
   name: zod.string().min(1).max(setStaffStatusResponseNameMax),
   phone: zod.string().min(1).max(setStaffStatusResponsePhoneMax),
   role: zod.string(),
@@ -31204,9 +32898,7 @@ export const SetStaffStatusResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
-  workspace_login_enabled: zod
-    .boolean()
-    .default(setStaffStatusResponseWorkspaceLoginEnabledDefault),
+  workspace_login_enabled: zod.union([zod.boolean(), zod.null()]).optional(),
 });
 
 /**
@@ -34973,777 +36665,3 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
-
-export const commitLupinImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
-
-export const commitLupinImportResponseOrdersItemRemarksDefault = ``;
-
-export const reviewLupinImportBodyEntriesItemNumberMax = 48;
-
-export const getLupinOrderResponseAttachmentIdsMax = 10;
-
-export const ListLupinOrdersQueryParams = zod.object({
-  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  limit: zod.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(listLupinOrdersQueryLimitMax)
-    .default(listLupinOrdersQueryLimitDefault),
-  search: zod.coerce
-    .string()
-    .max(listLupinOrdersQuerySearchMax)
-    .default(listLupinOrdersQuerySearchDefault),
-  status: zod
-    .union([
-      zod.enum([
-        "Confirmed",
-        "Approved",
-        "Shipped",
-        "Delivered",
-        "Rejected",
-        "Returned",
-      ]),
-      zod.null(),
-    ])
-    .optional(),
-  payment_status: zod
-    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
-    .optional(),
-  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  from_date: zod.union([zod.date(), zod.null()]).optional(),
-  to_date: zod.union([zod.date(), zod.null()]).optional(),
-});
-
-/**
- * @summary Review
- */
-
-export const reviewLupinImportBodyEntriesItemNumberDefault = ``;
-
-export const listLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
-
-export const exportLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
-
-export const createLupinOrderResponseStatusDefault = `Confirmed`;
-
-/**
- * @summary Cancel Upload
- */
-export const CancelLupinUploadParams = zod.object({
-  upload_id: zod.coerce.string().uuid(),
-});
-
-export const reviewLupinImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
-
-export const createLupinOrderBodyAttachmentIdsMax = 10;
-
-export const exportLupinOrdersResponseItemsItemPriceMax = 32;
-
-export const commitLupinImportBodyEntriesItemValuesPriceMax = 32;
-
-export const reviewLupinImportBodyEntriesItemValuesAttachmentIdsMax = 10;
-
-export const listLupinOrdersResponseItemsItemRemarksMax = 4000;
-
-export const createLupinOrderBodyPriceMax = 32;
-
-export const commitLupinImportBodyEntriesItemValuesAttachmentIdsMax = 10;
-
-export const reviewLupinImportBodyEntriesMax = 500;
-
-export const getLupinOrderResponsePatientCountMax = 1000000;
-
-export const CancelLupinUploadResponse = zod.object({
-  cancelled: zod.boolean(),
-  id: zod.string().uuid(),
-});
-
-export const exportLupinOrdersResponseItemsItemStatusDefault = `Confirmed`;
-
-export const createLupinOrderResponsePriceMax = 32;
-
-export const reviewLupinImportBodyReviewTokenDefault = ``;
-
-/**
- * @summary Create
- */
-
-export const createLupinOrderBodyPaymentStatusDefault = `Unpaid`;
-
-export const lupinReferencesQuerySearchDefault = ``;
-
-export const listLupinOrdersQueryLimitMax = 100;
-
-export const exportLupinOrdersResponseItemsItemPatientCountMax = 1000000;
-
-export const commitLupinImportBodyEntriesItemValuesRemarksMax = 4000;
-
-export const commitLupinImportBodyEntriesItemValuesPatientCountMax = 1000000;
-
-export const listLupinOrdersResponseItemsItemPriceMax = 32;
-
-export const commitLupinImportResponseOrdersItemPriceMax = 32;
-
-export const exportLupinOrdersQuerySearchMax = 200;
-
-export const UploadLupinAttachmentBody = zod.object({
-  file: zod.instanceof(Blob),
-});
-
-export const reviewLupinImportBodyEntriesItemValuesPatientIdsMax = 200;
-
-export const reviewLupinImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
-
-export const getLupinOrderResponsePaymentStatusDefault = `Unpaid`;
-
-export const commitLupinImportBodyEntriesItemNumberMax = 48;
-
-export const GetLupinOrderResponse = zod.object({
-  attachmentIds: zod
-    .array(zod.string().uuid())
-    .max(getLupinOrderResponseAttachmentIdsMax)
-    .optional(),
-  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-  date: zod.string(),
-  doctor: zod.record(zod.string(), zod.unknown()),
-  doctorId: zod.string().uuid(),
-  id: zod.string().uuid(),
-  mr: zod.record(zod.string(), zod.unknown()),
-  mrId: zod.string().uuid(),
-  number: zod.string(),
-  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-  patientCount: zod
-    .number()
-    .int()
-    .min(1)
-    .max(getLupinOrderResponsePatientCountMax),
-  patientIds: zod
-    .array(zod.string().uuid())
-    .max(getLupinOrderResponsePatientIdsMax)
-    .optional(),
-  patients: zod.array(zod.record(zod.string(), zod.unknown())),
-  paymentStatus: zod
-    .enum(["Unpaid", "Paid", "Partial"])
-    .default(getLupinOrderResponsePaymentStatusDefault),
-  price: zod.string().max(getLupinOrderResponsePriceMax),
-  remarks: zod
-    .string()
-    .max(getLupinOrderResponseRemarksMax)
-    .default(getLupinOrderResponseRemarksDefault),
-  status: zod
-    .enum([
-      "Confirmed",
-      "Approved",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ])
-    .default(getLupinOrderResponseStatusDefault),
-  total: zod.string(),
-  version: zod.number().int(),
-});
-
-export const CreateLupinOrderResponse = zod.object({
-  attachmentIds: zod
-    .array(zod.string().uuid())
-    .max(createLupinOrderResponseAttachmentIdsMax)
-    .optional(),
-  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-  date: zod.string(),
-  doctor: zod.record(zod.string(), zod.unknown()),
-  doctorId: zod.string().uuid(),
-  id: zod.string().uuid(),
-  mr: zod.record(zod.string(), zod.unknown()),
-  mrId: zod.string().uuid(),
-  number: zod.string(),
-  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-  patientCount: zod
-    .number()
-    .int()
-    .min(1)
-    .max(createLupinOrderResponsePatientCountMax),
-  patientIds: zod
-    .array(zod.string().uuid())
-    .max(createLupinOrderResponsePatientIdsMax)
-    .optional(),
-  patients: zod.array(zod.record(zod.string(), zod.unknown())),
-  paymentStatus: zod
-    .enum(["Unpaid", "Paid", "Partial"])
-    .default(createLupinOrderResponsePaymentStatusDefault),
-  price: zod.string().max(createLupinOrderResponsePriceMax),
-  remarks: zod
-    .string()
-    .max(createLupinOrderResponseRemarksMax)
-    .default(createLupinOrderResponseRemarksDefault),
-  status: zod
-    .enum([
-      "Confirmed",
-      "Approved",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ])
-    .default(createLupinOrderResponseStatusDefault),
-  total: zod.string(),
-  version: zod.number().int(),
-});
-
-export const lupinReferencesQueryLimitDefault = 25;
-
-export const ReviewLupinImportResponse = zod.object({
-  additions: zod.number().int(),
-  entries: zod.array(zod.record(zod.string(), zod.unknown())),
-  patientAdditions: zod.number().int(),
-  rejected: zod.number().int(),
-  reviewToken: zod.string(),
-  unchanged: zod.number().int(),
-  updates: zod.number().int(),
-  valid: zod.boolean(),
-});
-
-export const createLupinOrderBodyStatusDefault = `Confirmed`;
-
-/**
- * @summary Detail
- */
-export const GetLupinOrderParams = zod.object({
-  record_id: zod.coerce.string().uuid(),
-});
-
-export const createLupinOrderBodyRemarksMax = 4000;
-
-export const listLupinOrdersResponseItemsItemStatusDefault = `Confirmed`;
-
-export const listLupinOrdersResponseItemsItemPatientIdsMax = 200;
-
-export const exportLupinOrdersResponseItemsItemRemarksDefault = ``;
-
-export const commitLupinImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
-
-/**
- * @summary References
- */
-export const LupinReferencesParams = zod.object({
-  kind: zod.enum(["patients", "doctors", "mrs"]),
-});
-
-export const ExportLupinOrdersResponse = zod.object({
-  counts: zod.record(zod.string(), zod.number().int()),
-  filtered: zod.union([zod.number().int(), zod.null()]),
-  items: zod.array(
-    zod.object({
-      attachmentIds: zod
-        .array(zod.string().uuid())
-        .max(exportLupinOrdersResponseItemsItemAttachmentIdsMax)
-        .optional(),
-      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-      date: zod.string(),
-      doctor: zod.record(zod.string(), zod.unknown()),
-      doctorId: zod.string().uuid(),
-      id: zod.string().uuid(),
-      mr: zod.record(zod.string(), zod.unknown()),
-      mrId: zod.string().uuid(),
-      number: zod.string(),
-      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-      patientCount: zod
-        .number()
-        .int()
-        .min(1)
-        .max(exportLupinOrdersResponseItemsItemPatientCountMax),
-      patientIds: zod
-        .array(zod.string().uuid())
-        .max(exportLupinOrdersResponseItemsItemPatientIdsMax)
-        .optional(),
-      patients: zod.array(zod.record(zod.string(), zod.unknown())),
-      paymentStatus: zod
-        .enum(["Unpaid", "Paid", "Partial"])
-        .default(exportLupinOrdersResponseItemsItemPaymentStatusDefault),
-      price: zod.string().max(exportLupinOrdersResponseItemsItemPriceMax),
-      remarks: zod
-        .string()
-        .max(exportLupinOrdersResponseItemsItemRemarksMax)
-        .default(exportLupinOrdersResponseItemsItemRemarksDefault),
-      status: zod
-        .enum([
-          "Confirmed",
-          "Approved",
-          "Shipped",
-          "Delivered",
-          "Rejected",
-          "Returned",
-        ])
-        .default(exportLupinOrdersResponseItemsItemStatusDefault),
-      total: zod.string(),
-      version: zod.number().int(),
-    }),
-  ),
-  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
-  total: zod.number().int(),
-});
-
-export const exportLupinOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
-
-export const commitLupinImportBodyEntriesMax = 500;
-
-export const reviewLupinImportBodyConfirmUpdatesDefault = false;
-
-export const listLupinOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
-
-export const LupinReferencesResponse = zod.object({
-  items: zod.array(zod.record(zod.string(), zod.unknown())),
-  limit: zod.number().int(),
-  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
-});
-
-export const commitLupinImportBodyReviewTokenMax = 256;
-
-export const commitLupinImportBodyEntriesItemValuesPatientIdsMax = 200;
-
-export const createLupinOrderBodyPatientIdsMax = 200;
-
-export const commitLupinImportBodyEntriesItemValuesRemarksDefault = ``;
-
-export const getLupinOrderResponsePriceMax = 32;
-
-export const LupinReferencesQueryParams = zod.object({
-  search: zod.coerce
-    .string()
-    .max(lupinReferencesQuerySearchMax)
-    .default(lupinReferencesQuerySearchDefault),
-  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  limit: zod.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(lupinReferencesQueryLimitMax)
-    .default(lupinReferencesQueryLimitDefault),
-  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-});
-
-export const createLupinOrderBodyRemarksDefault = ``;
-
-/**
- * @summary Export
- */
-export const exportLupinOrdersQuerySearchDefault = ``;
-
-export const commitLupinImportBodyConfirmUpdatesDefault = false;
-
-export const reviewLupinImportBodyEntriesItemValuesPriceMax = 32;
-
-export const CommitLupinImportBody = zod.object({
-  confirmUpdates: zod
-    .boolean()
-    .default(commitLupinImportBodyConfirmUpdatesDefault),
-  entries: zod
-    .array(
-      zod.object({
-        expected_version: zod
-          .union([zod.number().int().min(1), zod.null()])
-          .optional(),
-        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
-        number: zod
-          .string()
-          .max(commitLupinImportBodyEntriesItemNumberMax)
-          .default(commitLupinImportBodyEntriesItemNumberDefault),
-        values: zod.object({
-          attachmentIds: zod
-            .array(zod.string().uuid())
-            .max(commitLupinImportBodyEntriesItemValuesAttachmentIdsMax)
-            .optional(),
-          doctorId: zod.string().uuid(),
-          mrId: zod.string().uuid(),
-          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-          patientCount: zod
-            .number()
-            .int()
-            .min(1)
-            .max(commitLupinImportBodyEntriesItemValuesPatientCountMax),
-          patientIds: zod
-            .array(zod.string().uuid())
-            .max(commitLupinImportBodyEntriesItemValuesPatientIdsMax)
-            .optional(),
-          paymentStatus: zod
-            .enum(["Unpaid", "Paid", "Partial"])
-            .default(
-              commitLupinImportBodyEntriesItemValuesPaymentStatusDefault,
-            ),
-          price: zod
-            .string()
-            .max(commitLupinImportBodyEntriesItemValuesPriceMax),
-          remarks: zod
-            .string()
-            .max(commitLupinImportBodyEntriesItemValuesRemarksMax)
-            .default(commitLupinImportBodyEntriesItemValuesRemarksDefault),
-          status: zod
-            .enum([
-              "Confirmed",
-              "Approved",
-              "Shipped",
-              "Delivered",
-              "Rejected",
-              "Returned",
-            ])
-            .default(commitLupinImportBodyEntriesItemValuesStatusDefault),
-        }),
-      }),
-    )
-    .min(1)
-    .max(commitLupinImportBodyEntriesMax),
-  idempotencyKey: zod.string().uuid(),
-  reviewToken: zod
-    .string()
-    .max(commitLupinImportBodyReviewTokenMax)
-    .default(commitLupinImportBodyReviewTokenDefault),
-});
-
-export const getLupinOrderResponseStatusDefault = `Confirmed`;
-
-export const commitLupinImportResponseOrdersItemRemarksMax = 4000;
-
-export const commitLupinImportResponseOrdersItemPatientCountMax = 1000000;
-
-export const commitLupinImportResponseOrdersItemPaymentStatusDefault = `Unpaid`;
-
-export const CommitLupinImportResponse = zod.object({
-  imported: zod.number().int(),
-  orders: zod.array(
-    zod.object({
-      attachmentIds: zod
-        .array(zod.string().uuid())
-        .max(commitLupinImportResponseOrdersItemAttachmentIdsMax)
-        .optional(),
-      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-      date: zod.string(),
-      doctor: zod.record(zod.string(), zod.unknown()),
-      doctorId: zod.string().uuid(),
-      id: zod.string().uuid(),
-      mr: zod.record(zod.string(), zod.unknown()),
-      mrId: zod.string().uuid(),
-      number: zod.string(),
-      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-      patientCount: zod
-        .number()
-        .int()
-        .min(1)
-        .max(commitLupinImportResponseOrdersItemPatientCountMax),
-      patientIds: zod
-        .array(zod.string().uuid())
-        .max(commitLupinImportResponseOrdersItemPatientIdsMax)
-        .optional(),
-      patients: zod.array(zod.record(zod.string(), zod.unknown())),
-      paymentStatus: zod
-        .enum(["Unpaid", "Paid", "Partial"])
-        .default(commitLupinImportResponseOrdersItemPaymentStatusDefault),
-      price: zod.string().max(commitLupinImportResponseOrdersItemPriceMax),
-      remarks: zod
-        .string()
-        .max(commitLupinImportResponseOrdersItemRemarksMax)
-        .default(commitLupinImportResponseOrdersItemRemarksDefault),
-      status: zod
-        .enum([
-          "Confirmed",
-          "Approved",
-          "Shipped",
-          "Delivered",
-          "Rejected",
-          "Returned",
-        ])
-        .default(commitLupinImportResponseOrdersItemStatusDefault),
-      total: zod.string(),
-      version: zod.number().int(),
-    }),
-  ),
-});
-
-export const ReviewLupinImportBody = zod.object({
-  confirmUpdates: zod
-    .boolean()
-    .default(reviewLupinImportBodyConfirmUpdatesDefault),
-  entries: zod
-    .array(
-      zod.object({
-        expected_version: zod
-          .union([zod.number().int().min(1), zod.null()])
-          .optional(),
-        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
-        number: zod
-          .string()
-          .max(reviewLupinImportBodyEntriesItemNumberMax)
-          .default(reviewLupinImportBodyEntriesItemNumberDefault),
-        values: zod.object({
-          attachmentIds: zod
-            .array(zod.string().uuid())
-            .max(reviewLupinImportBodyEntriesItemValuesAttachmentIdsMax)
-            .optional(),
-          doctorId: zod.string().uuid(),
-          mrId: zod.string().uuid(),
-          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-          patientCount: zod
-            .number()
-            .int()
-            .min(1)
-            .max(reviewLupinImportBodyEntriesItemValuesPatientCountMax),
-          patientIds: zod
-            .array(zod.string().uuid())
-            .max(reviewLupinImportBodyEntriesItemValuesPatientIdsMax)
-            .optional(),
-          paymentStatus: zod
-            .enum(["Unpaid", "Paid", "Partial"])
-            .default(
-              reviewLupinImportBodyEntriesItemValuesPaymentStatusDefault,
-            ),
-          price: zod
-            .string()
-            .max(reviewLupinImportBodyEntriesItemValuesPriceMax),
-          remarks: zod
-            .string()
-            .max(reviewLupinImportBodyEntriesItemValuesRemarksMax)
-            .default(reviewLupinImportBodyEntriesItemValuesRemarksDefault),
-          status: zod
-            .enum([
-              "Confirmed",
-              "Approved",
-              "Shipped",
-              "Delivered",
-              "Rejected",
-              "Returned",
-            ])
-            .default(reviewLupinImportBodyEntriesItemValuesStatusDefault),
-        }),
-      }),
-    )
-    .min(1)
-    .max(reviewLupinImportBodyEntriesMax),
-  idempotencyKey: zod.string().uuid(),
-  reviewToken: zod
-    .string()
-    .max(reviewLupinImportBodyReviewTokenMax)
-    .default(reviewLupinImportBodyReviewTokenDefault),
-});
-
-export const reviewLupinImportBodyEntriesItemValuesPatientCountMax = 1000000;
-
-export const reviewLupinImportBodyEntriesItemValuesRemarksDefault = ``;
-
-/**
- * @summary Policy
- */
-export const LupinUploadPolicyResponse = zod.object({
-  maxBytes: zod.number().int(),
-  maxFiles: zod.number().int(),
-  types: zod.array(zod.string()),
-});
-
-export const getLupinOrderResponseRemarksDefault = ``;
-
-export const createLupinOrderResponseAttachmentIdsMax = 10;
-
-export const createLupinOrderResponsePaymentStatusDefault = `Unpaid`;
-
-export const UploadLupinAttachmentResponse = zod.object({
-  category: zod.enum(["profile", "documents"]),
-  checksum: zod.union([zod.string(), zod.null()]),
-  content_type: zod.string(),
-  created_at: zod.coerce.date(),
-  display_name: zod.string(),
-  id: zod.string().uuid(),
-  mr_id: zod.union([zod.string().uuid(), zod.null()]),
-  patient_id: zod.union([zod.string().uuid(), zod.null()]),
-  scanner_status: zod.enum([
-    "pending",
-    "clean",
-    "infected",
-    "unavailable",
-    "error",
-  ]),
-  size: zod.number().int(),
-  state: zod.enum([
-    "uploading",
-    "quarantined",
-    "verified",
-    "rejected",
-    "pending_delete",
-    "deleted",
-  ]),
-  updated_at: zod.coerce.date(),
-  version: zod.number().int(),
-});
-
-export const commitLupinImportResponseOrdersItemAttachmentIdsMax = 10;
-
-export const commitLupinImportResponseOrdersItemStatusDefault = `Confirmed`;
-
-export const getLupinOrderResponseRemarksMax = 4000;
-
-/**
- * @summary Commit
- */
-
-export const commitLupinImportBodyEntriesItemNumberDefault = ``;
-
-export const commitLupinImportBodyReviewTokenDefault = ``;
-
-export const listLupinOrdersQuerySearchMax = 200;
-
-export const createLupinOrderResponsePatientCountMax = 1000000;
-
-export const createLupinOrderBodyPatientCountMax = 1000000;
-
-export const createLupinOrderResponseRemarksMax = 4000;
-
-export const exportLupinOrdersResponseItemsItemPatientIdsMax = 200;
-
-export const reviewLupinImportBodyEntriesItemValuesRemarksMax = 4000;
-
-export const lupinReferencesQuerySearchMax = 200;
-
-export const lupinReferencesQueryLimitMax = 100;
-
-export const getLupinOrderResponsePatientIdsMax = 200;
-
-export const exportLupinOrdersResponseItemsItemRemarksMax = 4000;
-
-export const commitLupinImportResponseOrdersItemPatientIdsMax = 200;
-
-export const reviewLupinImportBodyReviewTokenMax = 256;
-
-export const listLupinOrdersResponseItemsItemRemarksDefault = ``;
-
-export const listLupinOrdersResponseItemsItemPatientCountMax = 1000000;
-
-export const ListLupinOrdersResponse = zod.object({
-  counts: zod.record(zod.string(), zod.number().int()),
-  filtered: zod.union([zod.number().int(), zod.null()]),
-  items: zod.array(
-    zod.object({
-      attachmentIds: zod
-        .array(zod.string().uuid())
-        .max(listLupinOrdersResponseItemsItemAttachmentIdsMax)
-        .optional(),
-      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-      date: zod.string(),
-      doctor: zod.record(zod.string(), zod.unknown()),
-      doctorId: zod.string().uuid(),
-      id: zod.string().uuid(),
-      mr: zod.record(zod.string(), zod.unknown()),
-      mrId: zod.string().uuid(),
-      number: zod.string(),
-      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-      patientCount: zod
-        .number()
-        .int()
-        .min(1)
-        .max(listLupinOrdersResponseItemsItemPatientCountMax),
-      patientIds: zod
-        .array(zod.string().uuid())
-        .max(listLupinOrdersResponseItemsItemPatientIdsMax)
-        .optional(),
-      patients: zod.array(zod.record(zod.string(), zod.unknown())),
-      paymentStatus: zod
-        .enum(["Unpaid", "Paid", "Partial"])
-        .default(listLupinOrdersResponseItemsItemPaymentStatusDefault),
-      price: zod.string().max(listLupinOrdersResponseItemsItemPriceMax),
-      remarks: zod
-        .string()
-        .max(listLupinOrdersResponseItemsItemRemarksMax)
-        .default(listLupinOrdersResponseItemsItemRemarksDefault),
-      status: zod
-        .enum([
-          "Confirmed",
-          "Approved",
-          "Shipped",
-          "Delivered",
-          "Rejected",
-          "Returned",
-        ])
-        .default(listLupinOrdersResponseItemsItemStatusDefault),
-      total: zod.string(),
-      version: zod.number().int(),
-    }),
-  ),
-  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
-  total: zod.number().int(),
-});
-
-export const CreateLupinOrderBody = zod.object({
-  attachmentIds: zod
-    .array(zod.string().uuid())
-    .max(createLupinOrderBodyAttachmentIdsMax)
-    .optional(),
-  doctorId: zod.string().uuid(),
-  idempotencyKey: zod.string().uuid(),
-  mrId: zod.string().uuid(),
-  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-  patientCount: zod
-    .number()
-    .int()
-    .min(1)
-    .max(createLupinOrderBodyPatientCountMax),
-  patientIds: zod
-    .array(zod.string().uuid())
-    .max(createLupinOrderBodyPatientIdsMax)
-    .optional(),
-  paymentStatus: zod
-    .enum(["Unpaid", "Paid", "Partial"])
-    .default(createLupinOrderBodyPaymentStatusDefault),
-  price: zod.string().max(createLupinOrderBodyPriceMax),
-  remarks: zod
-    .string()
-    .max(createLupinOrderBodyRemarksMax)
-    .default(createLupinOrderBodyRemarksDefault),
-  status: zod
-    .enum([
-      "Confirmed",
-      "Approved",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ])
-    .default(createLupinOrderBodyStatusDefault),
-});
-
-export const createLupinOrderResponseRemarksDefault = ``;
-
-/**
- * @summary Upload
- */
-export const UploadLupinAttachmentQueryParams = zod.object({
-  upload_id: zod.coerce.string().uuid(),
-});
-
-export const createLupinOrderResponsePatientIdsMax = 200;
-
-export const ExportLupinOrdersQueryParams = zod.object({
-  search: zod.coerce
-    .string()
-    .max(exportLupinOrdersQuerySearchMax)
-    .default(exportLupinOrdersQuerySearchDefault),
-  status: zod
-    .union([
-      zod.enum([
-        "Confirmed",
-        "Approved",
-        "Shipped",
-        "Delivered",
-        "Rejected",
-        "Returned",
-      ]),
-      zod.null(),
-    ])
-    .optional(),
-  payment_status: zod
-    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
-    .optional(),
-  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  from_date: zod.union([zod.date(), zod.null()]).optional(),
-  to_date: zod.union([zod.date(), zod.null()]).optional(),
-});

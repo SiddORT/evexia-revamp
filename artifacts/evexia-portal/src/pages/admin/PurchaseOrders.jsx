@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Activity, BarChart3, ChevronDown, ClipboardCheck, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
+import { exportPurchaseOrders } from '../../services/serverPurchaseOrders.js';
+import { downloadCSV } from '../../services/downloads.js';
+import { csvCell } from '../../services/reportingCSV.js';
 import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -50,6 +54,10 @@ function Recovery({ title, state, onRetry }) {
 const Skeleton = ({ label }) => <div aria-label={label} role="status"><div className="po-skeleton" /><div className="po-skeleton" /><div className="po-skeleton" /></div>;
 
 export default function PurchaseOrders() {
+  const can = useResourceActions('purchase_order');
+  const receivingAccess = useResourceActions('purchase_received');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const { date: displayDate, timestamp: displayTime } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const [tab, setTab] = useState('orders');
@@ -98,13 +106,29 @@ export default function PurchaseOrders() {
   const activeFilterCount = [filters.status !== 'open', filters.vendor, filters.product, from, to].filter(Boolean).length;
 
   const settled = search.trim() === debounced;
-  const [overview, reloadOverview] = useServerData((signal) => getPurchaseOrderOverview(signal), [freshness]);
+  async function csv() {
+    if (exporting || !can.export) return;
+    setExporting(true); setExportError('');
+    try {
+      const result = await exportPurchaseOrders({ query: debounced, status: filters.status,
+        vendor_id: filters.vendor?.id, product_id: filters.product?.id, from_date: from, to_date: to, sort: filters.sort });
+      if (result.items.length !== result.filtered) throw new Error('A complete result was not returned. No partial file was downloaded.');
+      const rows = [['PO number', 'PO date', 'Expected date', 'Vendor', 'Storage location', 'Status',
+        'Taxable subtotal (paise)', 'GST (paise)', 'Total (paise)', 'Saved product line snapshots (JSON; original field units)'],
+      ...result.items.map((order) => [order.number, order.poDate, order.expectedDate, order.vendorName,
+        order.locationName, order.status, String(order.subtotal), String(order.gstAmount), String(order.total), JSON.stringify(order.lines)])];
+      await downloadCSV(String.fromCharCode(0xfeff) + rows.map((row) => row.map(csvCell).join(',')).join(String.fromCharCode(13, 10)), 'purchase-orders.csv', 'purchase_order');
+    } catch (error) { setExportError(error.message); }
+    finally { setExporting(false); }
+  }
+  const [overview, reloadOverview] = useServerData((signal) => getPurchaseOrderOverview(signal), [freshness, can.analytics], can.analytics);
   const [orders, reloadOrders] = useServerData((signal) => listPurchaseOrders({
     query: debounced, status: filters.status, vendor_id: filters.vendor?.id, product_id: filters.product?.id, from_date: from, to_date: to,
     sort: filters.sort, limit: pageSize, offset: (page - 1) * pageSize,
   }, signal), [debounced, filters.status, filters.vendor?.id, filters.product?.id, from, to, filters.sort, page, pageSize, freshness], tab === 'orders' && !rangeError && settled);
-  const [activity, reloadActivity] = useServerData((signal) => listPurchaseOrderActivity({ query: debounced, limit: pageSize, offset: (activityPage - 1) * pageSize }, signal), [debounced, activityPage, pageSize, freshness], tab === 'activity' && settled);
-  const [analytics, reloadAnalytics] = useServerData((signal) => getPurchaseOrderAnalytics(signal), [freshness], tab === 'analytics');
+  const [activity, reloadActivity] = useServerData((signal) => listPurchaseOrderActivity({ query: debounced, limit: pageSize, offset: (activityPage - 1) * pageSize }, signal), [debounced, activityPage, pageSize, freshness, can.activity], can.activity && tab === 'activity' && settled);
+  const [analytics, reloadAnalytics] = useServerData((signal) => getPurchaseOrderAnalytics(signal), [freshness, can.analytics], can.analytics && tab === 'analytics');
+  useEffect(() => { if (tab !== 'orders' && !can[tab]) setTab('orders'); }, [tab, can.activity, can.analytics]);
 
   const orderData = orders.data;
   const ordersFor = orderData ? Math.max(1, Math.ceil(orderData.filtered / pageSize)) : 1;
@@ -128,10 +152,10 @@ export default function PurchaseOrders() {
     <ProcurementDocumentActions key={order.id} kind="po" record={order} iconOnly />
     <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View record for ${order.number}`} title={`View record for ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
     {order.status === 'open' && !order.activeReceiptCount && <>
-      <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>
-      <button type="button" className="po-icon-action po-action--danger" aria-label={`Delete ${order.number}`} title={`Delete ${order.number}`} onClick={(event) => { deleteFocus.current = event.currentTarget; setDeleting(order); setDeleteNotice(''); }}><Trash2 size={17} aria-hidden="true" /></button>
+      {can.edit && <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>}
+      {can.delete && <button type="button" className="po-icon-action po-action--danger" aria-label={`Delete ${order.number}`} title={`Delete ${order.number}`} onClick={(event) => { deleteFocus.current = event.currentTarget; setDeleting(order); setDeleteNotice(''); }}><Trash2 size={17} aria-hidden="true" /></button>}
     </>}
-    {!!order.activeReceiptCount && <Link className="po-icon-action" href={`/admin/inventory/purchase-received?poId=${order.id}`}
+    {receivingAccess.read && !!order.activeReceiptCount && <Link className="po-icon-action" href={`/admin/inventory/purchase-received?poId=${order.id}`}
       aria-label={`View ${order.activeReceiptCount} active ${order.activeReceiptCount === 1 ? 'receipt' : 'receipts'} for ${order.number}; active receipts prevent PO editing/deletion`}
       title={`View ${order.activeReceiptCount} active ${order.activeReceiptCount === 1 ? 'receipt' : 'receipts'} for ${order.number}; active receipts prevent PO editing/deletion`}><ClipboardCheck size={17} aria-hidden="true" /></Link>}
   </div>;
@@ -155,7 +179,8 @@ export default function PurchaseOrders() {
   return <AdminLayout title="Purchase Orders"><div className="po-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Procurement</p><h1>Purchase orders</h1><p className="admin-page-head__description">Plan supplier purchases, track order value and review recorded changes.</p></div><div className="po-head-actions">
       <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-purchase-orders"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
-      <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-purchase-order"><Plus size={16} aria-hidden="true" /> New purchase order</button>
+      <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || exporting || !settled} onClick={csv}>{exporting ? 'Preparing export…' : 'Export CSV'}</button>
+      <button type="button" disabled={!can.add} className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-purchase-order"><Plus size={16} aria-hidden="true" /> New purchase order</button>
     </div></div>
     {showSaved && <div className="admin-feedback" role="status" data-testid="status-po-feedback">{savedNotice?.number ? `Purchase order ${savedNotice.number} saved.` : 'Purchase order saved.'}</div>}
     {deleteNotice && <div className="admin-feedback" role="status">{deleteNotice}</div>}
@@ -164,16 +189,17 @@ export default function PurchaseOrders() {
       {deleteRecovery.ids.length > 0 && <><p>Earlier deletions are unconfirmed. Reconcile the original requests here, even if their rows are no longer on this page. No new deletion identity is created.</p>
         <div className="po-actions">{deleteRecovery.ids.map((id, index) => <button key={id} type="button" className="admin-button admin-button--secondary" disabled={Boolean(recoveryBusy)} onClick={(event) => recoverDeletion(id, event.currentTarget)}>{recoveryBusy === id ? 'Loading order…' : `Review unconfirmed deletion ${index + 1}`}</button>)}</div></>}
     </div>}
+    {exportError && <p className="admin-feedback admin-feedback--error" role="alert">{exportError}</p>}
     {overview.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{overview.error} <button type="button" className="po-link" onClick={reloadOverview}>Retry overview</button></div>}
-    <div className="po-summary" aria-label="Purchase order overview">
+    {can.analytics && <div className="po-summary" aria-label="Purchase order overview">
       <div className="po-summary__item po-summary__item--accent"><span>Open order value</span><strong data-testid="text-po-open-value">{card(ov && formatPaise(ov.openValue))}</strong><small>Including GST</small></div>
       <div className="po-summary__item"><span>Open orders</span><strong data-testid="text-po-open-count">{card(ov?.openCount)}</strong><small>{ov ? `Across ${ov.vendorCount} ${ov.vendorCount === 1 ? 'vendor' : 'vendors'}` : 'All vendors'}</small></div>
       <div className="po-summary__item"><span>Product lines</span><strong>{card(ov?.lineCount)}</strong><small>On open orders</small></div>
       <div className="po-summary__item"><span>Changes recorded</span><strong>{card(ov?.changes)}</strong><small>Creates, edits and deletions</small></div>
-    </div>
+    </div>}
     <section className="admin-panel" aria-label="Purchase order workspace">
       <div className="po-tabs" role="tablist" aria-label="Purchase order views">
-        {[['orders', ClipboardList, 'Orders'], ['activity', Activity, 'Activity'], ['analytics', BarChart3, 'Analytics']].map(([key, Icon, label]) => <button key={key} type="button" role="tab" aria-selected={tab === key} className="po-tab" onClick={() => selectTab(key)} data-testid={`tab-po-${key}`}><Icon size={15} aria-hidden="true" />{label}</button>)}
+        {[['orders', ClipboardList, 'Orders'], ['activity', Activity, 'Activity'], ['analytics', BarChart3, 'Analytics']].filter(([key]) => key === 'orders' || can[key]).map(([key, Icon, label]) => <button key={key} type="button" role="tab" aria-selected={tab === key} className="po-tab" onClick={() => selectTab(key)} data-testid={`tab-po-${key}`}><Icon size={15} aria-hidden="true" />{label}</button>)}
       </div>
       {tab === 'orders' && <div role="tabpanel">
         <div className="po-toolbar">

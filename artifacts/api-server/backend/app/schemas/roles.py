@@ -3,18 +3,10 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from app.services.master_policy import MASTER_ACTIONS
+from app.core.master_catalogue import ASSIGNABLE_ACTIONS
 
-ZoneAction = Literal[
-    "zone.add", "zone.edit", "zone.delete", "zone.export", "zone.import",
-    "headquarter.add", "headquarter.edit", "headquarter.delete", "headquarter.export", "headquarter.import",
-    "mr.add", "mr.edit", "mr.delete", "mr.export", "mr.import",
-    "patient.add", "patient.edit", "patient.delete", "patient.export", "patient.import",
-    "doctor.add", "doctor.edit", "doctor.delete", "doctor.export", "doctor.import",
-    "product_category.add", "product_category.edit", "product_category.delete", "product_category.export", "product_category.import",
-    "location.add", "location.edit", "location.delete", "location.export", "location.import",
-    "courier.add", "courier.edit", "courier.delete", "courier.export", "courier.import",
-]
+# Retain the schema alias consumed by the existing generated clients.
+ZoneAction = Literal[tuple(sorted(ASSIGNABLE_ACTIONS))]
 
 
 class RoleFields(BaseModel):
@@ -40,13 +32,13 @@ class RoleEdit(RoleFields, RoleVersion):
 
 
 class RolePermissions(RoleVersion):
-    permissions: list[ZoneAction] = Field(max_length=40)
+    permissions: list[ZoneAction] = Field(max_length=len(ASSIGNABLE_ACTIONS))
 
     @field_validator("permissions")
     @classmethod
     def known_unique_grants(cls, value):
-        if len(set(value)) != len(value) or any(key not in MASTER_ACTIONS for key in value):
-            raise ValueError("Use only distinct supported master actions")
+        if len(set(value)) != len(value) or any(key not in ASSIGNABLE_ACTIONS for key in value):
+            raise ValueError("Use only distinct supported assignable actions")
         return sorted(value)
 
 
@@ -59,7 +51,8 @@ class RoleResponse(RoleFields):
     updated_by: uuid.UUID = Field(json_schema_extra={"readOnly": True})
     deleted_at: datetime | None = Field(json_schema_extra={"readOnly": True})
     deleted_by: uuid.UUID | None = Field(json_schema_extra={"readOnly": True})
-    permissions: list[ZoneAction] = Field(default_factory=list, max_length=40, json_schema_extra={"readOnly": True})
+    permissions: list[ZoneAction] = Field(default_factory=list, max_length=len(ASSIGNABLE_ACTIONS), json_schema_extra={"readOnly": True})
+    permissions_visible: bool = Field(json_schema_extra={"readOnly": True})
 
 
 class RolePage(BaseModel):

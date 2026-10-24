@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import operation_router
 from app.db.session import get_db
 from app.schemas.products import (
     ProductCreate, ProductEdit, ProductDelete, ProductStatus, ProductView, ProductPage,
@@ -17,11 +17,16 @@ from app.api.v1.locations import read_file, UPLOAD
 from app.api.v1.product_categories import DOWNLOAD
 from app.services.downloads import server_record
 from app.services.purchase_received_crypto import PRError
-from app.services.allergens import authorize
+from app.services.master_policy import authorize_master
 from app.services.locations import LocationError
 
 router = APIRouter(prefix="/admin/products", tags=["Products"])
-manager = require_permissions("admin.access")
+manager = operation_router("product", {
+    "sample": "import", "export": "export", "review_import": "import", "commit_import": "import",
+    "listing": None, "detail": None, "references": None, "filter_references": None,
+    "create": "add", "edit": "edit", "status": "edit", "delete": "delete",
+    "reconcile": ("add", "edit", "delete", "import"),
+})
 
 
 def release(db, actor, initiation_id, format, operation, data):
@@ -36,7 +41,7 @@ def release(db, actor, initiation_id, format, operation, data):
 @router.get("/sample", operation_id="downloadStockProductSample", responses=DOWNLOAD)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    authorize(db, actor)
+    authorize_master(db, actor, "product", "import")
     return release(db, actor, initiation_id, format, "template", product_transfer.sample(format))
 
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Pencil, Plus, Trash2, UserPlus, Paperclip } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import PhoneInput from '../../components/admin/PhoneInput.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
@@ -44,6 +44,7 @@ export default function ImmunotherapyOrderFormPage({ id, mode }) {
 }
 
 function Editor({ order, mode }) {
+  const can = useOrderActions('immunotherapy');
   const BASE = useOrderBase('immunotherapy');
   const { portal, mr: authenticatedMR } = useOrderPortal();
   const mrPortal = portal === 'mr';
@@ -51,7 +52,7 @@ function Editor({ order, mode }) {
     ? (params, signal) => request('/patient-languages', { params, signal })
     : patientLanguageChoices;
   const [, navigate] = useLocation();
-  const readOnly = mode === 'view';
+  const readOnly = mode === 'view' || !(order ? can.edit : can.add);
   const isNew = !order;
   const initial = useRef(order ? fromOrder(order) : { ...blank(), mrId: authenticatedMR?.id || '' });
   const [v, setV] = useState(initial.current);
@@ -96,11 +97,12 @@ function Editor({ order, mode }) {
     return () => { alive.current = false; unsubscribe(); };
   }, []);
   useEffect(() => {
+    if (!can.upload_attachment) return undefined;
     const controller = new AbortController();
     request('/policy', { signal: controller.signal }).then((data) => { setPolicy(data); setPolicyError(''); })
       .catch((e) => { if (!controller.signal.aborted) setPolicyError(e.message); });
     return () => controller.abort();
-  }, [policyRevision]);
+  }, [policyRevision, can.upload_attachment]);
   useEffect(() => {
     if (!reg) return undefined;
     const controller = new AbortController();
@@ -185,7 +187,7 @@ function Editor({ order, mode }) {
     set({ groups: v.groups.map((g) => g.id === fromId ? { ...g, items: g.items.filter((i) => i.allergenId !== aid) } : g.id === toId ? { ...g, items } : g) });
   }
   async function addFiles(list) {
-    if (busy.current || !policy || !v.patientId) { setFileMsg('Choose a patient and load the upload policy first.'); return; }
+    if (!can.upload_attachment || busy.current || !policy || !v.patientId) { setFileMsg('Upload Prescription permission, a patient and the current upload policy are required.'); return; }
     const files = [...list];
     const msg = validateAttachments(files, [...v.attachments, ...uploads.filter((u) => u.state !== 'error')], policy.maxBytes);
     setFileMsg(msg);
@@ -325,7 +327,7 @@ function Editor({ order, mode }) {
               <Err id="imm-mrId-err" text={errors.mrId} /></div>
           </div>
           {patient && <dl className="imm-facts" data-testid="imm-patient-facts"><div><dt>Name</dt><dd>{patient.name}</dd></div><div><dt>Age / gender</dt><dd>{patient.age} / {patient.gender}</dd></div><div><dt>Phone</dt><dd>{patient.phone}</dd></div><div><dt>Address</dt><dd>{addr(patient.address)}</dd></div></dl>}
-          {!dis && !reg && <div className="imm-btn-row" style={{ marginTop: 14 }}><button type="button" className="admin-button admin-button--secondary" onClick={(e) => { openerRef.current = e.currentTarget; setReg({ ...blankReg(), doctorId: v.doctorId }); setRegErrors({}); }} data-testid="button-imm-register"><UserPlus size={15} aria-hidden="true" />Register patient</button></div>}
+          {!dis && !reg && (mrPortal || can.protected) && <div className="imm-btn-row" style={{ marginTop: 14 }}><button type="button" className="admin-button admin-button--secondary" onClick={(e) => { openerRef.current = e.currentTarget; setReg({ ...blankReg(), doctorId: v.doctorId }); setRegErrors({}); }} data-testid="button-imm-register"><UserPlus size={15} aria-hidden="true" />Register patient</button></div>}
           {reg && <form className="imm-reg" onSubmit={register} noValidate aria-label="Register patient" data-testid="form-imm-register"><fieldset disabled={Boolean(pending)} style={{ display: 'contents', border: 0, padding: 0, margin: 0 }}>
             <h3>Register patient</h3>
             <p className="imm-hint">Creates a real Patient Master record using its existing validation and Doctor/MR assignments. Patient Master creation is separate from saving this order. Enter the postal address manually.</p>
@@ -398,11 +400,11 @@ function Editor({ order, mode }) {
             {['patient', 'doctor'].map((s) => <label className="imm-radio" key={s}><input id={`imm-ship-${s}`} type="radio" name="shipping" checked={v.shipping === s} disabled={dis} onChange={() => set({ shipping: s })} data-testid={`radio-imm-ship-${s}`} /><span>{s === 'patient' ? 'Patient' : 'Doctor'}{(() => { const r = recipientFor(s); return r ? <span className="imm-cell-sub">{r.name}, {addr(r.address)}</span> : <span className="imm-cell-sub">Choose a {s} first</span>; })()}</span></label>)}</fieldset>
           <Err id="imm-shipping-err" text={errors.shipping} />
           <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-files">Prescription files</label>
-            {!readOnly && <label className="excel-import__picker"><Paperclip size={19} /><span>{pending === 'upload' ? 'Uploading privately…' : 'Choose prescription files'}</span><input id="imm-files" type="file" multiple disabled={dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
+            {!readOnly && <label className="excel-import__picker"><Paperclip size={19} /><span>{pending === 'upload' ? 'Uploading privately…' : 'Choose prescription files'}</span><input id="imm-files" type="file" multiple disabled={!can.upload_attachment || dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
             <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. {mrPortal ? 'Saved attachments must be retained. You can remove unsaved selections without deleting shared files.' : 'Removing a selection detaches it when you save; it does not delete shared files.'}</p>
             {policyError && <p role="alert">{policyError} <button type="button" className="imm-link-btn" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
             <Err id="imm-files-err" text={fileMsg || errors.attachments} /></div>
-          {v.attachments.length > 0 ? <ul className="imm-files" aria-label="Attached files">{v.attachments.map((f, i) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({kb(f.size)}) — Uploaded / verified</span><button type="button" className="imm-link-btn" onClick={() => downloadPrescription(f).catch((e) => setFileMsg(`Download unavailable: ${e.message}`))}>Download</button>{!dis && !(mrPortal && order?.attachments?.some((saved) => saved.id === f.id)) && <button type="button" className="imm-link-btn" onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} aria-label={`Remove ${f.name}`}>Remove</button>}</li>)}</ul> : <p className="imm-hint">No files attached.</p>}
+          {v.attachments.length > 0 ? <ul className="imm-files" aria-label="Attached files">{v.attachments.map((f, i) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${kb(f.size)}) — Uploaded / verified`}</span><button type="button" className="imm-link-btn" disabled={!can.read_attachment || f.restricted} onClick={() => downloadPrescription(f).catch((e) => setFileMsg(`Download unavailable: ${e.message}`))}>Download</button>{!dis && !(mrPortal && order?.attachments?.some((saved) => saved.id === f.id)) && <button type="button" className="imm-link-btn" onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} aria-label={`Remove ${f.name}`}>Remove</button>}</li>)}</ul> : <p className="imm-hint">No files attached.</p>}
           {uploads.length > 0 && <ul className="imm-files" aria-label="Pending or failed uploads">{uploads.map((u) => <li key={u.key}><span role={u.state === 'pending' ? 'status' : undefined}>{u.name}: {u.state === 'pending' ? 'Uploading — not attached yet' : u.message}</span>{!pending && !uncertain && <><button type="button" className="imm-link-btn" onClick={() => setUploads((rows) => rows.filter((r) => r.key !== u.key))}>Remove selection</button>{u.id ? <button type="button" className="imm-link-btn" onClick={async () => {
             try { const f = await prescriptionMetadata(u.id); if (f.state !== 'verified' || f.scanner_status !== 'clean') { setFileMsg(`Not attached: ${f.state}; scanner ${f.scanner_status}.`); return; } setV((cur) => ({ ...cur, attachments: [...cur.attachments, { id: f.id, name: f.display_name, size: f.size, type: f.content_type, state: f.state }] })); setUploads((rows) => rows.filter((r) => r.key !== u.key)); } catch (e) { setFileMsg(e.message); }
           }}>Check availability</button> : <button type="button" className="imm-link-btn" onClick={() => { setUploads((rows) => rows.filter((r) => r.key !== u.key)); addFiles([u.file]); }}>Retry upload</button>}</>}</li>)}</ul>}

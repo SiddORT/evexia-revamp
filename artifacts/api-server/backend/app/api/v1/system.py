@@ -50,6 +50,9 @@ def readiness(db: Session = Depends(get_db)):
         from app.services.communication_crypto import CommunicationCrypto
         CommunicationCrypto(get_settings())
         # Reviewed Staff successors retain every predecessor capability.
+        # Catalogue-only successor inherits every predecessor readiness probe.
+        if revisions == ["0069_workspace_permissions"]:
+            revisions = ["0068_category_description"]
         feature_revisions = revisions
         if revisions == ["0068_category_description"]:
             db.execute(text("SELECT description FROM product_categories LIMIT 0"))

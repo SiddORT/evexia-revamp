@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
@@ -41,6 +41,7 @@ export default function KitsOrderFormPage({ id }) {
 }
 
 function Summary({ order }) {
+  const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
   const { date } = useAdminDateFormatters();
   const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
@@ -71,7 +72,7 @@ function Summary({ order }) {
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
           <h2 style={{ marginTop: 16 }}>Private attachments</h2>
-          {order.attachments?.length ? <ul className="kits-files">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span><button type="button" className="kits-link" disabled={downloading} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
+          {order.attachments?.length ? <ul className="kits-files">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${fileSize(f.size)})`}</span><button type="button" className="kits-link" disabled={downloading || !can.read_attachment || f.restricted} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
         </section></div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Shipping ({order.shipping})</h2><Facts person={rec} empty="Recipient unavailable." testId="kits-summary-shipping" /></section>
@@ -82,6 +83,7 @@ function Summary({ order }) {
 }
 
 function Form() {
+  const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
   const { portal, mr: authenticatedMR } = useOrderPortal();
   const [, navigate] = useLocation();
@@ -93,10 +95,11 @@ function Form() {
   const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState('');
   const submission = useRef(null), saving = useRef(false), uploads = useRef(new Map());
   useEffect(() => {
+    if (!can.upload_attachment) return undefined;
     const controller = new AbortController();
     request('/policy', { signal: controller.signal }).then(setPolicy).catch((e) => { if (!controller.signal.aborted) setPolicyError(e.message); });
     return () => controller.abort();
-  }, []);
+  }, [can.upload_attachment]);
   useEffect(() => setNavigationGuard(() => {
     if (!saving.current && !submission.current) return false;
     setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
@@ -163,7 +166,7 @@ function Form() {
     {policyError && <p role="alert">{policyError} <button type="button" className="kits-link" onClick={() => { setPolicyError(''); request('/policy').then(setPolicy).catch((e) => setPolicyError(e.message)); }}>Retry upload policy</button></p>}
     {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="kits-error-summary"><strong>Fix {errList.length} problem{errList.length > 1 ? 's' : ''} before saving</strong>
       <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="kits-link" onClick={() => focusId(k === 'orderFor' ? `orderFor-${v.orderFor}` : k === 'shipping' ? `shipping-${v.shipping}` : k === 'products' ? 'kit-product' : k)} data-testid={`kits-error-${k}`}>{LABELS[k] || k}: {m}</button></li>)}</ul></div>}
-    <fieldset className="kits-layout kits-form-fields" disabled={busy || uncertain}>
+    <fieldset className="kits-layout kits-form-fields" disabled={!can.add || busy || uncertain}>
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-order"><h2 id="kits-h-order">Order details</h2>
           <fieldset className="kits-radios" aria-describedby={e.orderFor ? 'kits-orderFor-err' : undefined}><legend>Order for</legend>
@@ -184,7 +187,7 @@ function Form() {
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-more"><h2 id="kits-h-more">Remarks and attachments</h2>
           <div className="kits-field"><label htmlFor="kits-remarks">Remarks</label><textarea id="kits-remarks" rows={3} value={v.remarks} onChange={(ev) => set({ remarks: ev.target.value })} data-testid="kits-input-remarks" /></div>
           <div className="kits-field" style={{ marginTop: 14 }}><label htmlFor="kits-attachments">Attachments (optional)</label>
-            <input id="kits-attachments" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="kits-files-hint kits-attachments-err" onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ''; }} data-testid="kits-input-files" />
+            <input id="kits-attachments" type="file" disabled={!can.upload_attachment} multiple accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="kits-files-hint kits-attachments-err" onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ''; }} data-testid="kits-input-files" />
             <p className="kits-hint" id="kits-files-hint">Up to 10 PDF, JPEG, PNG or WebP files, {policy ? fileSize(policy.maxBytes) : '10 MB'} each. Files upload privately when saving and must pass verification and scanning before attachment. Import/export excludes file contents.</p>
             <Err id="kits-attachments-err" text={fileMsg || e.attachments} />
             {fileMsg && <button type="button" className="kits-link kits-file-dismiss" onClick={() => { setFileMsg(''); setErrors((current) => ({ ...current, attachments: undefined })); }}>Continue without rejected files</button>}</div>
@@ -216,7 +219,8 @@ function Form() {
         </section>
       </div>
     </fieldset>
-    <div className="kits-actions"><button type="button" className="admin-button" disabled={busy || !policy} onClick={save} data-testid="kits-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
+    {!can.upload_attachment && <p role="status">Upload Attachment permission is required for this form's mandatory attachment. Your draft remains in this tab.</p>}
+    <div className="kits-actions"><button type="button" className="admin-button" disabled={!can.add || !can.upload_attachment || busy || !policy} onClick={save} data-testid="kits-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
       {!busy && !uncertain && <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-cancel">Cancel</Link>}</div>
     </div></AdminLayout>;
 }

@@ -39,10 +39,17 @@ def transaction(db, work):
 
 
 def authorize(db, actor):
+    from app.services.zone_policy import lock_policy
+    lock_policy(db)
     current = revalidate_identity(db, actor, lock=True)
     if not current.user.is_protected_system_admin or current.role != "super_admin" or "admin.access" not in current.permissions:
         raise AllergenError("Access denied", 403, "access_denied")
     return current
+
+
+def authorize_catalogue(db, actor, action=None):
+    from app.services.master_policy import authorize_master
+    return authorize_master(db, actor, "allergen", action, error=AllergenError)
 
 
 def reference_status(row):
@@ -99,7 +106,7 @@ def predicates(query="", status="all", min_price=None, max_price=None, category_
 
 def listing(db, actor, query="", status="all", limit=10, offset=0, **filters):
     def work():
-        authorize(db, actor)
+        authorize_catalogue(db, actor)
         total = db.scalar(select(func.count()).select_from(AllergenProduct).where(AllergenProduct.deleted_at.is_(None)))
         conditions = predicates(query, status, **filters)
         filtered = db.scalar(select(func.count()).select_from(AllergenProduct).where(*conditions))
@@ -113,7 +120,7 @@ def listing(db, actor, query="", status="all", limit=10, offset=0, **filters):
 
 def references(db, actor, kind, query="", limit=20, offset=0, include_unusable=False):
     def work():
-        authorize(db, actor)
+        authorize_catalogue(db, actor)
         model = REFERENCE_MODELS[kind]
         conditions = [] if include_unusable else [model.deleted_at.is_(None), model.status == "active"]
         term = literal_term(query)
@@ -170,7 +177,7 @@ def insert(db, actor, body):
 
 def create(db, actor, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize_catalogue(db, actor, "add")
         result = projection(db, insert(db, current, body))
         db.commit()
         return result
@@ -187,7 +194,7 @@ def find(db, record_id):
 
 def detail(db, actor, record_id):
     def work():
-        authorize(db, actor)
+        authorize_catalogue(db, actor)
         result = projection(db, find(db, record_id))
         db.commit()
         return result
@@ -196,7 +203,7 @@ def detail(db, actor, record_id):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = authorize(db, actor)
+        current = authorize_catalogue(db, actor, "delete" if operation == "delete" else "edit")
         row = find(db, record_id)
         if row.version != body.expected_version:
             raise AllergenError("Product changed. Your draft is not saved. Review current details before retrying.", 409, "allergen_stale")

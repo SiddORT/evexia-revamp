@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import { X } from 'lucide-react';
 import { containDialogTab } from './dialogKeyboard.js';
 import { getOpening, openingActivity, openingAnalytics, money, valueMoney, locationLabel } from '../../services/openingStock.js';
@@ -7,6 +8,7 @@ import '../../poActivityDrawer.css';
 import '../../inventoryServer.css';
 
 export default function OpeningDrawer({ id, onClose, returnFocusTo }) {
+  const can = useResourceActions('opening_stock');
   const { date, timestamp } = useAdminDateFormatters();
   const dialogRef = useRef(null);
   const [state, setState] = useState({ data: null, activity: [], summary: null, loading: true, error: '' });
@@ -25,11 +27,11 @@ export default function OpeningDrawer({ id, onClose, returnFocusTo }) {
   useEffect(() => {
     const c = new AbortController();
     setState({ data: null, activity: [], summary: null, loading: true, error: '' });
-    Promise.all([getOpening(id, c.signal), openingActivity(id, { limit: 50 }, c.signal), openingAnalytics(id, c.signal)])
+    Promise.all([getOpening(id, c.signal), can.protected ? openingActivity(id, { limit: 50 }, c.signal) : Promise.resolve({ items: [] }), can.protected ? openingAnalytics(id, c.signal) : Promise.resolve(null)])
       .then(([data, act, summary]) => setState({ data, activity: act.items || [], summary, loading: false, error: '' }))
       .catch((e) => { if (!c.signal.aborted) setState({ data: null, activity: [], summary: null, loading: false, error: e.message || 'Opening stock could not be loaded.' }); });
     return () => c.abort();
-  }, [id, tick]);
+  }, [id, tick, can.protected]);
   function backdrop(event) {
     if (event.target !== event.currentTarget) return;
     const b = event.currentTarget.getBoundingClientRect();
@@ -61,9 +63,9 @@ export default function OpeningDrawer({ id, onClose, returnFocusTo }) {
           <div><dt>Source / row ID</dt><dd className="inv-mono">{o.sourceId} / {o.rowId}</dd></div>
         </dl>
         <p className="mr-form__hint" data-testid="text-opening-historical">{o.historicalData}</p>
-        <section className="inv-drawer-section"><h3>Server activity</h3>
+        {can.protected && <section className="inv-drawer-section"><h3>Server activity</h3>
           {state.activity.length ? <div className="po-activity">{state.activity.map((a, i) => <article className="po-event" key={`${a.at}-${i}`}><div><strong className="po-activity-drawer__action">{a.action}</strong><p>{timestamp(a.at)} · {a.actor}{a.requestId ? ` · request ${a.requestId}` : ''}</p></div></article>)}</div> : <p>No activity recorded.</p>}
-        </section>
+        </section>}
         {s && <section className="inv-drawer-section"><h3>Totals</h3>
           <p>{s.records} record{s.records === 1 ? '' : 's'}, {s.imports} import{s.imports === 1 ? '' : 's'}. {s.scope}</p>
           {s.breakdown?.length > 0 && <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Item</th><th scope="col">Location</th><th scope="col">Quantity</th><th scope="col">Value</th></tr></thead>

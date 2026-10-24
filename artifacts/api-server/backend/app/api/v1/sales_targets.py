@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.api.v1.vendors import BINARY_RESPONSES, UPLOAD, release
 from app.api.v1.vendors import read_file as read_vendor_file
 from app.db.session import get_db
@@ -15,7 +15,7 @@ from app.services.vendors import VendorError
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/sales-targets", tags=["Sales Target Master"])
-manager = require_permissions("admin.access")
+manager = master_router("sales_target")
 
 
 def filters(query: str = Query("", max_length=100), status: Literal["all", "active", "inactive"] = "all",
@@ -57,7 +57,7 @@ def export(filters: dict = Depends(filters), format: Literal["csv", "xlsx"] = "c
 @router.get("/sample", operation_id="downloadSalesTargetSample", responses=BINARY_RESPONSES)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    sales_targets.transaction(db, lambda: sales_targets.authorize(db, actor))
+    sales_targets.transaction(db, lambda: sales_targets.authorize(db, actor, "import"))
     data = sales_target_transfer.sample(format)
     evidence = server_record(db, actor, initiation_id, "sales_target", "template", format.upper())
     return release(data, format, evidence, "evexia-sales-target-template")

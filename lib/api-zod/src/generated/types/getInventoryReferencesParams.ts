@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { GetInventoryReferencesPurpose } from "./getInventoryReferencesPurpose";
 
 export type GetInventoryReferencesParams = {
   /**
@@ -23,4 +24,5 @@ export type GetInventoryReferencesParams = {
    */
   limit?: number;
   unallocated?: boolean;
+  purpose?: GetInventoryReferencesPurpose;
 };

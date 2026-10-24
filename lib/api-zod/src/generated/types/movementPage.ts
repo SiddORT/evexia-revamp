@@ -13,6 +13,6 @@ export interface MovementPage {
   items: MovementSaved[];
   limit: number;
   offset: number;
-  summary: MovementSummary;
+  summary: MovementSummary | null;
   total: number;
 }

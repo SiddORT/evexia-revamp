@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { ClipboardList, Eye, Pencil, Plus, Printer, Search, ChevronDown } from 'lucide-react';
-import AdminLayout, { useOrderBase } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -19,6 +19,7 @@ import '../../immunotherapy.css';
 export const StatusPill = ({ status }) => <span className={`imm-status imm-status--${status.replace(' ', '-')}`}>{status}</span>;
 
 export default function ImmunotherapyOrders() {
+  const can = useOrderActions('immunotherapy');
   const BASE = useOrderBase('immunotherapy');
   const { date } = useAdminDateFormatters();
   const [result, setResult] = useState({ items: [], total: 0, counts: {}, nextCursor: null, filtered: null });
@@ -98,8 +99,8 @@ export default function ImmunotherapyOrders() {
     { key: 'status', label: 'Status', render: (o) => <StatusPill status={o.status} /> },
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
       <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
-      <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>
-      {eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
+      {can.edit && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
+      {can.documents && eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
   ];
 
   return <AdminLayout title="IMMUNOTHERAPY"><div className="imm">
@@ -108,7 +109,7 @@ export default function ImmunotherapyOrders() {
         <p className="admin-page-head__description">Review patient dosage and bottle composition for each order.</p></div>
       <div className="imm-list-head__actions">
         {actions}
-        <Link href={`${BASE}/new`} className="admin-button" data-testid="link-imm-add"><Plus size={16} aria-hidden="true" />Add Order</Link>
+        {can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-imm-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}
       </div>
     </div>} />
     {error && <div className="imm-errors" role="alert">{error} <button type="button" className="imm-link-btn" onClick={() => setRevision((n) => n + 1)}>Retry</button></div>}
@@ -132,7 +133,7 @@ export default function ImmunotherapyOrders() {
           {selected.size > 0 && <button type="button" className="imm-link-btn" onClick={() => setSelected(new Set())}>Clear selection</button>}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <button ref={printTrigger} type="button" className="admin-button admin-button--secondary" disabled={!chosen.length} data-testid="button-imm-bulk-print"><Printer size={15} aria-hidden="true" />Bulk Print<ChevronDown size={14} aria-hidden="true" /></button>
+              <button ref={printTrigger} type="button" className="admin-button admin-button--secondary" disabled={!can.documents || !chosen.length} data-testid="button-imm-bulk-print"><Printer size={15} aria-hidden="true" />Bulk Print<ChevronDown size={14} aria-hidden="true" /></button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
               <DropdownMenu.Content className="admin-dropdown__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ width: 210, maxWidth: 'calc(100vw - 24px)' }} aria-label="Bulk print options" onCloseAutoFocus={(event) => { if (openingPrint.current) { event.preventDefault(); openingPrint.current = false; } }}>
@@ -143,7 +144,7 @@ export default function ImmunotherapyOrders() {
         </div>
       </div>
       <DataTable columns={columns} rows={pager.pageRows} rowOffset={pager.startIndex} rowKey={(o) => o.id} label="Immunotherapy orders (scrolls horizontally)" testIdPrefix="imm"
-        empty={<div className="imm-empty" data-testid="empty-imm"><ClipboardList size={28} aria-hidden="true" /><strong>{loading ? 'Loading…' : error ? 'Orders unavailable' : result.total ? 'No matches in this section' : 'No immunotherapy orders yet'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : result.total ? 'Adjust the search, status or dates.' : 'Add an order to begin.'}</p>{result.total ? <button type="button" className="admin-button admin-button--secondary" onClick={reset}>Reset filters</button> : <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
+        empty={<div className="imm-empty" data-testid="empty-imm"><ClipboardList size={28} aria-hidden="true" /><strong>{loading ? 'Loading…' : error ? 'Orders unavailable' : result.total ? 'No matches in this section' : 'No immunotherapy orders yet'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : result.total ? 'Adjust the search, status or dates.' : 'Saved orders will appear here.'}</p>{result.total ? <button type="button" className="admin-button admin-button--secondary" onClick={reset}>Reset filters</button> : can.add && <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
       <TablePagination cursorMode sectionCount={rows.length} page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} filtered={result.filtered} total={result.total} label="orders" testId="text-imm-count" onPageChange={pager.setPage} onPageSizeChange={pager.setPageSize} />
     </section>
     {printKind && <ImmPrintDialog kind={printKind} orders={printOrders} returnFocusRef={printTrigger} onClose={() => setPrintKind('')} />}

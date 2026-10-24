@@ -4,6 +4,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, SlidersHorizontal, ChevronDown, Eye, FileDown, FileText, Filter, RefreshCw, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import StockAllergenSelect from '../../components/admin/StockAllergenSelect.jsx';
@@ -20,6 +21,7 @@ import '../../inventoryServer.css';
 const POLL_MS = 60000;
 
 export default function StockStatus() {
+  const can = useResourceActions('stock_status');
   const { timestamp } = useAdminDateFormatters();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -118,7 +120,7 @@ export default function StockStatus() {
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
     { key: 'q', label: 'Quantity', render: (r) => <><strong className="inv-mono">{r.quantity} {r.unit}</strong>{r.state === 'catalogue_zero' && <span className="stock-sub">No stock on hand</span>}{Number(r.unallocatedQuantity) > 0 && <span className="stock-sub">Unallocated: {r.unallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
     { key: 'v', label: 'Actions', render: (r) => <div className="stock-row-actions"><button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setDetail({ row: r, asOf: snap.asOf })} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</button>
-      {r.itemKind !== 'combo' && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setLedger(r)} aria-label={`Ledger for ${r.name} ${r.concentration}`} data-testid={`button-ledger-stock-${r.productId}`}><BookOpen size={14} /> Ledger</button>}
+      {can.protected && r.itemKind !== 'combo' && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setLedger(r)} aria-label={`Ledger for ${r.name} ${r.concentration}`} data-testid={`button-ledger-stock-${r.productId}`}><BookOpen size={14} /> Ledger</button>}
       {r.itemKind !== 'combo' && isSuperAdmin() && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setAdjust(r)} aria-label={`Manual adjustment for ${r.name} ${r.concentration}`} data-testid={`button-adjust-stock-${r.productId}`}><SlidersHorizontal size={14} /> Manual adjustment</button>}</div> },
   ];
   const filtersCurrent = Boolean(snap) && search.trim() === appliedSearch && snap.filters === filters;
@@ -126,8 +128,8 @@ export default function StockStatus() {
   return <AdminLayout title="Stock Status"><div className="stock-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Stock</p><h1>Stock status</h1><p className="admin-page-head__description">Current stock from accepted receipts, assemblies, opening stock and committed transfers. Unallocated opening stock is shown separately.</p></div>
       <div className="stock-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={exportCsv} disabled={disabled} data-testid="button-export-stock"><FileDown size={15} /> Export</button>
-        <button type="button" className="admin-button" onClick={openReport} disabled={disabled} data-testid="button-inventory-report"><FileText size={15} /> Inventory Report</button>
+        <button type="button" className="admin-button admin-button--secondary" onClick={exportCsv} disabled={!can.export || disabled} data-testid="button-export-stock"><FileDown size={15} /> Export</button>
+        <button type="button" className="admin-button" onClick={openReport} disabled={!can.export || disabled} data-testid="button-inventory-report"><FileText size={15} /> Inventory Report</button>
       </div></div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-stock-notice">{notice}</div>}
     {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-stock-error">{error}</div>}

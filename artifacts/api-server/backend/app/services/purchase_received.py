@@ -20,9 +20,13 @@ from app.services import procurement_documents as documents
 SCAN_LIMIT = 2000
 
 
-def transaction(db, actor, work):
+def transaction(db, actor, work, *, capability=None):
     try:
-        current = authorize(db, actor)
+        if capability is None:
+            current = authorize(db, actor)
+        else:
+            from app.services.capability_policy import authorize as check
+            current = check(db, actor, *capability, error=PRError)
         import logging
         engine = db.get_bind().engine
         if engine.echo or logging.getLogger("sqlalchemy.engine").isEnabledFor(logging.INFO) or logging.getLogger("sqlalchemy.engine.Engine").isEnabledFor(logging.INFO):
@@ -136,10 +140,12 @@ def review_data(db, crypto, body, existing=None):
 
 
 def preview(db, actor, body, record_id=None):
-    return transaction(db, actor, lambda _, c: review_data(db, c, body, get_row(db, record_id) if record_id else None))
+    return transaction(db, actor, lambda _, c: review_data(db, c, body, get_row(db, record_id) if record_id else None),
+                       capability=("purchase_received", "edit" if record_id else "add"))
 
 
 def mutation(db, actor, body, record_id=None, operation="created"):
+    from app.services.retry_capabilities import envelope, result as retry_response
     def work(current, crypto):
         from app.services import inventory
         # Always before PO locks: transfer and initialization writers use this
@@ -157,7 +163,7 @@ def mutation(db, actor, body, record_id=None, operation="created"):
                 raise PRError("This request was reconciled as not committed and closed. Review again with a new request identity.", 409, "pr_request_closed")
             if retry.actor_id != current.user.id or retry.digest not in hashes.values():
                 raise PRError("Retry identity conflicts with another request.", 409, "pr_retry_conflict")
-            return crypto.open(retry.key, "retry", retry.payload_ciphertext)
+            return retry_response(current, "purchase_received", crypto.open(retry.key, "retry", retry.payload_ciphertext))
         row = get_row(db, record_id) if record_id else None
         orders.find(db, row.po_id if row else body.poId)
         if row and (row.version != body.expected_version or row.status != "active"):
@@ -202,9 +208,11 @@ def mutation(db, actor, body, record_id=None, operation="created"):
             documents.archive(db, "pr", row, event, {**data, "company": dict(documents.COMPANY)},
                 documents.context(body), crypto)
         db.add(ReceiptRetry(key=body.idempotencyKey, actor_id=current.user.id, digest=hashes[crypto.active],
-                           payload_ciphertext=crypto.seal(body.idempotencyKey, "retry", data)))
+                           payload_ciphertext=crypto.seal(body.idempotencyKey, "retry", envelope("purchase_received",
+                               "delete" if operation == "deleted" else "edit" if record_id else "add", data))))
         return data
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("purchase_received",
+        "delete" if operation == "deleted" else "edit" if record_id else "add"))
 
 
 def query_data(db, crypto, params):
@@ -250,7 +258,7 @@ def listing(db, actor, params, export=False):
         offset, limit = params.get("offset", 0), params.get("limit", 10)
         return dict(items=data if export else data[offset:offset + limit], filtered=len(data), total=total,
                     limit=len(data) if export else limit, offset=0 if export else offset)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("purchase_received", "export" if export else None))
 
 
 def reporting(db, actor, params, analytics=False):
@@ -278,7 +286,7 @@ def reporting(db, actor, params, analytics=False):
             fullyAccepted=sum(Decimal(l["acceptedQty"]) > 0 and Decimal(l["rejectedQty"]) == 0 for l in lines),
             anyRejected=sum(Decimal(l["rejectedQty"]) > 0 for l in lines),
             allRejected=sum(Decimal(l["acceptedQty"]) == 0 for l in lines))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("purchase_received", "analytics" if analytics else "activity"))
 
 
 def references(db, actor, kind, query="", selected_id=None, offset=0, limit=25):
@@ -303,10 +311,11 @@ def references(db, actor, kind, query="", selected_id=None, offset=0, limit=25):
         total = len(data)
         data = sorted([r for r in data if query.strip().casefold() in r["name"].casefold()], key=lambda r: (r["name"], r["id"]))
         return dict(items=data[offset:offset + limit], total=total, filtered=len(data), limit=limit, offset=offset)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("purchase_received", None))
 
 
 def reconcile(db, actor, key):
+    from app.services.retry_capabilities import result
     def work(current, crypto):
         # Same lock as mutations: "not committed" is never inferred mid-commit.
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key.int % (2**63 - 1)})
@@ -319,5 +328,5 @@ def reconcile(db, actor, key):
         if row.actor_id != current.user.id:
             raise PRError("Retry identity belongs to a different account.", 403, "pr_retry_owner")
         return dict(state="not_committed" if row.digest == "cancelled" else "committed",
-                    receipt=crypto.open(key, "retry", row.payload_ciphertext))
-    return transaction(db, actor, work)
+                    receipt=result(current, "purchase_received", crypto.open(key, "retry", row.payload_ciphertext)))
+    return transaction(db, actor, work, capability=("purchase_received", ("add", "edit", "delete")))

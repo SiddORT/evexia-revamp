@@ -17,6 +17,7 @@ export function taxContext(vendor, destination) {
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, value]) => value !== '' && value != null));
 
 export const listPurchaseOrders = (params, signal) => purchaseOrderRequest('', { params: clean(params), signal });
+export const exportPurchaseOrders = (params, signal) => purchaseOrderRequest('/export', { params: clean(params), signal });
 export const getPurchaseOrderOverview = (signal) => purchaseOrderRequest('/overview', { signal });
 export const listPurchaseOrderActivity = (params, signal) => purchaseOrderRequest('/activity', { params: clean(params), signal });
 export const getPurchaseOrderAnalytics = (signal) => purchaseOrderRequest('/analytics', { signal });

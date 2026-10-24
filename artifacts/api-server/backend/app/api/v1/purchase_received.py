@@ -3,7 +3,7 @@ from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import operation_router
 from app.db.session import get_db
 from app.schemas.purchase_received import (
     PRInput, PRCreate, PREdit, PRDelete, PRSaved, PRReview, PRPage, PRSource,
@@ -17,7 +17,13 @@ from app.services import pr_batches
 from app.schemas.pr_batches import PRBatchSettingsWrite, PRBatchSettingsView, PRBatchAllocationInput, PRBatchAllocationView
 
 router = APIRouter(prefix="/admin/purchase-received", tags=["Purchase Received"])
-manager = require_permissions("admin.access")
+manager = operation_router("purchase_received", {
+    "listing": None, "detail": None, "options": None, "references": None, "source": None,
+    "export": "export", "preview": "add", "create": "add", "edit_preview": "edit", "edit": "edit",
+    "delete": "delete", "reconcile": ("add", "edit", "delete"), "activity": "activity",
+    "analytics": "analytics", "document": "print", "history": "history",
+    "batch_settings": ("add", "edit"), "allocate_batches": ("add", "edit"),
+})
 
 
 @router.get("/batch-settings", response_model=PRBatchSettingsView, operation_id="getPRBatchSettings")
@@ -69,7 +75,7 @@ def options(params=Depends(filters), actor: Identity = Depends(manager), db: Ses
         return dict(vendors=[dict(id=k, name=" / ".join(sorted(v))) for k, v in sorted(vendors.items())],
                     receivers=[dict(id="staff:" + k, name=" / ".join(sorted(v))) for k, v in sorted(staff.items())]
                     + ([dict(id="other", name="Others (recorded names)")] if any(r["receiverMode"] == "other" for r in data) else []))
-    return service.transaction(db, actor, work)
+    return service.transaction(db, actor, work, capability=("purchase_received", None))
 
 
 @router.get("/activity", response_model=PRActivityPage, operation_id="listPurchaseReceivedActivity")
@@ -92,7 +98,8 @@ def references(kind: Literal["staff", "orders"], query: str = Query("", max_leng
 @router.get("/sources/{po_id}", response_model=PRSource, operation_id="getPurchaseReceivedSource")
 def source(po_id: uuid.UUID, exclude_id: uuid.UUID | None = None,
            actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.transaction(db, actor, lambda _, c: service.source(db, po_id, c, str(exclude_id) if exclude_id else None))
+    return service.transaction(db, actor, lambda _, c: service.source(db, po_id, c, str(exclude_id) if exclude_id else None),
+                               capability=("purchase_received", None))
 
 
 @router.get("/requests/{key}", response_model=PRReconciliation, operation_id="reconcilePurchaseReceived")
@@ -112,16 +119,21 @@ def create(body: PRCreate, actor: Identity = Depends(manager), db: Session = Dep
 
 @router.get("/{record_id}", response_model=PRSaved, operation_id="getPurchaseReceived")
 def detail(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.transaction(db, actor, lambda _, c: service.projection(service.get_row(db, record_id), c))
+    return service.transaction(db, actor, lambda _, c: service.projection(service.get_row(db, record_id), c),
+                               capability=("purchase_received", None))
 
 
 @router.get("/{record_id}/documents", response_model=SavedDocument, operation_id="getPurchaseReceivedDocument")
 def document(record_id: uuid.UUID, revision: int | None = Query(None, ge=1),
              actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    def work(_, crypto):
+    def work(current, crypto):
+        from app.services.capability_policy import allowed
+        from app.services.purchase_received_crypto import PRError
+        if revision is not None and not allowed(current, "purchase_received", "history"):
+            raise PRError("View History permission is required for archived revisions.", 403, "access_denied")
         service.get_row(db, record_id)
         return documents.document_data(db, "pr", record_id, revision)
-    return service.transaction(db, actor, work)
+    return service.transaction(db, actor, work, capability=("purchase_received", "print"))
 
 
 @router.get("/{record_id}/history", response_model=DocumentHistory, operation_id="getPurchaseReceivedChanges")
@@ -130,7 +142,7 @@ def history(record_id: uuid.UUID, limit: int = Query(10, ge=1, le=50), offset: i
     def work(_, crypto):
         service.get_row(db, record_id)
         return documents.history_data(db, "pr", record_id, limit, offset)
-    return service.transaction(db, actor, work)
+    return service.transaction(db, actor, work, capability=("purchase_received", "history"))
 
 
 @router.post("/{record_id}/preview", response_model=PRReview, operation_id="previewPurchaseReceivedEdit")

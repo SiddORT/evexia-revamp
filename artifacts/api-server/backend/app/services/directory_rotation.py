@@ -38,7 +38,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access",
     "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders",
     "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders",
-    "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description"})
+    "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -59,7 +59,7 @@ def _fields(db):
                     "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers",
                     "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders",
                     "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner",
-                    "0067_inventory_adjustments", "0068_category_description"):
+                    "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -84,13 +84,13 @@ def _lock(db, exclusive=False):
         raise RotationError()
     if revisions[0] in RUNTIME_REVISIONS:
         db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
-    if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
+    if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"], ["0069_workspace_permissions"]):
         db.execute(text(f"LOCK TABLE immunotherapy_orders,immunotherapy_requests IN {mode} MODE NOWAIT"))
-    if revisions in (["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
+    if revisions in (["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"], ["0069_workspace_permissions"]):
         db.execute(text(f"LOCK TABLE kits_orders,kits_requests,files IN {mode} MODE NOWAIT"))
-    if revisions in (["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
+    if revisions in (["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"], ["0069_workspace_permissions"]):
         db.execute(text(f"LOCK TABLE spt_orders,spt_patients,spt_requests IN {mode} MODE NOWAIT"))
-    if revisions in (["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
+    if revisions in (["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"], ["0069_workspace_permissions"]):
         db.execute(text(f"LOCK TABLE lupin_orders,lupin_requests IN {mode} MODE NOWAIT"))
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;

@@ -163,7 +163,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None, key=None):
         result = dict(id=str(key), kind="product_import", imported=len(fields), memberRows=len(rows))
         products.save_retry(db, current, crypto, key, hashes, result)
         return result
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("product", "import"))
 
 
 def sample(format):
@@ -183,4 +183,4 @@ def export(db, actor, query, status, format, category_id=None, allergen_ids=None
                 rows.append([safe_text(product["name"]), product["mrp"], product["sellingPrice"], product["status"],
                              member["allergenId"], safe_text(member["name"]), member["quantity"], FORMAT])
         return rows
-    return encode(inv.transaction(db, actor, work), format, "ProductRecipes")
+    return encode(inv.transaction(db, actor, work, capability=("product", "export")), format, "ProductRecipes")

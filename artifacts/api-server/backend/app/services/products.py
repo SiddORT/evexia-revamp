@@ -48,21 +48,24 @@ def event(db, actor, record_id, operation, kind="product"):
 
 
 def retry_result(db, current, crypto, key, command):
+    from app.services.retry_capabilities import result
     hashes = crypto.digests(["products:v1", command])
     row = db.get(Retry, key)
     if row:
         if row.actor_id != current.user.id or row.digest not in hashes.values():
             raise PRError("This request identity is closed or conflicts. Reconcile before another save.", 409, "product_retry")
-        return True, crypto.open(key, "product_retry", row.payload_ciphertext), hashes
+        return True, result(current, "product", crypto.open(key, "product_retry", row.payload_ciphertext)), hashes
     return False, None, hashes
 
 
-def save_retry(db, actor, crypto, key, hashes, result):
+def save_retry(db, actor, crypto, key, hashes, result, *, action=None):
+    from app.services.retry_capabilities import envelope
     db.add(Retry(key=key, actor_id=actor.user.id, digest=hashes[crypto.active],
-        payload_ciphertext=crypto.seal(key, "product_retry", result)))
+        payload_ciphertext=crypto.seal(key, "product_retry", envelope("product", action, result))))
 
 
 def reconcile(db, actor, key):
+    from app.services.retry_capabilities import result
     def work(current, crypto):
         row = db.get(Retry, key)
         if row and row.actor_id != current.user.id:
@@ -71,8 +74,8 @@ def reconcile(db, actor, key):
             db.add(Retry(key=key, actor_id=current.user.id, digest="cancelled",
                 payload_ciphertext=crypto.seal(key, "product_retry", None)))
         return dict(state="committed" if row and row.digest != "cancelled" else "not_committed",
-                    result=crypto.open(key, "product_retry", row.payload_ciphertext) if row else None)
-    return inv.transaction(db, actor, work)
+                    result=result(current, "product", crypto.open(key, "product_retry", row.payload_ciphertext)) if row else None)
+    return inv.transaction(db, actor, work, capability=("product", ("add", "edit", "delete", "import")))
 
 
 def recipe(db, members, old=None):
@@ -151,11 +154,13 @@ def mutate(db, actor, body, record_id=None, operation="create", *, transaction_c
         for member in data["members"]:
             db.add(Member(revision_id=revision_id, allergen_id=uuid.UUID(member["allergenId"]),
                 quantity=Decimal(member["quantity"])))
-        save_retry(db, current, crypto, body.idempotencyKey, hashes, data)
+        save_retry(db, current, crypto, body.idempotencyKey, hashes, data,
+                   action="import" if transaction_context is not None else "delete" if operation == "delete" else "edit" if record_id else "add")
         return data
     if transaction_context is not None:
         return work(*transaction_context)
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("product",
+        "add" if operation == "create" else "delete" if operation == "delete" else "edit"))
 
 
 def summary(db, crypto, products):
@@ -221,7 +226,7 @@ def listing(db, actor, query="", status="all", offset=0, limit=25, category_id=N
         matches, total = matching_products(db, crypto, query, status, category_id, allergen_ids, refresh=True)
         return dict(items=matches[offset:offset + limit], total=total, filtered=len(matches),
                     offset=offset, limit=limit, summary=summary(db, crypto, matches))
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("product", None))
 
 
 def detail(db, actor, record_id, section=None, offset=0, limit=25):
@@ -239,7 +244,7 @@ def detail(db, actor, record_id, section=None, offset=0, limit=25):
             return dict(items=[crypto.open(r.id, "assembly", r.payload_ciphertext) for r in rows[offset:offset + limit]],
                         filtered=len(rows), offset=offset, limit=limit)
         return data
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("product", None) if section is None else None)
 
 
 def references(db, actor, query="", offset=0, limit=25):
@@ -248,7 +253,7 @@ def references(db, actor, query="", offset=0, limit=25):
         data = [dict(id=str(r.id), name=f"{r.name} · {r.concentration}", version=r.version, unit=UNIT)
                 for r in rows if normalized(query) in normalized(f"{r.name} {r.concentration}")]
         return dict(items=data[offset:offset + limit], filtered=len(data), offset=offset, limit=limit)
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("product", None))
 
 
 def filter_references(db, actor, kind, query="", offset=0, limit=25):
@@ -265,7 +270,7 @@ def filter_references(db, actor, kind, query="", offset=0, limit=25):
                      name=row.name if kind == "categories" else f"{row.name} · {row.concentration}",
                      version=row.version, unit="") for row in rows]
         return dict(items=data, filtered=count, offset=offset, limit=limit)
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("product", None))
 
 
 def review_assembly(db, crypto, body):

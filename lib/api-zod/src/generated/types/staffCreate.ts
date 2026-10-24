@@ -9,7 +9,7 @@ import type { StaffCreateDialCountry } from "./staffCreateDialCountry";
 import type { StaffCreateStatus } from "./staffCreateStatus";
 
 export interface StaffCreate {
-  custom_role_id: string;
+  custom_role_id?: string | null;
   dateOfJoining: Date;
   designation_id: string;
   dialCountry?: StaffCreateDialCountry;

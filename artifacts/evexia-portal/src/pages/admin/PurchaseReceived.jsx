@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -19,6 +20,7 @@ const initial = { search: '', from: '', to: '', vendorId: '', receivedBy: '', fu
 export const fulfilClass = (f) => f === 'Closed' ? 'pr-tag pr-tag--closed' : f === 'Open' ? 'pr-tag pr-tag--open' : 'pr-tag';
 
 export default function PurchaseReceived() {
+  const can = useResourceActions('purchase_received');
   const { date, timestamp } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const poId = new URLSearchParams(useSearch()).get('poId') || '';
@@ -46,7 +48,7 @@ export default function PurchaseReceived() {
     setLoading(true); setError(''); setData(null); setStats(null); setOptions({ vendors: [], receivers: [] }); setSource(null);
     const fetcher = tab === 'receipts' ? listPR : tab === 'activity' ? activityPR : analyticsPR;
     Promise.all([fetcher(params, controller.signal),
-      analyticsPR({ ...params, status: 'all' }, controller.signal),
+      can.analytics ? analyticsPR({ ...params, status: 'all' }, controller.signal) : Promise.resolve(null),
       filtersPR({ po_id: poId, from_date: filters.from, to_date: filters.to }, controller.signal),
       poId ? sourcePR(poId, null, controller.signal) : Promise.resolve(null)]).then(([result, summary, choices, po]) => {
       if (seq !== generation.current || controller.signal.aborted) return;
@@ -57,7 +59,8 @@ export default function PurchaseReceived() {
       setError(cause.message || 'Could not load server receipts.'); setLoading(false);
     });
     return () => { controller.abort(); generation.current++; };
-  }, [tab, signature, freshness]);
+  }, [tab, signature, freshness, can.analytics]);
+  useEffect(() => { if (tab !== 'receipts' && !can[tab]) setTab('receipts'); }, [tab, can.activity, can.analytics]);
   const refresh = () => setFreshness((n) => n + 1);
   const change = (key, value) => { setFilters((f) => ({ ...f, [key]: value })); setPage(1); };
   const canCreate = !poId || (source?.status === 'open' && source?.fulfillment !== 'Closed');
@@ -98,25 +101,25 @@ export default function PurchaseReceived() {
   return <AdminLayout title="Purchase Received"><div className="po-page pr-server-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Receiving</p><h1>Purchase received</h1><p className="admin-page-head__description">Record goods received against saved server purchase orders.</p></div><div className="po-head-actions">
       <button type="button" className="admin-button admin-button--secondary" onClick={refresh}><RefreshCw size={15} /> Refresh</button>
-      <button type="button" className="admin-button" disabled={loading || !!error || !canCreate || !!recovery.pending || !!recovery.error} onClick={() => navigate(`${BASE}/new${poId ? `?poId=${poId}` : ''}`)} data-testid="button-new-pr"><Plus size={16} /> New PR</button></div></div>
+      <button type="button" className="admin-button" disabled={!can.add || loading || !!error || !canCreate || !!recovery.pending || !!recovery.error} onClick={() => navigate(`${BASE}/new${poId ? `?poId=${poId}` : ''}`)} data-testid="button-new-pr"><Plus size={16} /> New PR</button></div></div>
     {(recovery.pending || recovery.error) && <ReceiptRetryRecovery {...recovery} onResolved={(r) => { setRecovery({}); if (r) open(r); else refresh(); }} />}
     {actionError && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     {poId && <div className="admin-feedback">Showing receipts for {source?.number || 'selected PO'} only. <button type="button" className="po-link" onClick={() => navigate(BASE)}>Show all receipts</button></div>}
-    <div className="po-summary">
+    {can.analytics && <div className="po-summary">
       <div className="po-summary__item po-summary__item--accent"><span>Active receipts</span><strong>{stats?.active ?? '—'}</strong><small>{stats?.deleted ?? '—'} deleted retained · full filtered scope, regardless of status</small></div>
       <div className="po-summary__item"><span>POs partially received</span><strong>{stats?.fulfillment?.['Partially Received'] ?? '—'}</strong><small>Linked POs · active acceptance</small></div>
       <div className="po-summary__item"><span>POs closed</span><strong>{stats?.fulfillment?.Closed ?? '—'}</strong><small>Linked POs · fully accepted</small></div>
       <div className="po-summary__item"><span>Lines with rejections</span><strong>{stats?.anyRejected ?? '—'}</strong><small>Full filtered scope, including deleted</small></div>
-    </div>
+    </div>}
     <section className="admin-panel">
-      <div className="po-tabs" role="tablist">{[['receipts', ClipboardCheck, 'Receipts'], ['activity', Activity, 'Activity'], ['analytics', BarChart3, 'Analytics']].map(([key, Icon, name]) =>
+      <div className="po-tabs" role="tablist">{[['receipts', ClipboardCheck, 'Receipts'], ['activity', Activity, 'Activity'], ['analytics', BarChart3, 'Analytics']].filter(([key]) => key === 'receipts' || can[key]).map(([key, Icon, name]) =>
         <button key={key} type="button" role="tab" aria-selected={tab === key} className="po-tab" onClick={() => { setTab(key); setPage(1); }}><Icon size={15} />{name}</button>)}</div>
       {tab === 'receipts' ? <>
         <div className="po-toolbar">
           <label className="admin-search"><Search size={16} /><span className="sr-only">Search receipts</span><input type="search" value={filters.search} onChange={(e) => change('search', e.target.value)} placeholder="Search PR, PO, vendor, receiver or product" /></label>
           <button type="button" className="admin-button admin-button--secondary po-filter-toggle" onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen} aria-controls="pr-filter-panel"><SlidersHorizontal size={15} /> Filters<ChevronDown size={15} /></button>
           <div className="pr-toolbar-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setFilters({ ...initial, status: poId ? 'all' : 'active' }); setPage(1); }}>Clear filters</button>
-            <button type="button" className="admin-button admin-button--secondary" disabled={busy || loading || !data?.filtered} onClick={csv}><FileDown size={15} /> CSV ({data?.filtered ?? 0})</button></div>
+            <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || busy || loading || !data?.filtered} onClick={csv}><FileDown size={15} /> CSV ({data?.filtered ?? 0})</button></div>
         </div>
         <div id="pr-filter-panel" className="po-toolbar po-filter-panel" hidden={!filtersOpen}>
           <div className="admin-filter"><label htmlFor="pr-from">From date</label><input id="pr-from" type="date" className="admin-select" value={filters.from} onChange={(e) => change('from', e.target.value)} /></div>

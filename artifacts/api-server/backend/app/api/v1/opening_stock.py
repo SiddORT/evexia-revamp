@@ -3,7 +3,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import operation_router
 from app.db.session import get_db
 from app.services.auth import Identity
 from app.schemas.opening_stock import (
@@ -19,7 +19,11 @@ from app.api.v1.languages import read_file, FILE_RESPONSES, UPLOAD
 from app.services.languages import LanguageError
 
 router = APIRouter(prefix="/admin/opening-stock", tags=["Opening Stock"])
-manager = require_permissions("admin.access")
+manager = operation_router("opening_stock", {
+    "sample": "import", "export": "export", "import_review": "import", "listing": None,
+    "detail": None, "references": None, "reconcile": ("add", "import"),
+    "preview": ("add", "import"), "create": ("add", "import"),
+})
 
 
 def download_response(db, actor, data, format, initiation_id, kind):

@@ -4105,6 +4105,188 @@ export interface LoginRequest {
 
 export type LupinInputPaymentStatus =
   (typeof LupinInputPaymentStatus)[keyof typeof LupinInputPaymentStatus];
+
+export const LupinInputPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinInputStatus =
+  (typeof LupinInputStatus)[keyof typeof LupinInputStatus];
+
+export const LupinInputStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface LupinInput {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinInputPaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinInputStatus;
+}
+
+export interface LupinImportEntry {
+  expected_version?: number | null;
+  id?: string | null;
+  /** @maxLength 48 */
+  number?: string;
+  values: LupinInput;
+}
+
+export interface LupinImport {
+  confirmUpdates?: boolean;
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  entries: LupinImportEntry[];
+  idempotencyKey: string;
+  /** @maxLength 256 */
+  reviewToken?: string;
+}
+
+export type LupinRecordPaymentStatus =
+  (typeof LupinRecordPaymentStatus)[keyof typeof LupinRecordPaymentStatus];
+
+export const LupinRecordPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinRecordStatus =
+  (typeof LupinRecordStatus)[keyof typeof LupinRecordStatus];
+
+export const LupinRecordStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type LupinRecordAttachmentsItem = { [key: string]: unknown };
+
+export type LupinRecordDoctor = { [key: string]: unknown };
+
+export type LupinRecordMr = { [key: string]: unknown };
+
+export type LupinRecordPatientsItem = { [key: string]: unknown };
+
+export interface LupinRecord {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  attachments: LupinRecordAttachmentsItem[];
+  date: string;
+  doctor: LupinRecordDoctor;
+  doctorId: string;
+  id: string;
+  mr: LupinRecordMr;
+  mrId: string;
+  number: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  patients: LupinRecordPatientsItem[];
+  paymentStatus?: LupinRecordPaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinRecordStatus;
+  total: string;
+  version: number;
+}
+
+export interface LupinImportResult {
+  imported: number;
+  orders: LupinRecord[];
+}
+
+export type LupinPageCounts = { [key: string]: number };
+
+export interface LupinPage {
+  counts: LupinPageCounts;
+  filtered: number | null;
+  items: LupinRecord[];
+  nextCursor: string | null;
+  total: number;
+}
+
+export interface LupinUploadCancellation {
+  cancelled: boolean;
+  id: string;
+}
+
+export type LupinWritePaymentStatus =
+  (typeof LupinWritePaymentStatus)[keyof typeof LupinWritePaymentStatus];
+
+export const LupinWritePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinWriteStatus =
+  (typeof LupinWriteStatus)[keyof typeof LupinWriteStatus];
+
+export const LupinWriteStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface LupinWrite {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinWritePaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinWriteStatus;
+}
+
 export interface MRChoice {
   deleted?: boolean;
   id: string;
@@ -5377,7 +5559,7 @@ export interface MovementSaved {
   source: MovementLocation;
   staffId: string | null;
   staffVersion: number | null;
-  summary: MovementSummary;
+  summary: MovementSummary | null;
 }
 
 export interface MovementPage {
@@ -5385,7 +5567,7 @@ export interface MovementPage {
   items: MovementSaved[];
   limit: number;
   offset: number;
-  summary: MovementSummary;
+  summary: MovementSummary | null;
   total: number;
 }
 
@@ -8101,46 +8283,160 @@ export type RoleResponsePermissionsItem =
   (typeof RoleResponsePermissionsItem)[keyof typeof RoleResponsePermissionsItem];
 
 export const RoleResponsePermissionsItem = {
-  zoneadd: "zone.add",
-  zoneedit: "zone.edit",
-  zonedelete: "zone.delete",
-  zoneexport: "zone.export",
-  zoneimport: "zone.import",
-  headquarteradd: "headquarter.add",
-  headquarteredit: "headquarter.edit",
-  headquarterdelete: "headquarter.delete",
-  headquarterexport: "headquarter.export",
-  headquarterimport: "headquarter.import",
-  mradd: "mr.add",
-  mredit: "mr.edit",
-  mrdelete: "mr.delete",
-  mrexport: "mr.export",
-  mrimport: "mr.import",
-  patientadd: "patient.add",
-  patientedit: "patient.edit",
-  patientdelete: "patient.delete",
-  patientexport: "patient.export",
-  patientimport: "patient.import",
-  doctoradd: "doctor.add",
-  doctoredit: "doctor.edit",
-  doctordelete: "doctor.delete",
-  doctorexport: "doctor.export",
-  doctorimport: "doctor.import",
-  product_categoryadd: "product_category.add",
-  product_categoryedit: "product_category.edit",
-  product_categorydelete: "product_category.delete",
-  product_categoryexport: "product_category.export",
-  product_categoryimport: "product_category.import",
-  locationadd: "location.add",
-  locationedit: "location.edit",
-  locationdelete: "location.delete",
-  locationexport: "location.export",
-  locationimport: "location.import",
+  allergenadd: "allergen.add",
+  allergendelete: "allergen.delete",
+  allergenedit: "allergen.edit",
+  allergenexport: "allergen.export",
+  allergenimport: "allergen.import",
+  allergenview: "allergen.view",
   courieradd: "courier.add",
-  courieredit: "courier.edit",
   courierdelete: "courier.delete",
+  courieredit: "courier.edit",
   courierexport: "courier.export",
   courierimport: "courier.import",
+  courierview: "courier.view",
+  designationadd: "designation.add",
+  designationdelete: "designation.delete",
+  designationedit: "designation.edit",
+  designationexport: "designation.export",
+  designationimport: "designation.import",
+  designationview: "designation.view",
+  doctoradd: "doctor.add",
+  doctordelete: "doctor.delete",
+  doctoredit: "doctor.edit",
+  doctorexport: "doctor.export",
+  doctorimport: "doctor.import",
+  doctorview: "doctor.view",
+  headquarteradd: "headquarter.add",
+  headquarterdelete: "headquarter.delete",
+  headquarteredit: "headquarter.edit",
+  headquarterexport: "headquarter.export",
+  headquarterimport: "headquarter.import",
+  headquarterview: "headquarter.view",
+  immunotherapyadd: "immunotherapy.add",
+  immunotherapyedit: "immunotherapy.edit",
+  immunotherapyexport: "immunotherapy.export",
+  immunotherapyimport: "immunotherapy.import",
+  immunotherapyread_attachment: "immunotherapy.read_attachment",
+  immunotherapyupload_attachment: "immunotherapy.upload_attachment",
+  immunotherapyview: "immunotherapy.view",
+  kitsadd: "kits.add",
+  kitsexport: "kits.export",
+  kitsimport: "kits.import",
+  kitsread_attachment: "kits.read_attachment",
+  kitsupload_attachment: "kits.upload_attachment",
+  kitsview: "kits.view",
+  languageadd: "language.add",
+  languagedelete: "language.delete",
+  languageedit: "language.edit",
+  languageexport: "language.export",
+  languageimport: "language.import",
+  languageview: "language.view",
+  locationadd: "location.add",
+  locationdelete: "location.delete",
+  locationedit: "location.edit",
+  locationexport: "location.export",
+  locationimport: "location.import",
+  locationview: "location.view",
+  lupinadd: "lupin.add",
+  lupinexport: "lupin.export",
+  lupinimport: "lupin.import",
+  lupinread_attachment: "lupin.read_attachment",
+  lupinupload_attachment: "lupin.upload_attachment",
+  lupinview: "lupin.view",
+  mradd: "mr.add",
+  mrdelete: "mr.delete",
+  mredit: "mr.edit",
+  mrexport: "mr.export",
+  mrimport: "mr.import",
+  mrview: "mr.view",
+  opening_balanceadd: "opening_balance.add",
+  opening_balancedelete: "opening_balance.delete",
+  opening_balanceedit: "opening_balance.edit",
+  opening_balanceexport: "opening_balance.export",
+  opening_balanceimport: "opening_balance.import",
+  opening_balanceview: "opening_balance.view",
+  opening_stockadd: "opening_stock.add",
+  opening_stockexport: "opening_stock.export",
+  opening_stockimport: "opening_stock.import",
+  opening_stockview: "opening_stock.view",
+  patientadd: "patient.add",
+  patientdelete: "patient.delete",
+  patientedit: "patient.edit",
+  patientexport: "patient.export",
+  patientimport: "patient.import",
+  patientview: "patient.view",
+  permissionsview: "permissions.view",
+  productadd: "product.add",
+  productdelete: "product.delete",
+  productedit: "product.edit",
+  productexport: "product.export",
+  productimport: "product.import",
+  productview: "product.view",
+  product_categoryadd: "product_category.add",
+  product_categorydelete: "product_category.delete",
+  product_categoryedit: "product_category.edit",
+  product_categoryexport: "product_category.export",
+  product_categoryimport: "product_category.import",
+  product_categoryview: "product_category.view",
+  purchase_orderactivity: "purchase_order.activity",
+  purchase_orderadd: "purchase_order.add",
+  purchase_orderanalytics: "purchase_order.analytics",
+  purchase_orderdelete: "purchase_order.delete",
+  purchase_orderedit: "purchase_order.edit",
+  purchase_orderexport: "purchase_order.export",
+  purchase_orderhistory: "purchase_order.history",
+  purchase_orderprint: "purchase_order.print",
+  purchase_orderview: "purchase_order.view",
+  purchase_receivedactivity: "purchase_received.activity",
+  purchase_receivedadd: "purchase_received.add",
+  purchase_receivedanalytics: "purchase_received.analytics",
+  purchase_receiveddelete: "purchase_received.delete",
+  purchase_receivededit: "purchase_received.edit",
+  purchase_receivedexport: "purchase_received.export",
+  purchase_receivedhistory: "purchase_received.history",
+  purchase_receivedprint: "purchase_received.print",
+  purchase_receivedview: "purchase_received.view",
+  roleadd: "role.add",
+  roledelete: "role.delete",
+  roleedit: "role.edit",
+  roleview: "role.view",
+  sales_targetadd: "sales_target.add",
+  sales_targetdelete: "sales_target.delete",
+  sales_targetedit: "sales_target.edit",
+  sales_targetexport: "sales_target.export",
+  sales_targetimport: "sales_target.import",
+  sales_targetview: "sales_target.view",
+  sptadd: "spt.add",
+  sptedit: "spt.edit",
+  sptexport: "spt.export",
+  sptimport: "spt.import",
+  sptview: "spt.view",
+  staffadd: "staff.add",
+  staffdelete: "staff.delete",
+  staffedit: "staff.edit",
+  staffstatus: "staff.status",
+  staffview: "staff.view",
+  staff_accessview: "staff_access.view",
+  stock_movementactivity: "stock_movement.activity",
+  stock_movementanalytics: "stock_movement.analytics",
+  stock_movementcreate: "stock_movement.create",
+  stock_movementview: "stock_movement.view",
+  stock_statusexport: "stock_status.export",
+  stock_statushistory: "stock_status.history",
+  stock_statusview: "stock_status.view",
+  vendoradd: "vendor.add",
+  vendordelete: "vendor.delete",
+  vendoredit: "vendor.edit",
+  vendorexport: "vendor.export",
+  vendorimport: "vendor.import",
+  vendorview: "vendor.view",
+  zoneadd: "zone.add",
+  zonedelete: "zone.delete",
+  zoneedit: "zone.edit",
+  zoneexport: "zone.export",
+  zoneimport: "zone.import",
+  zoneview: "zone.view",
 } as const;
 
 export interface RoleResponse {
@@ -8156,8 +8452,9 @@ export interface RoleResponse {
    * @maxLength 100
    */
   name: string;
-  /** @maxItems 40 */
+  /** @maxItems 154 */
   readonly permissions?: readonly RoleResponsePermissionsItem[];
+  readonly permissions_visible: boolean;
   updated_at: string;
   readonly updated_by: string;
   version: number;
@@ -8174,52 +8471,166 @@ export type RolePermissionsPermissionsItem =
   (typeof RolePermissionsPermissionsItem)[keyof typeof RolePermissionsPermissionsItem];
 
 export const RolePermissionsPermissionsItem = {
-  zoneadd: "zone.add",
-  zoneedit: "zone.edit",
-  zonedelete: "zone.delete",
-  zoneexport: "zone.export",
-  zoneimport: "zone.import",
-  headquarteradd: "headquarter.add",
-  headquarteredit: "headquarter.edit",
-  headquarterdelete: "headquarter.delete",
-  headquarterexport: "headquarter.export",
-  headquarterimport: "headquarter.import",
-  mradd: "mr.add",
-  mredit: "mr.edit",
-  mrdelete: "mr.delete",
-  mrexport: "mr.export",
-  mrimport: "mr.import",
-  patientadd: "patient.add",
-  patientedit: "patient.edit",
-  patientdelete: "patient.delete",
-  patientexport: "patient.export",
-  patientimport: "patient.import",
-  doctoradd: "doctor.add",
-  doctoredit: "doctor.edit",
-  doctordelete: "doctor.delete",
-  doctorexport: "doctor.export",
-  doctorimport: "doctor.import",
-  product_categoryadd: "product_category.add",
-  product_categoryedit: "product_category.edit",
-  product_categorydelete: "product_category.delete",
-  product_categoryexport: "product_category.export",
-  product_categoryimport: "product_category.import",
-  locationadd: "location.add",
-  locationedit: "location.edit",
-  locationdelete: "location.delete",
-  locationexport: "location.export",
-  locationimport: "location.import",
+  allergenadd: "allergen.add",
+  allergendelete: "allergen.delete",
+  allergenedit: "allergen.edit",
+  allergenexport: "allergen.export",
+  allergenimport: "allergen.import",
+  allergenview: "allergen.view",
   courieradd: "courier.add",
-  courieredit: "courier.edit",
   courierdelete: "courier.delete",
+  courieredit: "courier.edit",
   courierexport: "courier.export",
   courierimport: "courier.import",
+  courierview: "courier.view",
+  designationadd: "designation.add",
+  designationdelete: "designation.delete",
+  designationedit: "designation.edit",
+  designationexport: "designation.export",
+  designationimport: "designation.import",
+  designationview: "designation.view",
+  doctoradd: "doctor.add",
+  doctordelete: "doctor.delete",
+  doctoredit: "doctor.edit",
+  doctorexport: "doctor.export",
+  doctorimport: "doctor.import",
+  doctorview: "doctor.view",
+  headquarteradd: "headquarter.add",
+  headquarterdelete: "headquarter.delete",
+  headquarteredit: "headquarter.edit",
+  headquarterexport: "headquarter.export",
+  headquarterimport: "headquarter.import",
+  headquarterview: "headquarter.view",
+  immunotherapyadd: "immunotherapy.add",
+  immunotherapyedit: "immunotherapy.edit",
+  immunotherapyexport: "immunotherapy.export",
+  immunotherapyimport: "immunotherapy.import",
+  immunotherapyread_attachment: "immunotherapy.read_attachment",
+  immunotherapyupload_attachment: "immunotherapy.upload_attachment",
+  immunotherapyview: "immunotherapy.view",
+  kitsadd: "kits.add",
+  kitsexport: "kits.export",
+  kitsimport: "kits.import",
+  kitsread_attachment: "kits.read_attachment",
+  kitsupload_attachment: "kits.upload_attachment",
+  kitsview: "kits.view",
+  languageadd: "language.add",
+  languagedelete: "language.delete",
+  languageedit: "language.edit",
+  languageexport: "language.export",
+  languageimport: "language.import",
+  languageview: "language.view",
+  locationadd: "location.add",
+  locationdelete: "location.delete",
+  locationedit: "location.edit",
+  locationexport: "location.export",
+  locationimport: "location.import",
+  locationview: "location.view",
+  lupinadd: "lupin.add",
+  lupinexport: "lupin.export",
+  lupinimport: "lupin.import",
+  lupinread_attachment: "lupin.read_attachment",
+  lupinupload_attachment: "lupin.upload_attachment",
+  lupinview: "lupin.view",
+  mradd: "mr.add",
+  mrdelete: "mr.delete",
+  mredit: "mr.edit",
+  mrexport: "mr.export",
+  mrimport: "mr.import",
+  mrview: "mr.view",
+  opening_balanceadd: "opening_balance.add",
+  opening_balancedelete: "opening_balance.delete",
+  opening_balanceedit: "opening_balance.edit",
+  opening_balanceexport: "opening_balance.export",
+  opening_balanceimport: "opening_balance.import",
+  opening_balanceview: "opening_balance.view",
+  opening_stockadd: "opening_stock.add",
+  opening_stockexport: "opening_stock.export",
+  opening_stockimport: "opening_stock.import",
+  opening_stockview: "opening_stock.view",
+  patientadd: "patient.add",
+  patientdelete: "patient.delete",
+  patientedit: "patient.edit",
+  patientexport: "patient.export",
+  patientimport: "patient.import",
+  patientview: "patient.view",
+  permissionsview: "permissions.view",
+  productadd: "product.add",
+  productdelete: "product.delete",
+  productedit: "product.edit",
+  productexport: "product.export",
+  productimport: "product.import",
+  productview: "product.view",
+  product_categoryadd: "product_category.add",
+  product_categorydelete: "product_category.delete",
+  product_categoryedit: "product_category.edit",
+  product_categoryexport: "product_category.export",
+  product_categoryimport: "product_category.import",
+  product_categoryview: "product_category.view",
+  purchase_orderactivity: "purchase_order.activity",
+  purchase_orderadd: "purchase_order.add",
+  purchase_orderanalytics: "purchase_order.analytics",
+  purchase_orderdelete: "purchase_order.delete",
+  purchase_orderedit: "purchase_order.edit",
+  purchase_orderexport: "purchase_order.export",
+  purchase_orderhistory: "purchase_order.history",
+  purchase_orderprint: "purchase_order.print",
+  purchase_orderview: "purchase_order.view",
+  purchase_receivedactivity: "purchase_received.activity",
+  purchase_receivedadd: "purchase_received.add",
+  purchase_receivedanalytics: "purchase_received.analytics",
+  purchase_receiveddelete: "purchase_received.delete",
+  purchase_receivededit: "purchase_received.edit",
+  purchase_receivedexport: "purchase_received.export",
+  purchase_receivedhistory: "purchase_received.history",
+  purchase_receivedprint: "purchase_received.print",
+  purchase_receivedview: "purchase_received.view",
+  roleadd: "role.add",
+  roledelete: "role.delete",
+  roleedit: "role.edit",
+  roleview: "role.view",
+  sales_targetadd: "sales_target.add",
+  sales_targetdelete: "sales_target.delete",
+  sales_targetedit: "sales_target.edit",
+  sales_targetexport: "sales_target.export",
+  sales_targetimport: "sales_target.import",
+  sales_targetview: "sales_target.view",
+  sptadd: "spt.add",
+  sptedit: "spt.edit",
+  sptexport: "spt.export",
+  sptimport: "spt.import",
+  sptview: "spt.view",
+  staffadd: "staff.add",
+  staffdelete: "staff.delete",
+  staffedit: "staff.edit",
+  staffstatus: "staff.status",
+  staffview: "staff.view",
+  staff_accessview: "staff_access.view",
+  stock_movementactivity: "stock_movement.activity",
+  stock_movementanalytics: "stock_movement.analytics",
+  stock_movementcreate: "stock_movement.create",
+  stock_movementview: "stock_movement.view",
+  stock_statusexport: "stock_status.export",
+  stock_statushistory: "stock_status.history",
+  stock_statusview: "stock_status.view",
+  vendoradd: "vendor.add",
+  vendordelete: "vendor.delete",
+  vendoredit: "vendor.edit",
+  vendorexport: "vendor.export",
+  vendorimport: "vendor.import",
+  vendorview: "vendor.view",
+  zoneadd: "zone.add",
+  zonedelete: "zone.delete",
+  zoneedit: "zone.edit",
+  zoneexport: "zone.export",
+  zoneimport: "zone.import",
+  zoneview: "zone.view",
 } as const;
 
 export interface RolePermissions {
   /** @minimum 1 */
   expected_version: number;
-  /** @maxItems 40 */
+  /** @maxItems 154 */
   permissions: RolePermissionsPermissionsItem[];
 }
 
@@ -8732,6 +9143,28 @@ export interface StaffAccess {
   workspace_login_enabled: boolean;
 }
 
+export type StaffAccessRecordStatus =
+  (typeof StaffAccessRecordStatus)[keyof typeof StaffAccessRecordStatus];
+
+export const StaffAccessRecordStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffAccessRecord {
+  employeeCode: string | null;
+  id: string;
+  name: string;
+  role: string;
+  status: StaffAccessRecordStatus;
+  workspace_login_enabled: boolean;
+}
+
+export interface StaffAccessPage {
+  items: StaffAccessRecord[];
+  total: number;
+}
+
 export type StaffCreateDialCountry =
   (typeof StaffCreateDialCountry)[keyof typeof StaffCreateDialCountry];
 
@@ -8992,7 +9425,7 @@ export const StaffCreateStatus = {
 } as const;
 
 export interface StaffCreate {
-  custom_role_id: string;
+  custom_role_id?: string | null;
   dateOfJoining: string;
   designation_id: string;
   dialCountry?: StaffCreateDialCountry;
@@ -9292,7 +9725,7 @@ export interface StaffResponse {
   employeeCode: string | null;
   id: string;
   legacy_role?: string | null;
-  login_identifiers_ready?: boolean;
+  login_identifiers_ready?: boolean | null;
   /**
    * @minLength 1
    * @maxLength 200
@@ -9310,11 +9743,11 @@ export interface StaffResponse {
   updatedAt: string;
   updatedBy: string;
   version: number;
-  workspace_login_enabled?: boolean;
+  workspace_login_enabled?: boolean | null;
 }
 
 export interface StaffCreated {
-  initial_password: string;
+  initial_password: string | null;
   record: StaffResponse;
 }
 
@@ -9342,6 +9775,11 @@ export interface StaffDesignationChoices {
   has_more: boolean;
   items: StaffDesignationChoice[];
   next_cursor: string | null;
+}
+
+export interface StaffDesignationReferencePage {
+  items: StaffDesignationChoice[];
+  total: number;
 }
 
 export type StaffEditDialCountry =
@@ -9604,7 +10042,7 @@ export const StaffEditStatus = {
 } as const;
 
 export interface StaffEdit {
-  custom_role_id: string | null;
+  custom_role_id?: string | null;
   dateOfJoining: string;
   designation_id: string;
   dialCountry?: StaffEditDialCountry;
@@ -11502,7 +11940,16 @@ export type GetInventoryReferencesParams = {
    */
   limit?: number;
   unallocated?: boolean;
+  purpose?: GetInventoryReferencesPurpose;
 };
+
+export type GetInventoryReferencesPurpose =
+  (typeof GetInventoryReferencesPurpose)[keyof typeof GetInventoryReferencesPurpose];
+
+export const GetInventoryReferencesPurpose = {
+  movement: "movement",
+  opening_stock: "opening_stock",
+} as const;
 
 export type ListInventoryStockParams = {
   /**
@@ -11791,6 +12238,87 @@ export type ListLupinOrdersParams = {
   from_date?: string | null;
   to_date?: string | null;
 };
+
+export type ListLupinOrdersStatus =
+  (typeof ListLupinOrdersStatus)[keyof typeof ListLupinOrdersStatus] | null;
+
+export const ListLupinOrdersStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ListLupinOrdersPaymentStatus =
+  | (typeof ListLupinOrdersPaymentStatus)[keyof typeof ListLupinOrdersPaymentStatus]
+  | null;
+
+export const ListLupinOrdersPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type UploadLupinAttachmentParams = {
+  upload_id: string;
+};
+
+export type UploadLupinAttachmentBody = {
+  file: Blob | File;
+};
+
+export type ExportLupinOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ExportLupinOrdersStatus;
+  payment_status?: ExportLupinOrdersPaymentStatus;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ExportLupinOrdersStatus =
+  (typeof ExportLupinOrdersStatus)[keyof typeof ExportLupinOrdersStatus] | null;
+
+export const ExportLupinOrdersStatus = {
+  Confirmed: "Confirmed",
+  Approved: "Approved",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ExportLupinOrdersPaymentStatus =
+  | (typeof ExportLupinOrdersPaymentStatus)[keyof typeof ExportLupinOrdersPaymentStatus]
+  | null;
+
+export const ExportLupinOrdersPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  selected?: string | null;
+};
+
 export type ListMRDirectoryParams = {
   /**
    * @maxLength 200
@@ -12620,6 +13148,36 @@ export type ListPurchaseOrderActivityParams = {
   offset?: number;
 };
 
+export type ExportPurchaseOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportPurchaseOrdersStatus;
+  vendor_id?: string | null;
+  product_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: ExportPurchaseOrdersSort;
+};
+
+export type ExportPurchaseOrdersStatus =
+  (typeof ExportPurchaseOrdersStatus)[keyof typeof ExportPurchaseOrdersStatus];
+
+export const ExportPurchaseOrdersStatus = {
+  open: "open",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type ExportPurchaseOrdersSort =
+  (typeof ExportPurchaseOrdersSort)[keyof typeof ExportPurchaseOrdersSort];
+
+export const ExportPurchaseOrdersSort = {
+  recent: "recent",
+  oldest: "oldest",
+} as const;
+
 export type ListPurchaseOrderFilterOptionsParams = {
   /**
    * @maxLength 200
@@ -13374,6 +13932,31 @@ export const ListStaffStatus = {
   inactive: "inactive",
 } as const;
 
+export type ListStaffAccessParams = {
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetStaffDesignationReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+};
+
 export type ListStaffFilterDesignationsParams = {
   cursor?: string | null;
 };
@@ -13735,264 +14318,3 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
-
-export type UploadLupinAttachmentParams = {
-  upload_id: string;
-};
-
-export type LupinInputStatus =
-  (typeof LupinInputStatus)[keyof typeof LupinInputStatus];
-
-export type LupinRecordPatientsItem = { [key: string]: unknown };
-
-export const ListLupinOrdersStatus = {
-  Confirmed: "Confirmed",
-  Approved: "Approved",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export type UploadLupinAttachmentBody = {
-  file: Blob | File;
-};
-
-export type ExportLupinOrdersStatus =
-  (typeof ExportLupinOrdersStatus)[keyof typeof ExportLupinOrdersStatus] | null;
-
-export type ExportLupinOrdersParams = {
-  /**
-   * @maxLength 200
-   */
-  search?: string;
-  status?: ExportLupinOrdersStatus;
-  payment_status?: ExportLupinOrdersPaymentStatus;
-  doctor_id?: string | null;
-  mr_id?: string | null;
-  patient_id?: string | null;
-  from_date?: string | null;
-  to_date?: string | null;
-};
-
-export type LupinRecordDoctor = { [key: string]: unknown };
-
-export const LupinWriteStatus = {
-  Confirmed: "Confirmed",
-  Approved: "Approved",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export const ExportLupinOrdersStatus = {
-  Confirmed: "Confirmed",
-  Approved: "Approved",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface LupinWrite {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  doctorId: string;
-  idempotencyKey: string;
-  mrId: string;
-  orderDate?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 1000000
-   */
-  patientCount: number;
-  /** @maxItems 200 */
-  patientIds?: string[];
-  paymentStatus?: LupinWritePaymentStatus;
-  /** @maxLength 32 */
-  price: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  status?: LupinWriteStatus;
-}
-
-export const LupinWritePaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export const LupinInputStatus = {
-  Confirmed: "Confirmed",
-  Approved: "Approved",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export const LupinRecordPaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export interface LupinRecord {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  attachments: LupinRecordAttachmentsItem[];
-  date: string;
-  doctor: LupinRecordDoctor;
-  doctorId: string;
-  id: string;
-  mr: LupinRecordMr;
-  mrId: string;
-  number: string;
-  orderDate?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 1000000
-   */
-  patientCount: number;
-  /** @maxItems 200 */
-  patientIds?: string[];
-  patients: LupinRecordPatientsItem[];
-  paymentStatus?: LupinRecordPaymentStatus;
-  /** @maxLength 32 */
-  price: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  status?: LupinRecordStatus;
-  total: string;
-  version: number;
-}
-
-export interface LupinUploadCancellation {
-  cancelled: boolean;
-  id: string;
-}
-
-export type ExportLupinOrdersPaymentStatus =
-  | (typeof ExportLupinOrdersPaymentStatus)[keyof typeof ExportLupinOrdersPaymentStatus]
-  | null;
-
-export type LupinRecordStatus =
-  (typeof LupinRecordStatus)[keyof typeof LupinRecordStatus];
-
-export const ListLupinOrdersPaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export interface LupinImport {
-  confirmUpdates?: boolean;
-  /**
-   * @minItems 1
-   * @maxItems 500
-   */
-  entries: LupinImportEntry[];
-  idempotencyKey: string;
-  /** @maxLength 256 */
-  reviewToken?: string;
-}
-
-export interface LupinImportResult {
-  imported: number;
-  orders: LupinRecord[];
-}
-
-export const LupinInputPaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export const LupinRecordStatus = {
-  Confirmed: "Confirmed",
-  Approved: "Approved",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export type ListLupinOrdersStatus =
-  (typeof ListLupinOrdersStatus)[keyof typeof ListLupinOrdersStatus] | null;
-
-export type LupinReferencesParams = {
-  /**
-   * @maxLength 200
-   */
-  search?: string;
-  cursor?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  selected?: string | null;
-};
-
-export type LupinPageCounts = { [key: string]: number };
-
-export type LupinRecordAttachmentsItem = { [key: string]: unknown };
-
-export type LupinWritePaymentStatus =
-  (typeof LupinWritePaymentStatus)[keyof typeof LupinWritePaymentStatus];
-
-export interface LupinPage {
-  counts: LupinPageCounts;
-  filtered: number | null;
-  items: LupinRecord[];
-  nextCursor: string | null;
-  total: number;
-}
-
-export type LupinRecordPaymentStatus =
-  (typeof LupinRecordPaymentStatus)[keyof typeof LupinRecordPaymentStatus];
-
-export interface LupinImportEntry {
-  expected_version?: number | null;
-  id?: string | null;
-  /** @maxLength 48 */
-  number?: string;
-  values: LupinInput;
-}
-
-export interface LupinInput {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  doctorId: string;
-  mrId: string;
-  orderDate?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 1000000
-   */
-  patientCount: number;
-  /** @maxItems 200 */
-  patientIds?: string[];
-  paymentStatus?: LupinInputPaymentStatus;
-  /** @maxLength 32 */
-  price: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  status?: LupinInputStatus;
-}
-
-export type ListLupinOrdersPaymentStatus =
-  | (typeof ListLupinOrdersPaymentStatus)[keyof typeof ListLupinOrdersPaymentStatus]
-  | null;
-
-export type LupinWriteStatus =
-  (typeof LupinWriteStatus)[keyof typeof LupinWriteStatus];
-
-export type LupinRecordMr = { [key: string]: unknown };
-
-export const ExportLupinOrdersPaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;

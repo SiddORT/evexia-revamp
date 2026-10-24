@@ -21,6 +21,25 @@ class StaffRoleChoices(BaseModel):
     total: int
 
 
+class StaffAccessRecord(BaseModel):
+    id: uuid.UUID
+    name: str
+    employeeCode: str | None
+    status: StaffBusinessStatus
+    role: str
+    workspace_login_enabled: bool
+
+
+class StaffAccessPage(BaseModel):
+    items: list[StaffAccessRecord]
+    total: int
+
+
+class StaffDesignationReferencePage(BaseModel):
+    items: list["StaffDesignationChoice"]
+    total: int
+
+
 class StaffDirectoryFilters(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     status: StaffBusinessStatus | None = None
@@ -47,7 +66,7 @@ class StaffFields(BaseModel):
     email: EmailStr = Field(max_length=320)
     phone: str = Field(min_length=1, max_length=30)
     dialCountry: DialCountry = "IN"
-    custom_role_id: uuid.UUID
+    custom_role_id: uuid.UUID | None = None
     designation_id: uuid.UUID
     dateOfJoining: date
     status: Literal["active", "inactive"]
@@ -88,7 +107,7 @@ class StaffFields(BaseModel):
 
 
 class StaffEdit(StaffFields):
-    custom_role_id: uuid.UUID | None
+    custom_role_id: uuid.UUID | None = None
     expected_version: int = Field(ge=1)
 
 
@@ -125,7 +144,7 @@ class StaffResponse(StaffFields):
     role: str
     role_resolution_required: bool = False
     role_available: bool = False
-    login_identifiers_ready: bool = False
+    login_identifiers_ready: bool | None = None
     legacy_role: str | None = None
     designationName: str
     deleted_at: datetime | None = None
@@ -137,12 +156,12 @@ class StaffResponse(StaffFields):
     createdAt: datetime
     updatedAt: datetime
     custom_role_id: uuid.UUID | None = None
-    workspace_login_enabled: bool = False
+    workspace_login_enabled: bool | None = None
 
 
 class StaffCreated(BaseModel):
     record: StaffResponse
-    initial_password: str
+    initial_password: str | None
 
 
 class StaffPage(BaseModel):

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import { X } from 'lucide-react';
 import { getProduct, productActivity, productAnalytics, productAssemblies } from '../../services/productMaster.js';
 import { formatPrice } from '../../services/serverInventory.js';
@@ -36,6 +37,7 @@ function usePaged(fetchPage, id, tick) {
 }
 
 export default function ProductDrawer({ id, onClose }) {
+  const can = useResourceActions('product');
   const { timestamp } = useAdminDateFormatters();
   const dialogRef = useRef(null);
   const [tab, setTab] = useState('Details');
@@ -54,11 +56,11 @@ export default function ProductDrawer({ id, onClose }) {
   useEffect(() => {
     const c = new AbortController();
     setBase((x) => ({ ...x, loading: true, error: '' }));
-    Promise.all([getProduct(id, c.signal), productAnalytics(id, c.signal)])
+    Promise.all([getProduct(id, c.signal), can.protected ? productAnalytics(id, c.signal) : Promise.resolve(null)])
       .then(([product, analytics]) => setBase({ product, analytics, loading: false, error: '' }))
       .catch((e) => { if (!c.signal.aborted) setBase((x) => ({ ...x, loading: false, error: e.message || 'Product details could not be loaded.' })); });
     return () => c.abort();
-  }, [id, tick]);
+  }, [id, tick, can.protected]);
   function closeOnBackdrop(event) {
     if (event.target !== event.currentTarget) return;
     const b = event.currentTarget.getBoundingClientRect();
@@ -79,7 +81,7 @@ export default function ProductDrawer({ id, onClose }) {
       <button type="button" className="po-activity-drawer__close" onClick={onClose} aria-label="Close product details" data-testid="button-close-product-drawer"><X size={18} /></button>
     </header>
     <div className="po-activity-drawer__body">
-      <div role="group" aria-label="Detail sections" className="inv-period">{TABS.map((t) => <button key={t} type="button" aria-pressed={tab === t} className={`admin-button${tab === t ? '' : ' admin-button--secondary'}`} onClick={() => setTab(t)}>{t}</button>)}</div>
+      <div role="group" aria-label="Detail sections" className="inv-period">{TABS.filter((t) => t === 'Details' || can.protected).map((t) => <button key={t} type="button" aria-pressed={tab === t} className={`admin-button${tab === t ? '' : ' admin-button--secondary'}`} onClick={() => setTab(t)}>{t}</button>)}</div>
       {base.loading && <p role="status">Loading product…</p>}
       {base.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{base.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((t) => t + 1)}>Retry</button></div>}
       {p && tab === 'Details' && <>

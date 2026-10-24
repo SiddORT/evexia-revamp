@@ -6,7 +6,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.db.session import get_db
 from app.schemas.designations import (
     DesignationFields, DesignationEdit, DesignationStatus, DesignationVersion, DesignationResponse,
@@ -17,7 +17,7 @@ from app.services import designations, designation_transfer
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/designations", tags=["Designation Master"])
-manager = require_permissions("admin.access")
+manager = master_router("designation")
 OVERHEAD = 64 * 1024
 
 
@@ -52,7 +52,7 @@ def export(query: str = Query("", max_length=200), status: Literal["all", "activ
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}})
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    designations.transaction(db, lambda: designations.authorize(db, actor))
+    designations.transaction(db, lambda: designations.authorize(db, actor, "import"))
     data = designation_transfer.sample(format)
     evidence = server_record(db, actor, initiation_id, "designation", "template", format.upper())
     return Response(data, media_type="text/csv; charset=utf-8" if format == "csv" else

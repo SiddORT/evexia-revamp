@@ -1,6 +1,16 @@
 import TableSkeleton, { TableLoadingStatus } from './TableSkeleton.jsx';
+import { Link, useLocation } from 'wouter';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
+import { MASTER_CATALOGUE, canViewMaster, hasMasterPermission, isStaffIdentity } from '../../auth/capabilities.js';
 
 export default function DataTable({ columns, rows = [], rowKey, empty, label = 'Zone records', testIdPrefix = 'zone', rowOffset = 0, loading = false, loadingLabel = `Loading ${label}…`, skeletonRows = 5 }) {
+  const [path] = useLocation();
+  const { user } = useAdminSession();
+  const master = MASTER_CATALOGUE.find((item) => path === `/admin/masters/${item.path}` || (item.key === 'language' && path === '/admin/languages'));
+  if (isStaffIdentity(user) && master && canViewMaster(user, master.key) && !hasMasterPermission(user, master.key, 'edit')) {
+    columns = [...columns, { key: 'readOnlyDetails', label: 'Details', render: (row) => row.id
+      ? <Link className="admin-button admin-button--secondary" href={`/admin/masters/${master.path}/${row.id}`}>View details</Link> : null }];
+  }
   if (!loading && !rows.length) return empty;
   return (
     <>

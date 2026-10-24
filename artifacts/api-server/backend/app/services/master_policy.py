@@ -1,11 +1,11 @@
 """Explicit assignable master actions; labels never confer authority."""
 from app.services.zone_policy import lock_policy
 
-from app.core.master_catalogue import MASTERS, ACTIONS, MASTER_ACTIONS
+from app.core.master_catalogue import MASTERS, ACTIONS, MASTER_ACTIONS, MASTER_RESOURCES
 
 
 def master_allowed(identity, resource, action=None, protected=False):
-    if resource not in MASTERS or (action is not None and action not in ACTIONS):
+    if resource not in MASTERS or (action is not None and action not in MASTER_RESOURCES[resource]):
         return False
     if (identity.user.is_protected_system_admin and identity.role == "super_admin"
             and "admin.access" in identity.permissions):
@@ -13,7 +13,7 @@ def master_allowed(identity, resource, action=None, protected=False):
     if protected or identity.staff is None:
         return False
     return (f"{resource}.{action}" in identity.permissions if action else
-            any(f"{resource}.{item}" in identity.permissions for item in ACTIONS))
+            any(f"{resource}.{item}" in identity.permissions for item in MASTER_RESOURCES[resource]))
 
 
 def authorize_master(db, actor, resource, action=None, *, protected=False, lock=True, error=None):

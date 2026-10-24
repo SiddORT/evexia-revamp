@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Download, Eye, FileUp, Plus, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OpeningDrawer from '../../components/admin/OpeningDrawer.jsx';
@@ -18,6 +19,7 @@ import '../../openingStock.css';
 const BASE = '/admin/masters/opening-stock';
 
 export default function OpeningStockMaster() {
+  const can = useResourceActions('opening_stock');
   const [, navigate] = useLocation();
   const { date } = useAdminDateFormatters();
   const { theme, appearance } = useAdminPreferences();
@@ -80,15 +82,15 @@ export default function OpeningStockMaster() {
   return <AdminLayout title="Opening Stock"><div className="opening-stock-master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Opening Stock</h1><p className="admin-page-head__description">Pre-system physical stock for allergens and products. Records are append-only stock initialization; a blank location means Unallocated, not zero stock.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/import`)} data-testid="button-import-opening"><FileUp size={16} /> Import</button>
+        <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/import`)} data-testid="button-import-opening"><FileUp size={16} /> Import</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
-          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={loading || Boolean(error) || search.trim() !== applied || !filtered} aria-disabled={Boolean(exporting) || undefined} data-testid="button-export-opening"><Download size={16} aria-hidden="true" /> {exporting ? 'Preparing…' : 'Export data'}</button></DropdownMenu.Trigger>
+          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={!can.export || loading || Boolean(error) || search.trim() !== applied || !filtered} aria-disabled={Boolean(exporting) || undefined} data-testid="button-export-opening"><Download size={16} aria-hidden="true" /> {exporting ? 'Preparing…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu admin-mr-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Opening stock export format">
             <DropdownMenu.Item className="admin-dropdown__item" disabled={Boolean(exporting)} onSelect={() => void exportAll('csv')} data-testid="button-export-opening-csv">CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-dropdown__item" disabled={Boolean(exporting)} onSelect={() => void exportAll('xlsx')} data-testid="button-export-opening-xlsx">Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-opening"><Plus size={16} /> Add opening stock</button></div></div>
+        <button type="button" disabled={!can.add} className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-opening"><Plus size={16} /> Add opening stock</button></div></div>
     <OpeningPendingBanner onResolved={() => load()} />
     {exportMsg && <div className="admin-feedback" role="status">{exportMsg}</div>}
     <section className="admin-panel" aria-label="Opening stock list">

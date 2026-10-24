@@ -30,9 +30,10 @@ class POError(Exception):
         self.message, self.status, self.code = message, status, code
 
 
-def transaction(db, actor, work):
+def transaction(db, actor, work, *, action=None):
     try:
-        current = authorize(db, actor)
+        from app.services.capability_policy import authorize as check
+        current = check(db, actor, "purchase_order", action, error=POError)
         result = work(current)
         db.commit()
         return result
@@ -119,7 +120,8 @@ def preview_data(db, body, existing=None):
 
 
 def preview(db, actor, body, record_id=None):
-    return transaction(db, actor, lambda _: preview_data(db, body, find(db, record_id) if record_id else None))
+    return transaction(db, actor, lambda _: preview_data(db, body, find(db, record_id) if record_id else None),
+                       action="edit" if record_id else "add")
 
 
 def find(db, record_id):
@@ -232,7 +234,7 @@ def mutation(db, actor, body, record_id=None, operation="created"):
                 documents.crypto_for(db))
         db.add(Retry(key=body.idempotencyKey, actor_id=current.user.id, digest=payload_digest, response=result))
         return result
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="delete" if operation == "deleted" else "edit" if record_id else "add")
 
 
 def page(db, statement, total_statement, limit, offset, project):
@@ -247,7 +249,7 @@ def pattern(query):
 
 
 def listing(db, actor, query="", status="open", vendor_id=None, product_id=None,
-            from_date=None, to_date=None, sort="recent", limit=10, offset=0):
+            from_date=None, to_date=None, sort="recent", limit=10, offset=0, *, complete=False):
     def work(_):
         if from_date and to_date and from_date > to_date:
             raise POError("From PO date must not be later than To PO date.", 422, "po_date_range")
@@ -269,8 +271,13 @@ def listing(db, actor, query="", status="open", vendor_id=None, product_id=None,
                 select(Line.id).where(Line.order_id == PO.id, Line.position >= 0, Line.snapshot["productName"].as_string().ilike(p, escape="\\")).exists()))
         ordering = (PO.po_date, PO.created_at, PO.id)
         statement = statement.order_by(*(col.asc() if sort == "oldest" else col.desc() for col in ordering))
+        if complete:
+            count = db.scalar(select(func.count()).select_from(statement.order_by(None).subquery()))
+            if count > 10000:
+                raise POError("Export is limited to 10,000 matching orders. Narrow the filters; no partial export was prepared.", 422, "po_export_scope")
+            return page(db, statement, select(func.count()).select_from(PO), 10000, 0, lambda r: projection(db, r[0]))
         return page(db, statement, select(func.count()).select_from(PO), limit, offset, lambda r: projection(db, r[0]))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="export" if complete else None)
 
 
 def overview_data(db):
@@ -291,7 +298,7 @@ def activity(db, actor, query="", limit=10, offset=0):
         return page(db, statement, select(func.count()).select_from(Meta), limit, offset,
             lambda r: dict(id=str(r[0].event_id), orderId=str(r[0].order_id), number=r[0].number,
                            action=r[0].action, summary=r[0].summary, actor=r[0].actor, at=r[1].created_at.isoformat()))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="activity")
 
 
 def analytics(db, actor):
@@ -304,7 +311,7 @@ def analytics(db, actor):
             .where(PO.status == "open").group_by(PO.vendor_id, PO.vendor_name)
             .order_by(func.sum(PO.total).desc(), PO.vendor_name, PO.vendor_id)).all()
         return dict(counts=counts, vendors=[dict(id=f"{r[0]}:{r[1]}", name=r[1], count=r[2], amount=int(r[3])) for r in vendors])
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="analytics")
 
 
 def references(db, actor, kind, query="", limit=25, offset=0, selected_id=None, historical=False):

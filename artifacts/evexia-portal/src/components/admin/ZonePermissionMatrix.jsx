@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Minus, Search } from 'lucide-react';
-import { MASTER_CATALOGUE, MASTER_PERMISSIONS, ZONE_PERMISSIONS, MASTER_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
+import { PERMISSION_MODULES, ACTION_LABELS, ASSIGNABLE_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
 import InfoDisclosure from './InfoDisclosure.jsx';
 
 export const countLabel = (n) => `${n} permission${n === 1 ? '' : 's'}`;
@@ -17,17 +17,23 @@ function GroupCheckbox({ selected, locked, label, onAll, onNone, testId, keys = 
 // Shortcuts select explicit catalogue keys, never implicit broad authority.
 export default function ZonePermissionMatrix({ roleName, selected, saved, disabled, busy, dirty, onToggle, onSelect, onAll, onNone, onSave, onCancel, children }) {
   const [query, setQuery] = useState('');
+  const [moduleKey, setModuleKey] = useState('masters');
   const all = ZONE_KEYS.every((key) => selected.includes(key));
   const none = selected.length === 0;
   const locked = disabled || busy;
   const needle = query.trim().toLowerCase();
-  const groups = MASTER_CATALOGUE.map((master) => {
-    const items = MASTER_PERMISSIONS.filter((item) => item.master === master.key);
+  const activeModule = PERMISSION_MODULES.find((item) => item.key === moduleKey);
+  const columns = [...new Set(activeModule.resources.flatMap((resource) => resource.actions))];
+  const groups = activeModule.resources.map((master) => {
+    const items = master.actions.map((action) => ({
+      key: `${master.key}.${action}`, action, label: master.labels?.[action] || ACTION_LABELS[action],
+      hint: `${master.labels?.[action] || ACTION_LABELS[action]} for ${master.label}. This grants no unsupported or Super Admin-only operations.`,
+    }));
     return {
       ...master,
       keys: ZONE_KEYS.filter((key) => key.startsWith(`${master.key}.`)),
       items,
-      shown: new Set(items.filter((item) => `Masters ${master.label} ${item.label} ${item.hint}`.toLowerCase().includes(needle)).map((item) => item.key)),
+      shown: new Set(items.filter((item) => `${activeModule.label} ${master.label} ${item.label} ${item.hint}`.toLowerCase().includes(needle)).map((item) => item.key)),
     };
   });
   const rows = groups.filter((group) => group.shown.size > 0);
@@ -55,20 +61,26 @@ export default function ZonePermissionMatrix({ roleName, selected, saved, disabl
     <label className="rp-search"><Search size={15} aria-hidden="true" /><span className="sr-only">Search permissions</span><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search permissions..." data-testid="input-search-permissions" /></label>
     <div className="rp-body">
       <nav className="rp-rail" aria-label="Permission modules">
-        <div className="rp-rail__item rp-rail__item--active">
-          <GroupCheckbox selected={selected} locked={locked} label="Select all Masters permissions" onAll={onAll} onNone={onNone} testId="checkbox-masters-permissions" />
-          <span aria-current="true" className="rp-rail__label">Masters <span>{selected.length}/{ZONE_KEYS.length}</span></span>
-        </div>
+        {PERMISSION_MODULES.map((module) => {
+          const keys = module.resources.flatMap((resource) => resource.actions.map((action) => `${resource.key}.${action}`));
+          return <div key={module.key} className={`rp-rail__item${moduleKey === module.key ? ' rp-rail__item--active' : ''}`}>
+            <GroupCheckbox selected={selected} keys={keys} locked={locked} label={`Select all ${module.label} permissions`}
+              onAll={() => selectGroup(keys, true)} onNone={() => selectGroup(keys, false)} testId={`checkbox-${module.key}-permissions`} />
+            <button type="button" aria-current={moduleKey === module.key ? 'true' : undefined} className="rp-rail__label"
+              onClick={() => setModuleKey(module.key)}>{module.label} <span>{keys.filter((key) => selected.includes(key)).length}/{keys.length}</span></button>
+          </div>;
+        })}
       </nav>
       <div className="rp-main">
         {rows.length === 0 && <div className="admin-empty" role="status" data-testid="status-permissions-no-results"><strong>No matching permissions</strong><p>Try another search. Your selections are unchanged.</p></div>}
-        {rows.length > 0 && <div className="rp-table-scroll" role="region" aria-label="Masters permission matrix" tabIndex={0}>
+        {rows.length > 0 && <div className="rp-table-scroll" role="region" aria-label={`${activeModule.label} permission matrix`} tabIndex={0}>
           <table className="rp-table">
-            <caption className="sr-only">Masters permissions by action</caption>
+            <caption className="sr-only">{activeModule.label} permissions by supported action</caption>
             <thead>
               <tr>
-                <th scope="col" className="rp-table__master">Master</th>
-                {ZONE_PERMISSIONS.map(({ key, label }) => <th scope="col" key={key} className="rp-table__action">{label}</th>)}
+                <th scope="col" className="rp-table__master">Submodule</th>
+                {columns.map((action) => <th scope="col" key={action} className="rp-table__action">{ACTION_LABELS[action]}</th>)}
+                {activeModule.resources.some((resource) => resource.protected) && <th scope="col">Super Admin only</th>}
               </tr>
             </thead>
             <tbody>
@@ -83,7 +95,11 @@ export default function ZonePermissionMatrix({ roleName, selected, saved, disabl
                       <span className="rp-table__count">{count}/{group.keys.length}</span>
                     </span>
                   </th>
-                  {group.items.map(({ key, label, hint }) => group.shown.has(key)
+                  {columns.map((action) => {
+                    const item = group.items.find((entry) => entry.action === action);
+                    if (!item) return <td key={action} className="rp-table__cell rp-table__cell--empty"><span aria-label="Not supported">—</span></td>;
+                    const { key, label, hint } = item;
+                    return group.shown.has(key)
                     ? <td key={key} className={`rp-table__cell${selected.includes(key) ? ' rp-table__cell--on' : ''}${locked ? ' rp-table__cell--locked' : ''}`}>
                       <div className="rp-cell">
                         <label className="rp-check">
@@ -98,7 +114,9 @@ export default function ZonePermissionMatrix({ roleName, selected, saved, disabl
                         <InfoDisclosure id={`rp-help-${key}`} title={`${group.label} ${label}`} text={hint} testId={`button-permission-help-${key}`} />
                       </div>
                     </td>
-                    : <td key={key} className="rp-table__cell rp-table__cell--empty" />)}
+                    : <td key={key} className="rp-table__cell rp-table__cell--empty" />;
+                  })}
+                  {activeModule.resources.some((resource) => resource.protected) && <td>{group.protected?.join('; ') || '—'}</td>}
                 </tr>;
               })}
             </tbody>
@@ -106,6 +124,6 @@ export default function ZonePermissionMatrix({ roleName, selected, saved, disabl
         </div>}
       </div>
     </div>
-    <p className="rp-matrix__note">A dot marks a saved permission. Any one grant permits live, non-deleted list and detail access for that master. Import works without Add. No grant includes trash, restore, password reset or private history. Group selection includes hidden actions; All and Clear apply to all 40 permissions.</p>
+    <p className="rp-matrix__note">A dot marks a saved permission. Existing Master action grants retain minimum live list/detail access; View alone grants no mutation or transfer. Unsupported cells are unavailable. Assembly, stock adjustments, trash, restore, password reset and private clinical/payment history are not assignable. Group selection includes hidden actions; All and Clear apply to all {ZONE_KEYS.length} supported permissions. Assign Role, Enable/Disable Login and Change Role Permissions remain Super Admin-only.</p>
   </section>;
 }

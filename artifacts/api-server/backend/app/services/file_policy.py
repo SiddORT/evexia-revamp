@@ -15,12 +15,73 @@ class FileError(Exception):
         super().__init__(message)
 
 
+def staff_order_file(db, current, action, patient_id, kits_owner_id, lupin_owner_id,
+                     file_id, lupin_reservation):
+    """Staff file grants are order capabilities, never general Patient-file access."""
+    from app.services.capability_policy import allowed
+    from app.db.file_models import FileRecord
+    from app.db.immunotherapy_models import ImmunotherapyAttachment
+    from app.db.kits_models import KitsAttachment
+    from app.db.lupin_models import LupinAttachment, LupinRequest
+    links = (("immunotherapy", ImmunotherapyAttachment), ("kits", KitsAttachment), ("lupin", LupinAttachment))
+    if action not in ("upload", "read", "download", "cancel_lupin_upload"):
+        raise FileError(403, "access_denied", "Access denied")
+    if file_id:
+        row = db.get(FileRecord, file_id)
+        if not row:
+            raise FileError(404, "not_found", "Object unavailable")
+        associated = [resource for resource, link in links
+                      if db.scalar(select(link.file_id).where(link.file_id == file_id).limit(1))]
+        if associated:
+            if action in ("read", "download") and any(
+                    allowed(current, resource, "read_attachment") for resource in associated):
+                return current
+            raise FileError(403, "access_denied", "Access denied")
+        # Knowing a private UUID or having a Patient Master grant is not access.
+        if row.uploader_id != current.user.id:
+            raise FileError(404, "not_found", "Object unavailable")
+    resource = "lupin" if lupin_owner_id else "kits" if kits_owner_id else "immunotherapy"
+    needed = "read_attachment" if action in ("read", "download") else "upload_attachment"
+    if not allowed(current, resource, needed):
+        raise FileError(403, "access_denied", "Access denied")
+    if lupin_owner_id:
+        if lupin_owner_id != current.user.id:
+            raise FileError(403, "access_denied", "Access denied")
+        if file_id:
+            retry = db.get(LupinRequest, file_id)
+            if not retry or retry.actor_id != current.user.id:
+                raise FileError(404, "not_found", "Object unavailable")
+            from app.services.lupin import unseal
+            from app.services.directory_runtime import crypto_scope
+            with crypto_scope(db) as keys:
+                saved = unseal(keys, "requests", file_id, retry.response_ciphertext)
+            if (saved["request"].get("kind") != "lupin_upload"
+                    or bool(saved["result"].get("cancelled")) != (action == "cancel_lupin_upload")):
+                raise FileError(404, "not_found", "Object unavailable")
+        elif action != "upload" or not lupin_reservation:
+            raise FileError(403, "access_denied", "Access denied")
+    elif kits_owner_id:
+        if kits_owner_id != current.user.id or action == "cancel_lupin_upload":
+            raise FileError(403, "access_denied", "Access denied")
+    elif patient_id and action != "cancel_lupin_upload":
+        # Own unattached drafts are still constrained to an eligible workflow
+        # patient. Saved historical associations were handled independently above.
+        from app.services.immunotherapy import eligible
+        eligible(db, "patients", patient_id)
+    else:
+        raise FileError(403, "access_denied", "Access denied")
+    return current
+
+
 def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False, kits_owner_id=None, lupin_owner_id=None, file_id=None, lupin_reservation=False):
-    if identity.role == "mr" and lupin_owner_id:
+    if identity.staff is not None or (identity.role == "mr" and lupin_owner_id):
         # Same policy-before-identity lock order as order mutations.
         from app.services.zone_policy import lock_policy
         lock_policy(db)
     current = revalidate_identity(db, identity, lock=lock)
+    if current.staff is not None:
+        return staff_order_file(db, current, action, patient_id, kits_owner_id, lupin_owner_id,
+                                file_id, lupin_reservation)
     admin_access = "admin.access" in current.permissions
     if lupin_owner_id:
         if current.role == "mr":

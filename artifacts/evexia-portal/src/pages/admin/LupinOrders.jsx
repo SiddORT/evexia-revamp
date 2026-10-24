@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Plus, Search } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -14,6 +14,7 @@ import '../../lupinOrders.css';
 
 const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '', status: '', payment_status: '' };
 export default function LupinOrders() {
+  const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
   const { mr } = useOrderPortal();
   const { date } = useAdminDateFormatters();
@@ -52,7 +53,7 @@ export default function LupinOrders() {
     <OrderTransfers kind="lupin" rows={result.items} adapter={createLupinTransferAdapter(applied, refresh)} total={loading || error ? undefined : result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Order Management – Lupin</h1><p className="admin-page-head__description">Review saved Lupin orders by Doctor, MR and status.</p></div>
-        <div className="lupin-actions">{actions}<Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link></div>
+        <div className="lupin-actions">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
     <section className="admin-panel" aria-label="Lupin orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}

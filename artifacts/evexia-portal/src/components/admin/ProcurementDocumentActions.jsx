@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import { FileDown, FileSearch, History } from 'lucide-react';
 import { getDocumentHistory, getSavedDocument, downloadSavedDocument } from '../../services/savedProcurementDocuments.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
@@ -67,6 +68,7 @@ function Changes({ before, after, action }) {
 }
 
 function ChangesDrawer({ kind, record, onClose, openDocument, actionError, actionBusy }) {
+  const can = useResourceActions(kind === 'po' ? 'purchase_order' : 'purchase_received');
   const { timestamp } = useAdminDateFormatters();
   const dialog = useRef(null);
   const [offset, setOffset] = useState(0);
@@ -103,10 +105,10 @@ function ChangesDrawer({ kind, record, onClose, openDocument, actionError, actio
             <p>{timestamp(event.at, true)} · Authenticated editor: {event.actor || 'Unavailable'}</p>
             <p>{event.summary}</p><Changes before={event.before} after={event.after} action={event.action} />
             <div className="po-actions">
-              {event.previousRevision ? <><button type="button" className="po-link" onClick={(e) => openDocument(event.previousRevision, false, e.currentTarget)}>View previous document</button>
-                <button type="button" className="po-link" onClick={(e) => openDocument(event.previousRevision, true, e.currentTarget)}>Download previous PDF</button></> : <span>Previous document unavailable</span>}
-              {event.revision ? <><button type="button" className="po-link" onClick={(e) => openDocument(event.revision, false, e.currentTarget)}>View saved document</button>
-                <button type="button" className="po-link" onClick={(e) => openDocument(event.revision, true, e.currentTarget)}>Download saved PDF</button></> : <span>Document unavailable; no historical layout was saved</span>}
+              {event.previousRevision ? <><button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.previousRevision, false, e.currentTarget)}>View previous document</button>
+                <button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.previousRevision, true, e.currentTarget)}>Download previous PDF</button></> : <span>Previous document unavailable</span>}
+              {event.revision ? <><button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.revision, false, e.currentTarget)}>View saved document</button>
+                <button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.revision, true, e.currentTarget)}>Download saved PDF</button></> : <span>Document unavailable; no historical layout was saved</span>}
             </div>
           </div></article>)}
             {!page.items.length && <p>No changes recorded.</p>}
@@ -118,6 +120,7 @@ function ChangesDrawer({ kind, record, onClose, openDocument, actionError, actio
 
 /** Shared entry points used in listing Actions and saved record detail pages. */
 export default function ProcurementDocumentActions({ kind, record, iconOnly = false }) {
+  const can = useResourceActions(kind === 'po' ? 'purchase_order' : 'purchase_received');
   const [history, setHistory] = useState(false);
   const [document, setDocument] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -131,6 +134,10 @@ export default function ProcurementDocumentActions({ kind, record, iconOnly = fa
     return () => { active.current = false; sequence.current++; };
   }, [record.id]);
   async function open(revision, download = false, focusElement) {
+    if (!can.print || (revision !== undefined && !can.history)) {
+      setError('Print / Download PDF permission is required. Archived revisions also require View History.');
+      return;
+    }
     if (busy) return;
     if (focusElement) documentOpener.current = focusElement;
     const seq = ++sequence.current;
@@ -148,13 +155,13 @@ export default function ProcurementDocumentActions({ kind, record, iconOnly = fa
   const actionClass = iconOnly ? 'po-icon-action' : 'po-link';
   return <span className={`po-document-actions${iconOnly ? ' po-document-actions--icons' : ''}`}>
     <span className="po-actions" role="group" aria-label={`${record.number} document actions`}>
-      <button type="button" className={actionClass} aria-label={`View document for ${record.number}`} title={iconOnly ? `View document for ${record.number}` : undefined} disabled={busy} onClick={(e) => open(undefined, false, e.currentTarget)}>{iconOnly ? <FileSearch size={17} aria-hidden="true" /> : 'View document'}</button>
-      <button type="button" className={actionClass} aria-label={`Download PDF for ${record.number}`} title={iconOnly ? `Download PDF for ${record.number}` : undefined} disabled={busy} onClick={(e) => open(undefined, true, e.currentTarget)}>{iconOnly ? <FileDown size={17} aria-hidden="true" /> : 'Download PDF'}</button>
-      <button type="button" className={actionClass} aria-label={`Changes history for ${record.number}`} title={iconOnly ? `Changes history for ${record.number}` : undefined} onClick={() => setHistory(true)}>{iconOnly ? <History size={17} aria-hidden="true" /> : 'Changes history'}</button>
+      <button type="button" className={actionClass} aria-label={`View document for ${record.number}`} title={iconOnly ? `View document for ${record.number}` : undefined} disabled={busy || !can.print} onClick={(e) => open(undefined, false, e.currentTarget)}>{iconOnly ? <FileSearch size={17} aria-hidden="true" /> : 'View document'}</button>
+      <button type="button" className={actionClass} aria-label={`Download PDF for ${record.number}`} title={iconOnly ? `Download PDF for ${record.number}` : undefined} disabled={busy || !can.print} onClick={(e) => open(undefined, true, e.currentTarget)}>{iconOnly ? <FileDown size={17} aria-hidden="true" /> : 'Download PDF'}</button>
+      <button type="button" className={actionClass} aria-label={`Changes history for ${record.number}`} title={iconOnly ? `Changes history for ${record.number}` : undefined} disabled={!can.history} onClick={() => setHistory(true)}>{iconOnly ? <History size={17} aria-hidden="true" /> : 'Changes history'}</button>
     </span>
     {busy && <span role="status">Loading saved document…</span>}
     {error && <span role="alert">{error} <button type="button" className="po-link" disabled={busy} onClick={(e) => open(retry?.revision, retry?.download, e.currentTarget)}>Retry document</button></span>}
-    {history && <ChangesDrawer kind={kind} record={record} onClose={() => { sequence.current++; setBusy(false); setHistory(false); }} openDocument={open} actionError={error} actionBusy={busy} />}
-    {document && <Preview document={document} returnFocusElement={documentOpener.current} onClose={() => setDocument(null)} />}
+    {history && can.history && <ChangesDrawer kind={kind} record={record} onClose={() => { sequence.current++; setBusy(false); setHistory(false); }} openDocument={open} actionError={error} actionBusy={busy} />}
+    {document && can.print && <Preview document={document} returnFocusElement={documentOpener.current} onClose={() => setDocument(null)} />}
   </span>;
 }

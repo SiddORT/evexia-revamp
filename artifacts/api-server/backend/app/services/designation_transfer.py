@@ -86,7 +86,7 @@ def review_digest(actor, data, filename):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     rows = parse(data, filename)
     def work():
-        current = designations.authorize(db, actor)
+        current = designations.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
             raise designations.DesignationError("File or session changed. Review again before confirming.", 409, "designation_review_changed")
@@ -146,7 +146,7 @@ def sample(format):
 @present_export
 def export(db, actor, query, status, format):
     def work():
-        designations.authorize(db, actor)
+        designations.authorize(db, actor, "export")
         records = list(db.scalars(select(Designation).where(*designations.predicates(query, status))
                                   .order_by(Designation.created_at.desc(), Designation.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:

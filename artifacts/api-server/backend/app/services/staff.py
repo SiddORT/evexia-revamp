@@ -15,11 +15,18 @@ from app.repositories import sessions as session_repository
 from app.services.zone_policy import lock_policy
 
 
-def authorize(db, actor, settings):
-    current = revalidate_identity(db, actor, lock=True)
-    if "staff.manage" not in current.permissions:
-        raise StaffError("Access denied", 403, "access_denied")
+def authorize(db, actor, settings, action=None, *, protected=False, access_read=False):
+    from app.services.capability_policy import authorize as check, is_super_admin
+    if protected:
+        lock_policy(db)
+        current = revalidate_identity(db, actor, lock=True)
+        if not is_super_admin(current):
+            raise StaffError("Only Super Admin may change staff access", 403, "access_denied")
+    else:
+        current = check(db, actor, "staff_access" if access_read else "staff",
+                        "view" if access_read else action, error=StaffError)
     crypto = StaffCrypto(settings)
+    crypto.authorized_identity = current
     # Validate the stable blind-index key against persisted data before reads or
     # writes. An accidentally changed index key must not admit duplicate emails.
     first = db.scalar(select(StaffProfile).order_by(StaffProfile.id).limit(1))
@@ -30,7 +37,22 @@ def authorize(db, actor, settings):
     return current, crypto
 
 
+def ordinary_target(user):
+    if not user or user.system_role is not None or user.is_protected_system_admin or user.email is not None:
+        raise StaffError("Protected accounts cannot be changed through Staff Management", 403, "access_denied")
+
+
+def access_fields(current, body):
+    # Reject even a no-op assignment supplied by an ordinary form. Omission,
+    # not an unchanged client-supplied role, is the metadata-edit contract.
+    from app.services.capability_policy import is_super_admin
+    if not is_super_admin(current) and {"custom_role_id", "initialPassword"} & body.model_fields_set:
+        raise StaffError("Only Super Admin may assign roles or configure credentials", 403, "access_denied")
+
+
 def projection(db, profile, crypto, designation_name=None, role_name=None, role_available=None):
+    from app.services.capability_policy import allowed
+    access_visible = allowed(crypto.authorized_identity, "staff_access", "view")
     if role_name is None:
         assigned_role = db.get(CustomRole, profile.custom_role_id) if profile.custom_role_id else None
         role_name = assigned_role.name if assigned_role and assigned_role.deleted_at is None else (
@@ -45,13 +67,47 @@ def projection(db, profile, crypto, designation_name=None, role_name=None, role_
         role_resolution_required=profile.role_resolution_required,
         role_available=bool(role_available),
         legacy_role=profile.role if profile.role_resolution_required else None,
-        login_identifiers_ready=profile.login_identifiers_ready,
+        login_identifiers_ready=profile.login_identifiers_ready if access_visible else None,
         designationName=designation_name, deleted_at=profile.deleted_at, deleted_by=profile.deleted_by,
         dateOfJoining=profile.joining_date, status=profile.status,
         createdBy=str(profile.created_by), updatedBy=str(profile.updated_by),
         createdAt=profile.created_at, updatedAt=profile.updated_at,
-        custom_role_id=profile.custom_role_id, workspace_login_enabled=profile.workspace_login_enabled,
+        custom_role_id=profile.custom_role_id if access_visible else None,
+        workspace_login_enabled=profile.workspace_login_enabled if access_visible else None,
     )
+
+
+def access_directory(db, actor, settings, offset, limit):
+    def work():
+        _, crypto = authorize(db, actor, settings, access_read=True)
+        condition = (StaffProfile.deleted_at.is_(None), User.system_role.is_(None),
+                     User.is_protected_system_admin.is_(False), User.email.is_(None))
+        base = select(StaffProfile).join(User, User.id == StaffProfile.user_id).where(*condition)
+        total = db.scalar(select(func.count()).select_from(base.subquery()))
+        rows = db.scalars(base.order_by(StaffProfile.created_at.desc(), StaffProfile.id).offset(offset).limit(limit))
+        items = []
+        for row in rows:
+            role = db.get(CustomRole, row.custom_role_id) if row.custom_role_id else None
+            items.append(dict(id=row.id, name=crypto.decrypt(row.id, "name", row.name_ciphertext),
+                              employeeCode=row.employee_code, status=row.status,
+                              role=role.name if role and role.deleted_at is None else "No available role",
+                              workspace_login_enabled=row.workspace_login_enabled))
+        db.commit()
+        return dict(items=items, total=total)
+    return transaction(work, db)
+
+
+def designation_references(db, actor, settings, query, offset):
+    def work():
+        authorize(db, actor, settings, ("add", "edit"))
+        condition = (Designation.deleted_at.is_(None), Designation.status == "active",
+                     Designation.name.icontains(query, autoescape=True))
+        rows = db.scalars(select(Designation).where(*condition).order_by(Designation.name, Designation.id).offset(offset).limit(50))
+        items = [dict(id=row.id, name=row.name, status=row.status, deleted=False) for row in rows]
+        total = db.scalar(select(func.count()).select_from(Designation).where(*condition))
+        db.commit()
+        return dict(items=items, total=total)
+    return transaction(work, db)
 
 
 def assign(profile, body, crypto):
@@ -144,7 +200,8 @@ def generated_staff_password():
 def create(db, actor, body, settings):
     def work():
         lock_policy(db)
-        current, crypto = authorize(db, actor, settings)
+        current, crypto = authorize(db, actor, settings, "add")
+        access_fields(current, body)
         validate_designation(db, body.designation_id)
         chosen = getattr(body, "initialPassword", None)
         password = chosen if chosen is not None else generated_staff_password()
@@ -167,7 +224,8 @@ def create(db, actor, body, settings):
         audit(db, current, profile, "staff_create")
         result = projection(db, profile, crypto)
         db.commit()
-        return {"record": result, "initial_password": password}
+        from app.services.capability_policy import is_super_admin
+        return {"record": result, "initial_password": password if is_super_admin(current) else None}
     return transaction(work, db)
 
 
@@ -283,11 +341,13 @@ def detail(db, actor, settings, profile_id):
 def edit(db, actor, settings, profile_id, body, status_only=False):
     def work():
         lock_policy(db)
-        current, crypto = authorize(db, actor, settings)
+        current, crypto = authorize(db, actor, settings, "status" if status_only else "edit")
+        access_fields(current, body)
         snapshot = db.get(StaffProfile, profile_id)
         if not snapshot or snapshot.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
         user = session_repository.lock_user(db, snapshot.user_id)
+        ordinary_target(user)
         profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
                             .execution_options(populate_existing=True).with_for_update())
         if not profile or profile.deleted_at is not None:
@@ -297,11 +357,17 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
         if profile.version != body.expected_version:
             raise StaffError("Staff record changed. Your draft has not been saved. Review current details before retrying.",
                              409, "staff_stale")
+        if not status_only and body.status != profile.status:
+            from app.services.capability_policy import allowed
+            if not allowed(current, "staff", "status"):
+                raise StaffError("Activate or Deactivate permission is required to change staff status",
+                                 403, "access_denied")
         if status_only:
             profile.status = body.status
         else:
             validate_designation(db, body.designation_id, profile.designation_id)
-            assign_role(db, profile, body.custom_role_id)
+            if "custom_role_id" in body.model_fields_set:
+                assign_role(db, profile, body.custom_role_id)
             assign(profile, body, crypto)
             from app.services.staff_identifiers import save_identifiers
             with db.no_autoflush:
@@ -323,7 +389,7 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
 def access(db, actor, settings, profile_id, body):
     def work():
         lock_policy(db)
-        current, crypto = authorize(db, actor, settings)
+        current, crypto = authorize(db, actor, settings, protected=True)
         snapshot = db.get(StaffProfile, profile_id)
         if not snapshot or snapshot.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
@@ -361,11 +427,12 @@ def access(db, actor, settings, profile_id, body):
 def delete(db, actor, settings, profile_id, body):
     def work():
         lock_policy(db)
-        current, crypto = authorize(db, actor, settings)
+        current, crypto = authorize(db, actor, settings, "delete")
         snapshot = db.get(StaffProfile, profile_id)
         if not snapshot or snapshot.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
         user = session_repository.lock_user(db, snapshot.user_id)
+        ordinary_target(user)
         profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
                             .execution_options(populate_existing=True).with_for_update())
         if not profile or profile.deleted_at is not None:

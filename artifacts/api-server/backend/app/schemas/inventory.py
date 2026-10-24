@@ -222,7 +222,7 @@ class MovementSaved(MovementSnapshot):
     actorId: uuid.UUID
     appendOnly: bool
     activity: list[MovementActivity]
-    summary: MovementSummary
+    summary: MovementSummary | None
 
 
 class MovementPage(BaseModel):
@@ -231,7 +231,7 @@ class MovementPage(BaseModel):
     total: int
     limit: int
     offset: int
-    summary: MovementSummary
+    summary: MovementSummary | None
 
 
 class MovementReconciliation(BaseModel):

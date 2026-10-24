@@ -1,7 +1,7 @@
 """Compatibility Zone policy; shared lock also orders all supported master operations."""
 from sqlalchemy import text
 
-ZONE_ACTIONS = frozenset({"zone.add", "zone.edit", "zone.delete", "zone.export", "zone.import"})
+ZONE_ACTIONS = frozenset({"zone.view", "zone.add", "zone.edit", "zone.delete", "zone.export", "zone.import"})
 
 
 def zone_allowed(identity, action=None, protected=False):

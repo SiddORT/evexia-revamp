@@ -92,7 +92,7 @@ def review_digest(actor, data, filename):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     rows = parse(data, filename)
     def work():
-        current = vendors.authorize(db, actor)
+        current = vendors.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
             raise vendors.VendorError("File or session changed. Review again before confirming.", 409, "vendor_review_changed")
@@ -157,7 +157,7 @@ def sample(format):
 @present_export
 def export(db, actor, query, status, format):
     def work():
-        vendors.authorize(db, actor)
+        vendors.authorize(db, actor, "export")
         records = (vendors.search_records(db, query, status) if query.strip() else
                    list(db.scalars(select(Vendor).where(*vendors.predicates("", status))
                         .order_by(Vendor.created_at.desc(), Vendor.id.desc()).limit(EXPORT_LIMIT + 1))))

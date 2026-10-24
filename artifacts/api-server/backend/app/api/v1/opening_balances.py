@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.api.v1.locations import read_file, UPLOAD
 from app.api.v1.product_categories import DOWNLOAD
 from app.db.session import get_db
@@ -16,7 +16,7 @@ from app.services.locations import LocationError
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/opening-balances", tags=["Opening Balance Master"])
-manager = require_permissions("admin.access")
+manager = master_router("opening_balance")
 
 
 @router.get("", response_model=OpeningBalancePage, operation_id="listOpeningBalances")
@@ -58,7 +58,7 @@ def export(query: str = Query("", max_length=200), status: Literal["all", "activ
 @router.get("/sample", operation_id="downloadOpeningBalanceSample", responses=DOWNLOAD)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    balances.transaction(db, lambda: balances.authorize(db, actor))
+    balances.transaction(db, lambda: balances.authorize(db, actor, "import"))
     return release(db, actor, initiation_id, format, "template", transfer.sample(format))
 
 

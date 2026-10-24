@@ -11,7 +11,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
-from app.api.deps import current_identity
+from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
 from app.schemas.immunotherapy import ImmWrite, ImmImport, ImmRecord, ImmPage, Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview, ImmImportResult
 from app.services import immunotherapy as service
@@ -24,7 +24,12 @@ from app.services.file_locks import operation
 from app.schemas.patients import PatientFields, PatientDirectoryResponse, PatientLanguageChoices
 from app.services import patients as patient_service
 
-router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"])
+router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"],
+    dependencies=[Depends(operation_router("immunotherapy", {
+        "listing": None, "detail": None, "references": None, "export": "export",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit",
+        "policy": "upload_attachment", "prescription": "upload_attachment",
+    }, allow_mr=True))])
 MULTIPART = {
     "requestBody": {
         "required": True,
@@ -54,7 +59,7 @@ def patient_languages(query: str = Query("", max_length=200), limit: int = Query
 
 @router.get("/policy", response_model=ImmUploadPolicy, operation_id="immunotherapyUploadPolicy")
 def policy(actor=Depends(current_identity), db: Session = Depends(get_db), settings=Depends(get_settings)):
-    service.authorize(db, actor)
+    service.authorize(db, actor, "upload_attachment")
     return dict(maxFiles=10, maxBytes=min(settings.max_upload_bytes, 10 * 1024 * 1024),
                 types=["application/pdf", "image/jpeg", "image/png", "image/webp"])
 
@@ -72,7 +77,7 @@ async def prescription(patient_id: uuid.UUID, request: Request, actor=Depends(cu
 
 async def prescription_body(patient_id, request, actor, db, settings, storage_factory):
     # Authorize before parsing the multipart body or constructing storage.
-    await run_in_threadpool(service.authorize, db, actor)
+    await run_in_threadpool(service.authorize, db, actor, "upload_attachment")
     await run_in_threadpool(file_service.quota, db, actor, settings)
     db.rollback()  # No row lock is retained while receiving a request body.
     maximum = min(settings.max_upload_bytes, 10 * 1024 * 1024)
@@ -83,7 +88,7 @@ async def prescription_body(patient_id, request, actor, db, settings, storage_fa
             raise FileError(422, "prescription_file", "Supply exactly one prescription file")
         if not upload.size or upload.size > maximum:
             raise FileError(413, "prescription_size", "Prescription exceeds the enforced upload limit")
-        await run_in_threadpool(service.authorize, db, actor)
+        await run_in_threadpool(service.authorize, db, actor, "upload_attachment")
         await run_in_threadpool(service.eligible, db, "patients", patient_id)
         body = UploadRequest(patient_id=patient_id, category="documents", filename=upload.filename)
         file_id = await run_in_threadpool(file_service.reserve, db, actor, body, upload.content_type, settings, request.state.request_id)

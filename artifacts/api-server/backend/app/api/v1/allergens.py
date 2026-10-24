@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.api.v1.locations import read_file as read_master_file, UPLOAD
 from app.api.v1.product_categories import DOWNLOAD
 from app.db.session import get_db
@@ -16,7 +16,7 @@ from app.services.locations import LocationError
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/allergens", tags=["Allergen Master"])
-manager = require_permissions("admin.access")
+manager = master_router("allergen")
 
 
 @router.get("", response_model=AllergenPage, operation_id="listAllergens")
@@ -66,7 +66,7 @@ def export(query: str = Query("", max_length=200), status: Literal["all", "activ
 @router.get("/sample", operation_id="downloadAllergenSample", responses=DOWNLOAD)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    allergens.transaction(db, lambda: allergens.authorize(db, actor))
+    allergens.transaction(db, lambda: allergens.authorize_catalogue(db, actor, "import"))
     return release(db, actor, initiation_id, format, "template", allergen_transfer.sample(format))
 
 

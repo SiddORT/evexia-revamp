@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, UsersRound, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -25,6 +26,7 @@ export default function VendorMaster() {
 }
 
 function VendorWorkspace() {
+  const can = useResourceActions('vendor');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
@@ -75,9 +77,9 @@ function VendorWorkspace() {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     const cls = mobile ? 'admin-vendor-card__action' : 'admin-icon-button';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={cls} aria-label={`Edit ${record.vendorName}`} title="Edit" onClick={() => { clearFeedback(); setEditing(record); }} data-testid={`button-edit-vendor-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" className={cls} aria-label={`${toggle} ${record.vendorName}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-vendor-${mobile ? 'mobile-' : ''}${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
-      <button type="button" className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete ${record.vendorName}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-vendor-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`Edit ${record.vendorName}`} title="Edit" onClick={() => { clearFeedback(); setEditing(record); }} data-testid={`button-edit-vendor-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`${toggle} ${record.vendorName}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-vendor-${mobile ? 'mobile-' : ''}${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
+      <button type="button" disabled={!can.delete} className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete ${record.vendorName}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-vendor-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
     </fieldset>;
   }
   const email = (r, t = '') => <a className="admin-vendor-link" href={`mailto:${r.emailId}`} data-testid={`link-vendor-${t}email-${r.id}`}>{r.emailId}</a>;
@@ -100,10 +102,10 @@ function VendorWorkspace() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters / Contacts</p><h1>Vendor Master</h1></div>
       <div className="admin-vendor-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/vendor')} data-testid="button-import-vendors"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/vendor')} data-testid="button-import-vendors"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
-            <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-vendors"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+            <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-vendors"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className="admin-dropdown__menu admin-courier-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Vendor export format">
@@ -112,7 +114,7 @@ function VendorWorkspace() {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-vendor"><Plus size={16} aria-hidden="true" /> Add vendor</button>
+        <button type="button" className="admin-button" disabled={!can.add || Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-vendor"><Plus size={16} aria-hidden="true" /> Add vendor</button>
       </div>
     </div>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-vendor-feedback">{feedback}</div>}

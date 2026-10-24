@@ -13700,7 +13700,14 @@
             "type": "integer"
           },
           "summary": {
-            "$ref": "#/components/schemas/MovementSummary"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "total": {
             "title": "Total",
@@ -13849,7 +13856,14 @@
             "title": "Staffversion"
           },
           "summary": {
-            "$ref": "#/components/schemas/MovementSummary"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -21104,50 +21118,164 @@
           "permissions": {
             "items": {
               "enum": [
-                "zone.add",
-                "zone.edit",
-                "zone.delete",
-                "zone.export",
-                "zone.import",
-                "headquarter.add",
-                "headquarter.edit",
-                "headquarter.delete",
-                "headquarter.export",
-                "headquarter.import",
-                "mr.add",
-                "mr.edit",
-                "mr.delete",
-                "mr.export",
-                "mr.import",
-                "patient.add",
-                "patient.edit",
-                "patient.delete",
-                "patient.export",
-                "patient.import",
+                "allergen.add",
+                "allergen.delete",
+                "allergen.edit",
+                "allergen.export",
+                "allergen.import",
+                "allergen.view",
+                "courier.add",
+                "courier.delete",
+                "courier.edit",
+                "courier.export",
+                "courier.import",
+                "courier.view",
+                "designation.add",
+                "designation.delete",
+                "designation.edit",
+                "designation.export",
+                "designation.import",
+                "designation.view",
                 "doctor.add",
-                "doctor.edit",
                 "doctor.delete",
+                "doctor.edit",
                 "doctor.export",
                 "doctor.import",
-                "product_category.add",
-                "product_category.edit",
-                "product_category.delete",
-                "product_category.export",
-                "product_category.import",
+                "doctor.view",
+                "headquarter.add",
+                "headquarter.delete",
+                "headquarter.edit",
+                "headquarter.export",
+                "headquarter.import",
+                "headquarter.view",
+                "immunotherapy.add",
+                "immunotherapy.edit",
+                "immunotherapy.export",
+                "immunotherapy.import",
+                "immunotherapy.read_attachment",
+                "immunotherapy.upload_attachment",
+                "immunotherapy.view",
+                "kits.add",
+                "kits.export",
+                "kits.import",
+                "kits.read_attachment",
+                "kits.upload_attachment",
+                "kits.view",
+                "language.add",
+                "language.delete",
+                "language.edit",
+                "language.export",
+                "language.import",
+                "language.view",
                 "location.add",
-                "location.edit",
                 "location.delete",
+                "location.edit",
                 "location.export",
                 "location.import",
-                "courier.add",
-                "courier.edit",
-                "courier.delete",
-                "courier.export",
-                "courier.import"
+                "location.view",
+                "lupin.add",
+                "lupin.export",
+                "lupin.import",
+                "lupin.read_attachment",
+                "lupin.upload_attachment",
+                "lupin.view",
+                "mr.add",
+                "mr.delete",
+                "mr.edit",
+                "mr.export",
+                "mr.import",
+                "mr.view",
+                "opening_balance.add",
+                "opening_balance.delete",
+                "opening_balance.edit",
+                "opening_balance.export",
+                "opening_balance.import",
+                "opening_balance.view",
+                "opening_stock.add",
+                "opening_stock.export",
+                "opening_stock.import",
+                "opening_stock.view",
+                "patient.add",
+                "patient.delete",
+                "patient.edit",
+                "patient.export",
+                "patient.import",
+                "patient.view",
+                "permissions.view",
+                "product.add",
+                "product.delete",
+                "product.edit",
+                "product.export",
+                "product.import",
+                "product.view",
+                "product_category.add",
+                "product_category.delete",
+                "product_category.edit",
+                "product_category.export",
+                "product_category.import",
+                "product_category.view",
+                "purchase_order.activity",
+                "purchase_order.add",
+                "purchase_order.analytics",
+                "purchase_order.delete",
+                "purchase_order.edit",
+                "purchase_order.export",
+                "purchase_order.history",
+                "purchase_order.print",
+                "purchase_order.view",
+                "purchase_received.activity",
+                "purchase_received.add",
+                "purchase_received.analytics",
+                "purchase_received.delete",
+                "purchase_received.edit",
+                "purchase_received.export",
+                "purchase_received.history",
+                "purchase_received.print",
+                "purchase_received.view",
+                "role.add",
+                "role.delete",
+                "role.edit",
+                "role.view",
+                "sales_target.add",
+                "sales_target.delete",
+                "sales_target.edit",
+                "sales_target.export",
+                "sales_target.import",
+                "sales_target.view",
+                "spt.add",
+                "spt.edit",
+                "spt.export",
+                "spt.import",
+                "spt.view",
+                "staff.add",
+                "staff.delete",
+                "staff.edit",
+                "staff.status",
+                "staff.view",
+                "staff_access.view",
+                "stock_movement.activity",
+                "stock_movement.analytics",
+                "stock_movement.create",
+                "stock_movement.view",
+                "stock_status.export",
+                "stock_status.history",
+                "stock_status.view",
+                "vendor.add",
+                "vendor.delete",
+                "vendor.edit",
+                "vendor.export",
+                "vendor.import",
+                "vendor.view",
+                "zone.add",
+                "zone.delete",
+                "zone.edit",
+                "zone.export",
+                "zone.import",
+                "zone.view"
               ],
               "type": "string"
             },
-            "maxItems": 40,
+            "maxItems": 154,
             "title": "Permissions",
             "type": "array"
           }
@@ -21219,53 +21347,172 @@
           "permissions": {
             "items": {
               "enum": [
-                "zone.add",
-                "zone.edit",
-                "zone.delete",
-                "zone.export",
-                "zone.import",
-                "headquarter.add",
-                "headquarter.edit",
-                "headquarter.delete",
-                "headquarter.export",
-                "headquarter.import",
-                "mr.add",
-                "mr.edit",
-                "mr.delete",
-                "mr.export",
-                "mr.import",
-                "patient.add",
-                "patient.edit",
-                "patient.delete",
-                "patient.export",
-                "patient.import",
+                "allergen.add",
+                "allergen.delete",
+                "allergen.edit",
+                "allergen.export",
+                "allergen.import",
+                "allergen.view",
+                "courier.add",
+                "courier.delete",
+                "courier.edit",
+                "courier.export",
+                "courier.import",
+                "courier.view",
+                "designation.add",
+                "designation.delete",
+                "designation.edit",
+                "designation.export",
+                "designation.import",
+                "designation.view",
                 "doctor.add",
-                "doctor.edit",
                 "doctor.delete",
+                "doctor.edit",
                 "doctor.export",
                 "doctor.import",
-                "product_category.add",
-                "product_category.edit",
-                "product_category.delete",
-                "product_category.export",
-                "product_category.import",
+                "doctor.view",
+                "headquarter.add",
+                "headquarter.delete",
+                "headquarter.edit",
+                "headquarter.export",
+                "headquarter.import",
+                "headquarter.view",
+                "immunotherapy.add",
+                "immunotherapy.edit",
+                "immunotherapy.export",
+                "immunotherapy.import",
+                "immunotherapy.read_attachment",
+                "immunotherapy.upload_attachment",
+                "immunotherapy.view",
+                "kits.add",
+                "kits.export",
+                "kits.import",
+                "kits.read_attachment",
+                "kits.upload_attachment",
+                "kits.view",
+                "language.add",
+                "language.delete",
+                "language.edit",
+                "language.export",
+                "language.import",
+                "language.view",
                 "location.add",
-                "location.edit",
                 "location.delete",
+                "location.edit",
                 "location.export",
                 "location.import",
-                "courier.add",
-                "courier.edit",
-                "courier.delete",
-                "courier.export",
-                "courier.import"
+                "location.view",
+                "lupin.add",
+                "lupin.export",
+                "lupin.import",
+                "lupin.read_attachment",
+                "lupin.upload_attachment",
+                "lupin.view",
+                "mr.add",
+                "mr.delete",
+                "mr.edit",
+                "mr.export",
+                "mr.import",
+                "mr.view",
+                "opening_balance.add",
+                "opening_balance.delete",
+                "opening_balance.edit",
+                "opening_balance.export",
+                "opening_balance.import",
+                "opening_balance.view",
+                "opening_stock.add",
+                "opening_stock.export",
+                "opening_stock.import",
+                "opening_stock.view",
+                "patient.add",
+                "patient.delete",
+                "patient.edit",
+                "patient.export",
+                "patient.import",
+                "patient.view",
+                "permissions.view",
+                "product.add",
+                "product.delete",
+                "product.edit",
+                "product.export",
+                "product.import",
+                "product.view",
+                "product_category.add",
+                "product_category.delete",
+                "product_category.edit",
+                "product_category.export",
+                "product_category.import",
+                "product_category.view",
+                "purchase_order.activity",
+                "purchase_order.add",
+                "purchase_order.analytics",
+                "purchase_order.delete",
+                "purchase_order.edit",
+                "purchase_order.export",
+                "purchase_order.history",
+                "purchase_order.print",
+                "purchase_order.view",
+                "purchase_received.activity",
+                "purchase_received.add",
+                "purchase_received.analytics",
+                "purchase_received.delete",
+                "purchase_received.edit",
+                "purchase_received.export",
+                "purchase_received.history",
+                "purchase_received.print",
+                "purchase_received.view",
+                "role.add",
+                "role.delete",
+                "role.edit",
+                "role.view",
+                "sales_target.add",
+                "sales_target.delete",
+                "sales_target.edit",
+                "sales_target.export",
+                "sales_target.import",
+                "sales_target.view",
+                "spt.add",
+                "spt.edit",
+                "spt.export",
+                "spt.import",
+                "spt.view",
+                "staff.add",
+                "staff.delete",
+                "staff.edit",
+                "staff.status",
+                "staff.view",
+                "staff_access.view",
+                "stock_movement.activity",
+                "stock_movement.analytics",
+                "stock_movement.create",
+                "stock_movement.view",
+                "stock_status.export",
+                "stock_status.history",
+                "stock_status.view",
+                "vendor.add",
+                "vendor.delete",
+                "vendor.edit",
+                "vendor.export",
+                "vendor.import",
+                "vendor.view",
+                "zone.add",
+                "zone.delete",
+                "zone.edit",
+                "zone.export",
+                "zone.import",
+                "zone.view"
               ],
               "type": "string"
             },
-            "maxItems": 40,
+            "maxItems": 154,
             "readOnly": true,
             "title": "Permissions",
             "type": "array"
+          },
+          "permissions_visible": {
+            "readOnly": true,
+            "title": "Permissions Visible",
+            "type": "boolean"
           },
           "updated_at": {
             "format": "date-time",
@@ -21292,7 +21539,8 @@
           "created_by",
           "updated_by",
           "deleted_at",
-          "deleted_by"
+          "deleted_by",
+          "permissions_visible"
         ],
         "title": "RoleResponse",
         "type": "object"
@@ -22933,13 +23181,91 @@
         "title": "StaffAccess",
         "type": "object"
       },
+      "StaffAccessPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StaffAccessRecord"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "StaffAccessPage",
+        "type": "object"
+      },
+      "StaffAccessRecord": {
+        "properties": {
+          "employeeCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeecode"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "workspace_login_enabled": {
+            "title": "Workspace Login Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "employeeCode",
+          "status",
+          "role",
+          "workspace_login_enabled"
+        ],
+        "title": "StaffAccessRecord",
+        "type": "object"
+      },
       "StaffCreate": {
         "additionalProperties": false,
         "properties": {
           "custom_role_id": {
-            "format": "uuid",
-            "title": "Custom Role Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Role Id"
           },
           "dateOfJoining": {
             "format": "date",
@@ -23254,7 +23580,6 @@
           "name",
           "email",
           "phone",
-          "custom_role_id",
           "designation_id",
           "dateOfJoining",
           "status",
@@ -23266,8 +23591,15 @@
       "StaffCreated": {
         "properties": {
           "initial_password": {
-            "title": "Initial Password",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Password"
           },
           "record": {
             "$ref": "#/components/schemas/StaffResponse"
@@ -23360,6 +23692,27 @@
           "next_cursor"
         ],
         "title": "StaffDesignationChoices",
+        "type": "object"
+      },
+      "StaffDesignationReferencePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StaffDesignationChoice"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "StaffDesignationReferencePage",
         "type": "object"
       },
       "StaffEdit": {
@@ -23682,7 +24035,6 @@
           "name",
           "email",
           "phone",
-          "custom_role_id",
           "designation_id",
           "dateOfJoining",
           "status",
@@ -24071,9 +24423,15 @@
             "title": "Legacy Role"
           },
           "login_identifiers_ready": {
-            "default": false,
-            "title": "Login Identifiers Ready",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Login Identifiers Ready"
           },
           "name": {
             "maxLength": 200,
@@ -24123,9 +24481,15 @@
             "type": "integer"
           },
           "workspace_login_enabled": {
-            "default": false,
-            "title": "Workspace Login Enabled",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Login Enabled"
           }
         },
         "required": [
@@ -53678,6 +54042,20 @@
               "default": false,
               "title": "Unallocated",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "default": "movement",
+              "enum": [
+                "movement",
+                "opening_stock"
+              ],
+              "title": "Purpose",
+              "type": "string"
             }
           }
         ],
@@ -90506,6 +90884,379 @@
         ]
       }
     },
+    "/v1/admin/purchase-orders/export": {
+      "get": {
+        "operationId": "exportPurchaseOrders",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Query",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "open",
+              "enum": [
+                "open",
+                "deleted",
+                "all"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "vendor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vendor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "recent",
+              "enum": [
+                "recent",
+                "oldest"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POPage"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
     "/v1/admin/purchase-orders/filter-options/{kind}": {
       "get": {
         "operationId": "listPurchaseOrderFilterOptions",
@@ -113335,6 +114086,583 @@
           }
         ],
         "summary": "Create Staff",
+        "tags": [
+          "staff management"
+        ]
+      }
+    },
+    "/v1/admin/staff/access-directory": {
+      "get": {
+        "operationId": "listStaffAccess",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAccessPage"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Access Directory",
+        "tags": [
+          "staff management"
+        ]
+      }
+    },
+    "/v1/admin/staff/designation-references": {
+      "get": {
+        "operationId": "getStaffDesignationReferences",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Query",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffDesignationReferencePage"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Designation References",
         "tags": [
           "staff management"
         ]

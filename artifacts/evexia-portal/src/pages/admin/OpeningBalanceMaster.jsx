@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -22,6 +23,7 @@ import '../../openingBalance.css';
 const PATH = '/admin/masters/opening-balances';
 const audit = (by, at) => <span className="ob-audit"><strong>{by}</strong><span>{formatAdminTimestamp(at)}</span></span>;
 export default function OpeningBalanceMaster() {
+  const can = useResourceActions('opening_balance');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [query, setQuery] = useState('');
@@ -77,9 +79,9 @@ export default function OpeningBalanceMaster() {
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     return <fieldset disabled={state.loading || state.pending} className={mobile ? 'admin-mr-card__actions ob-actions' : 'admin-table__actions ob-actions'}>
-      <button type="button" className="admin-icon-button" aria-label={`Edit balance for ${record.doctorName}`} onClick={() => navigate(`${PATH}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>
-      <button type="button" className="admin-icon-button" aria-label={`${toggle} balance for ${record.doctorName}`} onClick={() => request(record, record.status === 'active' ? 'inactive' : 'active')}><CirclePower size={16} />{mobile && toggle}</button>
-      <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Delete balance for ${record.doctorName}`} onClick={() => request(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>
+      <button type="button" disabled={!can.edit} className="admin-icon-button" aria-label={`Edit balance for ${record.doctorName}`} onClick={() => navigate(`${PATH}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>
+      <button type="button" disabled={!can.edit} className="admin-icon-button" aria-label={`${toggle} balance for ${record.doctorName}`} onClick={() => request(record, record.status === 'active' ? 'inactive' : 'active')}><CirclePower size={16} />{mobile && toggle}</button>
+      <button type="button" disabled={!can.delete} className="admin-icon-button admin-icon-button--danger" aria-label={`Delete balance for ${record.doctorName}`} onClick={() => request(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>
     </fieldset>;
   }
   const columns = [
@@ -96,11 +98,11 @@ export default function OpeningBalanceMaster() {
   return <AdminLayout title="Opening Balance Master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Finance</p><h1>Opening Balance Master</h1><p className="admin-page-head__description">Shared financial-year starting positions. This register does not post ledger entries or calculate payment balances.</p></div>
       <div className="ob-head-actions">
-        <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/opening-balance')}><Upload size={16} /> Import data</button>
-        <DropdownMenu.Root open={menu} onOpenChange={(open) => { if (!open || !busy.current) setMenu(open); }}><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" disabled={state.loading || Boolean(state.error)} aria-disabled={exporting || undefined} data-testid="button-export-opening-balances"><Download size={16} />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
+        <button disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/opening-balance')}><Upload size={16} /> Import data</button>
+        <DropdownMenu.Root open={menu} onOpenChange={(open) => { if (!open || !busy.current) setMenu(open); }}><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" disabled={!can.export || state.loading || Boolean(state.error)} aria-disabled={exporting || undefined} data-testid="button-export-opening-balances"><Download size={16} />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Opening balance export format"><DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void download('csv')}>CSV</DropdownMenu.Item><DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void download('xlsx')}>Excel (.xlsx)</DropdownMenu.Item></DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button className="admin-button" data-testid="button-add-opening-balance" onClick={(event) => { event.currentTarget.focus(); setNotice(''); setAdding(true); }}><Plus size={16} /> Add opening balance</button>
+        <button disabled={!can.add} className="admin-button" data-testid="button-add-opening-balance" onClick={(event) => { event.currentTarget.focus(); setNotice(''); setAdding(true); }}><Plus size={16} /> Add opening balance</button>
       </div></div>
     {notice && <div className="admin-feedback" role="status">{notice}</div>}
     {error && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}

@@ -31,11 +31,9 @@ def transaction(db, work):
         raise
 
 
-def authorize(db, actor):
-    current = revalidate_identity(db, actor, lock=True)
-    if not current.user.is_protected_system_admin or current.role != "super_admin" or "admin.access" not in current.permissions:
-        raise DesignationError("Access denied", 403, "access_denied")
-    return current
+def authorize(db, actor, action=None):
+    from app.services.master_policy import authorize_master
+    return authorize_master(db, actor, "designation", action, error=DesignationError)
 
 
 def projection(db, row):
@@ -89,7 +87,7 @@ def insert(db, actor, body):
 
 def create(db, actor, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "add")
         result = projection(db, insert(db, current, body))
         db.commit()
         return result
@@ -115,7 +113,7 @@ def detail(db, actor, record_id):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         row = find(db, record_id)
         if row.version != body.expected_version:
             raise DesignationError("Designation changed. Your draft is not saved. Review current details before retrying.",

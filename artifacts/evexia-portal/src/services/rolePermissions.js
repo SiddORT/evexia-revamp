@@ -1,5 +1,5 @@
 import { roleRequest, SessionError } from '../auth/adminSession.js';
-import { MASTER_KEYS as ZONE_KEYS } from '../auth/capabilities.js';
+import { ASSIGNABLE_KEYS as ZONE_KEYS } from '../auth/capabilities.js';
 
 export const ROLE_NAME_LIMIT = 100;
 export const ROLE_DESCRIPTION_LIMIT = 1000;
@@ -43,7 +43,7 @@ export function roleRecord(data) {
   return { id: data.id, name: data.name, description: data.description, version: data.version,
     created_at: data.created_at, updated_at: data.updated_at, created_by: data.created_by,
     updated_by: data.updated_by, deleted_at: data.deleted_at, deleted_by: data.deleted_by,
-    permissions: normalizePermissions(data.permissions) };
+    permissions: normalizePermissions(data.permissions), permissions_visible: data.permissions_visible === true };
 }
 function liveRole(data) {
   const role = roleRecord(data);

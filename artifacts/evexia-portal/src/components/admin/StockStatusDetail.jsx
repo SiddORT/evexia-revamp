@@ -5,8 +5,10 @@ import TablePagination from './TablePagination.jsx';
 import ComboProvenance from './ComboProvenance.jsx';
 import { dayEndExclusiveISO, dayStartISO, formatPrice, stockHistory } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 
 export default function StockStatusDetail({ row, asOf, onClose }) {
+  const can = useResourceActions('stock_status');
   const { date: displayDate, timestamp } = useAdminDateFormatters();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -17,7 +19,7 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
   const badRange = Boolean(from && to && from > to);
 
   useEffect(() => {
-    if (badRange) return undefined;
+    if (badRange || !can.history) return undefined;
     const controller = new AbortController();
     let current = true;
     setState((s) => ({ ...s, loading: true, error: '' }));
@@ -25,7 +27,7 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
       .then((d) => { if (current) setState({ items: d.items || [], filtered: d.filtered ?? 0, scope: d.scope || '', loading: false, error: '' }); })
       .catch((e) => { if (current && !controller.signal.aborted) setState((s) => ({ ...s, items: [], loading: false, error: e.message || 'History could not be loaded.' })); });
     return () => { current = false; controller.abort(); };
-  }, [row.productId, from, to, page, pageSize, tick, badRange]);
+  }, [row.productId, from, to, page, pageSize, tick, badRange, can.history]);
 
   const lotById = useMemo(() => Object.fromEntries(row.lots.map((l) => [l.lotId, l])), [row]);
   const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
@@ -55,7 +57,7 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
       {row.lots.length ? <DataTable columns={lotColumns} rows={row.lots} rowKey={(l) => `${l.lotId}-${l.locationId}`} label="Lots on hand" testIdPrefix="stock-lot" />
         : <div className="admin-empty"><strong>No lots on hand</strong><p>{row.itemKind === 'combo' ? 'No combo quantity remains on hand.' : 'This allergen has no receipt or opening quantity on hand.'}</p></div>}
     </div>
-    <h3 className="stock-section-title">Posting history</h3>
+    {can.history ? <><h3 className="stock-section-title">Posting history</h3>
     <div className="inv-period">
       <label className="stock-field stock-field--inline">From <input type="date" className="admin-input" value={from} max={to || undefined} onChange={(e) => { setFrom(e.target.value); setPage(1); }} data-testid="input-stock-history-from" /></label>
       <label className="stock-field stock-field--inline">To <input type="date" className="admin-input" value={to} min={from || undefined} onChange={(e) => { setTo(e.target.value); setPage(1); }} data-testid="input-stock-history-to" /></label>
@@ -71,7 +73,8 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
         : <div className="admin-empty"><strong>No postings in this period</strong><p>Choose All periods to see every recorded posting.</p></div>}
       {!state.error && !badRange && <TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} pageSize={pageSize} filtered={state.filtered} total={state.filtered} label="postings" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-stock-history-count" />}
     </div>
-    {state.scope && <p className="mr-form__hint">{state.scope}</p>}
+    {state.scope && <p className="mr-form__hint">{state.scope}</p>}</>
+      : <p className="mr-form__hint">View Stock History permission is required to read historical postings.</p>}
   </Dialog>;
 }
 

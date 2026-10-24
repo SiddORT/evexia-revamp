@@ -17,7 +17,7 @@ from app.db.mr_models import MRDirectory
 from app.db.allergen_models import AllergenProduct
 from app.db.file_models import FileRecord
 from app.db.models import AuditEvent, Patient
-from app.services.mr_orders import authorize, scope, reference_scope, assignment as mr_assignment
+from app.services.mr_orders import authorize as authorize_order, scope, reference_scope, assignment as mr_assignment
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
 from app.core.security import utcnow
@@ -54,11 +54,17 @@ def unseal(keys, table, record_id, value):
         raise DirectoryCryptoError() from None
 
 
-def transaction(db, actor, work):
+def authorize(db, actor, action=None):
+    return authorize_order(db, actor, "immunotherapy", action)
+
+
+def transaction(db, actor, work, *, action=None, resource="immunotherapy"):
     try:
-        current = authorize(db, actor)
+        current = authorize_order(db, actor, resource, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
+        from app.services.order_capabilities import public_result
+        result = public_result(current, resource, result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -174,6 +180,8 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     if row and expected != row.version:
         raise ImmError("This order changed. Your draft is preserved. Reopen the saved order in another tab and reconcile before retrying.", 409, "imm_stale")
     previous = project(keys, row) if row else None
+    from app.services.order_capabilities import attachment_changes
+    attachment_changes(actor, "immunotherapy", body.attachmentIds, previous)
     if row and body.orderDate is not None and body.orderDate != row.date:
         raise ImmError("Saved order date is immutable.", 422, "imm_date")
     db.info["imm_actor"] = actor.user.id
@@ -225,7 +233,7 @@ def idempotent(db, actor, keys, key, payload, work):
 def save(db, actor, body, record_id=None):
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
         [str(record_id), body.model_dump(mode="json")],
-        lambda: apply(db, a, k, body, record_id, body.expected_version)))
+        lambda: apply(db, a, k, body, record_id, body.expected_version)), action="edit" if record_id else "add")
 
 
 def detail(db, actor, record_id):
@@ -279,10 +287,10 @@ def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cu
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="export" if complete else None)
 
 
-def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
+def references(db, actor, kind, search="", cursor=None, limit=25, selected=None, *, resource="immunotherapy"):
     if kind not in MODELS:
         raise ImmError("Unknown reference kind.", 404, "imm_reference")
     def work(a, keys):
@@ -325,7 +333,7 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
                 if data:
                     items.append(data)
         return dict(items=items, nextCursor=str(last) if more else None, limit=limit)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, resource=resource)
 
 
 def batch(db, actor, body, commit=False):
@@ -365,4 +373,4 @@ def batch(db, actor, body, commit=False):
         token, entries = prepare()
         return dict(valid=True, entries=entries, reviewToken=token, additions=sum(e["action"] == "add" for e in entries),
             updates=sum(e["action"] == "update" for e in entries), unchanged=sum(e["action"] == "unchanged" for e in entries), rejected=0, patientAdditions=0)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="import")

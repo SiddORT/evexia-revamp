@@ -8,6 +8,6 @@
 import type { StaffResponse } from "./staffResponse";
 
 export interface StaffCreated {
-  initial_password: string;
+  initial_password: string | null;
   record: StaffResponse;
 }

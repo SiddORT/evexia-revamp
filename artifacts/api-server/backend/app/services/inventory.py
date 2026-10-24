@@ -50,12 +50,12 @@ def lock(db):
     db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK})
 
 
-def transaction(db, actor, work):
+def transaction(db, actor, work, *, capability=None):
     def run(current, _):
         lock(db)
         return work(current, InventoryCrypto(get_settings()))
     try:
-        return receipts.transaction(db, actor, run)
+        return receipts.transaction(db, actor, run, capability=capability)
     except PRError as exc:
         if exc.code == "pr_unavailable":
             raise PRError("Inventory schema or encrypted storage is unavailable. Contact the operator; your draft is preserved.",
@@ -351,7 +351,7 @@ def stock(db, actor, params):
                     snapshot=rows if params.get("snapshot") else None,
                     filterOptions=choices, filtered=len(rows), total=total, limit=params["limit"], offset=params["offset"],
                     asOf=utcnow().isoformat(), coverage=context)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("stock_status", "export" if params.get("snapshot") else None))
 
 
 def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0, limit=25):
@@ -369,10 +369,18 @@ def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0,
              source=r.source_key) for r in rows[offset:offset + limit]],
              filtered=len(rows), offset=offset, limit=limit,
              scope="Recorded receipt, opening, assembly and transfer/allocation posting times, not inferred historical activity. Period changes history only, never on-hand.")
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("stock_status", "history"))
 
 
-def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, unallocated=False):
+def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, unallocated=False, *, purpose="movement"):
+    if purpose == "opening_stock":
+        if kind != "locations":
+            raise PRError("Opening Stock references are limited to eligible locations.", 403, "access_denied")
+        capability = ("opening_stock", None)
+    elif purpose == "movement":
+        capability = ("stock_movement", "create" if kind in ("staff", "lots") else None)
+    else:
+        raise PRError("Unsupported reference purpose.", 403, "access_denied")
     def work(_, crypto):
         if kind.startswith("movement-"):
             # Historical choices must not disappear when a catalogue row is
@@ -413,7 +421,7 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
                                  **meta, available=q(balance.quantity)))
         data = sorted([r for r in data if query.strip().casefold() in r["name"].casefold()], key=lambda r: (r["name"], r["id"]))
         return dict(items=data[offset:offset + limit], filtered=len(data), offset=offset, limit=limit)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=capability)
 
 
 def location_snapshot(row):
@@ -470,7 +478,7 @@ def review_move(db, crypto, body):
 
 
 def preview(db, actor, body):
-    return transaction(db, actor, lambda _, c: review_move(db, c, body))
+    return transaction(db, actor, lambda _, c: review_move(db, c, body), capability=("stock_movement", "create"))
 
 
 def create(db, actor, body):
@@ -480,7 +488,7 @@ def create(db, actor, body):
         if old:
             if old.actor_id != current.user.id or old.digest not in hashes.values():
                 raise PRError("Request identity is closed or conflicts. Reconcile before a new save.", 409, "inventory_retry")
-            return crypto.open(old.key, "retry", old.payload_ciphertext)
+            return public_movement(current, crypto.open(old.key, "retry", old.payload_ciphertext))
         review = review_move(db, crypto, body)
         if review["reviewToken"] != body.reviewToken:
             raise PRError("Stock or reference choices changed. Review your preserved draft again.", 409, "inventory_review_stale")
@@ -507,8 +515,17 @@ def create(db, actor, body):
             post(db, lot, body.destinationId, Decimal(line["quantity"]), f"move:{mid}", current, mid)
         db.add(Retry(key=body.idempotencyKey, actor_id=current.user.id, digest=hashes[crypto.active],
                      payload_ciphertext=crypto.seal(body.idempotencyKey, "retry", data)))
-        return data
-    return transaction(db, actor, work)
+        return public_movement(current, data)
+    return transaction(db, actor, work, capability=("stock_movement", "create"))
+
+
+def public_movement(actor, data):
+    from app.services.capability_policy import allowed
+    if data is None:
+        return None
+    return {**data,
+            "activity": data["activity"] if allowed(actor, "stock_movement", "activity") else [],
+            "summary": data["summary"] if allowed(actor, "stock_movement", "analytics") else None}
 
 
 def reconcile(db, actor, key):
@@ -520,8 +537,8 @@ def reconcile(db, actor, key):
             db.add(Retry(key=key, actor_id=current.user.id, digest="cancelled",
                          payload_ciphertext=crypto.seal(key, "retry", None)))
         return dict(state="committed" if row and row.digest != "cancelled" else "not_committed",
-                    movement=crypto.open(key, "retry", row.payload_ciphertext) if row else None)
-    return transaction(db, actor, work)
+                    movement=public_movement(current, crypto.open(key, "retry", row.payload_ciphertext)) if row else None)
+    return transaction(db, actor, work, capability=("stock_movement", "create"))
 
 
 def movement_allergens(movement):
@@ -542,12 +559,19 @@ def movement_allergens(movement):
 
 def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=None,
               source_id=None, destination_id=None, unallocated=False, allergen_ids=None):
-    def work(_, crypto):
+    def work(current, crypto):
+        from app.services.capability_policy import allowed
         statement = select(Movement)
         if record_id:
             statement = statement.where(Movement.id == record_id)
         rows = bounded(db, statement.order_by(Movement.created_at.desc(), Movement.id))
         data = [crypto.open(r.id, "movement", r.payload_ciphertext) for r in rows]
+        if section is None:
+            for item in data:
+                if not allowed(current, "stock_movement", "activity"):
+                    item["activity"] = []
+                if not allowed(current, "stock_movement", "analytics"):
+                    item["summary"] = None
         if record_id:
             if not data:
                 raise PRError("Movement not found.", 404, "inventory_not_found")
@@ -562,5 +586,7 @@ def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=N
             *[l["productName"] for l in r["lines"]]]).casefold()]
         return dict(items=data[offset:offset + limit], filtered=len(data), total=len(rows), limit=limit, offset=offset,
                     summary=dict(movements=len(data), lots=sum(len(r["lines"]) for r in data),
-                                 scope="All matching committed movements; no mixed-product quantity total."))
-    return transaction(db, actor, work)
+                                 scope="All matching committed movements; no mixed-product quantity total.")
+                    if allowed(current, "stock_movement", "analytics") else None)
+    return transaction(db, actor, work, capability=("stock_movement",
+        "activity" if section == "activity" else "analytics" if section == "summary" else None))

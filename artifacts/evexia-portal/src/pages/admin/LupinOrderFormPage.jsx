@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
@@ -35,6 +35,7 @@ export default function LupinOrderFormPage({ id }) {
 }
 
 function Review({ order }) {
+  const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
   const { date } = useAdminDateFormatters();
   const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
@@ -54,14 +55,15 @@ function Review({ order }) {
       <p className="lupin-hint">Patient count is the saved pricing quantity, not the number of links. Confirmed / Unpaid is an initial classification, not evidence of payment, clinical work or fulfilment.</p>
       <div><h2>Linked Patients (optional historical context)</h2>
         {order.patients.length ? <ul className="lupin-files">{order.patients.map((p) => <li key={p.id}><span>{p.name}<span className="lupin-sub">{p.id}</span></span></li>)}</ul> : <p className="lupin-hint">No individual Patients were linked. This does not change the saved patient count.</p>}</div>
-      <div><h2>Private attachments</h2>{order.attachments.length ? <ul className="lupin-files" aria-label="Saved attachments">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span>
-        <button type="button" className="lupin-link" disabled={downloading} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="lupin-hint">No files attached. Imported orders may have no attachments; transfer metadata cannot restore files.</p>}</div>
+      <div><h2>Private attachments</h2>{order.attachments.length ? <ul className="lupin-files" aria-label="Saved attachments">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${fileSize(f.size)})`}</span>
+        <button type="button" className="lupin-link" disabled={downloading || !can.read_attachment || f.restricted} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="lupin-hint">No files attached. Imported orders may have no attachments; transfer metadata cannot restore files.</p>}</div>
       <div><h2>Remarks</h2><p className="lupin-remarks">{order.remarks || 'No remarks.'}</p></div>
     </section>
   </div></AdminLayout>;
 }
 
 function Form() {
+  const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
   const { mr } = useOrderPortal();
   const [, navigate] = useLocation();
@@ -76,7 +78,7 @@ function Form() {
   const uploadKeys = useRef(new Map());
   const initial = useRef(JSON.stringify(v));
   dirty.current = JSON.stringify(v) !== initial.current || uploads.current.size > 0 || failedUploads.current.size > 0 || busy || uncertain;
-  const locked = busy || uncertain || ownerChanged;
+  const locked = busy || uncertain || ownerChanged || !can.add;
   const set = (patch) => setV((current) => ({ ...current, ...patch }));
   useEffect(() => {
     alive.current = true;
@@ -90,12 +92,13 @@ function Form() {
     return () => { alive.current = false; unsubscribe(); };
   }, []);
   useEffect(() => {
+    if (!can.upload_attachment) return undefined;
     const controller = new AbortController();
     setPolicyError('');
     request('/policy', { signal: controller.signal }).then((data) => { if (!controller.signal.aborted) setPolicy(data); })
       .catch((e) => { if (!controller.signal.aborted) setPolicyError(e.message); });
     return () => controller.abort();
-  }, [policyRevision]);
+  }, [policyRevision, can.upload_attachment]);
   useEffect(() => setNavigationGuard((target) => {
     if (!dirty.current) return false;
     if (saving.current || submission.current) {
@@ -233,7 +236,7 @@ function Form() {
       <section className="admin-panel lupin-section" aria-labelledby="lupin-h-att"><h2 id="lupin-h-att">Attachments and remarks</h2>
         <div className="lupin-more-grid"><div>
           <div className="lupin-field"><span>Attachments (required)</span>
-            <MasterFilePicker id="lupin-files" icon={Paperclip} multiple disabled={locked || !policy} aria-label="Lupin private attachments" aria-required="true" aria-invalid={Boolean(fileMsg || errors.attachments)} aria-describedby="lupin-files-hint lupin-files-err"
+            <MasterFilePicker id="lupin-files" icon={Paperclip} multiple disabled={!can.upload_attachment || locked || !policy} aria-label="Lupin private attachments" aria-required="true" aria-invalid={Boolean(fileMsg || errors.attachments)} aria-describedby="lupin-files-hint lupin-files-err"
               accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-lupin-files">{v.attachments.length ? `${v.attachments.length} files selected — choose more` : 'Choose PDF or image files'}</MasterFilePicker>
             <p className="lupin-hint" id="lupin-files-hint">{policy ? `Up to ${policy.maxFiles} files, ${fileSize(policy.maxBytes)} each.` : 'Loading authoritative upload policy…'} Files upload privately on save and must pass type verification and a clean scan. PDF, JPEG, PNG and WebP only.</p>
             <Err id="lupin-files-err" text={fileMsg || errors.attachments} />
@@ -246,7 +249,8 @@ function Form() {
       </section>
     </fieldset>
     {progress && <p className="lupin-hint" role="status" aria-live="polite">{progress}</p>}
-    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={busy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
+    {!can.upload_attachment && <p role="status">Upload Attachment permission is required for this form's mandatory attachment. Your draft remains in this tab.</p>}
+    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={!can.add || !can.upload_attachment || busy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
       {!busy && !uncertain && <button type="button" className="admin-button admin-button--secondary" onClick={() => dirty.current ? setLeave({ kind: 'href', href: BASE }) : navigate(BASE)} data-testid="link-lupin-cancel">Cancel</button>}
     </div>
     {leave && <ImmDialog title="Discard this Lupin draft?" description="Selected files and unsaved details will be discarded. Known private uploads will be removed before leaving." onClose={() => { if (!busy) setLeave(null); }} returnFocusRef={saveButton}>

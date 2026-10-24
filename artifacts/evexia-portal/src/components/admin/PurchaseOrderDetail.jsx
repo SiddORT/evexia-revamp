@@ -8,6 +8,7 @@ import PurchaseOrderDeleteDialog from './PurchaseOrderDeleteDialog.jsx';
 import POReceivingSection from './POReceivingSection.jsx';
 import ProcurementDocumentActions from './ProcurementDocumentActions.jsx';
 import { sourcePR } from '../../services/serverPurchaseReceived.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import {
   describeError, getPurchaseOrder, isPermissionError, loadOrderMutation,
 } from '../../services/serverPurchaseOrders.js';
@@ -15,6 +16,8 @@ import {
 const BASE = '/admin/inventory/purchase-orders';
 
 export default function PurchaseOrderDetail({ id }) {
+  const can = useResourceActions('purchase_order');
+  const receivingAccess = useResourceActions('purchase_received');
   const { date, timestamp } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const [order, setOrder] = useState(null);
@@ -46,7 +49,7 @@ export default function PurchaseOrderDetail({ id }) {
       if (controller.signal.aborted) return;
       setOrder(result);
       setReceiving(null); setReceivingError('');
-      sourcePR(id, null, controller.signal).then((data) => {
+      if (receivingAccess.read) sourcePR(id, null, controller.signal).then((data) => {
         if (!controller.signal.aborted) setReceiving(data);
       }).catch((cause) => { if (!controller.signal.aborted) setReceivingError(cause.message); });
       // Reconcile an edit even if a later mutation changed/deleted the order.
@@ -91,13 +94,13 @@ export default function PurchaseOrderDetail({ id }) {
         <LineTable lines={order.lines} figures={order} />
         <div className="po-review"><ProcurementDocumentActions key={order.id} kind="po" record={order} /></div>
         {order.status === 'open' && <div className="po-form-footer"><div className="po-actions">
-          <button type="button" className="admin-button" disabled={Boolean(order.activeReceiptCount) || Boolean(blocked) || Boolean(pending)} onClick={() => { setRetry(loadOrderMutation(id)); setEditing(true); setNotice(''); }} data-testid="button-edit-po">Edit purchase order</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={(Boolean(order.activeReceiptCount) && !pending) || Boolean(blocked) || pending?.operation === 'edit'} onClick={() => { setDeleting(true); setNotice(''); }} data-testid="button-delete-po">{pending?.operation === 'delete' ? 'Reconcile deletion' : 'Delete purchase order'}</button>
+          <button type="button" className="admin-button" disabled={!can.edit || Boolean(order.activeReceiptCount) || Boolean(blocked) || Boolean(pending)} onClick={() => { setRetry(loadOrderMutation(id)); setEditing(true); setNotice(''); }} data-testid="button-edit-po">Edit purchase order</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={!can.delete || (Boolean(order.activeReceiptCount) && !pending) || Boolean(blocked) || pending?.operation === 'edit'} onClick={() => { setDeleting(true); setNotice(''); }} data-testid="button-delete-po">{pending?.operation === 'delete' ? 'Reconcile deletion' : 'Delete purchase order'}</button>
         </div></div>}
         <div className="po-review"><button type="button" className="admin-button admin-button--secondary" onClick={reload}>Reload latest order</button></div>
         {!!order.activeReceiptCount && <p className="admin-feedback">Active receipts prevent editing or deleting this PO. <button type="button" className="po-link" onClick={() => navigate(`/admin/inventory/purchase-received?poId=${id}`)}>View linked receipts ({order.activeReceiptCount})</button></p>}
         {receivingError && <p className="admin-feedback admin-feedback--error" role="alert">Receiving is unavailable: {receivingError}</p>}
-        {receiving && <><p className="admin-feedback">Fulfillment: <strong>{receiving.fulfillment}</strong> · separate from PO lifecycle ({order.status}).</p><POReceivingSection order={receiving} receipts={receiving.receipts} /></>}
+        {receivingAccess.read && receiving && <><p className="admin-feedback">Fulfillment: <strong>{receiving.fulfillment}</strong> · separate from PO lifecycle ({order.status}).</p><POReceivingSection order={receiving} receipts={receiving.receipts} /></>}
       </section>}
     {deleting && order && <PurchaseOrderDeleteDialog key={id} order={order} onClose={() => { setDeleting(false); setRetry(loadOrderMutation(id)); }} onDeleted={(saved) => { setOrder(saved); setDeleting(false); setRetry(loadOrderMutation(id)); setNotice('Purchase order deleted.'); requestAnimationFrame(() => allOrdersButton.current?.focus()); }} />}
   </div></AdminLayout>;

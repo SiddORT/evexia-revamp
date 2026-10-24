@@ -7,6 +7,7 @@ import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -23,6 +24,7 @@ import '../../productMaster.css';
 const BASE = '/admin/masters/products';
 
 export default function ProductMaster() {
+  const can = useResourceActions('product');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const queryString = useSearch();
@@ -109,25 +111,25 @@ export default function ProductMaster() {
     { key: 'st', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="product" /> },
     { key: 'act', label: 'Actions', render: (r) => { const t = r.status === 'active' ? 'Inactivate' : 'Activate'; return <div className="admin-table__actions">
       <button type="button" className="admin-icon-button" aria-label={`View details, ${r.name}`} title="Details, activity and analytics" onClick={() => setViewing(r.id)} data-testid={`button-view-product-${r.id}`}><Eye size={16} /></button>
-      <button type="button" className="admin-icon-button" aria-label={`Edit ${r.name}`} onClick={() => navigate(`${BASE}/${r.id}`)} data-testid={`button-edit-product-${r.id}`}><Pencil size={16} /></button>
-      <button type="button" className="admin-icon-button" aria-label={`Assemble ${r.name}`} title="Assemble combos" disabled={r.status !== 'active'} onClick={() => navigate(`${BASE}/assemble?product=${r.id}`)} data-testid={`button-assemble-product-${r.id}`}><Layers size={16} /></button>
-      <button type="button" className="admin-icon-button" aria-label={`${t} ${r.name}`} onClick={() => request(r, t.toLowerCase())} data-testid={`button-status-product-${r.id}`}><CirclePower size={16} /></button>
-      <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Delete ${r.name}`} onClick={() => request(r, 'delete')} data-testid={`button-delete-product-${r.id}`}><Trash2 size={16} /></button>
+      <button type="button" disabled={!can.edit} className="admin-icon-button" aria-label={`Edit ${r.name}`} onClick={() => navigate(`${BASE}/${r.id}`)} data-testid={`button-edit-product-${r.id}`}><Pencil size={16} /></button>
+      {can.protected && <button type="button" className="admin-icon-button" aria-label={`Assemble ${r.name}`} title="Assemble combos" disabled={r.status !== 'active'} onClick={() => navigate(`${BASE}/assemble?product=${r.id}`)} data-testid={`button-assemble-product-${r.id}`}><Layers size={16} /></button>}
+      <button type="button" disabled={!can.edit} className="admin-icon-button" aria-label={`${t} ${r.name}`} onClick={() => request(r, t.toLowerCase())} data-testid={`button-status-product-${r.id}`}><CirclePower size={16} /></button>
+      <button type="button" disabled={!can.delete} className="admin-icon-button admin-icon-button--danger" aria-label={`Delete ${r.name}`} onClick={() => request(r, 'delete')} data-testid={`button-delete-product-${r.id}`}><Trash2 size={16} /></button>
     </div>; } },
   ];
   const name = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Product Master"><div className="product-master-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Product Master</h1><p className="admin-page-head__description">Named combos of existing allergens with their own MRP and selling price. Saving a combo never creates stock.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product')} data-testid="button-import-products"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product')} data-testid="button-import-products"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
-          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={loading || Boolean(error) || search.trim() !== applied} aria-disabled={exporting || undefined}><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
+          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={!can.export || loading || Boolean(error) || search.trim() !== applied} aria-disabled={exporting || undefined}><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Product export format">
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportMatching('csv')}>CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportMatching('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-product"><Plus size={16} /> Add product</button></div></div>
+        <button type="button" disabled={!can.add} className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-product"><Plus size={16} /> Add product</button></div></div>
     <ProductPendingBanner onResolved={(r) => { keyRef.current = null; if (r.state === 'committed') setConfirming(null); load(); }} />
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Product list">

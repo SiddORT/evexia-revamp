@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import ConfirmationDialog from './ConfirmationDialog.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import {
   clearOrderMutation, deletePurchaseOrder, describeError, formatPaise, getPurchaseOrder,
   isStaleOrder, isUncertain, loadOrderMutation, newKey, saveOrderMutation,
@@ -7,6 +8,7 @@ import {
 
 /** One mutation controller for listing and detail. Never replace an uncertain key. */
 export default function PurchaseOrderDeleteDialog({ order, onClose, onDeleted }) {
+  const can = useResourceActions('purchase_order');
   const [current, setCurrent] = useState(order);
   const [retry, setRetry] = useState(() => loadOrderMutation(order.id));
   const [busy, setBusy] = useState(false);
@@ -17,7 +19,7 @@ export default function PurchaseOrderDeleteDialog({ order, onClose, onDeleted })
   const blocked = retry.status === 'blocked' ? retry.message
     : pending && pending.operation !== 'delete' ? 'An edit is unconfirmed. Open Edit to reconcile it before deleting.' : '';
   async function remove() {
-    if (busyRef.current || blocked) return;
+    if (!can.delete || busyRef.current || blocked) return;
     busyRef.current = true; setBusy(true); setError('');
     try {
       if (stale) {
@@ -61,9 +63,9 @@ export default function PurchaseOrderDeleteDialog({ order, onClose, onDeleted })
   return <ConfirmationDialog
     title={`Delete ${current.number}?`}
     description={`Version ${current.version} · ${current.vendorName} · ${formatPaise(current.total)}. Deletion removes this value from open orders. The saved record and audit history remain; receipts and stock are unchanged.${pending?.operation === 'delete' ? ' An earlier deletion is unconfirmed; retry reconciles that same action.' : ''}`}
-    destructive pending={busy} blocked={Boolean(blocked)}
+    destructive pending={busy} blocked={Boolean(blocked) || !can.delete}
     actionLabel={stale ? 'Load latest order' : pending?.operation === 'delete' ? 'Retry deletion' : 'Confirm deletion'}
-    error={blocked || error} onConfirm={remove}
+    error={!can.delete ? 'Delete permission is required. The retained retry is unchanged.' : blocked || error} onConfirm={remove}
     onClose={() => { if (!busyRef.current) onClose(); }}
   />;
 }

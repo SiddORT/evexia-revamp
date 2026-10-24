@@ -49,7 +49,9 @@ def view(row, crypto, actor_id):
 
 
 def read_settings(db, actor):
-    return transaction(db, actor, lambda current, c: view(settings_row(db), c, current.user.id))
+    # A form may consume the current policy, but cannot change the setting.
+    return transaction(db, actor, lambda current, c: view(settings_row(db), c, current.user.id),
+                       capability=("purchase_received", ("add", "edit")))
 
 
 def write_settings(db, actor, body):
@@ -112,4 +114,4 @@ def allocate(db, actor, body):
         db.add(PRBatchAllocation(key=body.idempotencyKey, actor_id=current.user.id,
             payload_ciphertext=crypto.seal(body.idempotencyKey, "batch-allocation", dict(request=request, result=result))))
         return result
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, capability=("purchase_received", ("add", "edit")))

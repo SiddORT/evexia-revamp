@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ClipboardList, Plus, Search } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
@@ -15,6 +15,7 @@ import '../../sptOrders.css';
 const EMPTY = { search: '', status: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '' };
 
 export default function SptOrders() {
+  const can = useOrderActions('spt');
   const BASE = useOrderBase('spt');
   const { mr } = useOrderPortal();
   const { date } = useAdminDateFormatters();
@@ -69,7 +70,7 @@ export default function SptOrders() {
             <h1>SPT</h1>
             <p className="admin-page-head__description">Review SPT orders by doctor, MR and status.</p>
           </div>
-          <div className="spt-actions-top">{actions}<Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link></div>
+          <div className="spt-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
         </div>} />
         <section className="admin-panel" aria-label="SPT orders">
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}
@@ -94,7 +95,7 @@ export default function SptOrders() {
             : error ? <div className="spt-empty" role="alert"><strong>Orders unavailable</strong><p>{error}</p><button type="button" className="admin-button" onClick={refresh}>Retry</button></div>
               : <>
                 <DataTable columns={columns} rows={result.items} rowOffset={offsets[page - 1]} rowKey={(o) => o.id} label="SPT orders (scrolls horizontally)" testIdPrefix="spt"
-                  empty={<div className="spt-empty" data-testid="empty-spt-orders"><ClipboardList size={28} aria-hidden="true" /><strong>{result.total ? 'No matching orders in this section' : 'No SPT orders yet'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : result.total ? 'Try different applied filters.' : 'Use Add Order to create a persistent SPT order.'}</p><Link href={`${BASE}/new`} className="admin-button">Add Order</Link></div>} />
+                  empty={<div className="spt-empty" data-testid="empty-spt-orders"><ClipboardList size={28} aria-hidden="true" /><strong>{result.total ? 'No matching orders in this section' : 'No SPT orders yet'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : result.total ? 'Try different applied filters.' : 'Saved SPT orders will appear here.'}</p>{can.add && <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
                 <TablePagination cursorMode sectionCount={result.items.length} page={page} pageCount={page + (result.nextCursor ? 1 : 0)}
                   pageSize={pageSize} filtered={result.filtered} total={result.total} label="orders" testId="spt-count"
                   onPageChange={changePage} onPageSizeChange={(size) => { setPageSize(size); resetPage(); }} />

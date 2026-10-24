@@ -203,6 +203,33 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Stack and scope
 
+### Current approved saved-role boundary (source only)
+
+The explicit catalogue now covers sixteen Masters, Inventory, the four live
+Orders workflows and bounded User Management: **154 assignable actions**.
+This supersedes older eight-master and singleton-only authorization descriptions
+below for precisely these approved actions; it does not expand their historical
+migration approvals. See `docs/role-permission-expansion.md` for the complete
+catalogue, source mapping and activation limitations.
+
+Independent View grants are available without mutations or transfers. Existing
+action keys retain minimum read/reference access, without rewriting roles or
+adding grants. Staff authority comes only from the authenticated account's saved
+custom-role assignment, never labels or designations. Product has no Assemble
+grant. Assembly, manual inventory adjustments, initialization, protected batch
+configuration, private clinical/payment history and unlisted domains stay
+protected. MR ownership and relationships remain separate from staff authority.
+Change Role Permissions, Assign Role and Enable/Disable Login are Super
+Admin-only; metadata CRUD cannot perform them.
+
+The `0069_workspace_permissions` constraint migration and coordinated contract
+are **unexecuted source changes**. The operator review manifest intentionally
+remains pinned to its previously approved target. Do not bypass that guard or
+restart/apply migrations as part of this source-only work. No tests, builds,
+browser/manual scenarios, smoke requests, runtime probes, release/validation
+wrappers, service restarts, live role edits, migrations or deployments were run.
+Necessary contract generation/formatting is not runtime verification.
+
 - Live Purchase Orders creation/listing/detail/versioned edit/soft deletion/Activity/Analytics use protected Super Admin FastAPI persistence and shared Vendor/Storage Location/Allergen records. Explicit Place of supply plus supplier GSTIN determines CGST/SGST/UTGST/IGST for ordinary domestic goods; retained tax snapshots and aggregate-only historical totals must not be inferred or recalculated. `0038_purchase_orders` and additive `0040_po_tax_basis` are operator-only and need separate managed activation approval; existing pinned activation/release manifests do not authorize the latter. Legacy local PO/PR/master stores are untouched; invoices/stock and supplier submission remain excluded. Receiving is a separately operator-gated domain described below. Exact rounding, retry and focused-test guidance: `docs/purchase-order-backend.md`.
 
 - Shared Allergen Master is protected singleton-only (no assignable staff Allergen permissions). `mix=true` means Mix; `false` means No Mix, catalogue metadata only. It uses shared category/location references, exact optional decimal strings, versioned soft deletion and bounded CSV/XLSX review/confirm/filtered exports with durable acceptance. No HSN in the current catalogue; explicit legacy CSV HSN is ignored. Migration `0022_allergen_catalogue` is empty and requires operator approval for managed rollout. The original local allergen/category/location and procurement datasets stay separate and untouched. See `docs/allergen-master.md`.
@@ -243,7 +270,7 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
   no tests, builds, browser/manual scenarios, restarts, migrations or live sends
   were run. Generated API/schema source metadata is not activation evidence.
 - Staff uses required catalogue `designation_id` and read-only `designationName`; unchanged inactive/deleted references remain retainable. Forward `0028_staff_designation_lifecycle` follows merged `0028_directory_soft_delete` after MR `0027` and requires complete reviewed historical mapping before removing text; read-only preflight and exact-label UUID overrides never create catalogue rows. Versioned soft deletion retains encrypted profiles, Users, status and relationships, revokes sessions and excludes tombstones from normal operations/authentication, not backup/rotation/history. Managed rollout requires separate approval, backups and coordinated schema/API/frontend; populated downgrade is refused. See `docs/staff-security.md`.
-- Roles & Permissions requires protected system Super Admin `roles.manage`. Custom roles default to empty grants. Exactly eight masters have five assignable actions each: Headquarter, Zone, MR, Patient, Doctor, Product Category, Storage Location and Courier Partner. All/Clear select the catalogue, not broad administrator power. Staff remain explicitly enabled and assigned by saved role ID. Metadata and permissions preserve each other and share a concurrency version; assigned roles cannot be deleted. Lost outcomes require authoritative review. Migration `0021_master_permissions` follows `0020_patient_directory`, preserves saved Zone grants and adds no grants or login upgrades. Only approved operators may apply managed migrations. Protected reset, recovery, private files/history, payments and generic domain administration remain excluded. See `docs/zone-role-permissions.md`.
+- Roles & Permissions uses the approved explicit four-module catalogue documented above. Custom roles default to empty grants. All/Clear selects supported assignable actions, not broad administrator power. Role metadata CRUD and View Permissions have separate capabilities; permission writes remain protected Super Admin-only. Staff remain explicitly enabled and assigned by saved role ID. Metadata and permissions preserve each other and share a concurrency version; all retained Staff links block role deletion. Lost outcomes require authoritative review and drafts are retained. Historical `0021_master_permissions` preserved saved Zone grants and added no grants or login upgrades; the new constraint likewise grants nothing. Only separately approved operators may activate schema changes. See `docs/role-permission-expansion.md`; `docs/zone-role-permissions.md` describes the earlier rollout.
 - Role attribution and retained soft deletion use forward `0029_role_lifecycle` after accepted Staff lifecycle. Required creator/updater User UUIDs need verified complete audit evidence or reviewed field-specific maps; never guess legacy actors. All Staff links block deletion, including deleted history. Tombstones retain global names/grants but never authorize or remain assignable. Connected development rollout was separately approved and applied with backup and reviewed updater mapping; production remains unverified/unmodified, and other databases require separate approval. See `docs/role-lifecycle-operations.md`.
 
 

@@ -4,13 +4,18 @@ from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from app.api.deps import current_identity
+from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
 from app.schemas.spt import SptWrite, SptRegistration, SptPatient, SptRecord, SptPage, SptImport, SptImportResult, Status
 from app.schemas.immunotherapy import ImmReferencePage, ImmImportReview
 from app.services import spt as service
 
-router = APIRouter(prefix="/admin/spt-orders", tags=["spt"])
+router = APIRouter(prefix="/admin/spt-orders", tags=["spt"],
+    dependencies=[Depends(operation_router("spt", {
+        "listing": None, "detail": None, "references": None, "export": "export",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit",
+        "register": ("add", "import"),
+    }, allow_mr=True))])
 
 
 def filters(search: str = Query("", max_length=200), status: Status | None = None,

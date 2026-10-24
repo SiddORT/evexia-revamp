@@ -10,7 +10,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
-from app.api.deps import current_identity
+from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
 from app.schemas.kits import KitsWrite, KitsImport, KitsRecord, KitsPage, KitsImportResult, Payment
 from app.schemas.immunotherapy import Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview
@@ -22,7 +22,12 @@ from app.services.file_locks import operation
 from app.api.v1.files import storage_dependency
 from app.api.v1.immunotherapy import MULTIPART
 
-router = APIRouter(prefix="/admin/kits-orders", tags=["kits"])
+router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
+    dependencies=[Depends(operation_router("kits", {
+        "listing": None, "detail": None, "references": None, "export": "export",
+        "review": "import", "commit": "import", "create": "add",
+        "policy": "upload_attachment", "upload": "upload_attachment",
+    }, allow_mr=True))])
 
 
 def filters(search: str = Query("", max_length=200), status: Status | None = None,
@@ -53,7 +58,7 @@ def references(kind: Literal["patients", "doctors", "mrs"], search: str = Query(
 
 @router.get("/policy", response_model=ImmUploadPolicy, operation_id="kitsUploadPolicy")
 def policy(actor=Depends(current_identity), db: Session = Depends(get_db), settings=Depends(get_settings)):
-    service.authorize(db, actor)
+    service.authorize(db, actor, "upload_attachment")
     return dict(maxFiles=10, maxBytes=min(settings.max_upload_bytes, 10485760),
                 types=["application/pdf", "image/jpeg", "image/png", "image/webp"])
 
@@ -62,7 +67,7 @@ def policy(actor=Depends(current_identity), db: Session = Depends(get_db), setti
 async def upload(request: Request, actor=Depends(current_identity), db: Session = Depends(get_db),
                  settings=Depends(get_settings), storage_factory=Depends(storage_dependency)):
     # Authentication and current authorization precede multipart parsing and storage.
-    await run_in_threadpool(service.authorize, db, actor)
+    await run_in_threadpool(service.authorize, db, actor, "upload_attachment")
     await run_in_threadpool(file_service.quota, db, actor, settings)
     db.rollback()
     maximum = min(settings.max_upload_bytes, 10485760)

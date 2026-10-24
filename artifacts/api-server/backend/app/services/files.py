@@ -75,9 +75,11 @@ def reserve(db, identity, body, content_type, settings, request_id, *, replaces_
         raise FileError(415, "invalid_filename", "File name is not allowed") from None
     if MIME_TYPES[ext] != content_type or (body.category == "profile" and ext == "pdf"):
         raise FileError(415, "unsupported_type", "File type is not allowed")
-    authorize(db, identity, "replace" if replaces_id else "upload", body.patient_id, body.mr_id, lock=True,
+    current = authorize(db, identity, "replace" if replaces_id else "upload", body.patient_id, body.mr_id, lock=True,
               kits_owner_id=body.kits_owner_id, lupin_owner_id=body.lupin_owner_id,
               lupin_reservation=lupin_reservation)
+    if current.staff is not None and body.category != "documents":
+        raise FileError(403, "access_denied", "Staff order uploads cannot change private profile files")
     if replaces_id:
         original = get_record(db, identity, replaces_id, "replace", lock=True, readable=True)
         if original.version != expected_version:
@@ -125,7 +127,7 @@ def interrupted(db, file_id, identity, request_id):
 
 def complete_upload(db, identity, file_id, stream, settings, storage, request_id):
     row = get_record(db, identity, file_id, "replace" if db.get(FileRecord, file_id).replaces_id else "upload")
-    if row.kits_owner_id or row.lupin_owner_id:
+    if row.kits_owner_id or row.lupin_owner_id or identity.staff is not None:
         settings = settings.model_copy(update={"max_upload_bytes": min(settings.max_upload_bytes, 10485760)})
     name, media, key = row.display_name, row.content_type, row.object_key
     db.rollback()  # Never retain read transactions/row locks through slow I/O.
@@ -299,7 +301,7 @@ def issue_url(db, identity, file_id, storage, settings, request_id, base_path=""
     evidence = None
     if settings.storage_backend == "s3" and row.content_type == "application/pdf":
         from app.services.downloads import server_record
-        evidence = server_record(db, identity, initiation_id, "private_attachment", "issuance", "PDF")
+        evidence = server_record(db, identity, initiation_id, "private_attachment", "issuance", "PDF", file_id=file_id)
     db.commit()
     return {"url": url, "expires_at": expires_at, "bearer_capability": settings.storage_backend == "s3", "download_log": evidence}
 

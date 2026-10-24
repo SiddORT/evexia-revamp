@@ -81,7 +81,7 @@ def review_digest(actor, data, filename):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     rows = parse(data, filename)
     def work():
-        current = languages.authorize(db, actor)
+        current = languages.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
             raise languages.LanguageError("File or login session changed. Review again before confirming.",
@@ -142,7 +142,7 @@ def sample(format):
 
 def export(db, actor, query, format):
     def work():
-        languages.authorize(db, actor)
+        languages.authorize(db, actor, "export")
         filters = [Language.deleted_at.is_(None)]
         if query.strip():
             escaped = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

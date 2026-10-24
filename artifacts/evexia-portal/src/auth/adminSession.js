@@ -1,5 +1,5 @@
 // Tokens live only in this module's memory. No credential or identity storage.
-import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission } from './capabilities.js';
+import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission, hasCapability, canReadResource, isSuperAdminIdentity, workflowAllowed } from './capabilities.js';
 import { captureExportPreferences, exportPreferenceHeader } from '../services/exportPreferences.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
@@ -303,10 +303,12 @@ export function reportingIdentityGuard() {
 // Dedicated authenticated staff transport. Never replay mutations: a lost create
 // response may already have committed and its initial password is unrecoverable.
 export async function staffRequest(path = '', body, { signal } = {}) {
+  const accessDirectoryPath = /^\/access-directory\?offset=\d+&limit=\d+$/.test(path);
+  const designationReferencePath = /^\/designation-references\?query=[^&]*&offset=\d+$/.test(path);
   const encodedRole = '(?:[A-Za-z0-9_.!~*\\x27()-]|%[0-9A-Fa-f]{2}|\\+){1,1200}';
   const listingPath = new RegExp(`^\\?limit=\\d+&offset=\\d+(?:&status=(?:active|inactive))?(?:&designation_id=[0-9a-f-]{36})?(?:&role=${encodedRole})?$`).test(path);
   const roleChoicesPath = /^\/role-choices\?query=(?:[A-Za-z0-9_.!~*'()-]|%[0-9A-Fa-f]{2}|\+)*&offset=\d+&include_retained=(?:true|false)$/.test(path);
-  if (!listingPath && !roleChoicesPath && !/^(?:|\/search|\/filter-designations(?:\?cursor=[0-9a-f-]{36})?|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?)$/.test(path)) {
+  if (!accessDirectoryPath && !designationReferencePath && !listingPath && !roleChoicesPath && !/^(?:|\/search|\/filter-designations(?:\?cursor=[0-9a-f-]{36})?|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?)$/.test(path)) {
     throw new SessionError('Unsupported staff operation.');
   }
   const mutation = body !== undefined && path !== '/search';
@@ -317,7 +319,14 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Please sign in again.', 401);
     }
-    if (!state.user.permissions.includes('staff.manage')) throw new SessionError('Staff Management access denied.', 403);
+    const action = path.endsWith('/status') ? 'status' : path.endsWith('/delete') ? 'delete'
+      : path.endsWith('/edit') ? 'edit' : mutation && path === '' ? 'add' : null;
+    if (accessDirectoryPath ? !hasCapability(state.user, 'staff_access', 'view')
+      : designationReferencePath ? !(hasCapability(state.user, 'staff', 'add') || hasCapability(state.user, 'staff', 'edit'))
+      : path.endsWith('/access') ? !isSuperAdminIdentity(state.user)
+      : !(action ? hasCapability(state.user, 'staff', action) : canReadResource(state.user, 'staff'))) {
+      throw new SessionError('Staff Management access denied.', 403);
+    }
   };
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
@@ -354,6 +363,7 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   if (pending) await pending;
   checkResponse();
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) { restorationAllowed = false; clear(); }
     const code = data?.error?.code;
     const error = new SessionError(
@@ -391,7 +401,12 @@ export async function roleRequest(path = '', body, { signal } = {}) {
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Please sign in again.', 401);
     }
-    if (!state.user.permissions.includes('roles.manage')) throw new SessionError('Role Management access denied.', 403);
+    const action = path.endsWith('/delete') ? 'delete' : path.endsWith('/edit') ? 'edit' : mutation ? 'add' : null;
+    if (path.endsWith('/permissions') ? !isSuperAdminIdentity(state.user)
+      : !(action ? hasCapability(state.user, 'role', action)
+        : canReadResource(state.user, 'role') || hasCapability(state.user, 'permissions', 'view'))) {
+      throw new SessionError('Role Management access denied.', 403);
+    }
   };
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
@@ -428,6 +443,7 @@ export async function roleRequest(path = '', body, { signal } = {}) {
   if (pending) await pending;
   guardResponse();
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) { restorationAllowed = false; clear(); }
     const code = data?.error?.code;
     const error = new SessionError(
@@ -680,7 +696,7 @@ function masterAllowed(user, resource, path, writing, params = {}) {
     : /^\/[0-9a-f-]{36}\/doctors$/.test(path) && resource === 'mrs' ? null
     : /^\/postal\//.test(path) ? (params.action || 'add')
     : path === '/language-choices' && resource === 'patients' && !writing ? null
-    : ['/references', '/filters'].includes(path) ? null : undefined;
+    : ['/references', '/filters', '/choices'].includes(path) || /^\/references\/(?:categories|locations)$/.test(path) ? null : undefined;
   if (need === undefined) return false;
   return need ? hasMasterPermission(user, master.key, need) : canViewMaster(user, master.key);
 }
@@ -781,6 +797,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   if (pending) await pending;
   check();
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     const error = new SessionError(response.status >= 500 && data?.error?.code !== unavailable
       ? `${label} service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.`
       : data?.error?.message || `${label} request failed. Review the details and retry.`, response.status);
@@ -868,7 +885,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       const e = new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401); e.ambiguous = mutation; throw e;
     }
-    if (state.user.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access')) throw new SessionError('Opening stock is restricted to the protected Super Admin.', 403);
+    if (!workflowAllowed(state.user, 'opening-stock', path, { body, params, method, file })) throw new SessionError('Opening Stock access denied.', 403);
   };
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
@@ -898,8 +915,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
   if (pending) await pending;
   try { check(); } catch (e) { e.ambiguous = mutation; throw e; }
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) { await verifySession(true, 'admin'); const e = new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401); e.ambiguous = mutation; throw e; }
-    const e = new SessionError(response.status === 403 ? 'Opening stock is restricted to the protected Super Admin.'
+    const e = new SessionError(response.status === 403 ? 'Your current saved role does not allow this opening stock operation.'
       : response.status >= 500 ? 'Opening stock service is unavailable. Your draft is preserved; check the outcome before saving again.'
       : typeof data?.error?.message === 'string' ? data.error.message : 'Opening stock fields are invalid. Check quantities, rates and references.', response.status);
     e.code = data?.error?.code;
@@ -941,7 +959,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/(?:history|ledger|adjustment-choices))?|adjustments(?:\/preview|\/[0-9a-f-]{36})?|adjustment-requests\/[0-9a-f-]{36}|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
     ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i
-    : /^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
+    : /^(?:|\/(?:export|overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
   if (!allowed.test(path)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
@@ -969,8 +987,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
     }
-    if (!mrOrder && (state.user.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access'))) {
-      throw new SessionError('Purchase orders are restricted to the protected Super Admin.', 403);
+    if (!mrOrder && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {
+      throw new SessionError('Workspace operation access denied.', 403);
     }
   };
   if (pending) await pending;
@@ -1011,6 +1029,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   if (pending) await pending;
   try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) {
       await verifySession(true, mrOrder ? 'mr' : 'admin');
       const error = new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
@@ -1089,7 +1108,8 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, portalOf(state.user));
   guard();
-  if (state.user?.identity_kind !== 'mr' && (state.user?.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access'))) throw new SessionError('Access denied.', 403);
+  if (state.user?.identity_kind !== 'mr' && !hasCapability(state.user, lupin ? 'lupin' : kits ? 'kits' : 'immunotherapy',
+    file ? 'upload_attachment' : 'read_attachment')) throw new SessionError('Access denied.', 403);
   if (file && !kits && !lupin && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
   const form = file ? new FormData() : null;
   if (form) form.append('file', file);
@@ -1101,6 +1121,7 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   const data = response.ok && download ? await response.blob() : await response.json();
   guard();
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) await verifySession(true, portalOf(state.user));
     const error = new SessionError(data?.error?.message || (kits || lupin ? 'Order attachment unavailable. Your order draft is preserved; retry explicitly.' : 'Prescription unavailable. Your order draft is preserved; retry explicitly.'), response.status);
     error.fileId = response.headers.get('X-File-ID');
@@ -1117,10 +1138,14 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   const mrKitsDownload = state.user?.identity_kind === 'mr' && resource === 'downloads/initiate'
     && ['kits_orders', 'spt_orders', 'lupin_orders'].includes(params.source) && ['template', 'export'].includes(params.kind) && ['CSV', 'XLSX'].includes(params.format);
   if (state.user?.identity_kind === 'mr' && !mrKitsDownload) throw new SessionError('Reporting access denied.', 403);
-  if (state.user?.identity_kind === 'staff' && !(resource === 'downloads/initiate'
-      && ['sample', 'template'].includes(params.kind)
-      && hasMasterPermission(state.user, params.source === 'storage_location' ? 'location' : params.source, 'import'))) {
-    throw new SessionError('Reporting access denied.', 403);
+  if (state.user?.identity_kind === 'staff') {
+    const sourceResource = ({ storage_location: 'location', kits_orders: 'kits', spt_orders: 'spt', lupin_orders: 'lupin',
+      po_invoice: 'purchase_order', pr_receipt: 'purchase_received' })[params.source] || params.source;
+    const action = ['sample', 'template'].includes(params.kind) ? 'import'
+      : params.kind === 'export' ? 'export' : ['po_invoice', 'pr_receipt'].includes(params.source) ? 'print' : null;
+    if (resource !== 'downloads/initiate' || !action || !hasCapability(state.user, sourceResource, action)) {
+      throw new SessionError('Reporting access denied.', 403);
+    }
   }
   const epoch = generation;
   const owner = state.user?.id;
@@ -1181,6 +1206,7 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
     if (!invitation) response = await load(token); // never replay an invitation mutation
   }
   if (!response.ok) {
+    if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (invitation && ![401, 403].includes(response.status)) {
       const data = await response.json().catch(() => null);
       throw new SessionError(data?.error?.message || data?.detail || 'Invitation could not complete. Check Email Logs before trying again.', response.status);

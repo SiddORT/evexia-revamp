@@ -27,13 +27,13 @@ def person(row):
     return dict(id=str(row.id), name=row.name)
 
 
-def authorize(db, actor):
-    return shared_order_authorize(db, actor)
+def authorize(db, actor, action=None):
+    return shared_order_authorize(db, actor, "lupin", action)
 
 
 def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
     actor = authorize(db, actor)
-    result = supply_references(db, actor, kind, search, cursor, limit, selected)
+    result = supply_references(db, actor, kind, search, cursor, limit, selected, resource="lupin")
     result["items"] = [{k: p[k] for k in ("id", "name", "doctorId", "mrId") if k in p}
                        for p in result["items"]]
     return result
@@ -57,11 +57,13 @@ def unseal(keys, table, identity, value):
         raise DirectoryCryptoError() from None
 
 
-def transaction(db, actor, work):
+def transaction(db, actor, work, *, action=None):
     try:
-        current = authorize(db, actor)
+        current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
+        from app.services.order_capabilities import public_result
+        result = public_result(current, "lupin", result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -134,6 +136,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     if row and body.orderDate and row.date != body.orderDate:
         raise ImmError("Saved order date is immutable.", 422, "lupin_date")
     previous = project(keys, row) if row else None
+    from app.services.order_capabilities import attachment_changes
+    attachment_changes(actor, "lupin", body.attachmentIds, previous)
     data = resolved(db, actor, keys, body, previous)
     if not row:
         number = db.scalar(text("SELECT nextval('lupin_order_number_seq')"))
@@ -190,7 +194,7 @@ def save(db, actor, body):
     if body.orderDate or body.status != "Confirmed" or body.paymentStatus != "Unpaid" or not body.attachmentIds:
         raise ImmError("New orders require attachments and start Confirmed / Unpaid with a server date.", 422, "lupin_create")
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
-        body.model_dump(mode="json"), lambda: apply(db, a, k, body)))
+        body.model_dump(mode="json"), lambda: apply(db, a, k, body)), action="add")
 
 
 def detail(db, actor, identity):
@@ -222,7 +226,7 @@ def reserve_upload(db, actor, body, content_type, settings, request_id, upload_i
         if result.get("cancelled"):
             raise ImmError("This upload was cancelled. Choose the file again explicitly.", 409, "lupin_upload_cancelled")
         return upload_id
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="upload_attachment")
 
 
 def cancel_upload(db, actor, identity):
@@ -251,7 +255,7 @@ def cancel_upload(db, actor, identity):
             db.add(prior)
         prior.response_ciphertext = seal(keys, "requests", identity, saved)
         return row is not None
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="upload_attachment")
 
 
 def listing(db, actor, *, search="", status=None, payment_status=None,
@@ -303,7 +307,7 @@ def listing(db, actor, *, search="", status=None, payment_status=None,
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="export" if complete else None)
 
 
 def batch(db, actor, body, commit=False):
@@ -354,4 +358,4 @@ def batch(db, actor, body, commit=False):
         return dict(valid=True, entries=entries, reviewToken=token, rejected=0, patientAdditions=0,
             additions=sum(e["action"] == "add" for e in entries), updates=sum(e["action"] == "update" for e in entries),
             unchanged=sum(e["action"] == "unchanged" for e in entries))
-    return transaction(db, actor, work)
+    return transaction(db, actor, work, action="import")

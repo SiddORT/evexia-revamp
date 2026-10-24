@@ -7,13 +7,12 @@ from app.db.patient_models import PatientDirectory
 from app.services.auth import revalidate_identity
 
 
-def authorize(db, actor):
+def authorize(db, actor, resource=None, action=None):
     from app.services.immunotherapy import ImmError
     # Match MR Doctor/master lock order: policy before identity/profile/graph.
     # This branch only acquires a lock; revalidation below grants the access.
-    if actor.role == "mr":
-        from app.services.zone_policy import lock_policy
-        lock_policy(db)
+    from app.services.zone_policy import lock_policy
+    lock_policy(db)
     current = revalidate_identity(db, actor, lock=True)
     db.info["order_mr_id"] = None
     if current.role == "mr":
@@ -25,9 +24,12 @@ def authorize(db, actor):
             raise ImmError("Your saved MR identity is unavailable.", 403, "mr_order_identity")
         doctors.assignment(db, current.mr.id)
         db.info["order_mr_id"] = current.mr.id
-    elif not (current.user.is_protected_system_admin and current.role == "super_admin"
-              and "admin.access" in current.permissions):
-        raise ImmError("Access denied.", 403, "access_denied")
+    else:
+        from app.services.capability_policy import allowed, readable, is_super_admin
+        if not is_super_admin(current):
+            if (resource not in ("immunotherapy", "kits", "spt", "lupin")
+                    or not (readable(current, resource) if action is None else allowed(current, resource, action))):
+                raise ImmError("Access denied.", 403, "access_denied")
     return current
 
 

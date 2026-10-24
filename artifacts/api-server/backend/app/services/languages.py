@@ -32,12 +32,9 @@ def transaction(db, work):
         raise
 
 
-def authorize(db, actor):
-    lock_policy(db)
-    current = revalidate_identity(db, actor, lock=True)
-    if not zone_allowed(current, protected=True):
-        raise LanguageError("Language access denied.", 403, "access_denied")
-    return current
+def authorize(db, actor, action=None, *, protected=False):
+    from app.services.master_policy import authorize_master
+    return authorize_master(db, actor, "language", action, protected=protected, error=LanguageError)
 
 
 def projection(db, row):
@@ -97,7 +94,7 @@ def record_change(db, actor, row, action, before):
 
 def create(db, actor, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "add")
         row = insert(db, current, body)
         result = projection(db, row)
         db.commit()
@@ -118,7 +115,7 @@ def insert(db, actor, body):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         row = find(db, record_id)
         if row.version != body.expected_version:
             raise LanguageError("Language changed. Your draft is preserved. Review current details before retrying.",
@@ -141,7 +138,7 @@ def mutate(db, actor, record_id, body, operation):
 
 def history(db, actor, record_id, limit, offset):
     def work():
-        authorize(db, actor)
+        authorize(db, actor, protected=True)
         record = projection(db, find(db, record_id, deleted=True))
         filters = [LanguageChange.language_id == record_id]
         counts = dict(db.execute(select(LanguageChange.action, func.count()).where(*filters)

@@ -24,6 +24,7 @@ MODULES = {
     "headquarter": "Headquarter Master", "product_category": "Product Category Master",
     "sales_target": "Sales Target Master", "staff": "Staff Management",
     "stock_status": "Stock Status", "purchase_received": "Purchase Received",
+    "purchase_order": "Purchase Orders",
     "po_invoice": "Purchase Orders", "pr_receipt": "Purchase Received",
     "sessions": "Sessions", "activity": "Activity Logs", "private_attachment": "Private Files",
 }
@@ -44,6 +45,7 @@ BROWSER = {
     "staff": {"export": {"CSV"}},
     "stock_status": {"export": {"CSV"}},
     "purchase_received": {"export": {"CSV"}},
+    "purchase_order": {"export": {"CSV"}},
     "po_invoice": {"invoice": {"PDF"}},
     "pr_receipt": {"searchable": {"PDF"}, "image": {"PDF"}},
     "sessions": {"export": {"CSV"}}, "activity": {"export": {"CSV"}},
@@ -76,14 +78,13 @@ def label(source, kind):
     return f"{MODULES[source]} {kind}"
 
 
-def record(db, identity, initiation_id, source, kind, format, provenance="server_prepared"):
+def record(db, identity, initiation_id, source, kind, format, provenance="server_prepared", *, file_id=None):
     allowed = BROWSER if provenance == "browser_reported" else SERVER
     if format not in allowed.get(source, {}).get(kind, set()):
         raise HTTPException(422, "Unsupported download metadata")
     # Serialize against logout/replacement and across retry requests/tabs.
     resource = "location" if source == "storage_location" else source
-    if resource in MASTERS:
-        lock_policy(db)
+    lock_policy(db)
     try:
         verified = revalidate_identity(db, identity, lock=True)
     except AuthError:
@@ -103,7 +104,21 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     if mr_kits:
         from app.services.mr_orders import authorize
         authorize(db, verified)
-    if "admin.access" not in verified.permissions and not mr_private and not mr_doctor and not mr_kits:
+    staff_download = False
+    if verified.staff is not None:
+        from app.services.capability_policy import allowed as capability
+        transfers = {"kits_orders": "kits", "spt_orders": "spt", "lupin_orders": "lupin",
+                     "stock_status": "stock_status", "purchase_received": "purchase_received", "purchase_order": "purchase_order"}
+        if source in transfers:
+            action = "import" if kind in ("sample", "template") else "export" if kind == "export" else None
+            staff_download = bool(action and capability(verified, transfers[source], action))
+        elif source in ("po_invoice", "pr_receipt"):
+            staff_download = capability(verified, "purchase_order" if source == "po_invoice" else "purchase_received", "print")
+        elif source == "private_attachment" and file_id is not None and provenance == "server_prepared":
+            from app.services.files import get_record
+            get_record(db, verified, file_id, "download", readable=True)
+            staff_download = True
+    if "admin.access" not in verified.permissions and not mr_private and not mr_doctor and not mr_kits and not staff_download:
         action = ("import" if kind in ("sample", "template")
                   else "export" if kind == "export" and provenance == "server_prepared" else None)
         if (resource not in MASTERS or action is None
@@ -132,5 +147,5 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     return {"id": row.id, "provenance": provenance}
 
 
-def server_record(db, identity, initiation_id, source, kind, format):
-    return record(db, identity, initiation_id or uuid.uuid4(), source, kind, format)
+def server_record(db, identity, initiation_id, source, kind, format, *, file_id=None):
+    return record(db, identity, initiation_id or uuid.uuid4(), source, kind, format, file_id=file_id)

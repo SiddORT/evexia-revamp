@@ -92,7 +92,8 @@ def stream_download(db, identity, file_id, settings, storage_factory, request_id
     try:
         spool, media, size = service.prepare_download(db, identity, file_id, storage_factory(), settings, request_id)
         try:
-            evidence = server_record(db, identity, initiation_id, "private_attachment", "attachment", "PDF") if media == "application/pdf" else None
+            evidence = server_record(db, identity, initiation_id, "private_attachment", "attachment", "PDF",
+                                     file_id=file_id) if media == "application/pdf" else None
         except BaseException:
             spool.close()
             raise

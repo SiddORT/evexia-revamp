@@ -5,7 +5,7 @@ from email.policy import default
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.db.session import get_db
 from app.schemas.vendors import (VendorFields, VendorEdit, VendorStatus, VendorVersion,
                                 VendorResponse, VendorPage, VendorReview, VendorImportResult)
@@ -14,7 +14,7 @@ from app.services import vendors, vendor_transfer
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/vendors", tags=["Vendor Master"])
-manager = require_permissions("admin.access")
+manager = master_router("vendor")
 OVERHEAD = 64 * 1024
 BINARY_RESPONSES = {200: {"content": {
     "text/csv": {"schema": {"type": "string", "format": "binary"}},
@@ -53,7 +53,7 @@ def export(query: str = Query("", max_length=200), status: Literal["all", "activ
 @router.get("/sample", operation_id="downloadVendorSample", responses=BINARY_RESPONSES)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    vendors.transaction(db, lambda: vendors.authorize(db, actor))
+    vendors.transaction(db, lambda: vendors.authorize(db, actor, "import"))
     data = vendor_transfer.sample(format)
     evidence = server_record(db, actor, initiation_id, "vendor", "template", format.upper())
     return release(data, format, evidence, "evexia-vendor-template")

@@ -36,13 +36,9 @@ def transaction(db, work):
         raise
 
 
-def authorize(db, actor):
-    # This workflow is deliberately absent from the assignable master catalogue.
-    lock_policy(db)
-    current = revalidate_identity(db, actor, lock=True)
-    if not (current.user.is_protected_system_admin and current.role == "super_admin"
-            and "admin.access" in current.permissions):
-        raise OpeningBalanceError("Access denied", 403, "access_denied")
+def authorize(db, actor, action=None):
+    from app.services.master_policy import authorize_master
+    current = authorize_master(db, actor, "opening_balance", action, error=OpeningBalanceError)
     encrypted.ready(db)
     return current
 
@@ -199,7 +195,7 @@ def insert(db, actor, body):
 
 def create(db, actor, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "add")
         mrs.graph_lock(db)
         reference(db, body.doctorId)
         result = projection(db, insert(db, current, body))
@@ -210,7 +206,7 @@ def create(db, actor, body):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         mrs.graph_lock(db)
         row = find(db, record_id)
         if row.version != body.expected_version:

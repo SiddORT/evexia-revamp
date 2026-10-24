@@ -198,7 +198,7 @@ def review_digest(actor, data, filename, snapshots):
 
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     def work():
-        current = allergens.authorize(db, actor)
+        current = allergens.authorize_catalogue(db, actor, "import")
         rows = parse(data, filename)
         resolved, snapshots = resolve(db, rows)
         fingerprint = review_digest(current, data, filename, snapshots)
@@ -237,7 +237,7 @@ def sample(format):
 @present_export
 def export(db, actor, query="", status="all", format="csv", **filters):
     def work():
-        allergens.authorize(db, actor)
+        allergens.authorize_catalogue(db, actor, "export")
         records = list(db.scalars(select(AllergenProduct).where(*allergens.predicates(query, status, **filters))
                                   .order_by(AllergenProduct.created_at.desc(), AllergenProduct.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:

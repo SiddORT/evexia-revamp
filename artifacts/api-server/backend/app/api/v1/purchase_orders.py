@@ -3,7 +3,7 @@ from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import operation_router
 from app.db.session import get_db
 from app.schemas.purchase_orders import (
     POInput, POCreate, POEdit, PODelete, POResponse, POReview, POPage,
@@ -15,7 +15,12 @@ from app.services import procurement_documents as documents
 from app.schemas.procurement_documents import SavedDocument, DocumentHistory
 
 router = APIRouter(prefix="/admin/purchase-orders", tags=["Purchase Orders"])
-manager = require_permissions("admin.access")
+manager = operation_router("purchase_order", {
+    "listing": None, "overview": "analytics", "detail": None, "references": None, "filters": None,
+    "preview": "add", "create": "add", "edit_preview": "edit", "edit": "edit", "delete": "delete",
+    "activity": "activity", "analytics": "analytics", "document": "print", "history": "history",
+    "export": "export",
+})
 
 
 @router.get("", response_model=POPage, operation_id="listPurchaseOrders")
@@ -27,9 +32,18 @@ def listing(query: str = Query("", max_length=200), status: Literal["open", "del
     return service.listing(db, actor, query, status, vendor_id, product_id, from_date, to_date, sort, limit, offset)
 
 
+@router.get("/export", response_model=POPage, operation_id="exportPurchaseOrders")
+def export(query: str = Query("", max_length=200), status: Literal["open", "deleted", "all"] = "open",
+           vendor_id: uuid.UUID | None = None, product_id: uuid.UUID | None = None,
+           from_date: date | None = None, to_date: date | None = None,
+           sort: Literal["recent", "oldest"] = "recent",
+           actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return service.listing(db, actor, query, status, vendor_id, product_id, from_date, to_date, sort, complete=True)
+
+
 @router.get("/overview", response_model=POOverview, operation_id="getPurchaseOrderOverview")
 def overview(actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.transaction(db, actor, lambda _: service.overview_data(db))
+    return service.transaction(db, actor, lambda _: service.overview_data(db), action="analytics")
 
 
 @router.get("/activity", response_model=POActivityPage, operation_id="listPurchaseOrderActivity")
@@ -75,10 +89,14 @@ def detail(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session
 @router.get("/{record_id}/documents", response_model=SavedDocument, operation_id="getPurchaseOrderDocument")
 def document(record_id: uuid.UUID, revision: int | None = Query(None, ge=1),
              actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    def work(_):
+    def work(current):
+        from app.services.capability_policy import allowed
+        from app.services.purchase_received_crypto import PRError
+        if revision is not None and not allowed(current, "purchase_order", "history"):
+            raise PRError("View History permission is required for archived revisions.", 403, "access_denied")
         service.find(db, record_id)
         return documents.document_data(db, "po", record_id, revision)
-    return service.transaction(db, actor, work)
+    return service.transaction(db, actor, work, action="print")
 
 
 @router.get("/{record_id}/history", response_model=DocumentHistory, operation_id="getPurchaseOrderChanges")
@@ -87,7 +105,7 @@ def history(record_id: uuid.UUID, limit: int = Query(10, ge=1, le=50), offset: i
     def work(_):
         service.find(db, record_id)
         return documents.history_data(db, "po", record_id, limit, offset)
-    return service.transaction(db, actor, work)
+    return service.transaction(db, actor, work, action="history")
 
 
 @router.post("/{record_id}/preview", response_model=POReview, operation_id="previewPurchaseOrderEdit")

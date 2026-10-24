@@ -20,8 +20,9 @@ export interface RoleResponse {
    * @maxLength 100
    */
   name: string;
-  /** @maxItems 40 */
+  /** @maxItems 154 */
   readonly permissions?: readonly RoleResponsePermissionsItem[];
+  readonly permissions_visible: boolean;
   updated_at: Date;
   readonly updated_by: string;
   version: number;

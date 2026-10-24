@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, FolderOpen, Pencil, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -35,6 +36,7 @@ export default function SalesTargetMaster() {
 }
 
 function TargetWorkspace() {
+  const can = useResourceActions('sales_target');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [draft, setDraft] = useState(BLANK);
@@ -107,9 +109,9 @@ function TargetWorkspace() {
     const who = `${record.mrName} ${period(record)}`;
     const t = mobile ? 'mobile-' : '';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={cls} aria-label={`Edit target for ${who}`} title="Edit" onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing(record); }} data-testid={`button-edit-sales-target-${t}${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" className={cls} aria-label={`${toggle} target for ${who}`} title={toggle} onClick={(event) => requestAction(record, toggle.toLowerCase(), event)} data-testid={`button-toggle-sales-target-${t}${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
-      <button type="button" className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete target for ${who}`} title="Delete" onClick={(event) => requestAction(record, 'delete', event)} data-testid={`button-delete-sales-target-${t}${record.id}`}><Trash2 size={16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`Edit target for ${who}`} title="Edit" onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing(record); }} data-testid={`button-edit-sales-target-${t}${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`${toggle} target for ${who}`} title={toggle} onClick={(event) => requestAction(record, toggle.toLowerCase(), event)} data-testid={`button-toggle-sales-target-${t}${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
+      <button type="button" disabled={!can.delete} className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete target for ${who}`} title="Delete" onClick={(event) => requestAction(record, 'delete', event)} data-testid={`button-delete-sales-target-${t}${record.id}`}><Trash2 size={16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
     </fieldset>;
   }
   const columns = [
@@ -132,15 +134,15 @@ function TargetWorkspace() {
       <div><p className="admin-page-head__eyebrow">Masters / Planning</p><h1>Sales Target Master</h1><p className="admin-page-head__description">Targets for MRs by financial year.</p></div>
       <div className="admin-target-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => setSummary(true)} disabled={loading || Boolean(error)} data-testid="button-sales-target-summary">Summary</button>
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/sales-target')} data-testid="button-import-sales-targets"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/sales-target')} data-testid="button-import-sales-targets"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={menuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setMenuOpen(open); }}>
-          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-sales-targets"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
+          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={!can.export || Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-sales-targets"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-courier-export__menu sales-target-export-menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Sales target export format">
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportAll('csv')} data-testid="menu-export-sales-targets-csv">CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportAll('xlsx')} data-testid="menu-export-sales-targets-xlsx">Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing('new'); }} data-testid="button-add-sales-target"><Plus size={16} aria-hidden="true" /> Add target</button>
+        <button type="button" className="admin-button" disabled={!can.add || Boolean(error)} onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing('new'); }} data-testid="button-add-sales-target"><Plus size={16} aria-hidden="true" /> Add target</button>
       </div>
     </div>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-sales-target-feedback">{feedback}</div>}

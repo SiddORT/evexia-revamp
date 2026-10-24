@@ -23,7 +23,7 @@ export interface StaffResponse {
   employeeCode: string | null;
   id: string;
   legacy_role?: string | null;
-  login_identifiers_ready?: boolean;
+  login_identifiers_ready?: boolean | null;
   /**
    * @minLength 1
    * @maxLength 200
@@ -41,5 +41,5 @@ export interface StaffResponse {
   updatedAt: Date;
   updatedBy: string;
   version: number;
-  workspace_login_enabled?: boolean;
+  workspace_login_enabled?: boolean | null;
 }

@@ -120,7 +120,7 @@ def review_digest(actor, data, filename):
 
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     def work():
-        current = sales_targets.authorize(db, actor)
+        current = sales_targets.authorize(db, actor, "import")
         rows = parse(data, filename)
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
@@ -214,7 +214,7 @@ def sample(format):
 @present_export
 def export(db, actor, filters, format):
     def work():
-        sales_targets.authorize(db, actor)
+        sales_targets.authorize(db, actor, "export")
         clauses = sales_targets.predicates(**{**filters, "query": ""})
         candidates = sales_targets.encrypted.complete(db, SalesTarget, clauses, None,
             prepare=lambda rows: sales_targets.search_matcher(db, filters.get("query", ""), rows))

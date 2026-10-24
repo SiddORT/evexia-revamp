@@ -3,10 +3,19 @@ import { Link } from 'wouter';
 import AdminLayout from '../admin/AdminLayout.jsx';
 import { getSession } from '../../auth/adminSession.js';
 import { request } from '../../services/serverImmunotherapy.js';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 
 const Context = createContext({ portal: 'admin', mr: null });
 export const useOrderPortal = () => useContext(Context);
 export const useOrderBase = (kind) => `/${useOrderPortal().portal}/orders/${kind}`;
+export function useOrderActions(kind) {
+  const { portal } = useOrderPortal();
+  const capabilities = useResourceActions(kind);
+  if (portal !== 'mr') return { ...capabilities, documents: capabilities.protected };
+  // MR routes retain their existing ownership-scoped service authorization.
+  // They never inherit staff or protected-administration authority.
+  return { ...Object.fromEntries(Object.keys(capabilities).map((action) => [action, action !== 'protected'])), documents: true };
+}
 
 // MRWorkspace owns the shell and account-keyed lifetime; do not nest Admin chrome.
 export default function OrderPortalLayout(props) {

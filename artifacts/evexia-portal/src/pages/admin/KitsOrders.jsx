@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Plus, Search } from 'lucide-react';
-import AdminLayout, { useOrderBase } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -14,6 +14,7 @@ import '../../kitsOrders.css';
 
 const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '', status: '', payment_status: '', order_for: '' };
 export default function KitsOrders() {
+  const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
   const { date } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
@@ -51,7 +52,7 @@ export default function KitsOrders() {
     <OrderTransfers kind="kits" rows={result.items} adapter={createKitsTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Kits &amp; Consumables</h1><p className="admin-page-head__description">Skin prick kits, lancets, applicators and trays ordered for doctors and MRs.</p></div>
-        <div className="kits-actions-top">{actions}<Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link></div>
+        <div className="kits-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
     <section className="admin-panel kits-panel kits-listing__panel" aria-label="Kits and consumables orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}

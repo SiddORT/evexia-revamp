@@ -148,6 +148,8 @@ def ready(db):
         ["0067_inventory_adjustments"],
         # Free-text category CHECK relaxation changes no encrypted fields/keys.
         ["0068_category_description"],
+        # Explicit catalogue CHECK successor changes no encrypted account fields.
+        ["0069_workspace_permissions"],
     ):
         raise AccountCryptoError()
     current = crypto()

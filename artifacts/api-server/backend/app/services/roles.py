@@ -14,16 +14,24 @@ class RoleError(Exception):
         self.message, self.status, self.code = message, status, code
 
 
-def authorize(db, actor):
+def authorize(db, actor, action=None, *, permissions=False):
+    from app.services.capability_policy import allowed, readable, is_super_admin
+    lock_policy(db)
     current = revalidate_identity(db, actor, lock=True)
-    if "roles.manage" not in current.permissions:
+    permitted = (is_super_admin(current) if permissions else
+                 allowed(current, "role", action) if action else
+                 readable(current, "role") or allowed(current, "permissions", "view"))
+    if not permitted:
         raise RoleError("Access denied", 403, "access_denied")
     return current
 
 
-def projection(row):
+def projection(row, actor):
+    from app.services.capability_policy import allowed
     return dict(id=row.id, name=row.name, description=row.description, version=row.version,
-                created_at=row.created_at, updated_at=row.updated_at, permissions=sorted(row.permissions),
+                created_at=row.created_at, updated_at=row.updated_at,
+                permissions=sorted(row.permissions) if allowed(actor, "permissions", "view") else [],
+                permissions_visible=allowed(actor, "permissions", "view"),
                 created_by=row.created_by, updated_by=row.updated_by,
                 deleted_at=row.deleted_at, deleted_by=row.deleted_by)
 
@@ -46,12 +54,12 @@ def transaction(db, work):
 
 def listing(db, actor, limit, cursor):
     def work():
-        authorize(db, actor)
+        current = authorize(db, actor)
         query = select(CustomRole).where(CustomRole.deleted_at.is_(None)).order_by(CustomRole.id).limit(limit + 1)
         if cursor is not None:
             query = query.where(CustomRole.id > cursor)
         rows = list(db.scalars(query))
-        result = dict(items=[projection(row) for row in rows[:limit]], limit=limit,
+        result = dict(items=[projection(row, current) for row in rows[:limit]], limit=limit,
                       has_more=len(rows) > limit,
                       next_cursor=rows[limit - 1].id if len(rows) > limit else None)
         db.commit()
@@ -61,11 +69,11 @@ def listing(db, actor, limit, cursor):
 
 def detail(db, actor, role_id):
     def work():
-        authorize(db, actor)
+        current = authorize(db, actor)
         row = db.get(CustomRole, role_id, populate_existing=True)
         if not row or row.deleted_at is not None:
             raise RoleError("Role is unavailable. Choose a current role or explicitly unassign it.", 404, "role_deleted")
-        result = projection(row)
+        result = projection(row, current)
         db.commit()
         return result
     return transaction(db, work)
@@ -73,9 +81,8 @@ def detail(db, actor, role_id):
 
 def mutate(db, actor, body, role_id=None, deleting=False, permissions=False):
     def work():
-        if deleting or permissions:
-            lock_policy(db)
-        current = authorize(db, actor)
+        current = authorize(db, actor, "delete" if deleting else "add" if role_id is None else "edit",
+                            permissions=permissions)
         if role_id is None:
             row = CustomRole(name=body.name, description=body.description,
                              created_by=current.user.id, updated_by=current.user.id)
@@ -102,7 +109,7 @@ def mutate(db, actor, body, role_id=None, deleting=False, permissions=False):
             if deleting:
                 row.deleted_at, row.deleted_by = row.updated_at, current.user.id
         db.flush()
-        result = projection(row)
+        result = projection(row, current)
         db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
                          action=action, resource_type="custom_role", resource_id=row.id,
                          outcome="success", request_id=db.info.get("request_id")))

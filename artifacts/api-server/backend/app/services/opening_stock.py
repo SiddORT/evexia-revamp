@@ -59,7 +59,7 @@ def references(db, actor, query="", offset=0, limit=25):
         rows = [r for r in catalogue(db, crypto) if query.strip().casefold() in
                 f"{r['name']} {r['itemKind']} {r['id']}".casefold()]
         return dict(items=rows[offset:offset + limit], filtered=len(rows), offset=offset, limit=limit)
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("opening_stock", None))
 
 
 def existing(db, row):
@@ -108,17 +108,19 @@ def review_data(db, crypto, body):
 
 
 def preview(db, actor, body):
-    return inv.transaction(db, actor, lambda _, c: review_data(db, c, body))
+    return inv.transaction(db, actor, lambda _, c: review_data(db, c, body),
+                           capability=("opening_stock", "import" if body.mode == "import" else "add"))
 
 
 def create(db, actor, body):
+    from app.services.retry_capabilities import envelope, result as retry_response
     def work(current, crypto):
         hashes = crypto.digests(["opening-request:v1", body.model_dump(mode="json")])
         retry = db.get(Retry, body.idempotencyKey)
         if retry:
             if retry.actor_id != current.user.id or retry.digest not in hashes.values():
                 raise PRError("Request identity is closed or conflicts; reconcile before another save.", 409, "opening_retry")
-            return crypto.open(retry.key, "opening_retry", retry.payload_ciphertext)
+            return retry_response(current, "opening_stock", crypto.open(retry.key, "opening_retry", retry.payload_ciphertext))
         review = review_data(db, crypto, body)
         snapshot = dict(rows=review["rows"], recordedDate=body.recordedDate.isoformat(), mode=body.mode)
         if body.reviewToken not in crypto.digests(["opening-review:v1", snapshot]).values():
@@ -166,12 +168,15 @@ def create(db, actor, body):
             posted += 1
         result = dict(records=records, summary=summary(records), postedCount=posted, alreadyImportedCount=already)
         db.add(Retry(key=body.idempotencyKey, actor_id=current.user.id, digest=hashes[crypto.active],
-            payload_ciphertext=crypto.seal(body.idempotencyKey, "opening_retry", result)))
+            payload_ciphertext=crypto.seal(body.idempotencyKey, "opening_retry",
+                envelope("opening_stock", "import" if body.mode == "import" else "add", result))))
         return result
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work,
+                           capability=("opening_stock", "import" if body.mode == "import" else "add"))
 
 
 def reconcile(db, actor, key):
+    from app.services.retry_capabilities import result
     def work(current, crypto):
         row = db.get(Retry, key)
         if row and row.actor_id != current.user.id:
@@ -180,8 +185,8 @@ def reconcile(db, actor, key):
             db.add(Retry(key=key, actor_id=current.user.id, digest="cancelled",
                 payload_ciphertext=crypto.seal(key, "opening_retry", None)))
         return dict(state="committed" if row and row.digest != "cancelled" else "not_committed",
-                    result=crypto.open(key, "opening_retry", row.payload_ciphertext) if row else None)
-    return inv.transaction(db, actor, work)
+                    result=result(current, "opening_stock", crypto.open(key, "opening_retry", row.payload_ciphertext)) if row else None)
+    return inv.transaction(db, actor, work, capability=("opening_stock", ("add", "import")))
 
 
 def matching(db, crypto, query=""):
@@ -197,7 +202,7 @@ def listing(db, actor, query="", offset=0, limit=25):
         rows, total = matching(db, crypto, query)
         return dict(items=rows[offset:offset + limit], filtered=len(rows), total=total,
                     offset=offset, limit=limit, summary=summary(rows))
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("opening_stock", None))
 
 
 def detail(db, actor, record_id, section=None):
@@ -211,4 +216,4 @@ def detail(db, actor, record_id, section=None):
         if section == "activity":
             return dict(items=data["activity"], filtered=len(data["activity"]))
         return data
-    return inv.transaction(db, actor, work)
+    return inv.transaction(db, actor, work, capability=("opening_stock", None) if section is None else None)

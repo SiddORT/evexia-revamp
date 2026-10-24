@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useOrderActions } from '../orders/OrderPortalContext.jsx';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Download, Upload } from 'lucide-react';
 import { useAdminPreferences } from './adminPreferences.js';
@@ -10,6 +11,7 @@ import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderTransfers.css';
 
 export default function OrderTransfers({ kind, rows, snapshot, store, adapter, total, renderActions }) {
+  const can = useOrderActions(kind);
   const { theme, appearance } = useAdminPreferences();
   const [format, setFormat] = useState('csv');
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -41,6 +43,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
   useEffect(() => { if (review) summary.current?.focus(); }, [review]);
   const close = () => { if (committing.current || uncertain) return; generation.current++; setOpen(false); setBusy(false); setReview(null); setConfirmed(false); setError(''); setFileName(''); };
   async function download(template = false, selectedFormat = format) {
+    if (!(template ? can.import : can.export)) { setError('Your saved role does not allow this transfer. The current review is preserved.'); return; }
     if (exportBusy.current) return;
     exportBusy.current = true;
     setExporting(true);
@@ -65,6 +68,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
     finally { exportBusy.current = false; setExporting(false); }
   }
   async function read(file) {
+    if (!can.import) { setError('Import is not allowed by your saved role. The current review is preserved.'); return; }
     const token = ++generation.current;
     setReview(null); setConfirmed(false); setError(''); setMessage(''); setFileName(file?.name || '');
     if (!file) { setBusy(false); return; }
@@ -77,6 +81,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
     } finally { if (generation.current === token) setBusy(false); }
   }
   async function commit() {
+    if (!can.import) { setError('Import is not allowed by your saved role. The current review is preserved.'); return; }
     if (committing.current) return;
     try {
       committing.current = true; setBusy(true);
@@ -96,16 +101,16 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
   const actions = <div className="order-transfer-actions">
       <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(nextOpen) => { if (!nextOpen || !exportBusy.current) setExportMenuOpen(nextOpen); }}>
         <DropdownMenu.Trigger asChild>
-          <button type="button" className="admin-button admin-button--secondary" disabled={adapter ? total === 0 : !rows.length} aria-disabled={exporting || undefined} data-testid={exportTestId}><Download size={15} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export'}</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || (adapter ? total === 0 : !rows.length)} aria-disabled={exporting || undefined} data-testid={exportTestId}><Download size={15} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export'}</button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label={`${title} export format`}>
-            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => { setFormat('csv'); void download(false, 'csv'); }}>CSV</DropdownMenu.Item>
-            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => { setFormat('xlsx'); void download(false, 'xlsx'); }}>Excel (.xlsx)</DropdownMenu.Item>
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting || !can.export} onSelect={() => { setFormat('csv'); void download(false, 'csv'); }}>CSV</DropdownMenu.Item>
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting || !can.export} onSelect={() => { setFormat('xlsx'); void download(false, 'xlsx'); }}>Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      <button ref={trigger} type="button" className="admin-button admin-button--secondary" onClick={() => { setError(''); setMessage(''); setOpen(true); }}><Upload size={15} aria-hidden="true" />Import</button>
+      <button ref={trigger} type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => { setError(''); setMessage(''); setOpen(true); }}><Upload size={15} aria-hidden="true" />Import</button>
     </div>;
   return <div className="order-transfers">
     {renderActions ? renderActions(actions) : actions}
@@ -121,9 +126,9 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
         <label className="order-transfer-format">Template file format
           <select value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
         </label>
-        <button type="button" className="admin-button admin-button--secondary" disabled={exporting} onClick={() => download(true)}>Download {format === 'xlsx' ? 'Excel' : 'CSV'} template</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={exporting || !can.import} onClick={() => download(true)}>Download {format === 'xlsx' ? 'Excel' : 'CSV'} template</button>
         <label className="admin-dialog__field">CSV or Excel file ({adapter ? 'up to 8 MB / 500 orders; validated JSON up to 1 MiB' : 'up to 8 MB / 10,000 orders'})
-          <input type="file" disabled={Boolean(adapter) && (busy || uncertain)} accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
+          <input type="file" disabled={!can.import || (Boolean(adapter) && (busy || uncertain))} accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
         </label>
         {fileName && <p className="order-transfer-filename">Selected: {fileName}</p>}
         {busy && <p role="status">Reading local file…</p>}
@@ -149,7 +154,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
       </div>
       <div className="admin-dialog__actions">
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(adapter) && (busy || uncertain)} onClick={close}>Cancel</button>
-        <button type="button" className="admin-button" disabled={busy || !review?.valid || (review.updates > 0 && !confirmed)} onClick={commit}>Confirm import</button>
+        <button type="button" className="admin-button" disabled={!can.import || busy || !review?.valid || (review.updates > 0 && !confirmed)} onClick={commit}>Confirm import</button>
       </div>
     </ImmDialog>}
   </div>;

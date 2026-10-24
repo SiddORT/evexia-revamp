@@ -91,15 +91,55 @@ def require_master(resource, action=None, protected=False) -> Callable:
     return check
 
 
+def require_capability(resource, action=None) -> Callable:
+    """Early rejection; every service must repeat under the shared policy lock."""
+    from app.services.capability_policy import allowed, readable
+    def check(identity: Identity = Depends(current_identity)) -> Identity:
+        if not (readable(identity, resource) if action is None else allowed(identity, resource, action)):
+            raise HTTPException(403, "Access denied")
+        return identity
+    return check
+
+
+def require_role_read(identity: Identity = Depends(current_identity)) -> Identity:
+    from app.services.capability_policy import readable, allowed
+    if not (readable(identity, "role") or allowed(identity, "permissions", "view")):
+        raise HTTPException(403, "Access denied")
+    return identity
+
+
+def operation_router(resource, operations, *, allow_mr=False) -> Callable:
+    """An explicit endpoint catalogue; unlisted siblings remain protected."""
+    from app.services.capability_policy import allowed, readable, is_super_admin
+    def check(request: Request, identity: Identity = Depends(current_identity)) -> Identity:
+        # This only admits an MR to the existing workflow-specific service;
+        # the service still enforces saved MR ownership/relationships.
+        if allow_mr and identity.role == "mr" and identity.mr is not None:
+            return identity
+        name = request.scope["endpoint"].__name__
+        if name not in operations:
+            if not is_super_admin(identity):
+                raise HTTPException(403, "Access denied")
+        else:
+            action = operations[name]
+            if not (readable(identity, resource) if action is None else allowed(identity, resource, action)):
+                raise HTTPException(403, "Access denied")
+        return identity
+    return check
+
+
 def master_router(resource) -> Callable:
     """Early action gate using explicit existing endpoint names, never HTTP verbs."""
     operations = {"listing": None, "detail": None, "filters": None,
                   "create": "add", "edit": "edit", "status": "edit", "contact": "edit",
                   "delete": "delete", "bulk": "edit", "export": "export",
                   "sample": "import", "review": "import", "commit": "import",
-                  "username": "add", "references": None}
+                  "username": "add", "references": None, "choices": None}
     def check(request: Request, identity: Identity = Depends(current_identity)) -> Identity:
         name = request.scope["endpoint"].__name__
+        # Protected sibling operations (e.g. Language history) remain singleton-only.
+        if name not in operations and master_allowed(identity, resource, protected=True):
+            return identity
         if name not in operations or not master_allowed(identity, resource, operations[name]):
             raise HTTPException(403, "Master access denied")
         return identity

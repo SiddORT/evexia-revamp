@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ClipboardList, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useResourceActions } from '../../auth/useMasterActions.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
@@ -86,6 +87,7 @@ const fromSaved = (order) => ({
 });
 
 export function Editor({ order, onCancel, onSaved, onReload }) {
+  const can = useResourceActions('purchase_order');
   const confirm = usePlatformConfirm();
   const { date: displayDate } = useAdminDateFormatters();
   const editing = Boolean(order);
@@ -105,7 +107,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const busyRef = useRef(false);
   const [conflict, setConflict] = useState(false);
   const [locationChoice, setLocationChoice] = useState(null);
-  const locked = uncertain || busy || Boolean(blocked);
+  const locked = uncertain || busy || Boolean(blocked) || !(editing ? can.edit : can.add);
   const tax = taxContext(values.vendor, values.placeOfSupplyCode);
   const figures = computeTotals(values.lines, tax.treatment);
   const draft = values.lines.map((line) => computeLine(line.quantity, line.product, tax.treatment));
@@ -190,7 +192,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   }
 
   async function save() {
-    if (busyRef.current || !review) return;
+    if (!(editing ? can.edit : can.add) || busyRef.current || !review) return;
     busyRef.current = true; setBusy(true);
     setSaveError('');
     const input = uncertain && restored ? (restored.input || toInput(restored.values)) : review.input;
@@ -253,7 +255,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
       <LineTable lines={review.order.lines} figures={review.order} />
       <div className="po-form-footer"><span>{uncertain ? 'Editing is locked until this exact request is confirmed.' : 'The order is saved only after the server confirms it.'}</span><div className="po-actions">
         {!uncertain && <button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button>}
-        <button type="button" disabled={busy || Boolean(blocked) || conflict} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : uncertain ? 'Retry and confirm' : editing ? 'Save changes' : 'Create purchase order'}</button></div></div>
+        <button type="button" disabled={!(editing ? can.edit : can.add) || busy || Boolean(blocked) || conflict} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : uncertain ? 'Retry and confirm' : editing ? 'Save changes' : 'Create purchase order'}</button></div></div>
     </> : <form onSubmit={runReview} noValidate className="po-new-form">
       <div className="po-new-layout">
         <aside className="po-new-summary" aria-label="Order totals" aria-live="polite" aria-atomic="true"><h3>Order totals</h3>

@@ -10,6 +10,7 @@ import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js'
 import { recordLocalAction } from '../../services/localActivity.js';
 import { commitOpening, journaled, listItemReferences, locationLabel, money, valueMoney, newId, pendingOpening, previewOpening, validQuantity, validRate } from '../../services/openingStock.js';
 import { listReference } from '../../services/serverInventory.js';
+const openingLocationReferences = (kind, params, signal) => listReference(kind, { ...params, purpose: 'opening_stock' }, signal);
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
@@ -134,7 +135,7 @@ export default function OpeningStockFormPage() {
           <div className="ms-field"><label htmlFor={`os-qty-${i}`}>Quantity <span className="mr-form__required">*</span></label><input id={`os-qty-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(i, { quantity: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-qty-${i}`} /></div>
           <div className="ms-field"><InfoDisclosure id={`os-rate-${r.rowId}-help`} title="Unit rate" text="Entered cost per unit, not MRP or selling price. This can also be a weighted-average cost per unit." testId={`button-opening-rate-info-${i}`}><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label></InfoDisclosure><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /></div>
           <div className="ms-field"><label htmlFor={`os-loc-${i}`}>Storage location</label>
-            <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={listReference} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
+            <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={openingLocationReferences} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
               onChange={(_v, o) => patchRow(i, { location: o ? { value: o.value, label: o.label } : UNALLOCATED })} /></div>
           {draft.rows.length > 1 && <button type="button" className="admin-button admin-button--secondary opening-stock-form__remove" aria-label={`Remove opening stock row ${i + 1}`} onClick={() => { reset(); setDraft((d) => ({ ...d, rows: d.rows.filter((_x, j) => j !== i) })); }} data-testid={`button-remove-opening-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
           </div>
