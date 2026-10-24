@@ -40,7 +40,7 @@ function Review({ order: initialOrder }) {
   const [order, setOrder] = useState(initialOrder);
   const can = useOrderActions('lupin');
   const { portal } = useOrderPortal();
-  const canPreview = portal === 'mr' && can.read_attachment;
+  const canPreview = (portal === 'mr' || can.protected) && can.read_attachment;
   const [viewing, setViewing] = useState(null);
   const viewerOpener = useRef(null);
   const BASE = useOrderBase('lupin');

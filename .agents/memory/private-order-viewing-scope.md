@@ -8,7 +8,8 @@ Immunotherapy and Kits & Consumables saved-order View pages. This supersedes
 the earlier Admin-only viewer scope for these two MR order types only.
 
 MR may also privately preview verified saved attachments on the Lupin saved-order
-detail page. This approval does not extend to Admin/staff Lupin views.
+detail page. Protected Super Admin may also preview verified saved Lupin
+attachments on the saved-order detail page; ordinary Admin/staff are excluded.
 
 Super Admin may also privately preview verified saved Kits & Consumables
 attachments on both the saved-order summary and the Edit order/pricing screen,
@@ -18,7 +19,8 @@ or unsaved file selections.
 **Why:** The user explicitly extended viewing to MR without extending ownership,
 file permissions or unsaved entry uploads. The user separately approved the
 Super Admin Kits summary and retained editor attachment extension.
-The user also explicitly approved the MR-only saved Lupin attachment extension.
+The user also explicitly approved saved Lupin previews first for MR and then
+for protected Super Admin, without extending access to ordinary Admin/staff.
 
 **How to apply:** Reuse the isolated authenticated PDF/image viewer and existing
 server authorization. Do not infer permission to preview unsaved selections,

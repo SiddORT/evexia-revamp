@@ -107,6 +107,6 @@
 - [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.
 - [Development upload storage](development-upload-storage.md) — user wants private project-local S3-compatible folders for now; generic CDN HEAD failures do not prove freshclam is blocked.
 - [Kits Business Parking](kits-business-parking.md) — independent entered amount; the legacy screenshot does not authorize a commission, deduction or link to totals.
-- [Private order viewing](private-order-viewing-scope.md) — MR saved previews and Super Admin Kits summary/editor previews are approved; other staff and unsaved uploads stay unchanged.
+- [Private order viewing](private-order-viewing-scope.md) — MR saved previews, Super Admin saved Lupin and Kits summary/editor previews are approved; other staff and unsaved uploads stay unchanged.
 - [MR contact masking scope](mr-contact-scope.md) — mask Doctor/Patient contacts only; preserve identities, demographics, MR self details and authoritative snapshots.
 - [Doctor overview financial boundary](doctor-overview-financial-boundary.md) — real saved facts only; payment flags do not establish debt, credit or deadlines.
