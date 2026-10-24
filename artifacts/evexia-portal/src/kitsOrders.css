@@ -63,6 +63,15 @@
 .kits-entry .kits-facts dt { margin-bottom: 2px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--admin-muted); }
 .kits-entry .kits-facts dd { font-size: 13px; color: var(--admin-text); }
 .kits-entry .kits-panel[aria-labelledby="kits-h-bill"] { border-top: 3px solid var(--admin-secondary); }
+/* Keep the shared picker's input hidden despite legacy entry input rules. */
+.kits-entry.order-entry .kits-field .excel-import__picker { position: relative; }
+.kits-entry.order-entry .kits-field .excel-import__picker input[type="file"] { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; overflow: hidden; opacity: 0; }
+.kits-entry .excel-import__picker > svg { flex-shrink: 0; }
+.kits-entry .excel-import__picker:has(input:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.kits-entry .excel-import__picker:has(input:disabled) { opacity: .6; cursor: not-allowed; }
+.kits-entry .kits-file-remove { display: inline-flex; align-items: center; justify-content: center; width: 44px; padding: 0; border: 1px solid var(--admin-border); border-radius: 8px; background: transparent; color: var(--admin-text); cursor: pointer; }
+.kits-entry .kits-file-remove:hover:not(:disabled) { background: var(--admin-state-hover); }
+.kits-entry .kits-file-remove:disabled { opacity: .6; cursor: not-allowed; }
 /* Listing-owned layout: direct entry must not rely on another order route's CSS. */
 .kits-listing { gap: 16px; }
 .kits-listing .order-transfers { margin-bottom: 0; }

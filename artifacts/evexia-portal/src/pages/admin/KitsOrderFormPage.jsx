@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowLeft, Paperclip } from 'lucide-react';
+import { ArrowLeft, Paperclip, X } from 'lucide-react';
 import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
+import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import '../../kitsOrders.css';
@@ -186,22 +187,22 @@ function Form() {
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-more"><h2 id="kits-h-more">Remarks and attachments</h2>
           <div className="kits-field"><label htmlFor="kits-remarks">Remarks</label><textarea id="kits-remarks" rows={3} value={v.remarks} onChange={(ev) => set({ remarks: ev.target.value })} data-testid="kits-input-remarks" /></div>
-          <div className="kits-field" style={{ marginTop: 14 }}><label htmlFor="kits-attachments">Attachments (optional)</label>
-            <input id="kits-attachments" type="file" disabled={!can.upload_attachment} multiple accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="kits-files-hint kits-attachments-err" onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ''; }} data-testid="kits-input-files" />
+          <div className="kits-field" style={{ marginTop: 14 }}><span>Attachments (optional)</span>
+            <MasterFilePicker id="kits-attachments" icon={Paperclip} disabled={!can.upload_attachment} multiple accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-label="Kits attachments (optional)" aria-invalid={Boolean(fileMsg || e.attachments)} aria-describedby="kits-files-hint kits-attachments-err" onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ''; }} data-testid="kits-input-files">{v.attachments.length ? `${v.attachments.length} files selected — choose more` : 'Choose PDF or image files'}</MasterFilePicker>
             <p className="kits-hint" id="kits-files-hint">Up to 10 PDF, JPEG, PNG or WebP files, {policy ? fileSize(policy.maxBytes) : '10 MB'} each. Files upload privately when saving and must pass verification and scanning before attachment. Import/export excludes file contents.</p>
             <Err id="kits-attachments-err" text={fileMsg || e.attachments} />
             {fileMsg && <button type="button" className="kits-link kits-file-dismiss" onClick={() => { setFileMsg(''); setErrors((current) => ({ ...current, attachments: undefined })); }}>Continue without rejected files</button>}</div>
           {v.attachments.length > 0 ? <ul className="kits-files" aria-label="Attached files" data-testid="kits-file-list">{v.attachments.map((f, i) => <li key={`${f.name}-${i}`}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span>
-            <button type="button" className="kits-link" aria-label={`Remove ${f.name}`} onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} data-testid={`kits-remove-file-${i}`}>Remove</button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
+            <button type="button" className="kits-file-remove" aria-label={`Remove ${f.name}`} onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} data-testid={`kits-remove-file-${i}`}><X size={16} aria-hidden="true" /></button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
         </section>
       </div>
       <div className="kits-side">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-people"><h2 id="kits-h-people">Doctor details</h2>
           <div className="kits-grid">
-            <KitsReferenceSelect disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: authenticatedMR?.id || '' }); setMr(authenticatedMR); }} onPerson={setDoctor} />
+            <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: authenticatedMR?.id || '' }); setMr(authenticatedMR); }} onPerson={setDoctor} />
             {portal === 'mr' ? <label className="kits-field" htmlFor="kits-mrId">MR (signed-in account)<input id="kits-mrId" readOnly value={authenticatedMR.name} /></label>
-              : <KitsReferenceSelect disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />}
-            <KitsReferenceSelect disabled={busy || uncertain} id="kits-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />
+              : <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />}
+            <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />
             <p className="kits-hint">Patient is optional for supply orders. If selected, the Patient must belong to the billing Doctor. A selected MR must match that Doctor’s current assignment. No masters or clinical history are created.</p>
           </div></section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-ship"><h2 id="kits-h-ship">Shipping details</h2>
