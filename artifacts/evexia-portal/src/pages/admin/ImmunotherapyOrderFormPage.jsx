@@ -314,7 +314,7 @@ function Editor({ order, mode }) {
       </div>
     </div>
     {uncertain && <p role="alert" className="imm-boundary">Save outcome is unconfirmed. Editing is locked; retry the same submission below to recover it without creating a duplicate. Your draft remains mounted.</p>}
-    {mrPortal && <p className="imm-boundary">{order && !mrEditable(order) ? 'This saved order is read-only for MR because it has Admin review or historical pricing data.' : 'Submit without pricing as Confirmed. Admin will enter MRP, allergen rates and PO number, then approve or reject.'}</p>}
+    {mrPortal && order && !mrEditable(order) && <p className="imm-boundary">This saved order is read-only for MR because it has Admin review or historical pricing data.</p>}
     {errList.length > 0 && <div className="imm-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="error-imm-summary"><strong>Fix {errList.length} problem{errList.length > 1 ? 's' : ''} before saving</strong>
       <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="imm-link-btn" onClick={() => focusId(targetFor(k))} data-testid={`link-imm-error-${k}`}>{labelFor(k)}: {m}</button></li>)}</ul></div>}
     <div className="imm-layout">
