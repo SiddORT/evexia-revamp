@@ -61,15 +61,19 @@ function Summary({ order: initialOrder }) {
   const k = order.kit || {};
   const kitOn = k.product || k.custom || k.volume || k.quantity;
   const rec = order.recipient;
-  return <AdminLayout title="KITS & CONSUMABLES"><div className="kits">
+  return <AdminLayout title="KITS & CONSUMABLES"><div className="kits kits-saved">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Order {order.number}</h1>
       <p className="admin-page-head__description">Read-only saved order with historical billing, shipping and personal details.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     <div className="kits-layout">
       <div className="kits-main">
+        {can.protected && <section className="admin-panel kits-panel" aria-labelledby="kits-s-pricing">
+          <div className="kits-saved__section-head"><h2 id="kits-s-pricing">Order items and pricing</h2>
+            <Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link></div>
+          <KitsPricingSummary order={order} />
+        </section>}
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
-          {can.protected && <><Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link><KitsPricingSummary order={order} /></>}
-          {portal === 'mr' && can.edit && order.mrEditable && <Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link>}
+          {portal === 'mr' && can.edit && order.mrEditable && <div className="kits-saved__actions"><Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link></div>}
           <OrderApproval kind="kits" order={order} request={request} onApproved={setOrder} />
           <dl className="kits-facts" data-testid="kits-summary-items">
             <div><dt>Summary</dt><dd>{productSummary(order)}</dd></div>
@@ -85,16 +89,17 @@ function Summary({ order: initialOrder }) {
             <div><dt>Payment</dt><dd>{order.paymentStatus}</dd></div>
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
-          <h2 style={{ marginTop: 16 }}>Private attachments</h2>
+        </section>
+        <section className="admin-panel kits-panel" aria-labelledby="kits-s-attachments"><h2 id="kits-s-attachments">Private attachments</h2>
           <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment"
             actions={canPreview && !f.restricted && f.state === 'verified'
               ? <button type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }} aria-label={`View ${f.name}`}><Eye size={15} aria-hidden="true" />View</button>
               : null} />)}</OrderFileList>
         </section></div>
       <div className="kits-side">
-        <section className="admin-panel kits-panel"><h2>Shipping ({order.shipping})</h2><Facts person={rec} empty="Recipient unavailable." testId="kits-summary-shipping" /></section>
-        <section className="admin-panel kits-panel"><h2>Billing doctor</h2><Facts person={order.billing || doctor} empty="Billing doctor unavailable." testId="kits-summary-billing" /></section>
-        {order.patient && <section className="admin-panel kits-panel"><h2>Patient (historical)</h2><Facts person={order.patient} empty="Not selected." /></section>}
+        <section className="admin-panel kits-panel" aria-labelledby="kits-s-shipping"><h2 id="kits-s-shipping">Shipping ({order.shipping})</h2><Facts person={rec} empty="Recipient unavailable." testId="kits-summary-shipping" /></section>
+        <section className="admin-panel kits-panel" aria-labelledby="kits-s-billing"><h2 id="kits-s-billing">Billing doctor</h2><Facts person={order.billing || doctor} empty="Billing doctor unavailable." testId="kits-summary-billing" /></section>
+        {order.patient && <section className="admin-panel kits-panel" aria-labelledby="kits-s-patient"><h2 id="kits-s-patient">Patient (historical)</h2><Facts person={order.patient} empty="Not selected." /></section>}
       </div>
     </div>
     {canPreview && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
