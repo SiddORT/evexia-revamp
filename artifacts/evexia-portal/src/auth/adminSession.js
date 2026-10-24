@@ -999,7 +999,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'lupin-orders'
     ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36})$/i
-    : ['immunotherapy-orders', 'kits-orders'].includes(resource)
+    : resource === 'immunotherapy-orders'
+    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
+    : resource === 'kits-orders'
     ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
@@ -1008,7 +1010,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'purchase-received'
     ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i
     : /^(?:|\/(?:export|overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
-  if (!allowed.test(path)) {
+  const immunotherapyDecision = resource === 'immunotherapy-orders'
+    && /^\/[0-9a-f-]{36}\/(?:approve|reject|resubmit)$/i.test(path);
+  if (!allowed.test(path) || (immunotherapyDecision && body === undefined)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
   if ((file !== undefined && (resource !== 'products' || !['/import/review', '/import/commit'].includes(path)))
