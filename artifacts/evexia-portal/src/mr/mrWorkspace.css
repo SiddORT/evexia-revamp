@@ -200,20 +200,26 @@ textarea.mrw-input { padding: 10px 12px; min-height: 88px; }
 .mrw-do-card h2 { margin: 0; font-size: 16px; }
 .mrw-do-card p { margin: 0; }
 .mrw-do-clinic { font-weight: 700; }
-.mrw-do-loc, .mrw-do-secondary { color: var(--admin-text-soft); font-size: 12px; }
-.mrw-do-view { margin-top: auto; justify-content: center; }
+.mrw-do-secondary { color: var(--admin-text-soft); font-size: 12px; }
+.mrw-do-view { margin-top: auto; align-self: flex-end; }
 .mrw-do-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0; padding: 10px; background: var(--admin-state-row); border-radius: 8px; }
 .mrw-do-metric { min-width: 0; }
 .mrw-do-metric dt { font-size: 11px; font-weight: 700; color: var(--admin-text-soft); }
 .mrw-do-metric dd { margin: 2px 0 0; font-weight: 700; }
 .mrw-do-metric small { display: block; font-weight: 400; font-size: 11px; color: var(--admin-text-soft); }
-.mrw-do-link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--admin-accent); }
+.mrw-do-link { display: inline-flex; align-items: center; justify-content: center; width: 44px; min-height: 44px; box-sizing: border-box; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-accent); text-decoration: none; }
+.mrw-do-link:hover { background: var(--admin-state-hover); }
+.mrw-do-link:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.mrw-do-link svg { flex: none; }
 .mrw-do-table td { padding: 10px 8px; }
 .mrw-do-table th:first-child, .mrw-do-table td:first-child { text-align: left; }
-.mrw-do-detail { display: grid; gap: 16px; }
-.mrw-do-section .mrw-do-summary { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.mrw-do-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.mrw-do-detail .mrw-dl, .mrw-do-detail .mrw-do-summary { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.mrw-do-detail .mrw-profile-field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+.mrw-do-detail .mrw-profile-field dd { margin: 0; }
 .mrw-do-explain { margin-top: 12px; font-size: 12px; color: var(--admin-text-soft); display: grid; gap: 6px; }
 .mrw-do-explain p { margin: 0; }
 .mrw-do-domains { min-width: 0; margin-top: 12px; table-layout: fixed; }
+.mrw-do-domains caption { text-align: left; font-weight: 700; padding-bottom: 8px; }
 .mrw-do-domains td, .mrw-do-domains th { overflow-wrap: anywhere; }
 @media (max-width: 600px) { .mrw-do-summary { grid-template-columns: minmax(0, 1fr); } .mrw-doctor-table.mrw-do-table td, .mrw-doctor-table.mrw-do-table td:first-child { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); text-align: left; } }

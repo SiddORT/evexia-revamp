@@ -1,11 +1,10 @@
 import { Link } from 'wouter';
+import { Eye } from 'lucide-react';
 import { statusPill } from './common.jsx';
 
 export const dash = (value) => String(value ?? '').trim() || '--';
 const isInt = (v) => Number.isInteger(v) && v >= 0;
 const KIND = { immunotherapy: 'Immunotherapy', kits: 'Kits', spt: 'SPT', lupin: 'Lupin' };
-const addressText = (doctor) => [doctor.addressLine1, doctor.addressLine2, doctor.landmark,
-  doctor.city, doctor.state, doctor.pincode, doctor.country].map((v) => String(v ?? '').trim()).filter(Boolean).join(', ');
 
 // Exact minor-unit formatting; never uses Number/parseFloat on money.
 export function formatMinor(minor) {
@@ -70,27 +69,30 @@ export function PaymentFlagsText({ m }) {
 export function DoctorSummary({ doctor }) {
   const m = summaryModel(doctor);
   return <dl className="mrw-do-summary" aria-label={`Order summary for ${dash(doctor.name)}`}>
-    <Metric label="Orders">{m.available ? m.count : 'Unavailable'}</Metric>
+    <Metric label="Total orders">{m.available ? m.count : 'Unavailable'}</Metric>
     <Metric label="Pending fulfillment" note={m.available && m.untracked ? `${m.untracked} untracked (SPT)` : undefined}>{m.available ? (m.pending ?? 'Unavailable') : 'Unavailable'}</Metric>
-    <Metric label="Known order value" note={coverageText(m) || undefined}>{valueText(m)}</Metric>
+    <Metric label="Known priced subtotal" note={coverageText(m) || undefined}>{valueText(m)}</Metric>
     <Metric label="Pending payment" note={<PaymentFlagsText m={m} />}>Unavailable</Metric>
     <Metric label="Days limit (configured)">{limitText(doctor.daysLimit)}</Metric>
     <Metric label="Payment limit (configured)">{limitText(doctor.paymentLimit, true)}</Metric>
   </dl>;
 }
 
+function DoctorDetailsLink({ doctor, className = '' }) {
+  const label = `View details for ${dash(doctor.name)} (${dash(doctor.doctorNumber)})`;
+  return <Link className={`mrw-do-link ${className}`} href={`/mr/doctors/${doctor.id}`} aria-label={label} title={label} data-testid={`link-doctor-details-${doctor.id}`}><Eye size={20} aria-hidden="true" /></Link>;
+}
+
 export function DoctorCard({ doctor }) {
-  const loc = addressText(doctor);
   return <article className="mrw-do-card" data-testid={`card-doctor-${doctor.id}`}>
     <header>
       <div><h2>{dash(doctor.name)}</h2><p className="mrw-doctor-number">{dash(doctor.doctorNumber)}</p></div>
       {statusPill(doctor.status)}
     </header>
     <p className="mrw-do-clinic">{dash(doctor.clinicName)}</p>
-    <p className="mrw-do-loc">{dash(loc)}</p>
     <DoctorSummary doctor={doctor} />
     <p className="mrw-do-secondary">Reg. {dash(doctor.registrationNumber)} · {dash(doctor.qualification)} · {dash(doctor.phoneDisplay)} · {dash(doctor.emailDisplay)}</p>
-    <Link className="admin-button admin-button--secondary mrw-do-view" href={`/mr/doctors/${doctor.id}`} data-testid={`link-doctor-details-${doctor.id}`}>View details<span className="sr-only"> for {dash(doctor.name)}</span></Link>
+    <DoctorDetailsLink doctor={doctor} className="mrw-do-view" />
   </article>;
 }
 
@@ -99,26 +101,25 @@ export function DoctorGrid({ records }) {
 }
 
 export function DoctorTable({ records, partial, serial }) {
-  const heads = ['Doctor / clinic', 'Location', 'Orders', 'Order value', 'Payment status / limits', 'Details'];
+  const heads = ['Sr No', 'Doctor / clinic', 'Orders', 'Order value', 'Payment status / limits', 'Details'];
   return <div className="mrw-card mrw-doctor-list" role="region" aria-label="Assigned doctor list">
     <table className="mrw-table mrw-doctor-table mrw-do-table">
       <caption className="sr-only">{partial ? 'Rows restart numbering in each bounded search section.' : 'Assigned doctors.'} Order totals cover all MR-owned saved orders for the doctor; value is a known priced subtotal. On narrow screens each record stacks with labeled fields.</caption>
-      <colgroup>{[26, 16, 14, 16, 20, 8].map((w, i) => <col key={i} style={{ width: `${w}%` }} />)}</colgroup>
+      <colgroup>{['52px', undefined, '16%', '18%', '23%', '64px'].map((width, i) => <col key={i} style={{ width }} />)}</colgroup>
       <thead><tr>{heads.map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
       <tbody>{records.map((d, index) => {
         const m = summaryModel(d);
-        const loc = addressText(d);
         return <tr key={d.id}>
-          <td><span className="mrw-doctor-label" aria-hidden="true">{heads[0]}</span><div className="mrw-doctor-value">
+          <td><span className="mrw-doctor-label" aria-hidden="true">{heads[0]}</span><div className="mrw-doctor-value">{serial(index)}</div></td>
+          <td><span className="mrw-doctor-label" aria-hidden="true">{heads[1]}</span><div className="mrw-doctor-value">
             <strong>{dash(d.name)}</strong> {statusPill(d.status)}
-            <div className="mrw-doctor-number">{serial(index)}. {dash(d.doctorNumber)} · Reg. {dash(d.registrationNumber)}</div>
+            <div className="mrw-doctor-number">{dash(d.doctorNumber)} · Reg. {dash(d.registrationNumber)}</div>
             <div>{dash(d.clinicName)}</div>
             <div className="mrw-doctor-number">{dash(d.phoneDisplay)} · {dash(d.emailDisplay)}</div></div></td>
-          <td><span className="mrw-doctor-label" aria-hidden="true">{heads[1]}</span><div className="mrw-doctor-value">{dash(loc)}</div></td>
           <td><span className="mrw-doctor-label" aria-hidden="true">{heads[2]}</span><div className="mrw-doctor-value">{m.available ? (m.count ? `${m.count} total` : 'No orders') : 'Unavailable'}<div className="mrw-doctor-number">Pending fulfillment: {m.available ? (m.pending ?? 'Unavailable') : 'Unavailable'}</div>{m.untracked > 0 && <div className="mrw-doctor-number">{m.untracked} SPT orders: fulfillment not tracked</div>}</div></td>
           <td><span className="mrw-doctor-label" aria-hidden="true">{heads[3]}</span><div className="mrw-doctor-value">{valueText(m)}<div className="mrw-doctor-number">{coverageText(m)}</div></div></td>
           <td><span className="mrw-doctor-label" aria-hidden="true">{heads[4]}</span><div className="mrw-doctor-value">Pending payment: Unavailable<div className="mrw-doctor-number"><PaymentFlagsText m={m} /></div><div className="mrw-doctor-number">Limits: {limitText(d.daysLimit)} days, {limitText(d.paymentLimit, true)}</div></div></td>
-          <td><span className="mrw-doctor-label" aria-hidden="true">{heads[5]}</span><div className="mrw-doctor-value"><Link href={`/mr/doctors/${d.id}`} className="mrw-do-link">View details<span className="sr-only"> for {dash(d.name)}</span></Link></div></td>
+          <td><span className="mrw-doctor-label" aria-hidden="true">{heads[5]}</span><div className="mrw-doctor-value"><DoctorDetailsLink doctor={d} /></div></td>
         </tr>;
       })}</tbody>
     </table>
@@ -139,10 +140,11 @@ export function DoctorDetailView({ doctor }) {
     </Section>
     <Section title="Contact (masked)"><Fields rows={[['Phone', doctor.phoneDisplay], ['Alternate phone', doctor.alternatePhoneDisplay], ['Email', doctor.emailDisplay]]} /></Section>
     <Section title="Order summary">
+      <p className="mrw-notice">One combined summary for this doctor, not one doctor row per order. The order-type breakdown appears below when available.</p>
       <DoctorSummary doctor={doctor} />
-      {m.available && m.domains.length > 0 && <table className="mrw-table mrw-do-domains"><caption className="sr-only">Orders by domain</caption><thead><tr><th scope="col">Domain</th><th scope="col" className="num">Orders</th><th scope="col" className="num">Pending fulfillment</th></tr></thead><tbody>{m.domains.map((d) => <tr key={d.kind}><td>{KIND[d.kind] || d.kind}</td><td className="num">{d.orderCount}</td><td className="num">{d.pendingFulfillment ?? 'Not tracked'}</td></tr>)}</tbody></table>}
+      {m.available && m.domains.length > 0 && <table className="mrw-table mrw-do-domains"><caption>Saved orders by type</caption><thead><tr><th scope="col">Order type</th><th scope="col" className="num">Orders</th><th scope="col" className="num">Pending fulfillment</th></tr></thead><tbody>{m.domains.map((d) => <tr key={d.kind}><td>{KIND[d.kind] || d.kind}</td><td className="num">{d.orderCount}</td><td className="num">{d.pendingFulfillment ?? 'Not tracked'}</td></tr>)}</tbody></table>}
       <div className="mrw-do-explain">
-        <p>{m.available ? 'Counts cover all MR-owned saved orders for this assigned doctor (SPT drafts excluded).' : 'Order summary is unavailable from the server. This does not mean there are no orders.'}</p>
+        <p>{m.available ? 'Totals combine all MR-owned saved orders for this assigned doctor across order types, not just the current orders-list page. SPT drafts are excluded.' : 'Order summary is unavailable from the server. This does not mean there are no orders.'}</p>
         <p>Pending fulfillment: Immunotherapy Confirmed, Approved, In process, Shipped; Kits Confirmed, In process, Shipped; Lupin Confirmed, Approved, Shipped. SPT fulfillment is not tracked. Rejected, Returned and Delivered orders are not pending but remain in the order count and saved priced subtotal.</p>
         <p>Order value is a known subtotal of saved prices only; orders without a saved price are counted as unpriced. When unavailable it is not zero.</p>
         <p>Payment flags come only from saved Kits and Lupin orders; SPT and Immunotherapy are not tracked. Partial does not establish a remaining amount. Flags are not an outstanding balance. Pending payment, balance, remaining credit and due dates are unavailable because payment tracking is not linked. Days and payment limits are configured limits; no overdue or utilization warning is inferred.</p>
