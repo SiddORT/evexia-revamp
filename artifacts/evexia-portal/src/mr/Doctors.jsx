@@ -52,7 +52,27 @@ export function DoctorList() {
       : data.loading ? <p role="status">Loading doctors…</p>
         : !data.records.length ? <div className="mrw-card"><p>{data.partial ? 'No matches in this search section. Continue below.' : 'No assigned doctors match this scope.'}</p></div>
           : view === 'grid' ? <div className="mrw-grid">{data.records.map((doctor) => <Link className="mrw-card" key={doctor.id} href={`/mr/doctors/${doctor.id}`}><h2>{doctor.name}</h2><p>{dash(doctor.doctorNumber)} · {dash(doctor.registrationNumber)}</p><p>{dash(doctor.qualification)} · {dash(doctor.clinicName)}</p><p>{dash(doctor.phoneDisplay)} · {dash(doctor.emailDisplay)}</p><p>{dash(doctor.city)}, {dash(doctor.state)}</p>{statusPill(doctor.status)}</Link>)}</div>
-            : <div className="mrw-card mrw-scroll" tabIndex={0} role="region" aria-label="Assigned doctor list"><table className="mrw-table mrw-doctor-table"><caption className="sr-only">{data.partial ? 'Serial numbers restart in each bounded search section.' : 'Assigned doctors, numbered across pages.'} Scroll horizontally to see every field.</caption><thead><tr><th scope="col">Sr. No.</th><th scope="col">Name</th><th scope="col">Phone No.</th><th scope="col">Email</th><th scope="col">Reg. No.</th><th scope="col">Qualification</th><th scope="col">Clinic Name</th><th scope="col">City</th><th scope="col">State</th><th scope="col">Status</th></tr></thead><tbody>{data.records.map((doctor, index) => <tr key={doctor.id}><td>{serial(index)}</td><td><Link href={`/mr/doctors/${doctor.id}`}>{dash(doctor.name)}</Link><div>{dash(doctor.doctorNumber)}</div></td><td>{dash(doctor.phoneDisplay)}</td><td>{dash(doctor.emailDisplay)}</td><td>{dash(doctor.registrationNumber)}</td><td>{dash(doctor.qualification)}</td><td>{dash(doctor.clinicName)}</td><td>{dash(doctor.city)}</td><td>{dash(doctor.state)}</td><td>{statusPill(doctor.status)}</td></tr>)}</tbody></table></div>}
+            : <div className="mrw-card mrw-doctor-list" role="region" aria-label="Assigned doctor list">
+              <table className="mrw-table mrw-doctor-table" role="table">
+                <caption className="sr-only">{data.partial ? 'Serial numbers restart in each bounded search section.' : 'Assigned doctors, numbered across pages.'} On narrow screens, each record is shown with labeled fields.</caption>
+                <colgroup>{[5, 16, 11, 13, 10, 10, 13, 8, 8, 6].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
+                <thead role="rowgroup"><tr role="row">{['Sr. No.', 'Name', 'Phone No.', 'Email', 'Reg. No.', 'Qualification', 'Clinic Name', 'City', 'State', 'Status'].map((label) => <th key={label} scope="col" role="columnheader">{label}</th>)}</tr></thead>
+                <tbody role="rowgroup">{data.records.map((doctor, index) => <tr key={doctor.id} role="row">
+                  {[
+                    ['Sr. No.', serial(index)],
+                    ['Name', <><Link href={`/mr/doctors/${doctor.id}`}>{dash(doctor.name)}</Link><div className="mrw-doctor-number">{dash(doctor.doctorNumber)}</div></>],
+                    ['Phone No.', dash(doctor.phoneDisplay)],
+                    ['Email', dash(doctor.emailDisplay)],
+                    ['Reg. No.', dash(doctor.registrationNumber)],
+                    ['Qualification', dash(doctor.qualification)],
+                    ['Clinic Name', dash(doctor.clinicName)],
+                    ['City', dash(doctor.city)],
+                    ['State', dash(doctor.state)],
+                    ['Status', statusPill(doctor.status)],
+                  ].map(([label, value]) => <td key={label} role="cell"><span className="mrw-doctor-label" aria-hidden="true">{label}</span><div className="mrw-doctor-value">{value}</div></td>)}
+                </tr>)}</tbody>
+              </table>
+            </div>}
     {!data.error && !data.loading && (data.partial
       ? <DirectorySearchStatus count={data.records.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={data.loading} onNext={data.continueSearch} onRestart={data.restartSearch} />
       : <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={data.filtered} total={data.total} label="doctors" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />)}

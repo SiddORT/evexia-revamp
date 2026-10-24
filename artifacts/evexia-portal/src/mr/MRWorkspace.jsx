@@ -100,7 +100,7 @@ function Shell() {
         </div>}
       </div>
     </div></header>
-    <main className="mrw-main" data-wide={path.replace(/\/+$/, '') === '/mr/doctors' ? 'true' : undefined} ref={mainRef} data-testid="page-mr-home">
+    <main className="mrw-main" ref={mainRef} data-testid="page-mr-home">
       {flash && <div className="mrw-flash" role="status" data-testid="text-flash">{flash.text}<button type="button" className="admin-button admin-button--secondary" onClick={() => setFlash(null)}>Dismiss</button></div>}
       <Routes />
     </main>
