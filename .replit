@@ -372,15 +372,3 @@ LOCAL_STORAGE_ROOT = "/home/runner/workspace/storage/private-files"
 SCANNER_BACKEND = "clamd"
 STORAGE_BACKEND = "local"
 EVEXIA_DEVELOPMENT_LOCAL_UPLOADS = "1"
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
-
-[[ports]]
-localPort = 8081
-externalPort = 80
-
-[[ports]]
-localPort = 25965
-externalPort = 3000
