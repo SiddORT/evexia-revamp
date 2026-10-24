@@ -366,11 +366,3 @@ EVEXIA_NIX_BROWSER_LOADER = "/repl/tools/qqiqd3ah10x8hzsif4j1y4xc1miw23nx-glibc-
 EVEXIA_NIX_DOWNLOAD_ENGINES = "1"
 CORS_ORIGINS = "https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk.sisko.replit.dev,https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk-jkv3ezgh.sisko.replit.dev,https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk-7nvu511b.sisko.replit.dev"
 PASSWORD_RECOVERY_URL = "https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk.sisko.replit.dev/reset-password"
-
-[[ports]]
-localPort = 8081
-externalPort = 8081
-
-[[ports]]
-localPort = 25965
-externalPort = 80
