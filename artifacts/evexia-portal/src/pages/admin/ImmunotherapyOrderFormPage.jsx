@@ -7,7 +7,7 @@ import PhoneInput from '../../components/admin/PhoneInput.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, saveOrder, uploadPrescription, downloadPrescription, prescriptionMetadata, groupingError, money, newGroup, nextDose, parseAmount, shippingRecipient, totalMinor, validateAttachments } from '../../services/serverImmunotherapy.js';
+import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, saveOrder, uploadPrescription, downloadPrescription, prescriptionMetadata, groupingError, money, newGroup, bottleLabel, nextDose, orderErrors, saveErrors, parseAmount, shippingRecipient, totalMinor, validateAttachments } from '../../services/serverImmunotherapy.js';
 import { createPatient, patientLanguageChoices } from '../../services/serverPatients.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import useImmunotherapyReferences from '../../hooks/useImmunotherapyReferences.js';
@@ -20,7 +20,7 @@ const blank = () => ({ patientId: '', doctorId: '', mrId: '', dosage: '', histam
 const fromOrder = (o) => structuredClone({ patientId: o.patientId, doctorId: o.doctorId, mrId: o.mrId, dosage: o.dosage, histamine: o.histamine, saline: o.saline, groups: o.groups, remarks: o.remarks || '', attachments: o.attachments || [], shipping: o.shipping, status: o.status });
 const addr = (a) => a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 const nameOf = (list, id) => list.find((x) => x.id === id)?.name || '';
-const ERROR_LABEL = { patientId: 'Patient', doctorId: 'Doctor', mrId: 'MR', dosage: 'Dosage', histamine: 'Histamine', saline: 'Saline', shipping: 'Shipping', groups: 'Bottles', attachments: 'Prescription files', status: 'Status', registration: 'Patient registration' };
+const ERROR_LABEL = { form: 'Order', patientId: 'Patient', doctorId: 'Doctor', mrId: 'MR', dosage: 'Dosage', histamine: 'Histamine (mm)', saline: 'Saline (mm)', shipping: 'Shipping', groups: 'Bottles', attachments: 'Prescription files', status: 'Status', remarks: 'Remarks', registration: 'Patient registration' };
 const kb = (n) => n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 
 function Err({ id, text }) { return text ? <p className="imm-error" id={id} role="alert">{text}</p> : null; }
@@ -55,6 +55,10 @@ function Editor({ order, mode }) {
   const readOnly = mode === 'view' || !(order ? can.edit : can.add);
   const isNew = !order;
   const initial = useRef(order ? fromOrder(order) : { ...blank(), mrId: authenticatedMR?.id || '' });
+  const issuedBottleIds = useRef(new Set(initial.current.groups.map((g) => g.id)));
+  // Only server-loaded saved associations or successful verified uploads count.
+  // A filename, local metadata, pending upload or transfer claim is not evidence.
+  const verifiedFiles = useRef(new Map((order?.attachments || []).map((f) => [f.id, order.patientId])));
   const [v, setV] = useState(initial.current);
   const [errors, setErrors] = useState({});
   const [groupMsg, setGroupMsg] = useState({});
@@ -91,6 +95,7 @@ function Editor({ order, mode }) {
     const unsubscribe = subscribeSession(() => {
       if (getSession().user?.id && getSession().user.id !== owner.current) {
         setV(blank()); initial.current = blank(); mutation.current = null; setUploads([]);
+        verifiedFiles.current.clear();
         setErrors({ form: 'Session owner changed. Return to orders before continuing.' });
       }
     });
@@ -167,6 +172,21 @@ function Editor({ order, mode }) {
     set(patch);
   }
   const updGroup = (gid, fn) => set({ groups: v.groups.map((g) => g.id === gid ? fn(g) : g) });
+  function addBottle() {
+    const group = newGroup(issuedBottleIds.current);
+    issuedBottleIds.current.add(group.id);
+    set({ groups: [...v.groups, group] });
+  }
+  function attachVerified(file, patientId) {
+    if (file.state !== 'verified' || file.scanner_status !== 'clean'
+        || file.patient_id !== patientId || file.category !== 'documents' || !file.size) {
+      throw new Error('Only a verified, clean-scanned prescription for the selected patient can be attached.');
+    }
+    verifiedFiles.current.set(file.id, patientId);
+    setErrors((current) => { const { attachments, ...remaining } = current; return remaining; });
+    setV((current) => current.patientId !== patientId || current.attachments.some((f) => f.id === file.id) ? current
+      : { ...current, attachments: [...current.attachments, { id: file.id, name: file.display_name, size: file.size, type: file.content_type, state: file.state }] });
+  }
   function addAllergen(gid, aid) {
     if (!aid) return;
     const g = v.groups.find((x) => x.id === gid);
@@ -202,7 +222,7 @@ function Editor({ order, mode }) {
         guard();
         if (!alive.current) return;
         if (result.state === 'verified' && result.scanner_status === 'clean') {
-          setV((current) => ({ ...current, attachments: [...current.attachments, { id: result.id, name: result.display_name, size: result.size, type: result.content_type, state: 'verified' }] }));
+          attachVerified(result, v.patientId);
           setUploads((rows) => rows.filter((u) => u.key !== key));
           setFileMsg('Prescription uploaded privately and verified. Save the order to attach it.');
         } else setUploads((rows) => rows.map((u) => u.key === key ? { ...u, id: result.id, state: result.state, message: `Not attached: ${result.state}; scanner ${result.scanner_status}.` } : u));
@@ -241,7 +261,13 @@ function Editor({ order, mode }) {
   async function save() {
     if (busy.current || getSession().user?.id !== owner.current) return;
     if (reg) { setErrors({ registration: 'Finish or cancel the patient registration before saving the order.' }); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
-    if (uploads.some((u) => u.state === 'pending')) { setErrors({ attachments: 'Wait for uploads to finish.' }); return; }
+    if (uploads.some((u) => u.state === 'pending')) { setErrors({ attachments: 'Wait for uploads to finish. Only verified prescriptions count.' }); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
+    // An unconfirmed submission must retain its exact payload/key, not be
+    // revalidated or changed into a different mutation during a safe retry.
+    if (!mutation.current) {
+      const problems = orderErrors(v, v.attachments.some((f) => verifiedFiles.current.get(f.id) === v.patientId));
+      if (Object.keys(problems).length) { setErrors(problems); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
+    }
     busy.current = true; setPending('save'); setErrors({});
     if (!mutation.current) mutation.current = { values: structuredClone(v), key: crypto.randomUUID() };
     try {
@@ -253,7 +279,7 @@ function Editor({ order, mode }) {
       if (alive.current) {
         setUncertain(Boolean(cause.ambiguous));
         if (!cause.ambiguous) mutation.current = null;
-        setErrors({ form: cause.message });
+        setErrors(cause.ambiguous ? { form: cause.message } : saveErrors(cause, v));
         if (cause.code === 'imm_stale' && order) {
           try { const latest = await request(`/${order.id}`); if (alive.current) setConflict(latest); }
           catch { /* The stale draft remains mounted; explicit retry can fetch again. */ }
@@ -280,7 +306,7 @@ function Editor({ order, mode }) {
     if (k === 'dosage') return `imm-dose-${v.dosage || DOSES[0]}`;
     if (k === 'shipping') return `imm-ship-${v.shipping}`;
     if (k === 'groups') return 'imm-add-bottle';
-    if (k === 'attachments') return readOnly ? 'imm-files-hint' : 'imm-files';
+    if (k === 'attachments') return readOnly || !can.upload_attachment || !policy || !v.patientId ? 'imm-files-hint' : 'imm-files';
     if (k === 'registration') return 'imm-reg-name';
     if (k.startsWith('group-')) return `imm-add-${gIndex(k.slice(6))}`;
     if (k.startsWith('mrp-')) return `imm-mrp-${gIndex(k.slice(4))}`;
@@ -322,7 +348,7 @@ function Editor({ order, mode }) {
               {!readOnly && <ReferenceState source={doctors} label="doctors" />}
               <Err id="imm-doctorId-err" text={errors.doctorId} /></div>
             <div className="imm-field"><label htmlFor="imm-mrId">MR</label>
-              {mrPortal ? <input id="imm-mrId" readOnly value={order?.mr?.name || authenticatedMR.name} aria-label="MR (signed-in account)" /> : <SearchableSelect viewportMenu id="imm-mrId" label="MR" value={v.mrId} options={mrOptions} onSearch={mrs.onSearch} searchOptions={() => mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'imm-mrId-err' : undefined} disabled={dis} />}
+              {mrPortal ? <input id="imm-mrId" readOnly value={order?.mr?.name || authenticatedMR.name} aria-label="MR (signed-in account)" aria-invalid={Boolean(errors.mrId)} aria-describedby={errors.mrId ? 'imm-mrId-err' : undefined} /> : <SearchableSelect viewportMenu id="imm-mrId" label="MR" value={v.mrId} options={mrOptions} onSearch={mrs.onSearch} searchOptions={() => mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'imm-mrId-err' : undefined} disabled={dis} />}
               {!readOnly && !mrPortal && <ReferenceState source={mrs} label="MRs" />}
               <Err id="imm-mrId-err" text={errors.mrId} /></div>
           </div>
@@ -359,8 +385,8 @@ function Editor({ order, mode }) {
           {explain && <p className="imm-explain" role="status" data-testid="text-imm-dose-explain">{explain}</p>}
           <div className="imm-grid" style={{ marginTop: 14 }}>
             {['histamine', 'saline'].map((k) => <div className="imm-field" key={k}><label htmlFor={`imm-${k}`}>{k === 'histamine' ? 'Histamine (mm)' : 'Saline (mm)'}</label>
-              <input id={`imm-${k}`} inputMode="decimal" value={v[k]} disabled={dis} onChange={(e) => set({ [k]: e.target.value })} aria-invalid={Boolean(errors[k])} aria-describedby={`imm-${k}-hint${errors[k] ? ` imm-${k}-err` : ''}`} data-testid={`input-imm-${k}`} />
-              <p className="imm-hint" id={`imm-${k}-hint`}>Measured wheal in mm.</p><Err id={`imm-${k}-err`} text={errors[k]} /></div>)}
+              <input id={`imm-${k}`} inputMode="decimal" required value={v[k]} disabled={dis} onChange={(e) => set({ [k]: e.target.value })} aria-invalid={Boolean(errors[k])} aria-describedby={errors[k] ? `imm-${k}-err` : undefined} data-testid={`input-imm-${k}`} />
+              <Err id={`imm-${k}-err`} text={errors[k]} /></div>)}
           </div>
         </section>
 
@@ -373,40 +399,44 @@ function Editor({ order, mode }) {
               const err = groupMsg[g.id] || errors[`group-${g.id}`];
               return <div className={`imm-bottle${err ? ' imm-bottle--error' : ''}`} key={g.id} data-testid={`imm-bottle-${gi}`}>
                 <div className="imm-bottle__head"><strong>Bottle {gi + 1}{g.items.length > 0 && <span className="imm-tag">{g.items.length === 1 ? 'Single allergen' : `${g.items.length} allergens`}</span>}</strong>
-                  <span className="imm-cell-sub" data-testid={`text-imm-group-id-${gi}`}>Bottle ID {g.id}</span>
+                  <span className="imm-cell-sub" data-testid={`text-imm-group-id-${gi}`}>{bottleLabel(g, gi)}</span>
                   {!dis && v.groups.length > 1 && <button type="button" className="admin-button admin-button--secondary" onClick={() => set({ groups: v.groups.filter((x) => x.id !== g.id) })} aria-label={`Remove bottle ${gi + 1}`}><Trash2 size={14} aria-hidden="true" />Remove bottle</button>}</div>
                 {g.items.map((it, ii) => { const a = ALLERGENS.find((x) => x.id === it.allergenId); const ek = `result-${g.id}-${it.allergenId}`;
                   return <div className="imm-item" key={it.allergenId}>
                     <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span></div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
-                    {!dis && <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>{v.groups.length > 1 && <label className="imm-field">Move to<select value="" onChange={(e) => moveItem(g.id, it.allergenId, e.target.value)} aria-label={`Move ${a?.name} to another bottle`} data-testid={`select-imm-move-${gi}-${ii}`}><option value="">Choose</option>{v.groups.filter((x) => x.id !== g.id).map((x) => <option key={x.id} value={x.id}>Bottle {gIndex(x.id) + 1} ({x.id})</option>)}</select></label>}<button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${a?.name} from bottle ${gi + 1}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button></div>}
+                    {!dis && <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>{v.groups.length > 1 && <label className="imm-field">Move to<select value="" onChange={(e) => moveItem(g.id, it.allergenId, e.target.value)} aria-label={`Move ${a?.name} to another bottle`} data-testid={`select-imm-move-${gi}-${ii}`}><option value="">Choose</option>{v.groups.filter((x) => x.id !== g.id).map((x) => <option key={x.id} value={x.id}>Bottle {gIndex(x.id) + 1} ({bottleLabel(x, gIndex(x.id))})</option>)}</select></label>}<button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${a?.name} from bottle ${gi + 1}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button></div>}
                   </div>; })}
                 <div className="imm-bottle__foot">
-                  {!dis ? <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Add allergen</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label="Allergen" value="" options={allergenOptions} onSearch={allergens.onSearch} searchOptions={() => allergenOptions} onChange={(aid) => addAllergen(g.id, aid)} placeholder="Search allergens" /></div> : <span />}
+                  {!dis ? <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Add allergen</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label="Allergen" value="" options={allergenOptions} onSearch={allergens.onSearch} searchOptions={() => allergenOptions} onChange={(aid) => addAllergen(g.id, aid)} placeholder="Search allergens" invalid={Boolean(err)} describedBy={err ? `group-${g.id}-err` : undefined} /></div> : <span />}
                   <div className="imm-field"><label htmlFor={`imm-mrp-${gi}`}>MRP (INR)</label><input id={`imm-mrp-${gi}`} inputMode="decimal" value={g.mrp} disabled={dis} aria-invalid={Boolean(errors[`mrp-${g.id}`])} aria-describedby={errors[`mrp-${g.id}`] ? `mrp-${g.id}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, mrp: e.target.value }))} data-testid={`input-imm-mrp-${gi}`} /><Err id={`mrp-${g.id}-err`} text={errors[`mrp-${g.id}`]} /></div>
                 </div>
                 <Err id={`group-${g.id}-err`} text={err} />
               </div>; })}
           </div>
-          {!dis && <div className="imm-btn-row" style={{ marginTop: 12 }}><button id="imm-add-bottle" type="button" className="admin-button admin-button--secondary" onClick={() => set({ groups: [...v.groups, newGroup()] })} data-testid="button-imm-add-bottle"><Plus size={15} aria-hidden="true" />Add bottle</button></div>}
+          {!dis && <div className="imm-btn-row" style={{ marginTop: 12 }}><button id="imm-add-bottle" type="button" className="admin-button admin-button--secondary" onClick={addBottle} data-testid="button-imm-add-bottle"><Plus size={15} aria-hidden="true" />Add bottle</button></div>}
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-more"><h2 id="imm-h-more">Details and shipping</h2>
           <div className="imm-grid" style={{ marginTop: 12 }}>
-            {!isNew && <div className="imm-field"><label htmlFor="imm-status">Status</label><select id="imm-status" value={v.status} disabled={dis} onChange={(e) => set({ status: e.target.value })} data-testid="select-imm-order-status">{STATUSES.map((s) => <option key={s}>{s}</option>)}</select><p className="imm-hint">Order tracking only; does not record treatment administration, stock or payments.</p></div>}
+            {!isNew && <div className="imm-field"><label htmlFor="imm-status">Status</label><select id="imm-status" value={v.status} disabled={dis} onChange={(e) => set({ status: e.target.value })} aria-invalid={Boolean(errors.status)} aria-describedby={errors.status ? 'imm-status-err' : undefined} data-testid="select-imm-order-status">{STATUSES.map((s) => <option key={s}>{s}</option>)}</select><Err id="imm-status-err" text={errors.status} /><p className="imm-hint">Order tracking only; does not record treatment administration, stock or payments.</p></div>}
           </div>
-          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-remarks">Remarks</label><textarea id="imm-remarks" value={v.remarks} disabled={dis} onChange={(e) => set({ remarks: e.target.value })} data-testid="input-imm-remarks" /></div>
+          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-remarks">Remarks</label><textarea id="imm-remarks" value={v.remarks} disabled={dis} onChange={(e) => set({ remarks: e.target.value })} aria-invalid={Boolean(errors.remarks)} aria-describedby={errors.remarks ? 'imm-remarks-err' : undefined} data-testid="input-imm-remarks" /><Err id="imm-remarks-err" text={errors.remarks} /></div>
           <fieldset className={`imm-chips${isNew ? ' imm-shipping-choices' : ''}`} style={{ marginTop: 14, display: 'grid' }} id="imm-shipping" aria-describedby={errors.shipping ? 'imm-shipping-err' : undefined}><legend>Ship to</legend>
             {['patient', 'doctor'].map((s) => <label className="imm-radio" key={s}><input id={`imm-ship-${s}`} type="radio" name="shipping" checked={v.shipping === s} disabled={dis} onChange={() => set({ shipping: s })} data-testid={`radio-imm-ship-${s}`} /><span>{s === 'patient' ? 'Patient' : 'Doctor'}{(() => { const r = recipientFor(s); return r ? <span className="imm-cell-sub">{r.name}, {addr(r.address)}</span> : <span className="imm-cell-sub">Choose a {s} first</span>; })()}</span></label>)}</fieldset>
           <Err id="imm-shipping-err" text={errors.shipping} />
-          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-files">Prescription files</label>
-            {!readOnly && <label className="excel-import__picker"><Paperclip size={19} /><span>{pending === 'upload' ? 'Uploading privately…' : 'Choose prescription files'}</span><input id="imm-files" type="file" multiple disabled={!can.upload_attachment || dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
-            <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. {mrPortal ? 'Saved attachments must be retained. You can remove unsaved selections without deleting shared files.' : 'Removing a selection detaches it when you save; it does not delete shared files.'}</p>
+          <div className="imm-field" style={{ marginTop: 14 }}><label htmlFor="imm-files">Prescription files{!readOnly && ' (required)'}</label>
+            {!readOnly && <label className="excel-import__picker"><Paperclip size={19} /><span>{pending === 'upload' ? 'Uploading privately…' : 'Choose prescription files'}</span><input id="imm-files" type="file" multiple disabled={!can.upload_attachment || dis || !policy || !v.patientId} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-required="true" aria-invalid={Boolean(errors.attachments)} aria-describedby="imm-files-hint imm-files-err" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="input-imm-files" /></label>}
+            <p className="imm-hint" id="imm-files-hint" tabIndex={-1}>{!readOnly && 'At least one verified prescription for the selected patient is required to save. '}{policy ? `Up to ${policy.maxFiles} PDF, JPEG, PNG or WebP files, ${(policy.maxBytes / 1048576).toFixed(1)} MiB each.` : 'Upload limits unavailable.'} Files remain private. Only successfully uploaded, clean-scanned files can be attached. {mrPortal ? 'Saved attachments must be retained. You can remove unsaved selections without deleting shared files.' : 'Removing a selection detaches it when you save; it does not delete shared files.'}</p>
             {policyError && <p role="alert">{policyError} <button type="button" className="imm-link-btn" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
-            <Err id="imm-files-err" text={fileMsg || errors.attachments} /></div>
+            <Err id="imm-files-err" text={errors.attachments || fileMsg} /></div>
           {v.attachments.length > 0 ? <ul className="imm-files" aria-label="Attached files">{v.attachments.map((f, i) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${kb(f.size)}) — Uploaded / verified`}</span><button type="button" className="imm-link-btn" disabled={!can.read_attachment || f.restricted} onClick={() => downloadPrescription(f).catch((e) => setFileMsg(`Download unavailable: ${e.message}`))}>Download</button>{!dis && !(mrPortal && order?.attachments?.some((saved) => saved.id === f.id)) && <button type="button" className="imm-link-btn" onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} aria-label={`Remove ${f.name}`}>Remove</button>}</li>)}</ul> : <p className="imm-hint">No files attached.</p>}
           {uploads.length > 0 && <ul className="imm-files" aria-label="Pending or failed uploads">{uploads.map((u) => <li key={u.key}><span role={u.state === 'pending' ? 'status' : undefined}>{u.name}: {u.state === 'pending' ? 'Uploading — not attached yet' : u.message}</span>{!pending && !uncertain && <><button type="button" className="imm-link-btn" onClick={() => setUploads((rows) => rows.filter((r) => r.key !== u.key))}>Remove selection</button>{u.id ? <button type="button" className="imm-link-btn" onClick={async () => {
-            try { const f = await prescriptionMetadata(u.id); if (f.state !== 'verified' || f.scanner_status !== 'clean') { setFileMsg(`Not attached: ${f.state}; scanner ${f.scanner_status}.`); return; } setV((cur) => ({ ...cur, attachments: [...cur.attachments, { id: f.id, name: f.display_name, size: f.size, type: f.content_type, state: f.state }] })); setUploads((rows) => rows.filter((r) => r.key !== u.key)); } catch (e) { setFileMsg(e.message); }
+            if (busy.current || uncertain) return;
+            busy.current = true; setPending('upload');
+            const guard = reportingIdentityGuard(); const patientId = v.patientId;
+            try { const f = await prescriptionMetadata(u.id); guard(); if (!alive.current) return; attachVerified(f, patientId); setUploads((rows) => rows.filter((r) => r.key !== u.key)); } catch (e) { if (alive.current) setFileMsg(e.message); }
+            finally { busy.current = false; if (alive.current) setPending(''); }
           }}>Check availability</button> : <button type="button" className="imm-link-btn" onClick={() => { setUploads((rows) => rows.filter((r) => r.key !== u.key)); addFiles([u.file]); }}>Retry upload</button>}</>}</li>)}</ul>}
         </section>
 

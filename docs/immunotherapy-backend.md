@@ -1,5 +1,67 @@
 # Admin Immunotherapy orders
 
+## Current MR/Admin form refinement (source-reviewed only)
+
+The shared form now omits the duplicate reaction hints while retaining the mm
+labels and required result validation. New bottles use `BOT-001` style IDs.
+The editor reserves every existing and newly issued ID for its lifetime,
+including removed bottles; moving allergens never changes bottle IDs.
+Historical IDs remain in the draft, save payload and CSV/XLSX details unchanged.
+Only their form presentation uses a short “Saved bottle” label.
+
+Saving requires at least one actual verified prescription for the selected
+patient. The form counts only server-loaded saved associations and successful
+verified, clean-scanned upload/recovery responses, never local file metadata.
+The shared server resolver rejects empty attachment lists during direct writes,
+import review and import commit, and continues to lock/check every FileRecord
+for patient, uploader, state, scan and size. Existing fileless orders remain
+readable/exportable but cannot be saved or reviewed for import until a
+prescription is attached through the order form. MR saved-file retention and
+scope checks are unchanged. Unchanged idempotent retries still recover the
+original result rather than performing another write.
+
+The transfer UI does not upload files or trust exported attachment claims.
+Consequently, create new orders through the form first; the transfer UI updates
+saved orders retaining their authoritative file associations. This supersedes
+the original blank-ID import-creation instructions below. A direct API import
+must also supply real qualifying file IDs; metadata cannot satisfy the rule.
+
+### Invalid-request investigation
+
+Source tracing compared `save()` → `saveOrder()` → `orderInput()` →
+`purchaseOrderRequest()` / JSON serialization with `ImmWrite` / `ImmInput` /
+`ImmBottle` / `ImmItem` and the shared validation handler:
+
+- The pictured PD choice is accepted. UUID-shaped bottle IDs also already meet
+  the string ID contract. No confirmed serialization/schema mismatch was found,
+  so dosage, number formats, reference/ownership rules and schema strictness
+  were not relaxed.
+- The confirmed defect was missing form preflight plus loss of the API's
+  field/code errors: new bottles start with empty MRP/items, the form previously
+  sent them directly to the strict API, the API emits a generic “Invalid request”
+  plus structured locations, and the transport/form discarded those locations.
+- The supplied screenshot shows only the upper form. Its two ₹0.00 billing rows
+  are not evidence of valid zero MRPs: billing deliberately treats blank/invalid
+  prices as zero. There is no captured rejected JSON body or 422 field response
+  identifying the exact lower-form field in that historical submission.
+  No particular hidden field is claimed to be its proven cause.
+- Preflight now identifies incomplete/invalid result, MRP and bottle fields
+  before submission. Rejected server schema errors map known structural paths
+  to the submitted bottle/result controls and actionable static messages.
+  Relationship, total and prescription errors also target relevant fields.
+  Unknown paths/codes remain generic; no invalid values, arbitrary property names
+  or validator messages are echoed. The server sanitizes locations for direct
+  and nested import requests before sending them.
+- Rejections preserve the mounted draft. Unconfirmed saves keep their frozen
+  payload/key and editing lock for the existing explicit safe retry; they are
+  never reported as saved.
+
+This refinement was inspected in source only. **No tests, builds, automated
+browser checks, runtime requests, service restarts, release/validation wrappers,
+migrations, deployments or live-data writes were run. Runtime behavior remains
+unverified.** Public schema shapes are unchanged; the minimum-file rule is a
+shared write/import service rule rather than a read-record schema restriction.
+
 ## Delivery boundary
 
 This change implements **source only**. No tests, builds, smoke scripts, browser

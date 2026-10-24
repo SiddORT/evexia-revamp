@@ -258,6 +258,9 @@ def create_app() -> FastAPI:
         master_fields = master_field_errors(request.url.path, exc.errors())
         if master_fields is not None:
             fields = master_fields
+        if request.url.path.startswith("/api/v1/admin/immunotherapy-orders"):
+            from app.schemas.immunotherapy_validation import order_field_errors
+            fields = order_field_errors(exc.errors())
         return JSONResponse(error_body(request, 422, "Invalid request", fields=fields), status_code=422)
 
     @app.exception_handler(FileError)

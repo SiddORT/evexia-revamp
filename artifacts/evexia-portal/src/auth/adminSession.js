@@ -1042,6 +1042,18 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
     error.ambiguous = mutation && response.status >= 500;
+    if (resource === 'immunotherapy-orders' && response.status === 422) {
+      // Retain only known structural locations and machine codes, never server
+      // validator messages, input values or untrusted extra-property names.
+      const location = /^body(?:\.(?:orderDate|patientId|doctorId|mrId|dosage|histamine|saline|remarks|shipping|status|idempotencyKey|expected_version|groups(?:\.\d{1,3}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result))?)?))?)?|attachmentIds(?:\.\d{1,2})?))?$/;
+      const codes = new Set(['missing', 'uuid_parsing', 'uuid_type', 'string_type', 'string_too_short', 'string_too_long', 'string_pattern_mismatch', 'literal_error', 'too_short', 'too_long', 'list_type', 'model_type', 'value_error', 'extra_forbidden', 'int_type', 'greater_than_equal', 'invalid_value']);
+      error.validationFields = (Array.isArray(data?.error?.fields) ? data.error.fields : []).slice(0, 20)
+        .filter((item) => typeof item?.field === 'string' && location.test(item.field) && codes.has(item.code))
+        .map(({ field, code }) => ({ field, code }));
+      error.message = error.code === 'imm_prescription_required'
+        ? 'Attach at least one verified prescription for the selected patient before saving or importing this order.'
+        : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, MRPs, patient assignments and prescriptions. Your draft is preserved.';
+    }
     if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');
     if (batchOperation && path === '/batch-settings') {
       if (response.status === 422) {

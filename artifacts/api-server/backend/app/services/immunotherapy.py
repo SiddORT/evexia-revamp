@@ -121,6 +121,11 @@ def person(row, kind):
 def resolved(db, body, previous=None):
     """Retain historical identities unless the corresponding relationship changes."""
     mr_assignment(db, body, previous)
+    # This is shared by direct writes and both import review and commit.
+    # Read projections deliberately remain compatible with historic fileless orders.
+    if not body.attachmentIds:
+        raise ImmError("Attach at least one verified prescription for the selected patient before saving or importing this order.",
+                       422, "imm_prescription_required")
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version"})
     value.pop("attachmentIds")
     value.pop("orderDate", None)
@@ -168,7 +173,7 @@ def resolved(db, body, previous=None):
         f = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update())
         if (not f or f.patient_id != body.patientId or f.category != "documents"
             or f.state != "verified" or f.scanner_status != "clean"
-            or f.size > 10 * 1024 * 1024
+            or not f.size or f.size > 10 * 1024 * 1024
             or (str(f.id) not in previous_files and f.uploader_id != db.info["imm_actor"])):
             raise ImmError("Prescription is not a verified private upload owned by this patient and uploader. Quarantined or incomplete files cannot be attached.", 409, "imm_attachment")
         value["attachments"].append(dict(id=str(f.id), name=f.display_name, size=f.size, type=f.content_type, state=f.state))

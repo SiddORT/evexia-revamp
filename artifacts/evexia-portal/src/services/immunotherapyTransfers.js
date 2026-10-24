@@ -23,8 +23,8 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
   const ownerGuard = reportingIdentityGuard();
   return {
     instructions: getSession().user?.identity_kind === 'mr'
-      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. New orders have blank ID/number and no files. Saved dates, versions and file associations must be retained. Patient snapshots never create masters.`
-      : undefined,
+      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update saved orders with verified prescriptions; attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle IDs and file associations. Patient snapshots never create masters.`
+      : 'Create new orders in the order form and upload a verified prescription first. Imports can update saved orders with verified prescriptions; attachment metadata in a spreadsheet cannot attach files. Fileless historical orders remain viewable but must be edited in the order form to add a verified prescription before import. Retain saved dates, versions and bottle IDs.',
     release(blob, filename) {
       const guard = prepared.get(blob);
       if (!guard) throw new Error('Prepare this export again before downloading.');
@@ -76,6 +76,9 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
             if (number !== previous.number || !Number.isInteger(details.version) || details.version !== previous.version) throw new Error('Matching updates require the current order number and exported version. Export current data before reviewing again.');
             if (date !== previous.date) throw new Error('Saved order dates are immutable.');
           } else if (number) throw new Error('Leave a new order number blank; it is assigned by the server.');
+          // External attachment claims never become upload evidence. The API
+          // rechecks these saved associations during review and commit.
+          if (!previous?.attachments?.length) throw new Error('A verified prescription is required. Use the order form to create this order or add a prescription to the existing order, then export and review again.');
           const values = orderInput({ ...details, attachments: previous?.attachments || [] });
           values.orderDate = date;
           entries.push({ id: previous?.id || null, expected_version: previous?.version || null, values });
