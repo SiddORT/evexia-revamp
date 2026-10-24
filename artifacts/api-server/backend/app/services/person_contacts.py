@@ -1,11 +1,8 @@
 """MR-only presentation copies. Never use these projections for persistence."""
 
-ADDRESS_FIELDS = frozenset({
-    "addressLine1", "addressLine2", "line1", "line2", "landmark",
-    "pincode", "postalCode", "city", "state", "country",
-})
+from email_validator import EmailNotValidError, validate_email
+
 PHONE_FIELDS = frozenset({"phone", "alternatePhone"})
-MASKED_ADDRESS = "Address masked"
 
 
 def phone_display(value):
@@ -13,8 +10,26 @@ def phone_display(value):
     return ("********" + digits[-2:]) if len(digits) > 2 else ("********" if digits else "")
 
 
+def email_display(value):
+    """Expose only a valid saved domain; never guess one from malformed input."""
+    if not value:
+        return ""
+    if not isinstance(value, str):
+        return "***"
+    email = value.strip()
+    if not email:
+        return ""
+    try:
+        validate_email(email, check_deliverability=False)
+    except EmailNotValidError:
+        return "***"
+    # Validation guards against extra @ signs, display names and trailing text.
+    # Keep the saved spelling rather than the validator's normalized domain.
+    return "***@" + email.rsplit("@", 1)[1]
+
+
 def person(value):
-    """Preserve identity/demographics and shape, including historical contacts."""
+    """Mask phones/email locals, preserving saved addresses and other facts."""
     if not isinstance(value, dict):
         return value
     result = dict(value)
@@ -22,14 +37,7 @@ def person(value):
         if key in PHONE_FIELDS:
             result[key] = phone_display(child)
         elif key == "email":
-            result[key] = "***@***" if child else ""
-        elif key in ADDRESS_FIELDS:
-            result[key] = MASKED_ADDRESS if child else ""
-        elif key == "address":
-            result[key] = (
-                {field: MASKED_ADDRESS if content else "" for field, content in child.items()}
-                if isinstance(child, dict) else MASKED_ADDRESS if child else ""
-            )
+            result[key] = email_display(child)
     return result
 
 
