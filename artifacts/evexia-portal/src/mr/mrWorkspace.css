@@ -230,7 +230,10 @@ textarea.mrw-input { padding: 10px 12px; min-height: 88px; }
 .mrw-do-order-label { display: none; }
 .mrw-do-orders-pages { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .mrw-do-orders-pages > span { color: var(--admin-text-soft); font-size: 12px; }
-@media (min-width: 1000px) { .mrw-do-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) {
+  .mrw-do-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mrw-do-detail > .mrw-do-section:not(.mrw-do-orders) { align-self: stretch; }
+}
 @media (max-width: 800px) {
   .mrw-do-orders-table, .mrw-do-orders-table tbody { display: block; width: 100%; }
   .mrw-do-orders-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
