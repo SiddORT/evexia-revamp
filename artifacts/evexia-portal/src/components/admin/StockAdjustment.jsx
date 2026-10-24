@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Dialog from './Dialog.jsx';
+import './stockAdjustment.css';
 import { adjustmentChoices, forgetAdjustment, MAX_MILLI, milli, newKey, pendingAdjustment, previewAdjustment, reconcileAdjustment, rememberAdjustment, saveAdjustment } from '../../services/serverInventory.js';
 
 export default function StockAdjustment({ row, correctionOf = null, onClose, onCommitted }) {
@@ -87,13 +88,14 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
   }
   const close = () => { if (!busyRef.current) onClose(); };
   const a = done;
-  return <Dialog className="stock-adjust" eyebrow="Super Admin only" title={`Manual adjustment: ${row.name} ${row.concentration}`} onClose={close}
-    description={`ID ${row.productId} · Adjustments are append-only and take effect when committed.${correctionOf ? ' This compensates an earlier adjustment.' : ''}`} footer={done ? <button type="button" className="admin-button" onClick={onClose} data-testid="button-adjust-done">Close</button> : <>
+  return <Dialog className="stock-adjust" eyebrow="Super Admin only" title="Manual adjustment" onClose={close}
+    description={<><span className="sa-product">{row.name} {row.concentration}</span><span className="sa-id">Product ID {row.productId}</span><span className="sa-note">Adjustments are append-only and take effect when committed.{correctionOf ? ' This compensates an earlier adjustment.' : ''}</span></>} footer={done ? <button type="button" className="admin-button" onClick={onClose} data-testid="button-adjust-done">Close</button> : <>
       <button type="button" className="admin-button admin-button--secondary" onClick={close} disabled={busy} data-testid="button-adjust-cancel">Cancel</button>
       {pending && <button type="button" className="admin-button admin-button--secondary" onClick={check} disabled={busy} data-testid="button-adjust-check">Check outcome</button>}
       {pending && review ? <button type="button" className="admin-button" onClick={commit} disabled={busy} data-testid="button-adjust-retry">Retry same adjustment</button>
         : review ? <button type="button" className="admin-button" onClick={commit} disabled={busy || Boolean(pending)} data-testid="button-adjust-commit">Commit adjustment</button>
         : <button type="button" className="admin-button" onClick={doPreview} disabled={busy || !choices || Boolean(pending)} data-testid="button-adjust-preview">Review adjustment</button>}</>}>
+    <div className="sa-body" role="region" aria-label="Adjustment content" tabIndex={0}>
     {loadError && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{loadError}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((t) => t + 1)} data-testid="button-adjust-load-retry">Retry</button></div>}
     {message && <div className="admin-feedback" role="status" data-testid="status-adjust-message">{message}</div>}
     {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-adjust-error">{error}</div>}
@@ -101,27 +103,30 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
     {done ? <div className="admin-feedback" role="status" data-testid="status-adjust-done">Adjustment recorded: {a?.id}. {a?.direction === 'add' ? 'Added' : 'Reduced'} {a?.quantity} {a?.unit || row.unit}. Affected lot/location balance now {a?.after}. Corrections require a new compensating adjustment with this reference and a reason.</div>
     : !choices && !loadError ? <div className="admin-empty" role="status"><strong>Loading adjustment choices…</strong></div>
     : choices && <div className="adjust-form">
-      <fieldset className="adjust-field" disabled={busy || Boolean(pending)}><legend>Direction</legend>
-        <label><input type="radio" name="adj-dir" checked={direction === 'add'} onChange={() => { setDirection('add'); setReview(null); }} data-testid="radio-adjust-add" /> Add</label>{' '}
-        <label><input type="radio" name="adj-dir" checked={direction === 'reduce'} onChange={() => { setDirection('reduce'); setReview(null); }} data-testid="radio-adjust-reduce" /> Reduce</label></fieldset>
-      {direction === 'reduce' ? <label className="adjust-field">Lot and location
+      <fieldset className="adjust-field sa-direction" disabled={busy || Boolean(pending)}><legend>Direction <em>(required)</em></legend>
+        <label className="sa-radio"><input type="radio" name="adj-dir" checked={direction === 'add'} onChange={() => { setDirection('add'); setReview(null); }} data-testid="radio-adjust-add" /> <span>Add</span></label>
+        <label className="sa-radio"><input type="radio" name="adj-dir" checked={direction === 'reduce'} onChange={() => { setDirection('reduce'); setReview(null); }} data-testid="radio-adjust-reduce" /> <span>Reduce</span></label></fieldset>
+      {direction === 'reduce' ? <label className="adjust-field"><span className="sa-label">Lot and location <em>(required)</em></span>
         <select className="admin-select" value={lotKey} onChange={edit(setLotKey)} disabled={busy || Boolean(pending)} data-testid="select-adjust-lot"><option value="">Choose lot</option>
           {lots.map((l) => <option key={`${l.lotId}|${l.locationId || ''}`} value={`${l.lotId}|${l.locationId || ''}`}>Lot {l.lotId} · {l.source} · {l.batchNo || 'No batch'} · {l.locationId ? l.locationName : 'Unallocated'} · available {l.available}</option>)}</select>
         {errors.lot && <small className="adjust-error">{errors.lot}</small>}</label>
-      : <><label className="adjust-field">Location
+      : <><label className="adjust-field"><span className="sa-label">Location <em>(required)</em></span>
         <select className="admin-select" value={locationId} onChange={edit(setLocationId)} disabled={busy || Boolean(pending)} data-testid="select-adjust-location"><option value="">Choose location</option>
           {choices.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
         {errors.location && <small className="adjust-error">{errors.location}</small>}</label>
-        <label className="adjust-field">Batch number (optional, new lot only)<input className="admin-input" maxLength={120} value={batchNo} onChange={edit(setBatchNo)} disabled={busy || Boolean(pending)} data-testid="input-adjust-batch" /></label>
-        <label className="adjust-field">Expiry date (optional, new lot only)<input type="date" className="admin-input" value={expiryDate} onChange={edit(setExpiryDate)} disabled={busy || Boolean(pending)} data-testid="input-adjust-expiry" /></label></>}
-      <label className="adjust-field">Quantity ({choices.product?.unit || row.unit})
+        <div className="sa-row">
+        <label className="adjust-field"><span className="sa-label">Batch number <em>(optional, new lot only)</em></span><input className="admin-input" maxLength={120} value={batchNo} onChange={edit(setBatchNo)} disabled={busy || Boolean(pending)} data-testid="input-adjust-batch" /></label>
+        <label className="adjust-field"><span className="sa-label">Expiry date <em>(optional, new lot only)</em></span><input type="date" className="admin-input" value={expiryDate} onChange={edit(setExpiryDate)} disabled={busy || Boolean(pending)} data-testid="input-adjust-expiry" /></label></div></>}
+      <label className="adjust-field"><span className="sa-label">Quantity ({choices.product?.unit || row.unit}) <em>(required)</em></span>
         <input className="admin-input" inputMode="decimal" value={quantity} onChange={edit(setQuantity)} disabled={busy || Boolean(pending)} data-testid="input-adjust-quantity" />
         {errors.quantity && <small className="adjust-error" role="alert">{errors.quantity}</small>}</label>
-      <label className="adjust-field">Reason
+      <label className="adjust-field"><span className="sa-label">Reason <em>(required)</em></span>
         <textarea className="admin-input" rows={3} maxLength={2000} value={reason} onChange={edit(setReason)} disabled={busy || Boolean(pending)} data-testid="input-adjust-reason" />
         {errors.reason && <small className="adjust-error" role="alert">{errors.reason}</small>}</label>
-      <label className="adjust-field">Correction of adjustment (optional UUID)
-        <input className="admin-input" value={correctionReference} onChange={edit(setCorrectionReference)} disabled={busy || Boolean(pending)} data-testid="input-adjust-correction" />
+      <label className="adjust-field"><span className="sa-label">Correction of adjustment <em>(optional UUID)</em></span>
+        <input className="admin-input sa-mono" placeholder="Leave blank unless correcting an earlier adjustment" value={correctionReference} onChange={edit(setCorrectionReference)} disabled={busy || Boolean(pending)} data-testid="input-adjust-correction" />
+        <small className="sa-hint">Use an earlier adjustment reference only for a compensating correction.</small>
+        {correctionReference && <small className="sa-reference">Correction reference: {correctionReference}</small>}
         {errors.correction && <small className="adjust-error" role="alert">{errors.correction}</small>}</label>
       {review && <div className="adjust-review" data-testid="section-adjust-review">
         <div><span>Before</span><strong className="inv-mono">{review.adjustment.before}</strong></div>
@@ -129,5 +134,6 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
         <div><span>After</span><strong className="inv-mono">{review.adjustment.after}</strong></div>
         <p className="mr-form__hint">{review.adjustment.scope} at {review.adjustment.locationName || 'Unallocated'}. This is the affected lot/location balance, not total allergen stock. Review, then commit explicitly.</p></div>}
     </div>}
+    </div>
   </Dialog>;
 }
