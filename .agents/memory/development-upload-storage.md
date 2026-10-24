@@ -12,6 +12,24 @@ the project folder for now.”
 **How to apply:** Preserve backend-neutral object keys and private local storage;
 do not interpret this as permission to move existing upload bytes to a cloud bucket.
 
+The user's intended Immunotherapy folder layout is
+`private-files/mrs/<MR-id>/immunotherapy/<patient-id>/<file-id>.pdf`.
+Do not insert a `patients` segment.
+
+**Why:** The user explicitly corrected the proposed folder layout.
+
+**How to apply:** Keep this as the desired layout when planning a compatible
+storage-key change; do not silently move existing objects or bypass key constraints.
+
+Verify the multipart request boundary separately from storage and scanner health.
+
+**Why:** Dynamically parsed multipart requests can fail despite healthy startup,
+storage round trips and real malware scans when the runtime parser dependency is
+missing.
+
+**How to apply:** Include a focused multipart parsing check; mocked storage or
+direct storage/scanner probes do not establish that the upload endpoint works.
+
 Use the official `freshclam` updater to establish whether virus definitions can
 be downloaded; a generic `curl -I` request is not conclusive.
 
