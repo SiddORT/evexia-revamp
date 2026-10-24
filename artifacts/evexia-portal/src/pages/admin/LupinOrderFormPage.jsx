@@ -6,9 +6,10 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
+import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { request, blankOrder, totalMinor, money, amountMoney, validateAttachments, fileSize, orderInput, uploadAttachment, downloadAttachment, removeUpload } from '../../services/serverLupin.js';
+import { request, blankOrder, totalMinor, money, amountMoney, validateAttachments, fileSize, orderInput, uploadAttachment, downloadAttachment, attachmentBlob, removeUpload } from '../../services/serverLupin.js';
 import '../../lupinOrders.css';
 import '../../orderEntry.css';
 
@@ -36,6 +37,10 @@ export default function LupinOrderFormPage({ id }) {
 
 function Review({ order }) {
   const can = useOrderActions('lupin');
+  const { portal } = useOrderPortal();
+  const canPreview = portal === 'mr' && can.read_attachment;
+  const [viewing, setViewing] = useState(null);
+  const viewerOpener = useRef(null);
   const BASE = useOrderBase('lupin');
   const { date } = useAdminDateFormatters();
   const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
@@ -56,9 +61,13 @@ function Review({ order }) {
       <div><h2>Linked Patients (optional historical context)</h2>
         {order.patients.length ? <ul className="lupin-files">{order.patients.map((p) => <li key={p.id}><span>{p.name}<span className="lupin-sub">{p.id}</span></span></li>)}</ul> : <p className="lupin-hint">No individual Patients were linked. This does not change the saved patient count.</p>}</div>
       <div><h2>Private attachments</h2>{order.attachments.length ? <ul className="lupin-files" aria-label="Saved attachments">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name}{!f.restricted && ` (${fileSize(f.size)})`}</span>
-        <button type="button" className="lupin-link" disabled={downloading || !can.read_attachment || f.restricted} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="lupin-hint">No files attached. Imported orders may have no attachments; transfer metadata cannot restore files.</p>}</div>
+        <div className="lupin-file-actions">
+          {canPreview && !f.restricted && f.state === 'verified' && <button type="button" className="lupin-link" aria-label={`View ${f.name}`} onClick={(event) => { viewerOpener.current = event.currentTarget; setViewing(f); }}>View</button>}
+          <button type="button" className="lupin-link" disabled={downloading || !can.read_attachment || f.restricted} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button>
+        </div></li>)}</ul> : <p className="lupin-hint">No files attached. Imported orders may have no attachments; transfer metadata cannot restore files.</p>}</div>
       <div><h2>Remarks</h2><p className="lupin-remarks">{order.remarks || 'No remarks.'}</p></div>
     </section>
+    {canPreview && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }
 
