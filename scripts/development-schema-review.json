@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0068_category_description",
+  "target": "0069_workspace_permissions",
   "policy_sha256": "1ca47ac8d2e46ca71854c64f8bee15b76e4d45a6daf747e48d729f81d45a336f",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -77,7 +77,8 @@
     "0065_lupin_orders": "cb008e7f017322da2e020a2fe3d3980f855540de618e71f970cf39335d0fee71",
     "0066_spt_registration_owner": "859924f57629b6cfab3c30855d00adac37f6325c76870e46ed3edeaf7a872fe9",
     "0067_inventory_adjustments": "5412ac31a4200613b45d728f8935c26d4e5c65a3cb5d3b282bf64d82e5b9146c",
-    "0068_category_description": "d4ddfee10d023bab49ea370c2f6352be09ff4ce7b46dc1bfea8dd2b263a9493a"
+    "0068_category_description": "d4ddfee10d023bab49ea370c2f6352be09ff4ce7b46dc1bfea8dd2b263a9493a",
+    "0069_workspace_permissions": "7db5d91d956c63c559102fc0cd90efd5a79610dc33751568e96f6e963c341568"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",
