@@ -17,6 +17,12 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AdjustmentChoices,
+  AdjustmentCreate,
+  AdjustmentInput,
+  AdjustmentReconciliation,
+  AdjustmentReview,
+  AdjustmentSaved,
   AllergenEdit,
   AllergenFields,
   AllergenImportResult,
@@ -156,6 +162,7 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  GetInventoryLedgerParams,
   GetInventoryReferencesParams,
   GetInventoryStockHistoryParams,
   GetLanguageHistoryParams,
@@ -211,6 +218,7 @@ import type {
   LanguageResponse,
   LanguageReview,
   LanguageVersion,
+  LedgerPage,
   ListAllergenReferencesParams,
   ListAllergensParams,
   ListCourierPartnersParams,
@@ -9465,6 +9473,422 @@ export const useEditImmunotherapyOrder = <
   return useMutation(getEditImmunotherapyOrderMutationOptions(options));
 };
 
+export const getReconcileInventoryAdjustmentUrl = (key: string) => {
+  return `/api/v1/admin/inventory/adjustment-requests/${key}`;
+};
+
+/**
+ * @summary Adjustment Reconcile
+ */
+export const reconcileInventoryAdjustment = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AdjustmentReconciliation> => {
+  return customFetch<AdjustmentReconciliation>(
+    getReconcileInventoryAdjustmentUrl(key),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getReconcileInventoryAdjustmentQueryKey = (key: string) => {
+  return [`/api/v1/admin/inventory/adjustment-requests/${key}`] as const;
+};
+
+export const getReconcileInventoryAdjustmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileInventoryAdjustment>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileInventoryAdjustment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileInventoryAdjustmentQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileInventoryAdjustment>>
+  > = ({ signal }) =>
+    reconcileInventoryAdjustment(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileInventoryAdjustment>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileInventoryAdjustmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileInventoryAdjustment>>
+>;
+export type ReconcileInventoryAdjustmentQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Adjustment Reconcile
+ */
+
+export function useReconcileInventoryAdjustment<
+  TData = Awaited<ReturnType<typeof reconcileInventoryAdjustment>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileInventoryAdjustment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileInventoryAdjustmentQueryOptions(
+    key,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateInventoryAdjustmentUrl = () => {
+  return `/api/v1/admin/inventory/adjustments`;
+};
+
+/**
+ * @summary Adjustment Create
+ */
+export const createInventoryAdjustment = async (
+  adjustmentCreate: AdjustmentCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AdjustmentSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AdjustmentSaved>(getCreateInventoryAdjustmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(adjustmentCreate),
+  });
+};
+
+export const getCreateInventoryAdjustmentMutationKey = () =>
+  ["createInventoryAdjustment"] as const;
+
+export const getCreateInventoryAdjustmentMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInventoryAdjustment>>,
+    TError,
+    CreateInventoryAdjustmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInventoryAdjustment>>,
+  TError,
+  CreateInventoryAdjustmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateInventoryAdjustmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInventoryAdjustment>>,
+    CreateInventoryAdjustmentMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInventoryAdjustment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInventoryAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInventoryAdjustment>>
+>;
+export type CreateInventoryAdjustmentMutationBody = BodyType<AdjustmentCreate>;
+export type CreateInventoryAdjustmentMutationError = ErrorType<ErrorEnvelope>;
+export type CreateInventoryAdjustmentMutationVariables = {
+  data: BodyType<AdjustmentCreate>;
+};
+
+/**
+ * @summary Adjustment Create
+ */
+export const useCreateInventoryAdjustment = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInventoryAdjustment>>,
+    TError,
+    CreateInventoryAdjustmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInventoryAdjustment>>,
+  TError,
+  CreateInventoryAdjustmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateInventoryAdjustmentMutationOptions(options));
+};
+
+export const getPreviewInventoryAdjustmentUrl = () => {
+  return `/api/v1/admin/inventory/adjustments/preview`;
+};
+
+/**
+ * @summary Adjustment Preview
+ */
+export const previewInventoryAdjustment = async (
+  adjustmentInput: AdjustmentInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AdjustmentReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AdjustmentReview>(getPreviewInventoryAdjustmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(adjustmentInput),
+  });
+};
+
+export const getPreviewInventoryAdjustmentMutationKey = () =>
+  ["previewInventoryAdjustment"] as const;
+
+export const getPreviewInventoryAdjustmentMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewInventoryAdjustment>>,
+    TError,
+    PreviewInventoryAdjustmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewInventoryAdjustment>>,
+  TError,
+  PreviewInventoryAdjustmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewInventoryAdjustmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewInventoryAdjustment>>,
+    PreviewInventoryAdjustmentMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewInventoryAdjustment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewInventoryAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewInventoryAdjustment>>
+>;
+export type PreviewInventoryAdjustmentMutationBody = BodyType<AdjustmentInput>;
+export type PreviewInventoryAdjustmentMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewInventoryAdjustmentMutationVariables = {
+  data: BodyType<AdjustmentInput>;
+};
+
+/**
+ * @summary Adjustment Preview
+ */
+export const usePreviewInventoryAdjustment = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewInventoryAdjustment>>,
+    TError,
+    PreviewInventoryAdjustmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewInventoryAdjustment>>,
+  TError,
+  PreviewInventoryAdjustmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewInventoryAdjustmentMutationOptions(options));
+};
+
+export const getGetInventoryAdjustmentUrl = (recordId: string) => {
+  return `/api/v1/admin/inventory/adjustments/${recordId}`;
+};
+
+/**
+ * @summary Adjustment Detail
+ */
+export const getInventoryAdjustment = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AdjustmentSaved> => {
+  return customFetch<AdjustmentSaved>(getGetInventoryAdjustmentUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInventoryAdjustmentQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/inventory/adjustments/${recordId}`] as const;
+};
+
+export const getGetInventoryAdjustmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryAdjustment>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryAdjustment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryAdjustmentQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryAdjustment>>
+  > = ({ signal }) =>
+    getInventoryAdjustment(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryAdjustment>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryAdjustmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryAdjustment>>
+>;
+export type GetInventoryAdjustmentQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Adjustment Detail
+ */
+
+export function useGetInventoryAdjustment<
+  TData = Awaited<ReturnType<typeof getInventoryAdjustment>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryAdjustment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryAdjustmentQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getReviewInventoryInitializationUrl = (
   params?: ReviewInventoryInitializationParams,
 ) => {
@@ -10531,6 +10955,104 @@ export function useListInventoryStock<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getGetInventoryAdjustmentChoicesUrl = (productId: string) => {
+  return `/api/v1/admin/inventory/stock/${productId}/adjustment-choices`;
+};
+
+/**
+ * @summary Adjustment Choices
+ */
+export const getInventoryAdjustmentChoices = async (
+  productId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AdjustmentChoices> => {
+  return customFetch<AdjustmentChoices>(
+    getGetInventoryAdjustmentChoicesUrl(productId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInventoryAdjustmentChoicesQueryKey = (productId: string) => {
+  return [
+    `/api/v1/admin/inventory/stock/${productId}/adjustment-choices`,
+  ] as const;
+};
+
+export const getGetInventoryAdjustmentChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  productId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetInventoryAdjustmentChoicesQueryKey(productId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>
+  > = ({ signal }) =>
+    getInventoryAdjustmentChoices(productId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: productId !== null && productId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryAdjustmentChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>
+>;
+export type GetInventoryAdjustmentChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Adjustment Choices
+ */
+
+export function useGetInventoryAdjustmentChoices<
+  TData = Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  productId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryAdjustmentChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryAdjustmentChoicesQueryOptions(
+    productId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getGetInventoryStockHistoryUrl = (
   productId: string,
   params?: GetInventoryStockHistoryParams,
@@ -10640,6 +11162,123 @@ export function useGetInventoryStockHistory<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetInventoryStockHistoryQueryOptions(
+    productId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetInventoryLedgerUrl = (
+  productId: string,
+  params?: GetInventoryLedgerParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/stock/${productId}/ledger?${stringifiedParams}`
+    : `/api/v1/admin/inventory/stock/${productId}/ledger`;
+};
+
+/**
+ * @summary Ledger
+ */
+export const getInventoryLedger = async (
+  productId: string,
+  params?: GetInventoryLedgerParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LedgerPage> => {
+  return customFetch<LedgerPage>(getGetInventoryLedgerUrl(productId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInventoryLedgerQueryKey = (
+  productId: string,
+  params?: GetInventoryLedgerParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/stock/${productId}/ledger`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInventoryLedgerQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryLedger>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  productId: string,
+  params?: GetInventoryLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryLedgerQueryKey(productId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryLedger>>
+  > = ({ signal }) =>
+    getInventoryLedger(productId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: productId !== null && productId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryLedger>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryLedgerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryLedger>>
+>;
+export type GetInventoryLedgerQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Ledger
+ */
+
+export function useGetInventoryLedger<
+  TData = Awaited<ReturnType<typeof getInventoryLedger>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  productId: string,
+  params?: GetInventoryLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryLedgerQueryOptions(
     productId,
     params,
     options,

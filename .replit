@@ -96,6 +96,14 @@ args = "release-coverage"
 task = "workflow.run"
 args = "release-api-account-crypto"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-staff-account-numbers"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-inventory-ledger"
+
 [[workflows.workflow]]
 name = "release"
 author = "agent"
@@ -312,6 +320,28 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python3 -B scripts/local-release-checks.py run api-account-crypto"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-staff-account-numbers"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-staff-account-numbers"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-inventory-ledger"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sh scripts/test-inventory-ledger.sh"
 
 [workflows.workflow.metadata]
 isValidation = true

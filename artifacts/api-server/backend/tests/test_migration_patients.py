@@ -23,6 +23,8 @@ from test_patients import fields, csv_file
 def prepare(fixture):
     engine, config, actor_id, sid, mr = prepare_doctor(fixture)
     with Session(engine) as db:
+        from test_patients import seed_patient_language
+        seed_patient_language(db, actor_id)
         actor = identity(db, actor_id, sid)
         doctor = doctors.create(db, actor, DoctorFields(**doctor_fields(mr)))
     return engine, config, actor_id, sid, mr, doctor
@@ -40,9 +42,14 @@ def test_empty_forward_migration_preserves_identity_file_history(migration_db):
         db.add(patient); db.flush()
         file_id = uuid.uuid4()
         key = f"patients/{patient.id}/documents/{file_id}.pdf"
-        db.add(FileRecord(id=file_id, patient_id=patient.id, category="documents", object_key=key,
-                          display_name="Synthetic retained file", content_type="application/pdf",
-                          uploader_id=actor_id, state="deleted"))
+        # Frozen revision-19 file fields, before later Kits owner/version
+        # columns; the modern mapper must not insert future nullable fields.
+        from sqlalchemy import Table, MetaData
+        historical_files = Table("files", MetaData(), autoload_with=db.get_bind())
+        db.execute(historical_files.insert().values(
+            id=file_id, patient_id=patient.id, category="documents", object_key=key,
+            display_name="Synthetic retained file", content_type="application/pdf",
+            uploader_id=actor_id, state="deleted"))
         db.commit()
         owner_id = patient.id
         count = db.scalar(select(func.count()).select_from(AuditEvent))

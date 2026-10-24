@@ -20,6 +20,10 @@ from test_migration_staff import prepare, identity
 def test_migration_empty_preserves_identity_and_db_normalization(migration_db):
     engine, config, admin_id, session_id, legacy_id = prepare(migration_db)
     upgrade_with_retirement_recovery(engine, config)
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
+        command.downgrade(config, "0009_staff")
+    from test_migration_0006 import continue_to_current_schema
+    continue_to_current_schema(engine, config)
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(CustomRole)) == 0
         assert db.get(User, admin_id).is_protected_system_admin
@@ -32,13 +36,11 @@ def test_migration_empty_preserves_identity_and_db_normalization(migration_db):
         with pytest.raises(IntegrityError):
             with db.begin_nested():
                 db.execute(text("INSERT INTO custom_roles(id,name,description,version,created_by,updated_by) VALUES (:id,'mixed case','',1,:actor,:actor)"), {"id": uuid.uuid4(), "actor": admin_id})
-    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
-        command.downgrade(config, "0009_staff")
 
 
 def test_concurrent_duplicate_edits_and_deletes_commit_atomically(migration_db):
     engine, config, admin_id, session_id, _ = prepare(migration_db)
-    upgrade_with_retirement_recovery(engine, config)
+    upgrade_with_retirement_recovery(engine, config, current_models=True)
     def race(operation):
         barrier = Barrier(2)
         def run(index):

@@ -60,7 +60,7 @@ def seed(fixture):
         insert("designations", dict(id=DESIGNATION_ID, name="Medical Representative", shortName="MR", status="active", **common))
         insert("mr_profiles", dict(id=mr_id, user_id=actor_id, is_active=False, version=1,
                                   created_at=now, updated_at=now))
-        mr_values = MRFields(**mr_fields(hq, zone)).model_dump(exclude={"userId"})
+        mr_values = MRFields(**mr_fields(hq, zone)).model_dump(exclude={"userId", "zoneIds", "reportingStaffId"})
         mr_values["status"] = "inactive"
         insert("mr_directory", dict(id=mr_id, **mr_values, **common))
         mr = dict(id=mr_id)

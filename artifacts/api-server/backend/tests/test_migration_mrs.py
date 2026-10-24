@@ -140,17 +140,23 @@ def test_import_conflict_provisioning_failure_rolls_back_whole_batch(migration_d
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "mr_directory_create")) == 0
 
 
-def test_namespace_reserves_old_identifiers_and_prevents_cross_field_races(migration_db):
+def test_generated_ids_and_retained_email_namespace_prevent_reuse(migration_db):
     engine, _, actor_id, session_id, hq, zone = setup(migration_db)
     with Session(engine, expire_on_commit=False) as db:
         actor = identity(db, actor_id, session_id)
-        row = mrs.create(db, actor, MRCreate(**fields(hq, zone)))["record"]
-        mrs.mutate(db, actor, row["id"], MREdit(**fields(hq, zone, username="changed.mr"), expected_version=1), "edit")
+        row = mrs.create(db, actor, MRCreate(**{**fields(hq, zone), "email": "retained-mr@example.com"}))["record"]
+        with pytest.raises(mrs.MRError) as immutable:
+            mrs.mutate(db, actor, row["id"], MREdit(**fields(hq, zone, username="changed.mr"), expected_version=1), "edit")
+        assert immutable.value.code == "mr_number_immutable"
+        mrs.mutate(db, actor, row["id"], MREdit(**{
+            **fields(hq, zone, username=row["userId"]), "email": "current-mr@example.com"},
+            expected_version=1), "edit")
         with pytest.raises(mrs.MRError):
-            mrs.create(db, actor, MRCreate(**fields(hq, zone, code="MR-02")))
+            mrs.create(db, actor, MRCreate(**{**fields(hq, zone, code="MR-02"),
+                                             "email": "retained-mr@example.com"}))
         # SQL writes from other account services use the same DB namespace guard.
         with pytest.raises(IntegrityError):
-            db.add(User(email="other@example.com", username="SYNTHETIC.MR", password_hash=hash_password("Synthetic password"),
+            db.add(User(email="other@example.com", username=row["userId"].upper(), password_hash=hash_password("Synthetic password"),
                         system_role=None, is_active=False))
             db.commit()
         db.rollback()

@@ -13,7 +13,9 @@ test('seed is isolated, immutable, sufficiently paged, with exactly the requeste
   assert.equal(createDemoStore({ empty: true }).getSnapshot().orders.length, 0);
 });
 test('next dosage uses only explicit administration evidence; missing, unknown and B8 wait', () => {
-  DOSES.slice(0, -1).forEach((lastGiven, i) => assert.equal(nextDose({ lastGiven }).dosage, DOSES[i + 1]));
+  const series = DOSES.filter((dose) => /^B[1-8]$/.test(dose));
+  series.slice(0, -1).forEach((lastGiven, i) => assert.equal(nextDose({ lastGiven }).dosage, series[i + 1]));
+  for (const lastGiven of ['PD', 'DD']) assert.equal(nextDose({ lastGiven }).dosage, 'B1');
   for (const lastGiven of [null, undefined, 'unknown', 'B8']) assert.equal(nextDose({ lastGiven, status: 'Delivered', dosage: 'B4' }).dosage, '');
   assert.match(nextDose({ lastGiven: 'B8' }).explanation, /no automatic next/i);
 });
@@ -23,11 +25,12 @@ test('MRPs reject malformed, excess precision and nonfinite values; totals are e
   assert.equal(money(30n), '₹0.30');
   assert.equal(parseAmount('123456789012345678901234567890.99'), 12345678901234567890123456789099n);
 });
-test('No Mix and duplicate bottles are blocked; mixable standalone and grouped products work', () => {
+test('catalogue allergens can be standalone or grouped; duplicate and unknown entries are blocked', () => {
   const item = (allergenId) => ({ allergenId, result: '2' });
   assert.equal(groupingError([item(ALLERGENS[0].id), item(ALLERGENS[1].id)]), '');
   assert.equal(groupingError([item(ALLERGENS[3].id)]), '');
-  assert.match(groupingError([item(ALLERGENS[3].id), item(ALLERGENS[0].id)]), /alone/);
+  assert.equal(groupingError([item(ALLERGENS[3].id), item(ALLERGENS[0].id)]), '');
+  assert.match(groupingError([item('not-in-the-demo-catalogue')]), /Choose fictional allergens/);
   assert.match(groupingError([item(ALLERGENS[0].id), item(ALLERGENS[0].id)]), /Duplicate/);
   assert.notEqual(newGroup().id, newGroup().id);
 });

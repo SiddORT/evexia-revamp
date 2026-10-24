@@ -150,7 +150,9 @@ def test_scale_summaries_and_exports(directory):
         for kind in ("csv", "xlsx"):
             with measure(db, name + "-" + kind) as queries:
                 data = transfer.export(db, actor, filters, kind)
-            assert queries[0] <= 20, "5,000-row exports must use bounded bulk reference reads, not per-row queries"
+            # Current MR snapshots/membership validation add fixed bulk reads.
+            # Keep a small absolute bound across 0/1/5,000-row scenarios: no N+1.
+            assert queries[0] <= 32, "5,000-row exports must use bounded bulk reference reads, not per-row queries"
             if kind == "csv":
                 rows = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
             else:

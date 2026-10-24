@@ -26,10 +26,12 @@ def seed(db, settings, admin, count=605):
                     email=None, password_hash=admin.password_hash, system_role=None)
         db.add(user)
         profile = StaffProfile(id=uuid.UUID(int=index), user_id=user.id, version=1,
+                               role="Synthetic Staff Role", custom_role_id=uuid.UUID(BODY["custom_role_id"]),
                                created_by=admin.id, updated_by=admin.id,
                                created_at=now + timedelta(seconds=index), updated_at=now)
         assign(profile, StaffFields(**{**BODY, "name": f"Fictional Directory {index}",
-                                      "email": f"directory-{index}@example.com"}), crypto)
+                                      "email": f"directory-{index}@example.com",
+                                      "employeeCode": f"SYNTHETIC-DIRECTORY-{index}"}), crypto)
         db.add(profile)
     db.commit()
 
@@ -65,8 +67,8 @@ def test_find_beyond_first_hundred_and_bounded_empty_sections(client, monkeypatc
     assert [row["id"] for row in page["items"]] == [target]
     assert page["scanned"] == page["scan_limit"] == 500 and page["has_more"]
     assert page["next_cursor"] == str(uuid.UUID(int=500))
-    assert len(calls) == 2001  # three Staff fields + encrypted account username per row; actor email
-    assert calls.count("username") == 500
+    assert len(calls) == 1501  # Only three Staff fields per row; actor email. Account labels are not searched.
+    assert calls.count("username") == 0  # Account labels must not enter directory search.
     assert len(sql) < 16  # constant account revision/key gates, never per scanned staff row
     assert elapsed < 5
     assert not any("OFFSET" in statement or "count(" in statement.lower() for statement in sql)
@@ -98,7 +100,7 @@ def test_matching_pagination_has_no_skips_or_duplicates_and_no_writes(client):
         cursor = page["next_cursor"]
         assert page["has_more"] == (expected == 100)
     assert len(set(ids)) == 205 and cursor is None
-    for query in ("987654", "st_000", "executive", "2025-01", "active", "super admin", "IN"):
+    for query in ("987654", "SYNTHETIC-DIRECTORY", "executive", "2025-01", "active", "Synthetic Staff", "IN"):
         assert api.post(SEARCH, headers=headers, json={"query": query, "limit": 1}).json()["items"]
 
 

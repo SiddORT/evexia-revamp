@@ -27,7 +27,7 @@ from test_staff import BODY, seed_designation
 
 def fixture(migration_db):
     engine, config, admin_id, session_id, _ = prepare(migration_db)
-    upgrade_with_retirement_recovery(engine, config)
+    upgrade_with_retirement_recovery(engine, config, current_models=True)
     settings = get_settings()
     with Session(engine, expire_on_commit=False) as db:
         seed_designation(db, admin_id)
@@ -66,27 +66,35 @@ def test_forward_existing_role_staff_defaults_preserve_identity(migration_db, tm
             {"id": staff_id, "user": user_id, "admin": admin_id})
     command.upgrade(config, "0027_mr_designation_identity")
     with Session(engine) as db:
-        seed_designation(db, admin_id, "Director")
+        seed_designation(db, admin_id, "Director", include_role=False)
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, admin_id)
     upgrade_with_retirement_recovery(engine, config)
     with Session(engine) as db:
-        profile = db.get(StaffProfile, staff_id)
+        # Assert the historical projection before later Staff unification and
+        # employee-code stages; do not map today's extra columns at revision 35.
+        from types import SimpleNamespace
+        profile = SimpleNamespace(**db.execute(text(
+            "SELECT custom_role_id,workspace_login_enabled,role,version,name_ciphertext "
+            "FROM staff_profiles WHERE id=:id"), {"id": staff_id}).mappings().one())
         assert profile.custom_role_id is None and profile.workspace_login_enabled is False
         assert profile.role == "Super Admin" and profile.version == 5 and profile.name_ciphertext == "preserved"
         role = db.get(CustomRole, role_id)
         assert role.permissions == [] and role.version == 7
-        assert db.get(User, user_id).password_hash == "existing-staff-hash"
-        assert db.get(User, legacy).password_hash == "existing-hash"
-        assert db.get(User, admin_id).is_protected_system_admin
+        assert db.scalar(text("SELECT password_hash FROM users WHERE id=:id"), {"id": user_id}) == "existing-staff-hash"
+        assert db.scalar(text("SELECT password_hash FROM users WHERE id=:id"), {"id": legacy}) == "existing-hash"
+        assert db.scalar(text("SELECT is_protected_system_admin FROM users WHERE id=:id"), {"id": admin_id})
         assert db.get(AuthSession, session_id).status == "ACTIVE"
-        with pytest.raises(auth.AuthError):
-            auth._load_identity(db, db.get(User, user_id))
         for grants in (["admin.access"], ["zone.restore"], ["zone.add", None]):
             with pytest.raises(IntegrityError):
                 with db.begin_nested():
                     db.execute(text("UPDATE custom_roles SET permissions=:grants WHERE id=:id"),
                                {"id": role_id, "grants": grants})
+    from test_migration_0006 import continue_to_current_schema
+    continue_to_current_schema(engine, config)
+    with Session(engine) as db:
+        with pytest.raises(auth.AuthError):
+            auth._load_identity(db, db.get(User, user_id))
 
 
 @pytest.mark.parametrize("revoke", ["grants", "assignment", "disable", "tombstone"])

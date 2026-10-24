@@ -64,7 +64,7 @@ def setup_graph(env):
         doctors = []
         for profile, code in ((env["owner_mr"], "REG-OWNER"), (env["replacement_mr"], "REG-TARGET")):
             doctor = DoctorDirectory(**DoctorFields(**doctor_fields({"id": str(profile.id)}, registrationNumber=code)).model_dump(),
-                                     verification="unverified", created_by=actor, updated_by=actor)
+                                     doctorNumber=f"DR-900001{len(doctors):03d}", verification="unverified", created_by=actor, updated_by=actor)
             db.add(doctor); db.flush(); doctors.append(doctor.id)
         body = PatientFields(**fields({"id": str(doctors[0])}))
         db.add(PatientDirectory(id=env["patient"].id, code="PAT-FILE-FIXTURE", **body.model_dump(), created_by=actor, updated_by=actor))

@@ -11,6 +11,7 @@ import type { MovementLineViewItemKind } from "./movementLineViewItemKind";
 import type { MovementLineViewOpeningLocation } from "./movementLineViewOpeningLocation";
 
 export interface MovementLineView {
+  adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   batchNo: string | null;

@@ -5,6 +5,192 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+export interface LedgerLocation {
+  id: string;
+  name: string;
+}
+
+export interface AdjustmentLotChoice {
+  available: string;
+  batchNo: string | null;
+  locationId: string | null;
+  locationName: string;
+  lotId: string;
+  source: string;
+}
+
+export interface LedgerProduct {
+  concentration: string;
+  name: string;
+  productId: string;
+  unit: string;
+}
+
+export interface AdjustmentChoices {
+  asOf: string;
+  locations: LedgerLocation[];
+  lots: AdjustmentLotChoice[];
+  product: LedgerProduct;
+}
+
+export type AdjustmentCreateDirection =
+  (typeof AdjustmentCreateDirection)[keyof typeof AdjustmentCreateDirection];
+
+export const AdjustmentCreateDirection = {
+  add: "add",
+  reduce: "reduce",
+} as const;
+
+export interface AdjustmentCreate {
+  batchNo?: string | null;
+  correctionOf?: string | null;
+  direction: AdjustmentCreateDirection;
+  expiryDate?: string | null;
+  idempotencyKey: string;
+  locationId: string | null;
+  lotId?: string | null;
+  productId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  reason: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+}
+
+export type AdjustmentInputDirection =
+  (typeof AdjustmentInputDirection)[keyof typeof AdjustmentInputDirection];
+
+export const AdjustmentInputDirection = {
+  add: "add",
+  reduce: "reduce",
+} as const;
+
+export interface AdjustmentInput {
+  batchNo?: string | null;
+  correctionOf?: string | null;
+  direction: AdjustmentInputDirection;
+  expiryDate?: string | null;
+  locationId: string | null;
+  lotId?: string | null;
+  productId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  reason: string;
+}
+
+export type AdjustmentReconciliationState =
+  (typeof AdjustmentReconciliationState)[keyof typeof AdjustmentReconciliationState];
+
+export const AdjustmentReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export type AdjustmentSavedDirection =
+  (typeof AdjustmentSavedDirection)[keyof typeof AdjustmentSavedDirection];
+
+export const AdjustmentSavedDirection = {
+  add: "add",
+  reduce: "reduce",
+} as const;
+
+export interface AdjustmentSaved {
+  actor: string;
+  actorId: string;
+  after: string;
+  appendOnly: boolean;
+  batchNo?: string | null;
+  before: string;
+  concentration: string;
+  correctionOf?: string | null;
+  createdAt: string;
+  delta: string;
+  direction: AdjustmentSavedDirection;
+  expiryDate?: string | null;
+  id: string;
+  locationId: string | null;
+  locationName: string;
+  locationVersion: number | null;
+  lotId?: string | null;
+  productId: string;
+  productName: string;
+  productVersion: number;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  reason: string;
+  scope: string;
+  unit: string;
+}
+
+export interface AdjustmentReconciliation {
+  adjustment: AdjustmentSaved | null;
+  state: AdjustmentReconciliationState;
+}
+
+export type AdjustmentSnapshotDirection =
+  (typeof AdjustmentSnapshotDirection)[keyof typeof AdjustmentSnapshotDirection];
+
+export const AdjustmentSnapshotDirection = {
+  add: "add",
+  reduce: "reduce",
+} as const;
+
+export interface AdjustmentSnapshot {
+  after: string;
+  batchNo?: string | null;
+  before: string;
+  concentration: string;
+  correctionOf?: string | null;
+  delta: string;
+  direction: AdjustmentSnapshotDirection;
+  expiryDate?: string | null;
+  locationId: string | null;
+  locationName: string;
+  locationVersion: number | null;
+  lotId?: string | null;
+  productId: string;
+  productName: string;
+  productVersion: number;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  reason: string;
+  scope: string;
+  unit: string;
+}
+
+export interface AdjustmentReview {
+  adjustment: AdjustmentSnapshot;
+  reviewToken: string;
+}
+
 export type AllergenEditStatus =
   (typeof AllergenEditStatus)[keyof typeof AllergenEditStatus];
 
@@ -214,12 +400,14 @@ export interface AllergenVersion {
 }
 
 export interface AssemblyComponent {
+  adjustmentId?: string | null;
   after: string;
   batchNo: string | null;
   before: string;
   expiryDate: string | null;
   lineId: string | null;
   lotId: string;
+  openingId?: string | null;
   productId: string;
   productName: string;
   productVersion: number;
@@ -227,6 +415,7 @@ export interface AssemblyComponent {
   receiptId: string | null;
   receiptNumber: string | null;
   receivedDate: string | null;
+  source?: string | null;
   unit: string;
 }
 
@@ -3016,17 +3205,20 @@ export interface ImmWrite {
 }
 
 export interface InventoryComponentProvenance {
+  adjustmentId?: string | null;
   after: string;
   batchNo: string | null;
   before: string;
   expiryDate: string | null;
   lineId: string | null;
   lotId: string;
+  openingId?: string | null;
   productId: string;
   productName: string;
   quantity: string;
   receiptId: string | null;
   receiptNumber: string | null;
+  source?: string | null;
   unit: string;
 }
 
@@ -3113,6 +3305,7 @@ export interface InventoryRecipeSnapshot {
 }
 
 export interface InventoryLotView {
+  adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   batchNo: string | null;
@@ -3158,6 +3351,7 @@ export type InventoryReferenceOpeningLocation = {
 } | null;
 
 export interface InventoryReference {
+  adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   available?: string | null;
@@ -3652,6 +3846,89 @@ export interface LanguageReview {
 export interface LanguageVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export interface LedgerCoverage {
+  complete: boolean;
+  contract: string;
+  earliestRecordedAt: string | null;
+  limitations: string[];
+}
+
+export interface LedgerLeg {
+  delta: string;
+  location: string;
+  lotId: string;
+}
+
+export interface LedgerEntry {
+  actor: string;
+  at: string;
+  balance: string;
+  batchNo: string | null;
+  businessDate: string | null;
+  id: string;
+  legs: LedgerLeg[];
+  location: string;
+  lotId: string | null;
+  quantityIn: string;
+  quantityOut: string;
+  reason: string;
+  reference: string;
+  sourceAvailable: boolean;
+  sourceId: string | null;
+  sourceKind: string | null;
+  type: string;
+}
+
+export type ProcurementEntryKind =
+  (typeof ProcurementEntryKind)[keyof typeof ProcurementEntryKind];
+
+export const ProcurementEntryKind = {
+  po: "po",
+  pr: "pr",
+} as const;
+
+export interface ProcurementEntry {
+  accepted: string;
+  date: string | null;
+  id: string;
+  kind: ProcurementEntryKind;
+  number: string;
+  ordered: string;
+  received: string;
+  rejected: string;
+  sourceAvailable: boolean;
+  sourceId?: string | null;
+  status: string;
+  stockEffect: string;
+}
+
+export interface LedgerProcurement {
+  items: ProcurementEntry[];
+  scope: string;
+}
+
+export interface LedgerSummary {
+  additions: string;
+  closing: string;
+  current: string;
+  opening: string;
+  reductions: string;
+  scope: string;
+}
+
+export interface LedgerPage {
+  asOf: string;
+  coverage: LedgerCoverage;
+  filtered: number;
+  items: LedgerEntry[];
+  limit: number;
+  locations: LedgerLocation[];
+  offset: number;
+  procurement: LedgerProcurement;
+  product: LedgerProduct;
+  summary: LedgerSummary;
 }
 
 export type LocationEditStatus =
@@ -5036,6 +5313,7 @@ export const MovementLineViewItemKind = {
 export type MovementLineViewOpeningLocation = { [key: string]: unknown } | null;
 
 export interface MovementLineView {
+  adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   batchNo: string | null;
@@ -11263,6 +11541,23 @@ export const ListInventoryStockStockStatus = {
 export type GetInventoryStockHistoryParams = {
   from_date?: string | null;
   to_date?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetInventoryLedgerParams = {
+  from_date?: string | null;
+  to_date?: string | null;
+  location_id?: string | null;
+  transaction_type?: string | null;
   /**
    * @minimum 0
    * @maximum 1000000

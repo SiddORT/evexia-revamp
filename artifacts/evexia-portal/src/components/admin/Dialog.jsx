@@ -15,6 +15,9 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
     closeRef.current?.focus();
     function handleKey(event) {
       if (!isTopModal(dialogRef.current)) return;
+      // Existing source drawers/previews use the browser's top-layer dialog.
+      // Their own focus/Escape handlers must win over an enclosing portal dialog.
+      if (event.target?.closest?.('dialog[open]')) return;
       if (event.key === 'Escape' && document.activeElement?.closest?.('.searchable-select--open')) return;
       const activeControl = document.activeElement?.closest?.('.searchable-control--open');
       const portal = document.activeElement?.closest?.('[data-searchable-owner]');

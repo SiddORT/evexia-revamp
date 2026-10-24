@@ -100,7 +100,7 @@ def test_management_rejects_mr_staff_and_missing_identity(client):
                        json={"custom_role_id": None, "workspace_login_enabled": True, "expected_version": staff["version"]})
     assert enabled.status_code == 200, enabled.text
     staff_login = api.post("/api/v1/auth/login", headers={"Origin": "http://testserver"},
-                           json={"identifier": staff["userId"], "password": created["initial_password"], "identity_kind": "admin"})
+                           json={"identifier": staff["employeeCode"], "password": created["initial_password"], "identity_kind": "admin"})
     assert staff_login.status_code == 200, staff_login.text
     mr = create_user(db, "host-mr@example.com")
     for response in (staff_login, login(api, mr.email)):

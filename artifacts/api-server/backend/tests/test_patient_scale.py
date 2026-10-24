@@ -80,7 +80,8 @@ def test_large_directory_measurements(client):
     values = clone_values(prototype, "doctor_directory")
     doctor_ids = [uuid.uuid4() for _ in range(501)]
     db.add_all([
-        DoctorDirectory(**{**values, "id": key, "registrationNumber": f"SCALE-{i}"})
+        DoctorDirectory(**{**values, "id": key, "doctorNumber": f"DR-900000{i:06d}",
+                           "registrationNumber": f"SCALE-{i}"})
         for i, key in enumerate(doctor_ids)])
     ids = [uuid.uuid4() for _ in range(5001)]
     db.execute(insert(Patient), [

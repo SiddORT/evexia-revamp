@@ -166,7 +166,7 @@ def test_shift_status_domain_guard_and_current_zone_filters(client):
     assert str(owner.assigned_mr_id) == mr["id"] and not owner.is_active and owner.version == 4
     new_zone = api.post("/api/v1/admin/zones", headers=headers, json={"name": "Current Patient Zone", "status": "active"}).json()
     shifted_mr = api.post("/api/v1/admin/mrs/" + mr["id"] + "/edit", headers=headers,
-                          json={**mr_fields(str(source.hq), new_zone["id"]),
+                          json={**mr_fields(str(source.hq), new_zone["id"], username=mr["userId"]),
                                 "zoneIds": [new_zone["id"]], "expected_version": mr["version"]})
     assert shifted_mr.status_code == 200, shifted_mr.text
     assert api.get(BASE, headers=headers, params={"zone_id": zone}).json()["filtered"] == 0

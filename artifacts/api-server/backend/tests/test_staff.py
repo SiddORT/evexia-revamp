@@ -15,13 +15,20 @@ from app.services.staff_crypto import StaffCrypto, StaffError
 from test_sessions import client, create_user, login
 from test_reporting import admin_headers as reporting_admin_headers
 from app.db.designation_models import Designation
+from app.db.role_models import CustomRole
 
 BASE = "/api/v1/admin/staff"
 BODY = dict(name="Fictional Staff", email="fictional@example.com", phone="9876543210",
-            dialCountry="IN", role="Super Admin", designation_id="31300000-0000-4000-8000-000000000001", dateOfJoining="2025-01-15", status="active")
+            dialCountry="IN", custom_role_id="31300000-0000-4000-8000-000000000002",
+            employeeCode="SYNTHETIC-STAFF-001",
+            designation_id="31300000-0000-4000-8000-000000000001", dateOfJoining="2025-01-15", status="active")
 
 
-def seed_designation(db, actor_id, name="Executive"):
+def seed_designation(db, actor_id, name="Executive", *, include_role=True):
+    role_id = uuid.UUID(BODY["custom_role_id"])
+    if include_role and not db.get(CustomRole, role_id):
+        db.add(CustomRole(id=role_id, name="Synthetic Staff Role", description="Synthetic unprivileged role label",
+                          permissions=[], created_by=actor_id, updated_by=actor_id))
     key = uuid.UUID(BODY["designation_id"])
     if not db.get(Designation, key):
         db.add(Designation(id=key, name=name, shortName="EX", status="active",
@@ -48,10 +55,12 @@ def test_empty_create_encrypted_credentials_and_reporting(client):
     profile = db.get(StaffProfile, uuid.UUID(row["id"]))
     user = db.get(User, profile.user_id)
     assert user.email is None and user.system_role is None and not user.is_protected_system_admin
-    assert user.username == row["userId"] and len(user.username) <= 32
+    assert "userId" not in row and user.username.startswith("EVX-") and len(user.username) <= 32
     assert user.password_hash.startswith("$argon2id$")
     assert verify_password(body["initial_password"], user.password_hash)
-    assert len(body["initial_password"]) >= 24
+    assert len(body["initial_password"]) == 12
+    assert all(any(c in group for c in body["initial_password"]) for group in (
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz", "0123456789", "!@#$%^&*_-+?"))
     for field in ("name", "email", "phone"):
         encrypted = getattr(profile, f"{field}_ciphertext")
         assert encrypted.startswith("v1:primary:") and BODY[field] not in encrypted
@@ -79,10 +88,12 @@ def test_edit_status_immutable_credentials_and_stale_drafts(client):
     profile = db.get(StaffProfile, uuid.UUID(row["id"]))
     before = profile.name_ciphertext
     password_hash = db.get(User, profile.user_id).password_hash
+    account_number = db.get(User, profile.user_id).username
     changed = {**BODY, "name": "Revised Fictional", "expected_version": 1}
     response = api.post(f"{BASE}/{row['id']}/edit", headers=headers, json=changed)
     assert response.status_code == 200, response.text
-    assert response.json()["version"] == 2 and response.json()["userId"] == row["userId"]
+    assert response.json()["version"] == 2 and "userId" not in response.json()
+    assert db.get(User, profile.user_id).username == account_number
     assert before != db.get(StaffProfile, profile.id).name_ciphertext
     assert api.post(f"{BASE}/{row['id']}/edit", headers=headers, json=changed).json()["error"]["code"] == "staff_stale"
     assert api.post(f"{BASE}/{row['id']}/status", headers=headers, json={"status": "inactive", "expected_version": 1}).status_code == 409
@@ -161,17 +172,18 @@ def test_crypto_randomness_record_field_binding_and_rotation(client):
             crypto.decrypt(record, field, a)
 
 
-def test_username_collision_is_retried_without_rehashing_or_partial_rows(client, monkeypatch):
+def test_account_number_collision_fails_without_partial_rows(client, monkeypatch):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
     first = api.post(BASE, headers=headers, json=BODY).json()["record"]
-    from app.services import staff
-    choices = iter([first["userId"][3:], "e" * 28])
-    monkeypatch.setattr(staff.secrets, "token_hex", lambda size: next(choices))
-    response = api.post(BASE, headers=headers, json={**BODY, "email": "new@example.com"})
-    assert response.status_code == 201, response.text
-    assert response.json()["record"]["userId"] == "st_" + "e" * 28
-    assert db.scalar(select(func.count()).select_from(StaffProfile)) == 2
+    from app.services import staff_account_numbers
+    profile = db.get(StaffProfile, uuid.UUID(first["id"]))
+    number = db.get(User, profile.user_id).username
+    monkeypatch.setattr(staff_account_numbers, "allocate", lambda session: number)
+    response = api.post(BASE, headers=headers, json={**BODY, "email": "new@example.com", "employeeCode": "SYNTHETIC-STAFF-002"})
+    assert response.status_code == 409, response.text
+    assert db.scalar(select(func.count()).select_from(StaffProfile)) == 1
+    assert db.scalar(select(func.count()).select_from(User)) == 2
 
 
 def test_commit_failure_rolls_back_both_profile_and_credentials(client, monkeypatch):

@@ -35,8 +35,7 @@ def test_actual_location_migration_preserves_zone_identity_history(migration_db,
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, actor_id)
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
-    command.upgrade(config, "0041_location_geography")
+    approved_historical_upgrade(engine, config, current_models=True)
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"
         assert db.get(CourierPartner, courier_id).name == "Preserved courier"

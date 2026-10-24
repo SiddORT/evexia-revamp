@@ -144,6 +144,10 @@ def ready(db):
         ["0064_procurement_documents"],
         ["0065_lupin_orders"],
         ["0066_spt_registration_owner"],
+        # Adjustment metadata uses PR inventory keys, not account anchors.
+        ["0067_inventory_adjustments"],
+        # Free-text category CHECK relaxation changes no encrypted fields/keys.
+        ["0068_category_description"],
     ):
         raise AccountCryptoError()
     current = crypto()

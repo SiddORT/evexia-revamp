@@ -34,12 +34,14 @@ def test_forward_empty_migration_preserves_foundations(migration_db):
             '0,0,0,0,0,0,1,:actor,:actor)'), {"id": existing["id"], "actor": actor_id})
         db.add(AuditEvent(actor_id=actor_id, session_id=session_id, action="designation_create", outcome="success"))
         db.commit()
-        hq = Headquarter(name="Preserved HQ", state_code="DL", status="active",
-                         created_by=actor_id, updated_by=actor_id)
-        db.add(hq); db.commit()
-        hq = {"id": hq.id}
+        hq = {"id": uuid.uuid4()}
+        db.execute(text("""INSERT INTO headquarters
+            (id,name,state_code,status,version,created_by,updated_by)
+            VALUES (:id,'Preserved HQ','DL','active',1,:actor,:actor)"""),
+            {"id": hq["id"], "actor": actor_id})
+        db.commit()
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, current_models=True)
     with Session(engine) as db:
         assert db.get(Designation, existing["id"]).name == "Preserved"
         assert db.get(Headquarter, hq["id"]).name == "Preserved HQ"

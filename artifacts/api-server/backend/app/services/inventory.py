@@ -29,6 +29,7 @@ LIMIT = 2000
 LOCK = 145573
 COVERAGE = ("Stock originates in server accepted receipts and reviewed pre-system openings, exact to 0.001 procurement quantity units. "
             "Reviewed assemblies consume those components and create separate whole-combo lots in this same ledger. "
+            "Reasoned manual adjustments add distinct adjustment-origin stock or reduce an existing lot/location. "
             "Opening finished products do not consume components. Unallocated stock needs explicit allocation. No pack conversions. Stock carries across financial years. "
             "browser/demo data, sales, reservations and in-transit shipping are outside coverage.")
 
@@ -138,7 +139,8 @@ def reconcile_receipt(db, actor, data, initializing=False):
             old = crypto.open(lot.id, "lot", lot.payload_ciphertext)
             changed = metadata and any(old[k] != metadata[k] for k in ("productId", "batchNo", "expiryDate"))
             moved = db.scalar(select(Posting.id).where(Posting.lot_id == lot.id,
-                or_(Posting.movement_id.is_not(None), Posting.source_key.startswith("assembly:"))).limit(1))
+                or_(Posting.movement_id.is_not(None), Posting.source_key.startswith("assembly:"),
+                    Posting.source_key.startswith("adjustment:"))).limit(1))
             if changed and moved:
                 raise PRError("This receipt lot has committed transfers or assembly consumption; its product, batch and expiry cannot change.", 409, "inventory_lot_retained")
             if metadata:
@@ -313,7 +315,7 @@ def stock(db, actor, params):
                 item["lots"].append(dict(**meta, lotId=str(lot.id), locationId=lid,
                                          locationName=locations[lid], quantity=q(balance.quantity)))
                 item["quantity"] = q(Decimal(item["quantity"]) + balance.quantity)
-                item["state"] = "opening_backed" if lot.opening_id else ("assembled" if lot.combo_id else "receipt_backed")
+                item["state"] = "adjustment_backed" if lot.adjustment_id else ("opening_backed" if lot.opening_id else ("assembled" if lot.combo_id else "receipt_backed"))
         for item in result.values():
             item["unallocatedQuantity"] = q(sum((Decimal(l["quantity"]) for l in item["lots"] if l["locationId"] is None), Decimal(0)))
         rows = list(result.values())
@@ -406,7 +408,7 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
                 lot = db.get(Lot, balance.lot_id)
                 meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
                 meta.setdefault("itemKind", "combo" if lot.combo_id else "allergen")
-                provenance = ("Opening stock " + meta["openingId"]) if lot.opening_id else (meta.get("receiptNumber") or "Assembled combo")
+                provenance = ("Adjustment " + str(lot.adjustment_id)) if lot.adjustment_id else (("Opening stock " + meta["openingId"]) if lot.opening_id else (meta.get("receiptNumber") or "Assembled combo"))
                 data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta.get('batchNo') or 'Batch unavailable'} · {provenance}",
                                  **meta, available=q(balance.quantity)))
         data = sorted([r for r in data if query.strip().casefold() in r["name"].casefold()], key=lambda r: (r["name"], r["id"]))

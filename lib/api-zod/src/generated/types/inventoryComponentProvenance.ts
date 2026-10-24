@@ -7,16 +7,19 @@
  */
 
 export interface InventoryComponentProvenance {
+  adjustmentId?: string | null;
   after: string;
   batchNo: string | null;
   before: string;
   expiryDate: Date | null;
   lineId: string | null;
   lotId: string;
+  openingId?: string | null;
   productId: string;
   productName: string;
   quantity: string;
   receiptId: string | null;
   receiptNumber: string | null;
+  source?: string | null;
   unit: string;
 }

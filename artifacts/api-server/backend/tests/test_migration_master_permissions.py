@@ -43,13 +43,17 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
         staff_before = conn.execute(text("SELECT id, custom_role_id, workspace_login_enabled, version FROM staff_profiles")).all()
     command.upgrade(config, "0027_mr_designation_identity")
     with Session(engine) as db:
-        seed_designation(db, admin_id, "Director")
+        seed_designation(db, admin_id, "Director", include_role=False)
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, admin_id)
     upgrade_with_retirement_recovery(engine, config)
     with engine.connect() as conn:
         assert conn.execute(text("SELECT id, permissions, version, updated_at FROM custom_roles")).all() == before
         assert conn.execute(text("SELECT id, custom_role_id, workspace_login_enabled, version FROM staff_profiles")).all() == staff_before
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
+        command.downgrade(config, "0020_patient_directory")
+    from test_migration_0006 import continue_to_current_schema
+    continue_to_current_schema(engine, config)
     with Session(engine) as db:
         actor = identity(db, admin_id, session_id)
         empty = roles.mutate(db, actor, RoleFields(name="Empty"))
@@ -62,8 +66,6 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
             db.commit()
         db.rollback()
         assert db.get(CustomRole, role["id"]).permissions == sorted(MASTER_ACTIONS)
-    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
-        command.downgrade(config, "0020_patient_directory")
 
 
 @pytest.mark.parametrize("resource", MASTERS)

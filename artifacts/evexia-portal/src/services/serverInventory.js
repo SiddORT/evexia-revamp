@@ -12,6 +12,11 @@ const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter
 
 export const listStock = (params, signal) => request('/stock', { params: clean({ ...params, product_ids: params?.product_ids?.join?.(',') ?? params?.product_ids }), signal });
 export const stockHistory = (id, params, signal) => request(`/stock/${id}/history`, { params: clean(params), signal });
+export const getAdjustment = (id, signal) => request(`/adjustments/${id}`, { signal });
+export const lotOriginLabel = (lot) => lot.source === 'adjustment'
+  ? `Manual adjustment${lot.adjustmentId ? ` ${lot.adjustmentId}` : ''}`
+  : lot.source === 'opening' ? `Opening stock${lot.openingId ? ` ${lot.openingId}` : ''}`
+  : lot.receiptNumber || (lot.itemKind === 'combo' ? 'Assembled combo' : 'Receipt unavailable');
 export const listReference = (kind, params, signal) => request(`/references/${kind}`, { params: clean(params), signal });
 export const listMovements = (params, signal) => request('/movements', { params: clean({ ...params, allergen_ids: params?.allergen_ids?.join?.(',') ?? params?.allergen_ids }), signal });
 export const getMovement = (id, signal) => request(`/movements/${id}`, { signal });
@@ -100,4 +105,46 @@ export function exportStockCSV(rows, { asOf, coverage }, preferences) {
     coverage?.sales || 'unavailable', coverage?.openings || 'outside coverage']);
   return '\uFEFF' + presentExportTable(header, records, { timestampColumns: [9] }, preferences)
     .map((c) => c.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+
+/** Stock ledger and manual adjustments. */
+export const stockLedger = (id, params, signal) => request(`/stock/${id}/ledger`, { params: clean(params), signal });
+export const adjustmentChoices = (id, signal) => request(`/stock/${id}/adjustment-choices`, { signal });
+export const previewAdjustment = (body) => request('/adjustments/preview', { body });
+export const saveAdjustment = (body) => request('/adjustments', { body });
+export const reconcileAdjustment = (key) => request(`/adjustment-requests/${key}`);
+export const isSuperAdmin = () => getSession()?.user?.identity_kind === 'super_admin';
+export const LEDGER_TYPES = [
+  { value: '', label: 'All transaction types' }, { value: 'opening', label: 'Opening stock' }, { value: 'receipt', label: 'Receipt' },
+  { value: 'receipt_correction', label: 'Receipt correction' }, { value: 'transfer', label: 'Transfer' }, { value: 'allocation', label: 'Allocation' },
+  { value: 'assembly_consumption', label: 'Assembly consumption' }, { value: 'adjustment', label: 'Manual adjustment' },
+];
+export const typeLabel = (t) => LEDGER_TYPES.find((o) => o.value === t)?.label || String(t || 'Entry');
+const adjKey = () => `evexia.adjust.pending:${ownerMove()}`;
+export function pendingAdjustment() {
+  try {
+    if (!ownerMove()) throw new Error();
+    const raw = localStorage.getItem(adjKey());
+    if (raw === null) return null;
+    const item = JSON.parse(raw);
+    if (item.owner !== ownerMove() || !uuid.test(item.key)) throw new Error();
+    return item;
+  } catch { throw new Error('Adjustment retry identity is unavailable. Restore browser storage/session access; do not start a replacement save until the previous outcome is checked.'); }
+}
+export async function rememberAdjustment(key) {
+  const owner = ownerMove();
+  if (!owner || !navigator.locks) throw new Error('A safe save needs browser storage and Web Locks. Nothing was sent.');
+  await navigator.locks.request(`evexia-adjust:${owner}`, () => {
+    const previous = pendingAdjustment();
+    if (ownerMove() !== owner || (previous && previous.key !== key)) throw new Error('Another adjustment save is unresolved. Check its outcome before saving again.');
+    localStorage.setItem(adjKey(), JSON.stringify({ owner, key }));
+  });
+}
+export async function forgetAdjustment(key) {
+  const owner = ownerMove();
+  if (!owner || !navigator.locks) throw new Error('Retry storage unavailable; check the outcome before a new save.');
+  await navigator.locks.request(`evexia-adjust:${owner}`, () => {
+    if (ownerMove() !== owner || pendingAdjustment()?.key !== key) throw new Error('Retry identity changed.');
+    localStorage.removeItem(adjKey());
+  });
 }

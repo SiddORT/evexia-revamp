@@ -36,14 +36,15 @@ class SourceReviewTests(unittest.TestCase):
     def setUp(self):
         self.fn = functions()
 
-    def test_checked_in_source_is_explicitly_reviewed_at_0055(self):
+    def test_older_operator_scope_refuses_the_newer_source_pin(self):
         self.assertEqual(REVISION, "0055_mr_staff_managers")
         schema = ast.parse((ROOT / "artifacts/api-server/backend/app/core/schema.py").read_text())
         self.fn["SCHEMA_REVISION"] = next(ast.literal_eval(n.value) for n in schema.body
                                          if isinstance(n, ast.Assign)
                                          and any(isinstance(t, ast.Name) and t.id == "SCHEMA_REVISION"
                                                  for t in n.targets))
-        self.fn["source_review"]()
+        with self.assertRaisesRegex(RuntimeError, "Inventory source review is still pending"):
+            self.fn["source_review"]()
 
     def fixture(self, root):
         versions = root / "artifacts/api-server/backend/alembic/versions"

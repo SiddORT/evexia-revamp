@@ -39,7 +39,7 @@ def test_crud_audit_soft_deletion_and_versions(client):
     headers, actor = admin_headers(api, db)
     assert api.get(BASE, headers=headers).json()["total"] == 0
     row = add(api, headers, "  Diagnostic   reagents  ", description="  Example  ")
-    assert row["name"] == "Diagnostic reagents" and row["description"] == "Example"
+    assert row["name"] == "Diagnostic reagents" and row["description"] == "  Example  "
     assert row["unit_price"] == "125.50"
     assert row["createdBy"] == row["updatedBy"] == "Super Admin"
     assert row["createdAt"] == row["updatedAt"]

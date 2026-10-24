@@ -49,7 +49,7 @@ def test_designation_identity_lifecycle_names_and_transfer_revalidation(client):
     searched = api.get(BASE, headers=headers, params={"query": "Renamed Medical"}).json()
     assert searched["filtered"] is None and searched["partial"] and len(searched["items"]) == 1
     retained = api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
-                        json={**body, "expected_version": row["version"]})
+                        json={**body, "userId": row["userId"], "expected_version": row["version"]})
     assert retained.status_code == 200, retained.text
     assert api.post(BASE, headers=headers, json={**fields(hq, zone, code="NEW", username="new.mr")}).status_code == 409
     choices = api.get(BASE + "/references", headers=headers,
@@ -63,7 +63,7 @@ def test_designation_identity_lifecycle_names_and_transfer_revalidation(client):
         imported = {**fields(hq, zone, code="IMPORT-" + format, username="import." + format),
             "designation_id": "  RENAMED   Medical Representative ", "reportingManagerId": "",
             "zoneIds": json.dumps([zone])}
-        data = mr_transfer.encode([[imported[key] for key, _ in mr_transfer.COLUMNS]], format)
+        data = mr_transfer.encode([["" if imported[key] is None else imported[key] for key, _ in mr_transfer.COLUMNS]], format)
         checked = review(api, headers, data, "mrs." + format).json()
         assert checked["valid"], checked
         designation.version += 1; db.commit()
@@ -132,16 +132,21 @@ def setup(api, db):
     return headers, actor, hq, zone
 
 
-def fields(hq, zone, name="Synthetic MR", code="MR-01", username="synthetic.mr", **changes):
-    return dict(name=name, employeeCode=code, userId=username, phone="9000000001", dialCountry="IN", email="", contactRequirement="optional",
+def fields(hq, zone, name="Synthetic MR", code="MR-01", username="synthetic.mr", reportingStaffId=None, **changes):
+    values = dict(name=name, employeeCode=code, phone="9000000001", dialCountry="IN", email="", contactRequirement="optional",
                 hq=hq, zoneId=zone, dateOfJoining="2020-01-01", designation_id=str(DESIGNATION_ID),
-                reportingManagerId=None, paymentLimit="", doctorDaysLimit="", status="active",
+                reportingManagerId=None, reportingStaffId=reportingStaffId, paymentLimit="", doctorDaysLimit="", status="active",
                 pincode="110001", addressLine1="Synthetic address", addressLine2="", landmark="Synthetic landmark",
                 city="Delhi", state="Delhi", country="India", **changes)
+    if username is not None:
+        values["userId"] = username
+    return values
 
 
 def add(api, headers, body):
-    response = api.post(BASE, headers=headers, json=body)
+    # These directory/auth fixtures model activated accounts. Invitation tests
+    # exercise the passwordless creation path separately.
+    response = api.post(BASE, headers=headers, json={"initialPassword": PASSWORD, **body})
     assert response.status_code == 201, response.text
     assert response.headers["cache-control"] == "no-store"
     return response.json()
@@ -172,6 +177,7 @@ def csv_data(bodies, headers=None):
                       zoneIds=json.dumps(body.get("zoneIds") or ["Zone for MRs"]),
                       reportingManagerId=body["reportingManagerId"] or "",
                       reportingStaffId=body.get("reportingStaffId") or "")
+        values.setdefault("userId", "")
         writer.writerow([values[key] for key, title in mr_transfer.COLUMNS if title in headers])
     return stream.getvalue().encode()
 
@@ -193,7 +199,8 @@ def test_persisted_directory_account_identity_and_secret_projection(client):
     persisted = db.get(MRDirectory, uuid.UUID(row["id"]))
     profile = db.get(MRProfile, persisted.id)
     user = db.get(User, profile.user_id)
-    assert user.email is None and user.username == "synthetic.mr" and user.system_role == "mr"
+    assert user.email is None and user.username == row["userId"] and user.system_role == "mr"
+    assert user.username.startswith("MR-")
     assert verify_password(secret["password"], user.password_hash)
     assert db.get(MRDirectory, existing_profile) is None
     assert db.get(Patient, patient.id).assigned_mr_id == existing_profile
@@ -219,7 +226,7 @@ def test_persisted_directory_account_identity_and_secret_projection(client):
 
 @pytest.mark.parametrize("field,value", [
     ("name", ""), ("name", "x" * 201), ("name", "a\x00b"), ("employeeCode", "x" * 65),
-    ("userId", "email@example.invalid"), ("userId", "UPPER?!"), ("email", "bad"), ("phone", "123"),
+    ("email", "bad"), ("phone", "123"),
     ("pincode", "012345"), ("pincode", "12345"), ("dateOfJoining", "2020-02-30"),
     ("dateOfJoining", "2020-01-01T12:00:00Z"), ("dateOfJoining", (date.today() + timedelta(days=3)).isoformat()),
     ("paymentLimit", "0.001"), ("paymentLimit", "-1"), ("paymentLimit", "1e2"),
@@ -235,21 +242,30 @@ def test_business_validation(client, field, value):
     assert db.scalar(select(func.count()).select_from(MRDirectory)) == 0
 
 
+@pytest.mark.parametrize("requested", ["email@example.invalid", "UPPER?!"])
+def test_create_never_uses_caller_supplied_account_number(client, requested):
+    api, db, _ = client
+    headers, _, hq, zone = setup(api, db)
+    record = add(api, headers, {**fields(hq, zone), "userId": requested})["record"]
+    assert record["userId"].startswith("MR-") and record["userId"] != requested
+    profile = db.get(MRProfile, uuid.UUID(record["id"]))
+    assert db.get(User, profile.user_id).username == record["userId"]
+
+
 def test_optional_contacts_normalization_and_uniqueness(client):
     api, db, _ = client
     headers, _, hq, zone = setup(api, db)
     body = fields(hq, zone)
-    required = api.post(BASE, headers=headers, json={**body, "contactRequirement": "required"})
+    required = api.post(BASE, headers=headers, json={**body, "phone": "", "email": "", "contactRequirement": "required"})
     assert required.status_code == 422
     first = add(api, headers, {**body, "phone": "+91 (98765) 43210", "email": " Test@Example.COM ",
                                "name": "  Same name  ", "employeeCode": " Mr-01 "})["record"]
     assert first["phone"] == "9876543210" and first["email"] == "test@example.com"
     for changes in ({"employeeCode": "mr-01", "userId": "different.mr", "email": ""},
-                    {"employeeCode": "MR-02", "userId": "SYNTHETIC.MR", "email": ""},
-                    {"employeeCode": "MR-02", "userId": "different.mr", "email": "TEST@EXAMPLE.COM"},
-                    {"employeeCode": "MR-02", "userId": "root", "email": ""}):
+                    {"employeeCode": "MR-02", "userId": "different.mr", "email": "TEST@EXAMPLE.COM"}):
         assert api.post(BASE, headers=headers, json={**body, **changes}).status_code == 409
-    add(api, headers, fields(hq, zone, name="Same name", code="MR-02", username="second.mr"))
+    second = add(api, headers, fields(hq, zone, name="Same name", code="MR-02", username="root"))["record"]
+    assert second["userId"].startswith("MR-") and second["userId"] != "root"
     assert api.get(BASE, headers=headers).json()["total"] == 2
     assert "password" not in api.get(BASE + "/username", headers=headers).json()
 
@@ -258,16 +274,22 @@ def test_versions_assignment_lifecycle_cycles_and_delete_blocks(client):
     api, db, _ = client
     headers, _, hq, zone = setup(api, db)
     a = add(api, headers, fields(hq, zone))["record"]
-    b = add(api, headers, {**fields(hq, zone, code="MR-02", username="second.mr"), "reportingManagerId": a["id"]})["record"]
-    cyclic = {**fields(hq, zone), "expected_version": a["version"], "reportingManagerId": b["id"]}
+    b = add(api, headers, fields(hq, zone, code="MR-02"))["record"]
+    # Historical MR-manager links remain readable/delete-protected, but cannot
+    # be newly authored now that new managers must be Staff.
+    historical = db.get(MRDirectory, uuid.UUID(b["id"]))
+    historical.reportingManagerId = uuid.UUID(a["id"])
+    historical.reporting_manager_name = a["name"]
+    db.commit()
+    cyclic = {**fields(hq, zone, username=a["userId"]), "expected_version": a["version"], "reportingManagerId": b["id"]}
     assert api.post(BASE + "/" + a["id"] + "/edit", headers=headers, json=cyclic).status_code == 409
     assert api.post(BASE + "/" + a["id"] + "/delete", headers=headers, json={"expected_version": 1}).status_code == 409
     assert api.post(BASE + "/" + a["id"] + "/contact", headers=headers,
-                    json={"expected_version": 1, "contactRequirement": "required"}).status_code == 422
+                    json={"expected_version": 2, "contactRequirement": "required"}).status_code == 409
     assert api.post("/api/v1/admin/headquarters/" + hq + "/status", headers=headers,
                     json={"expected_version": 1, "status": "inactive"}).status_code == 200
     retained = api.post(BASE + "/" + a["id"] + "/edit", headers=headers,
-                        json={**fields(hq, zone), "expected_version": 1})
+                        json={**fields(hq, zone, username=a["userId"]), "expected_version": 1})
     assert retained.status_code == 200 and retained.json()["assignmentWarnings"]
     assert api.post(BASE + "/" + a["id"] + "/status", headers=headers,
                     json={"expected_version": 1, "status": "inactive"}).status_code == 409
@@ -275,7 +297,7 @@ def test_versions_assignment_lifecycle_cycles_and_delete_blocks(client):
     assert api.post("/api/v1/admin/headquarters/" + hq + "/delete", headers=headers,
                     json={"expected_version": 2}).status_code == 200
     assert api.post(BASE + "/" + a["id"] + "/edit", headers=headers,
-                    json={**fields(hq, zone), "expected_version": 2}).status_code == 409
+                    json={**fields(hq, zone, username=a["userId"]), "expected_version": 2}).status_code == 409
     choices = api.get(BASE + "/references", headers=headers, params={"kind": "headquarters", "include_saved": hq}).json()
     assert choices["items"][0]["deleted"]
     assert api.post(BASE + "/" + b["id"] + "/delete", headers=headers, json={"expected_version": 1}).status_code == 200
@@ -303,30 +325,34 @@ def test_reset_deactivation_identifier_changes_revoke_sessions(client):
     assert api.get("/api/v1/auth/me", headers=mh).status_code == 401
     new_secret = reset.json()["credentials"]
     token = mr_login(api, new_secret["userId"], new_secret["password"]).json()["access_token"]
+    immutable = api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
+                         json={**fields(hq, zone, username="changed.mr"), "expected_version": 2})
+    assert immutable.status_code == 409
+    assert api.get("/api/v1/auth/me", headers={"Authorization": "Bearer " + token}).status_code == 200
     edit = api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
-                    json={**fields(hq, zone, username="changed.mr"), "expected_version": 2})
+                    json={**fields(hq, zone, username=row["userId"]), "email": "new-login@example.com", "expected_version": 2})
     assert edit.status_code == 200 and edit.json()["id"] == row["id"] and "credentials" not in edit.json()
     assert api.get("/api/v1/auth/me", headers={"Authorization": "Bearer " + token}).status_code == 401
-    assert mr_login(api, "changed.mr", new_secret["password"]).status_code == 200
+    assert mr_login(api, row["userId"], new_secret["password"]).status_code == 200
     inactive = api.post(BASE + "/" + row["id"] + "/status", headers=headers, json={"expected_version": 3, "status": "inactive"})
     assert inactive.status_code == 200
     assert api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"}).status_code == 401
-    assert mr_login(api, "changed.mr", new_secret["password"]).status_code == 401
+    assert mr_login(api, row["userId"], new_secret["password"]).status_code == 401
     active = api.post(BASE + "/" + row["id"] + "/status", headers=headers, json={"expected_version": 4, "status": "active"})
-    assert active.status_code == 200 and mr_login(api, "changed.mr", new_secret["password"]).status_code == 200
+    assert active.status_code == 200 and mr_login(api, row["userId"], new_secret["password"]).status_code == 200
 
 
 def test_server_combined_filters_full_export_and_ledger(client):
     api, db, _ = client
     headers, _, hq, zone = setup(api, db)
     add(api, headers, fields(hq, zone))
-    add(api, headers, {**fields(hq, zone, code="MR-02", username="second.mr"), "status": "inactive"})
+    second = add(api, headers, {**fields(hq, zone, code="MR-02"), "status": "inactive"})["record"]
     matching = api.get(BASE, headers=headers, params={"query": "synthetic", "status": "inactive",
                        "zone_id": zone, "hq_id": hq, "limit": 1}).json()
     assert matching["filtered"] is None and matching["partial"] and matching["total"] == 2 and len(matching["items"]) == 1
     literal = api.get(BASE, headers=headers, params={"query": "%"}).json()
     assert literal["filtered"] is None and literal["partial"] and not literal["items"]
-    searched = api.get(BASE, headers=headers, params={"query": "second.mr"}).json()
+    searched = api.get(BASE, headers=headers, params={"query": second["userId"]}).json()
     assert searched["filtered"] is None and len(searched["items"]) == 1
     for format in ("csv", "xlsx"):
         response = api.get(BASE + "/export", headers={**headers, "X-Download-Initiation": str(uuid.uuid4())},
@@ -347,10 +373,15 @@ def test_server_combined_filters_full_export_and_ledger(client):
 
 def test_atomic_import_legacy_exports_batch_managers_and_secret_isolation(client):
     api, db, _ = client
-    headers, _, hq, zone = setup(api, db)
+    headers, actor, hq, zone = setup(api, db)
     one = fields(hq, zone)
     two = fields(hq, zone, code="MR-02", username="second.mr")
-    two["reportingManagerId"] = "user:synthetic.mr"
+    from test_staff import BODY as STAFF_BODY
+    from test_staff import seed_designation as seed_staff_designation
+    seed_staff_designation(db, actor.id)
+    staff = api.post("/api/v1/admin/staff", headers=headers, json=STAFF_BODY)
+    assert staff.status_code == 201, staff.text
+    two["reportingStaffId"] = staff.json()["record"]["id"]
     data = csv_data([one, two])
     checked = review(api, headers, data)
     assert checked.status_code == 200 and checked.json()["valid"], checked.text
@@ -363,7 +394,8 @@ def test_atomic_import_legacy_exports_batch_managers_and_secret_isolation(client
     assert commit(api, headers, data, checked.json()["digest"]).status_code == 409
     assert db.scalar(select(func.count()).select_from(MRDirectory)) == 2
     rows = list(db.scalars(select(MRDirectory).order_by(MRDirectory.employeeCode)))
-    assert rows[1].reportingManagerId == rows[0].id
+    assert rows[1].reportingStaffId == uuid.UUID(two["reportingStaffId"])
+    assert rows[1].reportingManagerId is None
     exported = api.get(BASE + "/export", headers=headers).content
     assert [r["values"]["userId"] for r in mr_transfer.parse(exported, "mrs.csv")]
     legacy = fields(hq, zone, code="MR-03", username="legacy.mr")
@@ -579,7 +611,7 @@ def test_large_page_bulk_queries_exact_projection_pagination_and_ledger(client, 
     assert api.get(BASE, headers=headers, params={"offset": 240}).json()["items"] == []
     tombstone = api.get(BASE, headers=headers, params={"query": "FIX-00000"}).json()["items"][0]
     assert tombstone["reportingManagerName"] == "Deleted manager"
-    assert tombstone["assignmentWarnings"] == ["Reporting manager was deleted. Explicitly replace it before saving."]
+    assert tombstone["assignmentWarnings"] == ["Legacy MR manager was deleted. Explicitly replace it before saving."]
     # Filtered full-directory export still requires a durable ledger acknowledgement.
     response = api.get(BASE + "/export", headers={**headers, "X-Download-Initiation": str(uuid.uuid4())},
                        params={"format": "csv", "query": "Bulk MR", "status": "inactive"})

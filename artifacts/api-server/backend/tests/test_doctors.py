@@ -48,7 +48,7 @@ def edit(api, headers, record, body):
                     json={**body, "expected_version": record["version"]})
 
 
-def csv_file(bodies, mr_reference="user:synthetic.mr", header=None):
+def csv_file(bodies, mr_reference="employee:MR-01", header=None):
     header = header or doctor_transfer.HEADERS
     stream = io.StringIO()
     writer = csv.writer(stream)
@@ -81,7 +81,7 @@ def test_all_fields_audit_persist_and_version_conflict(client):
     assert detail["createdBy"] == detail["updatedBy"] == "Super Admin"
     assert detail["verification"] == "unverified"
     assert "password" not in detail
-    changed = edit(api, headers, record, fields(mr, name="Changed Doctor", phone="", email="", contactRequirement="optional"))
+    changed = edit(api, headers, record, fields(mr, name="Changed Doctor", phone="", email="contact@example.com", contactRequirement="optional"))
     assert changed.status_code == 200, changed.text
     assert changed.json()["version"] == 2 and changed.json()["createdAt"] == detail["createdAt"]
     stale = edit(api, headers, record, body)
@@ -93,7 +93,7 @@ def test_all_fields_audit_persist_and_version_conflict(client):
 
 
 @pytest.mark.parametrize("changes", [
-    {"contactRequirement": "required", "phone": ""}, {"alternatePhone": "123"}, {"dialCountry": "ZZ"},
+    {"contactRequirement": "required", "phone": "", "email": ""}, {"alternatePhone": "123"}, {"dialCountry": "ZZ"},
     {"email": "bad"}, {"dateOfJoining": "2099-01-01"}, {"dateOfJoining": "2020-02-30"},
     {"invoiceType": "gst", "gstNumber": ""}, {"gstNumber": "bad"},
     {"orderDiscount": "100.01"}, {"orderDiscount": "1.0000001"}, {"paymentLimit": "1e3"},
@@ -118,12 +118,12 @@ def test_duplicates_contacts_status_and_atomic_bulk(client):
     api, db, _ = client
     headers, _, mr, _ = setup_doctor(api, db)
     one = add(api, headers, fields(mr))
-    two = add(api, headers, fields(mr, registrationNumber="REG-02", contactRequirement="optional", phone="", email=""))
+    two = add(api, headers, fields(mr, registrationNumber="REG-02", contactRequirement="optional", phone="", email="contact@example.com"))
     duplicate = api.post(BASE, headers=headers, json=fields(mr, registrationNumber="  reg-01 "))
     assert duplicate.status_code == 409
     invalid = api.post(BASE + "/" + two["id"] + "/contact", headers=headers,
                        json={"expected_version": two["version"], "contactRequirement": "required"})
-    assert invalid.status_code == 422
+    assert invalid.status_code == 422  # Required-contact mode still requires both.
     status = api.post(BASE + "/" + one["id"] + "/status", headers=headers,
                       json={"expected_version": 1, "status": "inactive"})
     assert status.status_code == 200
@@ -178,7 +178,7 @@ def test_search_filter_pagination_export_parity_and_xlsx_text(client):
     rows = list(csv.reader(io.StringIO(csv_response.content.decode("utf-8-sig"))))
     assert len(rows) == 8 and rows[0] == doctor_transfer.CURRENT_HEADERS + doctor_transfer.AUDIT
     assert all(row[24] == "'010001" for row in rows[1:])
-    assert all(row[11] == "user:synthetic.mr" and row[28] == mr["name"] for row in rows[1:])
+    assert all(row[11] == f"user:{mr['userId']}" and row[28] == mr["name"] for row in rows[1:])
     assert any(row[0].startswith("'=") for row in rows[1:])
     assert csv_response.headers["x-download-log"]
     excel = api.get(BASE + "/export", headers=headers, params={**params, "format": "xlsx"})
@@ -210,8 +210,9 @@ def test_review_commit_legacy_binding_and_rereview_conflict(client):
     assert review(api, headers, exported).json()["rows"][0]["errors"] == ["Registration number already belongs to another doctor."]
     new = csv_file([fields(mr, registrationNumber="NEW-01")])
     reviewed = review(api, headers, new).json()
-    changed = api.post("/api/v1/admin/mrs/" + mr["id"] + "/contact", headers=headers,
-                       json={"expected_version": mr["version"], "contactRequirement": "optional"})
+    changed = api.post("/api/v1/admin/mrs/" + mr["id"] + "/edit", headers=headers,
+                       json={**mr_fields(mr["hq"], mr["zoneId"], username=mr["userId"]),
+                             "name": "Renamed MR", "expected_version": mr["version"]})
     assert changed.status_code == 200
     assert commit(api, headers, new, reviewed["digest"]).status_code == 409
 
@@ -233,7 +234,7 @@ def test_import_atomic_invalid_duplicates_ambiguous_and_exact_xlsx(client):
     book = Workbook()
     sheet = book.active
     sheet.append(doctor_transfer.HEADERS)
-    values = {**fields(mr), "mrId": "user:synthetic.mr", "zoneName": "Zone for MRs", "dialCode": "+91", "verification": "unverified"}
+    values = {**fields(mr), "mrId": f"user:{mr['userId']}", "zoneName": "Zone for MRs", "dialCode": "+91", "verification": "unverified"}
     sheet.append([str(values[key]) for key, _ in doctor_transfer.COLUMNS])
     buffer = io.BytesIO(); book.save(buffer)
     response = review(api, headers, buffer.getvalue(), "doctors.xlsx")
@@ -245,17 +246,29 @@ def test_import_atomic_invalid_duplicates_ambiguous_and_exact_xlsx(client):
 def test_limits_bad_files_denials_and_unknown_fields(client):
     api, db, _ = client
     assert api.get(BASE).status_code == 401
-    headers, _, mr, _ = setup_doctor(api, db)
+    headers, actor, mr, _ = setup_doctor(api, db)
     assert review(api, headers, b"x" * (2 * 1024 * 1024 + 1)).status_code == 413
     assert review(api, headers, csv_file([fields(mr)] * 1001)).status_code == 422
     assert review(api, headers, b"bad", "fake.xlsx").status_code == 422
     assert review(api, headers, b"Name,Password\nfake,secret").status_code == 422
     forged = api.post(BASE, headers=headers, json=fields(mr, **{"private-secret-field": "secret"}))
     assert forged.status_code == 422 and "private-secret-field" not in forged.text and "secret" not in forged.text
-    # MR has no Admin grants; its valid portal token still cannot use Doctor services.
-    account = add_mr(api, headers, {**mr_fields(mr["hq"], mr["zoneId"]), "employeeCode": "MR-03", "userId": "denied.mr"})
+    # MR workflows now deliberately authorize Doctor reads. An unprivileged
+    # Staff token must still be rejected by every protected directory surface.
+    from test_staff import BODY as STAFF_BODY
+    from test_staff import seed_designation as seed_staff_designation
+    from test_sessions import PASSWORD
+    seed_staff_designation(db, actor.id)
+    staff = api.post("/api/v1/admin/staff", headers=headers,
+                     json={**STAFF_BODY, "initialPassword": PASSWORD})
+    assert staff.status_code == 201, staff.text
+    account = staff.json()["record"]
+    enabled = api.post(f"/api/v1/admin/staff/{account['id']}/access", headers=headers, json={
+        "custom_role_id": account["custom_role_id"], "workspace_login_enabled": True, "expected_version": 1})
+    assert enabled.status_code == 200, enabled.text
     login = api.post("/api/v1/auth/login", headers={"Origin": "http://testserver"}, json={
-        "identifier": account["credentials"]["userId"], "password": account["credentials"]["password"], "identity_kind": "mr"})
+        "identifier": account["employeeCode"], "password": PASSWORD, "identity_kind": "admin"})
+    assert login.status_code == 200, login.text
     denied = {"Authorization": "Bearer " + login.json()["access_token"]}
     for path in ("", "/references", "/filters", "/sample", "/export"):
         assert api.get(BASE + path, headers=denied).status_code == 403
@@ -327,7 +340,7 @@ def test_complete_mr_choices_beyond_one_page_and_export_limit(client):
     assert api.get(BASE, headers=headers, params={"limit": 1, "offset": 5000}).json()["filtered"] == 5001
 
 
-def test_atomic_shift_and_zone_reassignment_are_live_not_snapshot(client):
+def test_atomic_shift_retains_saved_doctor_zone_when_mr_zones_change(client):
     api, db, _ = client
     headers, _, mr, _ = setup_doctor(api, db)
     one = add(api, headers, fields(mr))
@@ -341,16 +354,16 @@ def test_atomic_shift_and_zone_reassignment_are_live_not_snapshot(client):
     changed = api.post("/api/v1/admin/mrs/" + target["id"] + "/edit", headers=headers,
                       json={**mr_fields(mr["hq"], third["id"]), "employeeCode": target["employeeCode"], "userId": target["userId"], "expected_version": target["version"]})
     assert changed.status_code == 200, changed.text
-    assert api.get(BASE + "/" + one["id"], headers=headers).json()["zoneId"] == third["id"]
-    assert api.get(BASE, headers=headers, params={"zone_id": zone["id"]}).json()["filtered"] == 0
-    assert api.get(BASE, headers=headers, params={"zone_id": third["id"]}).json()["filtered"] == 2
+    assert api.get(BASE + "/" + one["id"], headers=headers).json()["zoneId"] == zone["id"]
+    assert api.get(BASE, headers=headers, params={"zone_id": zone["id"]}).json()["filtered"] == 2
+    assert api.get(BASE, headers=headers, params={"zone_id": third["id"]}).json()["filtered"] == 0
 
 
 def test_xlsx_uses_original_numeric_lexemes_and_rejects_formulas(client):
     import zipfile
     api, db, _ = client
     headers, _, mr, _ = setup_doctor(api, db)
-    values = {**fields(mr), "mrId": "user:synthetic.mr", "zoneName": "", "dialCode": "+91", "verification": "unverified"}
+    values = {**fields(mr), "mrId": f"user:{mr['userId']}", "zoneName": "", "dialCode": "+91", "verification": "unverified"}
     book = Workbook(); sheet = book.active
     sheet.append(doctor_transfer.HEADERS)
     sheet.append([str(values[key]) for key, _ in doctor_transfer.COLUMNS])

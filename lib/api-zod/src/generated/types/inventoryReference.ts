@@ -11,6 +11,7 @@ import type { InventoryReferenceItemKind } from "./inventoryReferenceItemKind";
 import type { InventoryReferenceOpeningLocation } from "./inventoryReferenceOpeningLocation";
 
 export interface InventoryReference {
+  adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   available?: string | null;

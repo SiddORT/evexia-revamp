@@ -214,13 +214,13 @@ def test_enabled_staff_recovery_uses_encrypted_current_contact(configured):
     db.commit()
     # Issue a real staff session; reset must invalidate both credential types.
     signed_in = api.post("/api/v1/auth/login", headers=HEADERS, json={
-        "identifier": user.username, "password": result.json()["initial_password"],
+        "identifier": record["employeeCode"], "password": result.json()["initial_password"],
         "identity_kind": "admin",
     })
     assert signed_in.status_code == 200, signed_in.text
     access = signed_in.json()["access_token"]
     cookie = api.cookies.get("evexia_refresh")
-    request(api, user.username, "admin")
+    request(api, record["employeeCode"], "admin")
     assert sent[0][0] == BODY["email"] and user.email is None
     assert reset(api, sent[0][1]).status_code == 200
     assert reset(api, sent[0][1]).status_code == 400
@@ -229,11 +229,11 @@ def test_enabled_staff_recovery_uses_encrypted_current_contact(configured):
     with pytest.raises(auth.AuthError):
         auth.rotate_refresh(db, cookie, settings, "synthetic-staff-recovery")
     assert api.post("/api/v1/auth/login", headers=HEADERS, json={
-        "identifier": user.username, "password": result.json()["initial_password"],
+        "identifier": record["employeeCode"], "password": result.json()["initial_password"],
         "identity_kind": "admin",
     }).status_code == 401
     response = api.post("/api/v1/auth/login", headers=HEADERS,
-                        json={"identifier": user.username, "password": NEW, "identity_kind": "admin"})
+                        json={"identifier": record["employeeCode"], "password": NEW, "identity_kind": "admin"})
     assert response.status_code == 200, response.text
     assert response.json()["user"]["identity_kind"] == "staff"
 
@@ -245,12 +245,12 @@ def test_staff_eligibility_and_current_encrypted_recipient_rechecked(configured,
     from test_staff import admin_headers, BODY, BASE
     api, db, settings, sent = configured
     headers, _ = admin_headers(api, db)
-    created = api.post(BASE, headers=headers, json=BODY).json()["record"]
+    created = api.post(BASE, headers=headers, json={**BODY, "initialPassword": PASSWORD}).json()["record"]
     profile = db.get(StaffProfile, uuid.UUID(created["id"]))
     user = db.get(User, profile.user_id)
     profile.workspace_login_enabled = True
     db.commit()
-    request(api, user.username, "admin")
+    request(api, created["employeeCode"], "admin")
     assert len(sent) == 1
     original = user.password_hash
     if problem == "login_disabled":
@@ -267,7 +267,7 @@ def test_staff_eligibility_and_current_encrypted_recipient_rechecked(configured,
     db.commit()
     assert reset(api, sent[0][1]).status_code == 400
     assert db.get(User, user.id).password_hash == original
-    assert request(api, user.username, "admin").json() == {"message": recovery.MESSAGE}
+    assert request(api, created["employeeCode"], "admin").json() == {"message": recovery.MESSAGE}
     if problem == "email_changed":
         assert len(sent) == 2 and sent[1][0] == "changed@example.com"
     else:

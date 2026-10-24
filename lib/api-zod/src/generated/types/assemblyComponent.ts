@@ -7,12 +7,14 @@
  */
 
 export interface AssemblyComponent {
+  adjustmentId?: string | null;
   after: string;
   batchNo: string | null;
   before: string;
   expiryDate: Date | null;
   lineId: string | null;
   lotId: string;
+  openingId?: string | null;
   productId: string;
   productName: string;
   productVersion: number;
@@ -20,5 +22,6 @@ export interface AssemblyComponent {
   receiptId: string | null;
   receiptNumber: string | null;
   receivedDate: Date | null;
+  source?: string | null;
   unit: string;
 }

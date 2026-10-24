@@ -18,6 +18,7 @@ class InventoryLot(Base):
     combo_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("combo_products.id"), index=True)
     assembly_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("product_assemblies.id"), unique=True)
     opening_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("opening_stock.id"), unique=True)
+    adjustment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_adjustments.id"), unique=True)
     origin_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
     accepted: Mapped[Decimal] = mapped_column(Numeric())
     payload_ciphertext: Mapped[str] = mapped_column(Text)
@@ -72,6 +73,33 @@ class InventoryPosting(Base):
 
 class InventoryRequest(Base):
     __tablename__ = "inventory_requests"
+    key: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    digest: Mapped[str] = mapped_column(String(64))
+    payload_ciphertext: Mapped[str] = mapped_column(Text)
+
+
+class InventoryAdjustment(Base):
+    """Immutable business record; corrections are new compensating adjustments."""
+    __tablename__ = "inventory_adjustments"
+    __table_args__ = (
+        CheckConstraint("direction IN ('add','reduce')", name="ck_adjustment_direction"),
+        CheckConstraint("quantity > 0 AND quantity <= 1000000 AND quantity = round(quantity,3)", name="ck_adjustment_quantity"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("allergen_products.id"), index=True)
+    location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
+    direction: Mapped[str] = mapped_column(String(6))
+    quantity: Mapped[Decimal] = mapped_column(Numeric())
+    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("audit_events.id"), unique=True)
+    correction_of: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_adjustments.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    payload_ciphertext: Mapped[str] = mapped_column(Text)
+
+
+class InventoryAdjustmentRequest(Base):
+    __tablename__ = "inventory_adjustment_requests"
     key: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     digest: Mapped[str] = mapped_column(String(64))

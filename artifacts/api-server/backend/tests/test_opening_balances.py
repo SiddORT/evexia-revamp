@@ -107,7 +107,7 @@ def test_minimal_bounded_choices_saved_inactive_retention(client):
     headers, _, doctor = setup_balance(api, db)
     row = add(api, headers, doctor)
     choices = api.get(BASE + "/references", headers=headers, params={"limit": 1}).json()
-    assert choices["total"] == 1 and set(choices["items"][0]) == {"id", "name", "registrationNumber", "usable"}
+    assert choices["total"] == 1 and set(choices["items"][0]) == {"id", "name", "doctorNumber", "registrationNumber", "usable"}
     assert "phone" not in choices["items"][0]
     response = api.post("/api/v1/admin/doctors/" + doctor["id"] + "/status", headers=headers,
                         json={"status": "inactive", "expected_version": 1})
@@ -227,7 +227,7 @@ def test_bounded_doctor_paging_and_export_cap(client, monkeypatch):
     api, db, _ = client
     headers, actor, mr, _zone = setup_doctor(api, db)
     now = utcnow()
-    docs = [DoctorDirectory(**DoctorFields(**doctor_fields(mr, name=f"Paged {i:03d}",
+    docs = [DoctorDirectory(doctorNumber=f"DR-900001{i:06d}", **DoctorFields(**doctor_fields(mr, name=f"Paged {i:03d}",
             registrationNumber=f"PAGED-{i:03d}")).model_dump(), version=1, verification="unverified",
             created_by=actor.id, updated_by=actor.id, created_at=now, updated_at=now) for i in range(55)]
     db.add_all(docs); db.commit()

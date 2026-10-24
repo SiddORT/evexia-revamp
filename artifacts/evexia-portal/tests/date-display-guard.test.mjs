@@ -15,9 +15,11 @@ const approved = new Map([
     [`services/${name}.js:${businessDate}`, 'Existing business-date generation, not presentation']),
   ...['serverMRs', 'serverPatients'].map((name) =>
     [`services/${name}.js:${businessToday}`, 'Business-day validation; unchanged Kolkata boundary']),
-  ...['sptOrdersDemo', 'lupinOrdersDemo', 'immunotherapyDemo'].map((name) =>
+  ...['sptOrdersDemo', 'lupinOrdersDemo', 'immunotherapyDemo', 'serverImmunotherapy'].map((name) =>
     [`services/${name}.js:(minor / 100n).toLocaleString('en-IN')`, 'Currency grouping, not a Date']),
   ["services/openingStock.js:BigInt(digits).toLocaleString('en-IN')", 'Exact integer currency grouping, not date presentation'],
+  ["services/orderTransfers.js:max.toLocaleString()", 'Integer character-count error limit, not date presentation'],
+  ["services/orderTransfers.js:new Intl.DateTimeFormat('en-US', { timeZone: c.timeZone })", 'Validate an explicitly saved IANA timezone without formatting a display date'],
   ['pages/admin/ActivityLogs.jsx:new Date(`${value}T00:00:00Z`).toISOString()', 'UTC input validation'],
   ['pages/admin/ActivityLogs.jsx:new Date(t + DAY).toISOString()', 'Canonical inclusive-end UTC API filter'],
   ['pages/admin/DownloadLogs.jsx:new Date(`${v}T00:00:00Z`).toISOString()', 'UTC input validation'],
@@ -43,7 +45,10 @@ export function displayViolations(text, file) {
       const name = node.expression.getText(source);
       const primitive = /(?:toLocale(?:DateString|TimeString|String)|DateTimeFormat|toDateString|toTimeString|toUTCString|toGMTString)$/.test(name);
       const uiISO = file.endsWith('x') && /toISOString$/.test(name);
-      if ((primitive || uiISO) && file !== 'services/datePresentation.js' && !approved.has(`${file}:${node.getText(source)}`)) add(`unapproved display primitive: ${name}`);
+      const timezoneValidationUsedAsFormatter = file === 'services/orderTransfers.js' &&
+        name === 'Intl.DateTimeFormat' && ts.isPropertyAccessExpression(node.parent);
+      if ((primitive || uiISO) && file !== 'services/datePresentation.js' &&
+          (!approved.has(`${file}:${node.getText(source)}`) || timezoneValidationUsedAsFormatter)) add(`unapproved display primitive: ${name}`);
     }
     if (ts.isJsxExpression(node) && !ts.isJsxAttribute(node.parent) && raw(node.expression)) add('raw date in JSX; use a shared formatter');
     if (ts.isArrowFunction(node) && raw(node.body) && node.parent.getText(source).startsWith('render:')) add('raw date table renderer');
@@ -116,6 +121,14 @@ test('Email Logs UTC exceptions permit only exact machine-filter expressions, ne
     assert.equal(displayViolations(`const display = ${expression};`, 'pages/admin/EmailLogs.jsx').length, 1);
   }
 });
+test('Transfer numeric and timezone validation exceptions stay expression-scoped', () => {
+  assert.deepEqual(displayViolations("max.toLocaleString()", 'services/orderTransfers.js'), []);
+  assert.deepEqual(displayViolations("new Intl.DateTimeFormat('en-US', { timeZone: c.timeZone })", 'services/orderTransfers.js'), []);
+  assert.equal(displayViolations("new Date().toLocaleString()", 'services/orderTransfers.js').length, 1);
+  assert.equal(displayViolations("max.toLocaleString()", 'services/unreviewed.js').length, 1);
+  assert.equal(displayViolations("new Intl.DateTimeFormat('en-US', { timeZone: c.timeZone }).format(new Date())", 'services/orderTransfers.js').length, 1);
+});
+
 test('Opening Stock numeric exception does not exempt nearby date presentation', () => {
   const numeric = "const group = (digits) => BigInt(digits).toLocaleString('en-IN');";
   for (const [text, reason] of [

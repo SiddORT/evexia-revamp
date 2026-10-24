@@ -2,16 +2,18 @@ import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { downloadBlob } from '../../services/downloads.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Eye, FileDown, FileText, Filter, RefreshCw, Search } from 'lucide-react';
+import { BookOpen, SlidersHorizontal, ChevronDown, Eye, FileDown, FileText, Filter, RefreshCw, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import StockAllergenSelect from '../../components/admin/StockAllergenSelect.jsx';
 import StockStatusDetail from '../../components/admin/StockStatusDetail.jsx';
+import StockLedger from '../../components/admin/StockLedger.jsx';
+import StockAdjustment from '../../components/admin/StockAdjustment.jsx';
 import StockStatusReport from '../../components/admin/StockStatusReport.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { exportStockCSV, formatPrice, listStock, STOCK_STATUSES } from '../../services/serverInventory.js';
+import { exportStockCSV, formatPrice, isSuperAdmin, listStock, STOCK_STATUSES } from '../../services/serverInventory.js';
 import '../../stockStatus.css';
 import '../../inventoryServer.css';
 
@@ -30,6 +32,8 @@ export default function StockStatus() {
   const [silent, setSilent] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [detail, setDetail] = useState(null);
+  const [ledger, setLedger] = useState(null);
+  const [adjust, setAdjust] = useState(null);
   const [report, setReport] = useState(null);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -113,7 +117,9 @@ export default function StockStatus() {
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
     { key: 'q', label: 'Quantity', render: (r) => <><strong className="inv-mono">{r.quantity} {r.unit}</strong>{r.state === 'catalogue_zero' && <span className="stock-sub">No stock on hand</span>}{Number(r.unallocatedQuantity) > 0 && <span className="stock-sub">Unallocated: {r.unallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
-    { key: 'v', label: 'View', render: (r) => <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setDetail({ row: r, asOf: snap.asOf })} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</button> },
+    { key: 'v', label: 'Actions', render: (r) => <div className="stock-row-actions"><button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setDetail({ row: r, asOf: snap.asOf })} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</button>
+      {r.itemKind !== 'combo' && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setLedger(r)} aria-label={`Ledger for ${r.name} ${r.concentration}`} data-testid={`button-ledger-stock-${r.productId}`}><BookOpen size={14} /> Ledger</button>}
+      {r.itemKind !== 'combo' && isSuperAdmin() && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setAdjust(r)} aria-label={`Manual adjustment for ${r.name} ${r.concentration}`} data-testid={`button-adjust-stock-${r.productId}`}><SlidersHorizontal size={14} /> Manual adjustment</button>}</div> },
   ];
   const filtersCurrent = Boolean(snap) && search.trim() === appliedSearch && snap.filters === filters;
   const disabled = loading || silent || Boolean(loadError) || !snap || unavailable || !filtersCurrent;
@@ -164,6 +170,8 @@ export default function StockStatus() {
       {!unavailable && !loadError && snap && <TablePagination {...pg} filtered={rows.length} total={snap.total ?? rows.length} label={rows.length === 1 ? 'product' : 'products'} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} testId="text-stock-count" />}
     </section>
     {detail && <StockStatusDetail row={detail.row} asOf={detail.asOf} onClose={() => setDetail(null)} />}
+    {ledger && <StockLedger row={ledger} onClose={() => setLedger(null)} />}
+    {adjust && <StockAdjustment row={adjust} onClose={() => setAdjust(null)} onCommitted={() => { setDetail(null); setLedger(null); setNotice('Adjustment recorded. Reloading current stock.'); load(); }} />}
     {report && <StockStatusReport {...report} onClose={() => setReport(null)} />}
   </div></AdminLayout>;
 }

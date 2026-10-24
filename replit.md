@@ -65,7 +65,12 @@ CSV/XLSX use server review and atomic confirmation, not session fixtures.
 this is source metadata, not proof of database activation. Implementation is
 source-only: no tests, builds, runtime/manual/browser checks, validation wrappers,
 restarts, migration execution, push or deployment. See `docs/lupin-orders.md`.
-
+- Individual-allergen Stock Status has an authoritative recorded lifetime Ledger
+  and protected Super Admin-only append-only Manual adjustment. Adjustments post
+  into existing balances under the shared inventory lock, never receipt/opening
+  impersonation or browser storage. Type filters affect displayed rows, not
+  underlying running balances/totals. See `docs/stock-ledger-adjustments.md` for
+  snapshot/coverage bounds, retry cancellation and forward PR-key custody.
 Admin Kits & Consumables now uses protected shared backend orders with optional
 existing Patient selection, historical encrypted supply snapshots, private
 verified attachments and CSV/XLSX server review/atomic confirmation. Supply

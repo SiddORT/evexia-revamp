@@ -61,6 +61,13 @@ def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(m
         stored = db.get(Vendor, original["id"])
         assert stored.phoneNo == "9876543210" and stored.version == 1
         assert stored.created_by == actor_id
+    # Exercise this historical privacy refusal at its actual boundary, before
+    # later append-only inventory stages introduce an earlier downgrade guard.
+    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+        command.downgrade(config, "0024_opening_balances")
+    from test_migration_0006 import continue_to_current_schema
+    continue_to_current_schema(engine, config)
+    with Session(engine) as db:
         actor = identity(db, actor_id, session_id)
         added = vendors.create(db, actor, VendorFields(**{
             **FIELDS, "vendorName": "Brazil expansion", "gstNo": "29EEEEE4444E1Z9",
@@ -68,7 +75,7 @@ def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(m
         }))
         assert added["phoneNo"] == "11961234567"
         vendors.mutate(db, actor, added["id"], VendorVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+    with pytest.raises(RuntimeError, match=r"^Committed inventory adjustments cannot be discarded$"):
         command.downgrade(config, "0024_opening_balances")
     with Session(engine) as db:
         assert db.get(Vendor, added["id"]).phoneNo == "11961234567"
@@ -83,7 +90,7 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
     approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(Zone, row["id"]).name == "Preserved"
-        assert db.get(User, actor_id).is_protected_system_admin
+        assert db.scalar(text("SELECT is_protected_system_admin FROM users WHERE id=:id"), {"id": actor_id})
         assert db.get(AuthSession, session_id).status == "ACTIVE"
         assert db.scalar(select(AuditEvent.id).where(AuditEvent.action == "zone_create"))
         assert db.scalar(select(func.count()).select_from(Vendor)) == 0
@@ -101,9 +108,23 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
             with pytest.raises(IntegrityError):
                 with db.begin_nested():
                     db.execute(text(sql))
-        db.execute(historical.delete().where(historical.c.id == fixture_id))
         db.commit()
-    command.upgrade(config, "0036_reference_privacy")
+    # The retained vendor probe now makes reference conversion populated:
+    # supply real disposable dump/restore evidence for this separate scope.
+    from pathlib import Path
+    from tempfile import TemporaryDirectory
+    from test_reference_privacy_migration import evidence, approve
+    with TemporaryDirectory(prefix="evexia-vendor-reference-recovery-") as folder:
+        approve(config, evidence(engine, Path(folder) / "backup.dump"))
+        command.upgrade(config, "0036_reference_privacy")
+    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+        command.downgrade(config, "0021_master_permissions")
+    # Remove only the disposable constraint-probe fixture, not retained source
+    # records, before the separate current-service CRUD checks below.
+    with engine.begin() as db:
+        db.execute(text("DELETE FROM vendors WHERE id=:id"), {"id": fixture_id})
+    from test_migration_0006 import continue_to_current_schema
+    continue_to_current_schema(engine, config)
     with Session(engine) as db:
         actor = identity(db, actor_id, session_id)
         created = vendors.create(db, actor, VendorFields(**FIELDS))
@@ -113,7 +134,7 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
                 with db.begin_nested():
                     db.execute(text(f'UPDATE vendors SET "{field}"=NULL'))
         vendors.mutate(db, actor, created["id"], VendorVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+    with pytest.raises(RuntimeError, match=r"^Committed inventory adjustments cannot be discarded$"):
         command.downgrade(config, "0021_master_permissions")
     with Session(engine) as db:
         assert db.get(Vendor, created["id"]).deleted_by == actor_id

@@ -25,9 +25,9 @@ def setup(api, db, grants=(), enabled=True):
     if grants:
         role = api.post(f"{ROLES}/{role['id']}/permissions", headers=admin,
                         json={"permissions": list(grants), "expected_version": role["version"]}).json()
-    created = api.post(STAFF, headers=admin, json={**BODY, "initialPassword": PASSWORD}).json()
+    created = api.post(STAFF, headers=admin, json={**BODY, "custom_role_id": role["id"], "initialPassword": PASSWORD}).json()
     record = created["record"]
-    assert not record["workspace_login_enabled"] and record["custom_role_id"] is None
+    assert not record["workspace_login_enabled"] and record["custom_role_id"] == role["id"]
     if enabled:
         response = api.post(f"{STAFF}/{record['id']}/access", headers=admin,
                             json={"custom_role_id": role["id"], "workspace_login_enabled": True,
@@ -39,7 +39,7 @@ def setup(api, db, grants=(), enabled=True):
 
 def staff_login(api, record, password):
     return api.post("/api/v1/auth/login", headers=ORIGIN,
-                    json={"identifier": record["userId"], "password": password})
+                    json={"identifier": record["email"], "password": password})
 
 
 def bearer(response):
@@ -53,7 +53,7 @@ def test_legacy_opt_in_none_and_label_spoofing(client):
     assert staff_login(api, record, password).status_code == 401
     access = {"custom_role_id": None, "workspace_login_enabled": True, "expected_version": 1}
     response = api.post(f"{STAFF}/{record['id']}/access", headers=admin, json=access)
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
     authenticated = staff_login(api, record, password)
     headers = bearer(authenticated)
     user = authenticated.json()["user"]
@@ -63,10 +63,13 @@ def test_legacy_opt_in_none_and_label_spoofing(client):
     assigned = api.post(f"{STAFF}/{record['id']}/access", headers=admin,
                         json={**access, "custom_role_id": role["id"], "expected_version": 2}).json()
     assert assigned["role"] == "Super Admin" and assigned["version"] == 3
-    assert api.get(ZONES, headers=headers).status_code == 403
+    # Changing the authoritative role revokes the old credentials.
+    assert api.get(ZONES, headers=headers).status_code == 401
     refreshed = api.post("/api/v1/auth/refresh", headers=ORIGIN)
-    assert refreshed.status_code == 200 and refreshed.json()["user"]["permissions"] == ["workspace.access"]
-    assert api.get("/api/v1/auth/me", headers=bearer(refreshed)).status_code == 200
+    assert refreshed.status_code == 401
+    signed_in = staff_login(api, record, password)
+    assert signed_in.json()["user"]["permissions"] == ["workspace.access"]
+    assert api.get(ZONES, headers=bearer(signed_in)).status_code == 403
 
 
 @pytest.mark.parametrize("grant", sorted(ZONE_ACTIONS))

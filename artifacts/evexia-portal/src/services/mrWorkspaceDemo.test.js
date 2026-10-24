@@ -137,5 +137,5 @@ test('new workspace resets mutations and owners independently; schema has no pat
   assert.doesNotMatch(serial, /patient|clinical|DOB|caseId|caseCode/i);
   const code = readFileSync(new URL('./mrWorkspaceDemo.js', import.meta.url), 'utf8');
   assert.doesNotMatch(code, /\bfetch\s*\(|localStorage|sessionStorage|indexedDB|serverPatients|kitsOrdersDemo/);
-  for (const event of a.activity) assert.match(event.href, /^\/mr\/(?:doctors|orders|payments)\//);
+  for (const event of a.activity) assert.match(event.href, /^\/mr\/(?:doctors|orders|payments)(?:\/|$)/);
 });

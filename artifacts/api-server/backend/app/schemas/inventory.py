@@ -53,6 +53,9 @@ class InventoryCoverage(BaseModel):
 
 
 class InventoryComponentProvenance(BaseModel):
+    source: str | None = None
+    adjustmentId: uuid.UUID | None = None
+    openingId: uuid.UUID | None = None
     lotId: uuid.UUID
     receiptId: uuid.UUID | None
     receiptNumber: str | None
@@ -82,6 +85,7 @@ class InventoryRecipeSnapshot(BaseModel):
 
 class InventoryProvenance(BaseModel):
     source: str | None = None
+    adjustmentId: uuid.UUID | None = None
     openingId: uuid.UUID | None = None
     unitRate: str | None = None
     openingValue: str | None = None

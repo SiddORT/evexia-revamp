@@ -6,7 +6,7 @@ import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
 import ProductPendingBanner from '../../components/admin/ProductPendingBanner.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { getProduct, journaled, listProducts, newKey, pendingProduct, previewAssembly, saveAssembly } from '../../services/productMaster.js';
-import { listReference, milli, formatPrice } from '../../services/serverInventory.js';
+import { listReference, milli, formatPrice, lotOriginLabel } from '../../services/serverInventory.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
@@ -181,7 +181,7 @@ export default function ProductAssemblyPage() {
             : <div className="admin-table-scroll ms-stock-table" role="region" aria-label="Component lots" tabIndex={0}><table className="admin-table"><thead><tr><th scope="col">Select</th><th scope="col">Allergen / batch</th><th scope="col">Available</th><th scope="col">Quantity to use</th></tr></thead>
               <tbody>{[...missing.map((p) => ({ lot: p.lot, gone: true })), ...sources.map((lot) => ({ lot, gone: false }))].map(({ lot: l, gone }) => { const on = l.id in picked; return <tr key={l.id}>
                 <td><input type="checkbox" id={`pa-p-${l.id}`} checked={on} aria-label={`Select ${l.productName} batch ${l.batchNo}`} onChange={() => { clear('lots'); setPicked((p) => { if (l.id in p) { const n = { ...p }; delete n[l.id]; return n; } return { ...p, [l.id]: { lot: l, quantity: '' } }; }); }} data-testid={`checkbox-assembly-lot-${l.id}`} /></td>
-                <td><label htmlFor={`pa-p-${l.id}`} className="ms-product__name">{l.productName}</label><span className="stock-sub">Batch {l.batchNo} · {l.receiptNumber || 'No receipt'} · exp {l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable'}</span></td>
+                <td><label htmlFor={`pa-p-${l.id}`} className="ms-product__name">{l.productName}</label><span className="stock-sub">{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} · {lotOriginLabel(l)} · exp {l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable'}</span></td>
                 <td className="inv-mono">{gone ? 'Unavailable' : `${l.available} ${l.unit}`}{gone && <span className="mr-form__error"> No longer available at this location</span>}</td>
                 <td>{on ? <div className="ms-qty"><label htmlFor={`pa-q-${l.id}`}>Quantity ({l.unit})</label><input id={`pa-q-${l.id}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={picked[l.id].quantity} onChange={(e) => { const v = e.target.value; reset(); setPicked((p) => (l.id in p ? { ...p, [l.id]: { ...p[l.id], quantity: v } } : p)); setErrors((x) => ({ ...x, [l.id]: undefined })); }} aria-invalid={Boolean(errors[l.id])} data-testid={`input-assembly-qty-${l.id}`} />{err(l.id)}</div> : <span className="mr-form__hint">Select lot first</span>}</td>
               </tr>; })}</tbody></table></div>}

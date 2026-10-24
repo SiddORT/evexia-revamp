@@ -38,7 +38,8 @@ def setup(migration_db):
         seed_designation(db, admin)
         for number in range(2):
             staff.create(db, identity(db, admin, session),
-                         StaffFields(**{**BODY, "email": f"fictional{number}@example.com"}), settings)
+                         StaffFields(**{**BODY, "email": f"fictional{number}@example.com",
+                                        "employeeCode": f"SYNTHETIC-ROTATION-{number}"}), settings)
     return engine, settings, admin, session
 
 

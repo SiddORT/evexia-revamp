@@ -12,7 +12,7 @@ export default function ComboProvenance({ item }) {
     {item.comboProductId && <p><Link href={`/admin/masters/products?details=${encodeURIComponent(item.comboProductId)}`}>Product details and retained activity (including deleted products)</Link></p>}
     {item.recipe?.members?.length ? <p>Recipe per combo: {item.recipe.members.map((m) => `${m.name} ${m.quantity} ${m.unit}`).join('; ')}</p> : null}
     {sources?.length ? <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Source lot</th><th scope="col">Consumed</th><th scope="col">Balance before / after</th></tr></thead>
-      <tbody>{sources.map((c, i) => <tr key={`${c.lotId}-${i}`}><td>{c.productName}<span className="stock-sub">{c.batchNo ? `Batch ${c.batchNo}` : 'Batch unavailable'} · {c.receiptNumber || 'Receipt unavailable'} · exp {c.expiryDate ? date(c.expiryDate) : 'unavailable'}</span><span className="stock-sub">Source lot {c.lotId || 'unavailable'} · Receipt line {c.lineId || 'unavailable'}</span></td>
+      <tbody>{sources.map((c, i) => <tr key={`${c.lotId}-${i}`}><td>{c.productName}<span className="stock-sub">{c.batchNo ? `Batch ${c.batchNo}` : 'Batch unavailable'} · {c.source === 'adjustment' ? `Adjustment ${c.adjustmentId || ''}` : c.source === 'opening' ? 'Opening stock' : c.receiptNumber || 'Receipt unavailable'} · exp {c.expiryDate ? date(c.expiryDate) : 'unavailable'}</span><span className="stock-sub">Source lot {c.lotId || 'unavailable'} · Receipt line {c.lineId || 'unavailable'}</span></td>
         <td className="inv-mono">{c.quantity} {c.unit}</td><td className="inv-mono">{c.before} to {c.after}</td></tr>)}</tbody></table></div>
       : <p>Source components unavailable.</p>}
   </div>;

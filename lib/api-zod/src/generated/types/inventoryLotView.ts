@@ -11,6 +11,7 @@ import type { InventoryLotViewOpeningLocation } from "./inventoryLotViewOpeningL
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
 
 export interface InventoryLotView {
+  adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   batchNo: string | null;

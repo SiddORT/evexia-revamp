@@ -12,9 +12,47 @@ from app.schemas.inventory import (
 )
 from app.services.auth import Identity
 from app.services import inventory as service
+from app.services import inventory_ledger, inventory_adjustments
+from app.schemas.inventory_ledger import (
+    AdjustmentInput, AdjustmentCreate, AdjustmentReview, AdjustmentSaved,
+    AdjustmentChoices, AdjustmentReconciliation, LedgerPage,
+)
 
 router = APIRouter(prefix="/admin/inventory", tags=["Inventory"])
 manager = require_permissions("admin.access")
+
+
+@router.get("/stock/{product_id}/ledger", response_model=LedgerPage, operation_id="getInventoryLedger")
+def ledger(product_id: uuid.UUID, from_date: datetime | None = None, to_date: datetime | None = None,
+           location_id: str | None = Query(None, max_length=36), transaction_type: str | None = Query(None, max_length=32),
+           offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
+           actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return inventory_ledger.ledger(db, actor, product_id, from_date, to_date, location_id, transaction_type, offset, limit)
+
+
+@router.get("/stock/{product_id}/adjustment-choices", response_model=AdjustmentChoices, operation_id="getInventoryAdjustmentChoices")
+def adjustment_choices(product_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return inventory_adjustments.choices(db, actor, product_id)
+
+
+@router.post("/adjustments/preview", response_model=AdjustmentReview, operation_id="previewInventoryAdjustment")
+def adjustment_preview(body: AdjustmentInput, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return inventory_adjustments.preview(db, actor, body)
+
+
+@router.post("/adjustments", response_model=AdjustmentSaved, status_code=201, operation_id="createInventoryAdjustment")
+def adjustment_create(body: AdjustmentCreate, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return inventory_adjustments.create(db, actor, body)
+
+
+@router.get("/adjustment-requests/{key}", response_model=AdjustmentReconciliation, operation_id="reconcileInventoryAdjustment")
+def adjustment_reconcile(key: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return inventory_adjustments.reconcile(db, actor, key)
+
+
+@router.get("/adjustments/{record_id}", response_model=AdjustmentSaved, operation_id="getInventoryAdjustment")
+def adjustment_detail(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return inventory_adjustments.detail(db, actor, record_id)
 
 
 @router.get("/stock", response_model=InventoryStockPage, operation_id="listInventoryStock")

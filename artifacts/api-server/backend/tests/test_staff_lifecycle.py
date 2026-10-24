@@ -52,7 +52,7 @@ def test_soft_deletion_retains_account_ciphertext_access_history_and_revokes_aut
     accessed = api.post(BASE + "/" + row["id"] + "/access", headers=headers,
                         json={"custom_role_id": role["id"], "workspace_login_enabled": True, "expected_version": 1}).json()
     login = api.post("/api/v1/auth/login", headers={"Origin": "http://testserver"},
-                     json={"identifier": row["userId"], "password": password, "identity_kind": "admin"})
+                     json={"identifier": row["employeeCode"], "password": password, "identity_kind": "admin"})
     assert login.status_code == 200
     token = login.json()["access_token"]
     refresh_cookie = dict(api.cookies)
@@ -89,7 +89,7 @@ def test_soft_deletion_retains_account_ciphertext_access_history_and_revokes_aut
     api.cookies.clear(); api.cookies.update(refresh_cookie)
     assert api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"}, json={}).status_code == 401
     assert api.post("/api/v1/auth/login", headers={"Origin": "http://testserver"},
-                    json={"identifier": row["userId"], "password": password}).status_code == 401
+                    json={"identifier": row["employeeCode"], "password": password}).status_code == 401
     assert api.get("/api/v1/admin/reporting/summary", headers=headers).json()["active_users"] == 1
     assert all(session.status == "REVOKED" for session in db.scalars(select(AuthSession).where(AuthSession.user_id == user.id)))
     assert len(list(db.scalars(select(AuditEvent).where(AuditEvent.action == "staff_delete")))) == 1

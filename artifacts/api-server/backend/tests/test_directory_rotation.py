@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.services import directory_rotation as rotation
 from app.services.directory_crypto import DirectoryCrypto
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
+from app.services.directory_inventory import LEGACY_FIELDS as FIELDS, FIELDS as PHONE_FIELDS, INDEX_COLUMNS
 from app.services.directory_runtime import ready
 from app.services.directory_staging import batch as stage_batch, StagingError
 from test_directory_retirement import stage
@@ -86,8 +86,8 @@ def test_paused_rotation_can_finish_across_exact_geography_successor(migration_d
             assert db.scalar(text("SELECT phase FROM directory_crypto_stage")) == "encrypted"
 
 
-def logical(data, crypto):
-    for table, fields in FIELDS.items():
+def logical(data, crypto, field_inventory=FIELDS):
+    for table, fields in field_inventory.items():
         for row in data[table]:
             for field in fields:
                 if field + "_ciphertext" not in row:
@@ -105,12 +105,13 @@ def logical(data, crypto):
     (rotation.PHONE_REVISION, rotation.PHONE_REVISION),
 ])
 def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migration_db, monkeypatch, release_revision, final_revision):
+    field_inventory = PHONE_FIELDS if release_revision == rotation.PHONE_REVISION else FIELDS
     engine, config, *_ = seed(migration_db)
     with runtime(engine) as (role, api):
         source = stage(engine, config, role)
         command.upgrade(config, release_revision)
         destination = target(source)
-        before = logical(snapshot(engine), DirectoryCrypto(source))
+        before = logical(snapshot(engine), DirectoryCrypto(source), field_inventory)
         plan = arm(engine, source, destination)
         assert plan["schema"] == release_revision
         # An approved schema cleanup must not strand an already frozen rotation.
@@ -140,7 +141,7 @@ def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migrat
             done = rotation.verify(db, destination, finish=True, expected_content_digest=plan["content_digest"])
         assert done["key_usage"] and set(done["key_usage"]) == {"next"}
         assert done["schema"] == final_revision
-        assert before == logical(snapshot(engine), DirectoryCrypto(destination))
+        assert before == logical(snapshot(engine), DirectoryCrypto(destination), field_inventory)
         from app.services import directory_runtime
         monkeypatch.setattr(directory_runtime, "get_settings", lambda: destination)
         with Session(api) as db:

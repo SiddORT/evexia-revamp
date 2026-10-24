@@ -14,7 +14,7 @@ class ProductCategory(Timestamps, Base):
         CheckConstraint("version >= 1", name="ck_product_category_version"),
         CheckConstraint("status IN ('active', 'inactive')", name="ck_product_category_status"),
         CheckConstraint("length(name) BETWEEN 1 AND 200 AND name = btrim(name)", name="ck_product_category_name"),
-        CheckConstraint("length(description) <= 2000 AND description = btrim(description)", name="ck_product_category_description"),
+        CheckConstraint("length(description) <= 2000", name="ck_product_category_description"),
         CheckConstraint("unit_price >= 0 AND unit_price <= 999999999999.99 AND unit_price = round(unit_price, 2)", name="ck_product_category_price"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_product_category_deletion"),
     )

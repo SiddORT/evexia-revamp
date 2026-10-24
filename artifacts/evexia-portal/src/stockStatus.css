@@ -126,3 +126,31 @@
   .stock-report tr { break-inside: avoid; }
   .stock-report thead { display: table-header-group; }
 }
+
+.stock-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.stock-list-table .admin-table { min-width: 940px; }
+.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 180px; }
+.stock-row-actions .admin-button { white-space: normal; min-height: 34px; height: auto; padding: 7px 9px; max-width: 100%; }
+.stock-ledger .admin-dialog, .admin-dialog.stock-ledger { width: min(1180px, 96vw); max-width: 96vw; }
+.stock-ledger, .stock-adjust { min-width: 0; overflow-wrap: anywhere; }
+.stock-ledger :is(input, select), .stock-adjust :is(input, select, textarea, fieldset) { min-width: 0; max-width: 100%; }
+.ledger-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 12px 0; }
+.ledger-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+.ledger-summary > div { border: 1px solid var(--admin-border, #d8dde6); border-radius: 8px; padding: 10px 12px; }
+.ledger-summary span { display: block; font-size: 12px; opacity: .75; }
+.ledger-summary strong { font-size: 18px; }
+.ledger-table { overflow-x: auto; }
+.ledger-table .admin-table { min-width: 1200px; table-layout: fixed; }
+.ledger-table .admin-table :is(th, td) { overflow-wrap: anywhere; vertical-align: top; }
+.ledger-table .admin-table :is(th, td):first-child { width: 150px; text-align: left; }
+.ledger-table .admin-table :is(th, td):nth-child(3) { width: 190px; }
+.ledger-table .admin-table :is(th, td):last-child { width: 190px; }
+.ledger-table .stock-view { height: auto; min-height: 34px; padding: 7px; white-space: normal; max-width: 100%; text-align: left; }
+.stock-source-link { color: var(--admin-accent); }
+.ledger-legs { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }
+.adjust-form { display: grid; gap: 12px; margin-top: 12px; }
+.adjust-form .admin-field, .adjust-field { display: grid; gap: 4px; }
+.adjust-field small.adjust-error { color: var(--admin-danger, #a12626); }
+.adjust-review { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.adjust-review > div { border: 1px solid var(--admin-border, #d8dde6); border-radius: 8px; padding: 10px; }
+@media (max-width: 640px) { .adjust-review { grid-template-columns: 1fr; } }

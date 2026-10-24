@@ -20,7 +20,14 @@ BASE = "/api/v1/admin/headquarters"
 
 
 def add(api, headers, name="North Mumbai", code=None, status="active"):
-    body = {"name": name, "status": status}
+    choices = api.get("/api/v1/admin/zones", headers=headers).json()["items"]
+    zone = next((row["id"] for row in choices if row["status"] == "active"), None)
+    if zone is None:
+        response = api.post("/api/v1/admin/zones", headers=headers,
+                            json={"name": "Synthetic HQ zone", "status": "active"})
+        assert response.status_code == 201, response.text
+        zone = response.json()["id"]
+    body = {"name": name, "status": status, "zone_id": zone}
     if code is not None:
         body["state_code"] = code
     response = api.post(BASE, headers=headers, json=body)
@@ -46,8 +53,8 @@ def test_persistence_filters_audit_versions_and_tombstone(client):
     assert row["name"] == "North Mumbai" and row["state_code"] == "NM"
     assert row["createdBy"] == row["updatedBy"] == "Super Admin"
     assert row["createdAt"] == row["updatedAt"]
-    assert api.post(BASE, headers=headers, json={"name": "NORTH   mumbai", "status": "inactive"}).status_code == 409
-    edit = {"name": "South Mumbai", "status": "active", "expected_version": 1}
+    assert api.post(BASE, headers=headers, json={"name": "NORTH   mumbai", "status": "inactive", "zone_id": row["zone_id"]}).status_code == 409
+    edit = {"name": "South Mumbai", "status": "active", "zone_id": row["zone_id"], "areas": [], "expected_version": 1}
     changed = api.post(f"{BASE}/{row['id']}/edit", headers=headers, json=edit).json()
     assert changed["state_code"] == "NM" and changed["version"] == 2
     assert changed["createdAt"] == row["createdAt"] and changed["updatedAt"] > row["updatedAt"]
@@ -96,18 +103,19 @@ def test_abbreviation(name, code):
 def test_validation_override_and_forgery(client):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
-    assert add(api, headers, "123", " manual ")["state_code"] == "MANUAL"
-    assert api.post(BASE, headers=headers, json={"name": "123", "status": "active"}).status_code == 422
+    base = add(api, headers, "123", " manual ")
+    assert base["state_code"] == "MANUAL"
+    assert api.post(BASE, headers=headers, json={"name": "123", "status": "active", "zone_id": base["zone_id"]}).status_code == 422
     for field, value in [("name", ""), ("name", "x" * 201), ("name", "a\x00b"),
                          ("name", "\ufeff"), ("state_code", ""), ("state_code", "x" * 17),
                          ("state_code", None), ("state_code", "a\nb"), ("state_code", "a\ufeffb")]:
-        assert api.post(BASE, headers=headers, json={"name": "Valid", "state_code": "VA", "status": "active", field: value}).status_code == 422
+        assert api.post(BASE, headers=headers, json={"name": "Valid", "state_code": "VA", "status": "active", "zone_id": base["zone_id"], field: value}).status_code == 422
     for field in ("created_by", "updated_by", "deleted_by", "created_at", "updated_at", "deleted_at", "version", "id", "createdBy"):
-        assert api.post(BASE, headers=headers, json={"name": "Forge", "status": "active", field: "forged"}).status_code == 422
+        assert api.post(BASE, headers=headers, json={"name": "Forge", "status": "active", "zone_id": base["zone_id"], field: "forged"}).status_code == 422
     row = add(api, headers, "No new code")
-    assert api.post(f"{BASE}/{row['id']}/edit", headers=headers, json={"name": "1234", "status": "active", "expected_version": 1}).json()["state_code"] == row["state_code"]
+    assert api.post(f"{BASE}/{row['id']}/edit", headers=headers, json={"name": "1234", "status": "active", "zone_id": row["zone_id"], "areas": [], "expected_version": 1}).json()["state_code"] == row["state_code"]
     assert HeadquarterFields(name=" X ", state_code="ß", status="active").state_code == "SS"
-    assert HeadquarterEdit(name="1234", status="active", expected_version=1).state_code is None
+    assert HeadquarterEdit(name="1234", status="active", zone_id=row["zone_id"], areas=[], expected_version=1).state_code is None
 
 
 def test_anonymous_mr_and_zone_staff_are_denied(client):

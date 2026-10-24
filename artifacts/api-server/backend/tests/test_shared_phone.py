@@ -36,10 +36,13 @@ def test_all_five_create_edit_reload_and_transfers(client):
     seed_patient_language(db, actor.id)
     mr_body = {**mr_fields(hq, zone), "phone": "81234567", "dialCountry": "SG"}
     mr = add_mr(api, headers, mr_body)["record"]
+    mr_body["userId"] = mr["userId"]
     doctor_body = doctor_fields(mr, phone="81234567", alternatePhone="91234567", dialCountry="SG")
     doctor = add_doctor(api, headers, doctor_body)
     patient_body = patient_fields(doctor, phone="81234567", dialCountry="SG")
     patient = add_patient(api, headers, patient_body)
+    from test_staff import seed_designation as seed_staff_designation
+    seed_staff_designation(db, actor.id)
     staff_body = {**STAFF_BODY, "designation_id": mr["designation_id"], "phone": "81234567", "dialCountry": "SG"}
     staff_response = api.post("/api/v1/admin/staff", headers=headers, json=staff_body)
     assert staff_response.status_code == 201, staff_response.text

@@ -480,6 +480,24 @@ export const editImmunotherapyOrderBodyGroupsItemIdMax = 100;
 export const editImmunotherapyOrderBodyGroupsItemItemsMax = 100;
 export const editImmunotherapyOrderBodyGroupsMax = 100;
 export const editImmunotherapyOrderBodyRemarksMax = 4000;
+export const reconcileInventoryAdjustmentResponseAdjustmentOneBatchNoOneMax = 120;
+export const reconcileInventoryAdjustmentResponseAdjustmentOneQuantityMax = 11;
+export const reconcileInventoryAdjustmentResponseAdjustmentOneReasonMax = 2000;
+export const createInventoryAdjustmentBodyBatchNoOneMax = 120;
+export const createInventoryAdjustmentBodyQuantityMax = 11;
+export const createInventoryAdjustmentBodyReasonMax = 2000;
+export const createInventoryAdjustmentResponseBatchNoOneMax = 120;
+export const createInventoryAdjustmentResponseQuantityMax = 11;
+export const createInventoryAdjustmentResponseReasonMax = 2000;
+export const previewInventoryAdjustmentBodyBatchNoOneMax = 120;
+export const previewInventoryAdjustmentBodyQuantityMax = 11;
+export const previewInventoryAdjustmentBodyReasonMax = 2000;
+export const previewInventoryAdjustmentResponseAdjustmentBatchNoOneMax = 120;
+export const previewInventoryAdjustmentResponseAdjustmentQuantityMax = 11;
+export const previewInventoryAdjustmentResponseAdjustmentReasonMax = 2000;
+export const getInventoryAdjustmentResponseBatchNoOneMax = 120;
+export const getInventoryAdjustmentResponseQuantityMax = 11;
+export const getInventoryAdjustmentResponseReasonMax = 2000;
 export const reviewInventoryInitializationQueryOffsetDefault = 0;
 export const reviewInventoryInitializationQueryOffsetMin = 0;
 export const reviewInventoryInitializationQueryOffsetMax = 1000000;
@@ -519,6 +537,13 @@ export const getInventoryStockHistoryQueryOffsetMin = 0;
 export const getInventoryStockHistoryQueryOffsetMax = 1000000;
 export const getInventoryStockHistoryQueryLimitDefault = 25;
 export const getInventoryStockHistoryQueryLimitMax = 100;
+export const getInventoryLedgerQueryLocationIdOneMax = 36;
+export const getInventoryLedgerQueryTransactionTypeOneMax = 32;
+export const getInventoryLedgerQueryOffsetDefault = 0;
+export const getInventoryLedgerQueryOffsetMin = 0;
+export const getInventoryLedgerQueryOffsetMax = 1000000;
+export const getInventoryLedgerQueryLimitDefault = 25;
+export const getInventoryLedgerQueryLimitMax = 100;
 export const listKitsOrdersQueryLimitDefault = 25;
 export const listKitsOrdersQueryLimitMax = 100;
 export const listKitsOrdersQuerySearchMax = 200;
@@ -9467,6 +9492,254 @@ export const EditImmunotherapyOrderResponse = zod
   .describe("Encrypted document projected only after protected authorization.");
 
 /**
+ * @summary Adjustment Reconcile
+ */
+export const ReconcileInventoryAdjustmentParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const reconcileInventoryAdjustmentResponseAdjustmentOneQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const ReconcileInventoryAdjustmentResponse = zod.object({
+  adjustment: zod.union([
+    zod.object({
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      after: zod.string(),
+      appendOnly: zod.boolean(),
+      batchNo: zod
+        .union([
+          zod
+            .string()
+            .max(
+              reconcileInventoryAdjustmentResponseAdjustmentOneBatchNoOneMax,
+            ),
+          zod.null(),
+        ])
+        .optional(),
+      before: zod.string(),
+      concentration: zod.string(),
+      correctionOf: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      createdAt: zod.coerce.date(),
+      delta: zod.string(),
+      direction: zod.enum(["add", "reduce"]),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      id: zod.string().uuid(),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
+      locationName: zod.string(),
+      locationVersion: zod.union([zod.number().int(), zod.null()]),
+      lotId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      productVersion: zod.number().int(),
+      quantity: zod
+        .string()
+        .max(reconcileInventoryAdjustmentResponseAdjustmentOneQuantityMax)
+        .regex(reconcileInventoryAdjustmentResponseAdjustmentOneQuantityRegExp),
+      reason: zod
+        .string()
+        .min(1)
+        .max(reconcileInventoryAdjustmentResponseAdjustmentOneReasonMax),
+      scope: zod.string(),
+      unit: zod.string(),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Adjustment Create
+ */
+
+export const createInventoryAdjustmentBodyQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const createInventoryAdjustmentBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CreateInventoryAdjustmentBody = zod.object({
+  batchNo: zod
+    .union([
+      zod.string().max(createInventoryAdjustmentBodyBatchNoOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  correctionOf: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  direction: zod.enum(["add", "reduce"]),
+  expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  idempotencyKey: zod.string().uuid(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  lotId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  productId: zod.string().uuid(),
+  quantity: zod
+    .string()
+    .max(createInventoryAdjustmentBodyQuantityMax)
+    .regex(createInventoryAdjustmentBodyQuantityRegExp),
+  reason: zod.string().min(1).max(createInventoryAdjustmentBodyReasonMax),
+  reviewToken: zod
+    .string()
+    .regex(createInventoryAdjustmentBodyReviewTokenRegExp),
+});
+
+export const createInventoryAdjustmentResponseQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const CreateInventoryAdjustmentResponse = zod.object({
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  after: zod.string(),
+  appendOnly: zod.boolean(),
+  batchNo: zod
+    .union([
+      zod.string().max(createInventoryAdjustmentResponseBatchNoOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  before: zod.string(),
+  concentration: zod.string(),
+  correctionOf: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+  delta: zod.string(),
+  direction: zod.enum(["add", "reduce"]),
+  expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  id: zod.string().uuid(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  locationName: zod.string(),
+  locationVersion: zod.union([zod.number().int(), zod.null()]),
+  lotId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  productId: zod.string().uuid(),
+  productName: zod.string(),
+  productVersion: zod.number().int(),
+  quantity: zod
+    .string()
+    .max(createInventoryAdjustmentResponseQuantityMax)
+    .regex(createInventoryAdjustmentResponseQuantityRegExp),
+  reason: zod.string().min(1).max(createInventoryAdjustmentResponseReasonMax),
+  scope: zod.string(),
+  unit: zod.string(),
+});
+
+/**
+ * @summary Adjustment Preview
+ */
+
+export const previewInventoryAdjustmentBodyQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const PreviewInventoryAdjustmentBody = zod.object({
+  batchNo: zod
+    .union([
+      zod.string().max(previewInventoryAdjustmentBodyBatchNoOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  correctionOf: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  direction: zod.enum(["add", "reduce"]),
+  expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  lotId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  productId: zod.string().uuid(),
+  quantity: zod
+    .string()
+    .max(previewInventoryAdjustmentBodyQuantityMax)
+    .regex(previewInventoryAdjustmentBodyQuantityRegExp),
+  reason: zod.string().min(1).max(previewInventoryAdjustmentBodyReasonMax),
+});
+
+export const previewInventoryAdjustmentResponseAdjustmentQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const PreviewInventoryAdjustmentResponse = zod.object({
+  adjustment: zod.object({
+    after: zod.string(),
+    batchNo: zod
+      .union([
+        zod
+          .string()
+          .max(previewInventoryAdjustmentResponseAdjustmentBatchNoOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    before: zod.string(),
+    concentration: zod.string(),
+    correctionOf: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    delta: zod.string(),
+    direction: zod.enum(["add", "reduce"]),
+    expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+    locationId: zod.union([zod.string().uuid(), zod.null()]),
+    locationName: zod.string(),
+    locationVersion: zod.union([zod.number().int(), zod.null()]),
+    lotId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    productId: zod.string().uuid(),
+    productName: zod.string(),
+    productVersion: zod.number().int(),
+    quantity: zod
+      .string()
+      .max(previewInventoryAdjustmentResponseAdjustmentQuantityMax)
+      .regex(previewInventoryAdjustmentResponseAdjustmentQuantityRegExp),
+    reason: zod
+      .string()
+      .min(1)
+      .max(previewInventoryAdjustmentResponseAdjustmentReasonMax),
+    scope: zod.string(),
+    unit: zod.string(),
+  }),
+  reviewToken: zod.string(),
+});
+
+/**
+ * @summary Adjustment Detail
+ */
+export const GetInventoryAdjustmentParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getInventoryAdjustmentResponseQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const GetInventoryAdjustmentResponse = zod.object({
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  after: zod.string(),
+  appendOnly: zod.boolean(),
+  batchNo: zod
+    .union([
+      zod.string().max(getInventoryAdjustmentResponseBatchNoOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  before: zod.string(),
+  concentration: zod.string(),
+  correctionOf: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+  delta: zod.string(),
+  direction: zod.enum(["add", "reduce"]),
+  expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  id: zod.string().uuid(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  locationName: zod.string(),
+  locationVersion: zod.union([zod.number().int(), zod.null()]),
+  lotId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  productId: zod.string().uuid(),
+  productName: zod.string(),
+  productVersion: zod.number().int(),
+  quantity: zod
+    .string()
+    .max(getInventoryAdjustmentResponseQuantityMax)
+    .regex(getInventoryAdjustmentResponseQuantityRegExp),
+  reason: zod.string().min(1).max(getInventoryAdjustmentResponseReasonMax),
+  scope: zod.string(),
+  unit: zod.string(),
+});
+
+/**
  * @summary Initialization
  */
 
@@ -9589,6 +9862,7 @@ export const ListInventoryMovementsResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
+          adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
           assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           batchNo: zod.union([zod.string(), zod.null()]),
@@ -9646,17 +9920,24 @@ export const ListInventoryMovementsResponse = zod.object({
             .union([
               zod.array(
                 zod.object({
+                  adjustmentId: zod
+                    .union([zod.string().uuid(), zod.null()])
+                    .optional(),
                   after: zod.string(),
                   batchNo: zod.union([zod.string(), zod.null()]),
                   before: zod.string(),
                   expiryDate: zod.union([zod.coerce.date(), zod.null()]),
                   lineId: zod.union([zod.string().uuid(), zod.null()]),
                   lotId: zod.string().uuid(),
+                  openingId: zod
+                    .union([zod.string().uuid(), zod.null()])
+                    .optional(),
                   productId: zod.string().uuid(),
                   productName: zod.string(),
                   quantity: zod.string(),
                   receiptId: zod.union([zod.string().uuid(), zod.null()]),
                   receiptNumber: zod.union([zod.string(), zod.null()]),
+                  source: zod.union([zod.string(), zod.null()]).optional(),
                   unit: zod.string(),
                 }),
               ),
@@ -9767,6 +10048,7 @@ export const CreateInventoryMovementResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
       assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       batchNo: zod.union([zod.string(), zod.null()]),
@@ -9820,17 +10102,24 @@ export const CreateInventoryMovementResponse = zod.object({
         .union([
           zod.array(
             zod.object({
+              adjustmentId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               after: zod.string(),
               batchNo: zod.union([zod.string(), zod.null()]),
               before: zod.string(),
               expiryDate: zod.union([zod.coerce.date(), zod.null()]),
               lineId: zod.union([zod.string().uuid(), zod.null()]),
               lotId: zod.string().uuid(),
+              openingId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               productId: zod.string().uuid(),
               productName: zod.string(),
               quantity: zod.string(),
               receiptId: zod.union([zod.string().uuid(), zod.null()]),
               receiptNumber: zod.union([zod.string(), zod.null()]),
+              source: zod.union([zod.string(), zod.null()]).optional(),
               unit: zod.string(),
             }),
           ),
@@ -9913,6 +10202,7 @@ export const PreviewInventoryMovementResponse = zod.object({
     }),
     lines: zod.array(
       zod.object({
+        adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
         assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         batchNo: zod.union([zod.string(), zod.null()]),
@@ -9968,17 +10258,24 @@ export const PreviewInventoryMovementResponse = zod.object({
           .union([
             zod.array(
               zod.object({
+                adjustmentId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
                 after: zod.string(),
                 batchNo: zod.union([zod.string(), zod.null()]),
                 before: zod.string(),
                 expiryDate: zod.union([zod.coerce.date(), zod.null()]),
                 lineId: zod.union([zod.string().uuid(), zod.null()]),
                 lotId: zod.string().uuid(),
+                openingId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
                 productId: zod.string().uuid(),
                 productName: zod.string(),
                 quantity: zod.string(),
                 receiptId: zod.union([zod.string().uuid(), zod.null()]),
                 receiptNumber: zod.union([zod.string(), zod.null()]),
+                source: zod.union([zod.string(), zod.null()]).optional(),
                 unit: zod.string(),
               }),
             ),
@@ -10043,6 +10340,7 @@ export const GetInventoryMovementResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
       assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       batchNo: zod.union([zod.string(), zod.null()]),
@@ -10096,17 +10394,24 @@ export const GetInventoryMovementResponse = zod.object({
         .union([
           zod.array(
             zod.object({
+              adjustmentId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               after: zod.string(),
               batchNo: zod.union([zod.string(), zod.null()]),
               before: zod.string(),
               expiryDate: zod.union([zod.coerce.date(), zod.null()]),
               lineId: zod.union([zod.string().uuid(), zod.null()]),
               lotId: zod.string().uuid(),
+              openingId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               productId: zod.string().uuid(),
               productName: zod.string(),
               quantity: zod.string(),
               receiptId: zod.union([zod.string().uuid(), zod.null()]),
               receiptNumber: zod.union([zod.string(), zod.null()]),
+              source: zod.union([zod.string(), zod.null()]).optional(),
               unit: zod.string(),
             }),
           ),
@@ -10209,6 +10514,7 @@ export const GetInventoryReferencesResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
       assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       available: zod.union([zod.string(), zod.null()]).optional(),
@@ -10255,17 +10561,24 @@ export const GetInventoryReferencesResponse = zod.object({
         .union([
           zod.array(
             zod.object({
+              adjustmentId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               after: zod.string(),
               batchNo: zod.union([zod.string(), zod.null()]),
               before: zod.string(),
               expiryDate: zod.union([zod.coerce.date(), zod.null()]),
               lineId: zod.union([zod.string().uuid(), zod.null()]),
               lotId: zod.string().uuid(),
+              openingId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               productId: zod.string().uuid(),
               productName: zod.string(),
               quantity: zod.string(),
               receiptId: zod.union([zod.string().uuid(), zod.null()]),
               receiptNumber: zod.union([zod.string(), zod.null()]),
+              source: zod.union([zod.string(), zod.null()]).optional(),
               unit: zod.string(),
             }),
           ),
@@ -10320,6 +10633,7 @@ export const ReconcileInventoryMovementResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
+          adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
           assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           batchNo: zod.union([zod.string(), zod.null()]),
@@ -10377,17 +10691,24 @@ export const ReconcileInventoryMovementResponse = zod.object({
             .union([
               zod.array(
                 zod.object({
+                  adjustmentId: zod
+                    .union([zod.string().uuid(), zod.null()])
+                    .optional(),
                   after: zod.string(),
                   batchNo: zod.union([zod.string(), zod.null()]),
                   before: zod.string(),
                   expiryDate: zod.union([zod.coerce.date(), zod.null()]),
                   lineId: zod.union([zod.string().uuid(), zod.null()]),
                   lotId: zod.string().uuid(),
+                  openingId: zod
+                    .union([zod.string().uuid(), zod.null()])
+                    .optional(),
                   productId: zod.string().uuid(),
                   productName: zod.string(),
                   quantity: zod.string(),
                   receiptId: zod.union([zod.string().uuid(), zod.null()]),
                   receiptNumber: zod.union([zod.string(), zod.null()]),
+                  source: zod.union([zod.string(), zod.null()]).optional(),
                   unit: zod.string(),
                 }),
               ),
@@ -10498,6 +10819,7 @@ export const ListInventoryStockResponse = zod.object({
         .default(listInventoryStockResponseItemsItemItemKindDefault),
       lots: zod.array(
         zod.object({
+          adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
           assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           batchNo: zod.union([zod.string(), zod.null()]),
@@ -10552,17 +10874,24 @@ export const ListInventoryStockResponse = zod.object({
             .union([
               zod.array(
                 zod.object({
+                  adjustmentId: zod
+                    .union([zod.string().uuid(), zod.null()])
+                    .optional(),
                   after: zod.string(),
                   batchNo: zod.union([zod.string(), zod.null()]),
                   before: zod.string(),
                   expiryDate: zod.union([zod.coerce.date(), zod.null()]),
                   lineId: zod.union([zod.string().uuid(), zod.null()]),
                   lotId: zod.string().uuid(),
+                  openingId: zod
+                    .union([zod.string().uuid(), zod.null()])
+                    .optional(),
                   productId: zod.string().uuid(),
                   productName: zod.string(),
                   quantity: zod.string(),
                   receiptId: zod.union([zod.string().uuid(), zod.null()]),
                   receiptNumber: zod.union([zod.string(), zod.null()]),
+                  source: zod.union([zod.string(), zod.null()]).optional(),
                   unit: zod.string(),
                 }),
               ),
@@ -10599,6 +10928,9 @@ export const ListInventoryStockResponse = zod.object({
             .default(listInventoryStockResponseSnapshotOneItemItemKindDefault),
           lots: zod.array(
             zod.object({
+              adjustmentId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
               assembledQuantity: zod
                 .union([zod.string(), zod.null()])
                 .optional(),
@@ -10661,17 +10993,24 @@ export const ListInventoryStockResponse = zod.object({
                 .union([
                   zod.array(
                     zod.object({
+                      adjustmentId: zod
+                        .union([zod.string().uuid(), zod.null()])
+                        .optional(),
                       after: zod.string(),
                       batchNo: zod.union([zod.string(), zod.null()]),
                       before: zod.string(),
                       expiryDate: zod.union([zod.coerce.date(), zod.null()]),
                       lineId: zod.union([zod.string().uuid(), zod.null()]),
                       lotId: zod.string().uuid(),
+                      openingId: zod
+                        .union([zod.string().uuid(), zod.null()])
+                        .optional(),
                       productId: zod.string().uuid(),
                       productName: zod.string(),
                       quantity: zod.string(),
                       receiptId: zod.union([zod.string().uuid(), zod.null()]),
                       receiptNumber: zod.union([zod.string(), zod.null()]),
+                      source: zod.union([zod.string(), zod.null()]).optional(),
                       unit: zod.string(),
                     }),
                   ),
@@ -10700,6 +11039,39 @@ export const ListInventoryStockResponse = zod.object({
     ])
     .optional(),
   total: zod.number().int(),
+});
+
+/**
+ * @summary Adjustment Choices
+ */
+export const GetInventoryAdjustmentChoicesParams = zod.object({
+  product_id: zod.coerce.string().uuid(),
+});
+
+export const GetInventoryAdjustmentChoicesResponse = zod.object({
+  asOf: zod.coerce.date(),
+  locations: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+    }),
+  ),
+  lots: zod.array(
+    zod.object({
+      available: zod.string(),
+      batchNo: zod.union([zod.string(), zod.null()]),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
+      locationName: zod.string(),
+      lotId: zod.string().uuid(),
+      source: zod.string(),
+    }),
+  ),
+  product: zod.object({
+    concentration: zod.string(),
+    name: zod.string(),
+    productId: zod.string().uuid(),
+    unit: zod.string(),
+  }),
 });
 
 /**
@@ -10745,6 +11117,121 @@ export const GetInventoryStockHistoryResponse = zod.object({
   limit: zod.number().int(),
   offset: zod.number().int(),
   scope: zod.string(),
+});
+
+/**
+ * @summary Ledger
+ */
+export const GetInventoryLedgerParams = zod.object({
+  product_id: zod.coerce.string().uuid(),
+});
+
+export const GetInventoryLedgerQueryParams = zod.object({
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  location_id: zod
+    .union([
+      zod.coerce.string().max(getInventoryLedgerQueryLocationIdOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  transaction_type: zod
+    .union([
+      zod.coerce.string().max(getInventoryLedgerQueryTransactionTypeOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getInventoryLedgerQueryOffsetMin)
+    .max(getInventoryLedgerQueryOffsetMax)
+    .default(getInventoryLedgerQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getInventoryLedgerQueryLimitMax)
+    .default(getInventoryLedgerQueryLimitDefault),
+});
+
+export const GetInventoryLedgerResponse = zod.object({
+  asOf: zod.coerce.date(),
+  coverage: zod.object({
+    complete: zod.boolean(),
+    contract: zod.string(),
+    earliestRecordedAt: zod.union([zod.coerce.date(), zod.null()]),
+    limitations: zod.array(zod.string()),
+  }),
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      balance: zod.string(),
+      batchNo: zod.union([zod.string(), zod.null()]),
+      businessDate: zod.union([zod.coerce.date(), zod.null()]),
+      id: zod.string(),
+      legs: zod.array(
+        zod.object({
+          delta: zod.string(),
+          location: zod.string(),
+          lotId: zod.string().uuid(),
+        }),
+      ),
+      location: zod.string(),
+      lotId: zod.union([zod.string().uuid(), zod.null()]),
+      quantityIn: zod.string(),
+      quantityOut: zod.string(),
+      reason: zod.string(),
+      reference: zod.string(),
+      sourceAvailable: zod.boolean(),
+      sourceId: zod.union([zod.string().uuid(), zod.null()]),
+      sourceKind: zod.union([zod.string(), zod.null()]),
+      type: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  locations: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+    }),
+  ),
+  offset: zod.number().int(),
+  procurement: zod.object({
+    items: zod.array(
+      zod.object({
+        accepted: zod.string(),
+        date: zod.union([zod.coerce.date(), zod.null()]),
+        id: zod.string(),
+        kind: zod.enum(["po", "pr"]),
+        number: zod.string(),
+        ordered: zod.string(),
+        received: zod.string(),
+        rejected: zod.string(),
+        sourceAvailable: zod.boolean(),
+        sourceId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        status: zod.string(),
+        stockEffect: zod.string(),
+      }),
+    ),
+    scope: zod.string(),
+  }),
+  product: zod.object({
+    concentration: zod.string(),
+    name: zod.string(),
+    productId: zod.string().uuid(),
+    unit: zod.string(),
+  }),
+  summary: zod.object({
+    additions: zod.string(),
+    closing: zod.string(),
+    current: zod.string(),
+    opening: zod.string(),
+    reductions: zod.string(),
+    scope: zod.string(),
+  }),
 });
 
 /**
@@ -21756,12 +22243,14 @@ export const AssembleStockProductResponse = zod.object({
   batchNo: zod.string(),
   components: zod.array(
     zod.object({
+      adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       after: zod.string(),
       batchNo: zod.union([zod.string(), zod.null()]),
       before: zod.string(),
       expiryDate: zod.union([zod.coerce.date(), zod.null()]),
       lineId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
+      openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       productId: zod.string().uuid(),
       productName: zod.string(),
       productVersion: zod.number().int(),
@@ -21769,6 +22258,7 @@ export const AssembleStockProductResponse = zod.object({
       receiptId: zod.union([zod.string().uuid(), zod.null()]),
       receiptNumber: zod.union([zod.string(), zod.null()]),
       receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+      source: zod.union([zod.string(), zod.null()]).optional(),
       unit: zod.string(),
     }),
   ),
@@ -21849,12 +22339,14 @@ export const PreviewProductAssemblyResponse = zod.object({
     batchNo: zod.string(),
     components: zod.array(
       zod.object({
+        adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         after: zod.string(),
         batchNo: zod.union([zod.string(), zod.null()]),
         before: zod.string(),
         expiryDate: zod.union([zod.coerce.date(), zod.null()]),
         lineId: zod.union([zod.string().uuid(), zod.null()]),
         lotId: zod.string().uuid(),
+        openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         productId: zod.string().uuid(),
         productName: zod.string(),
         productVersion: zod.number().int(),
@@ -21862,6 +22354,7 @@ export const PreviewProductAssemblyResponse = zod.object({
         receiptId: zod.union([zod.string().uuid(), zod.null()]),
         receiptNumber: zod.union([zod.string(), zod.null()]),
         receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+        source: zod.union([zod.string(), zod.null()]).optional(),
         unit: zod.string(),
       }),
     ),
@@ -21926,12 +22419,14 @@ export const GetProductAssemblyResponse = zod.object({
   batchNo: zod.string(),
   components: zod.array(
     zod.object({
+      adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       after: zod.string(),
       batchNo: zod.union([zod.string(), zod.null()]),
       before: zod.string(),
       expiryDate: zod.union([zod.coerce.date(), zod.null()]),
       lineId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
+      openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       productId: zod.string().uuid(),
       productName: zod.string(),
       productVersion: zod.number().int(),
@@ -21939,6 +22434,7 @@ export const GetProductAssemblyResponse = zod.object({
       receiptId: zod.union([zod.string().uuid(), zod.null()]),
       receiptNumber: zod.union([zod.string(), zod.null()]),
       receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+      source: zod.union([zod.string(), zod.null()]).optional(),
       unit: zod.string(),
     }),
   ),
@@ -22220,12 +22716,14 @@ export const ReconcileStockProductRequestResponse = zod.object({
       batchNo: zod.string(),
       components: zod.array(
         zod.object({
+          adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           after: zod.string(),
           batchNo: zod.union([zod.string(), zod.null()]),
           before: zod.string(),
           expiryDate: zod.union([zod.coerce.date(), zod.null()]),
           lineId: zod.union([zod.string().uuid(), zod.null()]),
           lotId: zod.string().uuid(),
+          openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           productId: zod.string().uuid(),
           productName: zod.string(),
           productVersion: zod.number().int(),
@@ -22233,6 +22731,7 @@ export const ReconcileStockProductRequestResponse = zod.object({
           receiptId: zod.union([zod.string().uuid(), zod.null()]),
           receiptNumber: zod.union([zod.string(), zod.null()]),
           receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          source: zod.union([zod.string(), zod.null()]).optional(),
           unit: zod.string(),
         }),
       ),
@@ -22630,12 +23129,14 @@ export const GetStockProductAssembliesResponse = zod.object({
       batchNo: zod.string(),
       components: zod.array(
         zod.object({
+          adjustmentId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           after: zod.string(),
           batchNo: zod.union([zod.string(), zod.null()]),
           before: zod.string(),
           expiryDate: zod.union([zod.coerce.date(), zod.null()]),
           lineId: zod.union([zod.string().uuid(), zod.null()]),
           lotId: zod.string().uuid(),
+          openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
           productId: zod.string().uuid(),
           productName: zod.string(),
           productVersion: zod.number().int(),
@@ -22643,6 +23144,7 @@ export const GetStockProductAssembliesResponse = zod.object({
           receiptId: zod.union([zod.string().uuid(), zod.null()]),
           receiptNumber: zod.union([zod.string(), zod.null()]),
           receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          source: zod.union([zod.string(), zod.null()]).optional(),
           unit: zod.string(),
         }),
       ),

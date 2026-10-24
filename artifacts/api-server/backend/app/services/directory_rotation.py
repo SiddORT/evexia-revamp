@@ -36,7 +36,9 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge",
     "0053_email_invitations", "0054_modern_email_tests", STAFF_MANAGER_REVISION,
     "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access",
-    "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner"})
+    "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders",
+    "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders",
+    "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -53,7 +55,11 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers", "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner"):
+    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code",
+                    "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers",
+                    "0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders",
+                    "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner",
+                    "0067_inventory_adjustments", "0068_category_description"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -78,13 +84,13 @@ def _lock(db, exclusive=False):
         raise RotationError()
     if revisions[0] in RUNTIME_REVISIONS:
         db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
-    if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"]):
+    if revisions in (["0061_immunotherapy_orders"], ["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
         db.execute(text(f"LOCK TABLE immunotherapy_orders,immunotherapy_requests IN {mode} MODE NOWAIT"))
-    if revisions in (["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"]):
+    if revisions in (["0062_kits_orders"], ["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
         db.execute(text(f"LOCK TABLE kits_orders,kits_requests,files IN {mode} MODE NOWAIT"))
-    if revisions in (["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"]):
+    if revisions in (["0063_spt_orders"], ["0064_procurement_documents"], ["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
         db.execute(text(f"LOCK TABLE spt_orders,spt_patients,spt_requests IN {mode} MODE NOWAIT"))
-    if revisions in (["0065_lupin_orders"], ["0066_spt_registration_owner"]):
+    if revisions in (["0065_lupin_orders"], ["0066_spt_registration_owner"], ["0067_inventory_adjustments"], ["0068_category_description"]):
         db.execute(text(f"LOCK TABLE lupin_orders,lupin_requests IN {mode} MODE NOWAIT"))
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;

@@ -23,24 +23,31 @@ NO_DELETE = set()
 NO_SAMPLE = {"zone", "location", "courier"}  # Existing client templates have durable evidence.
 
 
-def seed(api, admin):
+def seed(api, admin, db):
+    from test_patients import seed_patient_language
+    from app.db.models import User
+    from sqlalchemy import select
+    seed_patient_language(db, db.scalar(select(User.id).where(User.is_protected_system_admin.is_(True))))
     def create(resource, body):
         response = api.post(BASE + PATHS[resource], headers=admin, json=body)
         assert response.status_code == 201, response.text
         return response.json()
     bodies = {
-        "headquarter": dict(name="HQ for MRs", status="active"),
+        "headquarter": dict(name="HQ for MRs", status="active", areas=[]),
         "zone": dict(name="Zone for MRs", status="active"),
         "location": dict(name="Location", address="Main Street", status="active"),
         "courier": dict(name="Courier", status="active"),
         "product_category": dict(name="Category", description="", unit_price="1.00", status="active"),
     }
-    rows = {key: create(key, value) for key, value in bodies.items()}
+    rows = {"zone": create("zone", bodies["zone"])}
+    bodies["headquarter"]["zone_id"] = rows["zone"]["id"]
+    rows.update({key: create(key, value) for key, value in bodies.items() if key != "zone"})
     designation = api.post(BASE + "designations", headers=admin,
                            json=dict(name="Medical Representative", shortName="MR", status="active")).json()
     bodies["mr"] = mr_fields(rows["headquarter"]["id"], rows["zone"]["id"])
     bodies["mr"]["designation_id"] = designation["id"]
     rows["mr"] = create("mr", bodies["mr"])["record"]
+    bodies["mr"]["userId"] = rows["mr"]["userId"]
     bodies["doctor"] = doctor_fields(rows["mr"])
     rows["doctor"] = create("doctor", bodies["doctor"])
     bodies["patient"] = patient_fields(rows["doctor"])
@@ -76,7 +83,7 @@ def upload(resource, bodies, rows):
 def test_each_single_grant_is_exact_and_master_isolated(client, monkeypatch, resource, action):
     api, db, _ = client
     admin, _, role, record, password = setup(api, db, [f"{resource}.{action}"])
-    bodies, rows = seed(api, admin)
+    bodies, rows = seed(api, admin, db)
     staff = bearer(staff_login(api, record, password))
     path = BASE + PATHS[resource]
     row = rows[resource]
@@ -187,7 +194,7 @@ def test_each_single_grant_is_exact_and_master_isolated(client, monkeypatch, res
 def test_empty_all_mixed_helpers_and_protected_boundaries(client):
     api, db, _ = client
     admin, _, role, record, password = setup(api, db)
-    _, rows = seed(api, admin)
+    _, rows = seed(api, admin, db)
     staff = bearer(staff_login(api, record, password))
     for resource in MASTERS:
         assert api.get(BASE + PATHS[resource], headers=staff).status_code == 403

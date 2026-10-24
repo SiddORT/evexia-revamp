@@ -115,7 +115,8 @@ def test_committed_duplicate_create_race_and_stale_status_use_independent_connec
     with ThreadPoolExecutor(max_workers=2) as executor:
         results = list(executor.map(lambda _: create(), range(2)))
     assert sum(isinstance(result, dict) for result in results) == 1
-    assert "staff_duplicate" in results
+    assert any(result in ("staff_email_duplicate", "staff_employee_code_duplicate")
+               for result in results if isinstance(result, str))
     row = next(result["record"] for result in results if isinstance(result, dict))
     row_id = row["id"]
     with Session(engine) as db:

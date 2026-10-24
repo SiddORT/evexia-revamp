@@ -173,6 +173,9 @@ class AssemblyCreate(AssemblyInput):
 
 
 class AssemblyComponent(BaseModel):
+    source: str | None = None
+    adjustmentId: uuid.UUID | None = None
+    openingId: uuid.UUID | None = None
     lotId: uuid.UUID
     receiptId: uuid.UUID | None
     receiptNumber: str | None

@@ -64,7 +64,7 @@ def seed(db, actor_id, historical=False):
         db.add(Designation(id=designation_id, name="MR", shortName="MR", status="active",
                            created_by=actor_id, updated_by=actor_id))
         db.flush()
-    mr = MRDirectory(id=profile.id, name="Migration MR", phone="", email="", contactRequirement="optional",
+    mr = MRDirectory(id=profile.id, name="Migration MR", phone="" if historical else "9000000001", email="", contactRequirement="optional",
                      hq=hq.id, zoneId=zone.id, employeeCode="RACE-MR", dateOfJoining=date(2020, 1, 1),
                      hq_name=hq.name, zone_name=zone.name,
                      designation_id=designation_id, reportingManagerId=None, paymentLimit=Decimal("0"),
@@ -73,10 +73,13 @@ def seed(db, actor_id, historical=False):
                      created_by=actor_id, updated_by=actor_id)
     if historical:
         from app.services.directory_inventory import LEGACY_FIELDS as FIELDS
-        values = {column.name: getattr(mr, column.name) for column in MRDirectory.__table__.columns
-                  if column.name not in ("designation_id", "name_index", "created_at", "updated_at", "version",
-                                         "hq_name", "zone_name")
-                  and not column.name.endswith("_ciphertext")}
+        # Freeze revision 0022's contract: today's mapper also includes later
+        # soft deletion, manager snapshots, Staff links and zone memberships.
+        values = {name: getattr(mr, name) for name in (
+            "id", "phone", "email", "contactRequirement", "hq", "zoneId",
+            "employeeCode", "dateOfJoining", "reportingManagerId", "paymentLimit",
+            "doctorDaysLimit", "status", "pincode", "addressLine1", "addressLine2",
+            "landmark", "city", "state", "country", "created_by", "updated_by")}
         values.update({field: getattr(mr, field) for field in FIELDS["mr_directory"]})
         values["designation"], values["version"] = "MR", 1
         columns = ", ".join(f'"{key}"' for key in values)
@@ -118,7 +121,9 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
                 with db.begin_nested():
                     db.execute(text(sql))
         sales_targets.mutate(db, actor, row["id"], SalesTargetVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match=r"^Opening stock downgrade requires independently reviewed external recovery\.$"):
+    # The current head's newer append-only adjustment guard refuses before
+    # Opening Stock. It must still roll the entire downgrade back unchanged.
+    with pytest.raises(RuntimeError, match=r"^Committed inventory adjustments cannot be discarded$"):
         command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         assert db.get(SalesTarget, row["id"]).deleted_by == actor_id

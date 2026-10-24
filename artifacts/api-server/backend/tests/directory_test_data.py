@@ -16,6 +16,9 @@ def encrypted_values(db, table, values):
     for field in FIELDS[table]:
         record[field + "_ciphertext"] = current.encrypt(table, record["id"], field, record.pop(field))
     if table == "doctor_directory":
+        # Explicit synthetic business number for current-schema bulk inserts;
+        # production numbers remain allocated by the authoritative service.
+        record.setdefault("doctorNumber", f"DR-900{uuid.UUID(str(record['id'])).int % 10**12:012}")
         record["state_index"] = current.doctor_state_index(values["state"])
     elif table == "mr_directory":
         record["name_index"] = current.mr_name_index(db.scalar(select(func.lower(values["name"]))))
