@@ -9,11 +9,33 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
-import { request, STATUSES, PAYMENT_STATUSES, productSummary } from '../../services/serverKits.js';
+import { request, STATUSES, PAYMENT_STATUSES } from '../../services/serverKits.js';
 import { createKitsTransferAdapter } from '../../services/kitsTransfers.js';
 import '../../kitsOrders.css';
 
 const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '', status: '', payment_status: '', order_for: '' };
+
+function OrderItemDetails({ order }) {
+  const kit = order.kit;
+  return <ul className="kits-listing__items" role="list">
+    {kit?.product && <li>
+      <strong>Stallergo Skin Prick Kit</strong>
+      <span>Configuration: {kit.product}</span>
+      {kit.product === 'Customized' && kit.custom && <span className="kits-listing__custom">{kit.custom}</span>}
+      <div className="kits-listing__item-facts">
+        <span>Volume: {kit.volume} ml</span>
+        <span>Quantity: {kit.quantity}</span>
+      </div>
+    </li>}
+    {[['lancets', 'Lancets'], ['applicators', 'Applicators'], ['tray', 'Tray']]
+      .filter(([key]) => order[key])
+      .map(([key, label]) => <li key={key}>
+        <strong>{label}</strong>
+        <span>Quantity: {order[key]}</span>
+      </li>)}
+  </ul>;
+}
+
 export default function KitsOrders() {
   const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
@@ -45,7 +67,7 @@ export default function KitsOrders() {
   const baseColumns = [
     { key: 'sr', label: 'Sr. No.', render: (_o, i) => i + 1 },
     { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="kits-sub">{date(o.date)}</span></> },
-    { key: 'items', label: 'Order details', render: productSummary },
+    { key: 'items', label: 'Order details', render: (o) => <OrderItemDetails order={o} /> },
     { key: 'who', label: 'Doctor / MR / Patient', render: (o) => <>{o.doctor.name}<span className="kits-sub">{o.orderFor === 'mr' ? 'MR order' : 'Doctor order'}</span><span className="kits-sub">MR: {o.mr?.name || 'Not selected'}</span><span className="kits-sub">Patient: {o.patient?.name || 'Not selected'}</span></> },
     { key: 'status', label: 'Status', render: (o) => <span className="kits-pill">{o.status}</span> },
     { key: 'pay', label: 'Payment status', render: (o) => <span className="kits-pill">{o.paymentStatus}</span> },

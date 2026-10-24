@@ -74,6 +74,12 @@
 .kits-entry .kits-file-remove:disabled { opacity: .6; cursor: not-allowed; }
 /* Listing-owned layout: direct entry must not rely on another order route's CSS. */
 .kits-listing { gap: 16px; }
+.kits-listing .kits-listing__items { display: grid; gap: 10px; width: 280px; max-width: 100%; min-width: 0; margin: 0; padding: 0; list-style: none; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+.kits-listing .kits-listing__items > li { display: grid; gap: 2px; min-width: 0; }
+.kits-listing .kits-listing__items > li + li { padding-top: 8px; border-top: 1px solid var(--admin-border); }
+.kits-listing .kits-listing__items strong { color: var(--admin-text); font-weight: 600; }
+.kits-listing .kits-listing__custom { white-space: pre-wrap; }
+.kits-listing .kits-listing__item-facts { display: flex; flex-wrap: wrap; gap: 2px 14px; color: var(--admin-text-soft); font-variant-numeric: tabular-nums; }
 .kits-listing .order-transfers { margin-bottom: 0; }
 .kits-listing .admin-page-head { align-items: flex-end; gap: 16px 24px; }
 .kits-listing .admin-page-head > :first-child { flex: 1 1 340px; }
