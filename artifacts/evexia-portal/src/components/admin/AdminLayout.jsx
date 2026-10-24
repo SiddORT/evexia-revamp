@@ -307,21 +307,19 @@ export default function AdminLayout({ title, children }) {
                   <span className="admin-profile__details">
                     <span className="admin-profile__name">{profileName}</span>
                     <span className="admin-profile__secondary">{profileAccount}</span>
-                    {staff && <><span className="admin-profile__secondary">Designation: {profileDesignation}</span>
-                    <span className="admin-profile__secondary">Role: {profileRole}</span></>}
                   </span>
                   <ChevronDown size={14} aria-hidden="true" />
                 </button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
-                <DropdownMenu.Content className="admin-dropdown__menu admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
+                <DropdownMenu.Content className="admin-dropdown__menu admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={8} collisionPadding={12}>
                   <DropdownMenu.Label className="admin-profile__identity">
                     <strong>{profileName}</strong>
                     <span>{profileAccount}</span>
-                    {staff ? <>
+                    {staff ? <span className="admin-profile__metadata">
                       <span>Designation: {profileDesignation}</span>
                       <span>Role: {profileRole}</span>
-                    </> : <span>Authenticated Super Admin</span>}
+                    </span> : <span className="admin-profile__metadata">Authenticated Super Admin</span>}
                   </DropdownMenu.Label>
                   <DropdownMenu.Separator className="admin-dropdown__separator" />
                   {!staff && <>
@@ -338,6 +336,7 @@ export default function AdminLayout({ title, children }) {
                     <Mail size={15} aria-hidden="true" /> Email Logs
                   </DropdownMenu.Item>}
                   </>}
+                  {!staff && <DropdownMenu.Separator className="admin-dropdown__separator" />}
                   <DropdownMenu.Item className="admin-dropdown__item admin-dropdown__item--danger" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Log Out
                   </DropdownMenu.Item>
