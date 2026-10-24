@@ -18,7 +18,12 @@ import type { KitsRecordRecipient } from "./kitsRecordRecipient";
 import type { KitsRecordShipping } from "./kitsRecordShipping";
 import type { KitsRecordStatus } from "./kitsRecordStatus";
 
+import type { KitsPricingSnapshot } from "./kitsPricingSnapshot";
+
 export interface KitsRecord {
+  pricing?: KitsPricingSnapshot | null;
+  businessParking?: string | null;
+  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */

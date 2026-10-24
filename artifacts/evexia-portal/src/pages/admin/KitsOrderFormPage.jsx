@@ -8,6 +8,8 @@ import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
+import KitsOrderEditor from './KitsOrderEditor.jsx';
+import KitsPricingSummary from '../../components/orders/KitsPricingSummary.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 
@@ -21,23 +23,25 @@ function Facts({ person, empty, testId }) {
   return <dl className="kits-facts" data-testid={testId}>{rows.map(([k, x]) => <div key={k}><dt>{k}</dt><dd>{x || '-'}</dd></div>)}</dl>;
 }
 
-export default function KitsOrderFormPage({ id }) {
+export default function KitsOrderFormPage({ id, mode = 'view' }) {
   const BASE = useOrderBase('kits-consumables');
+  const can = useOrderActions('kits');
   const [order, setOrder] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(Boolean(id)), [revision, setRevision] = useState(0);
   useEffect(() => {
-    if (!id) return undefined;
+    if (!id || (mode === 'edit' && !can.protected)) return undefined;
     const controller = new AbortController();
     setLoading(true); setError(''); setOrder(null);
     request(`/${id}`, { signal: controller.signal }).then(setOrder).catch((e) => { if (!controller.signal.aborted) setError(e.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [id, revision]);
+  }, [id, revision, mode, can.protected]);
+  if (mode === 'edit' && !can.protected) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><section className="admin-panel kits-panel"><h1>Edit access denied</h1><p role="alert">Only the protected Super Admin can edit saved Kits orders and pricing.</p><Link href={BASE}>Back to orders</Link></section></div></AdminLayout>;
   if (id) {
     if (!order) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><div className="admin-panel kits-panel kits-empty" data-testid="kits-missing">
       <h1>{loading ? 'Loading saved order…' : 'Order not available'}</h1>{error && <p role="alert">{error}</p>}
       {!loading && <button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button>}
       <Link href={BASE} className="admin-button">Back to orders</Link></div></div></AdminLayout>;
-    return <Summary order={order} />;
+    return mode === 'edit' ? <KitsOrderEditor order={order} /> : <Summary order={order} />;
   }
   return <Form />;
 }
@@ -57,6 +61,7 @@ function Summary({ order }) {
     <div className="kits-layout">
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
+          {can.protected && <><Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link><KitsPricingSummary order={order} /></>}
           <dl className="kits-facts" data-testid="kits-summary-items">
             <div><dt>Summary</dt><dd>{productSummary(order)}</dd></div>
             <div><dt>Order for</dt><dd>{order.orderFor === 'mr' ? `MR: ${mr?.name || '-'}` : `Doctor: ${doctor?.name || '-'}`}</dd></div>

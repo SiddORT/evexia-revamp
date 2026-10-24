@@ -107,6 +107,7 @@ function App() {
       <Route path="/admin/orders/spt/:id">{(params) => <SptOrderFormPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/orders/kits-consumables" component={KitsOrders} />
       <Route path="/admin/orders/kits-consumables/new">{() => <KitsOrderFormPage key="new" />}</Route>
+      <Route path="/admin/orders/kits-consumables/:id/edit">{(params) => <KitsOrderFormPage key={`${params.id}-edit`} id={params.id} mode="edit" />}</Route>
       <Route path="/admin/orders/kits-consumables/:id">{(params) => <KitsOrderFormPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/orders/lupin" component={LupinOrders} />
       <Route path="/admin/orders/lupin/new">{() => <LupinOrderFormPage key="new" />}</Route>

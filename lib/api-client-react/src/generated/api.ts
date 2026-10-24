@@ -212,6 +212,7 @@ import type {
   KitsRecord,
   KitsReferencesParams,
   KitsWrite,
+  KitsUpdate,
   LanguageEdit,
   LanguageFields,
   LanguageHistory,
@@ -12120,6 +12121,36 @@ export function useKitsReferences<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+// Coordinated source-only endpoint; generator/build/checks intentionally not run.
+export const getUpdateKitsOrderUrl = (recordId: string) =>
+  `/api/v1/admin/kits-orders/${recordId}/edit`;
+
+export const updateKitsOrder = async (
+  recordId: string,
+  data: KitsUpdate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => customFetch<KitsRecord>(getUpdateKitsOrderUrl(recordId), {
+  ...options, method: "POST",
+  headers: { "Content-Type": "application/json", ...options?.headers },
+  body: JSON.stringify(data),
+});
+
+export const getUpdateKitsOrderMutationOptions = <TError = ErrorType<ErrorEnvelope>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateKitsOrder>>, TError, { recordId: string; data: KitsUpdate }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => ({
+  mutationKey: ["updateKitsOrder"],
+  mutationFn: ({ recordId, data }: { recordId: string; data: KitsUpdate }) =>
+    updateKitsOrder(recordId, data, options?.request),
+  ...options?.mutation,
+});
+
+export const useUpdateKitsOrder = <TError = ErrorType<ErrorEnvelope>, TContext = unknown>(
+  options?: Parameters<typeof getUpdateKitsOrderMutationOptions<TError, TContext>>[0],
+) => useMutation(getUpdateKitsOrderMutationOptions<TError, TContext>(options));
 
 export const getGetKitsOrderUrl = (recordId: string) => {
   return `/api/v1/admin/kits-orders/${recordId}`;

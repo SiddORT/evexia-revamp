@@ -11,7 +11,7 @@ export const useOrderBase = (kind) => `/${useOrderPortal().portal}/orders/${kind
 export function useOrderActions(kind) {
   const { portal } = useOrderPortal();
   const capabilities = useResourceActions(kind);
-  if (portal !== 'mr') return { ...capabilities, documents: capabilities.protected };
+  if (portal !== 'mr') return { ...capabilities, ...(kind === 'kits' ? { edit: capabilities.protected } : {}), documents: capabilities.protected };
   // MR routes retain their existing ownership-scoped service authorization.
   // They never inherit staff or protected-administration authority.
   return { ...Object.fromEntries(Object.keys(capabilities).map((action) => [action, action !== 'protected'])), documents: true };

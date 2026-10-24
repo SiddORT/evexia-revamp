@@ -7,6 +7,31 @@
  */
 import * as zod from "zod";
 
+// Coordinated source-only contract update; no generator/build/check was run.
+export const kitsPricingInputSchema = zod.object({
+  kitRate: zod.string().max(32).nullable().optional(),
+  lancetsRate: zod.string().max(32).nullable().optional(),
+  applicatorsRate: zod.string().max(32).nullable().optional(),
+  trayRate: zod.string().max(32).nullable().optional(),
+  forwardingCharges: zod.string().max(32),
+  discountType: zod.enum(["percent", "inr"]),
+  discountValue: zod.string().max(32),
+}).strict();
+export const kitsPricingSnapshotSchema = kitsPricingInputSchema.extend({
+  taxPercentage: zod.string(),
+  lineAmounts: zod.record(zod.string(), zod.string()),
+  gross: zod.string(), discountAmount: zod.string(), discounted: zod.string(),
+  taxable: zod.string(), gst: zod.string(), total: zod.string(),
+});
+const kitsFinancialInputFields = {
+  pricing: kitsPricingInputSchema.nullable().optional(),
+  businessParking: zod.string().max(32).nullable().optional(),
+  poNumber: zod.string().max(200).nullable().optional(),
+};
+const kitsFinancialResponseFields = {
+  ...kitsFinancialInputFields, pricing: kitsPricingSnapshotSchema.nullable().optional(),
+};
+
 export const listAllergensQueryQueryMax = 200;
 export const listAllergensQueryMinPriceOneMax = 64;
 export const listAllergensQueryMaxPriceOneMax = 64;
@@ -12244,6 +12269,7 @@ export const ListKitsOrdersResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
+      ...kitsFinancialResponseFields,
       applicators: zod
         .string()
         .max(listKitsOrdersResponseItemsItemApplicatorsMax)
@@ -12421,6 +12447,7 @@ export const createKitsOrderBodyStatusDefault = `Confirmed`;
 export const createKitsOrderBodyTrayDefault = ``;
 
 export const CreateKitsOrderBody = zod.object({
+  ...kitsFinancialInputFields,
   applicators: zod
     .string()
     .max(createKitsOrderBodyApplicatorsMax)
@@ -12568,6 +12595,7 @@ export const createKitsOrderResponseStatusDefault = `Confirmed`;
 export const createKitsOrderResponseTrayDefault = ``;
 
 export const CreateKitsOrderResponse = zod.object({
+  ...kitsFinancialResponseFields,
   applicators: zod
     .string()
     .max(createKitsOrderResponseApplicatorsMax)
@@ -12798,6 +12826,7 @@ export const ExportKitsOrdersResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
+      ...kitsFinancialResponseFields,
       applicators: zod
         .string()
         .max(exportKitsOrdersResponseItemsItemApplicatorsMax)
@@ -12995,6 +13024,7 @@ export const CommitKitsImportBody = zod.object({
           .max(commitKitsImportBodyEntriesItemNumberMax)
           .default(commitKitsImportBodyEntriesItemNumberDefault),
         values: zod.object({
+          ...kitsFinancialInputFields,
           applicators: zod
             .string()
             .max(commitKitsImportBodyEntriesItemValuesApplicatorsMax)
@@ -13188,6 +13218,7 @@ export const CommitKitsImportResponse = zod.object({
   imported: zod.number().int(),
   orders: zod.array(
     zod.object({
+      ...kitsFinancialResponseFields,
       applicators: zod
         .string()
         .max(commitKitsImportResponseOrdersItemApplicatorsMax)
@@ -13383,6 +13414,7 @@ export const ReviewKitsImportBody = zod.object({
           .max(reviewKitsImportBodyEntriesItemNumberMax)
           .default(reviewKitsImportBodyEntriesItemNumberDefault),
         values: zod.object({
+          ...kitsFinancialInputFields,
           applicators: zod
             .string()
             .max(reviewKitsImportBodyEntriesItemValuesApplicatorsMax)
@@ -13630,6 +13662,7 @@ export const getKitsOrderResponseStatusDefault = `Confirmed`;
 export const getKitsOrderResponseTrayDefault = ``;
 
 export const GetKitsOrderResponse = zod.object({
+  ...kitsFinancialResponseFields,
   applicators: zod
     .string()
     .max(getKitsOrderResponseApplicatorsMax)
@@ -13751,6 +13784,12 @@ export const GetKitsOrderResponse = zod.object({
 /**
  * @summary Listing
  */
+export const UpdateKitsOrderParams = zod.object({ record_id: zod.coerce.string().uuid() });
+export const UpdateKitsOrderBody = CreateKitsOrderBody.extend({
+  expected_version: zod.number().int().min(1),
+});
+export const UpdateKitsOrderResponse = GetKitsOrderResponse;
+
 export const listLanguagesQueryQueryDefault = ``;
 
 export const ListLanguagesQueryParams = zod.object({

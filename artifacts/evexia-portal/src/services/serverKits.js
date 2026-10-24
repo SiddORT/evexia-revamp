@@ -6,6 +6,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function failure(error, stage) {
   const upload = stage === 'upload';
   const messages = {
+    kits_stale: 'Another save changed this order. Your draft is preserved. Open the saved View in a separate tab to compare; this draft will not overwrite the newer version.',
+    kits_pricing: 'Enter unit rates for each included item, valid nonnegative amounts, and a percent discount from 0–100 or fixed discount no greater than gross.',
     kits_relationship: 'Review the current Doctor/MR assignment and any selected Patient’s billing Doctor.',
     mr_order_assignment: 'The order MR must be your signed-in MR. Ask an administrator to review your saved assignment.',
     kits_attachment: 'An attachment is no longer eligible. Ask the operator to review its private upload state.',
@@ -42,6 +44,15 @@ export async function request(path = '', options) {
       const error = new Error();
       error.ambiguous = true;
       throw error;
+    }
+    return result;
+  } catch (error) { throw failure(error, 'save'); }
+}
+export async function updateOrder(id, body) {
+  try {
+    const result = await purchaseOrderRequest(`/${id}/edit`, { body }, 'kits-orders');
+    if (result?.id !== id || result.version !== body.expected_version + 1) {
+      const error = new Error(); error.ambiguous = true; throw error;
     }
     return result;
   } catch (error) { throw failure(error, 'save'); }

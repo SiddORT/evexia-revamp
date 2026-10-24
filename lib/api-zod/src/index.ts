@@ -1,4 +1,7 @@
 export * from "./generated/api";
+export * from "./generated/types/kitsPricingInput";
+export * from "./generated/types/kitsPricingSnapshot";
+export * from "./generated/types/kitsUpdate";
 export * from "./generated/types/assignPatientRequest";
 export * from "./generated/types/changePasswordRequest";
 export * from "./generated/types/createPatientRequest";

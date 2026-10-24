@@ -5,6 +5,8 @@ import { readOrderWorkbook, writeOrderWorkbook } from './orderTransferWorkbook.j
 import { exportDate } from './exportDatePresentation.js';
 import { downloadBlob } from './downloads.js';
 import { getSession, reportingIdentityGuard } from '../auth/adminSession.js';
+import { isSuperAdminIdentity } from '../auth/capabilities.js';
+import { pricingInput } from './kitsPricing.js';
 
 const HEADERS = ['Schema', 'Order type', 'Date context JSON', 'Order ID', 'Order number', 'Order date', 'Order details JSON', 'Patient snapshot JSON'];
 const SCHEMA = 'evexia.kits-orders/1';
@@ -67,6 +69,9 @@ export function createKitsTransferAdapter(filters, onSaved) {
             if (date !== previous.date) throw new Error('Saved order date is immutable.');
           } else if (number) throw new Error('Leave new order numbers blank; the server assigns them.');
           const values = orderInput({ ...details, attachments: previous?.attachments || [] });
+          const financial = ['pricing', 'businessParking', 'poNumber'].filter((key) => Object.hasOwn(details, key));
+          if (financial.length && !isSuperAdminIdentity(getSession().user)) throw new Error('Only the protected Super Admin may import pricing, Business Parking or PO fields. Remove those fields; omitted saved values are retained.');
+          for (const key of financial) values[key] = key === 'pricing' && details[key] != null ? pricingInput(details[key]) : details[key];
           values.orderDate = date;
           entries.push({ id: previous?.id || null, number: number || '', expected_version: previous?.version || null, values });
         } catch (e) { failures.push({ line, action: 'reject', errors: [e.message], changed: [], patients: [] }); }

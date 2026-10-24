@@ -87,6 +87,13 @@ orders do not imply clinical history, stock or financial transactions. Forward
 This implementation is source-inspection-only: no tests, builds, browser/manual
 scenarios, runtime probes, restarts, migrations or deployment. Production fresh
 catalog evidence was not invented. See `docs/kits-orders.md`.
+Saved Kits orders now have a protected Super Admin-only Edit source path with
+exact decimal pricing, saved 5% GST, independent Business Parking, PO Number,
+version conflicts and actor-bound retries. Financial fields are redacted from
+MR/staff transport responses and preserved by omitted-field imports. This
+feature was source-reviewed only: no tests, builds, runtime/browser/manual
+checks, operational migrations, service actions or deployment were performed.
+The new data stays inside existing encrypted order documents.
 
 ## Transactional onboarding email
 

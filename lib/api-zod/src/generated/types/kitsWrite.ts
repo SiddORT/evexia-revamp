@@ -12,7 +12,12 @@ import type { KitsWritePaymentStatus } from "./kitsWritePaymentStatus";
 import type { KitsWriteShipping } from "./kitsWriteShipping";
 import type { KitsWriteStatus } from "./kitsWriteStatus";
 
+import type { KitsPricingInput } from "./kitsPricingInput";
+
 export interface KitsWrite {
+  pricing?: KitsPricingInput | null;
+  businessParking?: string | null;
+  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */

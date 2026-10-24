@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from sqlalchemy import select, delete, func, text
+from sqlalchemy import select, func, text
 from sqlalchemy.exc import SQLAlchemyError
 from app.db.kits_models import KitsOrder as Order, KitsAttachment as Attachment, KitsRequest as Retry
 from app.db.file_models import FileRecord
@@ -18,6 +18,43 @@ from app.services.mr_orders import scope, assignment as mr_assignment
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
 from app.core.security import utcnow
+from app.services.capability_policy import is_super_admin
+from app.schemas.kits_pricing import KitsPricingInput, calculate
+
+FINANCIAL_FIELDS = {"pricing", "businessParking", "poNumber"}
+
+
+def finances(actor, body, previous):
+    """Omission preserves history; explicit financial writes require singleton authority."""
+    supplied = FINANCIAL_FIELDS & body.model_fields_set
+    if supplied and not is_super_admin(actor):
+        raise ImmError("Only the protected Super Admin may submit Kits pricing or PO fields.", 403, "access_denied")
+    values = {key: previous[key] for key in FINANCIAL_FIELDS if previous and key in previous}
+    if "pricing" in supplied:
+        if body.pricing is None:
+            if values.get("pricing") is not None:
+                raise ImmError("Saved pricing cannot be cleared.", 422, "kits_pricing")
+            values["pricing"] = None
+        else:
+            values["pricing"] = body.pricing.model_dump()
+    for key in ("businessParking", "poNumber"):
+        if key in supplied:
+            values[key] = getattr(body, key)
+    if values.get("pricing") is not None:
+        if not is_super_admin(actor) and previous and any(
+            (previous["kit"].get("quantity") if key == "kit" else previous[key]) !=
+            (body.kit.quantity if key == "kit" else getattr(body, key))
+            for key in ("kit", "lancets", "applicators", "tray")
+        ):
+            raise ImmError("Only the protected Super Admin may change priced quantities.", 403, "access_denied")
+        try:
+            raw = values["pricing"]
+            price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
+            tax = (previous or {}).get("pricing") or {}
+            values["pricing"] = calculate(body, price, tax.get("taxPercentage", "5.00"))
+        except ValueError:
+            raise ImmError("Enter valid unit rates for included items and a discount not exceeding gross.", 422, "kits_pricing") from None
+    return values
 
 
 def person(row, kind):
@@ -86,7 +123,9 @@ def project(keys, row):
 
 def resolved(db, actor, keys, body, previous=None):
     mr_assignment(db, body, previous)
-    value = body.model_dump(mode="json", exclude={"idempotencyKey", "orderDate", "attachmentIds"})
+    financial = finances(actor, body, previous)
+    value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version", "orderDate", "attachmentIds", *FINANCIAL_FIELDS})
+    value.update(financial)
     changed = {}
     for kind, field, key in (("doctors", "doctorId", "doctor"), ("mrs", "mrId", "mr"), ("patients", "patientId", "patient")):
         identity = getattr(body, field)
@@ -102,9 +141,10 @@ def resolved(db, actor, keys, body, previous=None):
             patient = eligible(db, "patients", body.patientId)
             if patient.doctorId != body.doctorId:
                 raise ImmError("Selected Patient must belong to the selected Doctor.", 422, "kits_relationship")
-    value["billing"] = value["doctor"]
+    value["billing"] = previous["billing"] if previous and not changed["doctor"] else value["doctor"]
     if body.shipping == "other":
-        value["recipient"] = value["other"]
+        value["recipient"] = (previous["recipient"] if previous and previous["shipping"] == "other"
+                              and previous["other"] == value["other"] else value["other"])
     elif previous and previous["shipping"] == body.shipping and not changed[body.shipping]:
         value["recipient"] = previous["recipient"]
     else:
@@ -112,6 +152,8 @@ def resolved(db, actor, keys, body, previous=None):
         identity = body.doctorId if body.shipping == "doctor" else body.mrId
         value["recipient"] = person(eligible(db, kind, identity), kind)
     previous_files = {a["id"]: a for a in previous["attachments"]} if previous else {}
+    if not set(previous_files).issubset(set(map(str, body.attachmentIds))):
+        raise ImmError("Saved attachments must be retained; replacement and removal are not supported.", 422, "kits_attachment")
     value["attachments"] = []
     for identity in sorted(body.attachmentIds):
         f = db.scalar(select(FileRecord).where(FileRecord.id == identity).with_for_update())
@@ -149,10 +191,10 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     row.updated_by = actor.user.id
     row.snapshot_ciphertext = seal(keys, "orders", row.id, data)
     db.flush()
-    db.execute(delete(Attachment).where(Attachment.order_id == row.id))
-    db.flush()
+    retained = {f["id"] for f in previous["attachments"]} if previous else set()
     for identity in body.attachmentIds:
-        db.add(Attachment(order_id=row.id, file_id=identity))
+        if str(identity) not in retained:
+            db.add(Attachment(order_id=row.id, file_id=identity))
     db.add(AuditEvent(actor_id=actor.user.id, session_id=actor.session_id,
         action="kits_updated" if previous else "kits_created", resource_type="kits_order",
         resource_id=row.id, outcome="success", request_id=db.info.get("request_id"), created_at=utcnow()))
@@ -181,7 +223,17 @@ def idempotent(db, actor, keys, key, payload, work):
 
 def save(db, actor, body):
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
-        body.model_dump(mode="json"), lambda: apply(db, a, k, body)), action="add")
+        body.model_dump(mode="json", exclude_unset=True), lambda: apply(db, a, k, body)), action="add")
+
+
+def update(db, actor, identity, body):
+    def work(a, keys):
+        if not is_super_admin(a):
+            raise ImmError("Only the protected Super Admin may edit a saved Kits order.", 403, "access_denied")
+        payload = {"operation": "kits_update", "id": str(identity), "values": body.model_dump(mode="json", exclude_unset=True)}
+        return idempotent(db, a, keys, body.idempotencyKey, payload,
+            lambda: apply(db, a, keys, body, identity, body.expected_version))
+    return transaction(db, actor, work)
 
 
 def detail(db, actor, identity):
@@ -268,7 +320,7 @@ def batch(db, actor, body, commit=False):
                     order={**values, "number": entry.number or "Assigned on save"}, previous=previous,
                     changed=changes, errors=[], patients=[]))
             token = keys._index("kits:review:v1", [str(a.user.id),
-                body.model_dump(mode="json", exclude={"idempotencyKey", "reviewToken", "confirmUpdates"}), resolved_values])
+                body.model_dump(mode="json", exclude_unset=True, exclude={"idempotencyKey", "reviewToken", "confirmUpdates"}), resolved_values])
             return token, entries
         def write():
             token, reviewed = prepare()
@@ -278,7 +330,7 @@ def batch(db, actor, body, commit=False):
                 else project(keys, find(db, e.id)) for e, r in zip(body.entries, reviewed)]
             return dict(imported=len(orders), orders=orders)
         if commit:
-            return idempotent(db, a, keys, body.idempotencyKey, body.model_dump(mode="json"), write)
+            return idempotent(db, a, keys, body.idempotencyKey, body.model_dump(mode="json", exclude_unset=True), write)
         token, entries = prepare()
         return dict(valid=True, entries=entries, reviewToken=token, rejected=0, patientAdditions=0,
             additions=sum(e["action"] == "add" for e in entries), updates=sum(e["action"] == "update" for e in entries),

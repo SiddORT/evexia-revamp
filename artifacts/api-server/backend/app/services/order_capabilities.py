@@ -13,6 +13,18 @@ def attachment_changes(actor, resource, identities, previous):
 
 def public_result(actor, resource, value):
     """Retain opaque saved IDs for edits without disclosing protected filenames."""
+    if resource == "kits":
+        from app.services.capability_policy import is_super_admin
+        if not is_super_admin(actor):
+            # Includes MR and all import-review previous/order envelopes.
+            def redact(child):
+                if isinstance(child, list):
+                    return [redact(item) for item in child]
+                if isinstance(child, dict):
+                    return {key: redact(item) for key, item in child.items()
+                            if key not in {"pricing", "businessParking", "poNumber"}}
+                return child
+            value = redact(value)
     if actor.staff is None or allowed(actor, resource, "read_attachment"):
         return value
     if isinstance(value, list):

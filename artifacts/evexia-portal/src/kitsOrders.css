@@ -142,3 +142,21 @@
   .kits-actions-top > *, .kits-actions > * { flex: 1 1 auto; }
   .kits-notice { flex-wrap: wrap; overflow-wrap: anywhere; }
 }
+
+/* Kits order editor and pricing summary (scoped) */
+.kito-scroll,.kpr-scroll{overflow-x:auto;max-width:100%;min-width:0}
+.kito-table,.kpr-table{width:100%;border-collapse:collapse;min-width:640px}
+.kito-table th,.kito-table td,.kpr-table th,.kpr-table td{padding:8px;border:1px solid var(--admin-border,#d9dce6);text-align:left;vertical-align:middle}
+.kito-table thead th,.kpr-table thead th{background:var(--admin-table-head);font-weight:600}
+.kito-table input,.kito-table select{width:100%;min-width:72px;box-sizing:border-box;min-height:44px;border:1px solid var(--admin-border);border-radius:6px;padding:8px;background:var(--admin-surface);color:var(--admin-text);font:inherit}
+.kito-fin{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:12px;margin:14px 0}
+.kito-disc{display:flex;gap:8px}
+.kito-sub{margin:16px 0 8px}
+.kito-done{padding:10px 14px}
+.kpr-totals{margin:14px 0 0 auto;max-width:420px}
+.kpr-totals>div{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--admin-border,#d9dce6)}
+.kpr-totals dt{font-weight:600}.kpr-totals dd{margin:0;font-variant-numeric:tabular-nums}
+.kpr-totals dt,.kpr-totals dd{min-width:0;overflow-wrap:anywhere}
+.kpr-total{font-size:1.05em}
+.kpr-extra{margin-left:0;max-width:none}
+.kpr-empty{padding:12px 0}

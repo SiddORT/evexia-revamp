@@ -11,8 +11,12 @@ import type { KitsInputPaymentStatus } from "./kitsInputPaymentStatus";
 import type { KitsInputShipping } from "./kitsInputShipping";
 import type { KitsInputStatus } from "./kitsInputStatus";
 import type { KitsRecipient } from "./kitsRecipient";
+import type { KitsPricingInput } from "./kitsPricingInput";
 
 export interface KitsInput {
+  pricing?: KitsPricingInput | null;
+  businessParking?: string | null;
+  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */

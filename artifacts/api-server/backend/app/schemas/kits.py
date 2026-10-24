@@ -4,7 +4,8 @@ import re
 from datetime import date
 from decimal import Decimal
 from typing import Literal
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, field_validator
+from app.schemas.kits_pricing import KitsPricingInput, KitsPricingSnapshot, amount
 from app.schemas.immunotherapy import Strict, Status, ImmReferencePage, ImmImportReview, ImmUploadPolicy
 
 Payment = Literal["Unpaid", "Paid", "Partial"]
@@ -53,6 +54,14 @@ class KitsInput(Strict):
     status: Status = "Confirmed"
     paymentStatus: Payment = "Unpaid"
     attachmentIds: list[uuid.UUID] = Field(default_factory=list, max_length=10)
+    pricing: KitsPricingInput | None = None
+    businessParking: str | None = Field(default=None, max_length=32)
+    poNumber: str | None = Field(default=None, max_length=200)
+
+    @field_validator("businessParking")
+    @classmethod
+    def parking_amount(cls, value):
+        return None if value is None else amount(value)
 
     @model_validator(mode="after")
     def configuration(self):
@@ -87,6 +96,10 @@ class KitsWrite(KitsInput):
     idempotencyKey: uuid.UUID
 
 
+class KitsUpdate(KitsWrite):
+    expected_version: int = Field(ge=1, strict=True)
+
+
 class KitsImportEntry(Strict):
     id: uuid.UUID | None = None
     number: str = Field(default="", max_length=48)
@@ -102,6 +115,7 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    pricing: KitsPricingSnapshot | None = None
     id: uuid.UUID
     number: str
     date: str

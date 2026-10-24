@@ -3558,7 +3558,36 @@ export const KitsInputStatus = {
   Returned: "Returned",
 } as const;
 
+/** Source-only coordinated contract update; codegen/checks were not run. */
+export interface KitsPricingInput {
+  kitRate?: string | null;
+  lancetsRate?: string | null;
+  applicatorsRate?: string | null;
+  trayRate?: string | null;
+  forwardingCharges: string;
+  discountType: "percent" | "inr";
+  discountValue: string;
+}
+
+export interface KitsPricingSnapshot extends KitsPricingInput {
+  taxPercentage: string;
+  lineAmounts: Record<string, string>;
+  gross: string;
+  discountAmount: string;
+  discounted: string;
+  taxable: string;
+  gst: string;
+  total: string;
+}
+
+export interface KitsUpdate extends KitsWrite {
+  expected_version: number;
+}
+
 export interface KitsInput {
+  pricing?: KitsPricingInput | null;
+  businessParking?: string | null;
+  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
@@ -3652,6 +3681,9 @@ export type KitsRecordPatient = { [key: string]: unknown } | null;
 export type KitsRecordRecipient = { [key: string]: unknown };
 
 export interface KitsRecord {
+  pricing?: KitsPricingSnapshot | null;
+  businessParking?: string | null;
+  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */
@@ -3738,6 +3770,9 @@ export const KitsWriteStatus = {
 } as const;
 
 export interface KitsWrite {
+  pricing?: KitsPricingInput | null;
+  businessParking?: string | null;
+  poNumber?: string | null;
   /** @maxLength 12 */
   applicators?: string;
   /** @maxItems 10 */

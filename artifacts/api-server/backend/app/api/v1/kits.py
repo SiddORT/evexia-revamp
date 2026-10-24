@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
-from app.schemas.kits import KitsWrite, KitsImport, KitsRecord, KitsPage, KitsImportResult, Payment
+from app.schemas.kits import KitsWrite, KitsUpdate, KitsImport, KitsRecord, KitsPage, KitsImportResult, Payment
 from app.schemas.immunotherapy import Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview
 from app.services import kits as service, files as file_service
 from app.core.config import get_settings
@@ -38,13 +38,13 @@ def filters(search: str = Query("", max_length=200), status: Status | None = Non
         doctor_id=doctor_id, mr_id=mr_id, patient_id=patient_id, from_date=from_date, to_date=to_date)
 
 
-@router.get("", response_model=KitsPage, operation_id="listKitsOrders")
+@router.get("", response_model=KitsPage, response_model_exclude_unset=True, operation_id="listKitsOrders")
 def listing(values=Depends(filters), cursor: uuid.UUID | None = None, limit: int = Query(25, ge=1, le=100),
             actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.listing(db, actor, **values, cursor=cursor, limit=limit)
 
 
-@router.get("/export", response_model=KitsPage, operation_id="exportKitsOrders")
+@router.get("/export", response_model=KitsPage, response_model_exclude_unset=True, operation_id="exportKitsOrders")
 def export(values=Depends(filters), actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.listing(db, actor, **values, complete=True)
 
@@ -98,16 +98,23 @@ def review(body: KitsImport, actor=Depends(current_identity), db: Session = Depe
     return service.batch(db, actor, body)
 
 
-@router.post("/import/commit", response_model=KitsImportResult, operation_id="commitKitsImport")
+@router.post("/import/commit", response_model=KitsImportResult, response_model_exclude_unset=True, operation_id="commitKitsImport")
 def commit(body: KitsImport, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.batch(db, actor, body, True)
 
 
-@router.post("", response_model=KitsRecord, operation_id="createKitsOrder")
+@router.post("", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="createKitsOrder")
 def create(body: KitsWrite, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.save(db, actor, body)
 
 
-@router.get("/{record_id}", response_model=KitsRecord, operation_id="getKitsOrder")
+@router.post("/{record_id}/edit", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="updateKitsOrder")
+def edit(record_id: uuid.UUID, body: KitsUpdate, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    # Unlisted operation is protected at the router; service revalidates again,
+    # including MR callers admitted to the ownership-scoped router.
+    return service.update(db, actor, record_id, body)
+
+
+@router.get("/{record_id}", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="getKitsOrder")
 def detail(record_id: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.detail(db, actor, record_id)

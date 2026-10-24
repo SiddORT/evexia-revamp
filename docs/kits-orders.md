@@ -18,6 +18,9 @@ new production installation/release evidence.
 
 The API is `/api/v1/admin/kits-orders`: list/create, detail, bounded real-master
 references, upload policy/attachments, complete export, import review/commit.
+Saved orders additionally expose `POST /{record_id}/edit` to the protected
+Super Admin only. It updates the same number/date with a strictly positive
+`expected_version` and actor-bound `idempotencyKey`; it never creates a record.
 UUID operational Doctor, optional MR and optional Patient references are stored
 separately from encrypted historical documents. Doctor billing is mandatory.
 Patient is optional; a newly selected Patient must belong to the current Doctor.
@@ -32,6 +35,90 @@ identities when masters are renamed, reassigned or unavailable. Changed
 combinations are validated against eligible current records. Saved dates are
 immutable. Create uses server sequence numbering (`KIT-`), audit attribution and
 actor-bound durable idempotency; imports update only with current ID/number/version.
+
+## Saved-order pricing
+
+Super Admin has Edit alongside View and a direct
+`/admin/orders/kits-consumables/:id/edit` route. Neither staff grants nor an MR
+session confer this editing/pricing permission. The service revalidates the
+protected system identity after locking, not merely the route or client flag.
+MR/staff reads, exports, mutation results and import-review documents omit
+`pricing`, `businessParking` and `poNumber`; explicit submissions of these fields
+by those identities are rejected. A non-Super-Admin import cannot change the
+quantities of a priced order. Existing unrelated authorized supply workflows
+retain their prior permissions; no new role grant is introduced.
+
+Pricing is optional document data inside the existing encrypted snapshot, not
+a new table, SQL column, operational migration or load-time backfill. A missing
+or null price means **Not yet priced**. It does not mean a historically recorded
+zero total. Each included item requires an explicitly entered unit rate,
+including genuine zero. Rates for omitted items may be null.
+
+Calculation order (server authoritative, mirrored using browser BigInt paise):
+
+1. Normalize each unit rate, forwarding charge and discount half-up to two
+   decimal places. Accept only nonnegative plain decimal **strings**, at most
+   six fractional digits; monetary inputs are bounded to INR 999,999,999.99.
+   Check original bounds before rounding. A percentage discount is 0–100;
+   an original fixed-INR discount may not exceed gross even before rounding.
+2. Each line is its whole quantity times its unit rate. Kit product choice,
+   customized allergen value and ml are configuration, never price multipliers.
+3. Gross is the sum of included line amounts plus forwarding charges.
+4. Apply the percentage or fixed-INR discount **once to gross**. Round the
+   percentage-derived discount amount half-up to paise.
+5. Discounted value and taxable value are the same nonnegative gross minus
+   discount. GST is taxable × saved tax percentage / 100, half-up to paise.
+6. Total is taxable plus GST, bounded to INR 999,999,999,999,999,999.99. Gross,
+   discount amount, discounted value, taxable value, GST and total are distinct
+   displayed and saved decimal strings with two fractional digits.
+
+Initial pricing captures **5.00% GST**. Later edits use that saved percentage,
+not a future master lookup or client-selected rate. There is no tax selector,
+invoice or payment framework. Submitted computed totals are not accepted by
+the write schema; the server calculates its own snapshot.
+
+`businessParking` is an independently entered INR amount, with explicit zero
+distinct from missing. It has **no commission, percentage, deduction or linkage
+to the order total**. `poNumber` is optional text of at most 200 characters.
+The browser editor asks for a Business Parking amount explicitly when pricing.
+
+The editor starts from historical identities, independent saved shipping and
+billing, configuration, quantities, remarks and retained private file IDs.
+Reference reads never replace those snapshots; explicit association changes
+use current relationship validation. Saved attachments, including the original
+MR's uploads, remain linked and use the existing authorized download path.
+The editor does not offer file replacement/removal or new uploads. Pricing
+does not fetch upload policy, require upload permission or reupload files.
+Retained association rows are not deleted/reinserted.
+
+Stale versions fail without applying edits. The browser keeps the draft on
+rejection, offers comparison in another tab, and never refreshes over it.
+Unconfirmed outcomes freeze fields and retain the original payload/key and
+expected version for **Retry unchanged save**. The server's durable retry
+record includes operation and order ID, so a replay cannot create an order,
+update it twice or be reused for another record. Successful saves navigate to
+the saved View, which reads server-authoritative persisted values.
+
+Eight-column CSV/XLSX remains version 1. Authorized exports retain every money
+value as an exact JSON string. The local importer strips calculated pricing
+fields, passing only rates, forwarding and discount to server review/commit.
+It retains an existing order's captured tax percentage. Omitted new fields in
+older unpriced backups preserve saved pricing/Business Parking/PO values; they
+never implicitly clear them. Explicitly clearing previously saved pricing is
+rejected. An authorized quantity update with omitted pricing recalculates from
+the saved rates. Import does not recreate historical file bytes or associations.
+
+### Source-only delivery boundary
+
+This pricing implementation and its diff were inspected in source only.
+No tests were added, modified or run; no builds, type checks, browser/manual
+scenarios, screenshots, API/runtime probes, validation/release wrappers,
+workflows, service restarts, operational migrations, live-order access,
+deployment or backfill were performed. Runtime behavior is **unverified**.
+OpenAPI and the affected client/Zod source contracts were coordinated by
+source edits only; contract export/codegen (which chains a type check) was not
+executed. No database schema change or activation is required for these
+encrypted document fields.
 
 Document, retry and filename ciphertext uses existing Directory keys with
 authenticated `evexia:kits:v1` domains for orders, requests and file names. No
