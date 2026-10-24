@@ -43,8 +43,6 @@ export default function OrdersNavigation({ mobileOpen }) {
       Orders <ChevronDown size={16} aria-hidden="true" />
     </button>
     <div id="mrw-orders-subnav" className="mrw-orders-subnav" hidden={!expanded}>
-      <Link href="/mr/orders" aria-current={path === '/mr/orders' ? 'page' : undefined}
-        onClick={() => setExpanded(false)} data-testid="link-nav-orders">All order types</Link>
       {TYPES.map(([slug, label]) => {
         const href = `/mr/orders/${slug}`;
         const selected = path === href || path.startsWith(`${href}/`);
