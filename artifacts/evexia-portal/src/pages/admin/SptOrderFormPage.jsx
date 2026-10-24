@@ -146,11 +146,13 @@ function OrderForm({ order, mode }) {
           <h1>{readOnly ? `View ${record.number}` : record ? `Edit ${record.number}` : 'Add Order'}</h1>
           <p className="admin-page-head__description">{readOnly ? 'Saved order details.' : mr ? 'Your MR is fixed. Choose Doctor and patients, then enter amounts.' : 'Choose Doctor, MR and patients, then enter amounts.'}</p>
         </div>
-        <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-spt-back"><ArrowLeft size={16} aria-hidden="true" />All orders</Link>
+        <div className="spt-form-head__actions">
+          <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-spt-back"><ArrowLeft size={16} aria-hidden="true" />All orders</Link>
+          {record && readOnly && can.edit && record.mrEditable && <Link href={`${BASE}/${record.id}/edit`} className="admin-button">{record.status === 'Draft' ? 'Resume draft' : 'Edit order'}</Link>}
+        </div>
       </div>
       {success && <p className="spt-notice" role="status">{success}</p>}
-      {record && readOnly && <>{can.edit && record.mrEditable && <Link href={`${BASE}/${record.id}/edit`} className="admin-button">{record.status === 'Draft' ? 'Resume draft' : 'Edit order'}</Link>}
-        <OrderApproval kind="spt" order={record} request={request} onApproved={setRecord} /></>}
+      {record && readOnly && <OrderApproval kind="spt" order={record} request={request} onApproved={setRecord} />}
       {busy && <p role="status">Saving on the server… Keep this page open.</p>}
       {errorList.length > 0 && <div className="spt-summary" role="alert" tabIndex={-1} ref={summaryRef} data-testid="status-spt-errors">
         <strong>Please fix the following before saving:</strong>

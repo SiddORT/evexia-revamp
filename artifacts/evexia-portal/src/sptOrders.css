@@ -81,6 +81,9 @@
 .spt-form .spt-register { gap: 10px; padding: 12px; }
 .spt-form .spt-register__fields { gap: 10px; }
 .spt-form .spt-register__fields > .spt-field:first-child { flex: 2 1 14rem; }
+/* Form header only: keep navigation compact, including below the mobile breakpoint. */
+.spt-form .spt-form-head__actions { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: stretch; gap: 10px; min-width: 0; max-width: 100%; }
+.spt-form .spt-form-head__actions > .admin-button { flex: 0 1 auto; width: auto; font-size: 14px; line-height: 1.4; min-height: 44px; }
 .spt-form .spt-patient-table .admin-table { min-width: 40rem; }
 .spt-form .spt-patient-table .admin-table :is(th,td) { padding-block: 9px; }
 .spt-form .spt-patient-table .admin-table :is(th,td):nth-child(2) { min-width: 10em; }
