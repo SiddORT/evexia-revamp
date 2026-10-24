@@ -1,3 +1,6 @@
 .order-approval { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; padding-top: 14px; border-top: 1px solid var(--admin-border); }
 .order-approval p { margin: 0; overflow-wrap: anywhere; min-width: 0; flex: 1 1 220px; }
 .order-approval .admin-button { min-height: 44px; height: auto; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+.order-approval__actions { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; max-width: 100%; }
+.order-approval__dialog { box-sizing: border-box; width: min(100%, 450px); overflow-wrap: anywhere; }
+.order-approval:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }

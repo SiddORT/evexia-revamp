@@ -35,14 +35,18 @@ def present(db, actor, value):
     if actor.mr is not None:
         for node in audits:
             node.pop("audit", None)
+            node.pop("decisionEligibility", None)
             if isinstance(node.get("approval"), dict):
                 node["approval"] = {**node["approval"], "approvedBy": "Admin"}
+            node.pop("rejection", None)
         return value
     ids = sorted({uuid.UUID(audit[key]) for node in audits
                   if isinstance((audit := node.get("audit")), dict)
                   for key in ("createdBy", "updatedBy") if audit.get(key)})
     ids = sorted(set(ids) | {uuid.UUID(node["approval"]["approvedBy"]) for node in audits
         if isinstance(node.get("approval"), dict) and node["approval"].get("approvedBy")})
+    ids = sorted(set(ids) | {uuid.UUID(node["rejection"]["rejectedBy"]) for node in audits
+        if isinstance(node.get("rejection"), dict) and node["rejection"].get("rejectedBy")})
     labels = {}
     if ids:
         ready(db)
@@ -55,6 +59,8 @@ def present(db, actor, value):
     for node in audits:
         if isinstance(node.get("approval"), dict):
             node["approval"] = {**node["approval"], "approvedBy": labels.get(node["approval"].get("approvedBy"))}
+        if isinstance(node.get("rejection"), dict):
+            node["rejection"] = {**node["rejection"], "rejectedBy": labels.get(node["rejection"].get("rejectedBy"))}
         audit = node.get("audit")
         if isinstance(audit, dict):
             node["audit"] = {**audit, **{key: labels.get(audit.get(key)) for key in ("createdBy", "updatedBy")}}

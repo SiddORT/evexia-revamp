@@ -11,7 +11,7 @@ export type ExportLupinOrdersStatus =
 
 export const ExportLupinOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",

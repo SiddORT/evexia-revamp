@@ -3017,7 +3017,6 @@ export type ImmInputStatus =
 
 export const ImmInputStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3088,7 +3087,6 @@ export type ImmRecordStatus =
 
 export const ImmRecordStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3112,6 +3110,8 @@ export type ImmRecordPatient = { [key: string]: unknown };
 
 export type ImmRecordRecipient = { [key: string]: unknown };
 
+export type ImmRecordRejection = { [key: string]: unknown } | null;
+
 export interface ImmRecord {
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
@@ -3131,6 +3131,7 @@ export interface ImmRecord {
   poNumber?: string | null;
   pricingBasis?: ImmRecordPricingBasis;
   recipient: ImmRecordRecipient;
+  rejection?: ImmRecordRejection;
   remarks: string;
   reviewDecision?: ImmRecordReviewDecision;
   saline: string;
@@ -3202,6 +3203,14 @@ export interface ImmUploadPolicy {
   types: string[];
 }
 
+export type ImmWriteDecision =
+  (typeof ImmWriteDecision)[keyof typeof ImmWriteDecision] | null;
+
+export const ImmWriteDecision = {
+  approve: "approve",
+  reject: "reject",
+} as const;
+
 export type ImmWriteDosage =
   (typeof ImmWriteDosage)[keyof typeof ImmWriteDosage];
 
@@ -3239,7 +3248,6 @@ export type ImmWriteStatus =
 
 export const ImmWriteStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3250,6 +3258,7 @@ export const ImmWriteStatus = {
 export interface ImmWrite {
   /** @maxItems 10 */
   attachmentIds?: string[];
+  decision?: ImmWriteDecision;
   doctorId: string;
   dosage: ImmWriteDosage;
   expected_version?: number | null;
@@ -3622,7 +3631,6 @@ export type KitsInputStatus =
 
 export const KitsInputStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3737,7 +3745,6 @@ export type KitsRecordStatus =
 
 export const KitsRecordStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3753,6 +3760,8 @@ export type KitsRecordAudit = { [key: string]: unknown } | null;
 
 export type KitsRecordBilling = { [key: string]: unknown };
 
+export type KitsRecordDecisionEligibility = { [key: string]: unknown } | null;
+
 export type KitsRecordDoctor = { [key: string]: unknown };
 
 export type KitsRecordMr = { [key: string]: unknown } | null;
@@ -3760,6 +3769,8 @@ export type KitsRecordMr = { [key: string]: unknown } | null;
 export type KitsRecordPatient = { [key: string]: unknown } | null;
 
 export type KitsRecordRecipient = { [key: string]: unknown };
+
+export type KitsRecordRejection = { [key: string]: unknown } | null;
 
 export interface KitsRecord {
   /** @maxLength 12 */
@@ -3772,6 +3783,7 @@ export interface KitsRecord {
   billing: KitsRecordBilling;
   businessParking?: string | null;
   date: string;
+  decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
   doctorId: string;
   id: string;
@@ -3791,6 +3803,7 @@ export interface KitsRecord {
   poNumber?: string | null;
   pricing?: KitsPricingSnapshot | null;
   recipient: KitsRecordRecipient;
+  rejection?: KitsRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
   shipping?: KitsRecordShipping;
@@ -3846,7 +3859,6 @@ export type KitsUpdateStatus =
 
 export const KitsUpdateStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3914,7 +3926,6 @@ export type KitsWriteStatus =
 
 export const KitsWriteStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -4324,7 +4335,7 @@ export type LupinInputStatus =
 
 export const LupinInputStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",
@@ -4386,7 +4397,7 @@ export type LupinRecordStatus =
 
 export const LupinRecordStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",
@@ -4399,11 +4410,15 @@ export type LupinRecordAttachmentsItem = { [key: string]: unknown };
 
 export type LupinRecordAudit = { [key: string]: unknown } | null;
 
+export type LupinRecordDecisionEligibility = { [key: string]: unknown } | null;
+
 export type LupinRecordDoctor = { [key: string]: unknown };
 
 export type LupinRecordMr = { [key: string]: unknown };
 
 export type LupinRecordPatientsItem = { [key: string]: unknown };
+
+export type LupinRecordRejection = { [key: string]: unknown } | null;
 
 export interface LupinRecord {
   approval?: LupinRecordApproval;
@@ -4412,6 +4427,7 @@ export interface LupinRecord {
   attachments: LupinRecordAttachmentsItem[];
   audit?: LupinRecordAudit;
   date: string;
+  decisionEligibility?: LupinRecordDecisionEligibility;
   doctor: LupinRecordDoctor;
   doctorId: string;
   id: string;
@@ -4431,6 +4447,7 @@ export interface LupinRecord {
   paymentStatus?: LupinRecordPaymentStatus;
   /** @maxLength 32 */
   price: string;
+  rejection?: LupinRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinRecordStatus;
@@ -4467,7 +4484,7 @@ export type LupinUpdateStatus =
 
 export const LupinUpdateStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",
@@ -4517,7 +4534,7 @@ export type LupinWriteStatus =
 
 export const LupinWriteStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",
@@ -9707,20 +9724,27 @@ export type SptRecordStatus =
 export const SptRecordStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  In_process: "In process",
+  Rejected: "Rejected",
 } as const;
 
 export type SptRecordApproval = { [key: string]: unknown } | null;
 
 export type SptRecordAudit = { [key: string]: unknown } | null;
 
+export type SptRecordDecisionEligibility = { [key: string]: unknown } | null;
+
 export type SptRecordDoctor = { [key: string]: unknown } | null;
 
 export type SptRecordMr = { [key: string]: unknown } | null;
+
+export type SptRecordRejection = { [key: string]: unknown } | null;
 
 export interface SptRecord {
   approval?: SptRecordApproval;
   audit?: SptRecordAudit;
   date: string;
+  decisionEligibility?: SptRecordDecisionEligibility;
   doctor: SptRecordDoctor;
   doctorId: string | null;
   doctorName: string;
@@ -9731,6 +9755,7 @@ export interface SptRecord {
   mrName: string;
   number: string;
   patients: SptPatientSnapshot[];
+  rejection?: SptRecordRejection;
   remarks: string;
   sourceId: string;
   status: SptRecordStatus;
@@ -12506,7 +12531,6 @@ export type ListImmunotherapyOrdersStatus =
 
 export const ListImmunotherapyOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -12530,7 +12554,6 @@ export type ExportImmunotherapyOrdersStatus =
 
 export const ExportImmunotherapyOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -12726,7 +12749,6 @@ export type ListKitsOrdersStatus =
 
 export const ListKitsOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -12776,7 +12798,6 @@ export type ExportKitsOrdersStatus =
 
 export const ExportKitsOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -12929,7 +12950,7 @@ export type ListLupinOrdersStatus =
 
 export const ListLupinOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",
@@ -12973,7 +12994,7 @@ export type ExportLupinOrdersStatus =
 
 export const ExportLupinOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",
@@ -14556,6 +14577,8 @@ export type ListSptOrdersStatus =
 export const ListSptOrdersStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  In_process: "In process",
+  Rejected: "Rejected",
 } as const;
 
 export type ExportSptOrdersParams = {
@@ -14577,6 +14600,8 @@ export type ExportSptOrdersStatus =
 export const ExportSptOrdersStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  In_process: "In process",
+  Rejected: "Rejected",
 } as const;
 
 export type SptReferencesParams = {

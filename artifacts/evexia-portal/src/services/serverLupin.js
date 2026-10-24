@@ -3,7 +3,7 @@ import { downloadServerBlob } from './downloads.js';
 export { validateAttachments, fileSize } from './serverKits.js';
 
 export const request = (path = '', options) => purchaseOrderRequest(path, options, 'lupin-orders');
-export const STATUSES = Object.freeze(['Confirmed', 'Approved', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
+export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Partial']);
 export const blankOrder = () => ({ doctorId: '', mrId: '', patientIds: [], patientCount: '', price: '1000.00', remarks: '', attachments: [] });
 export function priceMinor(value) {

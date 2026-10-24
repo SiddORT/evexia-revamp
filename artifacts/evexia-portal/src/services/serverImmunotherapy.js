@@ -3,7 +3,7 @@ import { downloadServerBlob } from './downloads.js';
 
 export const request = (path = '', options) => purchaseOrderRequest(path, options, 'immunotherapy-orders');
 const optionalPO = (value) => typeof value === 'string' && !value.trim() ? null : value || null;
-export const STATUSES = Object.freeze(['Confirmed', 'Approved', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
+export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
 export const DOSES = Object.freeze([...PRELIMINARY_DOSES, ...Array.from({ length: 8 }, (_, i) => `B${i + 1}`)]);
 export const GENDERS = Object.freeze(['male', 'female', 'other', 'prefer not to say']);
@@ -40,7 +40,7 @@ export function orderInput(v) {
       items: g.items.map(({ allergenId, result, rate, suborderId }) => ({ allergenId, result,
         ...(suborderId ? { suborderId } : {}), ...(!mr ? { rate: rate || null } : {}) })) })),
     remarks: v.remarks, shipping: v.shipping, status: mr ? 'Confirmed' : v.status,
-    ...(!mr ? { poNumber: optionalPO(v.poNumber) } : {}),
+    ...(!mr ? { poNumber: optionalPO(v.poNumber), ...(v.decision ? { decision: v.decision } : {}) } : {}),
     attachmentIds: v.attachments.map((f) => f.id),
   }));
 }
@@ -89,10 +89,10 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
   const enteredTotal = v.groups.reduce((sum, g) => sum + (basis === 'allergen_rates'
     ? g.items.reduce((n, i) => n + (parseAmount(i.rate) ?? 0n), 0n) : (parseAmount(g.mrp) ?? 0n)), 0n);
   if (enteredTotal > 10000000000n) errors.groups = 'Order value must not exceed ₹10 crore.';
-  const sameFinancials = previous && v.status === previous.status && v.status !== 'Approved'
+  const sameFinancials = !v.decision && previous && v.status === previous.status
     && basis === (previous.pricingBasis || 'legacy_bottle_mrp')
     && financialFingerprint(v.groups) === financialFingerprint(previous.groups);
-  if (!mr && ['Approved', 'In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && !sameFinancials) {
+  if (!mr && ['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && !sameFinancials) {
     for (const group of v.groups) {
       for (const item of group.items) if (parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter the INR rate for this allergen occurrence before approval.';
     }

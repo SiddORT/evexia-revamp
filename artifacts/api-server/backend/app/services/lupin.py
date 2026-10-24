@@ -64,6 +64,8 @@ def transaction(db, actor, work, *, action=None):
             result = work(current, keys)
         from app.services.order_capabilities import public_result
         from app.services.order_audit import present
+        from app.services.order_lifecycle import read_result
+        result = read_result(result)
         result = present(db, current, result)
         result = public_result(current, "lupin", result)
         from app.services.person_contacts import order_result
@@ -89,6 +91,10 @@ def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    from app.services.order_lifecycle import status
+    from app.services.order_approval import eligibility
+    value["status"] = status(row.status)
+    value["decisionEligibility"] = eligibility("lupin", value)
     return {**value, "approval": value.get("approval"), "mrEditable": editable("lupin", value), "id": str(row.id),
             "audit": metadata(row),
             "number": row.number, "date": row.date.isoformat(), "version": row.version}
@@ -284,7 +290,8 @@ def listing(db, actor, *, search="", status=None, payment_status=None,
     def work(a, keys):
         if from_date and to_date and from_date > to_date:
             raise ImmError("From date must not follow To date.", 422, "lupin_dates")
-        clauses = scope(db, Order) + [getattr(Order, field) == val for field, val in (
+        from app.services.order_lifecycle import filter_status
+        clauses = scope(db, Order) + [filter_status(Order.status, val) if field == "status" else getattr(Order, field) == val for field, val in (
             ("status", status), ("payment_status", payment_status),
             ("doctor_id", doctor_id), ("mr_id", mr_id)) if val]
         if patient_id:
@@ -324,6 +331,8 @@ def listing(db, actor, *, search="", status=None, payment_status=None,
         finally:
             rows.close()
         counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
+        from app.services.order_lifecycle import counts as compatible_counts
+        counts = compatible_counts(counts)
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)

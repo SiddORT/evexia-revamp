@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ImmBottle } from "./immBottle";
+import type { ImmWriteDecision } from "./immWriteDecision";
 import type { ImmWriteDosage } from "./immWriteDosage";
 import type { ImmWritePricingBasis } from "./immWritePricingBasis";
 import type { ImmWriteShipping } from "./immWriteShipping";
@@ -14,6 +15,7 @@ import type { ImmWriteStatus } from "./immWriteStatus";
 export interface ImmWrite {
   /** @maxItems 10 */
   attachmentIds?: string[];
+  decision?: ImmWriteDecision;
   doctorId: string;
   dosage: ImmWriteDosage;
   expected_version?: number | null;

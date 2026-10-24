@@ -8,10 +8,12 @@
 import type { LupinRecordApproval } from "./lupinRecordApproval";
 import type { LupinRecordAttachmentsItem } from "./lupinRecordAttachmentsItem";
 import type { LupinRecordAudit } from "./lupinRecordAudit";
+import type { LupinRecordDecisionEligibility } from "./lupinRecordDecisionEligibility";
 import type { LupinRecordDoctor } from "./lupinRecordDoctor";
 import type { LupinRecordMr } from "./lupinRecordMr";
 import type { LupinRecordPatientsItem } from "./lupinRecordPatientsItem";
 import type { LupinRecordPaymentStatus } from "./lupinRecordPaymentStatus";
+import type { LupinRecordRejection } from "./lupinRecordRejection";
 import type { LupinRecordStatus } from "./lupinRecordStatus";
 
 export interface LupinRecord {
@@ -21,6 +23,7 @@ export interface LupinRecord {
   attachments: LupinRecordAttachmentsItem[];
   audit?: LupinRecordAudit;
   date: string;
+  decisionEligibility?: LupinRecordDecisionEligibility;
   doctor: LupinRecordDoctor;
   doctorId: string;
   id: string;
@@ -40,6 +43,7 @@ export interface LupinRecord {
   paymentStatus?: LupinRecordPaymentStatus;
   /** @maxLength 32 */
   price: string;
+  rejection?: LupinRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinRecordStatus;

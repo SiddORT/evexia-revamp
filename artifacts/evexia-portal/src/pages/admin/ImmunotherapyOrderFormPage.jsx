@@ -264,9 +264,8 @@ function Editor({ order, mode }) {
     if (uploads.some((u) => ['queued', 'uploading'].includes(u.state))) { setErrors({ attachments: 'Wait for uploads to finish. Only verified prescriptions count.' }); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
     // An unconfirmed submission must retain its exact payload/key, not be
     // revalidated or changed into a different mutation during a safe retry.
-    const submission = decision ? { ...v, status: decision } : v;
+    const submission = decision ? { ...v, status: decision === 'approve' ? 'In process' : 'Rejected', decision } : v;
     if (!mutation.current) {
-      if (decision) set({ status: decision });
       const problems = orderErrors(submission, v.attachments.some((f) => verifiedFiles.current.get(f.id) === v.patientId), { mr: mrPortal, previous: saveBase.current });
       if (Object.keys(problems).length) { setErrors(problems); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
     }
@@ -481,8 +480,8 @@ function Editor({ order, mode }) {
             <Err id="imm-poNumber-err" text={errors.poNumber} />
             <p className="imm-hint">Approval requires a rate for every suborder and a verified prescription for the patient. PO number may be omitted or cleared. Rejection does not require prices.</p></>}
           <div className="imm-btn-row">
-            {adminReview && !isNew && <button type="button" className="admin-button" disabled={dis} onClick={() => save('Approved')} data-testid="button-imm-approve">Approve</button>}
-            {adminReview && !isNew && <button type="button" className="admin-button admin-button--danger" disabled={dis} onClick={() => save('Rejected')} data-testid="button-imm-reject">Reject</button>}
+            {adminReview && !isNew && mrEditable(order) && <button type="button" className="admin-button" disabled={dis} onClick={() => save('approve')} data-testid="button-imm-approve">Approve order</button>}
+            {adminReview && !isNew && mrEditable(order) && <button type="button" className="admin-button admin-button--danger" disabled={dis} onClick={() => save('reject')} data-testid="button-imm-reject">Reject order</button>}
             <button type="button" className="admin-button" disabled={Boolean(pending)} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Update'}</button>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-cancel">Cancel</button></div>
         </section>}

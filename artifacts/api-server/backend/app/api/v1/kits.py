@@ -45,6 +45,11 @@ def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_ide
     return approve_order(db, actor, record_id, body, "kits")
 
 
+@router.post("/{record_id}/reject", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="rejectKitsOrder")
+def reject(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "kits", decision="reject")
+
+
 @router.get("", response_model=KitsPage, response_model_exclude_unset=True, operation_id="listKitsOrders")
 def listing(values=Depends(filters), cursor: uuid.UUID | None = None, limit: int = Query(25, ge=1, le=100),
             actor=Depends(current_identity), db: Session = Depends(get_db)):

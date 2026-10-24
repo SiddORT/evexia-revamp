@@ -73,6 +73,8 @@ def transaction(db, actor, work, *, action=None, resource="immunotherapy", respo
             result = work(current, keys)
         if not isinstance(result, RejectedMutation):
             from app.services.order_capabilities import public_result
+            from app.services.order_lifecycle import read_result
+            result = read_result(result)
             result = present_audit(db, current, result)
             result = public_result(current, resource, result)
             from app.services.person_contacts import order_result
@@ -101,7 +103,8 @@ def find(db, record_id):
 
 
 def project(keys, row):
-    return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext),
+    from app.services.order_lifecycle import status
+    return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "status": status(row.status),
             "audit": audit_metadata(row),
             "id": str(row.id), "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
@@ -110,7 +113,10 @@ def review_policy(db, body, previous):
     """One boundary for direct writes and import review/commit, before resolution."""
     from app.services.mr_orders import scope_identity
     from app.services.immunotherapy_pricing import basis, financials, RATE_BASIS, LEGACY_BASIS
+    decision = getattr(body, "decision", None)
     if scope_identity(db):
+        if decision:
+            raise ImmError("Only Admin can decide orders.", 403, "imm_admin_review")
         saved_basis = previous.get("pricingBasis", LEGACY_BASIS) if previous else RATE_BASIS
         if body.pricingBasis is not None and body.pricingBasis != saved_basis:
             raise ImmError("MR cannot change an order's financial basis.", 403, "imm_admin_review")
@@ -123,16 +129,22 @@ def review_policy(db, body, previous):
         return
     # Existing edit/import capability grants the Admin-side operation. MRs never
     # reach this branch; imports do not gain a separate review authority.
+    if decision:
+        from app.services.order_approval import editable
+        if not previous or not editable("immunotherapy", previous) or body.status != ("In process" if decision == "approve" else "Rejected"):
+            raise ImmError("Only a pending saved order can be explicitly approved or rejected.", 409, "imm_admin_review")
+    elif body.status != (previous["status"] if previous else "Confirmed"):
+        raise ImmError("Use the explicit Admin decision action; ordinary status edits/imports cannot decide or advance orders.", 422, "imm_admin_review")
     if body.status == "Confirmed" and previous and previous["status"] != "Confirmed":
         raise ImmError("A reviewed order cannot be reset to awaiting review.", 422, "imm_admin_review")
-    proceeding = body.status in {"Approved", "In process", "Shipped", "Delivered", "Returned"}
+    proceeding = body.status in {"In process", "Shipped", "Delivered", "Returned"}
     # Unchanged historical fulfillment snapshots can retain missing legacy rates
     # and PO numbers. PO-only edits do not force historical financial conversion.
-    legacy_unchanged = previous and body.status == previous["status"] and body.status != "Approved" and (
+    legacy_unchanged = not decision and previous and body.status == previous["status"] and (
         basis(body, previous) == previous.get("pricingBasis", LEGACY_BASIS) and
         financials(body.model_dump(mode="json")["groups"]) == financials(previous["groups"])
     )
-    if body.status in {"In process", "Shipped", "Delivered", "Returned"} and (
+    if not decision and body.status in {"In process", "Shipped", "Delivered", "Returned"} and (
         not previous or previous["status"] in {"Confirmed", "Rejected"}
     ):
         raise ImmError("Approve this order explicitly before moving it to fulfillment.", 422, "imm_admin_review")
@@ -240,7 +252,8 @@ def resolved(db, body, previous=None):
     value["totalMinor"] = (total if priced else None) if value["pricingBasis"] == RATE_BASIS else previous["totalMinor"]
     if previous:
         value["nextSuborderNumber"] = previous.get("nextSuborderNumber", 1)
-    value["reviewDecision"] = (body.status if body.status in {"Approved", "Rejected"}
+    value.pop("decision", None)
+    value["reviewDecision"] = (("Approved" if body.decision == "approve" else "Rejected") if getattr(body, "decision", None)
                                else previous.get("reviewDecision") if previous else None)
     value["attachments"] = []
     previous_files = {a["id"] for a in previous["attachments"]} if previous else set()
@@ -268,8 +281,11 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     data = resolved(db, body, previous)
     from app.services.order_approval import evidence
     data["approval"] = previous.get("approval") if previous else None
-    if body.status == "Approved" and (not previous or previous["status"] != "Approved"):
+    data["rejection"] = previous.get("rejection") if previous else None
+    if getattr(body, "decision", None) == "approve":
         data["approval"] = evidence(actor)
+    elif getattr(body, "decision", None) == "reject":
+        data["rejection"] = {"rejectedBy": str(actor.user.id), "rejectedAt": utcnow().isoformat()}
     from app.services.immunotherapy_pricing import issue
     issue(data, previous)
     now = utcnow()
@@ -360,7 +376,8 @@ def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cu
             raise ImmError("From date must not be after To date.", 422, "imm_dates")
         clauses = scope(db, Order)
         if status:
-            clauses.append(Order.status == status)
+            from app.services.order_lifecycle import filter_status
+            clauses.append(filter_status(Order.status, status))
         if from_date:
             clauses.append(Order.date >= from_date)
         if to_date:
@@ -397,6 +414,8 @@ def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cu
         finally:
             rows.close()
         counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
+        from app.services.order_lifecycle import counts as compatible_counts
+        counts = compatible_counts(counts)
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)

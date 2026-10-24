@@ -100,6 +100,8 @@ def transaction(db, actor, work, *, action=None):
             result = work(current, keys)
         from app.services.order_capabilities import public_result
         from app.services.order_audit import present
+        from app.services.order_lifecycle import read_result
+        result = read_result(result)
         result = present(db, current, result)
         result = public_result(current, "kits", result)
         from app.services.person_contacts import order_result
@@ -125,12 +127,18 @@ def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    from app.services.order_lifecycle import status
+    from app.services.order_approval import eligibility
+    value["status"] = status(row.status)
+    value["decisionEligibility"] = eligibility("kits", value)
     return {**value, "approval": value.get("approval"), "mrEditable": editable("kits", value), "id": str(row.id),
             "audit": metadata(row),
             "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 
 def resolved(db, actor, keys, body, previous=None):
+    if body.status != (previous["status"] if previous else "Confirmed"):
+        raise ImmError("Use the explicit Approve order or Reject order action; ordinary saves/imports cannot change decisions.", 422, "kits_decision")
     from app.services.order_approval import protect
     protect(db, "kits", body, previous)
     mr_assignment(db, body, previous)
@@ -299,6 +307,8 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
         finally:
             rows.close()
         counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
+        from app.services.order_lifecycle import counts as compatible_counts
+        counts = compatible_counts(counts)
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)

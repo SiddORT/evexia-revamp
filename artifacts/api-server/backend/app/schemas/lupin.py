@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 from app.schemas.immunotherapy import Strict
 
-LupinStatus = Literal["Confirmed", "Approved", "Shipped", "Delivered", "Rejected", "Returned"]
+LupinStatus = Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
 LupinPayment = Literal["Unpaid", "Paid", "Partial"]
 
 
@@ -55,6 +55,8 @@ class LupinImport(Strict):
 
 
 class LupinRecord(LupinInput):
+    decisionEligibility: dict | None = None
+    rejection: dict | None = None
     approval: dict | None = None
     mrEditable: bool = False
     audit: dict | None = None

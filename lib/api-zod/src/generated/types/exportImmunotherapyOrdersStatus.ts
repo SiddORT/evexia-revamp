@@ -12,7 +12,6 @@ export type ExportImmunotherapyOrdersStatus =
 
 export const ExportImmunotherapyOrdersStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",

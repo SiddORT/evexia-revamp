@@ -11,7 +11,6 @@ export type ImmInputStatus =
 
 export const ImmInputStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",

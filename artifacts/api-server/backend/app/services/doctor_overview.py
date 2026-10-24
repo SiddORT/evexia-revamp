@@ -26,7 +26,7 @@ DOMAINS = (
      frozenset({"Confirmed", "Approved", "In process", "Shipped"})),
     ("kits", KitsOrder, kits, frozenset({"Confirmed", "In process", "Shipped"})),
     ("spt", SptOrder, spt, None),
-    ("lupin", LupinOrder, lupin, frozenset({"Confirmed", "Approved", "Shipped"})),
+    ("lupin", LupinOrder, lupin, frozenset({"Confirmed", "Approved", "In process", "Shipped"})),
 )
 
 

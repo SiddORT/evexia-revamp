@@ -115,6 +115,8 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    decisionEligibility: dict | None = None
+    rejection: dict | None = None
     approval: dict | None = None
     mrEditable: bool = False
     audit: dict | None = None

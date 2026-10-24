@@ -50,6 +50,8 @@ def transaction(db, actor, work, *, action=None):
         with crypto_scope(db) as keys:
             result = work(current, keys)
         from app.services.order_audit import present
+        from app.services.order_lifecycle import read_result
+        result = read_result(result)
         result = present(db, current, result)
         from app.services.person_contacts import order_result
         result = order_result(current, result)
@@ -74,6 +76,9 @@ def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    from app.services.order_approval import eligibility
+    value["status"] = row.status
+    value["decisionEligibility"] = eligibility("spt", value)
     return {**value, "approval": value.get("approval"), "mrEditable": editable("spt", value),
         "audit": metadata(row),
         "id": str(row.id), "sourceId": str(row.source_id), "number": row.number,

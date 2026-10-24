@@ -10,7 +10,7 @@ class LupinOrder(Base):
     __tablename__ = "lupin_orders"
     __table_args__ = (
         CheckConstraint("version > 0", name="ck_lupin_version"),
-        CheckConstraint("status IN ('Confirmed','Approved','Shipped','Delivered','Rejected','Returned')", name="ck_lupin_status"),
+        CheckConstraint("status IN ('Confirmed','Approved','In process','Shipped','Delivered','Rejected','Returned')", name="ck_lupin_status"),
         CheckConstraint("payment_status IN ('Unpaid','Paid','Partial')", name="ck_lupin_payment"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)

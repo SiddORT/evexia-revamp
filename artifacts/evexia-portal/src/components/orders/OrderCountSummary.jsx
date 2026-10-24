@@ -1,13 +1,20 @@
 import './orderCountSummary.css';
 
 // Counts come from the ownership-scoped server aggregate, never the visible page.
-export default function OrderCountSummary({ statuses, total, counts, loading }) {
+const STATUS_CARDS = [
+  ['Confirmed', 'Confirmed'], ['In process', 'In process'],
+  ['In shipping', 'Shipped'], ['Delivered', 'Delivered'],
+  ['Rejected', 'Rejected'], ['Returned', 'Returned'],
+];
+export default function OrderCountSummary({ total, counts, loading }) {
   const available = Number.isSafeInteger(total) && total >= 0
     && counts && typeof counts === 'object' && !Array.isArray(counts)
-    && statuses.every((status) => !Object.hasOwn(counts, status)
+    && [...STATUS_CARDS.map(([, key]) => key), 'Approved'].every((status) => !Object.hasOwn(counts, status)
       || (Number.isSafeInteger(counts[status]) && counts[status] >= 0));
   const state = loading ? 'Loading order counts…' : !available ? 'Order counts unavailable.' : '';
-  const cards = [['All orders', total], ...statuses.map((status) => [status, counts?.[status] ?? 0])];
+  const cards = [['All orders', total], ...STATUS_CARDS.map(([label, key]) => [
+    label, (counts?.[key] ?? 0) + (key === 'In process' ? (counts?.Approved ?? 0) : 0),
+  ])];
 
   return <section className="order-count-summary" aria-label="Order counts by status" aria-busy={loading}>
     <p className="order-count-summary__state" role="status" aria-live="polite">{state}</p>

@@ -1,6 +1,6 @@
 """Server-owned approval evidence inside existing encrypted order snapshots.
 
-No schema backfill: historical status is retained, never synthesized as evidence.
+Historical decisions are never synthesized from status alone.
 All callers run within the service transaction and hold the order row lock.
 """
 from app.core.security import utcnow
@@ -8,7 +8,7 @@ from app.services.immunotherapy import ImmError
 
 
 def editable(kind, previous):
-    if not previous or previous.get("approval"):
+    if not previous or previous.get("approval") or previous.get("rejection"):
         return previous is None
     pending = {"Draft", "Saved"} if kind == "spt" else {"Confirmed"}
     return previous["status"] in pending and not previous.get("reviewDecision")
@@ -41,12 +41,57 @@ def evidence(actor):
 
 def preserve(actor, kind, data, previous):
     data["approval"] = previous.get("approval") if previous else None
-    # Lupin already has an Approved status. Record only a real new transition.
-    if kind == "lupin" and data["status"] == "Approved" and (not previous or previous["status"] != "Approved"):
-        data["approval"] = evidence(actor)
+    data["rejection"] = previous.get("rejection") if previous else None
 
 
-def approve(db, actor, identity, body, kind):
+def saved_pricing(kind, previous):
+    """Validate persisted amounts against the persisted basis; zero is not missing."""
+    from decimal import Decimal
+    if kind == "spt":
+        from app.schemas.spt import SptInput
+        SptInput.model_validate({key: previous[key] for key in ("doctorId", "mrId", "remarks", "status")}
+            | {"patients": [{k: p[k] for k in ("id", "source", "amount")} for p in previous["patients"]]})
+        if Decimal(previous["total"]) != sum((Decimal(p["amount"]) for p in previous["patients"]), Decimal(0)):
+            raise ValueError("Stale patient total")
+        return
+    from app.schemas.kits import KitsInput
+    from app.schemas.lupin import LupinInput
+    contract = KitsInput if kind == "kits" else LupinInput
+    values = {key: previous[key] for key in contract.model_fields
+        if key in previous and key not in {"pricing", "businessParking", "poNumber"}}
+    values["attachmentIds"] = [f["id"] for f in previous["attachments"]]
+    body = contract.model_validate(values)
+    if kind == "kits":
+        from app.schemas.kits_pricing import KitsPricingInput, calculate
+        raw = previous.get("pricing")
+        if not raw:
+            raise ValueError("No saved pricing")
+        price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
+        if calculate(body, price, raw["taxPercentage"]) != raw:
+            raise ValueError("Stale supply pricing")
+    else:
+        if Decimal(previous["total"]) != Decimal(body.patientCount) * Decimal(body.price):
+            raise ValueError("Stale count pricing")
+        if not values["attachmentIds"]:
+            raise ValueError("Missing verified attachment")
+
+
+def eligibility(kind, previous):
+    pending = editable(kind, previous) and (kind != "spt" or previous["status"] == "Saved")
+    reason = ""
+    if pending:
+        try:
+            saved_pricing(kind, previous)
+        except (ValueError, KeyError, TypeError, ArithmeticError):
+            reason = "Save complete, valid pricing for the current saved items/patients before approving. Reopen Edit order to review pricing."
+        if kind == "lupin" and not previous.get("attachments"):
+            reason = "Attach a verified Lupin document and save the order before approving. Reopen Edit order."
+    else:
+        reason = "Submit this draft before review." if previous["status"] == "Draft" else "This order has already been decided or is closed."
+    return {"canApprove": pending and not reason, "canReject": pending, "approvalUnavailable": reason}
+
+
+def approve(db, actor, identity, body, kind, *, decision="approve"):
     from app.services import kits, spt, lupin
     from app.services.capability_policy import is_super_admin
     from app.db.models import AuditEvent
@@ -58,15 +103,18 @@ def approve(db, actor, identity, body, kind):
             row = service.find(db, identity)
             previous = service.project(keys, row)
             if row.version != body.expected_version:
-                raise ImmError("Order changed. Reopen the saved order before approving.", 409, "order_stale")
-            if not editable(kind, previous) or (kind == "spt" and row.status != "Saved"):
-                raise ImmError("Only a complete submitted pending order can be approved.", 409, "order_approval")
+                raise ImmError("Order changed. Your entries are preserved. Reopen the saved order separately before deciding.", 409, "order_stale")
+            available = eligibility(kind, previous)
+            if not available["canReject"]:
+                raise ImmError(available["approvalUnavailable"], 409, "order_approval")
+            if decision == "approve" and not available["canApprove"]:
+                raise ImmError(available["approvalUnavailable"], 422, "order_pricing")
             # Validate the complete saved submission, not Admin-supplied replacements.
-            if kind == "spt":
+            if decision == "approve" and kind == "spt":
                 from app.schemas.spt import SptInput
                 SptInput.model_validate({key: previous[key] for key in ("doctorId", "mrId", "patients", "remarks", "status")}
                     | {"patients": [{k: p[k] for k in ("id", "source", "amount")} for p in previous["patients"]]})
-            else:
+            elif decision == "approve":
                 from app.schemas.kits import KitsInput
                 from app.schemas.lupin import LupinInput
                 contract = KitsInput if kind == "kits" else LupinInput
@@ -79,17 +127,20 @@ def approve(db, actor, identity, body, kind):
                 # unverified file records cannot become new approval evidence.
                 service.resolved(db, current, keys, contract.model_validate(values), previous)
             snapshot = service.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
-            snapshot["approval"] = evidence(current)
-            if kind == "lupin":
-                snapshot["status"] = row.status = "Approved"
+            if decision == "approve":
+                snapshot["approval"] = evidence(current)
+                snapshot["status"] = row.status = "In process"
+            else:
+                snapshot["rejection"] = {"rejectedBy": str(current.user.id), "rejectedAt": utcnow().isoformat()}
+                snapshot["status"] = row.status = "Rejected"
             row.version += 1
             row.updated_by, row.updated_at = current.user.id, utcnow()
             row.snapshot_ciphertext = service.seal(keys, "orders", row.id, snapshot)
             db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
-                action=f"{kind}_approved", resource_type=f"{kind}_order", resource_id=row.id,
+                action=f"{kind}_{'approved' if decision == 'approve' else 'rejected'}", resource_type=f"{kind}_order", resource_id=row.id,
                 outcome="success", request_id=db.info.get("request_id"), created_at=utcnow()))
             db.flush()
             return service.project(keys, row)
         return service.idempotent(db, current, keys, body.idempotencyKey,
-            {"operation": "approve", "id": str(identity), "body": body.model_dump(mode="json")}, write)
+            {"operation": decision, "id": str(identity), "body": body.model_dump(mode="json")}, write)
     return service.transaction(db, actor, work, action="edit")

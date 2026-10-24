@@ -1067,7 +1067,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       error.message = error.code === 'imm_prescription_required'
         ? 'Attach at least one verified prescription for the selected patient before saving or importing this order.'
         : error.code === 'imm_pricing' ? 'Admin approval requires every allergen/suborder rate and a verified prescription. PO number is optional. Rejection does not require pricing. Your draft is preserved.'
-        : error.code === 'imm_admin_review' ? 'Review transitions are restricted. An order cannot return to Confirmed after review, and must be explicitly Approved before fulfillment. Your draft is preserved.'
+        : error.code === 'imm_admin_review' ? 'Use Approve order or Reject order on a pending saved order. Approval moves it directly to In process; ordinary status edits and imports cannot make that decision. Your draft is preserved.'
         : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, Admin rates, optional PO length, patient assignments and prescriptions. Your draft is preserved.';
     }
     if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');

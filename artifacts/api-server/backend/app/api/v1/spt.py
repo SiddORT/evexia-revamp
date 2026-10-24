@@ -10,17 +10,18 @@ from app.schemas.spt import SptWrite, SptRegistration, SptPatient, SptRecord, Sp
 from app.schemas.immunotherapy import ImmReferencePage, ImmImportReview
 from app.services import spt as service
 from app.schemas.order_approval import OrderApproval
+from app.schemas.spt import ReadStatus
 from app.services.order_approval import approve as approve_order
 
 router = APIRouter(prefix="/admin/spt-orders", tags=["spt"],
     dependencies=[Depends(operation_router("spt", {
         "listing": None, "detail": None, "references": None, "export": "export",
-        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
         "register": ("add", "import"),
     }, allow_mr=True))])
 
 
-def filters(search: str = Query("", max_length=200), status: Status | None = None,
+def filters(search: str = Query("", max_length=200), status: ReadStatus | None = None,
             doctor_id: uuid.UUID | None = None, mr_id: uuid.UUID | None = None,
             patient_id: uuid.UUID | None = None, from_date: date | None = None, to_date: date | None = None):
     return dict(search=search, status=status, doctor_id=doctor_id, mr_id=mr_id,
@@ -30,6 +31,11 @@ def filters(search: str = Query("", max_length=200), status: Status | None = Non
 @router.post("/{record_id}/approve", response_model=SptRecord, operation_id="approveSptOrder")
 def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "spt")
+
+
+@router.post("/{record_id}/reject", response_model=SptRecord, operation_id="rejectSptOrder")
+def reject(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "spt", decision="reject")
 
 
 @router.get("", response_model=SptPage, operation_id="listSptOrders")

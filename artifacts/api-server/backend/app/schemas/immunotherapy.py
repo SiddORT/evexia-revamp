@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 Result = Annotated[str, Field(pattern=r"^\d{1,6}(?:\.\d{1,2})?$")]
 Amount = Annotated[str, Field(pattern=r"^\d{1,10}(?:\.\d{1,2})?$")]
-Status = Literal["Confirmed", "Approved", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
+Status = Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
 
 
 class Strict(BaseModel):
@@ -67,6 +67,7 @@ class ImmInput(Strict):
 
 
 class ImmWrite(ImmInput):
+    decision: Literal["approve", "reject"] | None = None
     idempotencyKey: uuid.UUID
     expected_version: int | None = Field(default=None, ge=1, strict=True)
 
@@ -85,6 +86,7 @@ class ImmImport(Strict):
 
 
 class ImmRecord(BaseModel):
+    rejection: dict | None = None
     approval: dict | None = None
     """Encrypted document projected only after protected authorization."""
     id: uuid.UUID

@@ -11,7 +11,7 @@ export type LupinInputStatus =
 
 export const LupinInputStatus = {
   Confirmed: "Confirmed",
-  Approved: "Approved",
+  In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
   Rejected: "Rejected",

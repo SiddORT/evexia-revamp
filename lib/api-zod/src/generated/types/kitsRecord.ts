@@ -12,12 +12,14 @@ import type { KitsRecordApproval } from "./kitsRecordApproval";
 import type { KitsRecordAttachmentsItem } from "./kitsRecordAttachmentsItem";
 import type { KitsRecordAudit } from "./kitsRecordAudit";
 import type { KitsRecordBilling } from "./kitsRecordBilling";
+import type { KitsRecordDecisionEligibility } from "./kitsRecordDecisionEligibility";
 import type { KitsRecordDoctor } from "./kitsRecordDoctor";
 import type { KitsRecordMr } from "./kitsRecordMr";
 import type { KitsRecordOrderFor } from "./kitsRecordOrderFor";
 import type { KitsRecordPatient } from "./kitsRecordPatient";
 import type { KitsRecordPaymentStatus } from "./kitsRecordPaymentStatus";
 import type { KitsRecordRecipient } from "./kitsRecordRecipient";
+import type { KitsRecordRejection } from "./kitsRecordRejection";
 import type { KitsRecordShipping } from "./kitsRecordShipping";
 import type { KitsRecordStatus } from "./kitsRecordStatus";
 
@@ -32,6 +34,7 @@ export interface KitsRecord {
   billing: KitsRecordBilling;
   businessParking?: string | null;
   date: string;
+  decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
   doctorId: string;
   id: string;
@@ -51,6 +54,7 @@ export interface KitsRecord {
   poNumber?: string | null;
   pricing?: KitsPricingSnapshot | null;
   recipient: KitsRecordRecipient;
+  rejection?: KitsRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
   shipping?: KitsRecordShipping;

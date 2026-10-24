@@ -12,4 +12,6 @@ export type ListSptOrdersStatus =
 export const ListSptOrdersStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  In_process: "In process",
+  Rejected: "Rejected",
 } as const;

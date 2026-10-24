@@ -24,7 +24,7 @@ from app.services.order_approval import approve as approve_order
 router = APIRouter(prefix="/admin/lupin-orders", tags=["lupin"],
     dependencies=[Depends(operation_router("lupin", {
         "listing": None, "detail": None, "references": None, "export": "export",
-        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
         "policy": "upload_attachment", "upload": "upload_attachment", "cancel_upload": "upload_attachment",
     }, allow_mr=True))])
 
@@ -45,6 +45,11 @@ def edit(record_id: uuid.UUID, body: LupinUpdate, actor=Depends(current_identity
 @router.post("/{record_id}/approve", response_model=LupinRecord, operation_id="approveLupinOrder")
 def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "lupin")
+
+
+@router.post("/{record_id}/reject", response_model=LupinRecord, operation_id="rejectLupinOrder")
+def reject(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "lupin", decision="reject")
 
 
 @router.get("", response_model=LupinPage, operation_id="listLupinOrders")

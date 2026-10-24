@@ -837,6 +837,32 @@ export const updateKitsOrderResponsePricingOneLancetsRateOneMax = 32;
 export const updateKitsOrderResponsePricingOneTrayRateOneMax = 32;
 export const updateKitsOrderResponseRemarksMax = 4000;
 export const updateKitsOrderResponseTrayMax = 12;
+export const rejectKitsOrderResponseApplicatorsMax = 12;
+export const rejectKitsOrderResponseAttachmentIdsMax = 10;
+export const rejectKitsOrderResponseBusinessParkingOneMax = 32;
+export const rejectKitsOrderResponseKitCustomMax = 32;
+export const rejectKitsOrderResponseKitQuantityMax = 12;
+export const rejectKitsOrderResponseKitVolumeMax = 32;
+export const rejectKitsOrderResponseLancetsMax = 12;
+export const rejectKitsOrderResponseMrEditableDefault = false;
+export const rejectKitsOrderResponseOtherAddressCityMax = 200;
+export const rejectKitsOrderResponseOtherAddressCountryMax = 200;
+export const rejectKitsOrderResponseOtherAddressLandmarkMax = 1000;
+export const rejectKitsOrderResponseOtherAddressLine1Max = 1000;
+export const rejectKitsOrderResponseOtherAddressLine2Max = 1000;
+export const rejectKitsOrderResponseOtherAddressPincodeMax = 32;
+export const rejectKitsOrderResponseOtherAddressStateMax = 200;
+export const rejectKitsOrderResponseOtherNameMax = 200;
+export const rejectKitsOrderResponseOtherPhoneMax = 25;
+export const rejectKitsOrderResponsePoNumberOneMax = 200;
+export const rejectKitsOrderResponsePricingOneApplicatorsRateOneMax = 32;
+export const rejectKitsOrderResponsePricingOneDiscountValueMax = 32;
+export const rejectKitsOrderResponsePricingOneForwardingChargesMax = 32;
+export const rejectKitsOrderResponsePricingOneKitRateOneMax = 32;
+export const rejectKitsOrderResponsePricingOneLancetsRateOneMax = 32;
+export const rejectKitsOrderResponsePricingOneTrayRateOneMax = 32;
+export const rejectKitsOrderResponseRemarksMax = 4000;
+export const rejectKitsOrderResponseTrayMax = 12;
 export const listLanguagesQueryQueryMax = 200;
 export const listLanguagesQueryLimitDefault = 10;
 export const listLanguagesQueryLimitMax = 100;
@@ -936,6 +962,12 @@ export const updateLupinOrderResponsePatientCountMax = 1000000;
 export const updateLupinOrderResponsePatientIdsMax = 200;
 export const updateLupinOrderResponsePriceMax = 32;
 export const updateLupinOrderResponseRemarksMax = 4000;
+export const rejectLupinOrderResponseAttachmentIdsMax = 10;
+export const rejectLupinOrderResponseMrEditableDefault = false;
+export const rejectLupinOrderResponsePatientCountMax = 1000000;
+export const rejectLupinOrderResponsePatientIdsMax = 200;
+export const rejectLupinOrderResponsePriceMax = 32;
+export const rejectLupinOrderResponseRemarksMax = 4000;
 export const listMRDirectoryQueryQueryMax = 200;
 export const listMRDirectoryQueryLimitDefault = 10;
 export const listMRDirectoryQueryLimitMax = 100;
@@ -1817,6 +1849,7 @@ export const editSptDraftBodyPatientsItemAmountMax = 16;
 export const editSptDraftBodyPatientsMax = 200;
 export const editSptDraftBodyRemarksMax = 4000;
 export const editSptDraftResponseMrEditableDefault = false;
+export const rejectSptOrderResponseMrEditableDefault = false;
 export const listStaffQueryLimitDefault = 20;
 export const listStaffQueryLimitMax = 100;
 export const listStaffQueryOffsetDefault = 0;
@@ -9350,7 +9383,6 @@ export const ListImmunotherapyOrdersQueryParams = zod.object({
     .union([
       zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -9402,6 +9434,9 @@ export const ListImmunotherapyOrdersResponse = zod.object({
         .enum(["allergen_rates", "legacy_bottle_mrp"])
         .default(listImmunotherapyOrdersResponseItemsItemPricingBasisDefault),
       recipient: zod.record(zod.string(), zod.unknown()),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod.string(),
       reviewDecision: zod
         .union([zod.enum(["Approved", "Rejected"]), zod.null()])
@@ -9410,7 +9445,6 @@ export const ListImmunotherapyOrdersResponse = zod.object({
       shipping: zod.string(),
       status: zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -9456,6 +9490,7 @@ export const CreateImmunotherapyOrderBody = zod.object({
     .array(zod.string().uuid())
     .max(createImmunotherapyOrderBodyAttachmentIdsMax)
     .optional(),
+  decision: zod.union([zod.enum(["approve", "reject"]), zod.null()]).optional(),
   doctorId: zod.string().uuid(),
   dosage: zod.enum([
     "PD",
@@ -9547,7 +9582,6 @@ export const CreateImmunotherapyOrderBody = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -9584,6 +9618,9 @@ export const CreateImmunotherapyOrderResponse = zod.object({
     .enum(["allergen_rates", "legacy_bottle_mrp"])
     .default(createImmunotherapyOrderResponsePricingBasisDefault),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   reviewDecision: zod
     .union([zod.enum(["Approved", "Rejected"]), zod.null()])
@@ -9592,7 +9629,6 @@ export const CreateImmunotherapyOrderResponse = zod.object({
   shipping: zod.string(),
   status: zod.enum([
     "Confirmed",
-    "Approved",
     "In process",
     "Shipped",
     "Delivered",
@@ -9617,7 +9653,6 @@ export const ExportImmunotherapyOrdersQueryParams = zod.object({
     .union([
       zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -9662,6 +9697,9 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
         .enum(["allergen_rates", "legacy_bottle_mrp"])
         .default(exportImmunotherapyOrdersResponseItemsItemPricingBasisDefault),
       recipient: zod.record(zod.string(), zod.unknown()),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod.string(),
       reviewDecision: zod
         .union([zod.enum(["Approved", "Rejected"]), zod.null()])
@@ -9670,7 +9708,6 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
       shipping: zod.string(),
       status: zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -9835,7 +9872,6 @@ export const CommitImmunotherapyImportBody = zod.object({
           status: zod
             .enum([
               "Confirmed",
-              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -9888,6 +9924,9 @@ export const CommitImmunotherapyImportResponse = zod.object({
           commitImmunotherapyImportResponseOrdersItemPricingBasisDefault,
         ),
       recipient: zod.record(zod.string(), zod.unknown()),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod.string(),
       reviewDecision: zod
         .union([zod.enum(["Approved", "Rejected"]), zod.null()])
@@ -9896,7 +9935,6 @@ export const CommitImmunotherapyImportResponse = zod.object({
       shipping: zod.string(),
       status: zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -10059,7 +10097,6 @@ export const ReviewImmunotherapyImportBody = zod.object({
           status: zod
             .enum([
               "Confirmed",
-              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -10550,6 +10587,9 @@ export const GetImmunotherapyOrderResponse = zod.object({
     .enum(["allergen_rates", "legacy_bottle_mrp"])
     .default(getImmunotherapyOrderResponsePricingBasisDefault),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   reviewDecision: zod
     .union([zod.enum(["Approved", "Rejected"]), zod.null()])
@@ -10558,7 +10598,6 @@ export const GetImmunotherapyOrderResponse = zod.object({
   shipping: zod.string(),
   status: zod.enum([
     "Confirmed",
-    "Approved",
     "In process",
     "Shipped",
     "Delivered",
@@ -10603,6 +10642,7 @@ export const EditImmunotherapyOrderBody = zod.object({
     .array(zod.string().uuid())
     .max(editImmunotherapyOrderBodyAttachmentIdsMax)
     .optional(),
+  decision: zod.union([zod.enum(["approve", "reject"]), zod.null()]).optional(),
   doctorId: zod.string().uuid(),
   dosage: zod.enum([
     "PD",
@@ -10691,7 +10731,6 @@ export const EditImmunotherapyOrderBody = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -10728,6 +10767,9 @@ export const EditImmunotherapyOrderResponse = zod.object({
     .enum(["allergen_rates", "legacy_bottle_mrp"])
     .default(editImmunotherapyOrderResponsePricingBasisDefault),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   reviewDecision: zod
     .union([zod.enum(["Approved", "Rejected"]), zod.null()])
@@ -10736,7 +10778,6 @@ export const EditImmunotherapyOrderResponse = zod.object({
   shipping: zod.string(),
   status: zod.enum([
     "Confirmed",
-    "Approved",
     "In process",
     "Shipped",
     "Delivered",
@@ -12532,7 +12573,6 @@ export const ListKitsOrdersQueryParams = zod.object({
     .union([
       zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -12621,6 +12661,9 @@ export const ListKitsOrdersResponse = zod.object({
         ])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
@@ -12787,6 +12830,9 @@ export const ListKitsOrdersResponse = zod.object({
         ])
         .optional(),
       recipient: zod.record(zod.string(), zod.unknown()),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod
         .string()
         .max(listKitsOrdersResponseItemsItemRemarksMax)
@@ -12797,7 +12843,6 @@ export const ListKitsOrdersResponse = zod.object({
       status: zod
         .enum([
           "Confirmed",
-          "Approved",
           "In process",
           "Shipped",
           "Delivered",
@@ -13003,7 +13048,6 @@ export const CreateKitsOrderBody = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -13079,6 +13123,9 @@ export const CreateKitsOrderResponse = zod.object({
     ])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -13219,6 +13266,9 @@ export const CreateKitsOrderResponse = zod.object({
     ])
     .optional(),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(createKitsOrderResponseRemarksMax)
@@ -13229,7 +13279,6 @@ export const CreateKitsOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -13294,7 +13343,6 @@ export const ExportKitsOrdersQueryParams = zod.object({
     .union([
       zod.enum([
         "Confirmed",
-        "Approved",
         "In process",
         "Shipped",
         "Delivered",
@@ -13383,6 +13431,9 @@ export const ExportKitsOrdersResponse = zod.object({
         ])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
@@ -13553,6 +13604,9 @@ export const ExportKitsOrdersResponse = zod.object({
         ])
         .optional(),
       recipient: zod.record(zod.string(), zod.unknown()),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod
         .string()
         .max(exportKitsOrdersResponseItemsItemRemarksMax)
@@ -13563,7 +13617,6 @@ export const ExportKitsOrdersResponse = zod.object({
       status: zod
         .enum([
           "Confirmed",
-          "Approved",
           "In process",
           "Shipped",
           "Delivered",
@@ -13849,7 +13902,6 @@ export const CommitKitsImportBody = zod.object({
           status: zod
             .enum([
               "Confirmed",
-              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -13940,6 +13992,9 @@ export const CommitKitsImportResponse = zod.object({
         ])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
@@ -14112,6 +14167,9 @@ export const CommitKitsImportResponse = zod.object({
         ])
         .optional(),
       recipient: zod.record(zod.string(), zod.unknown()),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod
         .string()
         .max(commitKitsImportResponseOrdersItemRemarksMax)
@@ -14122,7 +14180,6 @@ export const CommitKitsImportResponse = zod.object({
       status: zod
         .enum([
           "Confirmed",
-          "Approved",
           "In process",
           "Shipped",
           "Delivered",
@@ -14406,7 +14463,6 @@ export const ReviewKitsImportBody = zod.object({
           status: zod
             .enum([
               "Confirmed",
-              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -14549,6 +14605,9 @@ export const GetKitsOrderResponse = zod.object({
     ])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -14684,6 +14743,9 @@ export const GetKitsOrderResponse = zod.object({
     ])
     .optional(),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(getKitsOrderResponseRemarksMax)
@@ -14694,7 +14756,6 @@ export const GetKitsOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -14783,6 +14844,9 @@ export const ApproveKitsOrderResponse = zod.object({
     ])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -14923,6 +14987,9 @@ export const ApproveKitsOrderResponse = zod.object({
     ])
     .optional(),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(approveKitsOrderResponseRemarksMax)
@@ -14933,7 +15000,6 @@ export const ApproveKitsOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -15140,7 +15206,6 @@ export const UpdateKitsOrderBody = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -15216,6 +15281,9 @@ export const UpdateKitsOrderResponse = zod.object({
     ])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -15356,6 +15424,9 @@ export const UpdateKitsOrderResponse = zod.object({
     ])
     .optional(),
   recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(updateKitsOrderResponseRemarksMax)
@@ -15366,7 +15437,6 @@ export const UpdateKitsOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
       "In process",
       "Shipped",
       "Delivered",
@@ -15378,6 +15448,250 @@ export const UpdateKitsOrderResponse = zod.object({
     .string()
     .max(updateKitsOrderResponseTrayMax)
     .default(updateKitsOrderResponseTrayDefault),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Reject
+ */
+export const RejectKitsOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RejectKitsOrderBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const rejectKitsOrderResponseApplicatorsDefault = ``;
+
+export const rejectKitsOrderResponseKitCustomDefault = ``;
+
+export const rejectKitsOrderResponseKitProductDefault = ``;
+export const rejectKitsOrderResponseKitQuantityDefault = ``;
+
+export const rejectKitsOrderResponseKitVolumeDefault = ``;
+
+export const rejectKitsOrderResponseLancetsDefault = ``;
+
+export const rejectKitsOrderResponseOrderForDefault = `doctor`;
+export const rejectKitsOrderResponseOtherAddressCityDefault = ``;
+
+export const rejectKitsOrderResponseOtherAddressCountryDefault = ``;
+
+export const rejectKitsOrderResponseOtherAddressLandmarkDefault = ``;
+
+export const rejectKitsOrderResponseOtherAddressLine1Default = ``;
+
+export const rejectKitsOrderResponseOtherAddressLine2Default = ``;
+
+export const rejectKitsOrderResponseOtherAddressPincodeDefault = ``;
+
+export const rejectKitsOrderResponseOtherAddressStateDefault = ``;
+
+export const rejectKitsOrderResponseOtherNameDefault = ``;
+
+export const rejectKitsOrderResponseOtherPhoneDefault = ``;
+
+export const rejectKitsOrderResponsePaymentStatusDefault = `Unpaid`;
+
+export const rejectKitsOrderResponseRemarksDefault = ``;
+
+export const rejectKitsOrderResponseShippingDefault = `doctor`;
+export const rejectKitsOrderResponseStatusDefault = `Confirmed`;
+export const rejectKitsOrderResponseTrayDefault = ``;
+
+export const RejectKitsOrderResponse = zod.object({
+  applicators: zod
+    .string()
+    .max(rejectKitsOrderResponseApplicatorsMax)
+    .default(rejectKitsOrderResponseApplicatorsDefault),
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(rejectKitsOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  billing: zod.record(zod.string(), zod.unknown()),
+  businessParking: zod
+    .union([
+      zod.string().max(rejectKitsOrderResponseBusinessParkingOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  kit: zod
+    .object({
+      custom: zod
+        .string()
+        .max(rejectKitsOrderResponseKitCustomMax)
+        .default(rejectKitsOrderResponseKitCustomDefault),
+      product: zod
+        .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+        .default(rejectKitsOrderResponseKitProductDefault),
+      quantity: zod
+        .string()
+        .max(rejectKitsOrderResponseKitQuantityMax)
+        .default(rejectKitsOrderResponseKitQuantityDefault),
+      volume: zod
+        .string()
+        .max(rejectKitsOrderResponseKitVolumeMax)
+        .default(rejectKitsOrderResponseKitVolumeDefault),
+    })
+    .optional(),
+  lancets: zod
+    .string()
+    .max(rejectKitsOrderResponseLancetsMax)
+    .default(rejectKitsOrderResponseLancetsDefault),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrEditable: zod.boolean().default(rejectKitsOrderResponseMrEditableDefault),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  orderFor: zod
+    .enum(["doctor", "mr"])
+    .default(rejectKitsOrderResponseOrderForDefault),
+  other: zod
+    .object({
+      address: zod
+        .object({
+          city: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressCityMax)
+            .default(rejectKitsOrderResponseOtherAddressCityDefault),
+          country: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressCountryMax)
+            .default(rejectKitsOrderResponseOtherAddressCountryDefault),
+          landmark: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressLandmarkMax)
+            .default(rejectKitsOrderResponseOtherAddressLandmarkDefault),
+          line1: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressLine1Max)
+            .default(rejectKitsOrderResponseOtherAddressLine1Default),
+          line2: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressLine2Max)
+            .default(rejectKitsOrderResponseOtherAddressLine2Default),
+          pincode: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressPincodeMax)
+            .default(rejectKitsOrderResponseOtherAddressPincodeDefault),
+          state: zod
+            .string()
+            .max(rejectKitsOrderResponseOtherAddressStateMax)
+            .default(rejectKitsOrderResponseOtherAddressStateDefault),
+        })
+        .optional(),
+      name: zod
+        .string()
+        .max(rejectKitsOrderResponseOtherNameMax)
+        .default(rejectKitsOrderResponseOtherNameDefault),
+      phone: zod
+        .string()
+        .max(rejectKitsOrderResponseOtherPhoneMax)
+        .default(rejectKitsOrderResponseOtherPhoneDefault),
+    })
+    .optional(),
+  patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(rejectKitsOrderResponsePaymentStatusDefault),
+  poNumber: zod
+    .union([
+      zod.string().max(rejectKitsOrderResponsePoNumberOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  pricing: zod
+    .union([
+      zod.object({
+        applicatorsRate: zod
+          .union([
+            zod
+              .string()
+              .max(rejectKitsOrderResponsePricingOneApplicatorsRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        discountAmount: zod.string(),
+        discountType: zod.enum(["percent", "inr"]),
+        discountValue: zod
+          .string()
+          .max(rejectKitsOrderResponsePricingOneDiscountValueMax),
+        discounted: zod.string(),
+        forwardingCharges: zod
+          .string()
+          .max(rejectKitsOrderResponsePricingOneForwardingChargesMax),
+        gross: zod.string(),
+        gst: zod.string(),
+        kitRate: zod
+          .union([
+            zod.string().max(rejectKitsOrderResponsePricingOneKitRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        lancetsRate: zod
+          .union([
+            zod
+              .string()
+              .max(rejectKitsOrderResponsePricingOneLancetsRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        lineAmounts: zod.record(zod.string(), zod.string()),
+        taxPercentage: zod.string(),
+        taxable: zod.string(),
+        total: zod.string(),
+        trayRate: zod
+          .union([
+            zod.string().max(rejectKitsOrderResponsePricingOneTrayRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod
+    .string()
+    .max(rejectKitsOrderResponseRemarksMax)
+    .default(rejectKitsOrderResponseRemarksDefault),
+  shipping: zod
+    .enum(["doctor", "mr", "other"])
+    .default(rejectKitsOrderResponseShippingDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(rejectKitsOrderResponseStatusDefault),
+  tray: zod
+    .string()
+    .max(rejectKitsOrderResponseTrayMax)
+    .default(rejectKitsOrderResponseTrayDefault),
   version: zod.number().int(),
 });
 
@@ -15689,7 +16003,7 @@ export const ListLupinOrdersQueryParams = zod.object({
     .union([
       zod.enum([
         "Confirmed",
-        "Approved",
+        "In process",
         "Shipped",
         "Delivered",
         "Rejected",
@@ -15731,6 +16045,9 @@ export const ListLupinOrdersResponse = zod.object({
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
@@ -15755,6 +16072,9 @@ export const ListLupinOrdersResponse = zod.object({
         .enum(["Unpaid", "Paid", "Partial"])
         .default(listLupinOrdersResponseItemsItemPaymentStatusDefault),
       price: zod.string().max(listLupinOrdersResponseItemsItemPriceMax),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod
         .string()
         .max(listLupinOrdersResponseItemsItemRemarksMax)
@@ -15762,7 +16082,7 @@ export const ListLupinOrdersResponse = zod.object({
       status: zod
         .enum([
           "Confirmed",
-          "Approved",
+          "In process",
           "Shipped",
           "Delivered",
           "Rejected",
@@ -15816,7 +16136,7 @@ export const CreateLupinOrderBody = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
+      "In process",
       "Shipped",
       "Delivered",
       "Rejected",
@@ -15844,6 +16164,9 @@ export const CreateLupinOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -15866,6 +16189,9 @@ export const CreateLupinOrderResponse = zod.object({
     .enum(["Unpaid", "Paid", "Partial"])
     .default(createLupinOrderResponsePaymentStatusDefault),
   price: zod.string().max(createLupinOrderResponsePriceMax),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(createLupinOrderResponseRemarksMax)
@@ -15873,7 +16199,7 @@ export const CreateLupinOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
+      "In process",
       "Shipped",
       "Delivered",
       "Rejected",
@@ -15950,7 +16276,7 @@ export const ExportLupinOrdersQueryParams = zod.object({
     .union([
       zod.enum([
         "Confirmed",
-        "Approved",
+        "In process",
         "Shipped",
         "Delivered",
         "Rejected",
@@ -15992,6 +16318,9 @@ export const ExportLupinOrdersResponse = zod.object({
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
@@ -16016,6 +16345,9 @@ export const ExportLupinOrdersResponse = zod.object({
         .enum(["Unpaid", "Paid", "Partial"])
         .default(exportLupinOrdersResponseItemsItemPaymentStatusDefault),
       price: zod.string().max(exportLupinOrdersResponseItemsItemPriceMax),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod
         .string()
         .max(exportLupinOrdersResponseItemsItemRemarksMax)
@@ -16023,7 +16355,7 @@ export const ExportLupinOrdersResponse = zod.object({
       status: zod
         .enum([
           "Confirmed",
-          "Approved",
+          "In process",
           "Shipped",
           "Delivered",
           "Rejected",
@@ -16099,7 +16431,7 @@ export const CommitLupinImportBody = zod.object({
           status: zod
             .enum([
               "Confirmed",
-              "Approved",
+              "In process",
               "Shipped",
               "Delivered",
               "Rejected",
@@ -16140,6 +16472,9 @@ export const CommitLupinImportResponse = zod.object({
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
@@ -16164,6 +16499,9 @@ export const CommitLupinImportResponse = zod.object({
         .enum(["Unpaid", "Paid", "Partial"])
         .default(commitLupinImportResponseOrdersItemPaymentStatusDefault),
       price: zod.string().max(commitLupinImportResponseOrdersItemPriceMax),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod
         .string()
         .max(commitLupinImportResponseOrdersItemRemarksMax)
@@ -16171,7 +16509,7 @@ export const CommitLupinImportResponse = zod.object({
       status: zod
         .enum([
           "Confirmed",
-          "Approved",
+          "In process",
           "Shipped",
           "Delivered",
           "Rejected",
@@ -16245,7 +16583,7 @@ export const ReviewLupinImportBody = zod.object({
           status: zod
             .enum([
               "Confirmed",
-              "Approved",
+              "In process",
               "Shipped",
               "Delivered",
               "Rejected",
@@ -16340,6 +16678,9 @@ export const GetLupinOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -16362,6 +16703,9 @@ export const GetLupinOrderResponse = zod.object({
     .enum(["Unpaid", "Paid", "Partial"])
     .default(getLupinOrderResponsePaymentStatusDefault),
   price: zod.string().max(getLupinOrderResponsePriceMax),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(getLupinOrderResponseRemarksMax)
@@ -16369,7 +16713,7 @@ export const GetLupinOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
+      "In process",
       "Shipped",
       "Delivered",
       "Rejected",
@@ -16411,6 +16755,9 @@ export const ApproveLupinOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -16433,6 +16780,9 @@ export const ApproveLupinOrderResponse = zod.object({
     .enum(["Unpaid", "Paid", "Partial"])
     .default(approveLupinOrderResponsePaymentStatusDefault),
   price: zod.string().max(approveLupinOrderResponsePriceMax),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(approveLupinOrderResponseRemarksMax)
@@ -16440,7 +16790,7 @@ export const ApproveLupinOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
+      "In process",
       "Shipped",
       "Delivered",
       "Rejected",
@@ -16494,7 +16844,7 @@ export const UpdateLupinOrderBody = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
+      "In process",
       "Shipped",
       "Delivered",
       "Rejected",
@@ -16522,6 +16872,9 @@ export const UpdateLupinOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
@@ -16544,6 +16897,9 @@ export const UpdateLupinOrderResponse = zod.object({
     .enum(["Unpaid", "Paid", "Partial"])
     .default(updateLupinOrderResponsePaymentStatusDefault),
   price: zod.string().max(updateLupinOrderResponsePriceMax),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod
     .string()
     .max(updateLupinOrderResponseRemarksMax)
@@ -16551,13 +16907,90 @@ export const UpdateLupinOrderResponse = zod.object({
   status: zod
     .enum([
       "Confirmed",
-      "Approved",
+      "In process",
       "Shipped",
       "Delivered",
       "Rejected",
       "Returned",
     ])
     .default(updateLupinOrderResponseStatusDefault),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Reject
+ */
+export const RejectLupinOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RejectLupinOrderBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const rejectLupinOrderResponsePaymentStatusDefault = `Unpaid`;
+
+export const rejectLupinOrderResponseRemarksDefault = ``;
+
+export const rejectLupinOrderResponseStatusDefault = `Confirmed`;
+
+export const RejectLupinOrderResponse = zod.object({
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(rejectLupinOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrEditable: zod.boolean().default(rejectLupinOrderResponseMrEditableDefault),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(rejectLupinOrderResponsePatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(rejectLupinOrderResponsePatientIdsMax)
+    .optional(),
+  patients: zod.array(zod.record(zod.string(), zod.unknown())),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(rejectLupinOrderResponsePaymentStatusDefault),
+  price: zod.string().max(rejectLupinOrderResponsePriceMax),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod
+    .string()
+    .max(rejectLupinOrderResponseRemarksMax)
+    .default(rejectLupinOrderResponseRemarksDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(rejectLupinOrderResponseStatusDefault),
   total: zod.string(),
   version: zod.number().int(),
 });
@@ -32036,7 +32469,9 @@ export const ListSptOrdersQueryParams = zod.object({
     .string()
     .max(listSptOrdersQuerySearchMax)
     .default(listSptOrdersQuerySearchDefault),
-  status: zod.union([zod.enum(["Draft", "Saved"]), zod.null()]).optional(),
+  status: zod
+    .union([zod.enum(["Draft", "Saved", "In process", "Rejected"]), zod.null()])
+    .optional(),
   doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
@@ -32056,6 +32491,9 @@ export const ListSptOrdersResponse = zod.object({
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       doctorId: zod.union([zod.string().uuid(), zod.null()]),
       doctorName: zod.string(),
@@ -32078,9 +32516,12 @@ export const ListSptOrdersResponse = zod.object({
           source: zod.enum(["master", "spt"]),
         }),
       ),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod.string(),
       sourceId: zod.string().uuid(),
-      status: zod.enum(["Draft", "Saved"]),
+      status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
       total: zod.string(),
       version: zod.number().int(),
     }),
@@ -32135,6 +32576,9 @@ export const CreateSptOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
@@ -32155,9 +32599,12 @@ export const CreateSptOrderResponse = zod.object({
       source: zod.enum(["master", "spt"]),
     }),
   ),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   sourceId: zod.string().uuid(),
-  status: zod.enum(["Draft", "Saved"]),
+  status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
   total: zod.string(),
   version: zod.number().int(),
 });
@@ -32172,7 +32619,9 @@ export const ExportSptOrdersQueryParams = zod.object({
     .string()
     .max(exportSptOrdersQuerySearchMax)
     .default(exportSptOrdersQuerySearchDefault),
-  status: zod.union([zod.enum(["Draft", "Saved"]), zod.null()]).optional(),
+  status: zod
+    .union([zod.enum(["Draft", "Saved", "In process", "Rejected"]), zod.null()])
+    .optional(),
   doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
@@ -32192,6 +32641,9 @@ export const ExportSptOrdersResponse = zod.object({
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       doctorId: zod.union([zod.string().uuid(), zod.null()]),
       doctorName: zod.string(),
@@ -32214,9 +32666,12 @@ export const ExportSptOrdersResponse = zod.object({
           source: zod.enum(["master", "spt"]),
         }),
       ),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod.string(),
       sourceId: zod.string().uuid(),
-      status: zod.enum(["Draft", "Saved"]),
+      status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
       total: zod.string(),
       version: zod.number().int(),
     }),
@@ -32306,6 +32761,9 @@ export const CommitSptImportResponse = zod.object({
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
       date: zod.string(),
+      decisionEligibility: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       doctorId: zod.union([zod.string().uuid(), zod.null()]),
       doctorName: zod.string(),
@@ -32328,9 +32786,12 @@ export const CommitSptImportResponse = zod.object({
           source: zod.enum(["master", "spt"]),
         }),
       ),
+      rejection: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
       remarks: zod.string(),
       sourceId: zod.string().uuid(),
-      status: zod.enum(["Draft", "Saved"]),
+      status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
       total: zod.string(),
       version: zod.number().int(),
     }),
@@ -32487,6 +32948,9 @@ export const GetSptOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
@@ -32507,9 +32971,12 @@ export const GetSptOrderResponse = zod.object({
       source: zod.enum(["master", "spt"]),
     }),
   ),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   sourceId: zod.string().uuid(),
-  status: zod.enum(["Draft", "Saved"]),
+  status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
   total: zod.string(),
   version: zod.number().int(),
 });
@@ -32534,6 +33001,9 @@ export const ApproveSptOrderResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
@@ -32554,9 +33024,12 @@ export const ApproveSptOrderResponse = zod.object({
       source: zod.enum(["master", "spt"]),
     }),
   ),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   sourceId: zod.string().uuid(),
-  status: zod.enum(["Draft", "Saved"]),
+  status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
   total: zod.string(),
   version: zod.number().int(),
 });
@@ -32610,6 +33083,9 @@ export const EditSptDraftResponse = zod.object({
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
   date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
@@ -32630,9 +33106,65 @@ export const EditSptDraftResponse = zod.object({
       source: zod.enum(["master", "spt"]),
     }),
   ),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
   remarks: zod.string(),
   sourceId: zod.string().uuid(),
-  status: zod.enum(["Draft", "Saved"]),
+  status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Reject
+ */
+export const RejectSptOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RejectSptOrderBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const RejectSptOrderResponse = zod.object({
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  doctorId: zod.union([zod.string().uuid(), zod.null()]),
+  doctorName: zod.string(),
+  id: zod.string().uuid(),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrEditable: zod.boolean().default(rejectSptOrderResponseMrEditableDefault),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  number: zod.string(),
+  patients: zod.array(
+    zod.object({
+      age: zod.number().int(),
+      amount: zod.string(),
+      code: zod.string(),
+      gender: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      source: zod.enum(["master", "spt"]),
+    }),
+  ),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod.string(),
+  sourceId: zod.string().uuid(),
+  status: zod.enum(["Draft", "Saved", "In process", "Rejected"]),
   total: zod.string(),
   version: zod.number().int(),
 });

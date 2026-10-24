@@ -14,6 +14,7 @@ import type { ImmRecordMr } from "./immRecordMr";
 import type { ImmRecordPatient } from "./immRecordPatient";
 import type { ImmRecordPricingBasis } from "./immRecordPricingBasis";
 import type { ImmRecordRecipient } from "./immRecordRecipient";
+import type { ImmRecordRejection } from "./immRecordRejection";
 import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
 import type { ImmRecordStatus } from "./immRecordStatus";
 
@@ -36,6 +37,7 @@ export interface ImmRecord {
   poNumber?: string | null;
   pricingBasis?: ImmRecordPricingBasis;
   recipient: ImmRecordRecipient;
+  rejection?: ImmRecordRejection;
   remarks: string;
   reviewDecision?: ImmRecordReviewDecision;
   saline: string;

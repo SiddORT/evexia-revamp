@@ -8,12 +8,11 @@ export function useAuditColumns(portal) {
   if (portal === 'mr') return [];
   const who = (name) => name || <span className="order-audit-unavailable">Unavailable</span>;
   const when = (value) => value ? timestamp(value) : <span className="order-audit-unavailable">Unavailable</span>;
-  return [
-    { key: 'createdBy', label: 'Created By', render: (o) => who(o.audit?.createdBy) },
-    { key: 'createdAt', label: 'Created At', render: (o) => when(o.audit?.createdAt) },
-    { key: 'updatedBy', label: 'Updated By', render: (o) => who(o.audit?.updatedBy) },
-    { key: 'updatedAt', label: 'Updated At', render: (o) => when(o.audit?.updatedAt) },
-  ];
+  return [{ key: 'auditDetails', label: 'Created / Updated details', render: (o) =>
+    <div className="order-audit-details">
+      <div><span className="order-audit-details__label">Created</span><strong>{who(o.audit?.createdBy)}</strong><span>{when(o.audit?.createdAt)}</span></div>
+      <div><span className="order-audit-details__label">Updated</span><strong>{who(o.audit?.updatedBy)}</strong><span>{when(o.audit?.updatedAt)}</span></div>
+    </div> }];
 }
 
 // Insert audit columns just before the trailing action column.

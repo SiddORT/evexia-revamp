@@ -20,7 +20,7 @@ class SptOrder(Base):
     __tablename__ = "spt_orders"
     __table_args__ = (
         CheckConstraint("version > 0", name="ck_spt_version"),
-        CheckConstraint("status IN ('Draft','Saved')", name="ck_spt_status"),
+        CheckConstraint("status IN ('Draft','Saved','In process','Rejected')", name="ck_spt_status"),
         CheckConstraint("status <> 'Saved' OR (doctor_id IS NOT NULL AND mr_id IS NOT NULL)", name="ck_spt_saved_people"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -29,7 +29,7 @@ class SptOrder(Base):
     date: Mapped[date] = mapped_column(Date, index=True)
     doctor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("doctor_directory.id"), index=True)
     mr_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_directory.id"), index=True)
-    status: Mapped[str] = mapped_column(String(8), index=True)
+    status: Mapped[str] = mapped_column(String(16), index=True)
     version: Mapped[int] = mapped_column(Integer)
     snapshot_ciphertext: Mapped[str] = mapped_column(Text)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))

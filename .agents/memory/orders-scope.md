@@ -26,8 +26,8 @@ excluded Patient Master creation, account provisioning, treatment, payments
 and fulfilment.
 
 **How to apply:** Keep minimal SPT registration independent of Patient Master
-and login identity. Saved is an immutable order status, never evidence of
-payment or treatment; do not silently migrate fictional fixtures.
+and login identity. Saved is a submitted pending state, never evidence of
+approval, payment or treatment; do not silently migrate fictional fixtures.
 
 Admin Lupin now has explicit authorization for protected backend persistence,
 real Doctor/MR references, optional existing Patient links, encrypted historical
@@ -74,8 +74,14 @@ MRs can edit all four sales-order types until approval. Submission is not
 approval; payment and fulfilment are not substitutes for approval evidence.
 Do not infer missing historical decisions or reopen terminal records.
 
-**Why:** This is an explicit expansion of the approved order workflow, not a
-generic staff permission grant or authority inferred from a portal label.
+Approval is a decision/history fact and advances a pending order directly to
+In process, not a separate current Approved state. SPT Draft/Saved remain
+pre-approval states. Kits, SPT and Lupin approval requires saved valid pricing;
+rejection is separate and does not require pricing or a mandatory reason.
+Kits decisions retain protected Super Admin authority.
+
+**Why:** The user explicitly requested these decision semantics and priced-order
+actions without expanding fulfilment transitions or staff permissions.
 
 **How to apply:** Preserve existing approval meanings and actor-owned evidence.
 Kits retains protected financial authority; pending MR edits must not erase
