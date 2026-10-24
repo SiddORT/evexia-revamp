@@ -5307,6 +5307,47 @@ export interface MRDoctorChoice {
   zoneName: string;
 }
 
+export type MRDoctorOrderRowKind =
+  (typeof MRDoctorOrderRowKind)[keyof typeof MRDoctorOrderRowKind];
+
+export const MRDoctorOrderRowKind = {
+  immunotherapy: "immunotherapy",
+  kits: "kits",
+  spt: "spt",
+  lupin: "lupin",
+} as const;
+
+export type MRDoctorOrderRowStatus =
+  (typeof MRDoctorOrderRowStatus)[keyof typeof MRDoctorOrderRowStatus];
+
+export const MRDoctorOrderRowStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+  Saved: "Saved",
+} as const;
+
+export interface MRDoctorOrderRow {
+  date: string | null;
+  id: string;
+  kind: MRDoctorOrderRowKind;
+  /**
+   * @minLength 1
+   * @maxLength 48
+   */
+  number: string;
+  status: MRDoctorOrderRowStatus;
+}
+
+export interface MRDoctorOrderPage {
+  items: MRDoctorOrderRow[];
+  limit: number;
+  nextCursor: string | null;
+}
+
 export type MRDoctorOverviewValueAvailability =
   (typeof MRDoctorOverviewValueAvailability)[keyof typeof MRDoctorOverviewValueAvailability];
 
@@ -12397,6 +12438,15 @@ export const DownloadDoctorSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListMRDoctorSavedOrdersParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  cursor?: string | null;
+};
 
 export type ListHeadquartersParams = {
   /**

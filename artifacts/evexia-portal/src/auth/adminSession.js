@@ -686,7 +686,7 @@ export async function emailTemplateRequest(path = '', body, { signal } = {}) {
 function masterAllowed(user, resource, path, writing, params = {}) {
   if (user.identity_kind === 'mr') return resource === 'doctors' && (
     path === '' || (!writing && (['/references', '/filters', '/sample', '/export'].includes(path)
-      || /^\/[0-9a-f-]{36}$/.test(path) || (/^\/postal\/[1-9][0-9]{5}$/.test(path) && (params.action || 'add') === 'add')))
+      || /^\/[0-9a-f-]{36}(?:\/orders)?$/.test(path) || (/^\/postal\/[1-9][0-9]{5}$/.test(path) && (params.action || 'add') === 'add')))
     || (writing && ['/import/review', '/import/commit'].includes(path)));
   if (user.permissions.includes('admin.access')) return true;
   const master = MASTER_CATALOGUE.find((item) => item.path === resource);
@@ -728,6 +728,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   if (!route.test(path) && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+      && !(resource === 'doctors' && /^\/[0-9a-f-]{36}\/orders$/.test(path) && body === undefined && file === undefined && !download)
       && !(resource === 'headquarters' && path === '/zone-choices' && body === undefined && file === undefined)
       && !(resource === 'storage-locations' && /^\/postal\/[1-9][0-9]{5}$/.test(path))
       && !(['vendors', 'designations', 'headquarters', 'product-categories', 'opening-balances'].includes(resource) && path === '/sample') && !(resource === 'opening-balances' && path === '/references')) {

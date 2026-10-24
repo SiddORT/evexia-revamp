@@ -242,6 +242,7 @@ import type {
   ListLupinOrdersParams,
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
+  ListMRDoctorSavedOrdersParams,
   ListMRReferenceChoicesParams,
   ListOpeningBalancesParams,
   ListOpeningStockParams,
@@ -296,6 +297,7 @@ import type {
   MRCreate,
   MRCreated,
   MRDirectoryResponse,
+  MRDoctorOrderPage,
   MRDoctorPage,
   MRDoctorRead,
   MRDoctorReadPage,
@@ -6081,6 +6083,127 @@ export const useEditDoctorDirectory = <
 > => {
   return useMutation(getEditDoctorDirectoryMutationOptions(options));
 };
+
+export const getListMRDoctorSavedOrdersUrl = (
+  doctorId: string,
+  params?: ListMRDoctorSavedOrdersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/${doctorId}/orders?${stringifiedParams}`
+    : `/api/v1/admin/doctors/${doctorId}/orders`;
+};
+
+/**
+ * @summary Orders
+ */
+export const listMRDoctorSavedOrders = async (
+  doctorId: string,
+  params?: ListMRDoctorSavedOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDoctorOrderPage> => {
+  return customFetch<MRDoctorOrderPage>(
+    getListMRDoctorSavedOrdersUrl(doctorId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListMRDoctorSavedOrdersQueryKey = (
+  doctorId: string,
+  params?: ListMRDoctorSavedOrdersParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/${doctorId}/orders`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListMRDoctorSavedOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMRDoctorSavedOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  doctorId: string,
+  params?: ListMRDoctorSavedOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRDoctorSavedOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListMRDoctorSavedOrdersQueryKey(doctorId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMRDoctorSavedOrders>>
+  > = ({ signal }) =>
+    listMRDoctorSavedOrders(doctorId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: doctorId !== null && doctorId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMRDoctorSavedOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMRDoctorSavedOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMRDoctorSavedOrders>>
+>;
+export type ListMRDoctorSavedOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Orders
+ */
+
+export function useListMRDoctorSavedOrders<
+  TData = Awaited<ReturnType<typeof listMRDoctorSavedOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  doctorId: string,
+  params?: ListMRDoctorSavedOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRDoctorSavedOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMRDoctorSavedOrdersQueryOptions(
+    doctorId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getSetDoctorDirectoryStatusUrl = (doctorId: string) => {
   return `/api/v1/admin/doctors/${doctorId}/status`;

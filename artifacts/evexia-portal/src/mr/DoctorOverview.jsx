@@ -1,10 +1,10 @@
 import { Link } from 'wouter';
 import { Eye } from 'lucide-react';
 import { statusPill } from './common.jsx';
+import DoctorOrders from './DoctorOrders.jsx';
 
 export const dash = (value) => String(value ?? '').trim() || '--';
 const isInt = (v) => Number.isInteger(v) && v >= 0;
-const KIND = { immunotherapy: 'Immunotherapy', kits: 'Kits', spt: 'SPT', lupin: 'Lupin' };
 
 // Exact minor-unit formatting; never uses Number/parseFloat on money.
 export function formatMinor(minor) {
@@ -130,7 +130,6 @@ const Section = ({ title, children }) => <section className="mrw-card mrw-do-sec
 const Fields = ({ rows }) => <dl className="mrw-dl">{rows.map(([l, v]) => <div className="mrw-profile-field" key={l}><dt>{l}</dt><dd>{dash(v)}</dd></div>)}</dl>;
 
 export function DoctorDetailView({ doctor }) {
-  const m = summaryModel(doctor);
   const addrParts = [['Address line 1', doctor.addressLine1], ['Address line 2', doctor.addressLine2], ['Landmark', doctor.landmark], ['City', doctor.city], ['State', doctor.state], ['Pincode', doctor.pincode], ['Country', doctor.country]];
   const shown = addrParts.filter(([, v]) => String(v ?? '').trim());
   return <div className="mrw-do-detail">
@@ -139,17 +138,7 @@ export function DoctorDetailView({ doctor }) {
       {shown.length ? <Fields rows={shown} /> : <p className="mrw-notice">No address available.</p>}
     </Section>
     <Section title="Contact (masked)"><Fields rows={[['Phone', doctor.phoneDisplay], ['Alternate phone', doctor.alternatePhoneDisplay], ['Email', doctor.emailDisplay]]} /></Section>
-    <Section title="Order summary">
-      <p className="mrw-notice">One combined summary for this doctor, not one doctor row per order. The order-type breakdown appears below when available.</p>
-      <DoctorSummary doctor={doctor} />
-      {m.available && m.domains.length > 0 && <table className="mrw-table mrw-do-domains"><caption>Saved orders by type</caption><thead><tr><th scope="col">Order type</th><th scope="col" className="num">Orders</th><th scope="col" className="num">Pending fulfillment</th></tr></thead><tbody>{m.domains.map((d) => <tr key={d.kind}><td>{KIND[d.kind] || d.kind}</td><td className="num">{d.orderCount}</td><td className="num">{d.pendingFulfillment ?? 'Not tracked'}</td></tr>)}</tbody></table>}
-      <div className="mrw-do-explain">
-        <p>{m.available ? 'Totals combine all MR-owned saved orders for this assigned doctor across order types, not just the current orders-list page. SPT drafts are excluded.' : 'Order summary is unavailable from the server. This does not mean there are no orders.'}</p>
-        <p>Pending fulfillment: Immunotherapy, Kits and Lupin Confirmed, In process and Shipped (including historical Approved orders as In process). SPT fulfillment is not tracked. Rejected, Returned and Delivered orders are not pending but remain in the order count and saved priced subtotal.</p>
-        <p>Order value is a known subtotal of saved prices only; orders without a saved price are counted as unpriced. When unavailable it is not zero.</p>
-        <p>Payment flags come only from saved Kits and Lupin orders; SPT and Immunotherapy are not tracked. Partial does not establish a remaining amount. Flags are not an outstanding balance. Pending payment, balance, remaining credit and due dates are unavailable because payment tracking is not linked. Days and payment limits are configured limits; no overdue or utilization warning is inferred.</p>
-      </div>
-    </Section>
     <Section title="Configured terms"><Fields rows={[['Invoice type', doctor.invoiceType], ['GST number', doctor.gstNumber], ['Drug licence number', doctor.drugLicenceNumber], ['Order discount (%)', doctor.orderDiscount], ['Days limit (configured)', limitText(doctor.daysLimit)], ['Payment limit (configured)', limitText(doctor.paymentLimit, true)]]} /></Section>
+    <DoctorOrders doctorId={doctor.id} />
   </div>;
 }

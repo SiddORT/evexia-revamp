@@ -12,7 +12,7 @@ from app.db.session import get_db
 from app.schemas.doctors import (
     DoctorFields, DoctorEdit, DoctorStatus, DoctorContact, DoctorBulk, DoctorResponse, DoctorDeletion,
     DoctorPage, DoctorChoices, DoctorFilters, DoctorReview, DoctorImportResult,
-    MRDoctorRead, MRDoctorReadPage,
+    MRDoctorRead, MRDoctorReadPage, MRDoctorOrderPage,
 )
 from app.services import doctors, doctor_transfer, mrs
 from app.services.designations import DesignationError
@@ -22,7 +22,7 @@ from app.services import mr_postal
 
 router = APIRouter(prefix="/admin/doctors", tags=["Doctor Master"])
 def manager(request: Request, identity=Depends(current_identity)):
-    operations = {"listing": None, "detail": None, "filters": None, "references": None,
+    operations = {"listing": None, "detail": None, "orders": None, "filters": None, "references": None,
                   "create": "add", "sample": "import", "review": "import",
                   "commit": "import", "export": "export", "postal": "add"}
     name = request.scope["endpoint"].__name__
@@ -140,6 +140,15 @@ async def commit(request: Request, filename: str = Query(min_length=1, max_lengt
 @router.get("/{doctor_id}", response_model=DoctorResponse | MRDoctorRead, operation_id="getDoctorDirectory")
 def detail(doctor_id: uuid.UUID, actor=Depends(manager), db: Session = Depends(get_db)):
     return doctors.detail(db, actor, doctor_id)
+
+
+@router.get("/{doctor_id}/orders", response_model=MRDoctorOrderPage, operation_id="listMRDoctorSavedOrders")
+def orders(doctor_id: uuid.UUID, response: Response, limit: int = Query(20, ge=1, le=50),
+           cursor: str | None = Query(None, min_length=1, max_length=512),
+           actor=Depends(manager), db: Session = Depends(get_db)):
+    from app.services import doctor_orders
+    response.headers["Cache-Control"] = "no-store"
+    return doctor_orders.listing(db, actor, doctor_id, limit, cursor)
 
 
 @router.post("/{doctor_id}/edit", response_model=DoctorResponse, operation_id="editDoctorDirectory")

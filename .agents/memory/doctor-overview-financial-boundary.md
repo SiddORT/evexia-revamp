@@ -16,11 +16,14 @@ fixtures for the existing Reena MR, not orders or financial transactions.
 states as order workflows evolve. New payment tracking or financial sample
 transactions require separate explicit scope approval.
 
-Represent multiple saved orders through the combined Doctor summary and its
-order-type breakdown, not a new individual-order history in My Doctors.
+Keep the combined summary on the My Doctors listing. Inside the Doctor detail,
+show a simple paginated list of the current MR's saved orders instead of the
+aggregate summary and type breakdown.
 
-**Why:** The user requested a simpler MR directory and explicitly excluded a new
-order-history feature from this presentation change.
+**Why:** The user explicitly approved individual-order history inside the Doctor
+detail, superseding its previous exclusion, without redesigning the main MR
+Orders listings or the My Doctors list/grid.
 
-**How to apply:** Keep Doctor-level totals distinct from type-level counts;
-individual-order history or extra order navigation needs separate approval.
+**How to apply:** Keep detail history read-only and scoped to both the currently
+assigned Doctor and authenticated MR ownership. Exclude SPT drafts and MR-supply
+Kits; do not present a bounded page as complete history or infer balances.

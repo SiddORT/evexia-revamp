@@ -189,9 +189,8 @@ def detail(db, actor, record_id):
     def work():
         current = authorize(db, actor, lock=False)
         result = read_projection(db, current, find(db, record_id, actor=current))
-        if current.role == "mr":
-            from app.services.doctor_overview import summaries
-            result["orderSummary"] = summaries(db, current, [record_id])[record_id]
+        # The MR detail has its own bounded order rows; do not decrypt the
+        # aggregate price history for a presentation which no longer uses it.
         db.commit()
         return result
     return transaction(db, work)

@@ -4,6 +4,7 @@ import { downloadServerBlob } from './downloads.js';
 const clean = (params = {}) => Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 export const listDoctors = (params, signal) => doctorRequest('', { params: clean(params), signal });
 export const getDoctor = (id, signal) => doctorRequest(`/${id}`, { signal });
+export const getDoctorOrders = (id, params, signal) => doctorRequest(`/${id}/orders`, { params: clean(params), signal });
 export const doctorFilters = (signal) => doctorRequest('/filters', { signal });
 export const doctorMRChoices = (params, signal) => doctorRequest('/references', { params: clean(params), signal });
 // Initial section plus saved-selection hydration only. The UI explicitly

@@ -276,6 +276,20 @@ class MRDoctorReadPage(SearchSection):
     offset: int
 
 
+class MRDoctorOrderRow(BaseModel):
+    id: uuid.UUID
+    number: str = Field(min_length=1, max_length=48)
+    kind: Literal["immunotherapy", "kits", "spt", "lupin"]
+    date: date | None
+    status: Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned", "Saved"]
+
+
+class MRDoctorOrderPage(BaseModel):
+    items: list[MRDoctorOrderRow]
+    nextCursor: str | None
+    limit: int
+
+
 class DoctorChoice(BaseModel):
     id: uuid.UUID
     name: str

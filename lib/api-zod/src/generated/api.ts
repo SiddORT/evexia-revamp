@@ -330,6 +330,10 @@ export const editDoctorDirectoryResponsePincodeMax = 12;
 export const editDoctorDirectoryResponseQualificationMax = 200;
 export const editDoctorDirectoryResponseRegistrationNumberMax = 100;
 export const editDoctorDirectoryResponseStateMax = 100;
+export const listMRDoctorSavedOrdersQueryLimitDefault = 20;
+export const listMRDoctorSavedOrdersQueryLimitMax = 50;
+export const listMRDoctorSavedOrdersQueryCursorOneMax = 512;
+export const listMRDoctorSavedOrdersResponseItemsItemNumberMax = 48;
 export const setDoctorDirectoryStatusResponseAddressLine1Max = 300;
 export const setDoctorDirectoryStatusResponseAddressLine2Max = 300;
 export const setDoctorDirectoryStatusResponseAlternatePhoneMax = 20;
@@ -8140,6 +8144,53 @@ export const EditDoctorDirectoryResponse = zod.object({
   version: zod.number().int(),
   zoneId: zod.union([zod.string().uuid(), zod.null()]),
   zoneName: zod.string(),
+});
+
+/**
+ * @summary Orders
+ */
+export const ListMRDoctorSavedOrdersParams = zod.object({
+  doctor_id: zod.coerce.string().uuid(),
+});
+
+export const ListMRDoctorSavedOrdersQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listMRDoctorSavedOrdersQueryLimitMax)
+    .default(listMRDoctorSavedOrdersQueryLimitDefault),
+  cursor: zod
+    .union([
+      zod.coerce.string().min(1).max(listMRDoctorSavedOrdersQueryCursorOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+export const ListMRDoctorSavedOrdersResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      date: zod.union([zod.coerce.date(), zod.null()]),
+      id: zod.string().uuid(),
+      kind: zod.enum(["immunotherapy", "kits", "spt", "lupin"]),
+      number: zod
+        .string()
+        .min(1)
+        .max(listMRDoctorSavedOrdersResponseItemsItemNumberMax),
+      status: zod.enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+        "Saved",
+      ]),
+    }),
+  ),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]),
 });
 
 /**

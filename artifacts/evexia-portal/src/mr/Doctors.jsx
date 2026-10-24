@@ -61,10 +61,10 @@ export function DoctorList() {
 
 export function DoctorDetail({ id }) {
   const data = useDoctors({}, id);
-  const doctor = data.doctor;
+  const doctor = data.doctor?.id === id ? data.doctor : null;
   return <>
-    <Head title={doctor && !data.error ? doctor.name : 'Doctor profile'} text="Read-only shared directory record with a saved-order summary."><Link className="admin-button admin-button--secondary" href="/mr/doctors">Back to My Doctors</Link></Head>
-    {data.loading ? <p role="status">Loading doctor…</p> : data.error ? <div role="alert" className="mrw-card"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry</button></div> : doctor && <DoctorDetailView doctor={doctor} />}
+    <Head title={doctor && !data.error ? doctor.name : 'Doctor profile'} text="Read-only Doctor profile and your saved orders."><Link className="admin-button admin-button--secondary" href="/mr/doctors">Back to My Doctors</Link></Head>
+    {data.loading || (!doctor && !data.error) ? <p role="status">Loading doctor…</p> : data.error ? <div role="alert" className="mrw-card"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry</button></div> : doctor && <DoctorDetailView key={id} doctor={doctor} />}
   </>;
 }
 

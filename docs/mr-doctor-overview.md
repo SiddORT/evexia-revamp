@@ -2,7 +2,10 @@
 
 ## Scope and summary contract
 
-MR Doctor list and detail responses include a read-only `orderSummary`.
+MR Doctor list responses include a read-only `orderSummary`. The Doctor detail
+now uses bounded individual saved-order rows instead; see
+[MR Doctor detail](mr-doctor-detail-orders.md). The aggregate implementation
+below remains the listing contract, not the detail presentation.
 The existing Doctor authorization first selects the displayed page or owned
 detail record; the shared MR order authorizer then applies its saved MR scope.
 Every order query uses that MR ID and only the selected Doctor IDs (at most 100).
