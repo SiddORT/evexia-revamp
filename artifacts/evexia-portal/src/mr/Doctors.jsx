@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { LayoutGrid, List } from 'lucide-react';
 import SharedDoctorForm from '../components/admin/DoctorForm.jsx';
 import DoctorImportPage from '../pages/admin/DoctorImportPage.jsx';
 import TablePagination from '../components/admin/TablePagination.jsx';
@@ -7,8 +8,6 @@ import DirectorySearchStatus from '../components/admin/DirectorySearchStatus.jsx
 import useDoctors from '../hooks/useDoctors.js';
 import useConfirmedNavigation from '../auth/useConfirmedNavigation.js';
 import { usePlatformConfirm } from '../components/PlatformConfirmation.jsx';
-import { reportingIdentityGuard } from '../auth/adminSession.js';
-import { downloadDoctorFile, exportDoctors } from '../services/serverDoctors.js';
 import { Head, statusPill, useWs } from './common.jsx';
 
 export function DoctorList() {
@@ -18,43 +17,19 @@ export function DoctorList() {
   const [view, setView] = useState('list');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [exporting, setExporting] = useState(false);
-  const [error, setError] = useState('');
-  const busy = useRef(false);
-  const controller = useRef(null);
-  useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => { const timer = setTimeout(() => { setQuery(search.trim()); setPage(1); }, 250); return () => clearTimeout(timer); }, [search]);
   const filters = { query, status };
   const data = useDoctors({ ...filters, limit: pageSize, offset: (page - 1) * pageSize });
   const pageCount = Math.max(1, Math.ceil((data.filtered || 0) / pageSize));
   useEffect(() => { if (!data.loading && !data.error && !data.partial && page > pageCount) setPage(pageCount); }, [data.loading, data.error, data.partial, page, pageCount]);
-  async function download(format) {
-    if (busy.current || data.loading || data.error || search.trim() !== query) return;
-    busy.current = true; setExporting(true); setError('');
-    const request = new AbortController(); controller.current = request;
-    const guard = reportingIdentityGuard();
-    try {
-      const blob = await exportDoctors(filters, format, request.signal);
-      guard(); if (!request.signal.aborted) downloadDoctorFile(blob, format);
-    } catch (cause) {
-      if (request.signal.aborted) return;
-      try { guard(); } catch { return; }
-      setError(cause.message || 'Export failed.');
-    } finally { busy.current = false; if (!request.signal.aborted) setExporting(false); }
-  }
   return <>
-    <Head eyebrow="My Doctors" title="My Doctors" text="Your assigned doctors from the shared server directory.">
-      <Link href="/mr/doctors/new" className="admin-button">Add Doctor</Link>
-      <Link href="/mr/doctors/import" className="admin-button admin-button--secondary">Import CSV / Excel</Link>
-      {['csv', 'xlsx'].map((format) => <button type="button" className="admin-button admin-button--secondary" key={format} disabled={exporting || data.loading || Boolean(data.error) || search.trim() !== query} onClick={() => download(format)}>Export {format.toUpperCase()}</button>)}
-    </Head>
+    <Head eyebrow="My Doctors" title="My Doctors" text="Your assigned doctors from the shared server directory." />
     <div className="mrw-bar">
       <input type="search" maxLength={200} aria-label="Search doctors" placeholder="Search name, registration, clinic or contact" value={search} onChange={(event) => setSearch(event.target.value)} />
       <select className="admin-select" aria-label="Doctor status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
       <button type="button" className="admin-button admin-button--secondary" onClick={data.retry} disabled={data.loading}>Refresh</button>
-      <div className="mrw-choice" aria-label="Doctor view">{['list', 'grid'].map((mode) => <button key={mode} type="button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'list' ? 'List view' : 'Grid view'}</button>)}</div>
+      <div className="mrw-choice mrw-doctor-view" role="group" aria-label="Doctor view">{[['list', 'List view', List], ['grid', 'Grid view', LayoutGrid]].map(([mode, label, Icon]) => <button key={mode} type="button" aria-label={label} title={label} aria-pressed={view === mode} onClick={() => setView(mode)}><Icon size={20} aria-hidden="true" /></button>)}</div>
     </div>
-    {error && <p className="mrw-alert" role="alert">{error}</p>}
     {data.error ? <div className="mrw-card" role="alert"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry loading doctors</button></div>
       : data.loading ? <p role="status">Loading doctors…</p>
         : !data.records.length ? <div className="mrw-card"><p>{data.partial ? 'No matches in this search section. Continue below.' : 'No assigned doctors match this scope.'}</p></div>

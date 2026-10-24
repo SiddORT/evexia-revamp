@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useOrderActions } from '../orders/OrderPortalContext.jsx';
+import { useOrderActions, useOrderPortal } from '../orders/OrderPortalContext.jsx';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Download, Upload } from 'lucide-react';
 import { useAdminPreferences } from './adminPreferences.js';
@@ -10,7 +10,14 @@ import { ORDER_TRANSFER_TYPES, orderTemplate, orderTransferBlob, reviewOrderFile
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderTransfers.css';
 
-export default function OrderTransfers({ kind, rows, snapshot, store, adapter, total, renderActions }) {
+export default function OrderTransfers(props) {
+  const { portal } = useOrderPortal();
+  // Presentation only: retain the listing header and Add Order, not transfers.
+  if (portal === 'mr') return props.renderActions ? props.renderActions(null) : null;
+  return <AdminOrderTransfers {...props} />;
+}
+
+function AdminOrderTransfers({ kind, rows, snapshot, store, adapter, total, renderActions }) {
   const can = useOrderActions(kind);
   const { theme, appearance } = useAdminPreferences();
   const [format, setFormat] = useState('csv');

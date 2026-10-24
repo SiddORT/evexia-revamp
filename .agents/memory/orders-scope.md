@@ -69,6 +69,16 @@ ownership as distinct permissions. An Admin-created registration's snapshot
 on an assigned MR order is reviewable, but that historical assignment must not
 make the underlying registration globally selectable or reusable on new orders.
 
+Hiding MR Doctor creation and Doctor/order transfer controls is presentation
+scope only, not revocation of the underlying routes or backend permissions.
+Admin controls and MR Add Order remain independently available.
+
+**Why:** The user explicitly requested a navigation/UI refinement, excluding
+permission changes and workflow removal.
+
+**How to apply:** Do not infer that a hidden MR listing action authorizes
+deleting its route or changing server ownership and permission rules.
+
 An order-transfer confirmation is permission to update matching session orders,
 not to reconcile divergent patient identity or administration history. Reject
 conflicting existing session patients even when order updates are confirmed.

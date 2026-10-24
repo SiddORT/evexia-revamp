@@ -10,7 +10,6 @@ const SptOrders = lazyRoute(() => import('../pages/admin/SptOrders.jsx'));
 const SptForm = lazyRoute(() => import('../pages/admin/SptOrderFormPage.jsx'));
 const LupinOrders = lazyRoute(() => import('../pages/admin/LupinOrders.jsx'));
 const LupinForm = lazyRoute(() => import('../pages/admin/LupinOrderFormPage.jsx'));
-const TYPES = [['immunotherapy', 'Immunotherapy'], ['kits-consumables', 'Kits & Consumables'], ['spt', 'SPT'], ['lupin', 'Lupin']];
 
 export default function LiveOrders() {
   const [path] = useLocation();
@@ -31,8 +30,5 @@ export default function LiveOrders() {
   } else if (kind === 'lupin' && id && parts.length === 2) {
     screen = <LupinForm key={id} id={id === 'new' ? undefined : id} />;
   } else screen = <section className="mrw-card"><h1>Order page not found</h1><Link href="/mr/orders">Back to Orders</Link></section>;
-  return <MROrderBoundary><nav className="mrw-actions" aria-label="Order types">
-    <Link href="/mr/orders" className="admin-button admin-button--secondary">Orders</Link>
-    {TYPES.map(([slug, title]) => <Link key={slug} href={`/mr/orders/${slug}`} className="admin-button admin-button--secondary" aria-current={slug === kind ? 'page' : undefined}>{title}</Link>)}
-  </nav>{screen}</MROrderBoundary>;
+  return <MROrderBoundary>{screen}</MROrderBoundary>;
 }

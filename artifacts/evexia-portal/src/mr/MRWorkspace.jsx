@@ -13,6 +13,7 @@ import { Empty, WsContext } from './common.jsx';
 import { Dashboard, Settings, Targets } from './Screens.jsx';
 import { DoctorDetail, DoctorForm, DoctorImport, DoctorList } from './Doctors.jsx';
 import LiveOrders from './LiveOrders.jsx';
+import OrdersNavigation from './OrdersNavigation.jsx';
 import { PaymentDetail, PaymentForm, PaymentList } from './Payments.jsx';
 
 const NAV = [['Dashboard', '/mr/home', 'home'], ['Doctors', '/mr/doctors', 'doctors'], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets'], ['Payments', '/mr/payments', 'payments']];
@@ -96,7 +97,7 @@ function Shell() {
   return <div className="admin-shell mrw" data-admin-theme={theme} data-admin-appearance={appearance}>
     <header className="mrw-top"><div className="mrw-top__bar">
       <Link href="/mr/home" className="mrw-brand" aria-label="EVEXIA MR dashboard"><BrandMark /></Link>
-      <nav id="mrw-nav" className="mrw-nav" data-open={open} aria-label="MR navigation">{NAV.map(([l, h, k]) => <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}>{l}</Link>)}</nav>
+      <nav id="mrw-nav" className="mrw-nav" data-open={open} aria-label="MR navigation">{NAV.map(([l, h, k]) => k === 'orders' ? <OrdersNavigation key={k} mobileOpen={open} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}>{l}</Link>)}</nav>
       <button type="button" ref={menuBtnRef} className="mrw-icon-btn" aria-expanded={open} aria-controls="mrw-nav" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)} data-testid="button-mobile-menu">{open ? <X size={20} /> : <Menu size={20} />}</button>
       <div className="mrw-profile" ref={menuRef}>
         <button type="button" ref={btnRef} className="mrw-avatar" aria-haspopup="menu" aria-expanded={menu} aria-label="Profile menu" onClick={() => setMenu(!menu)} data-testid="button-profile-menu"><User size={20} aria-hidden="true" /></button>
@@ -107,7 +108,6 @@ function Shell() {
         </div>}
       </div>
     </div></header>
-    <div className="mrw-demo" data-testid="text-demo-notice">Doctors, Immunotherapy, Kits &amp; Consumables, SPT and Lupin orders: live shared records. Dashboard, Targets and Payments: separate fictional demos that reset on reload; not linked to live Doctors or orders.</div>
     <main className="mrw-main" ref={mainRef} data-testid="page-mr-home">
       {flash && <div className="mrw-flash" role="status" data-testid="text-flash">{flash.text}<button type="button" className="admin-button admin-button--secondary" onClick={() => setFlash(null)}>Dismiss</button></div>}
       <Routes />
