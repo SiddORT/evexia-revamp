@@ -11,6 +11,7 @@ import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx'
 import { request, STATUSES, PAYMENT_STATUSES, amountMoney } from '../../services/serverLupin.js';
 import { createLupinTransferAdapter } from '../../services/lupinTransfers.js';
 import '../../lupinOrders.css';
+import '../../components/orders/orderListingLayout.css';
 
 const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '', status: '', payment_status: '' };
 export default function LupinOrders() {
@@ -56,7 +57,7 @@ export default function LupinOrders() {
         <div className="lupin-actions">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
     <section className="admin-panel" aria-label="Lupin orders">
-      <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
+      <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         resetTestId="button-lupin-reset" applyTestId="button-lupin-apply"
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
           <label className="lupin-field"><span className="lupin-search-control"><Search size={16} aria-hidden="true" /><input aria-label="Search" maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, Doctor, MR, linked Patient or remarks" data-testid="input-lupin-search" /></span></label>

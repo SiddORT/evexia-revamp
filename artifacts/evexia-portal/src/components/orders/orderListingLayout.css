@@ -1,0 +1,112 @@
+/* Loaded by both listings, independently of the Immunotherapy lazy route.
+   Keep these rules off entry forms and all other order types. */
+:is(.spt-listing, .lupin-listing) {
+  --order-listing-control-height: 40px;
+  gap: 14px;
+}
+.mrw :is(.spt-listing, .lupin-listing) { --order-listing-control-height: 44px; }
+:is(.spt-listing, .lupin-listing) .admin-page-head {
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 0;
+}
+:is(.spt-listing, .lupin-listing) .admin-page-head > :first-child { flex: 1 1 300px; min-width: 0; }
+:is(.spt-listing, .lupin-listing) .admin-page-head :is(h1, p) { overflow-wrap: anywhere; }
+:is(.spt-listing, .lupin-listing) :is(.spt-actions-top, .lupin-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+}
+:is(.spt-listing, .lupin-listing) .order-transfers { margin-bottom: 0; }
+:is(.spt-listing, .lupin-listing) :is(.admin-panel, .order-transfer-actions, .admin-table-scroll) {
+  min-width: 0;
+  max-width: 100%;
+}
+:is(.spt-listing, .lupin-listing) .order-listing-filters--master {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+}
+:is(.spt-listing, .lupin-listing) .order-listing-toolbar { gap: 10px; align-items: center; }
+:is(.spt-listing, .lupin-listing) .order-listing-search { align-items: center; gap: 10px; }
+:is(.spt-listing, .lupin-listing) :is(.admin-button, .order-listing-filters input, .order-listing-filters select) {
+  box-sizing: border-box;
+  min-height: var(--order-listing-control-height);
+  max-width: 100%;
+}
+:is(.spt-listing, .lupin-listing) .admin-button {
+  min-width: 0;
+  height: auto;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.spt-listing, .lupin-listing) .admin-button svg { flex-shrink: 0; }
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure {
+  min-width: 0;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-state-link);
+}
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--admin-text);
+  font-size: 12px;
+  font-weight: 700;
+  list-style: none;
+}
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure summary::-webkit-details-marker { display: none; }
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure summary svg { flex-shrink: 0; }
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure summary svg:last-child {
+  margin-left: auto;
+  transition: transform .16s ease;
+}
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure[open] summary svg:last-child { transform: rotate(180deg); }
+:is(.spt-listing, .lupin-listing) .order-listing-disclosure summary:focus-visible {
+  outline: 2px solid var(--admin-focus);
+  outline-offset: 2px;
+}
+:is(.spt-listing, .lupin-listing) .order-listing-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  align-items: start;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+:is(.spt-listing, .lupin-listing) .order-listing-filter-grid > * { min-width: 0; }
+:is(.spt-listing, .lupin-listing) .searchable-select__control { min-height: var(--order-listing-control-height); }
+/* The containing field styles must not draw a second border inside the select. */
+:is(.spt-listing, .lupin-listing) .order-listing-filter-grid .searchable-select__control input {
+  min-height: calc(var(--order-listing-control-height) - 2px);
+  padding: 8px 4px 8px 11px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.lupin-listing .lupin-empty { font-size: 13px; }
+.lupin-listing .lupin-empty strong { color: var(--admin-text); font-size: 14px; }
+.lupin-listing .lupin-empty p { margin: 0; max-width: 46ch; line-height: 1.5; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  :is(.spt-listing, .lupin-listing) :is(.spt-actions-top, .lupin-actions) { width: 100%; }
+  :is(.spt-listing, .lupin-listing) .admin-page-head > :first-child { flex-basis: auto; }
+  :is(.spt-listing, .lupin-listing) .order-listing-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :is(.spt-listing, .lupin-listing) .order-listing-search { grid-column: 1 / -1; }
+  :is(.spt-listing, .lupin-listing) .order-listing-toolbar .master-filter-actions { margin-left: 0; }
+  :is(.spt-listing, .lupin-listing) .master-filter-actions .admin-button { width: 100%; }
+  :is(.spt-listing, .lupin-listing) .admin-pagination__controls { justify-content: flex-start; }
+  :is(.spt-listing, .lupin-listing) .admin-pagination__total { white-space: normal; overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.spt-listing, .lupin-listing) .order-listing-disclosure summary svg:last-child { transition: none; }
+}

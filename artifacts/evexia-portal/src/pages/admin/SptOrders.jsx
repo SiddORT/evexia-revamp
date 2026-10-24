@@ -11,6 +11,7 @@ import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
 import { request } from '../../services/serverSpt.js';
 import { createSptTransferAdapter } from '../../services/sptTransfers.js';
 import '../../sptOrders.css';
+import '../../components/orders/orderListingLayout.css';
 
 const EMPTY = { search: '', status: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '' };
 
