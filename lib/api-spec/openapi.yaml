@@ -7041,7 +7041,7 @@
           "suborderId": {
             "anyOf": [
               {
-                "pattern": "^SUB-[0-9]{6,12}$",
+                "pattern": "^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$",
                 "type": "string"
               },
               {

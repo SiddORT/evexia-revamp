@@ -9250,7 +9250,7 @@ export const createImmunotherapyOrderBodyGroupsItemItemsItemRateOneRegExp =
 export const createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
   new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
 export const createImmunotherapyOrderBodyGroupsItemItemsItemSuborderIdOneRegExp =
-  new RegExp("^SUB-[0-9]{6,12}$");
+  new RegExp("^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$");
 
 export const createImmunotherapyOrderBodyGroupsItemMrpOneRegExp = new RegExp(
   "^\\d{1,10}(?:\\.\\d{1,2})?$",
@@ -9512,7 +9512,7 @@ export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemRa
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
   new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemSuborderIdOneRegExp =
-  new RegExp("^SUB-[0-9]{6,12}$");
+  new RegExp("^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$");
 
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
@@ -9737,7 +9737,7 @@ export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemRa
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
   new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemSuborderIdOneRegExp =
-  new RegExp("^SUB-[0-9]{6,12}$");
+  new RegExp("^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$");
 
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
@@ -10399,7 +10399,7 @@ export const editImmunotherapyOrderBodyGroupsItemItemsItemRateOneRegExp =
 export const editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
   new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
 export const editImmunotherapyOrderBodyGroupsItemItemsItemSuborderIdOneRegExp =
-  new RegExp("^SUB-[0-9]{6,12}$");
+  new RegExp("^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$");
 
 export const editImmunotherapyOrderBodyGroupsItemMrpOneRegExp = new RegExp(
   "^\\d{1,10}(?:\\.\\d{1,2})?$",

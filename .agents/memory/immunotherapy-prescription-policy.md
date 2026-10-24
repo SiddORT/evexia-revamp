@@ -52,3 +52,15 @@ Created At, Updated By and Updated At, not deletion, trash or restore features.
 
 **How to apply:** Use protected actor/time facts and mark unknown history
 unavailable; do not add deletion features to interpret that phrase.
+
+Immunotherapy suborder numbering is order-local and starts at `SUB001`.
+Issuance belongs to the MR's first successful save, not draft entry or Admin
+review. Existing saved numbers must not be renumbered, and removed numbers
+must not be reused. Do not reserve draft numbers or bulk-backfill old orders.
+
+**Why:** The user confirmed the compact format and explicitly required saved
+identities to exist before Admin review while preserving historical identities.
+
+**How to apply:** Treat pending draft rows and saved business numbers separately;
+keep older formats compatible and assign missing history only on an explicit
+supported save.

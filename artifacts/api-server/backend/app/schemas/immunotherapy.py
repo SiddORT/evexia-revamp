@@ -17,7 +17,7 @@ class ImmItem(Strict):
     allergenId: uuid.UUID
     result: Result
     rate: Amount | None = None
-    suborderId: str | None = Field(default=None, pattern=r"^SUB-[0-9]{6,12}$")
+    suborderId: str | None = Field(default=None, pattern=r"^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$")
 
 
 class ImmBottle(Strict):

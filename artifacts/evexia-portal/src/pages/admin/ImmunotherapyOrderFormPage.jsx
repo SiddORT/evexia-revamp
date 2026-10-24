@@ -274,10 +274,10 @@ function Editor({ order, mode }) {
     busy.current = true; setPending('save'); setErrors({});
     if (!mutation.current) mutation.current = prepareOrderSave(submission, saveBase.current, crypto.randomUUID());
     try {
-      await submitOrderSave(mutation.current);
+      const saved = await submitOrderSave(mutation.current);
       if (!alive.current) return;
       initial.current = v; dirtyRef.current = false; setErrors({}); setUncertain(false);
-      navigate(BASE);
+      navigate(isNew ? `${BASE}/${saved.id}` : BASE);
     } catch (cause) {
       if (alive.current) {
         // After a lost response, only an owner/key-bound terminal rejection
@@ -440,7 +440,7 @@ function Editor({ order, mode }) {
                 {!g.items.length && <p className="imm-hint">No allergens added.</p>}
                 {g.items.map((it, ii) => { const a = ALLERGENS.find((x) => x.id === it.allergenId); const ek = `result-${g.id}-${it.allergenId}`;
                   return <div className="imm-item" key={it.allergenId}>
-                    <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span><span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId || 'not assigned (issued on save)'}</span></div>
+                    <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span><span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId || 'pending save (server-assigned)'}</span></div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Skin Test Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" required value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
                     {adminReview && (() => { const rk = `rate-${g.id}-${it.allergenId}`; const locked = dis || (legacy && !editRates); return <div className="imm-field"><label htmlFor={`imm-${rk}`}>Rate (INR)</label><input id={`imm-${rk}`} inputMode="decimal" required={v.status === 'Approved'} value={it.rate ?? ''} disabled={locked} aria-invalid={Boolean(errors[rk])} aria-describedby={errors[rk] ? `${rk}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, rate: e.target.value } : y) }))} data-testid={`input-imm-rate-${gi}-${ii}`} /><Err id={`${rk}-err`} text={errors[rk]} /></div>; })()}
                     {!dis && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${it.allergen?.name || a?.name || 'saved allergen'}${v.groups.length > 1 ? ` from saved group ${gi + 1}` : ''}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
@@ -502,7 +502,7 @@ function Editor({ order, mode }) {
             {order && <div><dt>Status</dt><dd><StatusPill status={v.status} /></dd></div>}</dl></div>
         {adminReview && <div className="admin-panel imm-section"><h2>Pricing</h2>
           <p className="imm-hint">{legacy ? 'Legacy pricing basis: saved bottle MRPs. Historical bottle MRPs cannot be changed here.' : 'Total is the sum of the rate entered for each suborder.'}</p>
-          <div className="imm-totals">{v.groups.flatMap((g) => g.items.map((it, ii) => <div key={`${g.id}-${ii}`}><span>{it.suborderId || 'New suborder'}</span><span className="imm-num">{legacy ? 'Legacy' : money(parseAmount(it.rate))}</span></div>))}
+          <div className="imm-totals">{v.groups.flatMap((g) => g.items.map((it, ii) => <div key={`${g.id}-${ii}`}><span>{it.suborderId || 'Suborder pending save'}</span><span className="imm-num">{legacy ? 'Legacy' : money(parseAmount(it.rate))}</span></div>))}
             <div className="imm-total"><span>Total{legacy ? ' (legacy bottle MRP)' : ''}</span><span className="imm-num" data-testid="text-imm-total">{money(total)}</span></div></div>
           {legacy && !readOnly && <label className="imm-reprice"><span><input type="checkbox" checked={false} disabled={dis} onChange={() => set({ pricingBasis: 'allergen_rates' })} data-testid="checkbox-imm-reprice" /> Reprice by allergen rates</span>
             <span className="imm-hint">Switches this order to allergen rates. Resulting rate sum with the rates currently entered: {money(repriced)}. Historical bottle MRPs are not edited.</span></label>}

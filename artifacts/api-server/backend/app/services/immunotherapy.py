@@ -468,6 +468,12 @@ def batch(db, actor, body, commit=False):
                 values = resolved(db, entry.values, previous)
                 resolved_values.append(values)
                 changes = [key for key in values if previous and values[key] != previous.get(key)]
+                # An explicit import commit may issue missing historical IDs too;
+                # review must flag that write rather than skip it as unchanged.
+                if previous and "groups" not in changes and any(
+                    not item.get("suborderId") for group in values["groups"] for item in group["items"]
+                ):
+                    changes.append("groups")
                 entries.append(dict(line=index + 2, action=("update" if changes else "unchanged") if previous else "add",
                     order={**values, "number": previous["number"] if previous else "Assigned on save"},
                     previous=previous, errors=[], changed=changes, patients=[]))

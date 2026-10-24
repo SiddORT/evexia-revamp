@@ -68,12 +68,15 @@ def prepare(body, previous, error):
 def issue(value, previous):
     """Called only inside an explicit version-checked/idempotent write."""
     next_number = previous.get("nextSuborderNumber", 1) if previous else 1
-    used = [int(i["suborderId"].split("-")[1]) for g in value["groups"]
+    # Both formats share one numeric sequence. Include removed saved occurrences
+    # so a historical snapshot without a counter cannot recycle their numbers.
+    groups = [*(previous["groups"] if previous else []), *value["groups"]]
+    used = [int(i["suborderId"].removeprefix("SUB").removeprefix("-")) for g in groups
             for i in g["items"] if i.get("suborderId")]
     next_number = max([next_number, *[n + 1 for n in used]])
     for group in value["groups"]:
         for item in group["items"]:
             if not item.get("suborderId"):
-                item["suborderId"] = f"SUB-{next_number:06d}"
+                item["suborderId"] = f"SUB{next_number:03d}"
                 next_number += 1
     value["nextSuborderNumber"] = next_number
