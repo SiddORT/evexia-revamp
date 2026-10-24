@@ -9,6 +9,7 @@ import type { CurrentUserIdentityKind } from "./currentUserIdentityKind";
 import type { CurrentUserSystemRole } from "./currentUserSystemRole";
 
 export interface CurrentUser {
+  display_name?: string | null;
   email: string | null;
   id: string;
   identity_kind: CurrentUserIdentityKind;

@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0069_workspace_permissions"
+  "schema": "0070_mr_account_numbers"
 }

@@ -4,6 +4,7 @@ import { LogOut, Menu, Settings as Cog, User, X } from 'lucide-react';
 import { useAdminSession } from '../auth/AdminBoundary.jsx';
 import { interceptNavigation } from '../auth/navigationGuard.js';
 import { logoutAdmin } from '../auth/adminSession.js';
+import { mrDisplayIdentity } from '../auth/displayIdentity.js';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAdminPreferences } from '../components/admin/adminPreferences.js';
 import { createWorkspace } from '../services/mrWorkspaceDemo.js';
@@ -92,7 +93,7 @@ function Shell() {
     await logoutAdmin();
     navigate('/mr', { replace: true });
   }
-  const id = user?.username || user?.email;
+  const { name, account } = mrDisplayIdentity(user);
   const active = (k) => (k === 'home' ? path === '/mr/home' || path === '/mr' : path.startsWith(`/mr/${k}`));
   return <div className="admin-shell mrw" data-admin-theme={theme} data-admin-appearance={appearance}>
     <header className="mrw-top"><div className="mrw-top__bar">
@@ -100,9 +101,9 @@ function Shell() {
       <nav id="mrw-nav" className="mrw-nav" data-open={open} aria-label="MR navigation">{NAV.map(([l, h, k]) => k === 'orders' ? <OrdersNavigation key={k} mobileOpen={open} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}>{l}</Link>)}</nav>
       <button type="button" ref={menuBtnRef} className="mrw-icon-btn" aria-expanded={open} aria-controls="mrw-nav" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)} data-testid="button-mobile-menu">{open ? <X size={20} /> : <Menu size={20} />}</button>
       <div className="mrw-profile" ref={menuRef}>
-        <button type="button" ref={btnRef} className="mrw-avatar" aria-haspopup="menu" aria-expanded={menu} aria-label="Profile menu" onClick={() => setMenu(!menu)} data-testid="button-profile-menu"><User size={20} aria-hidden="true" /></button>
+        <button type="button" ref={btnRef} className="mrw-avatar" aria-haspopup="menu" aria-expanded={menu} aria-label={`Profile menu for ${name}. Account ID: ${account}.`} onClick={() => setMenu(!menu)} data-testid="button-profile-menu"><User size={20} aria-hidden="true" /><span className="mrw-profile__identity"><strong>{name}</strong><span>{account}</span></span></button>
         {menu && <div className="mrw-menu" role="menu" aria-label="Profile" onKeyDown={menuKeys}>
-          <div className="mrw-menu__id" data-testid="text-mr-account">Signed in as<strong>{id}</strong></div>
+          <div className="mrw-menu__id" data-testid="text-mr-account"><strong>{name}</strong><span>{account}</span></div>
           <Link href="/mr/settings" role="menuitem" data-testid="link-settings"><Cog size={16} aria-hidden="true" /> Settings</Link>
           <button type="button" role="menuitem" onClick={signOut} data-testid="button-mr-signout"><LogOut size={16} aria-hidden="true" /> Logout</button>
         </div>}

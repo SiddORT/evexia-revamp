@@ -36156,12 +36156,16 @@ export const LoginBody = zod.object({
 });
 
 export const loginResponseTokenTypeDefault = `bearer`;
+export const loginResponseUserDisplayNameDefault = null;
 
 export const LoginResponse = zod.object({
   access_token: zod.string(),
   expires_in: zod.number().int(),
   token_type: zod.literal("bearer").default(loginResponseTokenTypeDefault),
   user: zod.object({
+    display_name: zod
+      .union([zod.string(), zod.null()])
+      .default(loginResponseUserDisplayNameDefault),
     email: zod.union([zod.string().email(), zod.null()]),
     id: zod.string().uuid(),
     identity_kind: zod.enum(["super_admin", "mr", "staff"]),
@@ -36183,7 +36187,12 @@ export const LogoutResponse = zod.void();
 /**
  * @summary Me
  */
+export const getCurrentUserResponseDisplayNameDefault = null;
+
 export const GetCurrentUserResponse = zod.object({
+  display_name: zod
+    .union([zod.string(), zod.null()])
+    .default(getCurrentUserResponseDisplayNameDefault),
   email: zod.union([zod.string().email(), zod.null()]),
   id: zod.string().uuid(),
   identity_kind: zod.enum(["super_admin", "mr", "staff"]),
@@ -36200,12 +36209,16 @@ export const GetCurrentUserResponse = zod.object({
  * @summary Refresh
  */
 export const refreshResponseTokenTypeDefault = `bearer`;
+export const refreshResponseUserDisplayNameDefault = null;
 
 export const RefreshResponse = zod.object({
   access_token: zod.string(),
   expires_in: zod.number().int(),
   token_type: zod.literal("bearer").default(refreshResponseTokenTypeDefault),
   user: zod.object({
+    display_name: zod
+      .union([zod.string(), zod.null()])
+      .default(refreshResponseUserDisplayNameDefault),
     email: zod.union([zod.string().email(), zod.null()]),
     id: zod.string().uuid(),
     identity_kind: zod.enum(["super_admin", "mr", "staff"]),

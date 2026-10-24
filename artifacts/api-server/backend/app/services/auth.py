@@ -92,6 +92,22 @@ class Identity:
 
     def public(self) -> CurrentUser:
         details = {}
+        if self.mr is not None:
+            from app.db.mr_models import MRDirectory
+            from app.services.directory_runtime import ready
+            db = object_session(self.user)
+            if db is None or self.mr.user_id != self.user.id:
+                raise AuthError()
+            current = ready(db)
+            # Explicit authenticated ownership only. Identity-only profiles are
+            # not matched by name/email or attached to another directory entry.
+            row = db.execute(select(MRDirectory.id, MRDirectory.name_ciphertext).where(
+                MRDirectory.id == self.mr.id, MRDirectory.deleted_at.is_(None),
+            )).one_or_none()
+            details["display_name"] = (
+                current.decrypt("mr_directory", row.id, "name", row.name_ciphertext)
+                if row is not None else None
+            )
         if self.staff is not None:
             from app.core.config import get_settings
             from app.db.designation_models import Designation
@@ -109,6 +125,7 @@ class Identity:
                 # Never trust the legacy StaffProfile.role business-label copy.
                 staff_role=role.name if role and role.deleted_at is None else None,
             )
+            details["display_name"] = details["staff_name"]
         return CurrentUser(
             id=self.user.id, email=self.user.email, username=self.user.username,
             system_role=self.user.system_role, mr_id=self.mr.id if self.mr else None,

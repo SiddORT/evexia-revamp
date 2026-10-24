@@ -2465,6 +2465,14 @@
       },
       "CurrentUser": {
         "properties": {
+          "display_name": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "default": null,
+            "title": "Display Name"
+          },
           "email": {
             "anyOf": [
               {

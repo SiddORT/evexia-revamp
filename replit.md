@@ -45,6 +45,14 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+Signed-in MR/Admin/staff profiles use saved names above actual saved account
+numbers. `0070_mr_account_numbers` prepares encrypted, reservation-preserving
+conversion of explicitly directory-backed legacy MR logins; identity-only
+profiles need explicit ownership review. This delivery is source-only:
+no tests were added/modified/run and no runtime verification, restarts,
+operational migrations, production access or deployment were performed.
+See `docs/signed-in-identities.md` for conversion, session and catalog limits.
+
 MR Orders now includes the existing shared SPT and Lupin workflows alongside
 Immunotherapy and Kits & Consumables. The saved authenticated MR is fixed;
 orders, references, transfers and private Lupin files are ownership-scoped.

@@ -104,7 +104,7 @@ function safeMr(user) {
   if (user && typeof user.id === 'string' && user.identity_kind === 'mr' && user.system_role === 'mr'
       && typeof user.mr_id === 'string' && /^[0-9a-f-]{36}$/i.test(user.mr_id)
       && Array.isArray(user.permissions) && user.permissions.length === 0) {
-    return Object.freeze({ id: user.id, mr_id: user.mr_id, email: user.email ?? null, username: user.username ?? null, system_role: 'mr', identity_kind: 'mr', permissions: Object.freeze([]) });
+    return Object.freeze({ id: user.id, mr_id: user.mr_id, email: user.email ?? null, username: user.username ?? null, display_name: displayDetail(user.display_name), system_role: 'mr', identity_kind: 'mr', permissions: Object.freeze([]) });
   }
   throw new SessionError('This account does not have MR access.', 403);
 }
@@ -117,7 +117,7 @@ function safeAdmin(user) {
   const kind = user?.identity_kind ?? (user?.system_role === 'super_admin' ? 'super_admin' : undefined);
   if (user && typeof user.id === 'string' && permissions && kind === 'super_admin' && typeof user.email === 'string'
       && user.system_role === 'super_admin' && permissions.includes('admin.access')) {
-    return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, identity_kind: 'super_admin', permissions: permissions.filter((permission) => ['admin.access', 'staff.manage', 'roles.manage'].includes(permission)) });
+    return Object.freeze({ id: user.id, email: user.email, username: user.username, display_name: displayDetail(user.display_name), system_role: user.system_role, identity_kind: 'super_admin', permissions: permissions.filter((permission) => ['admin.access', 'staff.manage', 'roles.manage'].includes(permission)) });
   }
   // Verified restricted staff: never admin.access, never a system role.
   if (user && typeof user.id === 'string' && permissions && kind === 'staff' && user.system_role == null

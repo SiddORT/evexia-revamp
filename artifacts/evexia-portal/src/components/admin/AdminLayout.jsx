@@ -50,7 +50,8 @@ export default function AdminLayout({ title, children }) {
   const { user } = useAdminSession();
   const staff = isStaffIdentity(user);
   useEffect(() => { recordPageVisit(location); }, [location, user?.id]);
-  const profileName = staff ? user?.staff_name || 'Staff member' : user?.username || user?.email || 'Super Admin';
+  const profileName = staff ? user?.staff_name || 'Staff name not available' : user?.display_name || 'Super Admin';
+  const profileAccount = user?.username || 'Account ID not available';
   const profileDesignation = user?.staff_designation || 'Designation not available';
   const profileRole = user?.staff_role || 'No assigned role';
   const go = (href) => { if (!interceptNavigation({ kind: 'href', href })) navigate(href); };
@@ -290,7 +291,7 @@ export default function AdminLayout({ title, children }) {
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>
       <div className="admin-workspace" inert={compact && drawerOpen ? true : undefined} aria-hidden={compact && drawerOpen}>
-        <header className={`admin-header${staff ? ' admin-header--staff' : ''}`}>
+        <header className="admin-header admin-header--identity">
           <div className="admin-header__left">
             <button ref={menuRef} type="button" className="admin-header__menu" aria-label="Open navigation" aria-controls="admin-navigation" aria-expanded={drawerOpen} onClick={() => { restoreMenuFocusRef.current = false; setDrawerOpen(true); }} data-testid="button-open-navigation"><Menu size={20} /></button>
             <span className="admin-header__label">Admin workspace</span>
@@ -301,13 +302,14 @@ export default function AdminLayout({ title, children }) {
           <DropdownMenu.Root>
             <div className="admin-profile">
               <DropdownMenu.Trigger asChild>
-                <button type="button" className="admin-profile__trigger" aria-label={staff ? `Staff profile menu for ${profileName}. Designation: ${profileDesignation}. Role: ${profileRole}.` : 'Super Admin profile menu'} data-testid="button-admin-profile">
+                <button type="button" className="admin-profile__trigger" aria-label={`Profile menu for ${profileName}. Account ID: ${profileAccount}.${staff ? ` Designation: ${profileDesignation}. Role: ${profileRole}.` : ' Authenticated Super Admin.'}`} data-testid="button-admin-profile">
                   <span className="admin-profile__avatar" aria-hidden="true">{staff ? profileName.slice(0, 2).toUpperCase() : 'SA'}</span>
-                  {staff ? <span className="admin-profile__details">
+                  <span className="admin-profile__details">
                     <span className="admin-profile__name">{profileName}</span>
-                    <span className="admin-profile__secondary">Designation: {profileDesignation}</span>
-                    <span className="admin-profile__secondary">Role: {profileRole}</span>
-                  </span> : <span className="admin-profile__name">{profileName}</span>}
+                    <span className="admin-profile__secondary">{profileAccount}</span>
+                    {staff && <><span className="admin-profile__secondary">Designation: {profileDesignation}</span>
+                    <span className="admin-profile__secondary">Role: {profileRole}</span></>}
+                  </span>
                   <ChevronDown size={14} aria-hidden="true" />
                 </button>
               </DropdownMenu.Trigger>
@@ -315,6 +317,7 @@ export default function AdminLayout({ title, children }) {
                 <DropdownMenu.Content className="admin-dropdown__menu admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
                   <DropdownMenu.Label className="admin-profile__identity">
                     <strong>{profileName}</strong>
+                    <span>{profileAccount}</span>
                     {staff ? <>
                       <span>Designation: {profileDesignation}</span>
                       <span>Role: {profileRole}</span>

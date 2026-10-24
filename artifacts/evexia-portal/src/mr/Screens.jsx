@@ -4,6 +4,7 @@ import { Award, CalendarCheck, FilePlus2, UserPlus, Wallet } from 'lucide-react'
 import { useAdminSession } from '../auth/AdminBoundary.jsx';
 import { interceptNavigation } from '../auth/navigationGuard.js';
 import { changeMrPassword, logoutAdmin } from '../auth/adminSession.js';
+import { mrDisplayIdentity } from '../auth/displayIdentity.js';
 import Field from '../components/auth/Field.jsx';
 import { DATE_FORMATS, setAdminPreference, useAdminPreferences } from '../components/admin/adminPreferences.js';
 import { ADMIN_APPEARANCES, ADMIN_THEMES } from '../components/admin/adminTheme.js';
@@ -20,7 +21,7 @@ export function Dashboard() {
   const { state } = useWs();
   const date = useDate();
   const s = summarize(state, 'all');
-  const who = user?.username || user?.email || 'there';
+  const who = user?.display_name || 'there';
   return <>
     <section className="mrw-hero" aria-labelledby="mrw-greet">
       <p className="mrw-eyebrow">Financial year {FINANCIAL_YEAR} · as of {date(DEMO_DATE)}</p>
@@ -87,7 +88,8 @@ export function Settings() {
   function signOut() { if (!interceptNavigation({ kind: 'run', run: signOutNow })) return signOutNow(); }
   const choice = (key, map) => <div className="mrw-choice" role="group" aria-label={key === 'theme' ? 'Theme' : 'Appearance'}>{Object.entries(map).map(([v, l]) => <button key={v} type="button" aria-pressed={prefs[key] === v} onClick={() => pref(key, v)} data-testid={`button-${key}-${v}`}>{l}</button>)}</div>;
   return <>
-    <Head eyebrow="Settings" title="Settings" text={`Signed in as ${user?.username || user?.email}`} />
+    <Head eyebrow="Settings" title="Settings" />
+    <div className="mrw-settings-identity"><strong>{mrDisplayIdentity(user).name}</strong><span>{mrDisplayIdentity(user).account}</span></div>
     <div className="mrw-split">
       <div className="mrw-card"><h2>Appearance</h2>
         <div className="mrw-stack">{choice('theme', ADMIN_THEMES)}{choice('appearance', ADMIN_APPEARANCES)}

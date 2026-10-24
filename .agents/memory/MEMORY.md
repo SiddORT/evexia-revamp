@@ -97,6 +97,7 @@
 - [Account encryption boundary](account-encryption-boundary.md) — ciphertext-only users/history are coupled; bulk identifier writes must fail explicitly and old account decryption keys remain needed.
 - [Staff role unification](staff-role-unification.md) — staff Role grants permissions; login remains explicit and conflicting legacy assignments require administrator resolution.
 - [Staff renumbering approval](staff-renumbering-scope.md) — approval covers existing/new staff and protected Admin account labels only, not Employee Codes or other account types.
+- [Signed-in identity hierarchy](signed-in-identity-hierarchy.md) — saved name above actual MR/EVX account ID; supersedes hiding staff account IDs, without invented personal names.
 - [Password recovery rollout](password-recovery-rollout.md) — use the selected SMTP server; Git push permission does not implicitly authorize production activation.
 - [Readiness successor coverage](readiness-successor-coverage.md) — additive heads must inherit predecessor probes; a normal startup does not prove missing-table detection.
 - [Proxy client identity](proxy-client-identity.md) — strict forwarding rules must preserve per-client authentication quotas, not collapse users into a shared proxy bucket.

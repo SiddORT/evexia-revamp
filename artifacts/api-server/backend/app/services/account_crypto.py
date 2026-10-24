@@ -150,6 +150,7 @@ def ready(db):
         ["0068_category_description"],
         # Explicit catalogue CHECK successor changes no encrypted account fields.
         ["0069_workspace_permissions"],
+        ["0070_mr_account_numbers"],
     ):
         raise AccountCryptoError()
     current = crypto()

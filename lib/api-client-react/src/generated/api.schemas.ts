@@ -870,6 +870,7 @@ export const CurrentUserSystemRole = {
 } as const;
 
 export interface CurrentUser {
+  display_name?: string | null;
   email: string | null;
   id: string;
   identity_kind: CurrentUserIdentityKind;
