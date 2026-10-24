@@ -220,7 +220,6 @@ function OrderForm({ order }) {
         </div>
         {patients.length > 0 && <div className="spt-total">
           <span>{readOnly ? 'Saved total' : 'Entry total'}</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">{readOnly ? `INR ${record.total}` : money(total)}</span></div>}
-        {!readOnly && <p className="spt-card__sub">The server recalculates totals. Draft may omit amounts; entered amounts must be valid. A Saved status or amount does not record payment or treatment.</p>}
       </section>
 
       <section className="spt-card" aria-labelledby="spt-h-remarks">
