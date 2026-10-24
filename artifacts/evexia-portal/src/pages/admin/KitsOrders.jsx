@@ -18,22 +18,21 @@ const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: ''
 
 function OrderItemDetails({ order }) {
   const kit = order.kit;
+  const consumables = [['lancets', 'Lancets'], ['applicators', 'Applicators'], ['tray', 'Tray']]
+    .filter(([key]) => order[key]);
   return <ul className="kits-listing__items" role="list">
     {kit?.product && <li>
       <strong>Stallergo Skin Prick Kit</strong>
       <span>Configuration: {kit.product}</span>
+      <span>Volume: {kit.volume} ml</span>
+      <span>Qty: {kit.quantity}</span>
       {kit.product === 'Customized' && kit.custom && <span className="kits-listing__custom">{kit.custom}</span>}
-      <div className="kits-listing__item-facts">
-        <span>Volume: {kit.volume} ml</span>
-        <span>Quantity: {kit.quantity}</span>
-      </div>
     </li>}
-    {[['lancets', 'Lancets'], ['applicators', 'Applicators'], ['tray', 'Tray']]
-      .filter(([key]) => order[key])
-      .map(([key, label]) => <li key={key}>
-        <strong>{label}</strong>
-        <span>Quantity: {order[key]}</span>
-      </li>)}
+    {consumables.length > 0 && <li>
+      {consumables.map(([key, label]) => <span key={key}>
+        <strong>{label}</strong>{' '}Qty: {order[key]}
+      </span>)}
+    </li>}
   </ul>;
 }
 
