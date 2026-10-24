@@ -26,6 +26,18 @@ export default function usePrescriptionSelections({ patientId, attachments, poli
         if (rows.current.get(row.key) !== row) continue;
         update(row, { state: 'uploading', message: recover ? 'Checking private file — not attached yet.' : 'Uploading privately — not attached yet.' });
         try {
+          if (!recover) {
+            // Read only a bounded slice, never clone/spread the native File.
+            // Size metadata alone does not prove the browser can still read it.
+            try {
+              const bytes = await row.file.slice(0, Math.min(row.file.size, 1024)).arrayBuffer();
+              if (!bytes.byteLength) throw new Error('empty read');
+            } catch {
+              throw new Error(`The browser cannot read the selected file (${row.size} bytes; limit ${policy.maxBytes} bytes). Reselect the original file and retry.`);
+            }
+            guard();
+            if (!alive.current || rows.current.get(row.key) !== row) continue;
+          }
           const result = recover ? await prescriptionMetadata(row.id) : await uploadPrescription(row.file, selectedPatient);
           guard();
           if (!alive.current) return;
@@ -57,11 +69,12 @@ export default function usePrescriptionSelections({ patientId, attachments, poli
   function addFiles(list) {
     const ready = allowed && !busy.current && policy && patientId;
     let count = attachments.length + [...rows.current.values()].filter((row) => !['rejected', 'failed'].includes(row.state)).length;
-    const batch = [...list].map((file) => {
+    const selected = Array.from(list || []); // Capture before the input is cleared.
+    const batch = selected.map((file) => {
       const problem = !ready ? 'Choose a patient and load the upload policy before retrying.'
         : validateAttachments([file], [], policy.maxBytes) || (count >= policy.maxFiles ? `Select at most ${policy.maxFiles} prescription files.` : '');
       if (!problem) count += 1;
-      return { key: crypto.randomUUID(), name: file.name, file, patientId, state: problem ? 'rejected' : 'queued',
+      return { key: crypto.randomUUID(), name: file.name, size: file.size, file, patientId, state: problem ? 'rejected' : 'queued',
         message: problem ? `Not attached. ${problem}` : 'Waiting to upload — not attached yet.' };
     });
     // Stage the whole selection before the first asynchronous upload starts.

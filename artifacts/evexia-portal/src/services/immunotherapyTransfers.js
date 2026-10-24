@@ -1,4 +1,4 @@
-import { request, orderInput } from './serverImmunotherapy.js';
+import { request, orderInput, mrEditable } from './serverImmunotherapy.js';
 import { safeJson, parseDate, readContext } from './orderTransfers.js';
 import { readOrderCsv, writeOrderCsv, decodeTransferCell, TRANSFER_MAX_BYTES } from './orderTransferCsv.js';
 import { readOrderWorkbook, writeOrderWorkbook } from './orderTransferWorkbook.js';
@@ -23,8 +23,8 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
   const ownerGuard = reportingIdentityGuard();
   return {
     instructions: getSession().user?.identity_kind === 'mr'
-      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update saved orders with verified prescriptions; attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle IDs and file associations. Patient snapshots never create masters.`
-      : 'Create new orders in the order form and upload a verified prescription first. Imports can update saved orders with verified prescriptions; attachment metadata in a spreadsheet cannot attach files. Fileless historical orders remain viewable but must be edited in the order form to add a verified prescription before import. Retain saved dates, versions and bottle IDs.',
+      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update only unpriced Confirmed orders, not Admin-reviewed or historically priced orders. Do not supply MRP, allergen rates or PO number. Attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle IDs and file associations. Patient snapshots never create masters.`
+      : 'Create new orders in the order form and upload a verified prescription first. Imports follow the same Admin review rules: required MRP; approval also needs every allergen rate and PO number. Reject without fabricated prices. Fulfillment requires prior explicit approval. Older exports retain missing saved rates/PO without inventing values. Attachment metadata in a spreadsheet cannot attach files. Fileless historical orders remain viewable but must be edited in the order form to add a verified prescription before import. Retain saved dates, versions and bottle IDs.',
     release(blob, filename) {
       const guard = prepared.get(blob);
       if (!guard) throw new Error('Prepare this export again before downloading.');
@@ -67,8 +67,8 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
           const dependencies = safeJson(rawPatients, 'Legacy patient details');
           if (!Array.isArray(dependencies)) throw new Error('Legacy patient column must be an array; it never creates or updates masters.');
           if (![details.patientId, details.doctorId, details.mrId].every((v) => UUID.test(v))) throw new Error('Patient, Doctor and MR must be resolvable real master UUIDs. Fictional session IDs cannot be imported.');
-          // An obsolete poNumber is accepted and ignored. All external person,
-          // recipient, allergen-name and attachment claims are non-authoritative.
+           // Person, recipient, allergen-name and attachment claims remain
+           // non-authoritative. Admin pricing/PO follows the normal write policy.
           let previous = null;
           if (id) {
             if (!UUID.test(id)) throw new Error('Use a real saved order ID for updates, or leave ID and number blank for creation.');
@@ -79,7 +79,21 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
           // External attachment claims never become upload evidence. The API
           // rechecks these saved associations during review and commit.
           if (!previous?.attachments?.length) throw new Error('A verified prescription is required. Use the order form to create this order or add a prescription to the existing order, then export and review again.');
-          const values = orderInput({ ...details, attachments: previous?.attachments || [] });
+           if (getSession().user?.identity_kind === 'mr' && (
+             !mrEditable(previous) || details.status !== 'Confirmed' || details.poNumber != null
+             || details.groups.some((g) => g.mrp != null || g.items.some((i) => i.rate != null))
+           )) throw new Error('MR imports may only update unpriced Confirmed orders and cannot supply Admin pricing, PO number or review decisions.');
+           // Older exports lack new optional fields. Retain saved financial data
+           // by occurrence instead of clearing it or inferring historical rates.
+           const groups = details.groups.map((g) => {
+             const saved = previous.groups.find((p) => p.id === g.id);
+             return { ...g, items: g.items.map((i) => ({ ...i,
+               rate: Object.hasOwn(i, 'rate') ? i.rate : saved?.items.find((p) => p.allergenId === i.allergenId)?.rate ?? null,
+             })) };
+           });
+           const values = orderInput({ ...details, groups,
+             poNumber: Object.hasOwn(details, 'poNumber') ? details.poNumber : previous.poNumber ?? null,
+             attachments: previous.attachments });
           values.orderDate = date;
           entries.push({ id: previous?.id || null, expected_version: previous?.version || null, values });
         } catch (e) { failures.push({ line, action: 'reject', errors: [e.message], changed: [], patients: [] }); }

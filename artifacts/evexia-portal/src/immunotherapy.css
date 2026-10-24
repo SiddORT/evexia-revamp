@@ -60,6 +60,7 @@
 .imm-status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 50px; font-size: 11px; font-weight: 700; white-space: nowrap; background: var(--admin-state-soft); color: var(--admin-text); }
 .imm-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .imm-status--Confirmed { background: var(--admin-info-soft); color: var(--admin-success); }
+.imm-status--Approved { background: var(--admin-badge-success-bg); color: var(--admin-badge-success-text); }
 .imm-status--In-process { background: var(--admin-state-soft); color: var(--admin-secondary); }
 .imm-status--Shipped { background: var(--admin-state-link); color: var(--admin-sidebar-active); border: 1px solid var(--admin-border); }
 .imm-status--Delivered { background: var(--admin-badge-success-bg); color: var(--admin-badge-success-text); }

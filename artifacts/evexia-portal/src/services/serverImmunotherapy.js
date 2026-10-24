@@ -1,8 +1,8 @@
-import { purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
+import { getSession, purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 
 export const request = (path = '', options) => purchaseOrderRequest(path, options, 'immunotherapy-orders');
-export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
+export const STATUSES = Object.freeze(['Confirmed', 'Approved', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
 export const DOSES = Object.freeze([...PRELIMINARY_DOSES, ...Array.from({ length: 8 }, (_, i) => `B${i + 1}`)]);
 export const GENDERS = Object.freeze(['male', 'female', 'other', 'prefer not to say']);
@@ -11,8 +11,10 @@ export function parseAmount(value) {
   const [whole, fraction = ''] = value.split('.');
   return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
 }
-export const totalMinor = (groups) => groups.reduce((sum, g) => sum + (parseAmount(g.mrp) ?? 0n), 0n);
-export const money = (minor) => `₹${(minor / 100n).toLocaleString('en-IN')}.${String(minor % 100n).padStart(2, '0')}`;
+export const totalMinor = (groups) => groups.some((g) => parseAmount(g.mrp) === null) ? null : groups.reduce((sum, g) => sum + parseAmount(g.mrp), 0n);
+export const money = (minor) => minor === null ? 'Awaiting pricing' : `₹${(minor / 100n).toLocaleString('en-IN')}.${String(minor % 100n).padStart(2, '0')}`;
+export const mrEditable = (order) => order.status === 'Confirmed' && !order.reviewDecision && !order.poNumber
+  && order.groups.every((g) => g.mrp == null && g.items.every((i) => i.rate == null));
 // Callers retain issued IDs for the editor lifetime, including removed bottles.
 export function newGroup(issuedIds = []) {
   const used = new Set(issuedIds);
@@ -25,10 +27,13 @@ export const groupingError = (items) => new Set(items.map((i) => i.allergenId)).
 export const nextDose = () => ({ dosage: '', explanation: 'No administration history is recorded by this order workflow. Choose a dosage explicitly; order status is not evidence of a given dose.' });
 export function shippingRecipient(order) { return order.recipient || order[order.shipping] || null; }
 export function orderInput(v) {
+  const mr = getSession().user?.identity_kind === 'mr';
   return Object.fromEntries(Object.entries({
     patientId: v.patientId, doctorId: v.doctorId, mrId: v.mrId, dosage: v.dosage, histamine: v.histamine, saline: v.saline,
-    groups: v.groups.map((g) => ({ id: g.id, mrp: g.mrp, items: g.items.map(({ allergenId, result }) => ({ allergenId, result })) })),
-    remarks: v.remarks, shipping: v.shipping, status: v.status,
+    groups: v.groups.map((g) => ({ id: g.id, ...(!mr ? { mrp: g.mrp || null } : {}),
+      items: g.items.map(({ allergenId, result, rate }) => ({ allergenId, result, ...(!mr ? { rate: rate || null } : {}) })) })),
+    remarks: v.remarks, shipping: v.shipping, status: mr ? 'Confirmed' : v.status,
+    ...(!mr ? { poNumber: v.poNumber || null } : {}),
     attachmentIds: v.attachments.map((f) => f.id),
   }));
 }
@@ -42,7 +47,7 @@ export const skinResultError = (value) => RESULT.test(value) ? '' : RESULT_HELP;
 const PRICE_HELP = 'Enter a required non-negative MRP in INR, with up to ten whole digits and two decimal places.';
 export const PRESCRIPTION_HELP = 'Upload and attach at least one verified prescription for the selected patient. Pending, failed or removed files do not count.';
 
-export function orderErrors(v, hasPrescription) {
+export function orderErrors(v, hasPrescription, { mr = false, previous = null } = {}) {
   const errors = {};
   for (const [field, label] of [['patientId', 'patient'], ['doctorId', 'Doctor'], ['mrId', 'MR']]) {
     if (!v[field]) errors[field] = `Select a ${label}.`;
@@ -54,10 +59,27 @@ export function orderErrors(v, hasPrescription) {
   for (const group of v.groups) {
     if (!group.items.length || group.items.length > 100) errors[`group-${group.id}`] = 'Add between one and 100 allergens to this group in Allergen Details.';
     else if (groupingError(group.items)) errors[`group-${group.id}`] = groupingError(group.items);
-    if (parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
+    if (!mr && group.mrp != null && group.mrp !== '' && parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
+    for (const item of group.items) if (!mr && item.rate != null && item.rate !== '' && parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter a non-negative INR rate with up to ten whole digits and two decimal places.';
     for (const item of group.items) if (!RESULT.test(item.result)) errors[`result-${group.id}-${item.allergenId}`] = RESULT_HELP;
   }
-  if (totalMinor(v.groups) > 10000000000n) errors.groups = 'Order value must not exceed ₹10 crore.';
+  if ((totalMinor(v.groups) ?? 0n) > 10000000000n) errors.groups = 'Order value must not exceed ₹10 crore.';
+  const sameFinancials = previous && v.status === previous.status && v.status !== 'Approved'
+    && (v.poNumber || null) === (previous.poNumber || null)
+    && JSON.stringify(v.groups.map((g) => [g.id, g.mrp || null, g.items.map((i) => [i.allergenId, i.rate || null])]))
+      === JSON.stringify(previous.groups.map((g) => [g.id, g.mrp || null, g.items.map((i) => [i.allergenId, i.rate || null])]));
+  if (!mr && ['Approved', 'In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && !sameFinancials) {
+    if (!v.poNumber?.trim()) errors.poNumber = 'Enter the PO number before approval or fulfillment.';
+    for (const group of v.groups) {
+      if (parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
+      for (const item of group.items) if (parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter the INR rate for this allergen occurrence before approval.';
+    }
+  }
+  if (!mr && v.status !== 'Rejected') for (const group of v.groups) {
+    if (parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
+  }
+  if (!mr && ['In process', 'Shipped', 'Delivered', 'Returned'].includes(v.status) && (!previous || ['Confirmed', 'Rejected'].includes(previous.status))) errors.status = 'Approve this order explicitly before moving it to fulfillment.';
+  if ((v.poNumber || '').length > 100) errors.poNumber = 'Use at most 100 characters.';
   if ((v.remarks || '').length > 4000) errors.remarks = 'Use at most 4,000 characters.';
   if (!['patient', 'doctor'].includes(v.shipping)) errors.shipping = 'Choose Patient or Doctor for shipping.';
   if (!STATUSES.includes(v.status)) errors.status = 'Choose a listed order status.';
@@ -82,15 +104,17 @@ export function saveErrors(cause, v) {
     else if (key === 'shipping') errors.shipping = 'Choose Patient or Doctor for shipping.';
     else if (key === 'status') errors.status = 'Choose a listed order status.';
     else if (key === 'remarks') errors.remarks = 'Use at most 4,000 characters.';
+    else if (key === 'poNumber') errors.poNumber = 'Enter a PO number of 1–100 characters.';
     else if (/^attachmentIds(?:\.\d+)?$/.test(key)) errors.attachments = PRESCRIPTION_HELP;
     else if (key === 'groups') errors.groups = 'Use one to 100 bottles, with unique IDs and at most 1,000 allergen items.';
     else {
-      const match = /^groups\.(\d+)(?:\.(id|mrp|items)(?:\.(\d+)(?:\.(allergenId|result))?)?)?$/.exec(key);
+      const match = /^groups\.(\d+)(?:\.(id|mrp|items)(?:\.(\d+)(?:\.(allergenId|result|rate))?)?)?$/.exec(key);
       const group = match && v.groups[Number(match[1])];
       const item = group && match[3] !== undefined && group.items[Number(match[3])];
       if (group) {
         if (match[2] === 'mrp') errors[`mrp-${group.id}`] = PRICE_HELP;
         else if (item && match[4] === 'result') errors[`result-${group.id}-${item.allergenId}`] = RESULT_HELP;
+        else if (item && match[4] === 'rate') errors[`rate-${group.id}-${item.allergenId}`] = 'Enter a non-negative INR rate with at most two decimal places.';
         else errors[`group-${group.id}`] = match[2] === 'id'
           ? 'Bottle IDs must be unique and contain 1–100 characters. Retain saved IDs; remove and recreate only an unsaved bottle.'
           : 'Add one to 100 valid saved allergens without duplicates; check each result in mm.';
@@ -103,6 +127,10 @@ export function saveErrors(cause, v) {
   }
   if (cause.code === 'mr_order_assignment') errors.mrId = 'The order must use your signed-in saved MR assignment. Re-select an associated patient and Doctor.';
   if (cause.code === 'imm_total') errors.groups = 'Order value must not exceed ₹10 crore.';
+  if (cause.code === 'imm_pricing') errors.form = 'Admin must enter the required bottle MRP. Approval also requires a rate for each allergen occurrence and a PO number. Reject without pricing if the order will not proceed.';
+  if (cause.code === 'imm_admin_review') errors.status = cause.status === 403
+    ? 'MR cannot change reviewed or historically priced orders, Admin prices, PO numbers or decisions. Reopen the saved order to see the current status.'
+    : 'A reviewed order cannot return to Confirmed. Explicitly approve the order before moving it to fulfillment.';
   return Object.keys(errors).length ? errors : { form: cause.status === 422
     ? 'Order details were rejected. Check all required fields, bottle contents and prescriptions. Your draft is preserved.'
     : cause.message };
@@ -115,10 +143,17 @@ export const uploadPrescription = (file, patientId) => immunotherapyFileRequest(
 export const prescriptionMetadata = (id) => immunotherapyFileRequest(`/${id}`);
 export function validateAttachments(files, existing = [], maxBytes = 10485760) {
   if (files.length + existing.length > 10) return 'Select at most ten prescription files.';
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) return 'Upload limit is unavailable. Reload the upload policy before retrying.';
+  const measured = (size) => `${size.toLocaleString('en-IN')} bytes (${(size / 1024).toFixed(2)} KiB)`;
+  const limit = `Enforced limit: ${measured(maxBytes)}.`;
   const allowed = { 'application/pdf': ['pdf'], 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
   for (const f of files) {
+    let size;
+    try { size = f?.size; } catch { return `The selected file's byte size is unreadable. Reselect the original file. ${limit}`; }
+    if (!Number.isSafeInteger(size) || size < 0 || typeof f?.slice !== 'function' || typeof f?.arrayBuffer !== 'function') return `The selected file or its byte size is unreadable. Reselect the original file. ${Number.isSafeInteger(size) ? `Measured size: ${measured(size)}. ` : ''}${limit}`;
+    if (size === 0) return `The selected file is empty. Measured size: ${measured(size)}. ${limit}`;
+    if (size > maxBytes) return `The selected file exceeds the upload limit. Measured size: ${measured(size)}. ${limit}`;
     if (!allowed[f.type]?.includes(f.name.split('.').at(-1).toLowerCase())) return 'Choose matching PDF, JPEG, PNG or WebP files.';
-    if (!f.size || f.size > maxBytes) return `Each file must be nonempty and at most ${(maxBytes / 1048576).toFixed(1)} MiB.`;
   }
   return '';
 }

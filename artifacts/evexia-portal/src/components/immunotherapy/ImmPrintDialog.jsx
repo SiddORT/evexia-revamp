@@ -40,12 +40,14 @@ export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocu
         <span key="c">Dosage {o.dosage}</span>, <br key="br2" />,
         <span key="d">{g.items.map((it) => `${it.allergen.name} (${it.allergen.concentration})`).join(', ') || 'No allergens'}</span>, <br key="br3" />,
         <span key="id">Suborder {g.id}</span>, <br key="br4" />,
-        <span key="e">MRP INR {g.mrp || '0'}</span>] }));
+         <span key="e">{g.mrp == null || g.mrp === '' ? 'MRP awaiting pricing' : `MRP INR ${g.mrp}`}</span>,
+         <span key="po">PO: {o.poNumber || 'Not recorded'} | Admin: {o.reviewDecision || 'Not recorded'}</span>,
+         <span key="rates">{g.items.map((it) => `${it.allergen.name} rate INR ${it.rate ?? 'not recorded'}`).join(', ')}</span>] }));
     } else if (kind === 'shipping') {
       const r = shippingRecipient(o) || {};
       labels.push({ key: o.id, cls: 'imm-label--ship', lines: [<b key="a">Ship to: {r.name}</b>, <span key="b">{r.phone}</span>, <br key="b2" />, <span key="c">{addressText(r.address)}</span>, <br key="c2" />, <span key="d">Ref {o.number}</span>] });
     } else if (kind === 'newbox') {
-      labels.push({ key: o.id, cls: '', lines: [<b key="a">{o.number}</b>, <span key="b">{patient?.name}, {patient?.age} / {patient?.gender}</span>, <br key="b2" />, <span key="c">{o.doctor.name} | MR {o.mr.name}</span>, <br key="c2" />, <span key="d">Dosage {o.dosage} | {o.groups.length} bottle(s) | {money(totalMinor(o.groups))}</span>] });
+      labels.push({ key: o.id, cls: '', lines: [<b key="a">{o.number}</b>, <span key="b">{patient?.name}, {patient?.age} / {patient?.gender}</span>, <br key="b2" />, <span key="c">{o.doctor.name} | MR {o.mr.name}</span>, <br key="c2" />, <span key="d">Dosage {o.dosage} | {o.groups.length} bottle(s) | {money(totalMinor(o.groups))}</span>, <span key="po">PO: {o.poNumber || 'Not recorded'} | Admin: {o.reviewDecision || 'Not recorded'}</span>] });
     } else {
       labels.push({ key: o.id, cls: 'imm-label--old', lines: [<b key="a">{o.number} ({date(o.date)})</b>, <span key="b">{patient?.name}</span>, <br key="b2" />, <span key="c">Dosage {o.dosage} | {o.groups.length} bottle(s)</span>] });
     }

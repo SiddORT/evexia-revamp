@@ -8,6 +8,7 @@
 
 export interface ImmItem {
   allergenId: string;
+  rate?: string | null;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
   result: string;
 }

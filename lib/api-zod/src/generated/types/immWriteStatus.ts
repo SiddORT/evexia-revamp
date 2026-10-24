@@ -11,6 +11,7 @@ export type ImmWriteStatus =
 
 export const ImmWriteStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",

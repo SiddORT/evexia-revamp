@@ -87,6 +87,45 @@ def project(keys, row):
             "id": str(row.id), "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 
+def review_policy(db, body, previous):
+    """One boundary for direct writes and import review/commit, before resolution."""
+    from app.services.mr_orders import scope_identity
+    if scope_identity(db):
+        if body.status != "Confirmed" or body.poNumber is not None or any(
+            g.mrp is not None or any(i.rate is not None for i in g.items) for g in body.groups
+        ):
+            raise ImmError("MR submissions must be Confirmed and omit Admin pricing and PO number.", 403, "imm_admin_review")
+        if previous and (previous["status"] != "Confirmed" or previous.get("reviewDecision") is not None
+                         or previous.get("poNumber") is not None
+                         or any(g.get("mrp") is not None or any(i.get("rate") is not None for i in g["items"])
+                                for g in previous["groups"])):
+            raise ImmError("This order has Admin or historical pricing/review data and cannot be edited by MR.", 403, "imm_admin_review")
+        return
+    # Existing edit/import capability grants the Admin-side operation. MRs never
+    # reach this branch; imports do not gain a separate review authority.
+    if body.status == "Confirmed" and previous and previous["status"] != "Confirmed":
+        raise ImmError("A reviewed order cannot be reset to awaiting review.", 422, "imm_admin_review")
+    proceeding = body.status in {"Approved", "In process", "Shipped", "Delivered", "Returned"}
+    # Unchanged historical fulfillment snapshots can retain missing legacy rates
+    # and PO numbers. Any new approval/financial change needs the full contract.
+    legacy_unchanged = previous and body.status == previous["status"] and body.status != "Approved" and (
+        body.poNumber == previous.get("poNumber") and
+        [(g.id, g.mrp, [(str(i.allergenId), i.rate) for i in g.items]) for g in body.groups] ==
+        [(g["id"], g.get("mrp"), [(i["allergenId"], i.get("rate")) for i in g["items"]]) for g in previous["groups"]]
+    )
+    if body.status in {"In process", "Shipped", "Delivered", "Returned"} and (
+        not previous or previous["status"] in {"Confirmed", "Rejected"}
+    ):
+        raise ImmError("Approve this order explicitly before moving it to fulfillment.", 422, "imm_admin_review")
+    if body.status != "Rejected" and any(g.mrp is None for g in body.groups):
+        raise ImmError("Admin must enter each bottle MRP, or reject the order without pricing.", 422, "imm_pricing")
+    if proceeding and not legacy_unchanged:
+        if not body.poNumber or not body.poNumber.strip() or any(
+            g.mrp is None or any(i.rate is None for i in g.items) for g in body.groups
+        ):
+            raise ImmError("Approval/fulfillment requires MRP for every bottle, a rate for each allergen occurrence and a PO number.", 422, "imm_pricing")
+
+
 def eligible(db, kind, record_id):
     row = db.scalar(select(MODELS[kind]).where(
         MODELS[kind].id == record_id, *reference_scope(db, kind)).with_for_update())
@@ -120,6 +159,7 @@ def person(row, kind):
 
 def resolved(db, body, previous=None):
     """Retain historical identities unless the corresponding relationship changes."""
+    review_policy(db, body, previous)
     mr_assignment(db, body, previous)
     # This is shared by direct writes and both import review and commit.
     # Read projections deliberately remain compatible with historic fileless orders.
@@ -159,14 +199,22 @@ def resolved(db, body, previous=None):
             a = eligible(db, "allergens", aid)
             current[str(aid)] = dict(id=str(a.id), name=a.name, concentration=a.concentration)
     total = 0
+    priced = True
     for group in value["groups"]:
-        group["mrp"] = format(Decimal(group["mrp"]), ".2f")
-        total += int(Decimal(group["mrp"]) * 100)
+        if group["mrp"] is None:
+            priced = False
+        else:
+            group["mrp"] = format(Decimal(group["mrp"]), ".2f")
+            total += int(Decimal(group["mrp"]) * 100)
         for item in group["items"]:
+            if item.get("rate") is not None:
+                item["rate"] = format(Decimal(item["rate"]), ".2f")
             item["allergen"] = retained.get(item["allergenId"]) or current[item["allergenId"]]
     if total > 10000000000:
         raise ImmError("Order value exceeds ₹10 crore.", 422, "imm_total")
-    value["totalMinor"] = total
+    value["totalMinor"] = total if priced else None
+    value["reviewDecision"] = (body.status if body.status in {"Approved", "Rejected"}
+                               else previous.get("reviewDecision") if previous else None)
     value["attachments"] = []
     previous_files = {a["id"] for a in previous["attachments"]} if previous else set()
     for file_id in sorted(body.attachmentIds):
@@ -227,8 +275,14 @@ def idempotent(db, actor, keys, key, payload, work):
         if encode(saved["request"]) != encode(payload):
             raise ImmError("Retry identity belongs to a different request. Retry the original unchanged submission.", 409, "imm_retry")
         result = saved["result"]
-        for order in result.get("orders", [result]):
-            find(db, uuid.UUID(order["id"]))
+        # Recover the same mutation without replaying it or returning a stale
+        # Confirmed snapshot after an administrator has reviewed the order.
+        current = [project(keys, find(db, uuid.UUID(order["id"])))
+                   for order in result.get("orders", [result])]
+        if "orders" in result:
+            result = {**result, "orders": current}
+        else:
+            result = current[0]
         return result
     result = work()
     db.add(Retry(key=key, actor_id=actor.user.id, response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))

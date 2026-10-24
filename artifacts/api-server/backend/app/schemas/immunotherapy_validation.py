@@ -5,7 +5,7 @@ import re
 _TOP = {
     "orderDate", "patientId", "doctorId", "mrId", "dosage", "histamine",
     "saline", "remarks", "shipping", "status", "idempotencyKey",
-    "expected_version", "reviewToken", "confirmUpdates",
+    "expected_version", "reviewToken", "confirmUpdates", "poNumber",
 }
 _CODES = {
     "missing", "uuid_parsing", "uuid_type", "string_type", "string_too_short",
@@ -15,7 +15,7 @@ _CODES = {
     "date_parsing", "date_type", "json_invalid", "bool_parsing", "bool_type",
 }
 _NESTED = re.compile(
-    r"(?:groups(?:\.\d{1,3}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result))?)?))?)?"
+    r"(?:groups(?:\.\d{1,3}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result|rate))?)?))?)?"
     r"|attachmentIds(?:\.\d{1,2})?)"
 )
 

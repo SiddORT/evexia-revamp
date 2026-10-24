@@ -6702,14 +6702,16 @@
             "type": "array"
           },
           "mrp": {
-            "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$",
-            "title": "Mrp",
-            "type": "string"
+            "anyOf": [
+              { "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$", "type": "string" },
+              { "type": "null" }
+            ],
+            "default": null,
+            "title": "Mrp"
           }
         },
         "required": [
           "id",
-          "mrp",
           "items"
         ],
         "title": "ImmBottle",
@@ -6929,6 +6931,14 @@
             "title": "Patientid",
             "type": "string"
           },
+          "poNumber": {
+            "anyOf": [
+              { "type": "string", "minLength": 1, "maxLength": 100 },
+              { "type": "null" }
+            ],
+            "default": null,
+            "title": "Ponumber"
+          },
           "remarks": {
             "default": "",
             "maxLength": 4000,
@@ -6952,6 +6962,7 @@
             "default": "Confirmed",
             "enum": [
               "Confirmed",
+              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -6982,6 +6993,14 @@
             "format": "uuid",
             "title": "Allergenid",
             "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              { "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$", "type": "string" },
+              { "type": "null" }
+            ],
+            "default": null,
+            "title": "Rate"
           },
           "result": {
             "pattern": "^\\d{1,6}(?:\\.\\d{1,2})?$",
@@ -7120,6 +7139,16 @@
             "title": "Patientid",
             "type": "string"
           },
+          "poNumber": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "default": null,
+            "title": "Ponumber"
+          },
+          "reviewDecision": {
+            "anyOf": [{ "type": "string", "enum": ["Approved", "Rejected"] }, { "type": "null" }],
+            "default": null,
+            "title": "Reviewdecision"
+          },
           "recipient": {
             "additionalProperties": true,
             "title": "Recipient",
@@ -7140,6 +7169,7 @@
           "status": {
             "enum": [
               "Confirmed",
+              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -7151,7 +7181,7 @@
           },
           "totalMinor": {
             "title": "Totalminor",
-            "type": "integer"
+            "anyOf": [{ "type": "integer" }, { "type": "null" }]
           },
           "version": {
             "title": "Version",
@@ -7330,6 +7360,14 @@
             "title": "Patientid",
             "type": "string"
           },
+          "poNumber": {
+            "anyOf": [
+              { "type": "string", "minLength": 1, "maxLength": 100 },
+              { "type": "null" }
+            ],
+            "default": null,
+            "title": "Ponumber"
+          },
           "remarks": {
             "default": "",
             "maxLength": 4000,
@@ -7353,6 +7391,7 @@
             "default": "Confirmed",
             "enum": [
               "Confirmed",
+              "Approved",
               "In process",
               "Shipped",
               "Delivered",
@@ -47931,6 +47970,7 @@
                 {
                   "enum": [
                     "Confirmed",
+                    "Approved",
                     "In process",
                     "Shipped",
                     "Delivered",
@@ -48565,6 +48605,7 @@
                 {
                   "enum": [
                     "Confirmed",
+                    "Approved",
                     "In process",
                     "Shipped",
                     "Delivered",

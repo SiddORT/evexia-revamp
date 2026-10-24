@@ -25,6 +25,7 @@ export interface ImmInput {
   mrId: string;
   orderDate?: Date | null;
   patientId: string;
+  poNumber?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

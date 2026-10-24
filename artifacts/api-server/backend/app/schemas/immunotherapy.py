@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Result = Annotated[str, Field(pattern=r"^\d{1,6}(?:\.\d{1,2})?$")]
 Amount = Annotated[str, Field(pattern=r"^\d{1,10}(?:\.\d{1,2})?$")]
-Status = Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
+Status = Literal["Confirmed", "Approved", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
 
 
 class Strict(BaseModel):
@@ -16,11 +16,12 @@ class Strict(BaseModel):
 class ImmItem(Strict):
     allergenId: uuid.UUID
     result: Result
+    rate: Amount | None = None
 
 
 class ImmBottle(Strict):
     id: str = Field(min_length=1, max_length=100)
-    mrp: Amount
+    mrp: Amount | None = None
     items: list[ImmItem] = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")
@@ -42,6 +43,7 @@ class ImmInput(Strict):
     remarks: str = Field(default="", max_length=4000)
     shipping: Literal["patient", "doctor"]
     status: Status = "Confirmed"
+    poNumber: str | None = Field(default=None, min_length=1, max_length=100)
     attachmentIds: list[uuid.UUID] = Field(default_factory=list, max_length=10)
 
     @model_validator(mode="after")
@@ -94,7 +96,9 @@ class ImmRecord(BaseModel):
     recipient: dict
     groups: list[dict]
     attachments: list[dict]
-    totalMinor: int
+    totalMinor: int | None
+    poNumber: str | None = None
+    reviewDecision: Literal["Approved", "Rejected"] | None = None
 
 
 class ImmPage(BaseModel):

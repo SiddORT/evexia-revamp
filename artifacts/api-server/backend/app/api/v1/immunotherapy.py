@@ -86,8 +86,12 @@ async def prescription_body(patient_id, request, actor, db, settings, storage_fa
         # Starlette's UploadFile is the concrete parsed instance.
         if not upload or not hasattr(upload, "file") or len(form) != 1:
             raise FileError(422, "prescription_file", "Supply exactly one prescription file")
-        if not upload.size or upload.size > maximum:
-            raise FileError(413, "prescription_size", "Prescription exceeds the enforced upload limit")
+        if upload.size is None:
+            raise FileError(422, "prescription_size", f"Prescription byte size is unreadable. Enforced limit: {maximum} bytes.")
+        if upload.size == 0:
+            raise FileError(422, "prescription_empty", f"Prescription is empty (0 bytes). Enforced limit: {maximum} bytes.")
+        if upload.size > maximum:
+            raise FileError(413, "prescription_size", f"Prescription is {upload.size} bytes and exceeds the enforced limit of {maximum} bytes.")
         await run_in_threadpool(service.authorize, db, actor, "upload_attachment")
         await run_in_threadpool(service.eligible, db, "patients", patient_id)
         body = UploadRequest(patient_id=patient_id, category="documents", filename=upload.filename)

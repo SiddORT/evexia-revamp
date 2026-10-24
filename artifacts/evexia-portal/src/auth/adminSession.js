@@ -1046,14 +1046,16 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (resource === 'immunotherapy-orders' && response.status === 422) {
       // Retain only known structural locations and machine codes, never server
       // validator messages, input values or untrusted extra-property names.
-      const location = /^body(?:\.(?:orderDate|patientId|doctorId|mrId|dosage|histamine|saline|remarks|shipping|status|idempotencyKey|expected_version|groups(?:\.\d{1,3}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result))?)?))?)?|attachmentIds(?:\.\d{1,2})?))?$/;
+      const location = /^body(?:\.(?:orderDate|patientId|doctorId|mrId|dosage|histamine|saline|remarks|shipping|status|poNumber|idempotencyKey|expected_version|groups(?:\.\d{1,3}(?:\.(?:id|mrp|items(?:\.\d{1,3}(?:\.(?:allergenId|result|rate))?)?))?)?|attachmentIds(?:\.\d{1,2})?))?$/;
       const codes = new Set(['missing', 'uuid_parsing', 'uuid_type', 'string_type', 'string_too_short', 'string_too_long', 'string_pattern_mismatch', 'literal_error', 'too_short', 'too_long', 'list_type', 'model_type', 'value_error', 'extra_forbidden', 'int_type', 'greater_than_equal', 'invalid_value']);
       error.validationFields = (Array.isArray(data?.error?.fields) ? data.error.fields : []).slice(0, 20)
         .filter((item) => typeof item?.field === 'string' && location.test(item.field) && codes.has(item.code))
         .map(({ field, code }) => ({ field, code }));
       error.message = error.code === 'imm_prescription_required'
         ? 'Attach at least one verified prescription for the selected patient before saving or importing this order.'
-        : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, MRPs, patient assignments and prescriptions. Your draft is preserved.';
+        : error.code === 'imm_pricing' ? 'Admin approval requires each bottle MRP, each allergen rate and a PO number. Rejection does not require pricing. Your draft is preserved.'
+        : error.code === 'imm_admin_review' ? 'Review transitions are restricted. An order cannot return to Confirmed after review, and must be explicitly Approved before fulfillment. Your draft is preserved.'
+        : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, Admin pricing/PO, patient assignments and prescriptions. Your draft is preserved.';
     }
     if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');
     if (batchOperation && path === '/batch-settings') {

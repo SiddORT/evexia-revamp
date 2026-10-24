@@ -11,6 +11,7 @@ import type { ImmRecordGroupsItem } from "./immRecordGroupsItem";
 import type { ImmRecordMr } from "./immRecordMr";
 import type { ImmRecordPatient } from "./immRecordPatient";
 import type { ImmRecordRecipient } from "./immRecordRecipient";
+import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
 import type { ImmRecordStatus } from "./immRecordStatus";
 
 /**
@@ -30,11 +31,13 @@ export interface ImmRecord {
   number: string;
   patient: ImmRecordPatient;
   patientId: string;
+  poNumber?: string | null;
+  reviewDecision?: ImmRecordReviewDecision;
   recipient: ImmRecordRecipient;
   remarks: string;
   saline: string;
   shipping: string;
   status: ImmRecordStatus;
-  totalMinor: number;
+  totalMinor: number | null;
   version: number;
 }

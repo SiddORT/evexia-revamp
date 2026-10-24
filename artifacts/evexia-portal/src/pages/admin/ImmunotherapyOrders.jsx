@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { ClipboardList, Eye, Pencil, Plus, Printer, Search, ChevronDown } from 'lucide-react';
-import AdminLayout, { useOrderBase, useOrderActions } from '../../components/orders/OrderPortalContext.jsx';
+import AdminLayout, { useOrderBase, useOrderActions, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -12,7 +12,7 @@ import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
 import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
-import { STATUSES, request, money, shippingRecipient, totalMinor } from '../../services/serverImmunotherapy.js';
+import { STATUSES, request, money, shippingRecipient, totalMinor, mrEditable } from '../../services/serverImmunotherapy.js';
 import { createImmunotherapyTransferAdapter } from '../../services/immunotherapyTransfers.js';
 import '../../immunotherapy.css';
 
@@ -20,6 +20,7 @@ export const StatusPill = ({ status }) => <span className={`imm-status imm-statu
 
 export default function ImmunotherapyOrders() {
   const can = useOrderActions('immunotherapy');
+  const { portal } = useOrderPortal();
   const BASE = useOrderBase('immunotherapy');
   const { date } = useAdminDateFormatters();
   const [result, setResult] = useState({ items: [], total: 0, counts: {}, nextCursor: null, filtered: null });
@@ -96,10 +97,10 @@ export default function ImmunotherapyOrders() {
     { key: 'bottles', label: 'Bottles', render: (o) => o.groups.length },
     { key: 'value', label: 'Value', render: (o) => <span className="imm-num">{money(totalMinor(o.groups))}</span> },
     { key: 'ship', label: 'Ship to', render: (o) => <>{shippingRecipient(o, snap.patients)?.name || '-'}<span className="imm-cell-sub">{o.shipping === 'doctor' ? 'Doctor' : 'Patient'}</span></> },
-    { key: 'status', label: 'Status', render: (o) => <StatusPill status={o.status} /> },
+    { key: 'status', label: 'Status', render: (o) => <><StatusPill status={o.status} />{o.status === 'Confirmed' && <span className="imm-cell-sub">Awaiting Admin review</span>}{o.reviewDecision && o.reviewDecision !== o.status && <span className="imm-cell-sub">Admin: {o.reviewDecision}</span>}{o.poNumber && <span className="imm-cell-sub">PO: {o.poNumber}</span>}</> },
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
       <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
-      {can.edit && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
+      {can.edit && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
       {can.documents && eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
   ];
 

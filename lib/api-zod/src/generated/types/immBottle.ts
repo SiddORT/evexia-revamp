@@ -18,6 +18,5 @@ export interface ImmBottle {
    * @maxItems 100
    */
   items: ImmItem[];
-  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
-  mrp: string;
+  mrp?: string | null;
 }

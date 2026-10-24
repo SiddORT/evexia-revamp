@@ -2960,6 +2960,7 @@ export type HealthStatus = typeof HealthStatusValue;
 
 export interface ImmItem {
   allergenId: string;
+  rate?: string | null;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
   result: string;
 }
@@ -2975,8 +2976,7 @@ export interface ImmBottle {
    * @maxItems 100
    */
   items: ImmItem[];
-  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
-  mrp: string;
+  mrp?: string | null;
 }
 
 export type ImmInputDosage =
@@ -3008,6 +3008,7 @@ export type ImmInputStatus =
 
 export const ImmInputStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3030,6 +3031,7 @@ export interface ImmInput {
   mrId: string;
   orderDate?: string | null;
   patientId: string;
+  poNumber?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -3055,11 +3057,20 @@ export interface ImmImport {
   reviewToken?: string;
 }
 
+export type ImmRecordReviewDecision =
+  (typeof ImmRecordReviewDecision)[keyof typeof ImmRecordReviewDecision] | null;
+
+export const ImmRecordReviewDecision = {
+  Approved: "Approved",
+  Rejected: "Rejected",
+} as const;
+
 export type ImmRecordStatus =
   (typeof ImmRecordStatus)[keyof typeof ImmRecordStatus];
 
 export const ImmRecordStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3096,12 +3107,14 @@ export interface ImmRecord {
   number: string;
   patient: ImmRecordPatient;
   patientId: string;
+  poNumber?: string | null;
+  reviewDecision?: ImmRecordReviewDecision;
   recipient: ImmRecordRecipient;
   remarks: string;
   saline: string;
   shipping: string;
   status: ImmRecordStatus;
-  totalMinor: number;
+  totalMinor: number | null;
   version: number;
 }
 
@@ -3176,6 +3189,7 @@ export type ImmWriteStatus =
 
 export const ImmWriteStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -3200,6 +3214,7 @@ export interface ImmWrite {
   mrId: string;
   orderDate?: string | null;
   patientId: string;
+  poNumber?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -12176,6 +12191,7 @@ export type ListImmunotherapyOrdersStatus =
 
 export const ListImmunotherapyOrdersStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
@@ -12199,6 +12215,7 @@ export type ExportImmunotherapyOrdersStatus =
 
 export const ExportImmunotherapyOrdersStatus = {
   Confirmed: "Confirmed",
+  Approved: "Approved",
   In_process: "In process",
   Shipped: "Shipped",
   Delivered: "Delivered",
