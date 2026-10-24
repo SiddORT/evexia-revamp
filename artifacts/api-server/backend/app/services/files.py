@@ -1,5 +1,6 @@
 """Authoritative ownership and recoverable object/database lifecycle."""
 import hashlib
+import logging
 import secrets
 import uuid
 from datetime import timedelta
@@ -19,6 +20,7 @@ from app.services.verification import validated_extension, verify
 
 MIME_TYPES = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "pdf": "application/pdf", "webp": "image/webp"}
 INACCESSIBLE = frozenset({"pending_delete", "deleted", "rejected"})
+logger = logging.getLogger(__name__)
 
 
 def event(db, identity, request_id, action, file_id, outcome):
@@ -117,12 +119,42 @@ def reserve(db, identity, body, content_type, settings, request_id, *, replaces_
 
 def interrupted(db, file_id, identity, request_id):
     db.rollback()
-    row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update())
-    if row and row.state == "uploading":
-        row.state = "pending_delete"
-        row.version += 1
-        event(db, identity, request_id, "upload_interrupted", file_id, "failure")
-        db.commit()
+    try:
+        row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update(nowait=True))
+        if row and row.state == "uploading":
+            row.state = "pending_delete"
+            row.version += 1
+            event(db, identity, request_id, "upload_interrupted", file_id, "failure")
+            db.commit()
+    finally:
+        # Also release the lock when publication already committed quarantine,
+        # rejection or verification and there is no state transition to commit.
+        db.rollback()
+
+
+def interrupted_safely(db, file_id, identity, request_id):
+    """Best-effort recovery must never replace the original upload failure."""
+    try:
+        interrupted(db, file_id, identity, request_id)
+    except Exception:
+        logger.error("file_upload_cleanup_failed request_id=%s", request_id)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+
+def require_verified_upload(result):
+    """Order multipart uploads cannot report quarantine as an attached file."""
+    if result.state == "verified" and result.scanner_status == "clean":
+        return result
+    if result.scanner_status == "unavailable":
+        raise FileError(503, "scanner_unavailable", "Private file is quarantined; a clean malware scan is required.")
+    if result.scanner_status == "error":
+        raise FileError(503, "scanner_failed", "Malware scanning failed; private file remains quarantined.")
+    if result.scanner_status == "infected":
+        raise FileError(415, "file_scan_rejected", "Malware scanning rejected the file; it is not attached.")
+    raise FileError(409, "file_not_verified", "File verification is not complete; it is not attached.")
 
 
 def complete_upload(db, identity, file_id, stream, settings, storage, request_id):
@@ -131,8 +163,12 @@ def complete_upload(db, identity, file_id, stream, settings, storage, request_id
         settings = settings.model_copy(update={"max_upload_bytes": min(settings.max_upload_bytes, 10485760)})
     name, media, key = row.display_name, row.content_type, row.object_key
     db.rollback()  # Never retain read transactions/row locks through slow I/O.
-    if callable(storage):
-        storage = storage()
+    try:
+        if callable(storage):
+            storage = storage()
+    except Exception:
+        interrupted_safely(db, file_id, identity, request_id)
+        raise FileError(503, "storage_unavailable", "Private storage could not be initialized; upload was not completed.") from None
     try:
         verified = verify(stream, name, media, settings)
     except ValueError:
@@ -142,13 +178,16 @@ def complete_upload(db, identity, file_id, stream, settings, storage, request_id
         event(db, identity, request_id, "format", file_id, "failure")
         db.commit()
         raise FileError(415, "invalid_file", "File validation failed") from None
+    except (OSError, TypeError):
+        interrupted_safely(db, file_id, identity, request_id)
+        raise FileError(503, "upload_read_failed", "Upload bytes could not be read; retry the selected file.") from None
     # Missing scanner still stores a private quarantined object, never readable.
     try:
         meta = storage.put(key, stream, media)
         if (meta.size, meta.checksum, meta.content_type) != (verified.size, verified.checksum, verified.content_type):
             raise ValueError("Adapter metadata mismatch")
     except Exception:
-        interrupted(db, file_id, identity, request_id)
+        interrupted_safely(db, file_id, identity, request_id)
         raise FileError(503, "storage_write_failed", "Storage write failed; cleanup is pending") from None
     return publish(db, identity, file_id, verified, request_id)
 
@@ -175,13 +214,21 @@ def publish(db, identity, file_id, verified, request_id):
     except Exception:
         # A committed reservation identifies any object left by failed publication.
         # Do not invoke an adapter following failed live authorization.
-        db.rollback()
-        row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update())
-        if row and row.state in ("uploading", "quarantined"):
-            row.state = "pending_delete"
-            row.version += 1
-            event(db, identity, request_id, "publication", file_id, "failure")
-            db.commit()
+        try:
+            db.rollback()
+            row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update(nowait=True))
+            if row and row.state in ("uploading", "quarantined"):
+                row.state = "pending_delete"
+                row.version += 1
+                event(db, identity, request_id, "publication", file_id, "failure")
+                db.commit()
+        except Exception:
+            logger.error("file_publication_cleanup_failed request_id=%s", request_id)
+        finally:
+            try:
+                db.rollback()
+            except Exception:
+                pass
         raise
 
 

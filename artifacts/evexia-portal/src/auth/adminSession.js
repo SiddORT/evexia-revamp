@@ -1,6 +1,7 @@
 // Tokens live only in this module's memory. No credential or identity storage.
 import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission, hasCapability, canReadResource, isSuperAdminIdentity, workflowAllowed } from './capabilities.js';
 import { captureExportPreferences, exportPreferenceHeader } from '../services/exportPreferences.js';
+import { privateUploadMessage, privateRequestReference, privateFileId } from './privateFileErrors.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -1128,23 +1129,39 @@ export async function immunotherapyFileRequest(path = '', { file, patientId, sig
   if (file && !kits && !lupin && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
   const form = file ? new FormData() : null;
   if (form) form.append('file', file);
-  const response = await fetch(file ? (lupin ? `/api/v1/admin/lupin-orders/attachments?upload_id=${encodeURIComponent(uploadId || '')}` : kits ? '/api/v1/admin/kits-orders/attachments' : `/api/v1/admin/immunotherapy-orders/prescriptions/${patientId}`) : `/api/v1/files${path}`, {
-    method: file ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
-    headers: { Authorization: `Bearer ${token}` },
-    ...(form ? { body: form } : {}), signal: signal || AbortSignal.timeout(60000),
-  });
-  const data = response.ok && download ? await response.blob() : await response.json();
+  let response, data;
+  const safeFailure = (code) => {
+    const requestId = response?.headers.get('X-Request-ID') || data?.error?.request_id;
+    const error = new SessionError(`${privateUploadMessage(code, response?.status)} Your draft and selected files remain in this tab.${privateRequestReference(requestId)}`, response?.status || 0);
+    error.fileId = privateFileId(response?.headers.get('X-File-ID'));
+    error.code = code;
+    error.requestId = requestId;
+    return error;
+  };
+  try {
+    response = await fetch(file ? (lupin ? `/api/v1/admin/lupin-orders/attachments?upload_id=${encodeURIComponent(uploadId || '')}` : kits ? '/api/v1/admin/kits-orders/attachments' : `/api/v1/admin/immunotherapy-orders/prescriptions/${patientId}`) : `/api/v1/files${path}`, {
+      method: file ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}` },
+      ...(form ? { body: form } : {}), signal: signal || AbortSignal.timeout(60000),
+    });
+    data = response.ok && download ? await response.blob() : await response.json();
+  } catch (error) {
+    if (lupin) throw error; // Keep Lupin's separate retry contract unchanged.
+    throw safeFailure();
+  }
   guard();
   if (!response.ok) {
     if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) await verifySession(true, portalOf(state.user));
-    const error = new SessionError(data?.error?.message || (kits || lupin ? 'Order attachment unavailable. Your order draft is preserved; retry explicitly.' : 'Prescription unavailable. Your order draft is preserved; retry explicitly.'), response.status);
-    error.fileId = response.headers.get('X-File-ID');
-    if (kits) {
-      error.code = data?.error?.code;
-      error.requestId = response.headers.get('X-Request-ID') || data?.error?.request_id;
-    }
+    const error = lupin ? new SessionError(data?.error?.message || 'Order attachment unavailable. Your order draft is preserved; retry explicitly.', response.status)
+      : safeFailure(data?.error?.code);
+    if (lupin) error.fileId = response.headers.get('X-File-ID');
     throw error;
+  }
+  if (!lupin && !download && (!privateFileId(data?.id)
+      || !['uploading', 'quarantined', 'verified', 'rejected', 'pending_delete', 'deleted'].includes(data?.state)
+      || !['pending', 'clean', 'infected', 'unavailable', 'error'].includes(data?.scanner_status))) {
+    throw safeFailure('file_response_invalid');
   }
   if (download) serverDownloads.set(data, guard);
   return data;

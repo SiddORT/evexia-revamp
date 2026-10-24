@@ -1,5 +1,7 @@
 import asyncio
+import sys
 import uuid
+from contextlib import asynccontextmanager
 from tempfile import SpooledTemporaryFile
 from typing import Annotated
 
@@ -40,9 +42,36 @@ def storage_dependency(settings: Settings = Depends(get_settings)):
     return lambda: get_storage(settings)
 
 
+@asynccontextmanager
+async def order_upload_operation(db, settings, file_id, actor, request_id):
+    """Clean up multipart reservations even when lease acquisition fails."""
+    lease = operation(db, settings, file_id)
+    entered = False
+    try:
+        await run_in_threadpool(lease.__enter__)
+        entered = True
+        yield
+    except BaseException:
+        failure = sys.exc_info()
+        try:
+            await run_in_threadpool(service.interrupted_safely, db, file_id, actor, request_id)
+        finally:
+            if entered:
+                try:
+                    await run_in_threadpool(lease.__exit__, *failure)
+                except Exception:
+                    # Preserve the original failure; operation invalidates its
+                    # held connection if unlocking fails.
+                    pass
+        raise
+    else:
+        await run_in_threadpool(lease.__exit__, None, None, None)
+
+
 async def upload_body(request, db, identity, file_id, settings, storage_factory):
     lease = operation(db, settings, file_id)
     await run_in_threadpool(lease.__enter__)
+    failure = (None, None, None)
     try:
         with SpooledTemporaryFile(max_size=1024 * 1024) as spool:
             actual = 0
@@ -60,10 +89,11 @@ async def upload_body(request, db, identity, file_id, settings, storage_factory)
                                              settings, storage_factory, request.state.request_id)
             return result
     except BaseException:
-        await run_in_threadpool(service.interrupted, db, file_id, identity, request.state.request_id)
+        failure = sys.exc_info()
+        await run_in_threadpool(service.interrupted_safely, db, file_id, identity, request.state.request_id)
         raise
     finally:
-        await run_in_threadpool(lease.__exit__, None, None, None)
+        await run_in_threadpool(lease.__exit__, *failure)
 
 
 @router.post("", response_model=FileResponse, status_code=201, openapi_extra=RAW_BODY)
@@ -80,7 +110,7 @@ async def upload(
     try:
         return await upload_body(request, db, identity, file_id, settings, storage_factory)
     except BaseException:
-        await run_in_threadpool(service.interrupted, db, file_id, identity, request.state.request_id)
+        await run_in_threadpool(service.interrupted_safely, db, file_id, identity, request.state.request_id)
         raise
 
 
@@ -191,7 +221,7 @@ async def replacement(file_id: uuid.UUID, request: Request, body: Annotated[Repl
             await run_in_threadpool(cleanup)
         return result
     except BaseException:
-        await run_in_threadpool(service.interrupted, db, new_id, identity, request.state.request_id)
+        await run_in_threadpool(service.interrupted_safely, db, new_id, identity, request.state.request_id)
         raise
 
 

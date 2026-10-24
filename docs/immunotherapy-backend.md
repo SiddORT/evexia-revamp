@@ -163,6 +163,34 @@ checks never bypass scanning. Private downloads reauthorize the file after
 reload. A missing scanner intentionally leaves files quarantined; this source
 delivery does not claim that scanner/storage configuration is active.
 
+### Shared upload failure handling (source-only)
+
+Prescription uploads share Kits' private reservation/storage/verification path.
+Lazy adapter initialization failures now return safe 503 `storage_unavailable`
+instead of escaping as a generic 500; write/read failures have separate safe
+codes. Internally constructed filename metadata validation is a safe 422.
+No configuration, storage location or scanner security policy was changed.
+
+The order multipart endpoints return 503 `scanner_unavailable` or
+`scanner_failed` only after persisting the private quarantined state; infection
+returns 415 `file_scan_rejected`. Only verified/clean results are successful.
+The file ID remains available for an authorized metadata/reconciliation path.
+Retrying availability does not itself rescan a file or make it eligible.
+The picker retains the native File and draft; known failed storage reservations
+can be retried with the selected original file rather than repeatedly reading
+an unusable ID. Uncertain or quarantined outcomes keep their ID for inspection.
+Already verified prescriptions and the selected-patient requirement are retained.
+Safe allowlisted errors include UUID-shaped request references where supplied;
+arbitrary server/provider messages are not displayed.
+
+See [the shared incident evidence and prerequisites](kits-orders.md#kits-save-error-investigation).
+The screenshot's incident cause and actual serving-process storage/scanner
+configuration remain unestablished. Explicit private storage and a real,
+reachable clean-scanning service are prerequisites, not supplied by this fix.
+No tests were added/edited/run; no builds, regression/release checks, runtime
+requests, manual/browser scenarios, restarts, migrations or deployments were
+performed for this source-only correction.
+
 Removing a picker selection does not delete stored bytes. Saving detaches the
 association. The file service and database guard block destructive replacement,
 state/owner/content changes or cleanup while any saved order still references

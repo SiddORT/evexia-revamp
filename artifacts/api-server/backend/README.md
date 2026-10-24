@@ -517,6 +517,24 @@ interrupted writes and cleanup failures are explicit errors and leave a row for
 reconciliation rather than claiming success. Metadata responses do not reveal
 physical keys or paths.
 
+Kits and Immunotherapy multipart uploads report adapter initialization as
+503 `storage_unavailable`, separately from `storage_write_failed` and upload
+validation errors. For these two order endpoints, a persisted quarantine is
+an explicit 503 `scanner_unavailable`/`scanner_failed`, not a successful
+attachment; infection returns 415 `file_scan_rejected`. `X-File-ID` still
+identifies the recoverable reservation and `X-Request-ID` identifies the
+request. Error messages omit adapter exception text, paths and filenames.
+Cleanup preserves the initial error, releases unchanged-state row transactions,
+and invalidates the dedicated lease connection if advisory unlocks fail.
+
+These source changes do not provision storage or scanning. Local storage still
+requires the explicit private root; the default unavailable scanner cannot
+produce verified files. The actual serving configuration and screenshot
+incident were not runtime-verified. No tests were added/edited/run, and no
+builds, regression/release checks, runtime probes, workflows, restarts,
+migrations or deployments were performed for this correction. See the
+[source-only incident findings](../../../docs/kits-orders.md#kits-save-error-investigation).
+
 For operational triage, select only opaque IDs/state/version/timestamps from
 the database; do not select display names, object keys, or file bytes into
 operator logs or tickets. For example, use a read-only query:

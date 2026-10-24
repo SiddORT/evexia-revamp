@@ -1,26 +1,18 @@
 import { purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
+import { privateUploadMessage } from '../auth/privateFileErrors.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function failure(error, stage) {
   const upload = stage === 'upload';
-  const messages = upload ? {
-    invalid_filename: 'Use a supported PDF or image filename.',
-    kits_attachment_metadata: 'Use a nonempty PDF or image filename of at most 255 characters.',
-    unsupported_type: 'Choose a matching PDF, JPEG, PNG or WebP file.',
-    invalid_file: 'File verification failed. Choose a supported, nonempty PDF or image within the upload limit.',
-    file_rate_limit: 'Too many file operations. Wait before retrying this draft.',
-    file_capacity: 'The upload service is busy. Wait before retrying this draft.',
-    operation_busy: 'A file operation is already running. Wait before retrying.',
-    storage_write_failed: 'Private storage is unavailable. Ask the operator to check storage before retrying.',
-    kits_upload_timeout: 'The upload timed out. Retry explicitly when the connection is available.',
-  } : {
+  const messages = {
     kits_relationship: 'Review the current Doctor/MR assignment and any selected Patient’s billing Doctor.',
     mr_order_assignment: 'The order MR must be your signed-in MR. Ask an administrator to review your saved assignment.',
     kits_attachment: 'An attachment is no longer eligible. Ask the operator to review its private upload state.',
     kits_retry: 'Keep this draft unchanged. Ask the operator to review the original submission before starting another order.',
   };
-  const detail = (Object.hasOwn(messages, error?.code) ? messages[error.code] : '')
+  const detail = upload ? privateUploadMessage(error?.code, error?.status)
+    : (Object.hasOwn(messages, error?.code) ? messages[error.code] : '')
     || (error?.status === 401 ? 'Check your sign-in before retrying this draft.'
       : error?.status === 403 ? 'Access was denied. Ask an administrator to review your access.'
       : error?.status === 413 ? 'The request exceeds the service limit. Review the selected file sizes.'

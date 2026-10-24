@@ -16,13 +16,14 @@ def operation(db: Session, settings, file_id):
     # back to the pool while an object operation is still in progress.
     with engine.connect() as conn:
         held = []
+        failed = False
         try:
             file_key = f"evexia-file:{file_id}"
             def claim(key):
                 ok = conn.scalar(text("SELECT pg_try_advisory_lock(hashtextextended(:key, 0))"), {"key": key})
-                conn.commit()
                 if ok:
                     held.append(key)
+                conn.commit()
                 return ok
             if not claim(file_key):
                 raise FileError(409, "operation_busy", "File operation already in progress")
@@ -32,7 +33,21 @@ def operation(db: Session, settings, file_id):
             else:
                 raise FileError(429, "file_capacity", "File capacity exceeded; retry later")
             yield
+        except BaseException:
+            failed = True
+            raise
         finally:
-            for key in reversed(held):
-                conn.execute(text("SELECT pg_advisory_unlock(hashtextextended(:key, 0))"), {"key": key})
-            conn.commit()
+            try:
+                conn.rollback()
+                for key in reversed(held):
+                    conn.execute(text("SELECT pg_advisory_unlock(hashtextextended(:key, 0))"), {"key": key})
+                conn.commit()
+            except Exception:
+                # Never pool a session whose advisory locks may still be held.
+                # Dropping it releases session locks when explicit unlocks fail.
+                try:
+                    conn.invalidate()
+                except Exception:
+                    pass
+                if not failed:
+                    raise FileError(503, "file_operation_unavailable", "File operation cleanup could not be confirmed.") from None

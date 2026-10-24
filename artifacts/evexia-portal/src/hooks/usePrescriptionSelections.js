@@ -48,12 +48,18 @@ export default function usePrescriptionSelections({ patientId, attachments, poli
             removeUpload(row.key);
           } else {
             const rejected = result.state === 'rejected' || result.scanner_status === 'infected';
-            update(row, { id: result.id, state: rejected ? 'rejected' : 'unverified',
-              message: `Not attached: file ${result.state}; scanner ${result.scanner_status}. ${rejected ? 'Choose a different clean file.' : 'Check availability again after scanning completes.'}` });
+            const restart = ['pending_delete', 'deleted'].includes(result.state);
+            update(row, { id: restart ? undefined : result.id, state: rejected ? 'rejected' : restart ? 'failed' : 'unverified',
+              message: restart ? 'Not attached. The previous upload did not complete. Retry to upload the selected original file again.'
+                : `Not attached: file ${result.state}; scanner ${result.scanner_status}. ${rejected ? 'Choose a different clean file.' : 'Ask the operator to complete scanning, then check availability again.'}` });
           }
         } catch (error) {
           if (!alive.current) return;
-          update(row, { id: error.fileId || row.id, state: [413, 415, 422].includes(error.status) ? 'rejected' : 'failed', message: `Not attached. ${error.message}` });
+          // These failures cannot have published a verified file. Keep the real
+          // File, not a dead reservation ID that would trap Retry in metadata GETs.
+          const restart = ['storage_unavailable', 'storage_write_failed', 'upload_read_failed', 'invalid_file', 'file_scan_rejected'].includes(error.code)
+            || (recover && error.status === 404);
+          update(row, { id: restart ? undefined : error.fileId || row.id, state: [413, 415, 422].includes(error.status) ? 'rejected' : 'failed', message: `Not attached. ${error.message}` });
           try { guard(); } catch {
             for (const queued of batch) if (queued.state === 'queued') update(queued, { state: 'failed', message: 'Not uploaded: session changed. Retry after signing in.' });
             break;

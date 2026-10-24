@@ -19,8 +19,7 @@ from app.services import kits as service, files as file_service
 from app.core.config import get_settings
 from app.schemas.files import UploadRequest, FileResponse
 from app.services.file_policy import FileError
-from app.services.file_locks import operation
-from app.api.v1.files import storage_dependency
+from app.api.v1.files import storage_dependency, order_upload_operation
 from app.api.v1.immunotherapy import MULTIPART
 
 router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
@@ -86,16 +85,10 @@ async def upload(request: Request, actor=Depends(current_identity), db: Session 
                                 "Use a nonempty PDF/image filename of at most 255 characters.") from None
             file_id = await run_in_threadpool(file_service.reserve, db, actor, body, file.content_type, settings, request.state.request_id)
             request.state.file_id = str(file_id)
-            lease = operation(db, settings, file_id)
-            await run_in_threadpool(lease.__enter__)
-            try:
-                return await run_in_threadpool(file_service.complete_upload, db, actor, file_id, file.file,
+            async with order_upload_operation(db, settings, file_id, actor, request.state.request_id):
+                result = await run_in_threadpool(file_service.complete_upload, db, actor, file_id, file.file,
                     settings.model_copy(update={"max_upload_bytes": maximum}), storage_factory, request.state.request_id)
-            except BaseException:
-                await run_in_threadpool(file_service.interrupted, db, file_id, actor, request.state.request_id)
-                raise
-            finally:
-                await run_in_threadpool(lease.__exit__, None, None, None)
+                return file_service.require_verified_upload(result)
     except TimeoutError:
         raise FileError(408, "kits_upload_timeout", "Upload timed out; it is not attached. Retry explicitly.") from None
 

@@ -9,6 +9,7 @@ import asyncio
 from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from app.api.deps import current_identity, operation_router
@@ -19,8 +20,7 @@ from app.core.config import get_settings
 from app.schemas.files import UploadRequest, FileResponse
 from app.services import files as file_service
 from app.services.file_policy import FileError
-from app.api.v1.files import storage_dependency
-from app.services.file_locks import operation
+from app.api.v1.files import storage_dependency, order_upload_operation
 from app.schemas.patients import PatientFields, PatientDirectoryResponse, PatientLanguageChoices
 from app.services import patients as patient_service
 
@@ -94,19 +94,16 @@ async def prescription_body(patient_id, request, actor, db, settings, storage_fa
             raise FileError(413, "prescription_size", f"Prescription is {upload.size} bytes and exceeds the enforced limit of {maximum} bytes.")
         await run_in_threadpool(service.authorize, db, actor, "upload_attachment")
         await run_in_threadpool(service.eligible, db, "patients", patient_id)
-        body = UploadRequest(patient_id=patient_id, category="documents", filename=upload.filename)
+        try:
+            body = UploadRequest(patient_id=patient_id, category="documents", filename=upload.filename)
+        except ValidationError:
+            raise FileError(422, "prescription_metadata", "Use a nonempty PDF/image filename of at most 255 characters.") from None
         file_id = await run_in_threadpool(file_service.reserve, db, actor, body, upload.content_type, settings, request.state.request_id)
         request.state.file_id = str(file_id)
-        lease = operation(db, settings, file_id)
-        await run_in_threadpool(lease.__enter__)
-        try:
-            return await run_in_threadpool(file_service.complete_upload, db, actor, file_id, upload.file,
+        async with order_upload_operation(db, settings, file_id, actor, request.state.request_id):
+            result = await run_in_threadpool(file_service.complete_upload, db, actor, file_id, upload.file,
                 settings.model_copy(update={"max_upload_bytes": maximum}), storage_factory, request.state.request_id)
-        except BaseException:
-            await run_in_threadpool(file_service.interrupted, db, file_id, actor, request.state.request_id)
-            raise
-        finally:
-            await run_in_threadpool(lease.__exit__, None, None, None)
+            return file_service.require_verified_upload(result)
 
 
 @router.get("", response_model=ImmPage, operation_id="listImmunotherapyOrders")

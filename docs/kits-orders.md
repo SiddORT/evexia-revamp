@@ -114,12 +114,42 @@ confirm that no saved Kits association exists first (also enforced server-side).
 ### Kits save error investigation
 
 Source tracing confirms that selected native files upload before the create
-request. A confirmed upload defect was the internally constructed
-`UploadRequest`: Pydantic filename validation errors were not request-parsing
-errors and therefore escaped to the generic 500 handler. Kits now converts
-that failure to a safe 422 before reservation/storage. The filename constraints,
-owner selection, byte/type limits, clean-scanner requirement and encrypted
-filename/snapshot lifecycle are unchanged.
+request. The later supplied screenshot explicitly identifies attachment upload
+as the failed stage and includes a request reference. It does not establish the
+HTTP status, safe service code or failing backend source location. The earlier
+Immunotherapy screenshot shows a generic internal-server error during
+prescription upload. No correlated sanitized serving-process error record was
+available in the supplied evidence or the inspected local log locations.
+Failed duplicate-startup logs, if supplied later, must not be treated as
+evidence of the configuration/revision of the process actually serving uploads.
+
+The earlier filename fix catches internally constructed `UploadRequest`
+validation errors as 422; it is **not** an established explanation or resolution
+of this incident. The same metadata boundary is now handled for prescriptions.
+
+The confirmed shared source defect was lazy storage adapter construction
+outside the upload error handler. Missing local-root configuration, unsafe root
+permissions or another adapter initialization exception could escape to the
+generic HTTP 500 middleware even for a valid selected file. That boundary now
+returns 503 `storage_unavailable` and attempts a recoverable reservation
+transition, without changing storage configuration or selecting another backend.
+Storage writes separately return `storage_write_failed`; unreadable upload
+streams return `upload_read_failed`. This corrects failure handling, not the
+underlying absence of an operational dependency.
+
+Both order multipart routes require clean verification before a successful
+response. A missing scanner returns 503 `scanner_unavailable`; failed scanning
+returns 503 `scanner_failed`. The already stored object stays private and
+quarantined. Infection returns 415 `file_scan_rejected` with rejected state.
+No scanner response is fabricated. Generic private-file and Lupin publication
+contracts are not changed by this order-specific response gate.
+
+Cleanup cannot replace the initial upload/publication error. Cleanup row locks
+are non-waiting, unchanged file states release their transactions, and operation
+leases release acquired advisory locks or invalidate their held connection if
+unlocking fails. A failed cleanup retains a durable reservation for authorized
+reconciliation and logs only its fixed failure category and request reference.
+No stored bytes are automatically deleted by these changes.
 
 The Kits form now distinguishes upload, order-validation and order-save
 failures. It displays allowlisted guidance and a UUID-shaped request reference
@@ -127,18 +157,34 @@ when provided, not arbitrary server exception text. Native files and verified
 uploads stay in the mounted draft. A create response without a usable order ID
 is treated as uncertain, retaining the original payload/key rather than clearing
 it and navigating to an unidentified order. Retry conflicts likewise retain
-that original identity. Shared transport edits only attach diagnostic metadata
-for Kits; Immunotherapy authorization and request behavior are unchanged.
+that original identity. Kits and prescription transport failures now use
+allowlisted messages/codes and UUID-shaped request/file references, including
+malformed/non-JSON responses. Arbitrary server error strings are not displayed.
+Prescriptions retain native files on failure; a failed storage reservation does
+not trap Retry in repeated metadata requests for an unusable ID. Quarantined or
+uncertain uploads retain their ID for an availability check, not automatic
+re-upload or fake verification.
 
-No source evidence establishes that filename validation caused the reported
-screenshot incident: its filename, failing response and request reference are
-not available. Patient remains optional in both the client payload and server
-schema; authenticated MR enforcement and Doctor/Patient/shipping relationship
-checks remain unchanged. No order persistence is claimed as verified.
+Patient remains optional in both the Kits client payload and server schema;
+authenticated MR ownership, Doctor/Patient/shipping relationships, encrypted
+Kits names, size/type validation and clean-scanner requirements are unchanged.
+Immunotherapy still requires a verified prescription for its selected patient.
+No successful upload or order persistence is claimed as verified.
+
+The declared development defaults are `STORAGE_BACKEND=local`,
+`LOCAL_STORAGE_ROOT` unset and `SCANNER_BACKEND=unavailable`. The development
+launcher does not provision or override those dependencies. Startup and policy
+availability therefore do not prove upload readiness. This source inspection
+did not inspect secret values or establish the actual serving process's effective
+configuration. Successful verification requires an explicitly approved private
+local root (application-owned 0700, normalized absolute path) or an explicitly
+configured durable S3 backend, plus a reachable maintained real clamd scanner.
+Changing configuration/storage location, installing a scanner, reconciling files
+or restarting services requires separate operational approval; none was done.
 
 To identify the original incident, obtain only the failing operation
-(`POST /api/v1/admin/kits-orders/attachments` or
-`POST /api/v1/admin/kits-orders`), HTTP status, safe error code and
+(`POST /api/v1/admin/kits-orders/attachments` for the later screenshot), HTTP
+status, safe error code and
 `X-Request-ID`/`error.request_id`, then correlate that reference with the actual
 serving process's existing sanitized error record. If it is only a generic
 unhandled-error record, an operator will still need a sanitized exception class
@@ -149,9 +195,5 @@ This investigation and correction used source inspection only. No tests were
 added, changed or run; no builds, type checks, browser/manual scenarios, runtime
 probes, release/validation wrappers, restarts, migrations or deployments ran.
 
-This work is source-inspection-only at the user's request. Only narrow OpenAPI,
-client and development source-metadata generation was performed. No tests,
-builds, type checks, browser/manual scenarios, validation/release suites, live
-API probes, service restarts, migration execution, production access or
-deployment were performed. Runtime behavior and migration activation remain
-unverified.
+No code generation or development-metadata generation was run for this upload
+correction. Runtime behavior remains unverified.
