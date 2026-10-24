@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { reviewLabel } from '../../components/orders/OrderReviewStatus.jsx';
+import { useOrderListFreshness } from '../../services/orderFreshness.js';
 import { Link } from 'wouter';
 import { Eye, Pencil, Plus, Search } from 'lucide-react';
 import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
@@ -27,6 +29,7 @@ export default function LupinOrders() {
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   const resetPage = () => { setPage(1); setCursors([null]); };
   const refresh = () => { resetPage(); setRevision((n) => n + 1); };
+  useOrderListFreshness('lupin', refresh);
   const reset = () => { setDraft(EMPTY); setApplied(EMPTY); resetPage(); setRevision((n) => n + 1); };
   const set = (patch) => setDraft((v) => ({ ...v, ...patch }));
   useEffect(() => {
@@ -49,7 +52,7 @@ export default function LupinOrders() {
     { key: 'sn', label: 'S.No', render: (_o, i) => i + 1 },
     { key: 'order', label: 'Order details', render: (o) => <><strong>{o.number}</strong><span className="lupin-sub">{date(o.date)}</span><span className="lupin-sub">{o.patientCount} patients, {amountMoney(o.total)}</span></> },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="lupin-sub">{o.mr.name}</span></> },
-    { key: 'status', label: 'Order status', render: (o) => <span className="lupin-pill">{o.status}</span> },
+    { key: 'status', label: 'Order status', render: (o) => <span className="lupin-pill">{reviewLabel(o)}</span> },
     { key: 'pay', label: 'Payment status', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },
     { key: 'act', label: 'Action', render: (o) => <div className="lupin-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
   ];

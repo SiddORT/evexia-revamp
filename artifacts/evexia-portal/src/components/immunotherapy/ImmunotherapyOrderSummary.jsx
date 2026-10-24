@@ -4,7 +4,8 @@ import { ArrowLeft, Eye, Pencil } from 'lucide-react';
 import AdminLayout, { useOrderActions, useOrderBase, useOrderPortal } from '../orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../admin/adminPreferences.js';
 import { DownloadOrderFile, OrderFileList } from '../orders/OrderFiles.jsx';
-import { downloadPrescription, money, mrEditable, orderTotalMinor, parseAmount, prescriptionBlob } from '../../services/serverImmunotherapy.js';
+import { downloadPrescription, money, mrEditable, orderTotalMinor, parseAmount, prescriptionBlob, request } from '../../services/serverImmunotherapy.js';
+import OrderApproval from '../orders/OrderApproval.jsx';
 import PrescriptionViewer from './PrescriptionViewer.jsx';
 import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
@@ -23,7 +24,8 @@ function Person({ person, patient = false }) {
   ]} />;
 }
 
-export default function ImmunotherapyOrderSummary({ order }) {
+export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
+  const [order, setOrder] = useState(initialOrder);
   const can = useOrderActions('immunotherapy');
   const BASE = useOrderBase('immunotherapy');
   const { portal } = useOrderPortal();
@@ -43,6 +45,7 @@ export default function ImmunotherapyOrderSummary({ order }) {
       </div>
     </div>
     {mrPortal && !mrEditable(order) && <p className="kits-boundary">This order has been reviewed or closed and is read-only for MR.</p>}
+    <OrderApproval kind="immunotherapy" order={order} request={request} onApproved={setOrder} />
     <div className="kits-layout">
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-order"><h2 id="imm-s-order">Order details</h2>

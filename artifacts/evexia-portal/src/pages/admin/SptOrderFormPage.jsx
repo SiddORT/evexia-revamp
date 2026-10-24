@@ -20,6 +20,8 @@ function OrderForm({ order, mode }) {
   const { portal, mr } = useOrderPortal();
   const mrPortal = portal === 'mr';
   const [record, setRecord] = useState(order);
+  const [decisionRecord, setDecisionRecord] = useState(order);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const readOnly = record ? mode !== 'edit' || !record.mrEditable || !can.edit : !can.add;
   const [doctorId, setDoctorId] = useState(order?.doctorId || '');
   const [mrId, setMrId] = useState(order?.mrId || mr?.id || '');
@@ -45,7 +47,7 @@ function OrderForm({ order, mode }) {
   const initialDraft = useRef(JSON.stringify(values));
   const leaveDialog = useOrderDraftNavigation({
     dirty: !readOnly && initialDraft.current !== JSON.stringify(values),
-    pending: busy || uncertain,
+    pending: busy || uncertain || reviewBusy,
     onBlocked: () => setErrors({ form: 'Submission outcome is not yet confirmed. Keep this page open and retry the unchanged submission.' }),
   });
 
@@ -79,7 +81,7 @@ function OrderForm({ order, mode }) {
         setSuccess(`${result.code} registered for SPT. Select Add patient to include this patient in the order. No Patient Master or login account was created.`);
       } else {
         initialDraft.current = JSON.stringify({ doctorId: result.doctorId || '', mrId: result.mrId || '', patients: result.patients, remarks: result.remarks });
-        setRecord(result); setPatients(result.patients);
+        setRecord(result); setDecisionRecord(result); setPatients(result.patients);
         setSuccess(`${result.number} ${result.status === 'Draft' ? 'saved as Draft' : 'saved'}. Total INR ${result.total}.`);
       }
     } catch (error) {
@@ -110,7 +112,8 @@ function OrderForm({ order, mode }) {
   }
 
   function save(status) {
-    if (sending.current || submission.current || readOnly) return;
+    if (sending.current || submission.current || readOnly || reviewBusy) return;
+    if (record?.status === 'Rejected') status = 'Rejected';
     const errs = validateOrder(values, status);
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -133,7 +136,7 @@ function OrderForm({ order, mode }) {
     { key: 'gender', label: 'Gender', render: (p) => p.gender },
     { key: 'age', label: 'Age', render: (p) => p.age },
     { key: 'amount', label: 'Amount (INR)', render: (p) => readOnly ? <span className="spt-num">{money(totalMinor([p]))}</span> : <>
-      <input id={`spt-amount-${p.id}`} className="spt-input spt-amount" inputMode="decimal" aria-label={`Amount for ${p.name}`} value={p.amount} onChange={(e) => setAmount(p.id, e.target.value)} aria-invalid={Boolean(errors[`amount-${p.id}`])} aria-describedby={errors[`amount-${p.id}`] ? `spt-err-${p.id}` : undefined} placeholder="0.00" data-testid={`input-spt-amount-${p.id}`} />
+      <input id={`spt-amount-${p.id}`} className="spt-input spt-amount" inputMode="decimal" aria-label={`Amount for ${p.name}`} readOnly={Boolean(mrPortal && record?.patients.some((saved) => saved.id === p.id))} value={p.amount} onChange={(e) => setAmount(p.id, e.target.value)} aria-invalid={Boolean(errors[`amount-${p.id}`])} aria-describedby={errors[`amount-${p.id}`] ? `spt-err-${p.id}` : undefined} placeholder="0.00" data-testid={`input-spt-amount-${p.id}`} />
       {errors[`amount-${p.id}`] && <p className="spt-error" id={`spt-err-${p.id}`}>{errors[`amount-${p.id}`]}</p>}</> },
     { key: 'remove', label: 'Remove', render: (p) => readOnly ? '' : <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${p.name}`} onClick={() => remove(p.id)} data-testid={`button-spt-remove-${p.id}`}><Trash2 size={16} aria-hidden="true" /></button> },
   ];
@@ -152,14 +155,19 @@ function OrderForm({ order, mode }) {
         </div>
       </div>
       {success && <p className="spt-notice" role="status">{success}</p>}
-      {record && readOnly && <OrderApproval kind="spt" order={record} request={request} onApproved={setRecord} />}
+      {record && <OrderApproval kind="spt" order={decisionRecord} request={request}
+        dirty={!readOnly && initialDraft.current !== JSON.stringify(values)} blocked={busy || uncertain}
+        onLockChange={setReviewBusy} onApproved={(saved) => {
+          setDecisionRecord(saved);
+          if (readOnly || initialDraft.current === JSON.stringify(values)) setRecord(saved);
+        }} />}
       {busy && <p role="status">Saving on the server… Keep this page open.</p>}
       {errorList.length > 0 && <div className="spt-summary" role="alert" tabIndex={-1} ref={summaryRef} data-testid="status-spt-errors">
         <strong>Please fix the following before saving:</strong>
         <ul>{errorList.map(([key, msg]) => <li key={key}><button type="button" onClick={() => focusField(key)}>{labelFor(key)}</button>: {msg}</li>)}</ul>
       </div>}
       {uncertain && <button type="button" className="admin-button" disabled={busy} onClick={sendPending}>Retry unchanged submission</button>}
-      <fieldset className="spt-editor" disabled={busy || uncertain}>
+      <fieldset className="spt-editor" disabled={busy || uncertain || reviewBusy}>
       <section className="spt-card" aria-labelledby="spt-h-details">
         <h2 id="spt-h-details">Order details</h2>
         <div className="spt-grid">
@@ -231,8 +239,8 @@ function OrderForm({ order, mode }) {
       </fieldset>
         <div className="spt-actions">
           {readOnly ? <Link href={BASE} className="admin-button">All orders</Link> : <>
-            {record?.status !== 'Saved' && <button type="button" disabled={busy || uncertain} className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>}
-            <button type="button" disabled={busy || uncertain} className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">Save</button></>}
+            {!['Saved', 'Rejected'].includes(record?.status) && <button type="button" disabled={busy || uncertain || reviewBusy} className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>}
+            <button type="button" disabled={busy || uncertain || reviewBusy} className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">{record?.status === 'Rejected' ? 'Save corrections (keep Rejected)' : 'Save'}</button></>}
         </div>
       {leaveDialog}
     </Shell>

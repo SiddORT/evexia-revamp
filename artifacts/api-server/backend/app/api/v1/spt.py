@@ -9,15 +9,16 @@ from app.db.session import get_db
 from app.schemas.spt import SptWrite, SptRegistration, SptPatient, SptRecord, SptPage, SptImport, SptImportResult, Status
 from app.schemas.immunotherapy import ImmReferencePage, ImmImportReview
 from app.services import spt as service
-from app.schemas.order_approval import OrderApproval
+from app.schemas.order_approval import OrderApproval, OrderRejection
 from app.schemas.spt import ReadStatus
-from app.services.order_approval import approve as approve_order
+from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 
 router = APIRouter(prefix="/admin/spt-orders", tags=["spt"],
     dependencies=[Depends(operation_router("spt", {
         "listing": None, "detail": None, "references": None, "export": "export",
         "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
         "register": ("add", "import"),
+        "resubmit": "edit",
     }, allow_mr=True))])
 
 
@@ -34,8 +35,13 @@ def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_ide
 
 
 @router.post("/{record_id}/reject", response_model=SptRecord, operation_id="rejectSptOrder")
-def reject(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+def reject(record_id: uuid.UUID, body: OrderRejection, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "spt", decision="reject")
+
+
+@router.post("/{record_id}/resubmit", response_model=SptRecord, operation_id="resubmitSptOrder")
+def resubmit(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return resubmit_order(db, actor, record_id, body, "spt")
 
 
 @router.get("", response_model=SptPage, operation_id="listSptOrders")

@@ -12,4 +12,5 @@ export type SptInputStatus =
 export const SptInputStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Rejected: "Rejected",
 } as const;

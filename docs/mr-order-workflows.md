@@ -98,46 +98,88 @@ Existing Patient Master choices still require both MR and Doctor eligibility.
 Unique patient membership, quoted exact amounts and server totals are unchanged.
 Saved means submitted, not approved; incomplete Drafts cannot be approved.
 
-## Owning-MR editing and explicit Admin approval
+## Owning-MR corrections and explicit review cycles
 
-- MR edits require the current owner, expected version and an unreviewed pending
-  order under the same row lock used for approval. Immunotherapy/Lupin/Kits
-  terminal statuses remain closed; submitted SPT can be edited until approval,
-  but cannot be changed back to Draft.
-- Kits and SPT approval is separate server-owned evidence, not a payment or
-  fulfilment classification. Their existing status vocabularies and scoped
-  summary counts remain unchanged. Lupin approval also sets its existing
-  Approved status. Immunotherapy keeps its existing rate-complete Admin decision
-  workflow.
+- Pending is Confirmed for Immunotherapy/Lupin/Kits and submitted Saved for
+  SPT. SPT Draft is not submitted. Approval records actor/time and advances the
+  current lifecycle directly to In process; Approved is decision evidence, not
+  an additional lifecycle status or summary card.
+- A genuinely Rejected order without approval evidence permits owning-MR
+  corrections on the existing edit route. Saving retains Rejected and its
+  reason, business number, identity and owner. It never implicitly resubmits.
+  Approved and fulfilled orders remain MR read-only.
+- All four types expose separate saved-version Approve/Reject endpoints.
+  Rejection requires a nonblank plain-text reason of at most 2,000 characters,
+  independently of completed pricing. The reason and per-cycle history stay
+  inside encrypted snapshots and encrypted retry state. Audit events contain
+  only operation/resource evidence; exports omit reasons and history.
+- Only the owning MR can explicitly resubmit a saved correction, with its
+  current expected version and original owner-bound retry key. The normal
+  reference, patient, attachment and submission-completeness rules are applied
+  before the row atomically becomes Confirmed (or SPT Saved). Active decision
+  markers are cleared, not history. Each new rejection needs a fresh reason.
+- Legacy Rejected records remain readable even without decision/reason data.
+  Missing reasons are explicitly unavailable. They use the same authorized
+  correction-save/resubmit boundary; no historical decision is fabricated.
 - Approval actor/time lives in the existing authenticated encrypted snapshot and
   is accompanied by a protected audit event. No new table/column, readiness
   migration or historical approval backfill is needed. Missing evidence is
   represented as absent, including historical terminal orders.
-- Kits approval retains protected Super Admin authority. SPT/Lupin approval
+- Kits approval retains protected Super Admin authority. Other approvals
   requires existing Admin-side edit authority, revalidated on the server; MR
   authority is explicitly rejected regardless of the displayed portal.
-- Direct writes and import review/commit share MR decision/ownership protection.
-  Exact actor-bound requests retain their original keys and replay their
-  original results. A stale draft never overwrites a newer save or approval.
+- Direct writes and import review/commit cannot change review status or inject
+  server-owned history. Exact actor-bound retries retain operation, reason,
+  version and key, do not replay mutations, and reproject the latest authorized
+  saved state rather than returning a superseded pending snapshot. A stale
+  draft never overwrites a newer save or decision.
 - Saved MR files cannot be detached/replaced. Additional files use existing
   private upload verification/scanning; Immunotherapy writes still require a
   verified prescription for the selected Patient.
-- Pending Immunotherapy edits preserve Admin PO, basis and compatible
-  occurrence rates from server history, not client replacements. Changed
-  clinical context/results invalidate affected occurrence rates. Issued
-  occurrence IDs and legacy totals keep their historical contracts. Changes
-  to a pending Kits item basis invalidate its price snapshot for explicit Admin
-  repricing without clearing the independent PO or Business Parking values.
+- MR edits retain Immunotherapy PO/basis/retained rates, Kits pricing/PO/Business
+  Parking, Lupin saved unit price and existing SPT patient amounts. Changed
+  pricing bases retain protected data but mark approval pricing as needing
+  Admin review; new occurrences do not inherit invented rates. Admin must save
+  current valid pricing before approval. Issued occurrence IDs stay historical.
+- On View and Edit, Admin decision controls show ineligibility for drafts,
+  rejected, already decided and fulfilled records. Dirty editors must save
+  first, then approve the resulting saved version. Rejection against the saved
+  submission requires a separate explicit choice when unsaved edits exist;
+  those edits remain mounted and are not silently rebased onto a newer version.
+- Both portals render current status, recorded approval with In process,
+  Awaiting review, rejection reasons and encrypted history as React text.
+  Rejected list rows direct the reader to View for the reason/correction path.
+  Confirmed writes refresh authoritative lists/counts through navigation,
+  same-browser change signals, focus/visibility refresh and a finite polling
+  interval. Editors do not subscribe to background replacement of drafts.
 
 ### Source-only delivery review
 
 No tests, automated browser checks, builds, release/validation wrappers,
 workflows, migrations, uploads, order decisions or production operations were
 run for this refinement. Generated API contracts are source artifacts only.
-No authenticated manual preview was available through the permitted tools;
-responsive layout is source-reviewed only, not visually verified at runtime.
-No new database migrations were authored or applied; services were not
-restarted, so running previews are not evidence of the changed backend.
+Only offline contract export, client/schema source generation and formatting
+were performed; the normal codegen wrapper's typecheck was not run.
+No new database migration is needed by this review cycle: it extends the
+existing encrypted snapshots and uses already-declared statuses. No database
+schema was inspected or changed, and services were not restarted.
+
+The source/diff review traced all four types through:
+
+| Path | Source-level boundary reviewed |
+| --- | --- |
+| Submit and approve | Existing role grants; Kits protected authority; saved-version row lock; saved pricing and document checks; In process plus fresh evidence |
+| Reject and cancel | Required bounded reason; no pricing prerequisites; no request on cancellation; encrypted reason/history; version increment in the same transaction |
+| Correct and save | Owning-MR SQL scope; immutable identity/number; retained files/protected pricing; Rejected and current reason retained |
+| Explicit resubmit | Saved-correction marker; exact expected version; normal submission validation; pending state restored while preserving prior-cycle history |
+| Later approval/rejection | Pending eligibility ignores archived decisions; fresh approval evidence or newly required reason; approval closes MR editing |
+| Conflict and lost response | Serialized owner/key fingerprint; latest authorized reprojection; frozen retry payload; no early success; unsaved values remain mounted |
+| Legacy and direct/import writes | Missing reasons unavailable; explicit legacy correction path; no review transition or financial-field bypass |
+
+These are source-level conclusions, not exercised transitions. Runtime
+transaction behavior, active schema compatibility, generated client compilation,
+focus/keyboard behavior, cross-tab refresh and provider-backed file checks remain
+unverified. Nothing in this delivery establishes that a save or transition ran.
 
 The additive source migration `0066_spt_registration_owner` follows
 `0065_lupin_orders`. It adds a nullable operational MR reference/index, with no

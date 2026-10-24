@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 from app.schemas.immunotherapy import Strict
 
-Status = Literal["Draft", "Saved"]
+Status = Literal["Draft", "Saved", "Rejected"]
 ReadStatus = Literal["Draft", "Saved", "In process", "Rejected"]
 Gender = Literal["Male", "Female", "Other", "Prefer not to say"]
 
@@ -73,6 +73,10 @@ class SptPatientSnapshot(SptPatient):
 
 
 class SptRecord(Strict):
+    reviewHistory: list[dict] = Field(default_factory=list)
+    reviewDecision: str | None = None
+    correctionSaved: bool = False
+    pricingNeedsReview: bool = False
     decisionEligibility: dict | None = None
     rejection: dict | None = None
     approval: dict | None = None

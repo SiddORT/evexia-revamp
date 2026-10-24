@@ -107,6 +107,10 @@ def patient_snapshot(db, keys, identity, source, order_date):
 
 
 def resolve(db, keys, body, previous, order_date):
+    if body.status == "Rejected" and (not previous or previous["status"] != "Rejected"):
+        raise ImmError("Use the explicit rejection action.", 422, "order_decision")
+    if previous and previous["status"] == "Rejected" and body.status != "Rejected":
+        raise ImmError("Use explicit MR resubmission after saving corrections.", 422, "order_decision")
     from app.services.order_approval import protect
     protect(db, "spt", body, previous)
     require_assignment(db, body.mrId)
@@ -141,6 +145,8 @@ def resolve(db, keys, body, previous, order_date):
                 if not assigned or assigned.mrId != body.mrId:
                     raise ImmError("Patient and MR must match the current Doctor assignment.", 422, "spt_relationship")
         data["amount"] = format(Decimal(p.amount), ".2f") if p.amount else ""
+        if scope_identity(db) and retained and data["amount"] != retained["amount"]:
+            raise ImmError("Retain saved pricing for existing patients; Admin must review repricing.", 403, "order_pricing")
         total += Decimal(p.amount or "0")
         value["patients"].append(data)
     value["total"] = format(total, ".2f")
@@ -202,8 +208,8 @@ def idempotent(db, actor, keys, key, payload, work):
             raise ImmError("Retry the identical submission, not changed entries.", 409, "spt_retry")
         result = saved["result"]
         if payload["operation"] != "register":
-            for order in result.get("orders", [result]):
-                find(db, uuid.UUID(order["id"]))
+            current = [project(keys, find(db, uuid.UUID(order["id"]))) for order in result.get("orders", [result])]
+            return {**result, "orders": current} if "orders" in result else current[0]
         else:
             patient_snapshot(db, keys, uuid.UUID(result["id"]), "spt",
                 datetime.now(ZoneInfo("Asia/Kolkata")).date())
@@ -326,7 +332,8 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
                 searchable = " ".join([data["number"], data["doctorName"], data["mrName"],
                     data["remarks"], " ".join(f'{p["code"]} {p["name"]}' for p in data["patients"])])
                 if not search.strip() or search.strip().casefold() in searchable.casefold():
-                    items.append(data)
+                    from app.services.order_approval import export_safe
+                    items.append(export_safe(data) if complete else data)
                     size += len(encode(data).encode())
                     if size > 8_000_000:
                         raise ImmError("Response exceeds 8 MB. Narrow filters; no partial export.", 409, "spt_bound")

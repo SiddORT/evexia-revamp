@@ -340,6 +340,7 @@ import type {
   OpeningSaved,
   OpeningSummary,
   OrderApproval,
+  OrderRejection,
   POActivityPage,
   POAnalytics,
   POCreate,
@@ -9498,6 +9499,124 @@ export function useGetImmunotherapyOrder<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getApproveImmunotherapyOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/${recordId}/approve`;
+};
+
+/**
+ * @summary Approve
+ */
+export const approveImmunotherapyOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord>(getApproveImmunotherapyOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getApproveImmunotherapyOrderMutationKey = () =>
+  ["approveImmunotherapyOrder"] as const;
+
+export const getApproveImmunotherapyOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveImmunotherapyOrder>>,
+    TError,
+    ApproveImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveImmunotherapyOrder>>,
+  TError,
+  ApproveImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getApproveImmunotherapyOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveImmunotherapyOrder>>,
+    ApproveImmunotherapyOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return approveImmunotherapyOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveImmunotherapyOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveImmunotherapyOrder>>
+>;
+export type ApproveImmunotherapyOrderMutationBody = BodyType<OrderApproval>;
+export type ApproveImmunotherapyOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ApproveImmunotherapyOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Approve
+ */
+export const useApproveImmunotherapyOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveImmunotherapyOrder>>,
+    TError,
+    ApproveImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveImmunotherapyOrder>>,
+  TError,
+  ApproveImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getApproveImmunotherapyOrderMutationOptions(options));
+};
+
 export const getEditImmunotherapyOrderUrl = (recordId: string) => {
   return `/api/v1/admin/immunotherapy-orders/${recordId}/edit`;
 };
@@ -9614,6 +9733,242 @@ export const useEditImmunotherapyOrder = <
   TContext
 > => {
   return useMutation(getEditImmunotherapyOrderMutationOptions(options));
+};
+
+export const getRejectImmunotherapyOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/${recordId}/reject`;
+};
+
+/**
+ * @summary Reject
+ */
+export const rejectImmunotherapyOrder = async (
+  recordId: string,
+  orderRejection: OrderRejection,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord>(getRejectImmunotherapyOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderRejection),
+  });
+};
+
+export const getRejectImmunotherapyOrderMutationKey = () =>
+  ["rejectImmunotherapyOrder"] as const;
+
+export const getRejectImmunotherapyOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectImmunotherapyOrder>>,
+    TError,
+    RejectImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectImmunotherapyOrder>>,
+  TError,
+  RejectImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRejectImmunotherapyOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectImmunotherapyOrder>>,
+    RejectImmunotherapyOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return rejectImmunotherapyOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectImmunotherapyOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectImmunotherapyOrder>>
+>;
+export type RejectImmunotherapyOrderMutationBody = BodyType<OrderRejection>;
+export type RejectImmunotherapyOrderMutationError = ErrorType<ErrorEnvelope>;
+export type RejectImmunotherapyOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderRejection>;
+};
+
+/**
+ * @summary Reject
+ */
+export const useRejectImmunotherapyOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectImmunotherapyOrder>>,
+    TError,
+    RejectImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rejectImmunotherapyOrder>>,
+  TError,
+  RejectImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getRejectImmunotherapyOrderMutationOptions(options));
+};
+
+export const getResubmitImmunotherapyOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/${recordId}/resubmit`;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const resubmitImmunotherapyOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord>(getResubmitImmunotherapyOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getResubmitImmunotherapyOrderMutationKey = () =>
+  ["resubmitImmunotherapyOrder"] as const;
+
+export const getResubmitImmunotherapyOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitImmunotherapyOrder>>,
+    TError,
+    ResubmitImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resubmitImmunotherapyOrder>>,
+  TError,
+  ResubmitImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getResubmitImmunotherapyOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resubmitImmunotherapyOrder>>,
+    ResubmitImmunotherapyOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return resubmitImmunotherapyOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResubmitImmunotherapyOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resubmitImmunotherapyOrder>>
+>;
+export type ResubmitImmunotherapyOrderMutationBody = BodyType<OrderApproval>;
+export type ResubmitImmunotherapyOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ResubmitImmunotherapyOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const useResubmitImmunotherapyOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitImmunotherapyOrder>>,
+    TError,
+    ResubmitImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resubmitImmunotherapyOrder>>,
+  TError,
+  ResubmitImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getResubmitImmunotherapyOrderMutationOptions(options));
 };
 
 export const getReconcileInventoryAdjustmentUrl = (key: string) => {
@@ -12582,7 +12937,7 @@ export const getRejectKitsOrderUrl = (recordId: string) => {
  */
 export const rejectKitsOrder = async (
   recordId: string,
-  orderApproval: OrderApproval,
+  orderRejection: OrderRejection,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<KitsRecord> => {
   const getHeaders = (
@@ -12613,7 +12968,7 @@ export const rejectKitsOrder = async (
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(orderApproval),
+    body: JSON.stringify(orderRejection),
   });
 };
 
@@ -12660,11 +13015,11 @@ export const getRejectKitsOrderMutationOptions = <
 export type RejectKitsOrderMutationResult = NonNullable<
   Awaited<ReturnType<typeof rejectKitsOrder>>
 >;
-export type RejectKitsOrderMutationBody = BodyType<OrderApproval>;
+export type RejectKitsOrderMutationBody = BodyType<OrderRejection>;
 export type RejectKitsOrderMutationError = ErrorType<ErrorEnvelope>;
 export type RejectKitsOrderMutationVariables = {
   recordId: string;
-  data: BodyType<OrderApproval>;
+  data: BodyType<OrderRejection>;
 };
 
 /**
@@ -12688,6 +13043,124 @@ export const useRejectKitsOrder = <
   TContext
 > => {
   return useMutation(getRejectKitsOrderMutationOptions(options));
+};
+
+export const getResubmitKitsOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/kits-orders/${recordId}/resubmit`;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const resubmitKitsOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<KitsRecord>(getResubmitKitsOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getResubmitKitsOrderMutationKey = () =>
+  ["resubmitKitsOrder"] as const;
+
+export const getResubmitKitsOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitKitsOrder>>,
+    TError,
+    ResubmitKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resubmitKitsOrder>>,
+  TError,
+  ResubmitKitsOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getResubmitKitsOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resubmitKitsOrder>>,
+    ResubmitKitsOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return resubmitKitsOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResubmitKitsOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resubmitKitsOrder>>
+>;
+export type ResubmitKitsOrderMutationBody = BodyType<OrderApproval>;
+export type ResubmitKitsOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ResubmitKitsOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const useResubmitKitsOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitKitsOrder>>,
+    TError,
+    ResubmitKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resubmitKitsOrder>>,
+  TError,
+  ResubmitKitsOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getResubmitKitsOrderMutationOptions(options));
 };
 
 export const getListLanguagesUrl = (params?: ListLanguagesParams) => {
@@ -15025,7 +15498,7 @@ export const getRejectLupinOrderUrl = (recordId: string) => {
  */
 export const rejectLupinOrder = async (
   recordId: string,
-  orderApproval: OrderApproval,
+  orderRejection: OrderRejection,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<LupinRecord> => {
   const getHeaders = (
@@ -15056,7 +15529,7 @@ export const rejectLupinOrder = async (
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(orderApproval),
+    body: JSON.stringify(orderRejection),
   });
 };
 
@@ -15104,11 +15577,11 @@ export const getRejectLupinOrderMutationOptions = <
 export type RejectLupinOrderMutationResult = NonNullable<
   Awaited<ReturnType<typeof rejectLupinOrder>>
 >;
-export type RejectLupinOrderMutationBody = BodyType<OrderApproval>;
+export type RejectLupinOrderMutationBody = BodyType<OrderRejection>;
 export type RejectLupinOrderMutationError = ErrorType<ErrorEnvelope>;
 export type RejectLupinOrderMutationVariables = {
   recordId: string;
-  data: BodyType<OrderApproval>;
+  data: BodyType<OrderRejection>;
 };
 
 /**
@@ -15132,6 +15605,124 @@ export const useRejectLupinOrder = <
   TContext
 > => {
   return useMutation(getRejectLupinOrderMutationOptions(options));
+};
+
+export const getResubmitLupinOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/lupin-orders/${recordId}/resubmit`;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const resubmitLupinOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LupinRecord>(getResubmitLupinOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getResubmitLupinOrderMutationKey = () =>
+  ["resubmitLupinOrder"] as const;
+
+export const getResubmitLupinOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitLupinOrder>>,
+    TError,
+    ResubmitLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resubmitLupinOrder>>,
+  TError,
+  ResubmitLupinOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getResubmitLupinOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resubmitLupinOrder>>,
+    ResubmitLupinOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return resubmitLupinOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResubmitLupinOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resubmitLupinOrder>>
+>;
+export type ResubmitLupinOrderMutationBody = BodyType<OrderApproval>;
+export type ResubmitLupinOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ResubmitLupinOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const useResubmitLupinOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitLupinOrder>>,
+    TError,
+    ResubmitLupinOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resubmitLupinOrder>>,
+  TError,
+  ResubmitLupinOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getResubmitLupinOrderMutationOptions(options));
 };
 
 export const getListMRDirectoryUrl = (params?: ListMRDirectoryParams) => {
@@ -32525,7 +33116,7 @@ export const getRejectSptOrderUrl = (recordId: string) => {
  */
 export const rejectSptOrder = async (
   recordId: string,
-  orderApproval: OrderApproval,
+  orderRejection: OrderRejection,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<SptRecord> => {
   const getHeaders = (
@@ -32556,7 +33147,7 @@ export const rejectSptOrder = async (
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(orderApproval),
+    body: JSON.stringify(orderRejection),
   });
 };
 
@@ -32603,11 +33194,11 @@ export const getRejectSptOrderMutationOptions = <
 export type RejectSptOrderMutationResult = NonNullable<
   Awaited<ReturnType<typeof rejectSptOrder>>
 >;
-export type RejectSptOrderMutationBody = BodyType<OrderApproval>;
+export type RejectSptOrderMutationBody = BodyType<OrderRejection>;
 export type RejectSptOrderMutationError = ErrorType<ErrorEnvelope>;
 export type RejectSptOrderMutationVariables = {
   recordId: string;
-  data: BodyType<OrderApproval>;
+  data: BodyType<OrderRejection>;
 };
 
 /**
@@ -32631,6 +33222,124 @@ export const useRejectSptOrder = <
   TContext
 > => {
   return useMutation(getRejectSptOrderMutationOptions(options));
+};
+
+export const getResubmitSptOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/spt-orders/${recordId}/resubmit`;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const resubmitSptOrder = async (
+  recordId: string,
+  orderApproval: OrderApproval,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptRecord>(getResubmitSptOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderApproval),
+  });
+};
+
+export const getResubmitSptOrderMutationKey = () =>
+  ["resubmitSptOrder"] as const;
+
+export const getResubmitSptOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitSptOrder>>,
+    TError,
+    ResubmitSptOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resubmitSptOrder>>,
+  TError,
+  ResubmitSptOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getResubmitSptOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resubmitSptOrder>>,
+    ResubmitSptOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return resubmitSptOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResubmitSptOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resubmitSptOrder>>
+>;
+export type ResubmitSptOrderMutationBody = BodyType<OrderApproval>;
+export type ResubmitSptOrderMutationError = ErrorType<ErrorEnvelope>;
+export type ResubmitSptOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderApproval>;
+};
+
+/**
+ * @summary Resubmit
+ */
+export const useResubmitSptOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resubmitSptOrder>>,
+    TError,
+    ResubmitSptOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resubmitSptOrder>>,
+  TError,
+  ResubmitSptOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getResubmitSptOrderMutationOptions(options));
 };
 
 export const getListStaffUrl = (params?: ListStaffParams) => {

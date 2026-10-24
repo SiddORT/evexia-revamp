@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { reviewLabel } from '../../components/orders/OrderReviewStatus.jsx';
+import { useOrderListFreshness } from '../../services/orderFreshness.js';
 import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
@@ -47,6 +49,7 @@ export default function ImmunotherapyOrders() {
   const rows = result.items;
   const filters = { search, status: status === 'All' ? '' : status, from_date: from, to_date: to };
   const resetPage = () => { setPage(1); setCursors([null]); setSelected(new Set()); setKnown({}); };
+  useOrderListFreshness('immunotherapy', () => { resetPage(); setRevision((n) => n + 1); });
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError(''); setResult((r) => ({ ...r, counts: null }));
@@ -100,7 +103,7 @@ export default function ImmunotherapyOrders() {
     { key: 'suborders', label: 'Suborders', render: (o) => o.groups.reduce((count, group) => count + group.items.length, 0) },
     { key: 'value', label: 'Value', render: (o) => <span className="imm-num">{money(orderTotalMinor(o))}</span> },
     { key: 'ship', label: 'Ship to', render: (o) => <>{shippingRecipient(o, snap.patients)?.name || '-'}<span className="imm-cell-sub">{o.shipping === 'doctor' ? 'Doctor' : 'Patient'}</span></> },
-    { key: 'status', label: 'Status', render: (o) => <><StatusPill status={o.status} />{o.status === 'Confirmed' && <span className="imm-cell-sub">Awaiting Admin review</span>}{o.reviewDecision && o.reviewDecision !== o.status && <span className="imm-cell-sub">Admin: {o.reviewDecision}</span>}{o.poNumber && <span className="imm-cell-sub">PO: {o.poNumber}</span>}</> },
+    { key: 'status', label: 'Status', render: (o) => <><StatusPill status={o.status} /><span className="imm-cell-sub">{reviewLabel(o)}</span>{o.poNumber && <span className="imm-cell-sub">PO: {o.poNumber}</span>}</> },
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
       <Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
       {can.edit && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}

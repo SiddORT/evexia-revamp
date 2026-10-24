@@ -4,3 +4,6 @@
 .order-approval__actions { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; max-width: 100%; }
 .order-approval__dialog { box-sizing: border-box; width: min(100%, 450px); overflow-wrap: anywhere; }
 .order-approval:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+.order-review-status { flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; }
+.order-review-reason { white-space: pre-wrap; overflow-wrap: anywhere; }
+.order-approval__dialog textarea { display: block; box-sizing: border-box; width: 100%; min-height: 110px; margin-block: 8px 16px; }

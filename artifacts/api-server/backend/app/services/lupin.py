@@ -101,6 +101,8 @@ def project(keys, row):
 
 
 def resolved(db, actor, keys, body, previous=None):
+    if body.status != (previous["status"] if previous else "Confirmed") or body.paymentStatus != (previous["paymentStatus"] if previous else "Unpaid"):
+        raise ImmError("Use explicit review actions, not ordinary saves/imports.", 422, "order_decision")
     from app.services.order_approval import protect
     protect(db, "lupin", body, previous)
     require_assignment(db, body.mrId)
@@ -121,6 +123,10 @@ def resolved(db, actor, keys, body, previous=None):
         value[key] = previous[key] if previous and previous[field] == str(identity) else person(eligible(db, kind, identity))
     value["patients"] = [old_patients.get(str(p)) or person(eligible(db, "patients", p)) for p in body.patientIds]
     value["price"] = format(Decimal(body.price), ".2f")
+    if scope_identity(db) and previous:
+        if Decimal(body.price) != Decimal(previous["price"]):
+            raise ImmError("MR corrections must retain the saved Admin price.", 403, "order_pricing")
+        value["price"] = previous["price"]
     value["total"] = format(Decimal(body.patientCount) * Decimal(body.price), ".2f")
     previous_files = {a["id"]: a for a in previous["attachments"]} if previous else {}
     value["attachments"] = []
@@ -197,8 +203,8 @@ def idempotent(db, actor, keys, key, payload, work):
             raise ImmError("Retry the original unchanged submission.", 409, "lupin_retry")
         result = saved["result"]
         if payload.get("kind") != "lupin_upload":
-            for order in result.get("orders", [result]):
-                find(db, uuid.UUID(order["id"]))
+            current = [project(keys, find(db, uuid.UUID(order["id"]))) for order in result.get("orders", [result])]
+            return {**result, "orders": current} if "orders" in result else current[0]
         elif not result.get("cancelled"):
             from app.services.files import get_record
             get_record(db, actor, uuid.UUID(result["id"]), "read")
@@ -324,7 +330,8 @@ def listing(db, actor, *, search="", status=None, payment_status=None,
                     if complete and size > 8_000_000:
                         raise ImmError("Export exceeds 8 MB; narrow filters. No partial export.", 409, "lupin_bound")
                     # File contents, usable URLs and credentials never leave an export.
-                    found.append({**data, "attachments": [], "attachmentIds": []} if complete else data)
+                    from app.services.order_approval import export_safe
+                    found.append({**export_safe(data), "attachments": [], "attachmentIds": []} if complete else data)
                 if not complete and len(found) == limit:
                     more = next(rows, None) is not None
                     break

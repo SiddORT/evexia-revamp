@@ -8,6 +8,7 @@
 import type { ImmRecordApproval } from "./immRecordApproval";
 import type { ImmRecordAttachmentsItem } from "./immRecordAttachmentsItem";
 import type { ImmRecordAudit } from "./immRecordAudit";
+import type { ImmRecordDecisionEligibility } from "./immRecordDecisionEligibility";
 import type { ImmRecordDoctor } from "./immRecordDoctor";
 import type { ImmRecordGroupsItem } from "./immRecordGroupsItem";
 import type { ImmRecordMr } from "./immRecordMr";
@@ -16,13 +17,16 @@ import type { ImmRecordPricingBasis } from "./immRecordPricingBasis";
 import type { ImmRecordRecipient } from "./immRecordRecipient";
 import type { ImmRecordRejection } from "./immRecordRejection";
 import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
+import type { ImmRecordReviewHistoryItem } from "./immRecordReviewHistoryItem";
 import type { ImmRecordStatus } from "./immRecordStatus";
 
 export interface ImmRecord {
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;
+  correctionSaved?: boolean;
   date: string;
+  decisionEligibility?: ImmRecordDecisionEligibility;
   doctor: ImmRecordDoctor;
   doctorId: string;
   dosage: string;
@@ -30,16 +34,19 @@ export interface ImmRecord {
   histamine: string;
   id: string;
   mr: ImmRecordMr;
+  mrEditable?: boolean;
   mrId: string;
   number: string;
   patient: ImmRecordPatient;
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmRecordPricingBasis;
+  pricingNeedsReview?: boolean;
   recipient: ImmRecordRecipient;
   rejection?: ImmRecordRejection;
   remarks: string;
   reviewDecision?: ImmRecordReviewDecision;
+  reviewHistory?: ImmRecordReviewHistoryItem[];
   saline: string;
   shipping: string;
   status: ImmRecordStatus;

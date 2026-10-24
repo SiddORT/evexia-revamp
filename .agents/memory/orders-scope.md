@@ -77,11 +77,16 @@ Do not infer missing historical decisions or reopen terminal records.
 Approval is a decision/history fact and advances a pending order directly to
 In process, not a separate current Approved state. SPT Draft/Saved remain
 pre-approval states. Kits, SPT and Lupin approval requires saved valid pricing;
-rejection is separate and does not require pricing or a mandatory reason.
-Kits decisions retain protected Super Admin authority.
+rejection is separate and does not require pricing. Rejection now requires a
+bounded nonblank reason and is not terminal for the owning MR's limited
+correction/resubmission path. Correction saves retain Rejected; resubmission is
+explicit and preserves prior decisions as history. Approved and fulfilled
+orders remain closed to MR editing. Kits decisions retain protected Super Admin
+authority.
 
-**Why:** The user explicitly requested these decision semantics and priced-order
-actions without expanding fulfilment transitions or staff permissions.
+**Why:** The user explicitly superseded optional reasons and terminal rejection
+for correction/resubmission across all four sales orders, without expanding
+fulfilment transitions or staff permissions.
 
 **How to apply:** Preserve existing approval meanings and actor-owned evidence.
 Kits retains protected financial authority; pending MR edits must not erase

@@ -12,4 +12,5 @@ export type SptWriteStatus =
 export const SptWriteStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Rejected: "Rejected",
 } as const;

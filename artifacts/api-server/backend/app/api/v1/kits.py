@@ -21,8 +21,8 @@ from app.schemas.files import UploadRequest, FileResponse
 from app.services.file_policy import FileError
 from app.api.v1.files import storage_dependency, order_upload_operation
 from app.api.v1.immunotherapy import MULTIPART
-from app.schemas.order_approval import OrderApproval
-from app.services.order_approval import approve as approve_order
+from app.schemas.order_approval import OrderApproval, OrderRejection
+from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 
 router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
     dependencies=[Depends(operation_router("kits", {
@@ -46,8 +46,13 @@ def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_ide
 
 
 @router.post("/{record_id}/reject", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="rejectKitsOrder")
-def reject(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+def reject(record_id: uuid.UUID, body: OrderRejection, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "kits", decision="reject")
+
+
+@router.post("/{record_id}/resubmit", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="resubmitKitsOrder")
+def resubmit(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return resubmit_order(db, actor, record_id, body, "kits")
 
 
 @router.get("", response_model=KitsPage, response_model_exclude_unset=True, operation_id="listKitsOrders")

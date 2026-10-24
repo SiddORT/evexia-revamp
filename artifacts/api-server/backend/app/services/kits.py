@@ -30,6 +30,10 @@ def finances(actor, body, previous):
     if supplied and not is_super_admin(actor):
         raise ImmError("Only the protected Super Admin may submit Kits pricing or PO fields.", 403, "access_denied")
     values = {key: previous[key] for key in FINANCIAL_FIELDS if previous and key in previous}
+    if actor.role == "mr" and previous:
+        # Never recalculate protected prices implicitly, including on a second
+        # correction save after the item basis has already changed.
+        return values
     if "pricing" in supplied:
         if body.pricing is None:
             if values.get("pricing") is not None:
@@ -41,13 +45,6 @@ def finances(actor, body, previous):
         if key in supplied:
             values[key] = getattr(body, key)
     if values.get("pricing") is not None:
-        if actor.role == "mr" and previous and (
-            previous["kit"] != body.kit.model_dump(mode="json") or any(
-                previous[key] != getattr(body, key) for key in ("lancets", "applicators", "tray"))):
-            # A changed pending supply basis needs explicit Admin repricing;
-            # MR never submits replacement rates or implicitly reprices history.
-            values["pricing"] = None
-            return values
         try:
             raw = values["pricing"]
             price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
@@ -139,6 +136,8 @@ def project(keys, row):
 def resolved(db, actor, keys, body, previous=None):
     if body.status != (previous["status"] if previous else "Confirmed"):
         raise ImmError("Use the explicit Approve order or Reject order action; ordinary saves/imports cannot change decisions.", 422, "kits_decision")
+    if body.paymentStatus != (previous["paymentStatus"] if previous else "Unpaid"):
+        raise ImmError("Editing cannot change payment decisions.", 422, "kits_decision")
     from app.services.order_approval import protect
     protect(db, "kits", body, previous)
     mr_assignment(db, body, previous)
@@ -233,9 +232,8 @@ def idempotent(db, actor, keys, key, payload, work):
         if encode(saved["request"]) != encode(payload):
             raise ImmError("Retry the original unchanged submission.", 409, "kits_retry")
         result = saved["result"]
-        for order in result.get("orders", [result]):
-            find(db, uuid.UUID(order["id"]))
-        return result
+        current = [project(keys, find(db, uuid.UUID(order["id"]))) for order in result.get("orders", [result])]
+        return {**result, "orders": current} if "orders" in result else current[0]
     result = work()
     db.add(Retry(key=key, actor_id=actor.user.id,
         response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))
@@ -300,7 +298,8 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
                     size += len(encode(data).encode())
                     if complete and size > 8_000_000:
                         raise ImmError("Export exceeds 8 MB; narrow filters. No partial export.", 409, "kits_bound")
-                    found.append(data)
+                    from app.services.order_approval import export_safe
+                    found.append(export_safe(data) if complete else data)
                 if not complete and len(found) == limit:
                     more = next(rows, None) is not None
                     break

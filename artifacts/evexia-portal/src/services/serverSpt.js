@@ -1,6 +1,6 @@
-import { purchaseOrderRequest } from '../auth/adminSession.js';
+import { orderRequest } from './orderFreshness.js';
 
-export const request = (path = '', options) => purchaseOrderRequest(path, options, 'spt-orders');
+export const request = (path = '', options) => orderRequest(path, options, 'spt-orders');
 export const STATUSES = Object.freeze(['Draft', 'Saved', 'In process', 'Rejected']);
 export const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 export function parseAmount(value) {

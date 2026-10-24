@@ -20,6 +20,7 @@ import type { KitsRecordPatient } from "./kitsRecordPatient";
 import type { KitsRecordPaymentStatus } from "./kitsRecordPaymentStatus";
 import type { KitsRecordRecipient } from "./kitsRecordRecipient";
 import type { KitsRecordRejection } from "./kitsRecordRejection";
+import type { KitsRecordReviewHistoryItem } from "./kitsRecordReviewHistoryItem";
 import type { KitsRecordShipping } from "./kitsRecordShipping";
 import type { KitsRecordStatus } from "./kitsRecordStatus";
 
@@ -33,6 +34,7 @@ export interface KitsRecord {
   audit?: KitsRecordAudit;
   billing: KitsRecordBilling;
   businessParking?: string | null;
+  correctionSaved?: boolean;
   date: string;
   decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
@@ -53,10 +55,13 @@ export interface KitsRecord {
   paymentStatus?: KitsRecordPaymentStatus;
   poNumber?: string | null;
   pricing?: KitsPricingSnapshot | null;
+  pricingNeedsReview?: boolean;
   recipient: KitsRecordRecipient;
   rejection?: KitsRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
+  reviewDecision?: string | null;
+  reviewHistory?: KitsRecordReviewHistoryItem[];
   shipping?: KitsRecordShipping;
   status?: KitsRecordStatus;
   /** @maxLength 12 */

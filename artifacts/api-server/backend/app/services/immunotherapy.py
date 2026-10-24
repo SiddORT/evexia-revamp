@@ -104,7 +104,9 @@ def find(db, record_id):
 
 def project(keys, row):
     from app.services.order_lifecycle import status
-    return {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "status": status(row.status),
+    from app.services.order_approval import editable, eligibility
+    value = {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "status": status(row.status)}
+    return {**value, "mrEditable": editable("immunotherapy", value), "decisionEligibility": eligibility("immunotherapy", value),
             "audit": audit_metadata(row),
             "id": str(row.id), "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
@@ -114,26 +116,22 @@ def review_policy(db, body, previous):
     from app.services.mr_orders import scope_identity
     from app.services.immunotherapy_pricing import basis, financials, RATE_BASIS, LEGACY_BASIS
     decision = getattr(body, "decision", None)
+    if decision:
+        raise ImmError("Save changes first, then use the version-bound Approve or Reject action.", 422, "imm_admin_review")
     if scope_identity(db):
-        if decision:
-            raise ImmError("Only Admin can decide orders.", 403, "imm_admin_review")
         saved_basis = previous.get("pricingBasis", LEGACY_BASIS) if previous else RATE_BASIS
         if body.pricingBasis is not None and body.pricingBasis != saved_basis:
             raise ImmError("MR cannot change an order's financial basis.", 403, "imm_admin_review")
-        if body.status != "Confirmed" or body.poNumber is not None or any(
+        if body.status != (previous["status"] if previous else "Confirmed") or body.poNumber is not None or any(
             g.mrp is not None or any(i.rate is not None for i in g.items) for g in body.groups
         ):
-            raise ImmError("MR submissions must be Confirmed and omit Admin pricing and PO number.", 403, "imm_admin_review")
+            raise ImmError("MR saves must retain the current review status and omit Admin pricing and PO number.", 403, "imm_admin_review")
         from app.services.order_approval import protect
         protect(db, "immunotherapy", body, previous)
         return
     # Existing edit/import capability grants the Admin-side operation. MRs never
     # reach this branch; imports do not gain a separate review authority.
-    if decision:
-        from app.services.order_approval import editable
-        if not previous or not editable("immunotherapy", previous) or body.status != ("In process" if decision == "approve" else "Rejected"):
-            raise ImmError("Only a pending saved order can be explicitly approved or rejected.", 409, "imm_admin_review")
-    elif body.status != (previous["status"] if previous else "Confirmed"):
+    if body.status != (previous["status"] if previous else "Confirmed"):
         raise ImmError("Use the explicit Admin decision action; ordinary status edits/imports cannot decide or advance orders.", 422, "imm_admin_review")
     if body.status == "Confirmed" and previous and previous["status"] != "Confirmed":
         raise ImmError("A reviewed order cannot be reset to awaiting review.", 422, "imm_admin_review")
@@ -279,13 +277,8 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
         raise ImmError("Saved order date is immutable.", 422, "imm_date")
     db.info["imm_actor"] = actor.user.id
     data = resolved(db, body, previous)
-    from app.services.order_approval import evidence
-    data["approval"] = previous.get("approval") if previous else None
-    data["rejection"] = previous.get("rejection") if previous else None
-    if getattr(body, "decision", None) == "approve":
-        data["approval"] = evidence(actor)
-    elif getattr(body, "decision", None) == "reject":
-        data["rejection"] = {"rejectedBy": str(actor.user.id), "rejectedAt": utcnow().isoformat()}
+    from app.services.order_approval import preserve
+    preserve(actor, "immunotherapy", data, previous)
     from app.services.immunotherapy_pricing import issue
     issue(data, previous)
     now = utcnow()
@@ -407,7 +400,8 @@ def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cu
                     size += len(encode(data).encode("utf-8"))
                     if complete and size > 8_000_000:
                         raise ImmError("Export exceeds 8 MB of saved order data. Narrow filters; no partial file produced.", 409, "imm_export_limit")
-                    found.append(data)
+                    from app.services.order_approval import export_safe
+                    found.append(export_safe(data) if complete else data)
                 if not complete and len(found) == limit:
                     more = next(rows, None) is not None
                     break

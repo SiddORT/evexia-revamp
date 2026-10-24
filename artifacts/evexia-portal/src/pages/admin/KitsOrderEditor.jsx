@@ -10,6 +10,7 @@ import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewe
 import { blankPricing, calculateKitsPricing, pricingInput, moneyText, normalizeKitsAmount } from '../../services/kitsPricing.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
+import OrderApproval from '../../components/orders/OrderApproval.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 
@@ -36,7 +37,10 @@ function hydrate(o) {
   };
 }
 
-export default function KitsOrderEditor({ order }) {
+export default function KitsOrderEditor({ order: initialOrder }) {
+  const [order, setOrder] = useState(initialOrder);
+  const [decisionRecord, setDecisionRecord] = useState(order);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const can = useOrderActions('kits');
   const { portal } = useOrderPortal();
   const mrPortal = portal === 'mr';
@@ -68,14 +72,14 @@ export default function KitsOrderEditor({ order }) {
   const initialDraft = useRef(JSON.stringify({ v, pricing, parking, po }));
   const leaveDialog = useOrderDraftNavigation({
     dirty: !done && (files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })),
-    pending: busy || uncertain,
+    pending: busy || uncertain || reviewBusy,
     onBlocked: () => setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' }),
   });
 
   const set = (p) => setV((c) => ({ ...c, ...p }));
   const setKit = (p) => setV((c) => ({ ...c, kit: { ...c.kit, ...p } }));
   const setP = (p) => setPricing((c) => ({ ...c, ...p }));
-  const frozen = busy || uncertain || done;
+  const frozen = busy || uncertain || reviewBusy || done;
 
   const calc = useMemo(() => {
     try { return { snap: calculateKitsPricing(v, pricing, tax), error: '' }; }
@@ -93,7 +97,7 @@ export default function KitsOrderEditor({ order }) {
   const billing = doctorChanged ? doctor : (order.billing || order.doctor);
 
   async function save() {
-    if (saving.current || done || !protectedOk) return;
+    if (saving.current || reviewBusy || done || !protectedOk) return;
     if (!submission.current) {
       const e = {};
       if (!mrPortal) {
@@ -133,6 +137,15 @@ export default function KitsOrderEditor({ order }) {
       <p className="admin-page-head__description">Saved date: {date(order.date)}. Historical people, shipping and billing stay as saved unless you change them.</p></div>
       <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     {!protectedOk && <p role="alert" className="kits-error">This order cannot be edited by your account. Your draft is preserved.</p>}
+    <OrderApproval kind="kits" order={decisionRecord} request={request}
+      dirty={files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })}
+      blocked={busy || uncertain || done} onLockChange={setReviewBusy} onApproved={(saved) => {
+        setDecisionRecord(saved);
+        if (!files.length && initialDraft.current === JSON.stringify({ v, pricing, parking, po })) {
+          const next = { ...v, status: saved.status, paymentStatus: saved.paymentStatus };
+          setOrder(saved); setV(next); initialDraft.current = JSON.stringify({ v: next, pricing, parking, po });
+        }
+      }} />
     {done && <p role="status" className="kito-done">Order saved. <Link href={`${BASE}/${order.id}`} className="kits-link">View order</Link></p>}
     {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef}><strong>{errors.save ? 'Order save needs attention' : 'Fix before saving'}</strong>
       <ul>{errList.map(([k, m]) => <li key={k}>{m}</li>)}</ul>
@@ -209,7 +222,7 @@ export default function KitsOrderEditor({ order }) {
         <section className="admin-panel kits-panel"><h2>Billing details</h2><p className="kits-hint">Always the billing doctor, independent of shipping.</p><Facts person={billing} empty="Billing doctor unavailable." /></section>
       </div>
     </fieldset>
-    <div className="kits-actions"><button type="button" className="admin-button" disabled={!protectedOk || busy || done} onClick={save}>{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save changes'}</button>
+    <div className="kits-actions"><button type="button" className="admin-button" disabled={!protectedOk || busy || reviewBusy || done} onClick={save}>{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save changes'}</button>
       {!busy && !uncertain && !done && <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary">Cancel</Link>}</div>
     {protectedOk && can.read_attachment && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}
     {leaveDialog}

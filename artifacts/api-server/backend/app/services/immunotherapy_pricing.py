@@ -33,7 +33,6 @@ def prepare(body, previous, error, *, mr=False):
     groups = body.model_dump(mode="json")["groups"]
     if mr and previous:
         old_groups = {g["id"]: g for g in previous["groups"]}
-        clinical_same = all(previous.get(k) == getattr(body, k) for k in ("dosage", "histamine", "saline")) and previous["patientId"] == str(body.patientId)
         for group in groups:
             saved = old_groups.get(group["id"], {})
             group["mrp"] = saved.get("mrp")
@@ -43,7 +42,9 @@ def prepare(body, previous, error, *, mr=False):
                 if item.get("suborderId") is not None and item["suborderId"] != old.get("suborderId"):
                     raise error("Retain the saved occurrence identity.", 409, "imm_suborder")
                 item["suborderId"] = old.get("suborderId")
-                item["rate"] = old.get("rate") if clinical_same and item.get("result") == old.get("result") else None
+                # Retain Admin-owned values as history; the server review flag
+                # invalidates approval when the clinical/item basis changes.
+                item["rate"] = old.get("rate")
         return chosen, groups
     if chosen == LEGACY_BASIS:
         unpriced = previous and previous.get("totalMinor") is None and all(

@@ -24,10 +24,14 @@ from app.api.v1.files import storage_dependency, order_upload_operation
 from app.schemas.patients import PatientFields, PatientLanguageChoices
 from app.services import patients as patient_service
 
+from app.schemas.order_approval import OrderApproval, OrderRejection
+from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
+
 router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"],
     dependencies=[Depends(operation_router("immunotherapy", {
         "listing": None, "detail": None, "references": None, "export": "export",
         "review": "import", "commit": "import", "create": "add", "edit": "edit",
+        "approve": "edit", "reject": "edit", "resubmit": "edit",
         "policy": "upload_attachment", "prescription": "upload_attachment",
     }, allow_mr=True))])
 MULTIPART = {
@@ -44,6 +48,21 @@ MULTIPART = {
         },
     }
 }
+
+
+@router.post("/{record_id}/approve", response_model=ImmRecord, operation_id="approveImmunotherapyOrder")
+def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "immunotherapy")
+
+
+@router.post("/{record_id}/reject", response_model=ImmRecord, operation_id="rejectImmunotherapyOrder")
+def reject(record_id: uuid.UUID, body: OrderRejection, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return approve_order(db, actor, record_id, body, "immunotherapy", decision="reject")
+
+
+@router.post("/{record_id}/resubmit", response_model=ImmRecord, operation_id="resubmitImmunotherapyOrder")
+def resubmit(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return resubmit_order(db, actor, record_id, body, "immunotherapy")
 
 
 @router.post("/patient-registration", response_model=ImmRegisteredPatient, operation_id="registerMrOrderPatient")

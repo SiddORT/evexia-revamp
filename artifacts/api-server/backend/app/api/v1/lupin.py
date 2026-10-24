@@ -18,13 +18,14 @@ from app.services.file_locks import operation
 from app.api.v1.files import storage_dependency
 from app.api.v1.immunotherapy import MULTIPART
 from app.schemas.lupin import LupinUpdate
-from app.schemas.order_approval import OrderApproval
-from app.services.order_approval import approve as approve_order
+from app.schemas.order_approval import OrderApproval, OrderRejection
+from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 
 router = APIRouter(prefix="/admin/lupin-orders", tags=["lupin"],
     dependencies=[Depends(operation_router("lupin", {
         "listing": None, "detail": None, "references": None, "export": "export",
         "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
+        "resubmit": "edit",
         "policy": "upload_attachment", "upload": "upload_attachment", "cancel_upload": "upload_attachment",
     }, allow_mr=True))])
 
@@ -48,8 +49,13 @@ def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_ide
 
 
 @router.post("/{record_id}/reject", response_model=LupinRecord, operation_id="rejectLupinOrder")
-def reject(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+def reject(record_id: uuid.UUID, body: OrderRejection, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "lupin", decision="reject")
+
+
+@router.post("/{record_id}/resubmit", response_model=LupinRecord, operation_id="resubmitLupinOrder")
+def resubmit(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return resubmit_order(db, actor, record_id, body, "lupin")
 
 
 @router.get("", response_model=LupinPage, operation_id="listLupinOrders")

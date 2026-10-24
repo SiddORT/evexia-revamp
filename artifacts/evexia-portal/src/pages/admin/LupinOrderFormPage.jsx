@@ -80,7 +80,8 @@ function Review({ order: initialOrder }) {
   </div></AdminLayout>;
 }
 
-function Form({ order }) {
+function Form({ order: initialOrder }) {
+  const [order, setOrder] = useState(initialOrder);
   const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
   const { mr, portal } = useOrderPortal();
@@ -96,8 +97,13 @@ function Form({ order }) {
   const uploadKeys = useRef(new Map());
   const initial = useRef(JSON.stringify(v));
   dirty.current = JSON.stringify(v) !== initial.current || uploads.current.size > 0 || failedUploads.current.size > 0 || busy || uncertain;
+  const [decisionRecord, setDecisionRecord] = useState(order);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const reviewLock = useRef(false);
+  reviewLock.current = reviewBusy;
+  dirty.current = dirty.current || reviewBusy;
   const eligible = order ? can.edit && order.mrEditable : can.add;
-  const locked = busy || uncertain || ownerChanged || !eligible;
+  const locked = busy || uncertain || reviewBusy || ownerChanged || !eligible;
   const set = (patch) => setV((current) => ({ ...current, ...patch }));
   useEffect(() => {
     alive.current = true;
@@ -120,7 +126,7 @@ function Form({ order }) {
   }, [policyRevision, can.upload_attachment]);
   useEffect(() => setNavigationGuard((target) => {
     if (!dirty.current) return false;
-    if (saving.current || submission.current) {
+    if (saving.current || submission.current || reviewLock.current) {
       setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
       return true;
     }
@@ -151,7 +157,7 @@ function Form({ order }) {
     finally { saving.current = false; if (alive.current) setBusy(false); }
   }
   async function discard() {
-    if (saving.current || uncertain || submission.current) return;
+    if (saving.current || uncertain || submission.current || reviewLock.current) return;
     saving.current = true; setBusy(true);
     try {
       await cleanup([...uploadKeys.current.values(), ...failedUploads.current]);
@@ -163,7 +169,7 @@ function Form({ order }) {
   }
   async function save(event) {
     event.preventDefault();
-    if (saving.current || ownerChanged || !policy) return;
+    if (saving.current || reviewBusy || ownerChanged || !policy) return;
     const errs = {};
     if (!submission.current) {
       if (!v.doctorId) errs.doctorId = 'Choose a real eligible Doctor.';
@@ -231,6 +237,15 @@ function Form({ order }) {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>{order ? `Edit ${order.number}` : 'Add Lupin Order'}</h1></div></div>
     {!eligible && <p role="alert">This order cannot be edited. Saved details remain viewable; any mounted draft is preserved.</p>}
     {policyError && <p role="alert">{policyError} <button type="button" className="lupin-link" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
+    {order && <OrderApproval kind="lupin" order={decisionRecord} request={request}
+      dirty={JSON.stringify(v) !== initial.current || uploads.current.size > 0}
+      blocked={busy || uncertain || ownerChanged} onLockChange={setReviewBusy} onApproved={(saved) => {
+        setDecisionRecord(saved);
+        if (JSON.stringify(v) === initial.current && !uploads.current.size) {
+          const next = { ...v, status: saved.status, paymentStatus: saved.paymentStatus };
+          setOrder(saved); setV(next); initial.current = JSON.stringify(next);
+        }
+      }} />}
     {uncertain && <p className="lupin-notice" role="alert">Order outcome is unconfirmed. Editing is locked. Retry the unchanged save to recover the same order without a duplicate.</p>}
     {Object.keys(errors).length > 0 && <div className="lupin-errors" role="alert" tabIndex={-1} ref={summary} data-testid="lupin-errors"><strong>Unable to save</strong><ul>{Object.entries(errors).map(([key, text]) => <li key={key}>{text}</li>)}</ul></div>}
     <fieldset disabled={locked} className="lupin-form-fields">
@@ -242,7 +257,7 @@ function Form({ order }) {
         <p className="lupin-hint">The MR must match this Doctor’s current assignment. No master or account is created.</p>
         <div className="lupin-entry__amounts">
           {field('patientCount', 'No. of Patients', { inputMode: 'numeric', maxLength: 7 })}
-          {field('price', 'Price (per Test, INR)', { inputMode: 'decimal', maxLength: 32 })}
+          {field('price', 'Price (per Test, INR)', { inputMode: 'decimal', maxLength: 32, readOnly: Boolean(mr && order) })}
           <div className="lupin-field"><label htmlFor="lupin-total">Total Amount (₹)</label><input id="lupin-total" readOnly value={money(totalMinor(v.patientCount, v.price))} aria-live="polite" data-testid="lupin-total" /></div>
         </div>
         <p className="lupin-hint">Enter the patient count manually for pricing. Optional links never calculate, restrict or replace it. The server calculates the saved total.</p>
@@ -271,8 +286,8 @@ function Form({ order }) {
     </fieldset>
     {progress && <p className="lupin-hint" role="status" aria-live="polite">{progress}</p>}
     {!can.upload_attachment && <p role="status">Upload Attachment permission is required for this form's mandatory attachment. Your draft remains in this tab.</p>}
-    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={!eligible || !can.upload_attachment || busy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : order ? 'Save changes' : 'Save order'}</button>
-      {!busy && !uncertain && <button type="button" className="admin-button admin-button--secondary" onClick={() => dirty.current ? setLeave({ kind: 'href', href: BASE }) : navigate(BASE)} data-testid="link-lupin-cancel">Cancel</button>}
+    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={!eligible || !can.upload_attachment || busy || reviewBusy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : order ? 'Save changes' : 'Save order'}</button>
+      {!busy && !uncertain && !reviewBusy && <button type="button" className="admin-button admin-button--secondary" onClick={() => dirty.current ? setLeave({ kind: 'href', href: BASE }) : navigate(BASE)} data-testid="link-lupin-cancel">Cancel</button>}
     </div>
     {leave && <ImmDialog title="Discard this Lupin draft?" description="Selected files and unsaved details will be discarded. Known private uploads will be removed before leaving." onClose={() => { if (!busy) setLeave(null); }} returnFocusRef={saveButton}>
       <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => setLeave(null)}>Keep editing</button><button type="button" className="admin-button" disabled={busy} onClick={discard}>{busy ? 'Removing uploads…' : 'Discard draft'}</button></div>

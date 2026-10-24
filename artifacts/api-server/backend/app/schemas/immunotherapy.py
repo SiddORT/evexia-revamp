@@ -86,6 +86,11 @@ class ImmImport(Strict):
 
 
 class ImmRecord(BaseModel):
+    reviewHistory: list[dict] = Field(default_factory=list)
+    correctionSaved: bool = False
+    pricingNeedsReview: bool = False
+    mrEditable: bool = False
+    decisionEligibility: dict | None = None
     rejection: dict | None = None
     approval: dict | None = None
     """Encrypted document projected only after protected authorization."""

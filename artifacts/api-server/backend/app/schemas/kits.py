@@ -115,6 +115,10 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    reviewHistory: list[dict] = Field(default_factory=list)
+    reviewDecision: str | None = None
+    correctionSaved: bool = False
+    pricingNeedsReview: bool = False
     decisionEligibility: dict | None = None
     rejection: dict | None = None
     approval: dict | None = None

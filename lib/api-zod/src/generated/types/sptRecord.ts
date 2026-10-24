@@ -12,11 +12,13 @@ import type { SptRecordDecisionEligibility } from "./sptRecordDecisionEligibilit
 import type { SptRecordDoctor } from "./sptRecordDoctor";
 import type { SptRecordMr } from "./sptRecordMr";
 import type { SptRecordRejection } from "./sptRecordRejection";
+import type { SptRecordReviewHistoryItem } from "./sptRecordReviewHistoryItem";
 import type { SptRecordStatus } from "./sptRecordStatus";
 
 export interface SptRecord {
   approval?: SptRecordApproval;
   audit?: SptRecordAudit;
+  correctionSaved?: boolean;
   date: string;
   decisionEligibility?: SptRecordDecisionEligibility;
   doctor: SptRecordDoctor;
@@ -29,8 +31,11 @@ export interface SptRecord {
   mrName: string;
   number: string;
   patients: SptPatientSnapshot[];
+  pricingNeedsReview?: boolean;
   rejection?: SptRecordRejection;
   remarks: string;
+  reviewDecision?: string | null;
+  reviewHistory?: SptRecordReviewHistoryItem[];
   sourceId: string;
   status: SptRecordStatus;
   total: string;

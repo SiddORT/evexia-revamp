@@ -1,6 +1,7 @@
-import { getSession, purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
+import { getSession, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { privateUploadMessage } from '../auth/privateFileErrors.js';
+import { orderRequest } from './orderFreshness.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function failure(error, stage, mrPresentation) {
@@ -38,10 +39,10 @@ function failure(error, stage, mrPresentation) {
 
 export async function request(path = '', options) {
   // Other Kits reads/transfers keep their existing transport contract.
-  if (path !== '' || options?.body === undefined) return purchaseOrderRequest(path, options, 'kits-orders');
+  if (path !== '' || options?.body === undefined) return orderRequest(path, options, 'kits-orders');
   const mrPresentation = getSession().user?.identity_kind === 'mr';
   try {
-    const result = await purchaseOrderRequest(path, options, 'kits-orders');
+    const result = await orderRequest(path, options, 'kits-orders');
     if (!UUID.test(result?.id || '')) {
       // A successful HTTP status alone does not identify the persisted order.
       // Keep the original key/payload when a committed result cannot be read.
@@ -55,8 +56,8 @@ export async function request(path = '', options) {
 export async function updateOrder(id, body) {
   const mrPresentation = getSession().user?.identity_kind === 'mr';
   try {
-    const result = await purchaseOrderRequest(`/${id}/edit`, { body }, 'kits-orders');
-    if (result?.id !== id || result.version !== body.expected_version + 1) {
+    const result = await orderRequest(`/${id}/edit`, { body }, 'kits-orders');
+    if (result?.id !== id || !Number.isSafeInteger(result.version) || result.version < body.expected_version + 1) {
       const error = new Error(); error.ambiguous = true; throw error;
     }
     return result;

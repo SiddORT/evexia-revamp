@@ -1,7 +1,8 @@
-import { getSession, purchaseOrderRequest, immunotherapyFileRequest } from '../auth/adminSession.js';
+import { getSession, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
+import { orderRequest } from './orderFreshness.js';
 
-export const request = (path = '', options) => purchaseOrderRequest(path, options, 'immunotherapy-orders');
+export const request = (path = '', options) => orderRequest(path, options, 'immunotherapy-orders');
 const optionalPO = (value) => typeof value === 'string' && !value.trim() ? null : value || null;
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
@@ -19,7 +20,7 @@ export const totalMinor = (groups, basis = 'legacy_bottle_mrp') => {
 // Read/print/export consumers use the authoritative saved amount, never reprice.
 export const orderTotalMinor = (order) => order.totalMinor == null ? null : BigInt(order.totalMinor);
 export const money = (minor) => minor === null ? 'Awaiting pricing' : `₹${(minor / 100n).toLocaleString('en-IN')}.${String(minor % 100n).padStart(2, '0')}`;
-export const mrEditable = (order) => order.status === 'Confirmed' && !order.reviewDecision && !order.approval;
+export const mrEditable = (order) => Boolean(order.mrEditable);
 // Callers retain issued IDs for the editor lifetime, including removed bottles.
 export function newGroup(issuedIds = []) {
   const used = new Set(issuedIds);
@@ -39,7 +40,7 @@ export function orderInput(v) {
     groups: v.groups.map((g) => ({ id: g.id, ...(!mr ? { mrp: g.mrp || null } : {}),
       items: g.items.map(({ allergenId, result, rate, suborderId }) => ({ allergenId, result,
         ...(suborderId ? { suborderId } : {}), ...(!mr ? { rate: rate || null } : {}) })) })),
-    remarks: v.remarks, shipping: v.shipping, status: mr ? 'Confirmed' : v.status,
+    remarks: v.remarks, shipping: v.shipping, status: v.status || 'Confirmed',
     ...(!mr ? { poNumber: optionalPO(v.poNumber), ...(v.decision ? { decision: v.decision } : {}) } : {}),
     attachmentIds: v.attachments.map((f) => f.id),
   }));

@@ -3100,6 +3100,8 @@ export type ImmRecordAttachmentsItem = { [key: string]: unknown };
 
 export type ImmRecordAudit = { [key: string]: unknown } | null;
 
+export type ImmRecordDecisionEligibility = { [key: string]: unknown } | null;
+
 export type ImmRecordDoctor = { [key: string]: unknown };
 
 export type ImmRecordGroupsItem = { [key: string]: unknown };
@@ -3112,11 +3114,15 @@ export type ImmRecordRecipient = { [key: string]: unknown };
 
 export type ImmRecordRejection = { [key: string]: unknown } | null;
 
+export type ImmRecordReviewHistoryItem = { [key: string]: unknown };
+
 export interface ImmRecord {
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;
+  correctionSaved?: boolean;
   date: string;
+  decisionEligibility?: ImmRecordDecisionEligibility;
   doctor: ImmRecordDoctor;
   doctorId: string;
   dosage: string;
@@ -3124,16 +3130,19 @@ export interface ImmRecord {
   histamine: string;
   id: string;
   mr: ImmRecordMr;
+  mrEditable?: boolean;
   mrId: string;
   number: string;
   patient: ImmRecordPatient;
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmRecordPricingBasis;
+  pricingNeedsReview?: boolean;
   recipient: ImmRecordRecipient;
   rejection?: ImmRecordRejection;
   remarks: string;
   reviewDecision?: ImmRecordReviewDecision;
+  reviewHistory?: ImmRecordReviewHistoryItem[];
   saline: string;
   shipping: string;
   status: ImmRecordStatus;
@@ -3772,6 +3781,8 @@ export type KitsRecordRecipient = { [key: string]: unknown };
 
 export type KitsRecordRejection = { [key: string]: unknown } | null;
 
+export type KitsRecordReviewHistoryItem = { [key: string]: unknown };
+
 export interface KitsRecord {
   /** @maxLength 12 */
   applicators?: string;
@@ -3782,6 +3793,7 @@ export interface KitsRecord {
   audit?: KitsRecordAudit;
   billing: KitsRecordBilling;
   businessParking?: string | null;
+  correctionSaved?: boolean;
   date: string;
   decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
@@ -3802,10 +3814,13 @@ export interface KitsRecord {
   paymentStatus?: KitsRecordPaymentStatus;
   poNumber?: string | null;
   pricing?: KitsPricingSnapshot | null;
+  pricingNeedsReview?: boolean;
   recipient: KitsRecordRecipient;
   rejection?: KitsRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
+  reviewDecision?: string | null;
+  reviewHistory?: KitsRecordReviewHistoryItem[];
   shipping?: KitsRecordShipping;
   status?: KitsRecordStatus;
   /** @maxLength 12 */
@@ -4420,12 +4435,15 @@ export type LupinRecordPatientsItem = { [key: string]: unknown };
 
 export type LupinRecordRejection = { [key: string]: unknown } | null;
 
+export type LupinRecordReviewHistoryItem = { [key: string]: unknown };
+
 export interface LupinRecord {
   approval?: LupinRecordApproval;
   /** @maxItems 10 */
   attachmentIds?: string[];
   attachments: LupinRecordAttachmentsItem[];
   audit?: LupinRecordAudit;
+  correctionSaved?: boolean;
   date: string;
   decisionEligibility?: LupinRecordDecisionEligibility;
   doctor: LupinRecordDoctor;
@@ -4447,9 +4465,12 @@ export interface LupinRecord {
   paymentStatus?: LupinRecordPaymentStatus;
   /** @maxLength 32 */
   price: string;
+  pricingNeedsReview?: boolean;
   rejection?: LupinRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
+  reviewDecision?: string | null;
+  reviewHistory?: LupinRecordReviewHistoryItem[];
   status?: LupinRecordStatus;
   total: string;
   version: number;
@@ -6773,6 +6794,17 @@ export interface OrderApproval {
   /** @minimum 1 */
   expected_version: number;
   idempotencyKey: string;
+}
+
+export interface OrderRejection {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  reason: string;
 }
 
 export interface POActivityEvent {
@@ -9707,6 +9739,7 @@ export type SptInputStatus =
 export const SptInputStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Rejected: "Rejected",
 } as const;
 
 export interface SptInput {
@@ -9781,9 +9814,12 @@ export type SptRecordMr = { [key: string]: unknown } | null;
 
 export type SptRecordRejection = { [key: string]: unknown } | null;
 
+export type SptRecordReviewHistoryItem = { [key: string]: unknown };
+
 export interface SptRecord {
   approval?: SptRecordApproval;
   audit?: SptRecordAudit;
+  correctionSaved?: boolean;
   date: string;
   decisionEligibility?: SptRecordDecisionEligibility;
   doctor: SptRecordDoctor;
@@ -9796,8 +9832,11 @@ export interface SptRecord {
   mrName: string;
   number: string;
   patients: SptPatientSnapshot[];
+  pricingNeedsReview?: boolean;
   rejection?: SptRecordRejection;
   remarks: string;
+  reviewDecision?: string | null;
+  reviewHistory?: SptRecordReviewHistoryItem[];
   sourceId: string;
   status: SptRecordStatus;
   total: string;
@@ -9867,6 +9906,7 @@ export type SptWriteStatus =
 export const SptWriteStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Rejected: "Rejected",
 } as const;
 
 export interface SptWrite {
