@@ -1,9 +1,10 @@
 """Singleton-only Doctor directory. Reuse MR's graph lock and identity boundary."""
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import false, func, or_, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import utcnow
 from app.db.doctor_models import DoctorDirectory as Doctor
-from app.db.mr_models import MRDirectory
+from app.db.mr_models import MRDirectory, MRZoneAssignment
+from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
 from app.db.models import AuditEvent
 from app.schemas.doctors import DoctorFields
@@ -94,6 +95,20 @@ def projection(db, row, context=None):
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
+def read_projection(db, actor, row, context=None):
+    result = projection(db, row, context)
+    if actor.role != "mr":
+        return result
+    # Mask at the authorized read boundary, not in write validation or storage.
+    # Even very short legacy contacts must not be disclosed in their entirety.
+    for field, display in (("phone", "phoneDisplay"), ("alternatePhone", "alternatePhoneDisplay")):
+        digits = "".join(c for c in result.pop(field) if c.isascii() and c.isdigit())
+        result[display] = ("********" + digits[-2:]) if len(digits) > 2 else ("********" if digits else "")
+    email = result.pop("email")
+    result["emailDisplay"] = "***@***" if email else ""
+    return result
+
+
 def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retained_assignments=False):
     # Only historical relationship queries opt in. Live masters, actions,
     # exports and assignment choices always use the tombstone-excluding default.
@@ -122,11 +137,23 @@ def search_matcher(db, query, rows):
         context["mrs"].get(row.mrId).name if context["mrs"].get(row.mrId) and not context["mrs"][row.mrId].deleted_at else "")
 
 
-def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", limit=10, offset=0, cursor=None):
+def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", limit=10, offset=0, cursor=None, headquarter_id=None):
     def work():
         current = authorize(db, actor, lock=False)
         scope = owned_clauses(current)
-        clauses = predicates("", status, zone_id, mr_id, state) + scope
+        # MR filters describe saved assignments, including secondary zones.
+        # Keep the shared ownership predicate and writable choices unchanged.
+        clauses = predicates("", status, "" if current.role == "mr" else zone_id, mr_id, state) + scope
+        if current.role == "mr" and zone_id == "missing":
+            clauses.append(false())  # MR filters never offer missing/other assignments.
+        elif current.role == "mr" and zone_id:
+            members = select(MRZoneAssignment.mr_id).join(Zone, Zone.id == MRZoneAssignment.zone_id).where(
+                MRZoneAssignment.zone_id == zone_id, Zone.deleted_at.is_(None))
+            clauses.append(Doctor.mrId.in_(members))
+        if headquarter_id:
+            assigned = select(MRDirectory.id).join(Headquarter, Headquarter.id == MRDirectory.hq).where(
+                MRDirectory.deleted_at.is_(None), Headquarter.deleted_at.is_(None), MRDirectory.hq == headquarter_id)
+            clauses.append(Doctor.mrId.in_(assigned))
         total = db.scalar(select(func.count()).select_from(Doctor).where(Doctor.deleted_at.is_(None), *scope))
         meta = {}
         if query.strip():
@@ -139,7 +166,7 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", l
         from app.services.patients import doctor_context
         rows = list(rows)
         context = doctor_context(db, [row.id for row in rows])
-        result = dict(items=[projection(db, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset, **meta)
+        result = dict(items=[read_projection(db, current, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)
@@ -158,7 +185,7 @@ def find(db, record_id, lock=False, actor=None):
 def detail(db, actor, record_id):
     def work():
         current = authorize(db, actor, lock=False)
-        result = projection(db, find(db, record_id, actor=current))
+        result = read_projection(db, current, find(db, record_id, actor=current))
         db.commit()
         return result
     return transaction(db, work)
@@ -207,11 +234,19 @@ def filters(db, actor):
         state_rows = list(db.execute(select(Doctor.id, Doctor.state_ciphertext).where(Doctor.deleted_at.is_(None), *scope).limit(10001)))
         if len(state_rows) > 10000:
             raise DoctorError("Filter choices exceed 10,000 records. Narrow the directory.", 409, "doctor_filter_limit")
-        zone_scope = [Zone.id == db.get(MRDirectory, current.mr.id).zoneId] if current.role == "mr" else []
+        zone_scope = [Zone.id.in_(select(MRZoneAssignment.zone_id).where(
+            MRZoneAssignment.mr_id == current.mr.id))] if current.role == "mr" else []
         zones = list(db.scalars(select(Zone).where(Zone.deleted_at.is_(None), *zone_scope).order_by(Zone.name, Zone.id).limit(10001)))
         if len(zones) > 10000:
             raise DoctorError("Zone choices exceed the supported bound.", 409, "doctor_filter_limit")
+        headquarters = []
+        if current.role == "mr":
+            mr = db.get(MRDirectory, current.mr.id)
+            hq = db.get(Headquarter, mr.hq)
+            if hq and not hq.deleted_at:
+                headquarters.append(dict(id=str(hq.id), name=hq.name))
         result = dict(zones=[dict(id=str(zone.id), name=zone.name, status=zone.status) for zone in zones],
+                      headquarters=headquarters,
                       states=sorted({encrypted.crypto().decrypt("doctor_directory", row.id, "state", row.state_ciphertext) for row in state_rows}),
                       missingMR=bool(db.scalar(select(Doctor.id).where(*predicates(mr_id="missing"), *scope).limit(1))),
                       missingZone=bool(db.scalar(select(Doctor.id).where(*predicates(zone_id="missing"), *scope).limit(1))))

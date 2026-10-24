@@ -193,6 +193,60 @@ class DoctorPage(SearchSection):
     offset: int
 
 
+class MRDoctorRead(BaseModel):
+    """Read-only MR presentation DTO, deliberately independent of write validators.
+
+    Contacts are never returned as writable phone/email fields on MR reads.
+    """
+    model_config = ConfigDict(extra="forbid")
+    id: uuid.UUID
+    doctorNumber: str
+    name: str
+    phoneDisplay: str
+    alternatePhoneDisplay: str
+    emailDisplay: str
+    dialCountry: DialCountry
+    contactRequirement: Literal["required", "optional"]
+    dateOfJoining: date | None
+    registrationNumber: str
+    qualification: str
+    clinicName: str
+    mrId: uuid.UUID
+    mrName: str
+    mrUserId: str
+    zoneId: uuid.UUID | None
+    zoneName: str
+    invoiceType: Literal["normal", "gst"]
+    gstNumber: str
+    drugLicenceNumber: str
+    orderDiscount: Decimal
+    daysLimit: int
+    paymentLimit: Decimal
+    status: Literal["active", "inactive"]
+    verification: Literal["verified", "unverified"]
+    pincode: str
+    addressLine1: str
+    addressLine2: str
+    landmark: str
+    country: str
+    state: str
+    city: str
+    version: int
+    assignmentWarnings: list[str]
+    createdBy: str
+    updatedBy: str
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class MRDoctorReadPage(SearchSection):
+    items: list[MRDoctorRead]
+    total: int
+    filtered: int | None
+    limit: int
+    offset: int
+
+
 class DoctorChoice(BaseModel):
     id: uuid.UUID
     name: str
@@ -214,6 +268,7 @@ class DoctorChoices(SearchSection):
 
 class DoctorFilters(BaseModel):
     zones: list[dict[str, str]]
+    headquarters: list[dict[str, str]] = Field(default_factory=list)
     states: list[str]
     missingMR: bool
     missingZone: bool

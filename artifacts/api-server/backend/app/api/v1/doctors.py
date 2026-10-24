@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.schemas.doctors import (
     DoctorFields, DoctorEdit, DoctorStatus, DoctorContact, DoctorBulk, DoctorResponse, DoctorDeletion,
     DoctorPage, DoctorChoices, DoctorFilters, DoctorReview, DoctorImportResult,
+    MRDoctorRead, MRDoctorReadPage,
 )
 from app.services import doctors, doctor_transfer, mrs
 from app.services.designations import DesignationError
@@ -52,13 +53,14 @@ def reference(value):
         raise doctors.DoctorError("Choose a valid server assignment filter.", 422, "doctor_filter") from None
 
 
-@router.get("", response_model=DoctorPage, operation_id="listDoctorDirectory")
+@router.get("", response_model=DoctorPage | MRDoctorReadPage, operation_id="listDoctorDirectory")
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
             zone_id: str = Query("", max_length=36), mr_id: str = Query("", max_length=36), state: str = Query("", max_length=100),
             limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
             cursor: uuid.UUID | None = None,
+            headquarter_id: uuid.UUID | None = None,
             actor=Depends(manager), db: Session = Depends(get_db)):
-    return doctors.listing(db, actor, query, status, reference(zone_id), reference(mr_id), state, limit, offset, cursor)
+    return doctors.listing(db, actor, query, status, reference(zone_id), reference(mr_id), state, limit, offset, cursor, headquarter_id)
 
 
 @router.post("", response_model=DoctorResponse, status_code=201, operation_id="createDoctorDirectory")
@@ -135,7 +137,7 @@ async def commit(request: Request, filename: str = Query(min_length=1, max_lengt
     return await run_in_threadpool(doctor_transfer.transfer, db, actor, data, filename, True, digest)
 
 
-@router.get("/{doctor_id}", response_model=DoctorResponse, operation_id="getDoctorDirectory")
+@router.get("/{doctor_id}", response_model=DoctorResponse | MRDoctorRead, operation_id="getDoctorDirectory")
 def detail(doctor_id: uuid.UUID, actor=Depends(manager), db: Session = Depends(get_db)):
     return doctors.detail(db, actor, doctor_id)
 

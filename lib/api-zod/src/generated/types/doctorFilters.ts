@@ -5,9 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { DoctorFiltersHeadquartersItem } from "./doctorFiltersHeadquartersItem";
 import type { DoctorFiltersZonesItem } from "./doctorFiltersZonesItem";
 
 export interface DoctorFilters {
+  headquarters?: DoctorFiltersHeadquartersItem[];
   missingMR: boolean;
   missingZone: boolean;
   states: string[];

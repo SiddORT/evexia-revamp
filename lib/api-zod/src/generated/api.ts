@@ -125,30 +125,34 @@ export const listDoctorDirectoryQueryLimitMax = 100;
 export const listDoctorDirectoryQueryOffsetDefault = 0;
 export const listDoctorDirectoryQueryOffsetMin = 0;
 export const listDoctorDirectoryQueryOffsetMax = 1000000;
-export const listDoctorDirectoryResponseItemsItemAddressLine1Max = 300;
-export const listDoctorDirectoryResponseItemsItemAddressLine2Max = 300;
-export const listDoctorDirectoryResponseItemsItemAlternatePhoneMax = 20;
-export const listDoctorDirectoryResponseItemsItemCityMax = 100;
-export const listDoctorDirectoryResponseItemsItemClinicNameMax = 200;
-export const listDoctorDirectoryResponseItemsItemCountryMax = 100;
-export const listDoctorDirectoryResponseItemsItemDaysLimitDefault = 0;
-export const listDoctorDirectoryResponseItemsItemDaysLimitMin = 0;
-export const listDoctorDirectoryResponseItemsItemDaysLimitMax = 2147483647;
-export const listDoctorDirectoryResponseItemsItemDrugLicenceNumberMax = 100;
-export const listDoctorDirectoryResponseItemsItemEmailMax = 320;
-export const listDoctorDirectoryResponseItemsItemGstNumberMax = 20;
-export const listDoctorDirectoryResponseItemsItemLandmarkMax = 200;
-export const listDoctorDirectoryResponseItemsItemNameMax = 200;
-export const listDoctorDirectoryResponseItemsItemPhoneMax = 20;
-export const listDoctorDirectoryResponseItemsItemPincodeMin = 2;
-export const listDoctorDirectoryResponseItemsItemPincodeMax = 12;
-export const listDoctorDirectoryResponseItemsItemQualificationMax = 200;
-export const listDoctorDirectoryResponseItemsItemRegistrationNumberMax = 100;
-export const listDoctorDirectoryResponseItemsItemStateMax = 100;
-export const listDoctorDirectoryResponsePartialDefault = false;
-export const listDoctorDirectoryResponseScannedDefault = 0;
-export const listDoctorDirectoryResponseScannedMin = 0;
-export const listDoctorDirectoryResponseScannedMax = 500;
+export const listDoctorDirectoryResponseOneItemsItemAddressLine1Max = 300;
+export const listDoctorDirectoryResponseOneItemsItemAddressLine2Max = 300;
+export const listDoctorDirectoryResponseOneItemsItemAlternatePhoneMax = 20;
+export const listDoctorDirectoryResponseOneItemsItemCityMax = 100;
+export const listDoctorDirectoryResponseOneItemsItemClinicNameMax = 200;
+export const listDoctorDirectoryResponseOneItemsItemCountryMax = 100;
+export const listDoctorDirectoryResponseOneItemsItemDaysLimitDefault = 0;
+export const listDoctorDirectoryResponseOneItemsItemDaysLimitMin = 0;
+export const listDoctorDirectoryResponseOneItemsItemDaysLimitMax = 2147483647;
+export const listDoctorDirectoryResponseOneItemsItemDrugLicenceNumberMax = 100;
+export const listDoctorDirectoryResponseOneItemsItemEmailMax = 320;
+export const listDoctorDirectoryResponseOneItemsItemGstNumberMax = 20;
+export const listDoctorDirectoryResponseOneItemsItemLandmarkMax = 200;
+export const listDoctorDirectoryResponseOneItemsItemNameMax = 200;
+export const listDoctorDirectoryResponseOneItemsItemPhoneMax = 20;
+export const listDoctorDirectoryResponseOneItemsItemPincodeMin = 2;
+export const listDoctorDirectoryResponseOneItemsItemPincodeMax = 12;
+export const listDoctorDirectoryResponseOneItemsItemQualificationMax = 200;
+export const listDoctorDirectoryResponseOneItemsItemRegistrationNumberMax = 100;
+export const listDoctorDirectoryResponseOneItemsItemStateMax = 100;
+export const listDoctorDirectoryResponseOnePartialDefault = false;
+export const listDoctorDirectoryResponseOneScannedDefault = 0;
+export const listDoctorDirectoryResponseOneScannedMin = 0;
+export const listDoctorDirectoryResponseOneScannedMax = 500;
+export const listDoctorDirectoryResponseTwoPartialDefault = false;
+export const listDoctorDirectoryResponseTwoScannedDefault = 0;
+export const listDoctorDirectoryResponseTwoScannedMin = 0;
+export const listDoctorDirectoryResponseTwoScannedMax = 500;
 export const createDoctorDirectoryBodyAddressLine1Max = 300;
 export const createDoctorDirectoryBodyAddressLine2Max = 300;
 export const createDoctorDirectoryBodyAlternatePhoneMax = 20;
@@ -226,26 +230,26 @@ export const listDoctorMRChoicesResponsePartialDefault = false;
 export const listDoctorMRChoicesResponseScannedDefault = 0;
 export const listDoctorMRChoicesResponseScannedMin = 0;
 export const listDoctorMRChoicesResponseScannedMax = 500;
-export const getDoctorDirectoryResponseAddressLine1Max = 300;
-export const getDoctorDirectoryResponseAddressLine2Max = 300;
-export const getDoctorDirectoryResponseAlternatePhoneMax = 20;
-export const getDoctorDirectoryResponseCityMax = 100;
-export const getDoctorDirectoryResponseClinicNameMax = 200;
-export const getDoctorDirectoryResponseCountryMax = 100;
-export const getDoctorDirectoryResponseDaysLimitDefault = 0;
-export const getDoctorDirectoryResponseDaysLimitMin = 0;
-export const getDoctorDirectoryResponseDaysLimitMax = 2147483647;
-export const getDoctorDirectoryResponseDrugLicenceNumberMax = 100;
-export const getDoctorDirectoryResponseEmailMax = 320;
-export const getDoctorDirectoryResponseGstNumberMax = 20;
-export const getDoctorDirectoryResponseLandmarkMax = 200;
-export const getDoctorDirectoryResponseNameMax = 200;
-export const getDoctorDirectoryResponsePhoneMax = 20;
-export const getDoctorDirectoryResponsePincodeMin = 2;
-export const getDoctorDirectoryResponsePincodeMax = 12;
-export const getDoctorDirectoryResponseQualificationMax = 200;
-export const getDoctorDirectoryResponseRegistrationNumberMax = 100;
-export const getDoctorDirectoryResponseStateMax = 100;
+export const getDoctorDirectoryResponseOneAddressLine1Max = 300;
+export const getDoctorDirectoryResponseOneAddressLine2Max = 300;
+export const getDoctorDirectoryResponseOneAlternatePhoneMax = 20;
+export const getDoctorDirectoryResponseOneCityMax = 100;
+export const getDoctorDirectoryResponseOneClinicNameMax = 200;
+export const getDoctorDirectoryResponseOneCountryMax = 100;
+export const getDoctorDirectoryResponseOneDaysLimitDefault = 0;
+export const getDoctorDirectoryResponseOneDaysLimitMin = 0;
+export const getDoctorDirectoryResponseOneDaysLimitMax = 2147483647;
+export const getDoctorDirectoryResponseOneDrugLicenceNumberMax = 100;
+export const getDoctorDirectoryResponseOneEmailMax = 320;
+export const getDoctorDirectoryResponseOneGstNumberMax = 20;
+export const getDoctorDirectoryResponseOneLandmarkMax = 200;
+export const getDoctorDirectoryResponseOneNameMax = 200;
+export const getDoctorDirectoryResponseOnePhoneMax = 20;
+export const getDoctorDirectoryResponseOnePincodeMin = 2;
+export const getDoctorDirectoryResponseOnePincodeMax = 12;
+export const getDoctorDirectoryResponseOneQualificationMax = 200;
+export const getDoctorDirectoryResponseOneRegistrationNumberMax = 100;
+export const getDoctorDirectoryResponseOneStateMax = 100;
 export const setDoctorContactRequirementResponseAddressLine1Max = 300;
 export const setDoctorContactRequirementResponseAddressLine2Max = 300;
 export const setDoctorContactRequirementResponseAlternatePhoneMax = 20;
@@ -3270,409 +3274,739 @@ export const ListDoctorDirectoryQueryParams = zod.object({
     .max(listDoctorDirectoryQueryOffsetMax)
     .default(listDoctorDirectoryQueryOffsetDefault),
   cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  headquarter_id: zod
+    .union([zod.coerce.string().uuid(), zod.null()])
+    .optional(),
 });
 
-export const listDoctorDirectoryResponseItemsItemAddressLine2Default = ``;
+export const listDoctorDirectoryResponseOneItemsItemAddressLine2Default = ``;
 
-export const listDoctorDirectoryResponseItemsItemAlternatePhoneDefault = ``;
+export const listDoctorDirectoryResponseOneItemsItemAlternatePhoneDefault = ``;
 
-export const listDoctorDirectoryResponseItemsItemClinicNameDefault = ``;
+export const listDoctorDirectoryResponseOneItemsItemClinicNameDefault = ``;
 
-export const listDoctorDirectoryResponseItemsItemContactRequirementDefault = `optional`;
+export const listDoctorDirectoryResponseOneItemsItemContactRequirementDefault = `optional`;
 
-export const listDoctorDirectoryResponseItemsItemDialCountryDefault = `IN`;
-export const listDoctorDirectoryResponseItemsItemDrugLicenceNumberDefault = ``;
+export const listDoctorDirectoryResponseOneItemsItemDialCountryDefault = `IN`;
+export const listDoctorDirectoryResponseOneItemsItemDrugLicenceNumberDefault = ``;
 
-export const listDoctorDirectoryResponseItemsItemEmailDefault = ``;
+export const listDoctorDirectoryResponseOneItemsItemEmailDefault = ``;
 
-export const listDoctorDirectoryResponseItemsItemGstNumberDefault = ``;
+export const listDoctorDirectoryResponseOneItemsItemGstNumberDefault = ``;
 
-export const listDoctorDirectoryResponseItemsItemInvoiceTypeDefault = `normal`;
+export const listDoctorDirectoryResponseOneItemsItemInvoiceTypeDefault = `normal`;
 
-export const listDoctorDirectoryResponseItemsItemOrderDiscountDefault = `0.00`;
-export const listDoctorDirectoryResponseItemsItemOrderDiscountRegExp =
+export const listDoctorDirectoryResponseOneItemsItemOrderDiscountDefault = `0.00`;
+export const listDoctorDirectoryResponseOneItemsItemOrderDiscountRegExp =
   new RegExp("^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$");
-export const listDoctorDirectoryResponseItemsItemPaymentLimitDefault = `0.00`;
-export const listDoctorDirectoryResponseItemsItemPaymentLimitRegExp =
+export const listDoctorDirectoryResponseOneItemsItemPaymentLimitDefault = `0.00`;
+export const listDoctorDirectoryResponseOneItemsItemPaymentLimitRegExp =
   new RegExp(
     "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,13}|(?=[\\d.]{1,16}0*$)\\d{0,13}\\.\\d{0,2}0*$)",
   );
-export const listDoctorDirectoryResponseItemsItemPhoneDefault = ``;
+export const listDoctorDirectoryResponseOneItemsItemPhoneDefault = ``;
 
-export const listDoctorDirectoryResponseItemsItemStatusDefault = `active`;
+export const listDoctorDirectoryResponseOneItemsItemStatusDefault = `active`;
 
-export const ListDoctorDirectoryResponse = zod.object({
-  filtered: zod.union([zod.number().int(), zod.null()]),
-  items: zod.array(
-    zod.object({
-      addressLine1: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemAddressLine1Max),
-      addressLine2: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemAddressLine2Max)
-        .default(listDoctorDirectoryResponseItemsItemAddressLine2Default),
-      alternatePhone: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemAlternatePhoneMax)
-        .default(listDoctorDirectoryResponseItemsItemAlternatePhoneDefault),
-      assignmentWarnings: zod.array(zod.string()),
-      city: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemCityMax),
-      clinicName: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemClinicNameMax)
-        .default(listDoctorDirectoryResponseItemsItemClinicNameDefault),
-      contactRequirement: zod
-        .enum(["required", "optional"])
-        .default(listDoctorDirectoryResponseItemsItemContactRequirementDefault),
-      country: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemCountryMax),
-      createdAt: zod.coerce.date(),
-      createdBy: zod.string(),
-      dateOfJoining: zod.union([zod.coerce.date(), zod.null()]).optional(),
-      daysLimit: zod
-        .number()
-        .int()
-        .min(listDoctorDirectoryResponseItemsItemDaysLimitMin)
-        .max(listDoctorDirectoryResponseItemsItemDaysLimitMax)
-        .default(listDoctorDirectoryResponseItemsItemDaysLimitDefault),
-      dialCountry: zod
-        .enum([
-          "AC",
-          "AD",
-          "AE",
-          "AF",
-          "AG",
-          "AI",
-          "AL",
-          "AM",
-          "AO",
-          "AR",
-          "AS",
-          "AT",
-          "AU",
-          "AW",
-          "AX",
-          "AZ",
-          "BA",
-          "BB",
-          "BD",
-          "BE",
-          "BF",
-          "BG",
-          "BH",
-          "BI",
-          "BJ",
-          "BL",
-          "BM",
-          "BN",
-          "BO",
-          "BQ",
-          "BR",
-          "BS",
-          "BT",
-          "BW",
-          "BY",
-          "BZ",
-          "CA",
-          "CC",
-          "CD",
-          "CF",
-          "CG",
-          "CH",
-          "CI",
-          "CK",
-          "CL",
-          "CM",
-          "CN",
-          "CO",
-          "CR",
-          "CU",
-          "CV",
-          "CW",
-          "CX",
-          "CY",
-          "CZ",
-          "DE",
-          "DJ",
-          "DK",
-          "DM",
-          "DO",
-          "DZ",
-          "EC",
-          "EE",
-          "EG",
-          "EH",
-          "ER",
-          "ES",
-          "ET",
-          "FI",
-          "FJ",
-          "FK",
-          "FM",
-          "FO",
-          "FR",
-          "GA",
-          "GB",
-          "GD",
-          "GE",
-          "GF",
-          "GG",
-          "GH",
-          "GI",
-          "GL",
-          "GM",
-          "GN",
-          "GP",
-          "GQ",
-          "GR",
-          "GT",
-          "GU",
-          "GW",
-          "GY",
-          "HK",
-          "HN",
-          "HR",
-          "HT",
-          "HU",
-          "ID",
-          "IE",
-          "IL",
-          "IM",
-          "IN",
-          "IO",
-          "IQ",
-          "IR",
-          "IS",
-          "IT",
-          "JE",
-          "JM",
-          "JO",
-          "JP",
-          "KE",
-          "KG",
-          "KH",
-          "KI",
-          "KM",
-          "KN",
-          "KP",
-          "KR",
-          "KW",
-          "KY",
-          "KZ",
-          "LA",
-          "LB",
-          "LC",
-          "LI",
-          "LK",
-          "LR",
-          "LS",
-          "LT",
-          "LU",
-          "LV",
-          "LY",
-          "MA",
-          "MC",
-          "MD",
-          "ME",
-          "MF",
-          "MG",
-          "MH",
-          "MK",
-          "ML",
-          "MM",
-          "MN",
-          "MO",
-          "MP",
-          "MQ",
-          "MR",
-          "MS",
-          "MT",
-          "MU",
-          "MV",
-          "MW",
-          "MX",
-          "MY",
-          "MZ",
-          "NA",
-          "NC",
-          "NE",
-          "NF",
-          "NG",
-          "NI",
-          "NL",
-          "NO",
-          "NP",
-          "NR",
-          "NU",
-          "NZ",
-          "OM",
-          "PA",
-          "PE",
-          "PF",
-          "PG",
-          "PH",
-          "PK",
-          "PL",
-          "PM",
-          "PR",
-          "PS",
-          "PT",
-          "PW",
-          "PY",
-          "QA",
-          "RE",
-          "RO",
-          "RS",
-          "RU",
-          "RW",
-          "SA",
-          "SB",
-          "SC",
-          "SD",
-          "SE",
-          "SG",
-          "SH",
-          "SI",
-          "SJ",
-          "SK",
-          "SL",
-          "SM",
-          "SN",
-          "SO",
-          "SR",
-          "SS",
-          "ST",
-          "SV",
-          "SX",
-          "SY",
-          "SZ",
-          "TA",
-          "TC",
-          "TD",
-          "TG",
-          "TH",
-          "TJ",
-          "TK",
-          "TL",
-          "TM",
-          "TN",
-          "TO",
-          "TR",
-          "TT",
-          "TV",
-          "TW",
-          "TZ",
-          "UA",
-          "UG",
-          "US",
-          "UY",
-          "UZ",
-          "VA",
-          "VC",
-          "VE",
-          "VG",
-          "VI",
-          "VN",
-          "VU",
-          "WF",
-          "WS",
-          "XK",
-          "YE",
-          "YT",
-          "ZA",
-          "ZM",
-          "ZW",
-        ])
-        .default(listDoctorDirectoryResponseItemsItemDialCountryDefault),
-      doctorNumber: zod.string(),
-      drugLicenceNumber: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemDrugLicenceNumberMax)
-        .default(listDoctorDirectoryResponseItemsItemDrugLicenceNumberDefault),
-      email: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemEmailMax)
-        .default(listDoctorDirectoryResponseItemsItemEmailDefault),
-      gstNumber: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemGstNumberMax)
-        .default(listDoctorDirectoryResponseItemsItemGstNumberDefault),
-      id: zod.string().uuid(),
-      invoiceType: zod
-        .enum(["normal", "gst"])
-        .default(listDoctorDirectoryResponseItemsItemInvoiceTypeDefault),
-      landmark: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemLandmarkMax),
-      mrId: zod.string().uuid(),
-      mrName: zod.string(),
-      mrUserId: zod.string(),
-      name: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemNameMax),
-      orderDiscount: zod
-        .string()
-        .regex(listDoctorDirectoryResponseItemsItemOrderDiscountRegExp)
-        .default(listDoctorDirectoryResponseItemsItemOrderDiscountDefault)
+export const listDoctorDirectoryResponseTwoItemsItemOrderDiscountRegExp =
+  new RegExp("^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$");
+export const listDoctorDirectoryResponseTwoItemsItemPaymentLimitRegExp =
+  new RegExp("^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$");
+
+export const ListDoctorDirectoryResponse = zod.union([
+  zod.object({
+    filtered: zod.union([zod.number().int(), zod.null()]),
+    items: zod.array(
+      zod.object({
+        addressLine1: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemAddressLine1Max),
+        addressLine2: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemAddressLine2Max)
+          .default(listDoctorDirectoryResponseOneItemsItemAddressLine2Default),
+        alternatePhone: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemAlternatePhoneMax)
+          .default(
+            listDoctorDirectoryResponseOneItemsItemAlternatePhoneDefault,
+          ),
+        assignmentWarnings: zod.array(zod.string()),
+        city: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemCityMax),
+        clinicName: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemClinicNameMax)
+          .default(listDoctorDirectoryResponseOneItemsItemClinicNameDefault),
+        contactRequirement: zod
+          .enum(["required", "optional"])
+          .default(
+            listDoctorDirectoryResponseOneItemsItemContactRequirementDefault,
+          ),
+        country: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemCountryMax),
+        createdAt: zod.coerce.date(),
+        createdBy: zod.string(),
+        dateOfJoining: zod.union([zod.coerce.date(), zod.null()]).optional(),
+        daysLimit: zod
+          .number()
+          .int()
+          .min(listDoctorDirectoryResponseOneItemsItemDaysLimitMin)
+          .max(listDoctorDirectoryResponseOneItemsItemDaysLimitMax)
+          .default(listDoctorDirectoryResponseOneItemsItemDaysLimitDefault),
+        dialCountry: zod
+          .enum([
+            "AC",
+            "AD",
+            "AE",
+            "AF",
+            "AG",
+            "AI",
+            "AL",
+            "AM",
+            "AO",
+            "AR",
+            "AS",
+            "AT",
+            "AU",
+            "AW",
+            "AX",
+            "AZ",
+            "BA",
+            "BB",
+            "BD",
+            "BE",
+            "BF",
+            "BG",
+            "BH",
+            "BI",
+            "BJ",
+            "BL",
+            "BM",
+            "BN",
+            "BO",
+            "BQ",
+            "BR",
+            "BS",
+            "BT",
+            "BW",
+            "BY",
+            "BZ",
+            "CA",
+            "CC",
+            "CD",
+            "CF",
+            "CG",
+            "CH",
+            "CI",
+            "CK",
+            "CL",
+            "CM",
+            "CN",
+            "CO",
+            "CR",
+            "CU",
+            "CV",
+            "CW",
+            "CX",
+            "CY",
+            "CZ",
+            "DE",
+            "DJ",
+            "DK",
+            "DM",
+            "DO",
+            "DZ",
+            "EC",
+            "EE",
+            "EG",
+            "EH",
+            "ER",
+            "ES",
+            "ET",
+            "FI",
+            "FJ",
+            "FK",
+            "FM",
+            "FO",
+            "FR",
+            "GA",
+            "GB",
+            "GD",
+            "GE",
+            "GF",
+            "GG",
+            "GH",
+            "GI",
+            "GL",
+            "GM",
+            "GN",
+            "GP",
+            "GQ",
+            "GR",
+            "GT",
+            "GU",
+            "GW",
+            "GY",
+            "HK",
+            "HN",
+            "HR",
+            "HT",
+            "HU",
+            "ID",
+            "IE",
+            "IL",
+            "IM",
+            "IN",
+            "IO",
+            "IQ",
+            "IR",
+            "IS",
+            "IT",
+            "JE",
+            "JM",
+            "JO",
+            "JP",
+            "KE",
+            "KG",
+            "KH",
+            "KI",
+            "KM",
+            "KN",
+            "KP",
+            "KR",
+            "KW",
+            "KY",
+            "KZ",
+            "LA",
+            "LB",
+            "LC",
+            "LI",
+            "LK",
+            "LR",
+            "LS",
+            "LT",
+            "LU",
+            "LV",
+            "LY",
+            "MA",
+            "MC",
+            "MD",
+            "ME",
+            "MF",
+            "MG",
+            "MH",
+            "MK",
+            "ML",
+            "MM",
+            "MN",
+            "MO",
+            "MP",
+            "MQ",
+            "MR",
+            "MS",
+            "MT",
+            "MU",
+            "MV",
+            "MW",
+            "MX",
+            "MY",
+            "MZ",
+            "NA",
+            "NC",
+            "NE",
+            "NF",
+            "NG",
+            "NI",
+            "NL",
+            "NO",
+            "NP",
+            "NR",
+            "NU",
+            "NZ",
+            "OM",
+            "PA",
+            "PE",
+            "PF",
+            "PG",
+            "PH",
+            "PK",
+            "PL",
+            "PM",
+            "PR",
+            "PS",
+            "PT",
+            "PW",
+            "PY",
+            "QA",
+            "RE",
+            "RO",
+            "RS",
+            "RU",
+            "RW",
+            "SA",
+            "SB",
+            "SC",
+            "SD",
+            "SE",
+            "SG",
+            "SH",
+            "SI",
+            "SJ",
+            "SK",
+            "SL",
+            "SM",
+            "SN",
+            "SO",
+            "SR",
+            "SS",
+            "ST",
+            "SV",
+            "SX",
+            "SY",
+            "SZ",
+            "TA",
+            "TC",
+            "TD",
+            "TG",
+            "TH",
+            "TJ",
+            "TK",
+            "TL",
+            "TM",
+            "TN",
+            "TO",
+            "TR",
+            "TT",
+            "TV",
+            "TW",
+            "TZ",
+            "UA",
+            "UG",
+            "US",
+            "UY",
+            "UZ",
+            "VA",
+            "VC",
+            "VE",
+            "VG",
+            "VI",
+            "VN",
+            "VU",
+            "WF",
+            "WS",
+            "XK",
+            "YE",
+            "YT",
+            "ZA",
+            "ZM",
+            "ZW",
+          ])
+          .default(listDoctorDirectoryResponseOneItemsItemDialCountryDefault),
+        doctorNumber: zod.string(),
+        drugLicenceNumber: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemDrugLicenceNumberMax)
+          .default(
+            listDoctorDirectoryResponseOneItemsItemDrugLicenceNumberDefault,
+          ),
+        email: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemEmailMax)
+          .default(listDoctorDirectoryResponseOneItemsItemEmailDefault),
+        gstNumber: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemGstNumberMax)
+          .default(listDoctorDirectoryResponseOneItemsItemGstNumberDefault),
+        id: zod.string().uuid(),
+        invoiceType: zod
+          .enum(["normal", "gst"])
+          .default(listDoctorDirectoryResponseOneItemsItemInvoiceTypeDefault),
+        landmark: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemLandmarkMax),
+        mrId: zod.string().uuid(),
+        mrName: zod.string(),
+        mrUserId: zod.string(),
+        name: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemNameMax),
+        orderDiscount: zod
+          .string()
+          .regex(listDoctorDirectoryResponseOneItemsItemOrderDiscountRegExp)
+          .default(listDoctorDirectoryResponseOneItemsItemOrderDiscountDefault)
+          .describe(
+            "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+          ),
+        paymentLimit: zod
+          .string()
+          .regex(listDoctorDirectoryResponseOneItemsItemPaymentLimitRegExp)
+          .default(listDoctorDirectoryResponseOneItemsItemPaymentLimitDefault),
+        phone: zod
+          .string()
+          .max(listDoctorDirectoryResponseOneItemsItemPhoneMax)
+          .default(listDoctorDirectoryResponseOneItemsItemPhoneDefault),
+        pincode: zod
+          .string()
+          .min(listDoctorDirectoryResponseOneItemsItemPincodeMin)
+          .max(listDoctorDirectoryResponseOneItemsItemPincodeMax),
+        qualification: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemQualificationMax),
+        registrationNumber: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemRegistrationNumberMax),
+        state: zod
+          .string()
+          .min(1)
+          .max(listDoctorDirectoryResponseOneItemsItemStateMax),
+        status: zod
+          .enum(["active", "inactive"])
+          .default(listDoctorDirectoryResponseOneItemsItemStatusDefault),
+        updatedAt: zod.coerce.date(),
+        updatedBy: zod.string(),
+        verification: zod.enum(["verified", "unverified"]),
+        version: zod.number().int(),
+        zoneId: zod.union([zod.string().uuid(), zod.null()]),
+        zoneName: zod.string(),
+      }),
+    ),
+    limit: zod.number().int(),
+    nextCursor: zod.union([zod.string(), zod.null()]).optional(),
+    offset: zod.number().int(),
+    partial: zod
+      .boolean()
+      .default(listDoctorDirectoryResponseOnePartialDefault),
+    scanned: zod
+      .number()
+      .int()
+      .min(listDoctorDirectoryResponseOneScannedMin)
+      .max(listDoctorDirectoryResponseOneScannedMax)
+      .default(listDoctorDirectoryResponseOneScannedDefault),
+    total: zod.number().int(),
+  }),
+  zod.object({
+    filtered: zod.union([zod.number().int(), zod.null()]),
+    items: zod.array(
+      zod
+        .object({
+          addressLine1: zod.string(),
+          addressLine2: zod.string(),
+          alternatePhoneDisplay: zod.string(),
+          assignmentWarnings: zod.array(zod.string()),
+          city: zod.string(),
+          clinicName: zod.string(),
+          contactRequirement: zod.enum(["required", "optional"]),
+          country: zod.string(),
+          createdAt: zod.coerce.date(),
+          createdBy: zod.string(),
+          dateOfJoining: zod.union([zod.coerce.date(), zod.null()]),
+          daysLimit: zod.number().int(),
+          dialCountry: zod.enum([
+            "AC",
+            "AD",
+            "AE",
+            "AF",
+            "AG",
+            "AI",
+            "AL",
+            "AM",
+            "AO",
+            "AR",
+            "AS",
+            "AT",
+            "AU",
+            "AW",
+            "AX",
+            "AZ",
+            "BA",
+            "BB",
+            "BD",
+            "BE",
+            "BF",
+            "BG",
+            "BH",
+            "BI",
+            "BJ",
+            "BL",
+            "BM",
+            "BN",
+            "BO",
+            "BQ",
+            "BR",
+            "BS",
+            "BT",
+            "BW",
+            "BY",
+            "BZ",
+            "CA",
+            "CC",
+            "CD",
+            "CF",
+            "CG",
+            "CH",
+            "CI",
+            "CK",
+            "CL",
+            "CM",
+            "CN",
+            "CO",
+            "CR",
+            "CU",
+            "CV",
+            "CW",
+            "CX",
+            "CY",
+            "CZ",
+            "DE",
+            "DJ",
+            "DK",
+            "DM",
+            "DO",
+            "DZ",
+            "EC",
+            "EE",
+            "EG",
+            "EH",
+            "ER",
+            "ES",
+            "ET",
+            "FI",
+            "FJ",
+            "FK",
+            "FM",
+            "FO",
+            "FR",
+            "GA",
+            "GB",
+            "GD",
+            "GE",
+            "GF",
+            "GG",
+            "GH",
+            "GI",
+            "GL",
+            "GM",
+            "GN",
+            "GP",
+            "GQ",
+            "GR",
+            "GT",
+            "GU",
+            "GW",
+            "GY",
+            "HK",
+            "HN",
+            "HR",
+            "HT",
+            "HU",
+            "ID",
+            "IE",
+            "IL",
+            "IM",
+            "IN",
+            "IO",
+            "IQ",
+            "IR",
+            "IS",
+            "IT",
+            "JE",
+            "JM",
+            "JO",
+            "JP",
+            "KE",
+            "KG",
+            "KH",
+            "KI",
+            "KM",
+            "KN",
+            "KP",
+            "KR",
+            "KW",
+            "KY",
+            "KZ",
+            "LA",
+            "LB",
+            "LC",
+            "LI",
+            "LK",
+            "LR",
+            "LS",
+            "LT",
+            "LU",
+            "LV",
+            "LY",
+            "MA",
+            "MC",
+            "MD",
+            "ME",
+            "MF",
+            "MG",
+            "MH",
+            "MK",
+            "ML",
+            "MM",
+            "MN",
+            "MO",
+            "MP",
+            "MQ",
+            "MR",
+            "MS",
+            "MT",
+            "MU",
+            "MV",
+            "MW",
+            "MX",
+            "MY",
+            "MZ",
+            "NA",
+            "NC",
+            "NE",
+            "NF",
+            "NG",
+            "NI",
+            "NL",
+            "NO",
+            "NP",
+            "NR",
+            "NU",
+            "NZ",
+            "OM",
+            "PA",
+            "PE",
+            "PF",
+            "PG",
+            "PH",
+            "PK",
+            "PL",
+            "PM",
+            "PR",
+            "PS",
+            "PT",
+            "PW",
+            "PY",
+            "QA",
+            "RE",
+            "RO",
+            "RS",
+            "RU",
+            "RW",
+            "SA",
+            "SB",
+            "SC",
+            "SD",
+            "SE",
+            "SG",
+            "SH",
+            "SI",
+            "SJ",
+            "SK",
+            "SL",
+            "SM",
+            "SN",
+            "SO",
+            "SR",
+            "SS",
+            "ST",
+            "SV",
+            "SX",
+            "SY",
+            "SZ",
+            "TA",
+            "TC",
+            "TD",
+            "TG",
+            "TH",
+            "TJ",
+            "TK",
+            "TL",
+            "TM",
+            "TN",
+            "TO",
+            "TR",
+            "TT",
+            "TV",
+            "TW",
+            "TZ",
+            "UA",
+            "UG",
+            "US",
+            "UY",
+            "UZ",
+            "VA",
+            "VC",
+            "VE",
+            "VG",
+            "VI",
+            "VN",
+            "VU",
+            "WF",
+            "WS",
+            "XK",
+            "YE",
+            "YT",
+            "ZA",
+            "ZM",
+            "ZW",
+          ]),
+          doctorNumber: zod.string(),
+          drugLicenceNumber: zod.string(),
+          emailDisplay: zod.string(),
+          gstNumber: zod.string(),
+          id: zod.string().uuid(),
+          invoiceType: zod.enum(["normal", "gst"]),
+          landmark: zod.string(),
+          mrId: zod.string().uuid(),
+          mrName: zod.string(),
+          mrUserId: zod.string(),
+          name: zod.string(),
+          orderDiscount: zod
+            .string()
+            .regex(listDoctorDirectoryResponseTwoItemsItemOrderDiscountRegExp),
+          paymentLimit: zod
+            .string()
+            .regex(listDoctorDirectoryResponseTwoItemsItemPaymentLimitRegExp),
+          phoneDisplay: zod.string(),
+          pincode: zod.string(),
+          qualification: zod.string(),
+          registrationNumber: zod.string(),
+          state: zod.string(),
+          status: zod.enum(["active", "inactive"]),
+          updatedAt: zod.coerce.date(),
+          updatedBy: zod.string(),
+          verification: zod.enum(["verified", "unverified"]),
+          version: zod.number().int(),
+          zoneId: zod.union([zod.string().uuid(), zod.null()]),
+          zoneName: zod.string(),
+        })
         .describe(
-          "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+          "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.",
         ),
-      paymentLimit: zod
-        .string()
-        .regex(listDoctorDirectoryResponseItemsItemPaymentLimitRegExp)
-        .default(listDoctorDirectoryResponseItemsItemPaymentLimitDefault),
-      phone: zod
-        .string()
-        .max(listDoctorDirectoryResponseItemsItemPhoneMax)
-        .default(listDoctorDirectoryResponseItemsItemPhoneDefault),
-      pincode: zod
-        .string()
-        .min(listDoctorDirectoryResponseItemsItemPincodeMin)
-        .max(listDoctorDirectoryResponseItemsItemPincodeMax),
-      qualification: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemQualificationMax),
-      registrationNumber: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemRegistrationNumberMax),
-      state: zod
-        .string()
-        .min(1)
-        .max(listDoctorDirectoryResponseItemsItemStateMax),
-      status: zod
-        .enum(["active", "inactive"])
-        .default(listDoctorDirectoryResponseItemsItemStatusDefault),
-      updatedAt: zod.coerce.date(),
-      updatedBy: zod.string(),
-      verification: zod.enum(["verified", "unverified"]),
-      version: zod.number().int(),
-      zoneId: zod.union([zod.string().uuid(), zod.null()]),
-      zoneName: zod.string(),
-    }),
-  ),
-  limit: zod.number().int(),
-  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
-  offset: zod.number().int(),
-  partial: zod.boolean().default(listDoctorDirectoryResponsePartialDefault),
-  scanned: zod
-    .number()
-    .int()
-    .min(listDoctorDirectoryResponseScannedMin)
-    .max(listDoctorDirectoryResponseScannedMax)
-    .default(listDoctorDirectoryResponseScannedDefault),
-  total: zod.number().int(),
-});
+    ),
+    limit: zod.number().int(),
+    nextCursor: zod.union([zod.string(), zod.null()]).optional(),
+    offset: zod.number().int(),
+    partial: zod
+      .boolean()
+      .default(listDoctorDirectoryResponseTwoPartialDefault),
+    scanned: zod
+      .number()
+      .int()
+      .min(listDoctorDirectoryResponseTwoScannedMin)
+      .max(listDoctorDirectoryResponseTwoScannedMax)
+      .default(listDoctorDirectoryResponseTwoScannedDefault),
+    total: zod.number().int(),
+  }),
+]);
 
 /**
  * @summary Create
@@ -4845,6 +5179,7 @@ export const ExportDoctorDirectoryResponse = zod.unknown();
  * @summary Filters
  */
 export const GetDoctorFilterChoicesResponse = zod.object({
+  headquarters: zod.array(zod.record(zod.string(), zod.string())).optional(),
   missingMR: zod.boolean(),
   missingZone: zod.boolean(),
   states: zod.array(zod.string()),
@@ -5004,376 +5339,678 @@ export const GetDoctorDirectoryParams = zod.object({
   doctor_id: zod.coerce.string().uuid(),
 });
 
-export const getDoctorDirectoryResponseAddressLine2Default = ``;
+export const getDoctorDirectoryResponseOneAddressLine2Default = ``;
 
-export const getDoctorDirectoryResponseAlternatePhoneDefault = ``;
+export const getDoctorDirectoryResponseOneAlternatePhoneDefault = ``;
 
-export const getDoctorDirectoryResponseClinicNameDefault = ``;
+export const getDoctorDirectoryResponseOneClinicNameDefault = ``;
 
-export const getDoctorDirectoryResponseContactRequirementDefault = `optional`;
+export const getDoctorDirectoryResponseOneContactRequirementDefault = `optional`;
 
-export const getDoctorDirectoryResponseDialCountryDefault = `IN`;
-export const getDoctorDirectoryResponseDrugLicenceNumberDefault = ``;
+export const getDoctorDirectoryResponseOneDialCountryDefault = `IN`;
+export const getDoctorDirectoryResponseOneDrugLicenceNumberDefault = ``;
 
-export const getDoctorDirectoryResponseEmailDefault = ``;
+export const getDoctorDirectoryResponseOneEmailDefault = ``;
 
-export const getDoctorDirectoryResponseGstNumberDefault = ``;
+export const getDoctorDirectoryResponseOneGstNumberDefault = ``;
 
-export const getDoctorDirectoryResponseInvoiceTypeDefault = `normal`;
+export const getDoctorDirectoryResponseOneInvoiceTypeDefault = `normal`;
 
-export const getDoctorDirectoryResponseOrderDiscountDefault = `0.00`;
-export const getDoctorDirectoryResponseOrderDiscountRegExp = new RegExp(
+export const getDoctorDirectoryResponseOneOrderDiscountDefault = `0.00`;
+export const getDoctorDirectoryResponseOneOrderDiscountRegExp = new RegExp(
   "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
 );
-export const getDoctorDirectoryResponsePaymentLimitDefault = `0.00`;
-export const getDoctorDirectoryResponsePaymentLimitRegExp = new RegExp(
+export const getDoctorDirectoryResponseOnePaymentLimitDefault = `0.00`;
+export const getDoctorDirectoryResponseOnePaymentLimitRegExp = new RegExp(
   "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,13}|(?=[\\d.]{1,16}0*$)\\d{0,13}\\.\\d{0,2}0*$)",
 );
-export const getDoctorDirectoryResponsePhoneDefault = ``;
+export const getDoctorDirectoryResponseOnePhoneDefault = ``;
 
-export const getDoctorDirectoryResponseStatusDefault = `active`;
+export const getDoctorDirectoryResponseOneStatusDefault = `active`;
+export const getDoctorDirectoryResponseTwoOrderDiscountRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+);
+export const getDoctorDirectoryResponseTwoPaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+);
 
-export const GetDoctorDirectoryResponse = zod.object({
-  addressLine1: zod
-    .string()
-    .min(1)
-    .max(getDoctorDirectoryResponseAddressLine1Max),
-  addressLine2: zod
-    .string()
-    .max(getDoctorDirectoryResponseAddressLine2Max)
-    .default(getDoctorDirectoryResponseAddressLine2Default),
-  alternatePhone: zod
-    .string()
-    .max(getDoctorDirectoryResponseAlternatePhoneMax)
-    .default(getDoctorDirectoryResponseAlternatePhoneDefault),
-  assignmentWarnings: zod.array(zod.string()),
-  city: zod.string().min(1).max(getDoctorDirectoryResponseCityMax),
-  clinicName: zod
-    .string()
-    .max(getDoctorDirectoryResponseClinicNameMax)
-    .default(getDoctorDirectoryResponseClinicNameDefault),
-  contactRequirement: zod
-    .enum(["required", "optional"])
-    .default(getDoctorDirectoryResponseContactRequirementDefault),
-  country: zod.string().min(1).max(getDoctorDirectoryResponseCountryMax),
-  createdAt: zod.coerce.date(),
-  createdBy: zod.string(),
-  dateOfJoining: zod.union([zod.coerce.date(), zod.null()]).optional(),
-  daysLimit: zod
-    .number()
-    .int()
-    .min(getDoctorDirectoryResponseDaysLimitMin)
-    .max(getDoctorDirectoryResponseDaysLimitMax)
-    .default(getDoctorDirectoryResponseDaysLimitDefault),
-  dialCountry: zod
-    .enum([
-      "AC",
-      "AD",
-      "AE",
-      "AF",
-      "AG",
-      "AI",
-      "AL",
-      "AM",
-      "AO",
-      "AR",
-      "AS",
-      "AT",
-      "AU",
-      "AW",
-      "AX",
-      "AZ",
-      "BA",
-      "BB",
-      "BD",
-      "BE",
-      "BF",
-      "BG",
-      "BH",
-      "BI",
-      "BJ",
-      "BL",
-      "BM",
-      "BN",
-      "BO",
-      "BQ",
-      "BR",
-      "BS",
-      "BT",
-      "BW",
-      "BY",
-      "BZ",
-      "CA",
-      "CC",
-      "CD",
-      "CF",
-      "CG",
-      "CH",
-      "CI",
-      "CK",
-      "CL",
-      "CM",
-      "CN",
-      "CO",
-      "CR",
-      "CU",
-      "CV",
-      "CW",
-      "CX",
-      "CY",
-      "CZ",
-      "DE",
-      "DJ",
-      "DK",
-      "DM",
-      "DO",
-      "DZ",
-      "EC",
-      "EE",
-      "EG",
-      "EH",
-      "ER",
-      "ES",
-      "ET",
-      "FI",
-      "FJ",
-      "FK",
-      "FM",
-      "FO",
-      "FR",
-      "GA",
-      "GB",
-      "GD",
-      "GE",
-      "GF",
-      "GG",
-      "GH",
-      "GI",
-      "GL",
-      "GM",
-      "GN",
-      "GP",
-      "GQ",
-      "GR",
-      "GT",
-      "GU",
-      "GW",
-      "GY",
-      "HK",
-      "HN",
-      "HR",
-      "HT",
-      "HU",
-      "ID",
-      "IE",
-      "IL",
-      "IM",
-      "IN",
-      "IO",
-      "IQ",
-      "IR",
-      "IS",
-      "IT",
-      "JE",
-      "JM",
-      "JO",
-      "JP",
-      "KE",
-      "KG",
-      "KH",
-      "KI",
-      "KM",
-      "KN",
-      "KP",
-      "KR",
-      "KW",
-      "KY",
-      "KZ",
-      "LA",
-      "LB",
-      "LC",
-      "LI",
-      "LK",
-      "LR",
-      "LS",
-      "LT",
-      "LU",
-      "LV",
-      "LY",
-      "MA",
-      "MC",
-      "MD",
-      "ME",
-      "MF",
-      "MG",
-      "MH",
-      "MK",
-      "ML",
-      "MM",
-      "MN",
-      "MO",
-      "MP",
-      "MQ",
-      "MR",
-      "MS",
-      "MT",
-      "MU",
-      "MV",
-      "MW",
-      "MX",
-      "MY",
-      "MZ",
-      "NA",
-      "NC",
-      "NE",
-      "NF",
-      "NG",
-      "NI",
-      "NL",
-      "NO",
-      "NP",
-      "NR",
-      "NU",
-      "NZ",
-      "OM",
-      "PA",
-      "PE",
-      "PF",
-      "PG",
-      "PH",
-      "PK",
-      "PL",
-      "PM",
-      "PR",
-      "PS",
-      "PT",
-      "PW",
-      "PY",
-      "QA",
-      "RE",
-      "RO",
-      "RS",
-      "RU",
-      "RW",
-      "SA",
-      "SB",
-      "SC",
-      "SD",
-      "SE",
-      "SG",
-      "SH",
-      "SI",
-      "SJ",
-      "SK",
-      "SL",
-      "SM",
-      "SN",
-      "SO",
-      "SR",
-      "SS",
-      "ST",
-      "SV",
-      "SX",
-      "SY",
-      "SZ",
-      "TA",
-      "TC",
-      "TD",
-      "TG",
-      "TH",
-      "TJ",
-      "TK",
-      "TL",
-      "TM",
-      "TN",
-      "TO",
-      "TR",
-      "TT",
-      "TV",
-      "TW",
-      "TZ",
-      "UA",
-      "UG",
-      "US",
-      "UY",
-      "UZ",
-      "VA",
-      "VC",
-      "VE",
-      "VG",
-      "VI",
-      "VN",
-      "VU",
-      "WF",
-      "WS",
-      "XK",
-      "YE",
-      "YT",
-      "ZA",
-      "ZM",
-      "ZW",
-    ])
-    .default(getDoctorDirectoryResponseDialCountryDefault),
-  doctorNumber: zod.string(),
-  drugLicenceNumber: zod
-    .string()
-    .max(getDoctorDirectoryResponseDrugLicenceNumberMax)
-    .default(getDoctorDirectoryResponseDrugLicenceNumberDefault),
-  email: zod
-    .string()
-    .max(getDoctorDirectoryResponseEmailMax)
-    .default(getDoctorDirectoryResponseEmailDefault),
-  gstNumber: zod
-    .string()
-    .max(getDoctorDirectoryResponseGstNumberMax)
-    .default(getDoctorDirectoryResponseGstNumberDefault),
-  id: zod.string().uuid(),
-  invoiceType: zod
-    .enum(["normal", "gst"])
-    .default(getDoctorDirectoryResponseInvoiceTypeDefault),
-  landmark: zod.string().min(1).max(getDoctorDirectoryResponseLandmarkMax),
-  mrId: zod.string().uuid(),
-  mrName: zod.string(),
-  mrUserId: zod.string(),
-  name: zod.string().min(1).max(getDoctorDirectoryResponseNameMax),
-  orderDiscount: zod
-    .string()
-    .regex(getDoctorDirectoryResponseOrderDiscountRegExp)
-    .default(getDoctorDirectoryResponseOrderDiscountDefault)
+export const GetDoctorDirectoryResponse = zod.union([
+  zod.object({
+    addressLine1: zod
+      .string()
+      .min(1)
+      .max(getDoctorDirectoryResponseOneAddressLine1Max),
+    addressLine2: zod
+      .string()
+      .max(getDoctorDirectoryResponseOneAddressLine2Max)
+      .default(getDoctorDirectoryResponseOneAddressLine2Default),
+    alternatePhone: zod
+      .string()
+      .max(getDoctorDirectoryResponseOneAlternatePhoneMax)
+      .default(getDoctorDirectoryResponseOneAlternatePhoneDefault),
+    assignmentWarnings: zod.array(zod.string()),
+    city: zod.string().min(1).max(getDoctorDirectoryResponseOneCityMax),
+    clinicName: zod
+      .string()
+      .max(getDoctorDirectoryResponseOneClinicNameMax)
+      .default(getDoctorDirectoryResponseOneClinicNameDefault),
+    contactRequirement: zod
+      .enum(["required", "optional"])
+      .default(getDoctorDirectoryResponseOneContactRequirementDefault),
+    country: zod.string().min(1).max(getDoctorDirectoryResponseOneCountryMax),
+    createdAt: zod.coerce.date(),
+    createdBy: zod.string(),
+    dateOfJoining: zod.union([zod.coerce.date(), zod.null()]).optional(),
+    daysLimit: zod
+      .number()
+      .int()
+      .min(getDoctorDirectoryResponseOneDaysLimitMin)
+      .max(getDoctorDirectoryResponseOneDaysLimitMax)
+      .default(getDoctorDirectoryResponseOneDaysLimitDefault),
+    dialCountry: zod
+      .enum([
+        "AC",
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TA",
+        "TC",
+        "TD",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "XK",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW",
+      ])
+      .default(getDoctorDirectoryResponseOneDialCountryDefault),
+    doctorNumber: zod.string(),
+    drugLicenceNumber: zod
+      .string()
+      .max(getDoctorDirectoryResponseOneDrugLicenceNumberMax)
+      .default(getDoctorDirectoryResponseOneDrugLicenceNumberDefault),
+    email: zod
+      .string()
+      .max(getDoctorDirectoryResponseOneEmailMax)
+      .default(getDoctorDirectoryResponseOneEmailDefault),
+    gstNumber: zod
+      .string()
+      .max(getDoctorDirectoryResponseOneGstNumberMax)
+      .default(getDoctorDirectoryResponseOneGstNumberDefault),
+    id: zod.string().uuid(),
+    invoiceType: zod
+      .enum(["normal", "gst"])
+      .default(getDoctorDirectoryResponseOneInvoiceTypeDefault),
+    landmark: zod.string().min(1).max(getDoctorDirectoryResponseOneLandmarkMax),
+    mrId: zod.string().uuid(),
+    mrName: zod.string(),
+    mrUserId: zod.string(),
+    name: zod.string().min(1).max(getDoctorDirectoryResponseOneNameMax),
+    orderDiscount: zod
+      .string()
+      .regex(getDoctorDirectoryResponseOneOrderDiscountRegExp)
+      .default(getDoctorDirectoryResponseOneOrderDiscountDefault)
+      .describe(
+        "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+      ),
+    paymentLimit: zod
+      .string()
+      .regex(getDoctorDirectoryResponseOnePaymentLimitRegExp)
+      .default(getDoctorDirectoryResponseOnePaymentLimitDefault),
+    phone: zod
+      .string()
+      .max(getDoctorDirectoryResponseOnePhoneMax)
+      .default(getDoctorDirectoryResponseOnePhoneDefault),
+    pincode: zod
+      .string()
+      .min(getDoctorDirectoryResponseOnePincodeMin)
+      .max(getDoctorDirectoryResponseOnePincodeMax),
+    qualification: zod
+      .string()
+      .min(1)
+      .max(getDoctorDirectoryResponseOneQualificationMax),
+    registrationNumber: zod
+      .string()
+      .min(1)
+      .max(getDoctorDirectoryResponseOneRegistrationNumberMax),
+    state: zod.string().min(1).max(getDoctorDirectoryResponseOneStateMax),
+    status: zod
+      .enum(["active", "inactive"])
+      .default(getDoctorDirectoryResponseOneStatusDefault),
+    updatedAt: zod.coerce.date(),
+    updatedBy: zod.string(),
+    verification: zod.enum(["verified", "unverified"]),
+    version: zod.number().int(),
+    zoneId: zod.union([zod.string().uuid(), zod.null()]),
+    zoneName: zod.string(),
+  }),
+  zod
+    .object({
+      addressLine1: zod.string(),
+      addressLine2: zod.string(),
+      alternatePhoneDisplay: zod.string(),
+      assignmentWarnings: zod.array(zod.string()),
+      city: zod.string(),
+      clinicName: zod.string(),
+      contactRequirement: zod.enum(["required", "optional"]),
+      country: zod.string(),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      dateOfJoining: zod.union([zod.coerce.date(), zod.null()]),
+      daysLimit: zod.number().int(),
+      dialCountry: zod.enum([
+        "AC",
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TA",
+        "TC",
+        "TD",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "XK",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW",
+      ]),
+      doctorNumber: zod.string(),
+      drugLicenceNumber: zod.string(),
+      emailDisplay: zod.string(),
+      gstNumber: zod.string(),
+      id: zod.string().uuid(),
+      invoiceType: zod.enum(["normal", "gst"]),
+      landmark: zod.string(),
+      mrId: zod.string().uuid(),
+      mrName: zod.string(),
+      mrUserId: zod.string(),
+      name: zod.string(),
+      orderDiscount: zod
+        .string()
+        .regex(getDoctorDirectoryResponseTwoOrderDiscountRegExp),
+      paymentLimit: zod
+        .string()
+        .regex(getDoctorDirectoryResponseTwoPaymentLimitRegExp),
+      phoneDisplay: zod.string(),
+      pincode: zod.string(),
+      qualification: zod.string(),
+      registrationNumber: zod.string(),
+      state: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      verification: zod.enum(["verified", "unverified"]),
+      version: zod.number().int(),
+      zoneId: zod.union([zod.string().uuid(), zod.null()]),
+      zoneName: zod.string(),
+    })
     .describe(
-      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+      "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.",
     ),
-  paymentLimit: zod
-    .string()
-    .regex(getDoctorDirectoryResponsePaymentLimitRegExp)
-    .default(getDoctorDirectoryResponsePaymentLimitDefault),
-  phone: zod
-    .string()
-    .max(getDoctorDirectoryResponsePhoneMax)
-    .default(getDoctorDirectoryResponsePhoneDefault),
-  pincode: zod
-    .string()
-    .min(getDoctorDirectoryResponsePincodeMin)
-    .max(getDoctorDirectoryResponsePincodeMax),
-  qualification: zod
-    .string()
-    .min(1)
-    .max(getDoctorDirectoryResponseQualificationMax),
-  registrationNumber: zod
-    .string()
-    .min(1)
-    .max(getDoctorDirectoryResponseRegistrationNumberMax),
-  state: zod.string().min(1).max(getDoctorDirectoryResponseStateMax),
-  status: zod
-    .enum(["active", "inactive"])
-    .default(getDoctorDirectoryResponseStatusDefault),
-  updatedAt: zod.coerce.date(),
-  updatedBy: zod.string(),
-  verification: zod.enum(["verified", "unverified"]),
-  version: zod.number().int(),
-  zoneId: zod.union([zod.string().uuid(), zod.null()]),
-  zoneName: zod.string(),
-});
+]);
 
 /**
  * @summary Contact

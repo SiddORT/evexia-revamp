@@ -294,6 +294,8 @@ import type {
   MRCreated,
   MRDirectoryResponse,
   MRDoctorPage,
+  MRDoctorRead,
+  MRDoctorReadPage,
   MREdit,
   MRImportResult,
   MRPage,
@@ -4605,11 +4607,14 @@ export const getListDoctorDirectoryUrl = (
 export const listDoctorDirectory = async (
   params?: ListDoctorDirectoryParams,
   options?: Parameters<typeof customFetch>[1],
-): Promise<DoctorPage> => {
-  return customFetch<DoctorPage>(getListDoctorDirectoryUrl(params), {
-    ...options,
-    method: "GET",
-  });
+): Promise<DoctorPage | MRDoctorReadPage> => {
+  return customFetch<DoctorPage | MRDoctorReadPage>(
+    getListDoctorDirectoryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
 export const getListDoctorDirectoryQueryKey = (
@@ -5631,11 +5636,14 @@ export const getGetDoctorDirectoryUrl = (doctorId: string) => {
 export const getDoctorDirectory = async (
   doctorId: string,
   options?: Parameters<typeof customFetch>[1],
-): Promise<DoctorResponse> => {
-  return customFetch<DoctorResponse>(getGetDoctorDirectoryUrl(doctorId), {
-    ...options,
-    method: "GET",
-  });
+): Promise<DoctorResponse | MRDoctorRead> => {
+  return customFetch<DoctorResponse | MRDoctorRead>(
+    getGetDoctorDirectoryUrl(doctorId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
 export const getGetDoctorDirectoryQueryKey = (doctorId: string) => {

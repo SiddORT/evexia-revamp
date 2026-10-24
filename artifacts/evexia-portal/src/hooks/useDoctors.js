@@ -4,7 +4,7 @@ import { getSession, reportingIdentityGuard, subscribeSession } from '../auth/ad
 import { allDoctorMRChoices, bulkDoctors, createDoctor, deleteDoctor, doctorFilters, editDoctor, getDoctor, listDoctors, statusDoctor } from '../services/serverDoctors.js';
 
 export default function useDoctors(params = {}, detailId = null) {
-  const [state, setState] = useState({ records: [], doctor: null, mrs: [], zones: [], states: [], total: 0, filtered: 0, loading: true, error: '', missingMR: false, missingZone: false });
+  const [state, setState] = useState({ records: [], doctor: null, mrs: [], zones: [], headquarters: [], states: [], total: 0, filtered: 0, loading: true, error: '', missingMR: false, missingZone: false });
   const [revision, setRevision] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [pending, setPending] = useState(false);
@@ -21,7 +21,7 @@ export default function useDoctors(params = {}, detailId = null) {
     alive.current = true;
     const owner = getSession().user?.id;
     const unsubscribe = subscribeSession(() => {
-      if (getSession().user?.id !== owner) setState({ records: [], doctor: null, mrs: [], zones: [], states: [], total: 0, filtered: 0, loading: false, error: 'Session identity changed.' });
+      if (getSession().user?.id !== owner) setState({ records: [], doctor: null, mrs: [], zones: [], headquarters: [], states: [], total: 0, filtered: 0, loading: false, error: 'Session identity changed.' });
     });
     return () => { alive.current = false; unsubscribe(); };
   }, []);

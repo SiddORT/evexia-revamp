@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ShoppingCart } from 'lucide-react';
 
 const TYPES = [
   ['immunotherapy', 'Immunotherapy'],
@@ -9,14 +9,14 @@ const TYPES = [
   ['lupin', 'Lupin'],
 ];
 
-export default function OrdersNavigation({ mobileOpen }) {
+export default function OrdersNavigation() {
   const [path] = useLocation();
   const [expanded, setExpanded] = useState(false);
   const groupRef = useRef(null);
   const triggerRef = useRef(null);
   const active = path === '/mr/orders' || path.startsWith('/mr/orders/');
 
-  useEffect(() => { setExpanded(false); }, [path, mobileOpen]);
+  useEffect(() => { setExpanded(false); }, [path]);
   useEffect(() => {
     if (!expanded) return undefined;
     const dismiss = (event) => {
@@ -38,9 +38,10 @@ export default function OrdersNavigation({ mobileOpen }) {
   return <div className="mrw-orders-nav" ref={groupRef} onKeyDown={handleKeys}
     onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setExpanded(false); }}>
     <button ref={triggerRef} type="button" className="mrw-nav__orders" data-active={active}
+      aria-current={active ? 'page' : undefined}
       aria-expanded={expanded} aria-controls="mrw-orders-subnav" onClick={() => setExpanded((value) => !value)}
       data-testid="button-nav-orders">
-      Orders <ChevronDown size={16} aria-hidden="true" />
+      <ShoppingCart className="mrw-nav__icon" size={20} aria-hidden="true" /><span>Orders</span> <ChevronDown size={16} aria-hidden="true" />
     </button>
     <div id="mrw-orders-subnav" className="mrw-orders-subnav" hidden={!expanded}>
       {TYPES.map(([slug, label]) => {

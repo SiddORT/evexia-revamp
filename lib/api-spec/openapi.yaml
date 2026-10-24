@@ -4019,6 +4019,16 @@
       },
       "DoctorFilters": {
         "properties": {
+          "headquarters": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Headquarters",
+            "type": "array"
+          },
           "missingMR": {
             "title": "Missingmr",
             "type": "boolean"
@@ -12406,6 +12416,560 @@
           "offset"
         ],
         "title": "MRDoctorPage",
+        "type": "object"
+      },
+      "MRDoctorRead": {
+        "additionalProperties": false,
+        "description": "Read-only MR presentation DTO, deliberately independent of write validators.\n\nContacts are never returned as writable phone/email fields on MR reads.",
+        "properties": {
+          "addressLine1": {
+            "title": "Addressline1",
+            "type": "string"
+          },
+          "addressLine2": {
+            "title": "Addressline2",
+            "type": "string"
+          },
+          "alternatePhoneDisplay": {
+            "title": "Alternatephonedisplay",
+            "type": "string"
+          },
+          "assignmentWarnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assignmentwarnings",
+            "type": "array"
+          },
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "clinicName": {
+            "title": "Clinicname",
+            "type": "string"
+          },
+          "contactRequirement": {
+            "enum": [
+              "required",
+              "optional"
+            ],
+            "title": "Contactrequirement",
+            "type": "string"
+          },
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "title": "Createdby",
+            "type": "string"
+          },
+          "dateOfJoining": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dateofjoining"
+          },
+          "daysLimit": {
+            "title": "Dayslimit",
+            "type": "integer"
+          },
+          "dialCountry": {
+            "enum": [
+              "AC",
+              "AD",
+              "AE",
+              "AF",
+              "AG",
+              "AI",
+              "AL",
+              "AM",
+              "AO",
+              "AR",
+              "AS",
+              "AT",
+              "AU",
+              "AW",
+              "AX",
+              "AZ",
+              "BA",
+              "BB",
+              "BD",
+              "BE",
+              "BF",
+              "BG",
+              "BH",
+              "BI",
+              "BJ",
+              "BL",
+              "BM",
+              "BN",
+              "BO",
+              "BQ",
+              "BR",
+              "BS",
+              "BT",
+              "BW",
+              "BY",
+              "BZ",
+              "CA",
+              "CC",
+              "CD",
+              "CF",
+              "CG",
+              "CH",
+              "CI",
+              "CK",
+              "CL",
+              "CM",
+              "CN",
+              "CO",
+              "CR",
+              "CU",
+              "CV",
+              "CW",
+              "CX",
+              "CY",
+              "CZ",
+              "DE",
+              "DJ",
+              "DK",
+              "DM",
+              "DO",
+              "DZ",
+              "EC",
+              "EE",
+              "EG",
+              "EH",
+              "ER",
+              "ES",
+              "ET",
+              "FI",
+              "FJ",
+              "FK",
+              "FM",
+              "FO",
+              "FR",
+              "GA",
+              "GB",
+              "GD",
+              "GE",
+              "GF",
+              "GG",
+              "GH",
+              "GI",
+              "GL",
+              "GM",
+              "GN",
+              "GP",
+              "GQ",
+              "GR",
+              "GT",
+              "GU",
+              "GW",
+              "GY",
+              "HK",
+              "HN",
+              "HR",
+              "HT",
+              "HU",
+              "ID",
+              "IE",
+              "IL",
+              "IM",
+              "IN",
+              "IO",
+              "IQ",
+              "IR",
+              "IS",
+              "IT",
+              "JE",
+              "JM",
+              "JO",
+              "JP",
+              "KE",
+              "KG",
+              "KH",
+              "KI",
+              "KM",
+              "KN",
+              "KP",
+              "KR",
+              "KW",
+              "KY",
+              "KZ",
+              "LA",
+              "LB",
+              "LC",
+              "LI",
+              "LK",
+              "LR",
+              "LS",
+              "LT",
+              "LU",
+              "LV",
+              "LY",
+              "MA",
+              "MC",
+              "MD",
+              "ME",
+              "MF",
+              "MG",
+              "MH",
+              "MK",
+              "ML",
+              "MM",
+              "MN",
+              "MO",
+              "MP",
+              "MQ",
+              "MR",
+              "MS",
+              "MT",
+              "MU",
+              "MV",
+              "MW",
+              "MX",
+              "MY",
+              "MZ",
+              "NA",
+              "NC",
+              "NE",
+              "NF",
+              "NG",
+              "NI",
+              "NL",
+              "NO",
+              "NP",
+              "NR",
+              "NU",
+              "NZ",
+              "OM",
+              "PA",
+              "PE",
+              "PF",
+              "PG",
+              "PH",
+              "PK",
+              "PL",
+              "PM",
+              "PR",
+              "PS",
+              "PT",
+              "PW",
+              "PY",
+              "QA",
+              "RE",
+              "RO",
+              "RS",
+              "RU",
+              "RW",
+              "SA",
+              "SB",
+              "SC",
+              "SD",
+              "SE",
+              "SG",
+              "SH",
+              "SI",
+              "SJ",
+              "SK",
+              "SL",
+              "SM",
+              "SN",
+              "SO",
+              "SR",
+              "SS",
+              "ST",
+              "SV",
+              "SX",
+              "SY",
+              "SZ",
+              "TA",
+              "TC",
+              "TD",
+              "TG",
+              "TH",
+              "TJ",
+              "TK",
+              "TL",
+              "TM",
+              "TN",
+              "TO",
+              "TR",
+              "TT",
+              "TV",
+              "TW",
+              "TZ",
+              "UA",
+              "UG",
+              "US",
+              "UY",
+              "UZ",
+              "VA",
+              "VC",
+              "VE",
+              "VG",
+              "VI",
+              "VN",
+              "VU",
+              "WF",
+              "WS",
+              "XK",
+              "YE",
+              "YT",
+              "ZA",
+              "ZM",
+              "ZW"
+            ],
+            "title": "Dialcountry",
+            "type": "string"
+          },
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
+          "drugLicenceNumber": {
+            "title": "Druglicencenumber",
+            "type": "string"
+          },
+          "emailDisplay": {
+            "title": "Emaildisplay",
+            "type": "string"
+          },
+          "gstNumber": {
+            "title": "Gstnumber",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invoiceType": {
+            "enum": [
+              "normal",
+              "gst"
+            ],
+            "title": "Invoicetype",
+            "type": "string"
+          },
+          "landmark": {
+            "title": "Landmark",
+            "type": "string"
+          },
+          "mrId": {
+            "format": "uuid",
+            "title": "Mrid",
+            "type": "string"
+          },
+          "mrName": {
+            "title": "Mrname",
+            "type": "string"
+          },
+          "mrUserId": {
+            "title": "Mruserid",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "orderDiscount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Orderdiscount",
+            "type": "string"
+          },
+          "paymentLimit": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Paymentlimit",
+            "type": "string"
+          },
+          "phoneDisplay": {
+            "title": "Phonedisplay",
+            "type": "string"
+          },
+          "pincode": {
+            "title": "Pincode",
+            "type": "string"
+          },
+          "qualification": {
+            "title": "Qualification",
+            "type": "string"
+          },
+          "registrationNumber": {
+            "title": "Registrationnumber",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "updatedBy": {
+            "title": "Updatedby",
+            "type": "string"
+          },
+          "verification": {
+            "enum": [
+              "verified",
+              "unverified"
+            ],
+            "title": "Verification",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "zoneId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoneid"
+          },
+          "zoneName": {
+            "title": "Zonename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "doctorNumber",
+          "name",
+          "phoneDisplay",
+          "alternatePhoneDisplay",
+          "emailDisplay",
+          "dialCountry",
+          "contactRequirement",
+          "dateOfJoining",
+          "registrationNumber",
+          "qualification",
+          "clinicName",
+          "mrId",
+          "mrName",
+          "mrUserId",
+          "zoneId",
+          "zoneName",
+          "invoiceType",
+          "gstNumber",
+          "drugLicenceNumber",
+          "orderDiscount",
+          "daysLimit",
+          "paymentLimit",
+          "status",
+          "verification",
+          "pincode",
+          "addressLine1",
+          "addressLine2",
+          "landmark",
+          "country",
+          "state",
+          "city",
+          "version",
+          "assignmentWarnings",
+          "createdBy",
+          "updatedBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "MRDoctorRead",
+        "type": "object"
+      },
+      "MRDoctorReadPage": {
+        "properties": {
+          "filtered": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filtered"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MRDoctorRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "partial": {
+            "default": false,
+            "title": "Partial",
+            "type": "boolean"
+          },
+          "scanned": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": 0.0,
+            "title": "Scanned",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "filtered",
+          "limit",
+          "offset"
+        ],
+        "title": "MRDoctorReadPage",
         "type": "object"
       },
       "MREdit": {
@@ -37423,6 +37987,23 @@
               ],
               "title": "Cursor"
             }
+          },
+          {
+            "in": "query",
+            "name": "headquarter_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Headquarter Id"
+            }
           }
         ],
         "responses": {
@@ -37430,7 +38011,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DoctorPage"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DoctorPage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MRDoctorReadPage"
+                    }
+                  ],
+                  "title": "Response Listdoctordirectory"
                 }
               }
             },
@@ -40432,7 +41021,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DoctorResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DoctorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MRDoctorRead"
+                    }
+                  ],
+                  "title": "Response Getdoctordirectory"
                 }
               }
             },

@@ -36,4 +36,5 @@ export type ListDoctorDirectoryParams = {
    */
   offset?: number;
   cursor?: string | null;
+  headquarter_id?: string | null;
 };

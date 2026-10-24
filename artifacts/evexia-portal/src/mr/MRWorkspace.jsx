@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { LogOut, Menu, Settings as Cog, User, X } from 'lucide-react';
+import { CreditCard, LayoutDashboard, LogOut, Stethoscope, Target, Settings as Cog, User } from 'lucide-react';
 import { useAdminSession } from '../auth/AdminBoundary.jsx';
 import { interceptNavigation } from '../auth/navigationGuard.js';
 import { logoutAdmin } from '../auth/adminSession.js';
@@ -17,7 +17,7 @@ import LiveOrders from './LiveOrders.jsx';
 import OrdersNavigation from './OrdersNavigation.jsx';
 import { PaymentDetail, PaymentForm, PaymentList } from './Payments.jsx';
 
-const NAV = [['Dashboard', '/mr/home', 'home'], ['Doctors', '/mr/doctors', 'doctors'], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets'], ['Payments', '/mr/payments', 'payments']];
+const NAV = [['Dashboard', '/mr/home', 'home', LayoutDashboard], ['Doctors', '/mr/doctors', 'doctors', Stethoscope], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets', Target], ['Payments', '/mr/payments', 'payments', CreditCard]];
 const dec = (s) => { try { return decodeURIComponent(s); } catch { return ''; } };
 
 function Provider({ owner, children }) {
@@ -56,20 +56,12 @@ function Shell() {
   const { theme, appearance } = useAdminPreferences();
   const [path, navigate] = useLocation();
   const { flash, setFlash } = useContextFlash();
-  const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const btnRef = useRef(null);
-  const menuBtnRef = useRef(null);
   const mainRef = useRef(null);
   const first = useRef(true);
   useEffect(() => { if (menu) menuRef.current?.querySelector('[role="menuitem"]')?.focus(); }, [menu]);
-  useEffect(() => {
-    if (!open) return undefined;
-    const key = (e) => { if (e.key === 'Escape') { setOpen(false); menuBtnRef.current?.focus(); } };
-    document.addEventListener('keydown', key);
-    return () => document.removeEventListener('keydown', key);
-  }, [open]);
   function menuKeys(e) {
     const items = [...menuRef.current.querySelectorAll('[role="menuitem"]')];
     const i = items.indexOf(document.activeElement);
@@ -77,7 +69,7 @@ function Shell() {
     if (to === undefined) return;
     e.preventDefault(); items[to].focus();
   }
-  useEffect(() => { setOpen(false); setMenu(false); if (first.current) { first.current = false; return; } mainRef.current?.querySelector('h1')?.focus(); }, [path]);
+  useEffect(() => { setMenu(false); if (first.current) { first.current = false; return; } mainRef.current?.querySelector('h1')?.focus(); }, [path]);
   useEffect(() => {
     if (!menu) return undefined;
     const down = (e) => { if (!menuRef.current?.contains(e.target)) setMenu(false); };
@@ -98,8 +90,7 @@ function Shell() {
   return <div className="admin-shell mrw" data-admin-theme={theme} data-admin-appearance={appearance}>
     <header className="mrw-top"><div className="mrw-top__bar">
       <Link href="/mr/home" className="mrw-brand" aria-label="EVEXIA MR dashboard"><BrandMark /></Link>
-      <nav id="mrw-nav" className="mrw-nav" data-open={open} aria-label="MR navigation">{NAV.map(([l, h, k]) => k === 'orders' ? <OrdersNavigation key={k} mobileOpen={open} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}>{l}</Link>)}</nav>
-      <button type="button" ref={menuBtnRef} className="mrw-icon-btn" aria-expanded={open} aria-controls="mrw-nav" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)} data-testid="button-mobile-menu">{open ? <X size={20} /> : <Menu size={20} />}</button>
+      <nav id="mrw-nav" className="mrw-nav" aria-label="MR navigation">{NAV.map(([l, h, k, Icon]) => k === 'orders' ? <OrdersNavigation key={k} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}><Icon className="mrw-nav__icon" size={20} aria-hidden="true" /><span>{l}</span></Link>)}</nav>
       <div className="mrw-profile" ref={menuRef}>
         <button type="button" ref={btnRef} className="mrw-avatar" aria-haspopup="menu" aria-expanded={menu} aria-label={`Profile menu for ${name}. Account ID: ${account}.`} onClick={() => setMenu(!menu)} data-testid="button-profile-menu"><User size={20} aria-hidden="true" /><span className="mrw-profile__identity"><strong>{name}</strong><span>{account}</span></span></button>
         {menu && <div className="mrw-menu" role="menu" aria-label="Profile" onKeyDown={menuKeys}>
@@ -109,7 +100,7 @@ function Shell() {
         </div>}
       </div>
     </div></header>
-    <main className="mrw-main" ref={mainRef} data-testid="page-mr-home">
+    <main className="mrw-main" data-wide={path.replace(/\/+$/, '') === '/mr/doctors' ? 'true' : undefined} ref={mainRef} data-testid="page-mr-home">
       {flash && <div className="mrw-flash" role="status" data-testid="text-flash">{flash.text}<button type="button" className="admin-button admin-button--secondary" onClick={() => setFlash(null)}>Dismiss</button></div>}
       <Routes />
     </main>
