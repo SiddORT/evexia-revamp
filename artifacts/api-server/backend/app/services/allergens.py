@@ -62,7 +62,7 @@ def projection(db, row):
     values = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     for field in ("selling_price", "gst", "threshold_limit"):
         values[field] = (format(values[field], ".6f") if field == "threshold_limit" else display_rate(values[field])) if values[field] is not None else None
-    return dict(id=row.id, **values, version=row.version,
+    return dict(id=row.id, code=row.code, **values, version=row.version,
                 category_name=row.category_name, storage_location_name=row.storage_location_name,
                 category_status=reference_status(category), storage_location_status=reference_status(location),
                 createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
@@ -85,7 +85,8 @@ def predicates(query="", status="all", min_price=None, max_price=None, category_
     term = literal_term(query)
     if term:
         pattern = "%" + term + "%"
-        result.append(or_(AllergenProduct.name.ilike(pattern, escape="\\"),
+        result.append(or_(AllergenProduct.code.ilike(pattern, escape="\\"),
+                          AllergenProduct.name.ilike(pattern, escape="\\"),
                           AllergenProduct.concentration.ilike(pattern, escape="\\"),
                           AllergenProduct.category_name.ilike(pattern, escape="\\"),
                           AllergenProduct.storage_location_name.ilike(pattern, escape="\\")))

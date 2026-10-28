@@ -247,6 +247,11 @@ def create(db, actor, body, settings):
         lock_policy(db)
         current, crypto = authorize(db, actor, settings, "add")
         access_fields(current, body)
+        if body.employeeCode:
+            raise StaffError("Leave Employee Code empty; it is assigned automatically.",
+                             422, "staff_employee_code_invalid")
+        from app.services.staff_employee_numbers import allocate as employee_number
+        body = body.model_copy(update={"employeeCode": employee_number(db)})
         validate_designation(db, body.designation_id)
         chosen = getattr(body, "initialPassword", None)
         password = chosen if chosen is not None else generated_staff_password()
@@ -407,6 +412,9 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
             if not allowed(current, "staff", "status"):
                 raise StaffError("Activate or Deactivate permission is required to change staff status",
                                  403, "access_denied")
+        if not status_only and body.employeeCode != profile.employee_code:
+            raise StaffError("Employee Code is assigned by the server and cannot be changed.",
+                             422, "staff_employee_code_invalid")
         if status_only:
             profile.status = body.status
         else:

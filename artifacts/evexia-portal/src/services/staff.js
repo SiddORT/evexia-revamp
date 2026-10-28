@@ -29,8 +29,9 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
   for (const key of INPUTS) {
     if (key === 'custom_role_id') continue;
     if (key === 'employeeCode') {
-      if (!fields[key]) errors[key] = 'Employee Code is required.';
-      if ([...fields[key]].length > 64 || /[\u0000-\u001f\u007f-\u009f]/.test(values[key] ?? '')) errors[key] = 'Employee Code must be at most 64 characters without control characters.';
+      if (!fields[key] && _exceptId) errors[key] = 'Employee Code is required.';
+      if (!fields[key] && !_exceptId) fields[key] = null;
+      if ([...(fields[key] || '')].length > 64 || /[\u0000-\u001f\u007f-\u009f]/.test(values[key] ?? '')) errors[key] = 'Employee Code must be at most 64 characters without control characters.';
       continue;
     }
     if (!fields[key]) errors[key] = `${key === 'designation_id' ? 'Designation' : key === 'custom_role_id' ? 'Role' : STAFF_COLUMNS.find(([field]) => key === field)[1]} is required.`;

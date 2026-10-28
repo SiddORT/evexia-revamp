@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models import Timestamps
 from app.db.courier_models import normalized_name
+from app.services.business_numbers import allergen_default
 
 
 class AllergenProduct(Timestamps, Base):
@@ -22,6 +23,8 @@ class AllergenProduct(Timestamps, Base):
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_allergen_deletion"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False,
+                                    default=allergen_default)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("product_categories.id"), nullable=False, index=True)
     storage_location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"), nullable=False, index=True)

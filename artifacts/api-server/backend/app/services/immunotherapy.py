@@ -297,15 +297,16 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     from app.services.order_approval import preserve
     preserve(actor, "immunotherapy", data, previous)
     from app.services.immunotherapy_pricing import issue
-    issue(data, previous)
     now = utcnow()
     if not row:
         sequence = db.scalar(text("SELECT nextval('immunotherapy_order_number_seq')"))
-        row = Order(id=uuid.uuid4(), number=f"IT-{sequence:08d}",
+        from app.services.business_numbers import format_number
+        row = Order(id=uuid.uuid4(), number=format_number("immunotherapy", sequence),
             date=body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date(), version=1, created_by=actor.user.id, created_at=now)
         db.add(row)
     else:
         row.version += 1
+    issue(data, previous, row.number)
     row.patient_id, row.doctor_id, row.mr_id = body.patientId, body.doctorId, body.mrId
     row.status, row.updated_by = body.status, actor.user.id
     row.updated_at = now

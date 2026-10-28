@@ -68,6 +68,7 @@ class AllergenStatus(AllergenVersion):
 
 
 class AllergenResponse(AllergenFields):
+    code: str
     master_read = True
     id: uuid.UUID
     version: int

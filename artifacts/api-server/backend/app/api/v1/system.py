@@ -51,6 +51,11 @@ def readiness(db: Session = Depends(get_db)):
         CommunicationCrypto(get_settings())
         # Reviewed Staff successors retain every predecessor capability.
         # Catalogue-only successor inherits every predecessor readiness probe.
+        if revisions == ["0074_business_numbers"]:
+            db.execute(text("SELECT code FROM allergen_products LIMIT 0"))
+            db.execute(text("SELECT last_value,is_called FROM allergen_number_seq LIMIT 0"))
+            db.execute(text("SELECT last_value,is_called FROM staff_employee_number_seq LIMIT 0"))
+            revisions = ["0073_order_decisions"]
         if revisions == ["0073_order_decisions"]:
             db.execute(text("SELECT status,version,snapshot_ciphertext FROM spt_orders LIMIT 0"))
             db.execute(text("SELECT status,version,snapshot_ciphertext FROM lupin_orders LIMIT 0"))

@@ -20,7 +20,7 @@ class ImmItem(Strict):
     rate: Amount | None = None
     extract: Volume | None = None
     dilution: Volume | None = None
-    suborderId: str | None = Field(default=None, pattern=r"^SUB(?:[0-9]{3,12}|-[0-9]{6,12})$")
+    suborderId: str | None = Field(default=None, pattern=r"^(?:SUB(?:[0-9]{3,12}|-[0-9]{6,12})|IT-[0-9]{6,}[A-Z]+)$")
 
 
 class ImmBottle(Strict):

@@ -110,6 +110,7 @@ function StaffForm({ record, onSave, onClose }) {
       <fieldset disabled={!mutationAllowed} style={{ display: 'contents' }}>
       {['name', 'phone', 'employeeCode', 'email'].map((key) => {
         const inputProps = { id: `staff-${key}`, name: key, value: values[key], onChange: (event) => change(key, event.target.value),
+          readOnly: key === 'employeeCode', placeholder: key === 'employeeCode' && !record ? 'Assigned automatically: ST-001 onward' : undefined,
           disabled: saving, 'aria-required': true, 'aria-invalid': Boolean(errors[key]),
           'aria-describedby': errors[key] ? `staff-error-${key}` : undefined,
           'data-testid': `input-staff-${key}` };

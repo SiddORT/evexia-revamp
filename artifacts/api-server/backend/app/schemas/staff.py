@@ -138,6 +138,7 @@ class StaffEdit(StaffFields):
 
 
 class StaffCreate(StaffFields):
+    employeeCode: str | None = None
     # Preserve spaces exactly, as in MR credentials; never strip passwords.
     initialPassword: Annotated[str, StringConstraints(strip_whitespace=False, min_length=12, max_length=128)] | None = None
 

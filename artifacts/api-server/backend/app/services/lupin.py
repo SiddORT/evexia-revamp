@@ -167,7 +167,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     preserve(actor, "lupin", data, previous)
     if not row:
         number = db.scalar(text("SELECT nextval('lupin_order_number_seq')"))
-        row = Order(id=uuid.uuid4(), number=f"LUP-{number:08d}", version=1,
+        from app.services.business_numbers import format_number
+        row = Order(id=uuid.uuid4(), number=format_number("lupin", number), version=1,
             date=body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date(), created_by=actor.user.id)
         db.add(row)
     else:

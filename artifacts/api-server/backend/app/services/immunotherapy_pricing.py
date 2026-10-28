@@ -2,6 +2,7 @@
 from decimal import Decimal
 from copy import deepcopy
 import re
+from app.services.business_numbers import suborder_number, suborder_ordinal
 
 RATE_BASIS = "allergen_rates"
 LEGACY_BASIS = "legacy_bottle_mrp"
@@ -124,7 +125,7 @@ def prepare_suborders(groups, previous, error, *, mr=False):
     for group in groups:
         sid = group["id"]
         saved = old.get(sid)
-        if not saved or not re.fullmatch(r"SUB(?:[0-9]{3,12}|-[0-9]{6,12})", sid):
+        if not saved or not re.fullmatch(r"(?:SUB(?:[0-9]{3,12}|-[0-9]{6,12})|IT-[0-9]{6,}[A-Z]+)", sid):
             raise error("Retain exact server-issued SUB identities. New headers cannot be invented or recycled.", 409, "imm_suborder")
         if not converted and saved["items"][0]["allergenId"] not in {i["allergenId"] for i in group["items"]}:
             raise error("Each existing occurrence must remain the initial child of its own SUB during conversion.", 409, "imm_suborder")
@@ -153,16 +154,16 @@ def retain_provenance(value, previous):
     value["historicalTotalMinor"] = previous.get("historicalTotalMinor") if converted else previous.get("totalMinor")
 
 
-def issue(value, previous):
+def issue(value, previous, order_number=None):
     """Called only inside an explicit version-checked/idempotent write."""
     next_number = previous.get("nextSuborderNumber", 1) if previous else 1
     # Both formats share one numeric sequence. Include removed saved occurrences
     # so a historical snapshot without a counter cannot recycle their numbers.
     groups = [*(previous["groups"] if previous else []), *value["groups"]]
-    used = [int(i["suborderId"].removeprefix("SUB").removeprefix("-")) for g in groups
+    used = [suborder_ordinal(i["suborderId"]) for g in groups
             for i in g["items"] if i.get("suborderId")]
-    used += [int(g["id"].removeprefix("SUB").removeprefix("-")) for g in groups
-             if re.fullmatch(r"SUB(?:[0-9]{3,12}|-[0-9]{6,12})", g["id"])]
+    used += [suborder_ordinal(g["id"]) for g in groups
+             if re.fullmatch(r"(?:SUB(?:[0-9]{3,12}|-[0-9]{6,12})|IT-[0-9]{6,}[A-Z]+)", g["id"])]
     next_number = max([next_number, *[n + 1 for n in used]])
     if value.get("pricingBasis") == SUBORDER_BASIS:
         value["nextSuborderNumber"] = next_number
@@ -170,6 +171,9 @@ def issue(value, previous):
     for group in value["groups"]:
         for item in group["items"]:
             if not item.get("suborderId"):
-                item["suborderId"] = f"SUB{next_number:03d}"
+                # The optional legacy path supports historical contracts only.
+                # Every live order write supplies its authoritative parent.
+                item["suborderId"] = (suborder_number(order_number, next_number)
+                                      if order_number else f"SUB{next_number:03d}")
                 next_number += 1
     value["nextSuborderNumber"] = next_number

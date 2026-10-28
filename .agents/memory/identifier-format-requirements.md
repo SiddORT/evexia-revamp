@@ -12,6 +12,9 @@ The user requests these business-number patterns:
 - MR: `MR-001`; Doctor: `DR-001`; Staff: `ST-001`; Patient: `PAT-001`.
 - Allergens: `ALG-001`.
 
+The user confirmed that `ST-001` applies to Employee Code only, not the separate
+EVX account label or protected Super Admin account.
+
 **Why:** The user explicitly requested a system sequence audit against these examples.
 
 **How to apply:** Preserve the stated prefix casing and digit counts when

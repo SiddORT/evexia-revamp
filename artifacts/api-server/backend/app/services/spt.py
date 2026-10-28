@@ -171,7 +171,8 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
     if not row:
         identity = uuid.uuid4()
         number = db.scalar(text("SELECT nextval('spt_order_number_seq')"))
-        row = Order(id=identity, source_id=source_id or identity, number=f"SPT-{number:08d}",
+        from app.services.business_numbers import format_number
+        row = Order(id=identity, source_id=source_id or identity, number=format_number("spt", number),
             date=order_date, version=1, created_by=actor.user.id)
         db.add(row)
     else:

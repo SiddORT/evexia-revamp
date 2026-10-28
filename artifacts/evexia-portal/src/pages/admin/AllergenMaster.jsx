@@ -106,6 +106,7 @@ export default function AllergenMaster() {
     </fieldset>;
   }
   const columns = [
+    { key: 'code', label: 'Allergen ID', render: (record) => record.code || 'Not assigned' },
     { key: 'serial', label: 'Sr No', render: (_r, index) => index + 1 },
     { key: 'name', label: 'Product name', render: (r) => <strong className="admin-allergen-name" data-testid={`text-allergen-name-${r.id}`}>{r.name}</strong> },
     { key: 'category', label: 'Category', render: (r) => refName(r.category_name, r.category_status) },
@@ -170,7 +171,7 @@ export default function AllergenMaster() {
             <div className="admin-allergen-desktop"><DataTable columns={columns} rows={records} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Allergen records" /></div>
             <div className="admin-allergen-mobile" role="list" aria-label="Allergen records">{records.map((r, index) => <article className="admin-zone-card" role="listitem" key={r.id} data-testid={`card-allergen-${r.id}`}>
               <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2 data-testid={`text-allergen-name-${r.id}`}>{r.name}</h2></div><StatusBadge status={r.status} id={`m-${r.id}`} kind="allergen" /></div>
-              <p>{refName(r.category_name, r.category_status)} · {refName(r.storage_location_name, r.storage_location_status)}</p>
+              <p>{r.code || 'Not assigned'} · {refName(r.category_name, r.category_status)} · {refName(r.storage_location_name, r.storage_location_status)}</p>
                <p>Price {dash(r.selling_price)} · GST {r.gst}% · {r.concentration} · Low stock alert {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
               <dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}
             </article>)}</div></>
