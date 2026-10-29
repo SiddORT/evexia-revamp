@@ -22,3 +22,10 @@ people, billing, shipping and shipment information.
 
 **How to apply:** Add lengthy order information to the drawer rather than
 expanding the listing into an increasingly wide table.
+
+Use page-aware serial numbers, full order-type names, and icon-only actions
+with accessible labels and tooltips. Organize drawer information into clearly
+separated sections rather than deeply indented, narrow nested fields.
+
+**Why:** The user requested clearer drawer organization and less uneven column
+spacing after reviewing the initial shipment layout.

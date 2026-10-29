@@ -12,12 +12,12 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 const DATE_KEY = /(^date|Date|At)$/;
 // Internal identifiers/evidence keys rendered elsewhere or not business facts.
-const SKIP = new Set(['shipment', 'shipmentHistory', 'decisionEligibility', 'mrEditable']);
+const SKIP = new Set(['shipment', 'shipmentHistory', 'decisionEligibility', 'mrEditable', 'number', 'date', 'status']);
 const SECTION_ORDER = [
-  ['Items', ['groups', 'items', 'lines', 'allergens', 'products']],
-  ['People', ['doctor', 'mr', 'patient', 'patients', 'patientCount']],
-  ['Billing', ['billing', 'billTo', 'pricing', 'payment', 'price', 'amount', 'subtotal', 'tax', 'discount', 'total', 'totalMinor']],
-  ['Shipping', ['recipient', 'shipping', 'shipTo', 'address']],
+  ['Doctor, MR & patient', ['doctor', 'mr', 'patient', 'patients', 'patientCount']],
+  ['Allergens, items & quantities', ['groups', 'items', 'lines', 'allergens', 'products']],
+  ['Billing & payment', ['billing', 'billTo', 'pricing', 'payment', 'price', 'amount', 'subtotal', 'tax', 'discount', 'total', 'totalMinor']],
+  ['Shipping details', ['recipient', 'shipping', 'shipTo', 'address']],
   ['Remarks', ['remarks', 'notes', 'note', 'comments']],
 ];
 
@@ -47,7 +47,7 @@ function useValue() {
     if (typeof v === 'object') {
       const keys = Object.keys(v);
       if (!keys.length) return NA;
-      return <dl className="shipment-drawer__nested">{keys.map((k) => <div key={k}><dt>{label(k)}</dt><dd><Value k={k} v={v[k]} /></dd></div>)}</dl>;
+      return <dl className="shipment-drawer__nested">{keys.map((k) => <div key={k} className={v[k] && typeof v[k] === 'object' ? 'shipment-drawer__field-group' : undefined}><dt>{label(k)}</dt><dd><Value k={k} v={v[k]} /></dd></div>)}</dl>;
     }
     return String(v);
   };
@@ -91,7 +91,7 @@ export default function ShipmentDetailsDrawer({ row, onClose, returnFocusTo }) {
   const order = state.data?.order && typeof state.data.order === 'object' ? state.data.order : null;
   const used = new Set();
   const patientItems = Array.isArray(order?.patients) && order.patients.some((p) => p && typeof p === 'object' && ('allergens' in p || 'items' in p));
-  const plan = SECTION_ORDER.map(([t, keys]) => [t, patientItems ? (t === 'Items' ? ['patients', ...keys] : keys.filter((x) => x !== 'patients')) : keys]);
+  const plan = SECTION_ORDER.map(([t, keys]) => [t, patientItems ? (t === 'Allergens, items & quantities' ? ['patients', ...keys] : keys.filter((x) => x !== 'patients')) : keys]);
   const sections = order ? plan.map(([title, keys]) => {
     const present = keys.filter((k) => Object.prototype.hasOwnProperty.call(order, k) && !used.has(k));
     present.forEach((k) => used.add(k));
@@ -108,11 +108,11 @@ export default function ShipmentDetailsDrawer({ row, onClose, returnFocusTo }) {
       <button type="button" className="po-action po-activity-drawer__close" onClick={onClose} autoFocus aria-label="Close shipment details" title="Close shipment details" data-testid="button-close-shipment-detail"><X size={20} aria-hidden="true" /></button>
     </header>
     <div className="po-activity-drawer__body" tabIndex={0} role="region" aria-label="Shipment detail content">
-      <p id="shipment-drawer-description" className="po-activity-drawer__description">Saved order snapshot and latest shipment record from the server. Values are shown as saved; nothing is recalculated.</p>
+      <p id="shipment-drawer-description" className="po-activity-drawer__description">Order, people, items and delivery information. All values are shown as saved.</p>
       {state.loading && <div role="status" className="admin-empty shipment-drawer__skeleton"><span /><span /><span /><strong>Loading shipment details…</strong></div>}
       {state.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{state.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((t) => t + 1)} data-testid="button-retry-shipment-detail">Retry</button></div>}
       {rec && <>
-        <section className="inv-drawer-section"><h3>Order</h3>
+        <section className="inv-drawer-section shipment-drawer__overview"><h3>Order overview</h3>
           <dl className="stock-report__meta">
             {fact('Order number', <span className="shipment-mono">{rec.number}</span>)}
             {fact('Order date', opt(rec.date, date))}
@@ -120,12 +120,9 @@ export default function ShipmentDetailsDrawer({ row, onClose, returnFocusTo }) {
             {fact('Value', rec.value != null ? <span className="shipment-mono">{rec.value}</span> : NA)}
             {fact('Status', rec.status || NA)}
             {fact('Payment', rec.paymentStatus || NA)}
-            {fact('Doctor', rec.doctor || NA)}
-            {fact('MR', rec.mr || NA)}
-            {fact('Patient', rec.patients?.length ? rec.patients.join(', ') : NA)}
           </dl>
         </section>
-        <section className="inv-drawer-section"><h3>Shipment</h3>
+        <section className="inv-drawer-section shipment-drawer__delivery"><h3>Shipment & delivery</h3>
           <dl className="stock-report__meta">
             {fact('Recipient', rec.recipient || NA)}
             {fact('Shipping address', rec.address || NA)}
@@ -139,13 +136,13 @@ export default function ShipmentDetailsDrawer({ row, onClose, returnFocusTo }) {
       </>}
       {state.data && !order && <p className="shipment-na">Saved order details are unavailable.</p>}
       {order && <>
-        {sections.map(([title, keys]) => <section key={title} className="inv-drawer-section"><h3>{title}</h3>
-          {keys.length ? <dl className="shipment-drawer__nested">{keys.map((k) => <div key={k}><dt>{label(k)}</dt><dd><Value k={k} v={order[k]} /></dd></div>)}</dl> : NA}
+        {sections.filter(([, keys]) => keys.length).map(([title, keys]) => <section key={title} className="inv-drawer-section"><h3>{title}</h3>
+          <dl className="shipment-drawer__nested">{keys.map((k) => <div key={k} className={order[k] && typeof order[k] === 'object' ? 'shipment-drawer__field-group' : undefined}><dt>{label(k)}</dt><dd><Value k={k} v={order[k]} /></dd></div>)}</dl>
         </section>)}
-        {order.shipmentHistory?.length > 0 && <section className="inv-drawer-section"><h3>Earlier shipment records</h3><Value v={order.shipmentHistory} /></section>}
-        {rest.length > 0 && <section className="inv-drawer-section"><h3>Other saved details</h3>
+        {order.shipmentHistory?.length > 0 && <details className="inv-drawer-section shipment-drawer__additional"><summary>Earlier shipment records</summary><Value v={order.shipmentHistory} /></details>}
+        {rest.length > 0 && <details className="inv-drawer-section shipment-drawer__additional"><summary>Additional saved details</summary>
           <dl className="shipment-drawer__nested">{rest.map((k) => <div key={k}><dt>{label(k)}</dt><dd><Value k={k} v={order[k]} /></dd></div>)}</dl>
-        </section>}
+        </details>}
       </>}
     </div>
   </dialog>;

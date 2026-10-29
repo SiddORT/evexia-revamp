@@ -24,12 +24,12 @@ function StatusPill({ status }) {
 }
 
 function Actions({ row, onAction }) {
-  if (row.status === 'In process') return <button type="button" className="admin-button shipment-act" onClick={() => onAction('ship', row)} data-testid={`button-ship-${row.key}`}><Truck size={15} aria-hidden="true" />Ship</button>;
+  if (row.status === 'In process') return <button type="button" className="admin-button shipment-act" title="Mark as shipped" aria-label={`Mark ${row.number} as shipped`} onClick={() => onAction('ship', row)} data-testid={`button-ship-${row.key}`}><Truck size={15} aria-hidden="true" /></button>;
   if (row.status === 'Shipped') return <div className="shipment-actions">
-    {!row.actualDeliveryDate && <button type="button" className="admin-button admin-button--secondary shipment-act" onClick={() => onAction('delivery', row)} data-testid={`button-delivery-${row.key}`}><CalendarCheck size={15} aria-hidden="true" />Delivery date</button>}
-    <button type="button" className="admin-button admin-button--secondary shipment-act" onClick={() => onAction('return', row)} data-testid={`button-return-${row.key}`}><Undo2 size={15} aria-hidden="true" />Return</button>
+    {!row.actualDeliveryDate && <button type="button" className="admin-button admin-button--secondary shipment-act" title="Update delivery date" aria-label={`Update delivery date for ${row.number}`} onClick={() => onAction('delivery', row)} data-testid={`button-delivery-${row.key}`}><CalendarCheck size={15} aria-hidden="true" /></button>}
+    <button type="button" className="admin-button admin-button--secondary shipment-act" title="Mark as returned" aria-label={`Mark ${row.number} as returned`} onClick={() => onAction('return', row)} data-testid={`button-return-${row.key}`}><Undo2 size={15} aria-hidden="true" /></button>
   </div>;
-  return <span className="shipment-sub">No action</span>;
+  return null;
 }
 
 function Denied() {
@@ -106,10 +106,11 @@ function ShipmentsPage() {
   const patients = (r) => (r.patients?.length ? r.patients.join(', ') : NA);
   const courier = (r) => r.courier || r.trackingId ? <><span>{r.courier ?? NA}</span><span className="shipment-sub shipment-mono">{r.trackingId ?? 'Unavailable'}</span>{r.expectedDeliveryDate && <span className="shipment-sub">Exp. {fmtDate(r.expectedDeliveryDate)}</span>}</> : <span className="shipment-sub">Not shipped</span>;
   const openDetails = (r, e) => { setDetails({ row: r, focus: e.currentTarget }); };
-  const viewBtn = (r) => <button type="button" className="admin-button admin-button--secondary shipment-act" onClick={(e) => openDetails(r, e)} aria-label={`View details for ${r.number}`} data-testid={`button-view-${r.key}`}><Eye size={15} aria-hidden="true" />View details</button>;
+  const viewBtn = (r) => <button type="button" className="admin-button admin-button--secondary shipment-act" title="View details" onClick={(e) => openDetails(r, e)} aria-label={`View details for ${r.number}`} data-testid={`button-view-${r.key}`}><Eye size={15} aria-hidden="true" /></button>;
   const onAction = (mode, row) => { setNotice(''); setDetails(null); setAction({ mode, row }); };
   const columns = [
-    { key: 'order', label: 'Order / Type', render: (r) => <><strong className="shipment-mono" data-testid={`text-order-${r.key}`}>{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)}</span><span className={`shipment-type shipment-type--${r.type.toLowerCase()}`}>{r.type}</span></> },
+    { key: 'serial', label: 'Sr. No.', render: (_r, index) => index + 1 },
+    { key: 'order', label: 'Order / Type', render: (r) => <><strong className="shipment-mono" data-testid={`text-order-${r.key}`}>{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)}</span><span className={`shipment-type shipment-type--${r.type.toLowerCase()}`}>{TYPE_LABELS[r.type] || r.type}</span></> },
     { key: 'value', label: 'Value', render: (r) => r.value != null ? <span className="shipment-mono">{r.value}</span> : NA },
     { key: 'doctor', label: 'Doctor', render: (r) => r.doctor ?? NA },
     { key: 'mr', label: 'MR', render: (r) => r.mr ?? NA },
