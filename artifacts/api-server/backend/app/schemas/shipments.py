@@ -1,6 +1,7 @@
 """Shipment-only contracts. Ordinary order input contracts remain unchanged."""
 import uuid
 from datetime import date
+from typing import Any
 from typing import Literal
 from pydantic import Field, field_validator
 from app.schemas.immunotherapy import Strict
@@ -43,6 +44,7 @@ class ShipmentRecord(Strict):
     value: str | None
     doctor: str | None
     mr: str | None
+    patients: list[str] = Field(default_factory=list)
     address: str | None
     recipient: str | None
     courier: str | None
@@ -59,6 +61,11 @@ class ShipmentPage(Strict):
     total: int
     offset: int
     limit: int
+
+
+class ShipmentDetails(Strict):
+    record: ShipmentRecord
+    order: dict[str, Any]
 
 
 class ShipmentCourier(Strict):

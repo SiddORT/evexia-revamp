@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, FileDown, PackageCheck, Search, Truck, Undo2, CalendarCheck } from 'lucide-react';
+import { ChevronDown, Eye, FileDown, PackageCheck, Search, Truck, Undo2, CalendarCheck } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
@@ -10,6 +10,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import ShipmentActionDialog from '../../components/admin/ShipmentActionDialog.jsx';
+import ShipmentDetailsDrawer from '../../components/admin/ShipmentDetailsDrawer.jsx';
 import { useOrderListFreshness } from '../../services/orderFreshness.js';
 import { EMPTY_FILTERS, SHIPMENT_STATUSES, SHIPMENT_TYPES, TYPE_LABELS, listShipments, exportShipments, announceShipmentChange } from '../../services/serverShipments.js';
 import '../../kitsOrders.css';
@@ -51,6 +52,7 @@ function ShipmentsPage() {
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   const [dateError, setDateError] = useState('');
   const [action, setAction] = useState(null);
+  const [details, setDetails] = useState(null);
   const [notice, setNotice] = useState('');
   const [exporting, setExporting] = useState(''), [exportMsg, setExportMsg] = useState(null);
   const actionOpen = useRef(false);
@@ -63,6 +65,7 @@ function ShipmentsPage() {
   useOrderListFreshness('spt', refresh);
   const set = (patch) => { setDraft((v) => ({ ...v, ...patch })); setDateError(''); };
 
+  useEffect(() => { setDetails(null); }, [applied, page, pageSize]);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
@@ -100,24 +103,20 @@ function ShipmentsPage() {
   }
 
   const pageCount = Math.max(1, Math.ceil(result.total / pageSize));
-  const who = (r) => <><span>{r.doctor ?? NA}</span><span className="shipment-sub">MR: {r.mr ?? 'Unavailable'}</span></>;
-  const courier = (r) => r.courier || r.trackingId ? <><span>{r.courier ?? NA}</span><span className="shipment-sub shipment-mono">{r.trackingId ?? 'Unavailable'}</span></> : <span className="shipment-sub">Not shipped</span>;
-  const delivery = (r) => <dl className="shipment-dates">
-    <div><dt>Expected</dt><dd>{r.expectedDeliveryDate ? fmtDate(r.expectedDeliveryDate) : '—'}</dd></div>
-    <div><dt>Actual</dt><dd>{r.actualDeliveryDate ? fmtDate(r.actualDeliveryDate) : '—'}</dd></div>
-    {r.shippedAt && <div><dt>Shipped</dt><dd>{timestamp(r.shippedAt)}</dd></div>}
-  </dl>;
+  const patients = (r) => (r.patients?.length ? r.patients.join(', ') : NA);
+  const courier = (r) => r.courier || r.trackingId ? <><span>{r.courier ?? NA}</span><span className="shipment-sub shipment-mono">{r.trackingId ?? 'Unavailable'}</span>{r.expectedDeliveryDate && <span className="shipment-sub">Exp. {fmtDate(r.expectedDeliveryDate)}</span>}</> : <span className="shipment-sub">Not shipped</span>;
+  const openDetails = (r, e) => { setDetails({ row: r, focus: e.currentTarget }); };
+  const viewBtn = (r) => <button type="button" className="admin-button admin-button--secondary shipment-act" onClick={(e) => openDetails(r, e)} aria-label={`View details for ${r.number}`} data-testid={`button-view-${r.key}`}><Eye size={15} aria-hidden="true" />View details</button>;
+  const onAction = (mode, row) => { setNotice(''); setDetails(null); setAction({ mode, row }); };
   const columns = [
-    { key: 'sr', label: 'Sr. No.', render: (_r, i) => i + 1 },
-    { key: 'order', label: 'Order', render: (r) => <><strong className="shipment-mono" data-testid={`text-order-${r.key}`}>{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)}</span></> },
-    { key: 'type', label: 'Type', render: (r) => <span className={`shipment-type shipment-type--${r.type.toLowerCase()}`}>{r.type}</span> },
+    { key: 'order', label: 'Order / Type', render: (r) => <><strong className="shipment-mono" data-testid={`text-order-${r.key}`}>{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)}</span><span className={`shipment-type shipment-type--${r.type.toLowerCase()}`}>{r.type}</span></> },
     { key: 'value', label: 'Value', render: (r) => r.value != null ? <span className="shipment-mono">{r.value}</span> : NA },
-    { key: 'who', label: 'Doctor / MR', render: who },
-    { key: 'address', label: 'Shipping address', render: (r) => <div className="shipment-address">{r.recipient && <strong>{r.recipient}</strong>}{r.address ?? NA}</div> },
-    { key: 'courier', label: 'Courier / Tracking', render: courier },
-    { key: 'delivery', label: 'Delivery', render: delivery },
-    { key: 'status', label: 'Status', render: (r) => <><StatusPill status={r.status} /><span className="shipment-sub">Payment: {r.paymentStatus ?? 'Unavailable'}</span></> },
-    { key: 'act', label: 'Action', render: (r) => <Actions row={r} onAction={(mode, row) => { setNotice(''); setAction({ mode, row }); }} /> },
+    { key: 'doctor', label: 'Doctor', render: (r) => r.doctor ?? NA },
+    { key: 'mr', label: 'MR', render: (r) => r.mr ?? NA },
+    { key: 'patient', label: 'Patient', render: patients },
+    { key: 'courier', label: 'Shipment', render: courier },
+    { key: 'status', label: 'Status', render: (r) => <><StatusPill status={r.status} /><span className="shipment-sub">Pay: {r.paymentStatus ?? 'Unavailable'}</span></> },
+    { key: 'act', label: 'Action', render: (r) => <div className="shipment-actions">{viewBtn(r)}<Actions row={r} onAction={onAction} /></div> },
   ];
 
   return <AdminLayout title="SHIPMENTS"><div className="kits kits-listing shipments">
@@ -149,7 +148,7 @@ function ShipmentsPage() {
       {error ? <div className="kits-listing__state kits-listing__state--error" role="alert"><strong>Shipments unavailable</strong><p>{error}</p><button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-retry-shipments">Retry loading shipments</button></div>
         : <>
           <div className="shipments-table">
-            <DataTable columns={columns} rows={result.items} loading={loading} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.key} label="Shipments (scrolls horizontally)" testIdPrefix="shipment"
+            <DataTable columns={columns} rows={result.items} loading={loading} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.key} label="Shipments" testIdPrefix="shipment"
               empty={<div className="kits-listing__state"><PackageCheck size={28} aria-hidden="true" /><strong>{applied.status === 'In process' && applied.type === 'All' && !applied.search && !applied.from_date && !applied.to_date ? 'Nothing waiting to ship' : 'No matching shipments'}</strong><p>Change or reset the filters. All includes In process, Shipped and Returned orders.</p></div>} />
           </div>
           <ul className="shipments-cards" aria-label="Shipments">
@@ -160,18 +159,19 @@ function ShipmentsPage() {
                 <dl className="shipment-card__facts">
                   <div><dt>Value</dt><dd>{r.value ?? NA}</dd></div>
                   <div><dt>Payment</dt><dd>{r.paymentStatus ?? NA}</dd></div>
-                  <div><dt>Doctor / MR</dt><dd>{who(r)}</dd></div>
-                  <div><dt>Address</dt><dd>{r.recipient && <strong>{r.recipient} </strong>}{r.address ?? NA}</dd></div>
+                  <div><dt>Doctor</dt><dd>{r.doctor ?? NA}</dd></div>
+                  <div><dt>MR</dt><dd>{r.mr ?? NA}</dd></div>
+                  <div><dt>Patient</dt><dd>{patients(r)}</dd></div>
                   <div><dt>Courier</dt><dd>{courier(r)}</dd></div>
-                  <div><dt>Delivery</dt><dd>{delivery(r)}</dd></div>
                 </dl>
-                <Actions row={r} onAction={(mode, row) => { setNotice(''); setAction({ mode, row }); }} />
+                <div className="shipment-actions">{viewBtn(r)}<Actions row={r} onAction={onAction} /></div>
               </li>)}
           </ul>
           <TablePagination page={page} pageCount={pageCount} pageSize={pageSize} filtered={result.total} total={result.total} label="shipments" testId="shipments-count"
             onPageChange={(n) => { if (!loading && n >= 1 && n <= pageCount) setPage(n); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         </>}
     </section>
+    {details && <ShipmentDetailsDrawer key={details.row.key} row={details.row} returnFocusTo={details.focus} onClose={() => setDetails(null)} />}
     {action && <ShipmentActionDialog key={`${action.mode}-${action.row.key}`} mode={action.mode} row={action.row} formatDate={fmtDate} onClose={() => setAction(null)} onDone={done} />}
   </div></AdminLayout>;
 }

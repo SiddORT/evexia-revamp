@@ -67,9 +67,18 @@ def projection(kind, row, saved):
     def name(key):
         person = saved.get(key)
         return person.get("name") or None if isinstance(person, dict) else None
+    # Saved patient snapshots only: never infer a Patient from a shipping
+    # recipient, or replace historical identities with today's directory.
+    patients = []
+    single = saved.get("patient")
+    people = ([single] if isinstance(single, dict) else []) + (
+        saved.get("patients") if isinstance(saved.get("patients"), list) else [])
+    for person in people:
+        if isinstance(person, dict) and isinstance(person.get("name"), str) and person["name"].strip():
+            patients.append(person["name"])
     result = dict(id=str(row.id), key=f"{kind}:{row.id}", type=kind, number=row.number,
         date=row.date.isoformat(), version=row.version, value=value,
-        doctor=name("doctor"), mr=name("mr"), recipient=recipient.get("name") or None,
+        doctor=name("doctor"), mr=name("mr"), patients=patients, recipient=recipient.get("name") or None,
         address=address_text(recipient.get("address")),
         courier=shipping.get("courierName"), trackingId=shipping.get("trackingId"),
         expectedDeliveryDate=shipping.get("expectedDeliveryDate"),
@@ -77,6 +86,25 @@ def projection(kind, row, saved):
         status="In process" if row.status == "Approved" else row.status,
         paymentStatus=getattr(row, "payment_status", None))
     return ShipmentRecord.model_validate(result).model_dump(mode="json")
+
+
+def detail(db, actor, kind, identity):
+    if kind not in SOURCES:
+        raise ImmError("Unsupported order type.", 422, "shipment_type")
+    source = SOURCES[kind]
+
+    def work(current, keys):
+        row = db.get(source.Order, identity)
+        if row is None or row.status not in {*STATUSES, "Approved"}:
+            raise ImmError("Saved shipment order is unavailable.", 404, "shipment_not_found")
+        # Reuse the source's full saved projection, including its saved clinical,
+        # billing and shipping facts. No writes or live-directory enrichment.
+        order = source.project(keys, row)
+        order = {key: value for key, value in order.items()
+                 if key not in {"decisionEligibility", "mrEditable"}}
+        return dict(record=projection(kind, row, order), order=order)
+
+    return transaction(db, actor, work)
 
 
 def listing(db, actor, *, search="", status="In process", type="All",

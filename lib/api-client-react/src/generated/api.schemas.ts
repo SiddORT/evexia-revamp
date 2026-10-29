@@ -9752,19 +9752,7 @@ export interface ShipmentDelivery {
   idempotency_key: string;
 }
 
-export interface ShipmentDispatch {
-  actual_delivery_date?: string | null;
-  courier_id: string;
-  expected_delivery_date: string;
-  /** @minimum 1 */
-  expected_version: number;
-  idempotency_key: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  tracking_id: string;
-}
+export type ShipmentDetailsOrder = { [key: string]: unknown };
 
 export type ShipmentRecordStatus =
   (typeof ShipmentRecordStatus)[keyof typeof ShipmentRecordStatus];
@@ -9796,6 +9784,7 @@ export interface ShipmentRecord {
   key: string;
   mr: string | null;
   number: string;
+  patients?: string[];
   paymentStatus: string | null;
   recipient: string | null;
   shippedAt: string | null;
@@ -9804,6 +9793,25 @@ export interface ShipmentRecord {
   type: ShipmentRecordType;
   value: string | null;
   version: number;
+}
+
+export interface ShipmentDetails {
+  order: ShipmentDetailsOrder;
+  record: ShipmentRecord;
+}
+
+export interface ShipmentDispatch {
+  actual_delivery_date?: string | null;
+  courier_id: string;
+  expected_delivery_date: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotency_key: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  tracking_id: string;
 }
 
 export interface ShipmentPage {

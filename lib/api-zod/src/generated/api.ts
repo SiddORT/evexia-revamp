@@ -33649,6 +33649,7 @@ export const ListShipmentsResponse = zod.object({
       key: zod.string(),
       mr: zod.union([zod.string(), zod.null()]),
       number: zod.string(),
+      patients: zod.array(zod.string()).optional(),
       paymentStatus: zod.union([zod.string(), zod.null()]),
       recipient: zod.union([zod.string(), zod.null()]),
       shippedAt: zod.union([zod.string(), zod.null()]),
@@ -33734,6 +33735,7 @@ export const ExportShipmentsResponse = zod.object({
       key: zod.string(),
       mr: zod.union([zod.string(), zod.null()]),
       number: zod.string(),
+      patients: zod.array(zod.string()).optional(),
       paymentStatus: zod.union([zod.string(), zod.null()]),
       recipient: zod.union([zod.string(), zod.null()]),
       shippedAt: zod.union([zod.string(), zod.null()]),
@@ -33747,6 +33749,39 @@ export const ExportShipmentsResponse = zod.object({
   limit: zod.number().int(),
   offset: zod.number().int(),
   total: zod.number().int(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetShipmentDetailsParams = zod.object({
+  kind: zod.enum(["Kit", "IT", "Lupin", "SPT"]),
+  identity: zod.coerce.string().uuid(),
+});
+
+export const GetShipmentDetailsResponse = zod.object({
+  order: zod.record(zod.string(), zod.unknown()),
+  record: zod.object({
+    actualDeliveryDate: zod.union([zod.string(), zod.null()]),
+    address: zod.union([zod.string(), zod.null()]),
+    courier: zod.union([zod.string(), zod.null()]),
+    date: zod.string(),
+    doctor: zod.union([zod.string(), zod.null()]),
+    expectedDeliveryDate: zod.union([zod.string(), zod.null()]),
+    id: zod.string().uuid(),
+    key: zod.string(),
+    mr: zod.union([zod.string(), zod.null()]),
+    number: zod.string(),
+    patients: zod.array(zod.string()).optional(),
+    paymentStatus: zod.union([zod.string(), zod.null()]),
+    recipient: zod.union([zod.string(), zod.null()]),
+    shippedAt: zod.union([zod.string(), zod.null()]),
+    status: zod.enum(["In process", "Shipped", "Returned"]),
+    trackingId: zod.union([zod.string(), zod.null()]),
+    type: zod.enum(["Kit", "IT", "Lupin", "SPT"]),
+    value: zod.union([zod.string(), zod.null()]),
+    version: zod.number().int(),
+  }),
 });
 
 /**
@@ -33774,6 +33809,7 @@ export const RecordShipmentDeliveryResponse = zod.object({
   key: zod.string(),
   mr: zod.union([zod.string(), zod.null()]),
   number: zod.string(),
+  patients: zod.array(zod.string()).optional(),
   paymentStatus: zod.union([zod.string(), zod.null()]),
   recipient: zod.union([zod.string(), zod.null()]),
   shippedAt: zod.union([zod.string(), zod.null()]),
@@ -33808,6 +33844,7 @@ export const ReturnShipmentResponse = zod.object({
   key: zod.string(),
   mr: zod.union([zod.string(), zod.null()]),
   number: zod.string(),
+  patients: zod.array(zod.string()).optional(),
   paymentStatus: zod.union([zod.string(), zod.null()]),
   recipient: zod.union([zod.string(), zod.null()]),
   shippedAt: zod.union([zod.string(), zod.null()]),
@@ -33846,6 +33883,7 @@ export const DispatchShipmentResponse = zod.object({
   key: zod.string(),
   mr: zod.union([zod.string(), zod.null()]),
   number: zod.string(),
+  patients: zod.array(zod.string()).optional(),
   paymentStatus: zod.union([zod.string(), zod.null()]),
   recipient: zod.union([zod.string(), zod.null()]),
   shippedAt: zod.union([zod.string(), zod.null()]),

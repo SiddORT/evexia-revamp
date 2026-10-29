@@ -996,7 +996,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
   const allowed = resource === 'shipments'
-    ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}\/(?:ship|delivery|return))$/
+    ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}(?:\/(?:ship|delivery|return))?)$/
     : resource === 'spt-orders'
     ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'lupin-orders'

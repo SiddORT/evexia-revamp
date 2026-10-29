@@ -476,6 +476,7 @@ import type {
   ShipmentCouriers,
   ShipmentCouriersParams,
   ShipmentDelivery,
+  ShipmentDetails,
   ShipmentDispatch,
   ShipmentPage,
   ShipmentRecord,
@@ -32322,6 +32323,115 @@ export function useExportShipments<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getExportShipmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetShipmentDetailsUrl = (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+) => {
+  return `/api/v1/admin/shipments/${kind}/${identity}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getShipmentDetails = async (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentDetails> => {
+  return customFetch<ShipmentDetails>(
+    getGetShipmentDetailsUrl(kind, identity),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetShipmentDetailsQueryKey = (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+) => {
+  return [`/api/v1/admin/shipments/${kind}/${identity}`] as const;
+};
+
+export const getGetShipmentDetailsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getShipmentDetails>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getShipmentDetails>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetShipmentDetailsQueryKey(kind, identity);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getShipmentDetails>>
+  > = ({ signal }) =>
+    getShipmentDetails(kind, identity, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled:
+      kind !== null &&
+      kind !== undefined &&
+      identity !== null &&
+      identity !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getShipmentDetails>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetShipmentDetailsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getShipmentDetails>>
+>;
+export type GetShipmentDetailsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetShipmentDetails<
+  TData = Awaited<ReturnType<typeof getShipmentDetails>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getShipmentDetails>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetShipmentDetailsQueryOptions(
+    kind,
+    identity,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -10,3 +10,15 @@ Individual status filters remain available.
 
 **How to apply:** Preserve this default when changing listing, reset or refresh
 behavior. Do not revert to an In process-only default.
+
+### Listing and detail presentation
+
+Keep the Shipments listing compact and avoid horizontal scrolling. Combine
+Order and Type, but keep Doctor, MR and Patient separate. Full order details
+belong in a right-side View details drawer, including allergens, quantities,
+people, billing, shipping and shipment information.
+
+**Why:** The user explicitly requested this separation to keep the table readable.
+
+**How to apply:** Add lengthy order information to the drawer rather than
+expanding the listing into an increasingly wide table.

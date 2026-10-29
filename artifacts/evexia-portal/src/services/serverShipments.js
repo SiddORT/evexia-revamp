@@ -35,6 +35,22 @@ export async function fetchCourierPage(query, offset, signal) {
 // Mutation path resolved from the row's server identity only.
 export const mutationPath = (row, action) => `/${encodeURIComponent(TYPE_PATHS[row.type] || row.type)}/${encodeURIComponent(row.id)}/${action}`;
 
+export async function fetchShipmentDetails(row, signal) {
+  const kind = TYPE_PATHS[row.type];
+  if (!kind) throw new Error('Unsupported shipment order type.');
+  const data = await shipmentRequest(`/${kind}/${encodeURIComponent(row.id)}`, { signal });
+  const saved = data?.record;
+  if (!saved || saved.id !== row.id || saved.type !== row.type || saved.key !== row.key
+      || !Number.isSafeInteger(saved.version) || saved.version < row.version
+      || !['In process', 'Shipped', 'Returned'].includes(saved.status)
+      || !data.order || typeof data.order !== 'object' || Array.isArray(data.order)
+      || data.order.id !== saved.id || data.order.number !== saved.number
+      || data.order.version !== saved.version) {
+    throw new Error('The server did not confirm this saved order. Close the drawer and refresh shipments before retrying.');
+  }
+  return data;
+}
+
 export async function sendFrozen(frozen, row) {
   const updated = await shipmentRequest(frozen.path, { body: frozen.body });
   if (!updated || String(updated.id) !== String(row.id) || updated.type !== row.type || typeof updated.version !== 'number' || updated.version <= row.version) {

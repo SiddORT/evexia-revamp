@@ -77,3 +77,24 @@ test('wrong target, stale version, wrong status and mismatched dispatch details 
   assert.equal((await api.purchaseOrderRequest(`/IT/${id}/ship`, { body }, 'shipments')).status, 'Shipped');
   assert.equal(calls, corruptions.length + 1);
 });
+
+test('saved shipment details use read-only authenticated GET for each supported order type', async (t) => {
+  let calls = 0;
+  const api = await setup(async (url, options) => {
+    calls++;
+    assert.equal(options.method, 'GET');
+    assert.equal(options.credentials, 'same-origin');
+    assert.equal(options.body, undefined);
+    const type = url.match(/shipments\/([^/]+)\//)[1];
+    return reply({ record: result(type, 'ship'), order: { id, groups: [{ items: [{ quantity: 3 }] }] } });
+  });
+  t.after(() => api.logoutAdmin());
+  for (const type of ['Kit', 'IT', 'Lupin', 'SPT']) {
+    const data = await api.purchaseOrderRequest(`/${type}/${id}`, {}, 'shipments');
+    assert.equal(data.record.type, type);
+    assert.equal(data.order.groups[0].items[0].quantity, 3);
+  }
+  assert.equal(calls, 4);
+  await assert.rejects(api.purchaseOrderRequest(`/IT/${id}`, { body }, 'shipments'), /Unsupported/);
+  assert.equal(calls, 4);
+});

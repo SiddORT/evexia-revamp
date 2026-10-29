@@ -8,7 +8,7 @@ from app.api.deps import current_identity
 from app.db.session import get_db
 from app.schemas.shipments import (
     ShipmentType, ShipmentDispatch, ShipmentDelivery, ShipmentCommand,
-    ShipmentRecord, ShipmentPage, ShipmentCouriers,
+    ShipmentRecord, ShipmentPage, ShipmentCouriers, ShipmentDetails,
 )
 from app.services import shipments as service
 
@@ -43,6 +43,12 @@ def couriers(search: str = Query("", max_length=100), offset: int = Query(0, ge=
 def dispatch(kind: ShipmentType, identity: uuid.UUID, body: ShipmentDispatch,
              actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.mutate(db, actor, kind, identity, body, "ship")
+
+
+@router.get("/{kind}/{identity}", response_model=ShipmentDetails, operation_id="getShipmentDetails")
+def detail(kind: ShipmentType, identity: uuid.UUID,
+           actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return service.detail(db, actor, kind, identity)
 
 
 @router.post("/{kind}/{identity}/delivery", response_model=ShipmentRecord, operation_id="recordShipmentDelivery")

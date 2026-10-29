@@ -19,6 +19,7 @@ export interface ShipmentRecord {
   key: string;
   mr: string | null;
   number: string;
+  patients?: string[];
   paymentStatus: string | null;
   recipient: string | null;
   shippedAt: string | null;
