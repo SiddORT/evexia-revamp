@@ -150,7 +150,7 @@ function ShipmentsPage() {
         : <>
           <div className="shipments-table">
             <DataTable columns={columns} rows={result.items} loading={loading} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.key} label="Shipments (scrolls horizontally)" testIdPrefix="shipment"
-              empty={<div className="kits-listing__state"><PackageCheck size={28} aria-hidden="true" /><strong>{applied.status === 'In process' && applied.type === 'All' && !applied.search && !applied.from_date && !applied.to_date ? 'Nothing waiting to ship' : 'No matching shipments'}</strong><p>Change the status filter to see shipped or returned orders, or reset the filters.</p></div>} />
+              empty={<div className="kits-listing__state"><PackageCheck size={28} aria-hidden="true" /><strong>{applied.status === 'In process' && applied.type === 'All' && !applied.search && !applied.from_date && !applied.to_date ? 'Nothing waiting to ship' : 'No matching shipments'}</strong><p>Change or reset the filters. All includes In process, Shipped and Returned orders.</p></div>} />
           </div>
           <ul className="shipments-cards" aria-label="Shipments">
             {loading ? [0, 1, 2].map((i) => <li key={i} className="shipment-card shipment-card--skeleton" aria-hidden="true"><span /><span /><span /></li>)

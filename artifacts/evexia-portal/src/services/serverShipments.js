@@ -6,13 +6,13 @@ import { captureExportPreferences } from './exportPreferences.js';
 import { downloadBlob, prepareDownload } from './downloads.js';
 import { announceOrderChange } from './orderFreshness.js';
 
-export const SHIPMENT_STATUSES = ['In process', 'Shipped', 'Returned', 'All'];
+export const SHIPMENT_STATUSES = ['All', 'In process', 'Shipped', 'Returned'];
 export const SHIPMENT_TYPES = ['All', 'Kit', 'IT', 'Lupin', 'SPT'];
 export const TYPE_LABELS = { Kit: 'Kits & Consumables', IT: 'Immunotherapy', Lupin: 'Lupin', SPT: 'SPT' };
 export const TYPE_PATHS = { Kit: 'Kit', IT: 'IT', Lupin: 'Lupin', SPT: 'SPT' };
 // Source listing freshness channels (see orderFreshness.js useOrderListFreshness).
 export const TYPE_FRESHNESS = { Kit: 'kits', IT: 'immunotherapy', Lupin: 'lupin', SPT: 'spt' };
-export const EMPTY_FILTERS = { search: '', status: 'In process', type: 'All', from_date: '', to_date: '' };
+export const EMPTY_FILTERS = { search: '', status: 'All', type: 'All', from_date: '', to_date: '' };
 export const EXPORT_LIMIT = 5000;
 
 
