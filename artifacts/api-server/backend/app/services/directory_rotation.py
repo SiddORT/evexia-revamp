@@ -40,7 +40,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders",
     "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
     "0070_mr_account_numbers", "0071_order_review_audit", "0072_imm_approved_status", "0073_order_decisions",
-    "0074_business_numbers"})
+    "0074_business_numbers", "0075_shipments"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -63,7 +63,7 @@ def _fields(db):
                     "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner",
                     "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
                     "0070_mr_account_numbers", "0071_order_review_audit", "0072_imm_approved_status", "0073_order_decisions",
-                    "0074_business_numbers"):
+                    "0074_business_numbers", "0075_shipments"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -87,6 +87,8 @@ def _lock(db, exclusive=False):
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
     # The status CHECK expansion changes no encryption inventory or lock scope.
+    if revisions == ["0075_shipments"]:
+        revisions = ["0074_business_numbers"]
     if revisions == ["0074_business_numbers"]:
         revisions = ["0073_order_decisions"]
     if revisions == ["0073_order_decisions"]:
