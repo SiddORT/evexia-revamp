@@ -1138,6 +1138,19 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (data?.idempotencyKey !== body?.idempotencyKey || !Array.isArray(data.lines)
       || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
       || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
+  } else if (mutation && resource === 'shipments') {
+    // Shipment replies are ShipmentRecord, not PurchaseOrder (no lines array).
+    // Confirm the exact target, state and version before reporting success.
+    const [, kind, identity, action] = path.split('/');
+    if (data?.id !== identity || data?.type !== kind || data?.key !== `${kind}:${identity}`
+      || typeof data.number !== 'string' || !data.number
+      || !Number.isSafeInteger(data.version) || !Number.isSafeInteger(body.expected_version)
+      || data.version <= body.expected_version
+      || data.status !== (action === 'return' ? 'Returned' : 'Shipped')) throw uncertain();
+    if (action === 'ship' && (data.trackingId !== body.tracking_id?.trim()
+      || data.expectedDeliveryDate !== body.expected_delivery_date
+      || data.actualDeliveryDate !== (body.actual_delivery_date ?? null))) throw uncertain();
+    if (action === 'delivery' && data.actualDeliveryDate !== body.actual_delivery_date) throw uncertain();
   } else if (mutation && resource === 'spt-orders') {
     if (path === '/import/commit') {
       if (!Number.isInteger(data?.imported) || !Array.isArray(data.orders) || data.orders.length !== data.imported) throw uncertain();
