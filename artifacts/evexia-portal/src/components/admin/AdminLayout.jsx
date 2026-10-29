@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
-import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
+import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, isSuperAdminIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
 import { interceptNavigation } from '../../auth/navigationGuard.js';
 import { logoutAdmin } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
@@ -101,6 +101,7 @@ export default function AdminLayout({ title, children }) {
     (!staff || canReadResource(user, ({ 'kits-consumables': 'kits', immunotherapy: 'immunotherapy', spt: 'spt', lupin: 'lupin' })[destination.slug]))
     && (!searching || 'orders'.includes(query) || `${destination.label} ${destination.keywords || ''}`.toLocaleLowerCase().includes(query)));
   const showOrders = visibleOrders.length > 0;
+  const showShipments = !staff && isSuperAdminIdentity(user) && (!searching || 'shipments courier tracking delivery'.includes(query));
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
     links: group.links.filter((link) => !staff || MASTER_CATALOGUE.some((master) =>
@@ -274,6 +275,7 @@ export default function AdminLayout({ title, children }) {
               return <Link key={slug} href={href} className={`admin-nav__item${active ? ' admin-nav__item--active' : ''}`} aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid={`link-admin-orders-${slug}`}><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">{label}</span></Link>;
             })}
           </div>
+          {showShipments && <Link href="/admin/shipments" className={`admin-nav__item${location === '/admin/shipments' ? ' admin-nav__item--active' : ''}`} aria-label="Shipments" title={isCollapsed ? 'Shipments' : undefined} aria-current={location === '/admin/shipments' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-shipments"><Truck size={17} aria-hidden="true" /><span className="admin-nav__label">Shipments</span></Link>}
           {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${isUserManagementPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
@@ -286,7 +288,7 @@ export default function AdminLayout({ title, children }) {
               <ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Roles & Permissions</span>
             </Link>}
           </div>
-          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
+          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && !showShipments && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>

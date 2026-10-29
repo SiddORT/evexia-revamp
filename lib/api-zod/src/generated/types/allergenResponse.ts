@@ -13,6 +13,7 @@ export interface AllergenResponse {
   category_id: string;
   category_name: string;
   category_status: AllergenResponseCategoryStatus;
+  code: string;
   /**
    * @minLength 1
    * @maxLength 200

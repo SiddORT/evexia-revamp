@@ -7,7 +7,7 @@ from pydantic import Field, model_validator
 from app.schemas.immunotherapy import Strict
 
 Status = Literal["Draft", "Saved", "Rejected"]
-ReadStatus = Literal["Draft", "Saved", "In process", "Rejected"]
+ReadStatus = Literal["Draft", "Saved", "Approved", "In process", "Shipped", "Returned", "Rejected"]
 Gender = Literal["Male", "Female", "Other", "Prefer not to say"]
 
 

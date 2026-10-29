@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0074_business_numbers",
-  "policy_sha256": "446357ff0067ffca6ab4995b4f78e812926634e646a5597a4ef5d3ea07169583",
+  "target": "0075_shipments",
+  "policy_sha256": "3eb0679492f1e695ce08ce58eb189c9f78e1a65e274f1c257210f09639a1a9e2",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -83,7 +83,8 @@
     "0071_order_review_audit": "5441af9113ab33b1d277cd31b2a653eafdabb58fdba8461e3c80802cb41c11aa",
     "0072_imm_approved_status": "85c6bcc6ad6e135b86722fb9e20dc1691a5a36292b067ea83ad554b5f77f715f",
     "0073_order_decisions": "82d0290bac8a59c4bf85e2d1acb2690131d1d63971fa1b3a450a909856ee347e",
-    "0074_business_numbers": "8ecbfe607112dbd776c233c54c5555fe05d591d82052781a1b1a4844db363928"
+    "0074_business_numbers": "8ecbfe607112dbd776c233c54c5555fe05d591d82052781a1b1a4844db363928",
+    "0075_shipments": "6b11b27a377ca58df64ec6488d43384b4e59700cf5f5325ec69c39b6e7442d2f"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

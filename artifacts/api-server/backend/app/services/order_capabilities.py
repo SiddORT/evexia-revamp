@@ -13,6 +13,16 @@ def attachment_changes(actor, resource, identities, previous):
 
 def public_result(actor, resource, value):
     """Retain opaque saved IDs for edits without disclosing protected filenames."""
+    # Shipment reports have their own singleton-only projection. Internal source
+    # projects retain these fields for ordinary-edit preservation, not transport.
+    def without_fulfillment(child):
+        if isinstance(child, list):
+            return [without_fulfillment(item) for item in child]
+        if isinstance(child, dict):
+            return {key: without_fulfillment(item) for key, item in child.items()
+                    if key not in {"shipment", "shipmentHistory"}}
+        return child
+    value = without_fulfillment(value)
     if resource == "kits":
         from app.services.capability_policy import is_super_admin
         if not is_super_admin(actor):

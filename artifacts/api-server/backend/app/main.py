@@ -73,6 +73,7 @@ from app.api.v1.immunotherapy import router as immunotherapy_router
 from app.api.v1.kits import router as kits_router
 from app.api.v1.spt import router as spt_router
 from app.api.v1.lupin import router as lupin_router
+from app.api.v1.shipments import router as shipments_router
 from app.services.immunotherapy import ImmError
 from app.api.v1.opening_balances import router as opening_balances_router
 from app.services.opening_balances import OpeningBalanceError
@@ -383,6 +384,7 @@ def create_app() -> FastAPI:
     app.include_router(kits_router, prefix="/api/v1")
     app.include_router(spt_router, prefix="/api/v1")
     app.include_router(lupin_router, prefix="/api/v1")
+    app.include_router(shipments_router, prefix="/api/v1")
     app.include_router(purchase_received_router, prefix="/api/v1")
     app.include_router(inventory_router, prefix="/api/v1")
     app.include_router(products_router, prefix="/api/v1")

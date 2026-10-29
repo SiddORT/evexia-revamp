@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0075_shipments": "automatic",
     "0074_business_numbers": "automatic",
     "0064_procurement_documents": "automatic",
     "0060_staff_account_numbers": "automatic",

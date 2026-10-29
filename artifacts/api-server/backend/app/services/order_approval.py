@@ -48,6 +48,11 @@ def evidence(actor):
 
 
 def preserve(actor, kind, data, previous):
+    # Fulfillment is server-owned. Ordinary edits retain, but cannot submit or
+    # clear, the encrypted shipping evidence (including older detail revisions).
+    for key in ("shipment", "shipmentHistory"):
+        if previous and key in previous:
+            data[key] = previous[key]
     data["approval"] = previous.get("approval") if previous else None
     data["rejection"] = previous.get("rejection") if previous else None
     data["reviewHistory"] = list(previous.get("reviewHistory", [])) if previous else []

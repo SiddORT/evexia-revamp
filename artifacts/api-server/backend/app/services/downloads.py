@@ -10,6 +10,7 @@ from app.services.zone_policy import lock_policy
 from app.services.master_policy import MASTERS, master_allowed
 
 MODULES = {
+    "shipments": "Shipments",
     "kits_orders": "Kits & Consumables",
     "spt_orders": "SPT",
     "lupin_orders": "Lupin",
@@ -30,6 +31,7 @@ MODULES = {
 }
 # Metadata combinations represent actual supported actions, not arbitrary extensions.
 BROWSER = {
+    "shipments": {"export": {"CSV", "XLSX"}},
     "kits_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     "spt_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     "lupin_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
@@ -90,6 +92,11 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     except AuthError:
         db.rollback()
         raise HTTPException(401, "Authentication required") from None
+    if source == "shipments":
+        from app.services.capability_policy import is_super_admin
+        if not is_super_admin(verified):
+            db.rollback()
+            raise HTTPException(403, "Download access denied")
     # Existing MR private-file flows separately authorize the specific owner
     # object before calling server_record; their evidence policy is unchanged.
     mr_private = (verified.role == "mr" and verified.mr is not None

@@ -1,7 +1,7 @@
 import { orderRequest } from './orderFreshness.js';
 
 export const request = (path = '', options) => orderRequest(path, options, 'spt-orders');
-export const STATUSES = Object.freeze(['Draft', 'Saved', 'In process', 'Rejected']);
+export const STATUSES = Object.freeze(['Draft', 'Saved', 'In process', 'Shipped', 'Returned', 'Rejected']);
 export const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 export function parseAmount(value) {
   if (typeof value !== 'string' || !/^\d{1,9}(?:\.\d{1,2})?$/.test(value)) return null;

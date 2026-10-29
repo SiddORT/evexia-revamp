@@ -12,6 +12,9 @@ export type ExportSptOrdersStatus =
 export const ExportSptOrdersStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Approved: "Approved",
   In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
   Rejected: "Rejected",
 } as const;

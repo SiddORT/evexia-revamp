@@ -4,7 +4,7 @@ import { purchaseOrderRequest } from '../auth/adminSession.js';
 const EVENT = 'evexia:saved-order-change';
 const CHANNEL = 'evexia-order-refresh';
 
-function announce(kind) {
+export function announceOrderChange(kind) {
   window.dispatchEvent(new CustomEvent(EVENT, { detail: kind }));
   if (typeof window.BroadcastChannel === 'function') {
     const channel = new window.BroadcastChannel(CHANNEL);
@@ -16,7 +16,7 @@ function announce(kind) {
 export async function orderRequest(path, options, resource) {
   const result = await purchaseOrderRequest(path, options, resource);
   if (options?.body !== undefined && (path === '' || /\/(?:edit|approve|reject|resubmit)$/.test(path))) {
-    try { announce(resource); }
+    try { announceOrderChange(resource); }
     catch { console.warn('Live order refresh is unavailable in this browser. Use Refresh saved orders; visible lists also refresh periodically.'); }
   }
   return result;

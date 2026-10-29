@@ -12,6 +12,9 @@ export type SptRecordStatus =
 export const SptRecordStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Approved: "Approved",
   In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
   Rejected: "Rejected",
 } as const;

@@ -311,6 +311,7 @@ export interface AllergenResponse {
   category_id: string;
   category_name: string;
   category_status: AllergenResponseCategoryStatus;
+  code: string;
   /**
    * @minLength 1
    * @maxLength 200
@@ -9728,6 +9729,90 @@ export interface SessionPage {
   offset: number;
 }
 
+export interface ShipmentCommand {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotency_key: string;
+}
+
+export interface ShipmentCourier {
+  id: string;
+  name: string;
+}
+
+export interface ShipmentCouriers {
+  items: ShipmentCourier[];
+  total: number;
+}
+
+export interface ShipmentDelivery {
+  actual_delivery_date: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotency_key: string;
+}
+
+export interface ShipmentDispatch {
+  actual_delivery_date?: string | null;
+  courier_id: string;
+  expected_delivery_date: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotency_key: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  tracking_id: string;
+}
+
+export type ShipmentRecordStatus =
+  (typeof ShipmentRecordStatus)[keyof typeof ShipmentRecordStatus];
+
+export const ShipmentRecordStatus = {
+  In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
+} as const;
+
+export type ShipmentRecordType =
+  (typeof ShipmentRecordType)[keyof typeof ShipmentRecordType];
+
+export const ShipmentRecordType = {
+  Kit: "Kit",
+  IT: "IT",
+  Lupin: "Lupin",
+  SPT: "SPT",
+} as const;
+
+export interface ShipmentRecord {
+  actualDeliveryDate: string | null;
+  address: string | null;
+  courier: string | null;
+  date: string;
+  doctor: string | null;
+  expectedDeliveryDate: string | null;
+  id: string;
+  key: string;
+  mr: string | null;
+  number: string;
+  paymentStatus: string | null;
+  recipient: string | null;
+  shippedAt: string | null;
+  status: ShipmentRecordStatus;
+  trackingId: string | null;
+  type: ShipmentRecordType;
+  value: string | null;
+  version: number;
+}
+
+export interface ShipmentPage {
+  items: ShipmentRecord[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export type SptPatientInputSource =
   (typeof SptPatientInputSource)[keyof typeof SptPatientInputSource];
 
@@ -9808,7 +9893,10 @@ export type SptRecordStatus =
 export const SptRecordStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Approved: "Approved",
   In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
   Rejected: "Rejected",
 } as const;
 
@@ -10261,12 +10349,7 @@ export interface StaffCreate {
   dialCountry?: StaffCreateDialCountry;
   /** @maxLength 320 */
   email: string;
-  /**
-   * @minLength 1
-   * @maxLength 64
-   * @pattern ^[^\x00-\x1f\x7f-\x9f]+$
-   */
-  employeeCode: string;
+  employeeCode?: string | null;
   initialPassword?: string | null;
   /**
    * @minLength 1
@@ -14686,6 +14769,97 @@ export const DownloadSalesTargetSampleFormat = {
   xlsx: "xlsx",
 } as const;
 
+export type ListShipmentsParams = {
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ListShipmentsStatus;
+  type?: ListShipmentsType;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ListShipmentsStatus =
+  (typeof ListShipmentsStatus)[keyof typeof ListShipmentsStatus];
+
+export const ListShipmentsStatus = {
+  All: "All",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
+} as const;
+
+export type ListShipmentsType =
+  (typeof ListShipmentsType)[keyof typeof ListShipmentsType];
+
+export const ListShipmentsType = {
+  All: "All",
+  Kit: "Kit",
+  IT: "IT",
+  Lupin: "Lupin",
+  SPT: "SPT",
+} as const;
+
+export type ShipmentCouriersParams = {
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  /**
+   * @minimum 0
+   * @maximum 100000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ExportShipmentsParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ExportShipmentsStatus;
+  type?: ExportShipmentsType;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ExportShipmentsStatus =
+  (typeof ExportShipmentsStatus)[keyof typeof ExportShipmentsStatus];
+
+export const ExportShipmentsStatus = {
+  All: "All",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
+} as const;
+
+export type ExportShipmentsType =
+  (typeof ExportShipmentsType)[keyof typeof ExportShipmentsType];
+
+export const ExportShipmentsType = {
+  All: "All",
+  Kit: "Kit",
+  IT: "IT",
+  Lupin: "Lupin",
+  SPT: "SPT",
+} as const;
+
 export type ListSptOrdersParams = {
   cursor?: string | null;
   /**
@@ -14711,7 +14885,10 @@ export type ListSptOrdersStatus =
 export const ListSptOrdersStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Approved: "Approved",
   In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
   Rejected: "Rejected",
 } as const;
 
@@ -14734,7 +14911,10 @@ export type ExportSptOrdersStatus =
 export const ExportSptOrdersStatus = {
   Draft: "Draft",
   Saved: "Saved",
+  Approved: "Approved",
   In_process: "In process",
+  Shipped: "Shipped",
+  Returned: "Returned",
   Rejected: "Rejected",
 } as const;
 

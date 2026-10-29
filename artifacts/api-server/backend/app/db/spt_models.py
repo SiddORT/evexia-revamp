@@ -20,7 +20,7 @@ class SptOrder(Base):
     __tablename__ = "spt_orders"
     __table_args__ = (
         CheckConstraint("version > 0", name="ck_spt_version"),
-        CheckConstraint("status IN ('Draft','Saved','In process','Rejected')", name="ck_spt_status"),
+        CheckConstraint("status IN ('Draft','Saved','Approved','In process','Shipped','Returned','Rejected')", name="ck_spt_status"),
         CheckConstraint("status <> 'Saved' OR (doctor_id IS NOT NULL AND mr_id IS NOT NULL)", name="ck_spt_saved_people"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)

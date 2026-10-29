@@ -15,12 +15,7 @@ export interface StaffCreate {
   dialCountry?: StaffCreateDialCountry;
   /** @maxLength 320 */
   email: string;
-  /**
-   * @minLength 1
-   * @maxLength 64
-   * @pattern ^[^\x00-\x1f\x7f-\x9f]+$
-   */
-  employeeCode: string;
+  employeeCode?: string | null;
   initialPassword?: string | null;
   /**
    * @minLength 1

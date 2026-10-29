@@ -157,6 +157,7 @@ import type {
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportSalesTargetsParams,
+  ExportShipmentsParams,
   ExportSptOrdersParams,
   ExportStockProductsParams,
   ExportStorageLocationsParams,
@@ -262,6 +263,7 @@ import type {
   ListReportingSessionsParams,
   ListReportingUsersParams,
   ListSalesTargetsParams,
+  ListShipmentsParams,
   ListSptOrdersParams,
   ListStaffAccessParams,
   ListStaffBusinessRoleChoicesParams,
@@ -470,6 +472,13 @@ import type {
   SessionListResponse,
   SessionPage,
   SessionResponse,
+  ShipmentCommand,
+  ShipmentCouriers,
+  ShipmentCouriersParams,
+  ShipmentDelivery,
+  ShipmentDispatch,
+  ShipmentPage,
+  ShipmentRecord,
   SptImport,
   SptImportResult,
   SptPage,
@@ -32028,6 +32037,668 @@ export const useSetSalesTargetStatus = <
   TContext
 > => {
   return useMutation(getSetSalesTargetStatusMutationOptions(options));
+};
+
+export const getListShipmentsUrl = (params?: ListShipmentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/shipments?${stringifiedParams}`
+    : `/api/v1/admin/shipments`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listShipments = async (
+  params?: ListShipmentsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentPage> => {
+  return customFetch<ShipmentPage>(getListShipmentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListShipmentsQueryKey = (params?: ListShipmentsParams) => {
+  return [`/api/v1/admin/shipments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListShipmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listShipments>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListShipmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listShipments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListShipmentsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listShipments>>> = ({
+    signal,
+  }) => listShipments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listShipments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListShipmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listShipments>>
+>;
+export type ListShipmentsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListShipments<
+  TData = Awaited<ReturnType<typeof listShipments>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListShipmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listShipments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListShipmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getShipmentCouriersUrl = (params?: ShipmentCouriersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/shipments/couriers?${stringifiedParams}`
+    : `/api/v1/admin/shipments/couriers`;
+};
+
+/**
+ * @summary Couriers
+ */
+export const shipmentCouriers = async (
+  params?: ShipmentCouriersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentCouriers> => {
+  return customFetch<ShipmentCouriers>(getShipmentCouriersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getShipmentCouriersQueryKey = (
+  params?: ShipmentCouriersParams,
+) => {
+  return [
+    `/api/v1/admin/shipments/couriers`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getShipmentCouriersQueryOptions = <
+  TData = Awaited<ReturnType<typeof shipmentCouriers>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ShipmentCouriersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof shipmentCouriers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getShipmentCouriersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof shipmentCouriers>>
+  > = ({ signal }) => shipmentCouriers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof shipmentCouriers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ShipmentCouriersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof shipmentCouriers>>
+>;
+export type ShipmentCouriersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Couriers
+ */
+
+export function useShipmentCouriers<
+  TData = Awaited<ReturnType<typeof shipmentCouriers>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ShipmentCouriersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof shipmentCouriers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getShipmentCouriersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getExportShipmentsUrl = (params?: ExportShipmentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/shipments/export?${stringifiedParams}`
+    : `/api/v1/admin/shipments/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportShipments = async (
+  params?: ExportShipmentsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentPage> => {
+  return customFetch<ShipmentPage>(getExportShipmentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportShipmentsQueryKey = (params?: ExportShipmentsParams) => {
+  return [
+    `/api/v1/admin/shipments/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportShipmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportShipments>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportShipmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportShipments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportShipmentsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportShipments>>> = ({
+    signal,
+  }) => exportShipments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportShipments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportShipmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportShipments>>
+>;
+export type ExportShipmentsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportShipments<
+  TData = Awaited<ReturnType<typeof exportShipments>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportShipmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportShipments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportShipmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRecordShipmentDeliveryUrl = (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+) => {
+  return `/api/v1/admin/shipments/${kind}/${identity}/delivery`;
+};
+
+/**
+ * @summary Delivery
+ */
+export const recordShipmentDelivery = async (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+  shipmentDelivery: ShipmentDelivery,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ShipmentRecord>(
+    getRecordShipmentDeliveryUrl(kind, identity),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(shipmentDelivery),
+    },
+  );
+};
+
+export const getRecordShipmentDeliveryMutationKey = () =>
+  ["recordShipmentDelivery"] as const;
+
+export const getRecordShipmentDeliveryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordShipmentDelivery>>,
+    TError,
+    RecordShipmentDeliveryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordShipmentDelivery>>,
+  TError,
+  RecordShipmentDeliveryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordShipmentDeliveryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordShipmentDelivery>>,
+    RecordShipmentDeliveryMutationVariables
+  > = (props) => {
+    const { kind, identity, data } = props ?? {};
+
+    return recordShipmentDelivery(kind, identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordShipmentDeliveryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordShipmentDelivery>>
+>;
+export type RecordShipmentDeliveryMutationBody = BodyType<ShipmentDelivery>;
+export type RecordShipmentDeliveryMutationError = ErrorType<ErrorEnvelope>;
+export type RecordShipmentDeliveryMutationVariables = {
+  kind: "Kit" | "IT" | "Lupin" | "SPT";
+  identity: string;
+  data: BodyType<ShipmentDelivery>;
+};
+
+/**
+ * @summary Delivery
+ */
+export const useRecordShipmentDelivery = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordShipmentDelivery>>,
+    TError,
+    RecordShipmentDeliveryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordShipmentDelivery>>,
+  TError,
+  RecordShipmentDeliveryMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordShipmentDeliveryMutationOptions(options));
+};
+
+export const getReturnShipmentUrl = (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+) => {
+  return `/api/v1/admin/shipments/${kind}/${identity}/return`;
+};
+
+/**
+ * @summary Returned
+ */
+export const returnShipment = async (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+  shipmentCommand: ShipmentCommand,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ShipmentRecord>(getReturnShipmentUrl(kind, identity), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(shipmentCommand),
+  });
+};
+
+export const getReturnShipmentMutationKey = () => ["returnShipment"] as const;
+
+export const getReturnShipmentMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof returnShipment>>,
+    TError,
+    ReturnShipmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof returnShipment>>,
+  TError,
+  ReturnShipmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReturnShipmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof returnShipment>>,
+    ReturnShipmentMutationVariables
+  > = (props) => {
+    const { kind, identity, data } = props ?? {};
+
+    return returnShipment(kind, identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReturnShipmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof returnShipment>>
+>;
+export type ReturnShipmentMutationBody = BodyType<ShipmentCommand>;
+export type ReturnShipmentMutationError = ErrorType<ErrorEnvelope>;
+export type ReturnShipmentMutationVariables = {
+  kind: "Kit" | "IT" | "Lupin" | "SPT";
+  identity: string;
+  data: BodyType<ShipmentCommand>;
+};
+
+/**
+ * @summary Returned
+ */
+export const useReturnShipment = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof returnShipment>>,
+    TError,
+    ReturnShipmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof returnShipment>>,
+  TError,
+  ReturnShipmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getReturnShipmentMutationOptions(options));
+};
+
+export const getDispatchShipmentUrl = (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+) => {
+  return `/api/v1/admin/shipments/${kind}/${identity}/ship`;
+};
+
+/**
+ * @summary Dispatch
+ */
+export const dispatchShipment = async (
+  kind: "Kit" | "IT" | "Lupin" | "SPT",
+  identity: string,
+  shipmentDispatch: ShipmentDispatch,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ShipmentRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ShipmentRecord>(getDispatchShipmentUrl(kind, identity), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(shipmentDispatch),
+  });
+};
+
+export const getDispatchShipmentMutationKey = () =>
+  ["dispatchShipment"] as const;
+
+export const getDispatchShipmentMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dispatchShipment>>,
+    TError,
+    DispatchShipmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dispatchShipment>>,
+  TError,
+  DispatchShipmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDispatchShipmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dispatchShipment>>,
+    DispatchShipmentMutationVariables
+  > = (props) => {
+    const { kind, identity, data } = props ?? {};
+
+    return dispatchShipment(kind, identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DispatchShipmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dispatchShipment>>
+>;
+export type DispatchShipmentMutationBody = BodyType<ShipmentDispatch>;
+export type DispatchShipmentMutationError = ErrorType<ErrorEnvelope>;
+export type DispatchShipmentMutationVariables = {
+  kind: "Kit" | "IT" | "Lupin" | "SPT";
+  identity: string;
+  data: BodyType<ShipmentDispatch>;
+};
+
+/**
+ * @summary Dispatch
+ */
+export const useDispatchShipment = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dispatchShipment>>,
+    TError,
+    DispatchShipmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dispatchShipment>>,
+  TError,
+  DispatchShipmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getDispatchShipmentMutationOptions(options));
 };
 
 export const getListSptOrdersUrl = (params?: ListSptOrdersParams) => {

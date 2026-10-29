@@ -77,7 +77,8 @@ def project(keys, row):
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
     from app.services.order_approval import eligibility
-    value["status"] = row.status
+    from app.services.order_lifecycle import status
+    value["status"] = status(row.status)
     value["decisionEligibility"] = eligibility("spt", value)
     return {**value, "approval": value.get("approval"), "mrEditable": editable("spt", value),
         "audit": metadata(row),
@@ -305,7 +306,10 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
         if from_date and to_date and from_date > to_date:
             raise ImmError("From date must not follow To date.", 422, "spt_dates")
         clauses = scope(db, Order) + [getattr(Order, key) == value for key, value in
-            (("status", status), ("doctor_id", doctor_id), ("mr_id", mr_id)) if value]
+            (("doctor_id", doctor_id), ("mr_id", mr_id)) if value]
+        if status:
+            from app.services.order_lifecycle import filter_status
+            clauses.append(filter_status(Order.status, status))
         if patient_id:
             clauses.append(select(Membership.order_id).where(Membership.order_id == Order.id,
                 (Membership.master_patient_id == patient_id) | (Membership.spt_patient_id == patient_id)).exists())
@@ -344,7 +348,8 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
         finally:
             rows.close()
         counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
-        return dict(items=items, total=sum(counts.values()), counts=counts,
+        from app.services.order_lifecycle import counts as display_counts
+        return dict(items=items, total=sum(counts.values()), counts=display_counts(counts),
             filtered=len(items) if complete else None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses)),
             nextCursor=str(last) if more and not complete else None)
     return transaction(db, actor, work, action="export" if complete else None)

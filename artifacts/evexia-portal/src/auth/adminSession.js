@@ -995,7 +995,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'spt-orders'
+  const allowed = resource === 'shipments'
+    ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}\/(?:ship|delivery|return))$/
+    : resource === 'spt-orders'
     ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'lupin-orders'
     ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36})$/i
@@ -1025,6 +1027,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (resource === 'shipments' && (writing !== /\/(?:ship|delivery|return)$/.test(path))) {
+    throw new SessionError('Unsupported shipment operation.');
+  }
   if (writing && ['purchase-orders', 'purchase-received'].includes(resource) && /\/(?:documents|history)$/.test(path)) {
     throw new SessionError('Saved documents and history are read-only.');
   }
