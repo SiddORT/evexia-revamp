@@ -71,7 +71,7 @@ export default function OpeningStockMaster() {
   const columns = [
     { key: 'sr', label: 'Sr No', render: (_r, i) => i + 1 },
     { key: 'item', label: 'Item', render: (r) => <><strong className="admin-table__name">{r.productName}</strong><span className="stock-sub">{r.itemKind === 'combo' ? 'Product' : 'Allergen'}</span></> },
-    { key: 'qty', label: 'Quantity', render: (r) => <span className="inv-mono">{r.quantity} {r.unit}</span> },
+    { key: 'qty', label: 'Quantity (ml)', render: (r) => <span className="inv-mono">{r.quantity} {r.unit}</span> },
     { key: 'rate', label: 'Unit rate', render: (r) => <span className="inv-mono">{money(r.unitRate)}</span> },
     { key: 'val', label: 'Opening value', render: (r) => <span className="inv-mono">{valueMoney(r.openingValue)}</span> },
     { key: 'loc', label: 'Location', render: (r) => locationLabel(r.location) },

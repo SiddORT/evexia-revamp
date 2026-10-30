@@ -28,3 +28,12 @@ Concentration entry in Allergen Master and Add In-House Stock uses the choices
 
 **How to apply:** Share the entry choices between these forms; preserve existing
 saved concentration descriptions and historical units without converting them.
+
+Show “(ml)” on Allergen low-stock alert and stock quantity labels in Opening
+Stock and Inventory.
+
+**Why:** The user states these quantities are recorded in ml and requested the
+unit in parentheses.
+
+**How to apply:** Treat this as display labeling, not permission to convert
+saved values or change stock calculations.

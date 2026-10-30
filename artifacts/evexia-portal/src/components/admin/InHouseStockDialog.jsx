@@ -6,7 +6,7 @@ import { getInHouseStock, RESERVE_NOTE } from '../../services/inHouseStock.js';
 export function InHouseFacts({ record, date, timestamp }) {
   const rows = [
     ['Allergen', record.allergenName], ['Category', record.categoryName || 'Uncategorised'],
-    ['Concentration', record.concentration], ['Quantity', `${record.quantity} ${record.unit}`],
+    ['Concentration', record.concentration], ['Quantity (ml)', `${record.quantity} ${record.unit}`],
     ['Expiry', <>{date(record.expiryDate)} {record.expired && <strong className="mr-form__error" style={{ display: 'inline' }}>Expired</strong>}</>],
     ['Location', record.locationName], ['Batch', record.batch || 'Not recorded'], ['Notes', record.notes || 'None'],
     ...(record.actor ? [['Recorded by', record.actor], ['Recorded', timestamp(record.createdAt)]] : []),

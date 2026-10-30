@@ -133,7 +133,7 @@ function InHouseStockForm() {
               options={ALLERGEN_CONCENTRATIONS.map((value) => ({ value, label: value }))}
               onChange={(value) => set('concentration', value)} />
             {err('concentration')}</div>
-          {text('quantity', 'Quantity', 12, { required: true, inputMode: 'decimal' })}
+          {text('quantity', 'Quantity (ml)', 12, { required: true, inputMode: 'decimal' })}
           <div className="ms-field"><label htmlFor="ih-expiryDate">Expiry date <span className="mr-form__required">*</span></label>
             <input id="ih-expiryDate" type="date" className="mr-form__control" value={draft.expiryDate} onChange={(e) => set('expiryDate', e.target.value)} required aria-invalid={Boolean(errors.expiryDate)} aria-describedby={desc('expiryDate')} data-testid="input-in-house-expiryDate" />
             {err('expiryDate')}</div>

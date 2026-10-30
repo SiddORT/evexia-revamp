@@ -117,7 +117,7 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
         <div className="sa-row">
         <label className="adjust-field"><span className="sa-label">Batch number <em>(optional, new lot only)</em></span><input className="admin-input" maxLength={120} value={batchNo} onChange={edit(setBatchNo)} disabled={busy || Boolean(pending)} data-testid="input-adjust-batch" /></label>
         <label className="adjust-field"><span className="sa-label">Expiry date <em>(optional, new lot only)</em></span><input type="date" className="admin-input" value={expiryDate} onChange={edit(setExpiryDate)} disabled={busy || Boolean(pending)} data-testid="input-adjust-expiry" /></label></div></>}
-      <label className="adjust-field"><span className="sa-label">Quantity ({choices.product?.unit || row.unit}) <em>(required)</em></span>
+      <label className="adjust-field"><span className="sa-label">Quantity ({row.itemKind === 'combo' ? (choices.product?.unit || row.unit) : 'ml'}) <em>(required)</em></span>
         <input className="admin-input" inputMode="decimal" value={quantity} onChange={edit(setQuantity)} disabled={busy || Boolean(pending)} data-testid="input-adjust-quantity" />
         {errors.quantity && <small className="adjust-error" role="alert">{errors.quantity}</small>}</label>
       <label className="adjust-field"><span className="sa-label">Reason <em>(required)</em></span>

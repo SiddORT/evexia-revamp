@@ -80,7 +80,7 @@ function InHouseStockListInner() {
     { key: 'sr', label: 'Sr No', render: (_r, i) => i + 1 },
     { key: 'allergen', label: 'Allergen', render: (r) => <><strong className="admin-table__name">{r.allergenName}</strong><span className="stock-sub">{r.categoryName || 'Uncategorised'}</span></> },
     { key: 'conc', label: 'Concentration', render: (r) => r.concentration },
-    { key: 'qty', label: 'Quantity', render: (r) => <span className="inv-mono">{r.quantity} {r.unit}</span> },
+    { key: 'qty', label: 'Quantity (ml)', render: (r) => <span className="inv-mono">{r.quantity} {r.unit}</span> },
     { key: 'exp', label: 'Expiry', render: (r) => <>{date(r.expiryDate)}<span className="stock-sub" data-testid={`status-in-house-expiry-${r.id}`}>{r.expired ? 'Expired' : 'In date'}</span></> },
     { key: 'loc', label: 'Location', render: (r) => <>{r.locationName}{r.batch && <span className="stock-sub">Batch {r.batch}</span>}</> },
     { key: 'rec', label: 'Recorded', render: (r) => <>{timestamp(r.createdAt)}<span className="stock-sub">{r.actor}</span></> },

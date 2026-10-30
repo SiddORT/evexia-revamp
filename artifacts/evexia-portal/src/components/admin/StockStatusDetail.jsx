@@ -37,7 +37,7 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
     { key: 'r', label: 'Receipt', render: (l) => l.receiptNumber || 'Unavailable' },
     { key: 'e', label: 'Expiry', render: (l) => l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable' },
     { key: 'l', label: 'Location', render: (l) => l.locationId ? l.locationName : 'Unallocated' },
-    { key: 'q', label: 'On hand', render: (l) => <span className="inv-mono">{l.quantity}</span> },
+    { key: 'q', label: row.itemKind === 'combo' ? 'On hand (units)' : 'On hand (ml)', render: (l) => <span className="inv-mono">{l.quantity}</span> },
   ];
   const columns = [
     { key: 'd', label: 'Posted', render: (r) => timestamp(r.at) },
