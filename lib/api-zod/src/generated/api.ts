@@ -11536,6 +11536,8 @@ export const listInHouseStockResponseItemsItemBatchDefault = ``;
 
 export const listInHouseStockResponseItemsItemNotesDefault = ``;
 
+export const listInHouseStockResponseItemsItemUnitDefault = ``;
+
 export const ListInHouseStockResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
@@ -11574,7 +11576,10 @@ export const ListInHouseStockResponse = zod.object({
       reserveOnly: zod
         .literal(true)
         .default(listInHouseStockResponseItemsItemReserveOnlyDefault),
-      unit: zod.string().min(1).max(listInHouseStockResponseItemsItemUnitMax),
+      unit: zod
+        .string()
+        .max(listInHouseStockResponseItemsItemUnitMax)
+        .default(listInHouseStockResponseItemsItemUnitDefault),
     }),
   ),
   limit: zod.number().int(),
@@ -11592,6 +11597,7 @@ export const createInHouseStockBodyNotesDefault = ``;
 export const createInHouseStockBodyReviewTokenRegExp = new RegExp(
   "^[0-9a-f]{64}$",
 );
+export const createInHouseStockBodyUnitDefault = ``;
 
 export const CreateInHouseStockBody = zod.object({
   allergenId: zod.string().uuid(),
@@ -11612,12 +11618,17 @@ export const CreateInHouseStockBody = zod.object({
     .default(createInHouseStockBodyNotesDefault),
   quantity: zod.string().min(1).max(createInHouseStockBodyQuantityMax),
   reviewToken: zod.string().regex(createInHouseStockBodyReviewTokenRegExp),
-  unit: zod.string().min(1).max(createInHouseStockBodyUnitMax),
+  unit: zod
+    .string()
+    .max(createInHouseStockBodyUnitMax)
+    .default(createInHouseStockBodyUnitDefault),
 });
 
 export const createInHouseStockResponseBatchDefault = ``;
 
 export const createInHouseStockResponseNotesDefault = ``;
+
+export const createInHouseStockResponseUnitDefault = ``;
 
 export const CreateInHouseStockResponse = zod.object({
   actor: zod.string(),
@@ -11651,7 +11662,10 @@ export const CreateInHouseStockResponse = zod.object({
   reserveOnly: zod
     .literal(true)
     .default(createInHouseStockResponseReserveOnlyDefault),
-  unit: zod.string().min(1).max(createInHouseStockResponseUnitMax),
+  unit: zod
+    .string()
+    .max(createInHouseStockResponseUnitMax)
+    .default(createInHouseStockResponseUnitDefault),
 });
 
 /**
@@ -11660,6 +11674,8 @@ export const CreateInHouseStockResponse = zod.object({
 export const previewInHouseStockBodyBatchDefault = ``;
 
 export const previewInHouseStockBodyNotesDefault = ``;
+
+export const previewInHouseStockBodyUnitDefault = ``;
 
 export const PreviewInHouseStockBody = zod.object({
   allergenId: zod.string().uuid(),
@@ -11678,12 +11694,17 @@ export const PreviewInHouseStockBody = zod.object({
     .max(previewInHouseStockBodyNotesMax)
     .default(previewInHouseStockBodyNotesDefault),
   quantity: zod.string().min(1).max(previewInHouseStockBodyQuantityMax),
-  unit: zod.string().min(1).max(previewInHouseStockBodyUnitMax),
+  unit: zod
+    .string()
+    .max(previewInHouseStockBodyUnitMax)
+    .default(previewInHouseStockBodyUnitDefault),
 });
 
 export const previewInHouseStockResponseRecordBatchDefault = ``;
 
 export const previewInHouseStockResponseRecordNotesDefault = ``;
+
+export const previewInHouseStockResponseRecordUnitDefault = ``;
 
 export const PreviewInHouseStockResponse = zod.object({
   record: zod.object({
@@ -11717,7 +11738,10 @@ export const PreviewInHouseStockResponse = zod.object({
     reserveOnly: zod
       .literal(true)
       .default(previewInHouseStockResponseRecordReserveOnlyDefault),
-    unit: zod.string().min(1).max(previewInHouseStockResponseRecordUnitMax),
+    unit: zod
+      .string()
+      .max(previewInHouseStockResponseRecordUnitMax)
+      .default(previewInHouseStockResponseRecordUnitDefault),
   }),
   reviewToken: zod.string(),
 });
@@ -11776,6 +11800,8 @@ export const reconcileInHouseStockResponseResultOneBatchDefault = ``;
 
 export const reconcileInHouseStockResponseResultOneNotesDefault = ``;
 
+export const reconcileInHouseStockResponseResultOneUnitDefault = ``;
+
 export const ReconcileInHouseStockResponse = zod.object({
   result: zod.union([
     zod.object({
@@ -11815,8 +11841,8 @@ export const ReconcileInHouseStockResponse = zod.object({
         .default(reconcileInHouseStockResponseResultOneReserveOnlyDefault),
       unit: zod
         .string()
-        .min(1)
-        .max(reconcileInHouseStockResponseResultOneUnitMax),
+        .max(reconcileInHouseStockResponseResultOneUnitMax)
+        .default(reconcileInHouseStockResponseResultOneUnitDefault),
     }),
     zod.null(),
   ]),
@@ -11833,6 +11859,8 @@ export const GetInHouseStockParams = zod.object({
 export const getInHouseStockResponseBatchDefault = ``;
 
 export const getInHouseStockResponseNotesDefault = ``;
+
+export const getInHouseStockResponseUnitDefault = ``;
 
 export const GetInHouseStockResponse = zod.object({
   actor: zod.string(),
@@ -11866,7 +11894,10 @@ export const GetInHouseStockResponse = zod.object({
   reserveOnly: zod
     .literal(true)
     .default(getInHouseStockResponseReserveOnlyDefault),
-  unit: zod.string().min(1).max(getInHouseStockResponseUnitMax),
+  unit: zod
+    .string()
+    .max(getInHouseStockResponseUnitMax)
+    .default(getInHouseStockResponseUnitDefault),
 });
 
 /**

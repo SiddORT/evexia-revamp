@@ -37,9 +37,6 @@ export interface ReserveSaved {
    */
   quantity: string;
   reserveOnly?: true;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }

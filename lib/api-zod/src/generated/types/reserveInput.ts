@@ -24,9 +24,6 @@ export interface ReserveInput {
    * @maxLength 11
    */
   quantity: string;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }

@@ -9023,11 +9023,8 @@ export interface ReserveCreate {
   quantity: string;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }
 
 export interface ReserveInput {
@@ -9048,11 +9045,8 @@ export interface ReserveInput {
    * @maxLength 11
    */
   quantity: string;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }
 
 export interface ReserveSaved {
@@ -9086,11 +9080,8 @@ export interface ReserveSaved {
    */
   quantity: string;
   reserveOnly?: true;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }
 
 export interface ReservePage {
@@ -9156,11 +9147,8 @@ export interface ReserveSnapshot {
    */
   quantity: string;
   reserveOnly?: true;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }
 
 export interface ReserveReview {

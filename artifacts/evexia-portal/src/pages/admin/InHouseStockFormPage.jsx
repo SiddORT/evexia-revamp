@@ -11,13 +11,14 @@ import { isSuperAdminIdentity } from '../../auth/capabilities.js';
 import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js';
 import { commitInHouseStock, journaled, listAllergenReferences, listLocationReferences, newId, PENDING_EVENT, pendingInHouse, previewInHouseStock, RESERVE_NOTE, validDay, validQuantity } from '../../services/inHouseStock.js';
 import InHouseAccessDenied from './InHouseAccessDenied.jsx';
+import { ALLERGEN_CONCENTRATIONS } from '../../services/allergenConcentrations.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
 import '../../openingStock.css';
 
 const BASE = '/admin/inventory/in-house-stock';
-const BLANK = { allergen: null, concentration: '', quantity: '', unit: '', expiryDate: '', location: null, batch: '', notes: '' };
+const BLANK = { allergen: null, concentration: '', quantity: '', expiryDate: '', location: null, batch: '', notes: '' };
 const FIELD_KEYS = ['allergenId', 'concentration', 'quantity', 'unit', 'expiryDate', 'locationId', 'batch', 'notes'];
 
 export default function InHouseStockFormPage() {
@@ -55,17 +56,15 @@ function InHouseStockForm() {
     const e = {};
     const c = draft.concentration.trim();
     if (!draft.allergen) e.allergen = 'Select an active allergen.';
-    if (!c) e.concentration = 'Enter the concentration.'; else if (c.length > 200) e.concentration = 'Concentration must be 200 characters or fewer.';
+    if (!ALLERGEN_CONCENTRATIONS.includes(c)) e.concentration = 'Select a concentration.';
     if (!validQuantity(draft.quantity)) e.quantity = 'Quantity must be a plain positive decimal up to 1000000 with at most 3 decimals.';
-    const u = draft.unit.trim();
-    if (!u) e.unit = 'Enter the unit as held (for example vials of 5 mL).'; else if (u.length > 40) e.unit = 'Unit must be 40 characters or fewer.';
     if (!validDay(draft.expiryDate)) e.expiryDate = 'Enter a valid expiry date.';
     if (!draft.location) e.location = 'Select a storage location.';
     if (draft.batch.trim().length > 100) e.batch = 'Batch must be 100 characters or fewer.';
     if (draft.notes.length > 2000) e.notes = 'Notes must be 2000 characters or fewer.';
     return e;
   }
-  const body = () => ({ allergenId: draft.allergen.value, concentration: draft.concentration.trim(), quantity: draft.quantity.trim(), unit: draft.unit.trim(),
+  const body = () => ({ allergenId: draft.allergen.value, concentration: draft.concentration.trim(), quantity: draft.quantity.trim(),
     expiryDate: draft.expiryDate, locationId: draft.location.value, batch: draft.batch.trim(), notes: draft.notes.trim() });
   function showFieldErrors(error) {
     const next = {};
@@ -129,9 +128,13 @@ function InHouseStockForm() {
           <div className="ms-field"><label htmlFor="ih-allergen">Allergen <span className="mr-form__required">*</span></label>
             <ReferenceSelect id="ih-allergen" label="Allergen" kind="in-house-allergens" fetchPage={listAllergenReferences} value={draft.allergen?.value || ''} selected={draft.allergen} placeholder="Select active allergen" invalid={Boolean(errors.allergen)} describedBy={desc('allergen')} showResultHint={false}
               onChange={(_v, o) => set('allergen', o ? { value: o.value, label: o.label } : null)} />{hint('allergen', 'Active allergens only; category shown in brackets.')}{err('allergen')}</div>
-          {text('concentration', 'Concentration', 200, { required: true, hint: 'As labelled on the stock. Not copied from the allergen master.' })}
+          <div className="ms-field"><label htmlFor="ih-concentration">Concentration <span className="mr-form__required">*</span></label>
+            <select id="ih-concentration" className="mr-form__control" value={draft.concentration} onChange={(e) => set('concentration', e.target.value)} required
+              aria-invalid={Boolean(errors.concentration)} aria-describedby={desc('concentration')} data-testid="select-in-house-concentration">
+              <option value="">Select concentration</option>
+              {ALLERGEN_CONCENTRATIONS.map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>{hint('concentration', 'Select the concentration held in stock.')}{err('concentration')}</div>
           {text('quantity', 'Quantity', 12, { required: true, inputMode: 'decimal', hint: 'Positive, up to 1000000, max 3 decimals.' })}
-          {text('unit', 'Unit', 40, { required: true, hint: 'Descriptive, as held. No conversion is applied.' })}
           <div className="ms-field"><label htmlFor="ih-expiryDate">Expiry date <span className="mr-form__required">*</span></label>
             <input id="ih-expiryDate" type="date" className="mr-form__control" value={draft.expiryDate} onChange={(e) => set('expiryDate', e.target.value)} required aria-invalid={Boolean(errors.expiryDate)} aria-describedby={desc('expiryDate')} data-testid="input-in-house-expiryDate" />
             {hint('expiryDate', pastExpiry ? `Past date: this entry will be saved as Expired (${date(draft.expiryDate)}).` : 'Past dates are allowed and marked Expired.')}{err('expiryDate')}</div>

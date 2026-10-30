@@ -27,9 +27,6 @@ export interface ReserveCreate {
   quantity: string;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;
-  /**
-   * @minLength 1
-   * @maxLength 40
-   */
-  unit: string;
+  /** @maxLength 40 */
+  unit?: string;
 }

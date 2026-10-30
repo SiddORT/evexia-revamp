@@ -12,7 +12,8 @@ class ReserveInput(BaseModel):
     allergenId: uuid.UUID
     concentration: str = Field(min_length=1, max_length=200)
     quantity: str = Field(min_length=1, max_length=11)
-    unit: str = Field(min_length=1, max_length=40)
+    # New entry forms omit units; retain historical unit descriptions unchanged.
+    unit: str = Field(default="", max_length=40)
     expiryDate: date
     locationId: uuid.UUID
     batch: str = Field(default="", max_length=100)
@@ -29,7 +30,7 @@ class ReserveInput(BaseModel):
     @classmethod
     def clean_text(cls, value, info):
         value = value.strip()
-        if info.field_name in ("concentration", "unit") and not value:
+        if info.field_name == "concentration" and not value:
             raise ValueError("This field is required.")
         if any(ord(c) < 32 and c not in "\n\r\t" for c in value):
             raise ValueError("Control characters are not supported.")

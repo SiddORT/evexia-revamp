@@ -7,6 +7,7 @@ import AllergenSearchableSelect from '../../components/admin/AllergenSearchableS
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen } from '../../services/serverAllergens.js';
 import { catalogueRate } from '../../services/rates.js';
+import { ALLERGEN_CONCENTRATIONS } from '../../services/allergenConcentrations.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../allergen.css';
@@ -98,7 +99,16 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
           {err('storage_location_id')}</div>
         {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint })}
         {text('gst', 'GST (%)', { numeric: true, info: 'Original value must be 0 to 100, up to 6 source fractional digits. Rounded half-up to two places on save.' })}
-        {text('concentration', 'Concentration', { max: 200 })}
+        <div className="mr-form__field">
+          <label className="mr-form__label" htmlFor="allergen-concentration">Concentration <span className="mr-form__required">*</span></label>
+          <AllergenSearchableSelect id="allergen-concentration" label="Concentration" value={values.concentration} disabled={pending} placeholder="Select concentration"
+            invalid={Boolean(errors.concentration)} describedBy={errors.concentration ? 'allergen-concentration-error' : undefined} testId="select-allergen-concentration"
+            options={[
+              ...(values.concentration && !ALLERGEN_CONCENTRATIONS.includes(values.concentration) ? [{ value: values.concentration, label: `${values.concentration} (saved)` }] : []),
+              ...ALLERGEN_CONCENTRATIONS.map((value) => ({ value, label: value })),
+            ]} onChange={(value) => update('concentration', value)} />
+          {err('concentration')}
+        </div>
          {text('threshold_limit', 'Low stock alert', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: 'In procurement quantity units. Blank disables alerts; 0 alerts only at zero stock. Stock alert includes quantities at or below this value.' })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><AllergenSearchableSelect id="allergen-status" label="Status" value={values.status} disabled={pending} placeholder="Select status" invalid={Boolean(errors.status)} describedBy={errors.status ? 'allergen-status-error' : undefined} testId="select-allergen-status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => update('status', value)} />{err('status')}</div>
         <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
