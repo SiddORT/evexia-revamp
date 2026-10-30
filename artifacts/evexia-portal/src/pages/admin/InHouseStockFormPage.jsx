@@ -13,6 +13,7 @@ import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js'
 import { commitInHouseStock, journaled, listAllergenReferences, listLocationReferences, newId, PENDING_EVENT, pendingInHouse, previewInHouseStock, RESERVE_NOTE, validDay, validQuantity } from '../../services/inHouseStock.js';
 import InHouseAccessDenied from './InHouseAccessDenied.jsx';
 import { ALLERGEN_CONCENTRATIONS } from '../../services/allergenConcentrations.js';
+import { expiryYearsFromToday } from '../../services/calendarExpiry.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
@@ -31,7 +32,8 @@ export default function InHouseStockFormPage() {
 function InHouseStockForm() {
   const [, navigate] = useLocation();
   const { date } = useAdminDateFormatters();
-  const [draft, setDraft] = useState(BLANK);
+  const [draft, setDraft] = useState(() => ({ ...BLANK, expiryDate: expiryYearsFromToday(5) }));
+  const baseline = useRef(draft);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState('');
@@ -105,7 +107,7 @@ function InHouseStockForm() {
       else { keyRef.current = null; setReview(null); setMessage(`${err.message || 'Nothing was saved.'} Your draft is preserved; review it again to renew and save.`); }
     } finally { lock.current = false; if (mounted.current) setBusy(''); }
   }
-  const dirty = !saved && (Boolean(review) || Object.keys(BLANK).some((k) => draft[k] !== BLANK[k]));
+  const dirty = !saved && (Boolean(review) || Object.keys(baseline.current).some((k) => draft[k] !== baseline.current[k]));
   const leaveGuard = useProductDraftNavigation({ dirty, busy: Boolean(busy), uncertain: blocked, message: 'Discard this unsaved in-house stock entry and leave? Nothing has been committed.' });
   const leave = () => leaveGuard(BASE);
   const desc = (k) => errors[k] ? `ih-${k}-error` : undefined;

@@ -53,6 +53,14 @@ saved identities are immutable snapshots. See `docs/in-house-stock.md`.
 For this delivery the user explicitly limited further verification to new
 feature CRUD and responsiveness; do not run regression or release checks.
 
+New In-house Stock drafts prefill editable expiry at local today plus five
+calendar years; new Purchase Received rows use plus two years. Leap days clamp
+to February 28 in non-leap target years. These are initialization-only defaults:
+keep edited/cleared draft dates and all saved receipt dates (including blanks),
+without recalculating on receipt-date edits or batch-number allocation.
+The expiry-default delivery is source-only: no tests, builds, validation/release
+checks, runtime/browser probes, service starts or restarts were performed.
+
 Immunotherapy approval constraint repair is source-only: forward
 `0072_imm_approved_status` adds the application's existing `Approved` state to
 the database CHECK without changing historical migrations or saved orders.

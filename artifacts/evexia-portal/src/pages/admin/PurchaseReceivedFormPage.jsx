@@ -19,6 +19,7 @@ import '../../purchaseOrders.css';
 import '../../purchaseReceived.css';
 import { captureDocumentContext } from '../../services/savedProcurementDocuments.js';
 import DocumentPreferenceRecovery from '../../components/admin/DocumentPreferenceRecovery.jsx';
+import { expiryYearsFromToday } from '../../services/calendarExpiry.js';
 
 const BASE = '/admin/inventory/purchase-received';
 const PO_BASE = '/admin/inventory/purchase-orders';
@@ -28,9 +29,11 @@ const num = (v) => (String(v).trim() === '' || !Number.isFinite(Number(v)) ? 0 :
 const fclass = (f) => f === 'Closed' ? 'pr-tag pr-tag--closed' : f === 'Open' ? 'pr-tag pr-tag--open' : 'pr-tag';
 
 function rowsFor(po, receipt) {
+  // Editing a receipt keeps historical blanks, including PO lines not saved in it.
+  const expiryDate = receipt ? '' : expiryYearsFromToday(2);
   return po.lines.map((line) => {
     const saved = receipt?.lines.find((l) => l.lineId === line.id);
-    return { lineId: line.id, receivedQty: saved ? String(saved.receivedQty) : '', acceptedQty: saved ? String(saved.acceptedQty) : '', batchNo: saved?.batchNo || '', expiryDate: saved?.expiryDate || '' };
+    return { lineId: line.id, receivedQty: saved ? String(saved.receivedQty) : '', acceptedQty: saved ? String(saved.acceptedQty) : '', batchNo: saved?.batchNo || '', expiryDate: receipt ? saved?.expiryDate || '' : expiryDate };
   });
 }
 
@@ -52,8 +55,9 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const makeInitial = () => ({ poId: initialPo?.id || '', receivedDate: receipt?.receivedDate || today(),
     receiverMode: receipt?.receiverMode || 'staff', staff: receipt?.staffId ? { id: receipt.staffId, name: receipt.receivedBy } : null,
     otherName: receipt?.receiverMode === 'other' ? receipt.receivedBy : '', rows: initialPo ? rowsFor(initialPo, receipt) : [] });
-  const baseline = useRef(JSON.stringify(makeInitial()));
   const [values, setValues] = useState(makeInitial);
+  const baseline = useRef(null);
+  if (baseline.current === null) baseline.current = JSON.stringify(values);
   const [errors, setErrors] = useState({});
   const [review, setReview] = useState(null);
   const [saveError, setSaveError] = useState('');
@@ -93,9 +97,12 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   }
   const missingRows = po ? po.lines.filter((l) => !values.rows.some((r) => r.lineId === l.id)) : [];
   function restoreRows() {
-    const fresh = rowsFor(po, receipt);
-    setValues((c) => ({ ...c, rows: po.lines.map((l) => c.rows.find((r) => r.lineId === l.id)
-      || batchDefaults.restore(removedRows.current.get(l.id) || fresh.find((r) => r.lineId === l.id))) }));
+    setValues((c) => {
+      let fresh;
+      return { ...c, rows: po.lines.map((l) => c.rows.find((r) => r.lineId === l.id)
+        // Restore the whole draft (even a cleared expiry); initialize only truly missing rows.
+        || batchDefaults.restore(removedRows.current.get(l.id) || (fresh ||= rowsFor(po, receipt)).find((r) => r.lineId === l.id))) };
+    });
     setErrors({}); setSaveError('');
   }
   function setRow(i, field, value) {
