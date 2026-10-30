@@ -102,7 +102,8 @@ def send_identity(db, settings, identity, recipient, purpose, attempt_id):
     try:
         recovery_mail.validate_link_configuration(settings)
     except recovery_mail.RecoveryUnavailable:
-        email_delivery.outcome(db, attempt_id, "failed", "configuration")
+        email_delivery.outcome(db, attempt_id, "failed",
+                               "recovery_url_invalid" if purpose == "password_recovery" else "configuration")
         return
     user = identity.user
     identity_kind = _kind(identity)

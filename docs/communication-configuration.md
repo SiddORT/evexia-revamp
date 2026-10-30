@@ -13,16 +13,20 @@ WABA supports only the explicit Meta Cloud template-message adapter.
 
 Settings → Email templates uses its own PostgreSQL `email_templates` table and
 Super Admin APIs, described in [Email templates](email-templates.md). Eligible
-password recovery reads the protected `password_recovery` template automatically,
-but still sends through the existing environment-configured verified-TLS SMTP
-transport. Neither template edits nor Communication defaults change the recovery
-SMTP provider, sender, credentials or trusted recovery origin.
-Explicit template test sends and Staff/MR invitations use only the saved default
+password recovery reads the protected `password_recovery` template automatically.
+MR/eligible staff recovery, explicit template test sends and Staff/MR invitations use only the saved default
 Email SMTP configuration, including its encrypted credential and sender, with
 verified STARTTLS or implicit TLS. Missing/unreadable/invalid settings, API/Platform
 defaults and security `none` prevent those sends without environment fallback.
-Invitations retain trusted recovery-URL validation independently of saved SMTP;
+Recovery and invitations retain trusted recovery-URL validation independently of saved SMTP;
 template tests remain fictional and token-free.
+Communication defaults never supply the trusted reset URL. Public recovery
+preflight validates the URL and saved SMTP before identity lookup, returning only
+a generic unavailable response on configuration failure. Protected Email Logs
+show fixed saved-SMTP guidance or the separate `recovery_url_invalid` blocker.
+Duplicate defaults fail as `saved_smtp_invalid`, never select an arbitrary server.
+See [recovery](password-recovery.md) for the source-only change and remaining
+runtime/approved URL/SMTP acceptance/inbox-delivery verification boundaries.
 See [template test transport](email-templates.md#explicit-saved-version-test-emails).
 SMS templates retain their local
 storage and preview-only behavior. No browser-local email records are imported
@@ -104,9 +108,9 @@ Settings → Communication is restricted to the protected system Super Admin.
 It manages Email (SMTP, API and Platform), SMS and WABA records centrally.
 Saving or selecting a default does **not** send messages, probe providers, onboard
 OAuth accounts or verify credentials. The separate, explicitly submitted template
-test and Staff/MR invitation actions read the default Email SMTP configuration.
-API/Platform, SMS and WhatsApp delivery are not activated. Password recovery's
-environment-configured SMTP transport and validation remain unchanged.
+test and Staff/MR invitation actions, plus eligible password recovery requests,
+read the default Email SMTP configuration. API/Platform, SMS and WhatsApp delivery
+are not activated. No environment or alternate-server fallback is permitted.
 
 ## Current migration and key-provisioning policy
 

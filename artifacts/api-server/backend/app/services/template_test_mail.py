@@ -1,4 +1,4 @@
-"""Saved SMTP for explicit template tests/invitations; never environment fallback."""
+"""Saved SMTP for recovery, invitations and tests; never environment fallback."""
 import json
 from dataclasses import dataclass
 from email.headerregistry import Address
@@ -38,6 +38,15 @@ class SavedSMTP:
     smtp_password: SecretStr
     smtp_from: str
     sender_name: str
+
+
+def validate_configuration(db, settings):
+    """Offline recovery preflight; never return/retain decrypted send arguments."""
+    transport = None
+    try:
+        transport = resolve(db, settings)
+    finally:
+        transport = None
 
 
 def resolve(db, settings):

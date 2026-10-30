@@ -73,14 +73,17 @@ def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapsho
             return  # Never replay accepted, failed or uncertain work.
         is_test = row.purpose == "template_test"
         is_invitation = row.purpose == "account_invitation"
-        if is_invitation:
-            # Invitation links retain the trusted URL boundary, without
-            # requiring or selecting environment SMTP.
+        is_recovery = row.purpose == "password_recovery"
+        if is_recovery:
+            category = "recovery_url_invalid"
+        if is_invitation or is_recovery:
+            # Real links retain the independent trusted URL boundary, without
+            # requiring or selecting environment SMTP. Recheck at dispatch.
             recovery_mail.validate_link_configuration(settings)
-        if is_test or is_invitation:
-            saved_transport = template_test_mail.resolve(db, settings)
-        else:
-            recovery_mail.validate_configuration(settings)
+        if not (is_test or is_invitation or is_recovery):
+            raise ValueError("Unsupported email purpose.")
+        category = "configuration"
+        saved_transport = template_test_mail.resolve(db, settings)
         category = "template"
         if is_test:
             if snapshot is None:
@@ -102,11 +105,8 @@ def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapsho
         rendered = render(template)
         outcome(db, attempt_id, "sending")
         submitting = True
-        if is_test or is_invitation:
-            recovery_mail.send_smtp(saved_transport, recipient, rendered,
-                                    sender_name=saved_transport.sender_name)
-        else:
-            recovery_mail.send(settings, recipient, rendered)
+        recovery_mail.send_smtp(saved_transport, recipient, rendered,
+                                sender_name=saved_transport.sender_name)
     except Exception as error:
         db.rollback()
         if submitting:

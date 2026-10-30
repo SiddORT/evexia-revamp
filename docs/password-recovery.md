@@ -10,7 +10,7 @@ remain generic and rate limited. MR Forgot password accepts the real MR identity
 sends the recovery event, and the new password signs into the MR portal.
 
 All eligible recovery dispatches now pass through the encrypted persistent
-Email Logs ledger before rendering/SMTP. A bad global SMTP configuration gives
+Email Logs ledger before rendering/SMTP. An invalid trusted reset URL or saved default SMTP configuration gives
 the same 503 for every identifier and records only an anonymous configuration
 failure. No submitted unknown identifier is persisted as an outgoing recipient.
 Pending/sending attempts interrupted beyond two minutes become unknown, never
@@ -31,73 +31,83 @@ Recovery does not enable public registration. Existing account encryption remain
 required. Recovery email content now comes exclusively from the dedicated
 `email_templates` table at `0043_email_templates`; see [Email templates](email-templates.md)
 for its protected event assignment and separately approved migration requirements.
-There is no hardcoded or browser-local email fallback. This does **not** switch
-delivery to encrypted Communication configuration defaults.
+There is no hardcoded or browser-local email fallback. Recovery uses only the
+default Email SMTP configuration saved in Settings → Communication, as invitations
+and template tests do. This supersedes the former environment-only recovery policy.
 
 ## Operator configuration (not applied automatically)
 
-Use the existing backend environment/secret mechanism:
+The trusted action URL remains an independent operator setting, through the
+existing backend environment/secret mechanism:
 
 - `PASSWORD_RECOVERY_URL`: an explicitly approved HTTPS URL ending in
   `/reset-password`, with no credentials, query or fragment. It must be served
   by this frontend. Never derive it from incoming Host/Origin/returnTo.
-- `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_FROM` (mailbox authorized by the
-  mail server; configure SPF/DKIM/DMARC for delivery).
-- `SMTP_IMPLICIT_TLS=false` for mandatory STARTTLS; `true` for implicit TLS,
-  typically port 465. Certificate verification is mandatory in both modes.
-- `SMTP_USERNAME` and `SMTP_PASSWORD` together for authenticated SMTP, or neither
-  for a deliberately approved TLS relay. Store the password as a secret.
 - Existing signing and account/staff encryption keys remain required. No new
   reset signing secret is necessary: a domain-separated HMAC derives the key.
 
-Do not print credentials, tokens, recipient addresses or email bodies in logs.
-Missing/invalid configuration gives the same 503 for every identifier.
+SMTP comes exclusively from exactly one saved default Email configuration of type
+SMTP: host, port, verified TLS mode, username, encrypted credential, sender address
+and sender name. STARTTLS is mandatory for `starttls`; `tls` uses implicit TLS.
+Both verify certificates and hostnames. No plaintext, environment SMTP,
+alternate saved configuration or credential-cache fallback is permitted.
+Communication decryption keys and access to its saved records remain required.
+The sender mailbox must be authorized by the selected server; SPF/DKIM/DMARC and
+inbox placement are separate operational responsibilities.
 
-### Sanitized investigation findings
+### Preflight and protected diagnostics
 
-The workspace failure was reproduced through the frontend's same-origin API
-proxy: `POST /api/v1/auth/forgot-password` returned **503 service_unavailable**
-for a synthetic unknown identifier. An offline preflight of the effective local
-backend settings reported exactly these invalid/missing categories:
+After the existing IP/identifier throttles and before identity lookup, the public
+handler validates the trusted URL, then resolves/validates the saved default
+without contacting SMTP. It discards the decrypted preflight transport immediately;
+background arguments contain no transport or decrypted SMTP credential. Each actual
+dispatch revalidates the URL independently and resolves a fresh coherent saved
+snapshot in one database statement. Changes between preflight and dispatch may
+therefore block the attempt, never cause a fallback.
 
-- `PASSWORD_RECOVERY_URL:missing_or_invalid`
-- `SMTP_HOST:missing_or_invalid`
-- `SMTP_FROM:missing_or_invalid`
+Configuration failures give the same generic 503 for every identifier. Within the
+existing rate limits they create an anonymous ledger entry with no user/recipient
+or submitted identifier. Only fixed categories enter operational diagnostics and
+protected Super Admin Email Logs:
 
-The workspace configuration presence check confirmed these settings are absent,
-not merely rejected URLs/mailboxes. Default port 587 and STARTTLS are not the
-blocker; authentication settings are absent as a pair. No SMTP connection was
-attempted. This explains the screenshot's unavailable condition in this
-workspace, before identity lookup; it is not evidence of a bad staff User ID or
-an SMTP transport error. Deployed/UAT configuration was not inspected or changed.
-Missing approved URL and SMTP settings remain a **rollout blocker**.
+| Category | Action |
+| --- | --- |
+| `recovery_url_invalid` | Operator must configure an explicitly approved HTTPS `PASSWORD_RECOVERY_URL` ending in `/reset-password`, without credentials, query or fragment. |
+| `saved_smtp_missing` | Save/select a default Email SMTP configuration in Settings → Communication. |
+| `saved_smtp_unsupported` | Select SMTP rather than API/Platform as the Email default. |
+| `saved_smtp_insecure` | Select verified STARTTLS or TLS, not security `none`. |
+| `saved_smtp_invalid` | Review host, port, TLS mode, username, app password and sender fields; duplicate defaults also fail with this category and require operator integrity review to restore exactly one default. |
+| `saved_smtp_unavailable` | Restore access to the saved encrypted configuration/credential with the operator; do not replace keys or credentials speculatively. |
 
-The request handler now logs only fixed configuration category codes. An operator
-can also run this offline command from `artifacts/api-server` in the intended
-runtime, without printing settings or connecting to SMTP or the database:
+The URL blocker is separate from saved SMTP: configuring one does not repair the
+other. URL validation runs first; after an approved repair another blocker may
+be reported. Never infer the URL from the preview address or incoming request,
+and never disable TLS checks to pass preflight. Public responses never include
+these protected configuration details. Do not print credentials, recipients,
+tokens, rendered content or raw exceptions.
 
-```sh
-PYTHONPATH=backend python -c 'from app.core.config import get_settings; from app.services.recovery_mail import configuration_issues; print(", ".join(configuration_issues(get_settings())) or "Recovery configuration valid; delivery not tested")'
-```
+### Source-only handoff and remaining blockers
 
-It requires the normal backend environment. If settings fail to parse at startup
-(for example a non-integer port), repair the setting through the normal secret/
-environment mechanism; do not paste raw settings-validation exceptions into
-reports, as they can contain supplied values.
+The saved-recovery SMTP change was inspected in source only. No tests, regression
+or release checks (including wrappers), builds, browser/manual scenarios, runtime
+requests, SMTP connections, real email, service restarts, migrations, deployment,
+saved-setting/default/credential/key changes or environment changes were performed.
+Historical environment preflight findings do not establish the current running
+configuration. The legacy environment diagnostic in `recovery_mail.configuration_issues`
+does not validate saved SMTP and is not the live recovery preflight.
 
-For a 503, provide an explicitly approved reset URL and the selected existing
-SMTP server's host and authorized sender, then check port, TLS mode and paired
-authentication. Do not derive a trusted URL from a browser request or disable
-TLS checks to pass preflight. Obtain separate approval before applying deployed
-settings or restarting services. A successful offline preflight only establishes
-configuration shape, not DNS, SMTP authentication, acceptance or inbox delivery.
+An approved, valid trusted reset URL remains mandatory and its current runtime
+presence has not been verified. Actual saved-default decryptability/validity,
+running revision, DNS, SMTP authentication/acceptance and observed inbox delivery
+also remain unverified. Obtain separate approval for runtime inspection,
+configuration/activation or synthetic-mail verification. Source inspection proves
+neither SMTP acceptance nor delivery.
 
-Distinguish other failures: a browser network error means the request did not
-complete; 429 on reset means retry later; a generic 202 means only accepted for
-processing. A later sanitized `Password recovery delivery failed` log identifies
-background processing/delivery failure, never proof of delivery. Investigate
-privately with the existing SMTP operator, without enabling body/recipient/token
-logging, and request a fresh link after repairing the cause.
+A generic 202 means only accepted for processing; a browser network error means
+the request did not complete, and 429 on reset means retry later. Check protected
+Email Logs before a fresh explicit request after repairing a cause. Unknown or
+interrupted submissions may already have reached SMTP and must never be replayed
+automatically. A sanitized background-failure log is not delivery evidence.
 
 ## Security and behavior
 
@@ -156,7 +166,7 @@ response is identical and public registration stays 403. Never share the link.
 Rollback the application release if needed; already reset passwords/sessions
 are security changes and should not be restored from an old database snapshot.
 
-## Isolated verification
+## Historical isolated verification (not rerun for saved SMTP recovery)
 
 ```sh
 sh scripts/test-api-foundation.sh tests/test_password_recovery.py
@@ -182,4 +192,6 @@ concurrent consumption, old password/access/refresh invalidation and new login;
 missing/malformed links, mismatch, same-password guidance, loading, success,
 temporary failure/retry, stale-response suppression, keyboard submission and
 centered layouts without horizontal overflow at 320, 375, 768 and 1440px.
-These are isolated results, not live inbox-delivery evidence.
+These are historical isolated results, not validation of the changed saved-SMTP
+recovery path and not live inbox-delivery evidence. The commands above are
+reference only; none was run for this source-only change.

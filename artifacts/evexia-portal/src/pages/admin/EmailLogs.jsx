@@ -17,11 +17,12 @@ const PURPOSE = { password_recovery: 'Password recovery', account_invitation: 'A
 const STATUS = { pending: 'Pending', sending: 'Sending', smtp_accepted: 'SMTP accepted', failed: 'Failed', unknown: 'Unknown / interrupted' };
 // Fixed, public guidance only; never render SMTP exceptions or saved field values.
 const SMTP_GUIDANCE = {
+  recovery_url_invalid: 'The trusted password-reset URL is missing or invalid. Ask the operator to configure an approved HTTPS PASSWORD_RECOVERY_URL ending in /reset-password, without credentials, query or fragment. Communication settings cannot supply this URL. No email was sent.',
   saved_smtp_missing: 'No default Email configuration is available. Save an SMTP configuration and make it the Email default in Settings → Communication.',
   saved_smtp_unsupported: 'The default Email configuration is not SMTP. Select an SMTP default in Settings → Communication; API and Platform email sends are not supported.',
   saved_smtp_insecure: 'The default SMTP configuration has security set to none. Select STARTTLS or TLS in Settings → Communication before sending email.',
   saved_smtp_unavailable: 'The saved default Email configuration or its credential cannot be read. Review Settings → Communication and ask the operator to restore encrypted storage access. No email was sent.',
-  saved_smtp_invalid: 'The default SMTP configuration or credential is invalid. Review its host, port, TLS mode, username, app password and sender fields in Settings → Communication.',
+  saved_smtp_invalid: 'The default SMTP configuration or credential is invalid. Review its host, port, TLS mode, username, app password and sender fields in Settings → Communication. If the failure persists, ask the operator to verify that exactly one default Email configuration exists; duplicate defaults also block sending.',
 };
 const dash = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
 const sessionKey = (s) => (s.status === 'authenticated' && s.user?.id ? s.user.id : '');

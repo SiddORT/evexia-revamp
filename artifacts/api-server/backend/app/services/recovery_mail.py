@@ -18,7 +18,7 @@ class RecoveryUnavailable(Exception):
 
 
 def configuration_issues(settings):
-    """Offline preflight: no database lookup, network connection or secret output."""
+    """Legacy environment diagnostic only; live recovery uses saved SMTP preflight."""
     return link_configuration_issues(settings) + transport_configuration_issues(settings)
 
 
@@ -69,7 +69,8 @@ def validate_configuration(settings):
 
 
 def send(settings, recipient, rendered):
-    # Password recovery retains full environment and recovery-URL validation.
+    # Legacy environment helper; not selected by transactional email dispatch.
+    # Live recovery validates its trusted link separately and uses saved SMTP.
     validate_configuration(settings)
     send_smtp(settings, recipient, rendered)
 

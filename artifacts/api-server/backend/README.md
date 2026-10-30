@@ -20,7 +20,12 @@ After separately approved setup and restart, verify browser-facing ingress with
 See [the Communication operating guide](../../../docs/communication-configuration.md)
 for protected CRUD, write-only secrets, independent encryption-key provisioning,
 operator-only migration `0039_communication`, recovery custody and focused tests.
-Provider delivery and the environment-configured recovery SMTP are unchanged.
+MR/eligible staff recovery, invitations and explicit template tests use only the
+saved default Email SMTP configuration, including its encrypted credential and
+sender name/address over verified TLS; there is no environment fallback.
+Recovery/invitations independently require an approved `PASSWORD_RECOVERY_URL`.
+The recovery transport change is source-only: no checks, builds, runtime
+verification or mail sends; SMTP acceptance and inbox delivery remain unverified.
 No shared/managed migration or activation is authorized by this code change.
 
 # Role portal hostname deployment

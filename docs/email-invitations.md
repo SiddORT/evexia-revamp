@@ -60,9 +60,9 @@ account workflows and cannot create tokens; see [email templates](email-template
 
 ## SMTP outcomes and Email Logs
 
-Explicit Staff/MR invitations use only the saved default Email SMTP configuration
-in Settings → Communication. Password recovery retains environment-configured
-TLS SMTP. Recovery resolves `password_recovery`;
+Explicit Staff/MR invitations and MR/eligible staff password recovery use only the
+saved default Email SMTP configuration in Settings → Communication, with verified
+TLS and no environment fallback. Recovery resolves `password_recovery`;
 the verified invitation identity resolves `account_invitation` for staff/Admin
 and `mr_invitation` for MR. Both live invitation kinds retain the existing signed
 token/delivery purpose. No hardcoded-content or cross-role fallback is used.
@@ -90,19 +90,19 @@ retain the selected ID/version before SMTP, with fictional role-appropriate
 samples and a nonfunctional reserved-domain action URL. Historical invitation
 records keep their existing purpose and selected shared-template ID/version;
 they are not rewritten to imply the new MR template was used historically.
-Template tests and explicit invitations share one server-only per-attempt
+Recovery, template tests and explicit invitations share one server-only per-attempt
 snapshot of the saved default Email SMTP configuration in Settings → Communication:
 host, port, verified STARTTLS or implicit TLS, username, encrypted credential,
 sender address and sender name. Invitations require the existing trusted
 `PASSWORD_RECOVERY_URL` shape independently of SMTP selection, but do not
 require environment SMTP values. There is no fallback to environment SMTP or
 another saved server, and no decrypted transport cache beyond the attempt.
-Password recovery retains its existing environment SMTP and full recovery-URL
-validation. Saving/selecting a default never sends on its own.
+Password recovery likewise requires the independently configured trusted URL,
+not environment SMTP. Saving/selecting a default never sends on its own.
 
 Missing defaults (`saved_smtp_missing`), API/Platform defaults
 (`saved_smtp_unsupported`), security `none` (`saved_smtp_insecure`), invalid
-configuration/credentials (`saved_smtp_invalid`) and unreadable encrypted data
+configuration/credentials or duplicate defaults (`saved_smtp_invalid`) and unreadable encrypted data
 (`saved_smtp_unavailable`) fail before SMTP handoff. Invitation responses and
 protected Email Logs show fixed Settings → Communication guidance; no credential,
 saved field value or internal exception is exposed. Correct the configuration
@@ -124,8 +124,10 @@ unknown/interrupted. SMTP DATA acceptance remains accepted if subsequent QUIT
 cleanup fails. If terminal persistence fails after handoff, the record is never
 relabeled as a definite preparation failure. No open/click/bounce metrics or
 “delivered” status are invented. Public recovery configuration failures create
-an anonymous failed/configuration record without looking up or recording the
-submitted identifier. Requests for unknown accounts remain generic and do not
+an anonymous failed record with a fixed saved-SMTP category or the separate
+`recovery_url_invalid` category without looking up or recording the submitted
+identifier. Protected Email Logs give operator guidance; public errors remain
+generic. Requests for unknown accounts remain generic and do not
 invent a recipient delivery attempt.
 
 Only metadata and fixed categories enter audit/operational events. Passwords,
@@ -134,12 +136,17 @@ are excluded. Recipient snapshots use existing directory key custody with new
 mail-specific AAD and equality-index domains. Keep all historical decryption keys:
 existing directory/account rotation inventories do not rewrite Email Logs.
 
-### Saved invitation SMTP handoff — source only
+### Saved invitation and recovery SMTP handoff — source only
 
-The invitation transport change was inspected in source only. No tests, builds,
+The invitation and recovery transport changes were inspected in source only. No tests, builds,
 browser/manual scenarios, runtime requests, workflow restarts, migrations,
 credential/default changes, deployments or email sends were performed. Existing
 historical verification below does not validate this changed path.
+Recovery's saved preflight and actual-send branches were source-inspected together;
+its database template, eligibility, throttles and signed one-use link/reset/session
+rules are retained. Current trusted URL, running configuration, SMTP acceptance
+and inbox delivery have not been verified. Further runtime verification needs
+separate approval; no working-delivery claim is made.
 No retention deletion or general-purpose queue/retry service is introduced.
 
 ## Schema and focused acceptance
