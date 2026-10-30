@@ -31,11 +31,13 @@ def expired(data):
     return {**data, "expired": data["expiryDate"] < datetime.now(timezone.utc).date().isoformat()}
 
 
-def references(db, actor, kind, query="", offset=0, limit=25):
+def references(db, actor, kind, query="", offset=0, limit=25, include_inactive=False):
     def work(_, crypto):
         term = query.strip()
         model = AllergenProduct if kind == "allergens" else StorageLocation
-        stmt = select(model).where(model.deleted_at.is_(None), model.status == "active")
+        stmt = select(model)
+        if not include_inactive:
+            stmt = stmt.where(model.deleted_at.is_(None), model.status == "active")
         if term:
             stmt = stmt.where(model.name.ilike("%" + term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%", escape="\\"))
         total = db.scalar(select(func.count()).select_from(stmt.subquery()))
@@ -119,14 +121,25 @@ def reconcile(db, actor, key):
     return transaction(db, actor, work)
 
 
-def listing(db, actor, query="", offset=0, limit=25):
+def listing(db, actor, query="", offset=0, limit=25, allergen_id=None,
+            from_date=None, to_date=None, date_field="recorded"):
+    if from_date and to_date and from_date > to_date:
+        raise PRError("From date must be on or before To date.", 422, "reserve_date_range")
     def work(_, crypto):
         # Explicit finite encrypted scan; never return a misleading partial result.
         rows = bounded(db, select(Reserve).order_by(Reserve.created_at.desc(), Reserve.id))
         data = [expired(crypto.open(r.id, "in_house_reserve", r.payload_ciphertext)) for r in rows]
         term = query.strip().casefold()
-        matches = [r for r in data if term in " ".join(str(r[k]) for k in
-            ("allergenName", "categoryName", "concentration", "unit", "locationName", "batch", "actor", "expiryDate", "id")).casefold()]
+        def matches_filters(record):
+            day = record["expiryDate"] if date_field == "expiry" else record["createdAt"][:10]
+            return (
+                (not allergen_id or str(record["allergenId"]) == str(allergen_id))
+                and (not from_date or day >= from_date.isoformat())
+                and (not to_date or day <= to_date.isoformat())
+                and term in " ".join(str(record[k]) for k in
+                    ("allergenName", "categoryName", "concentration", "unit", "locationName", "batch", "actor", "expiryDate", "id")).casefold()
+            )
+        matches = [r for r in data if matches_filters(r)]
         return dict(items=matches[offset:offset + limit], filtered=len(matches), total=len(data), offset=offset, limit=limit)
     return transaction(db, actor, work)
 

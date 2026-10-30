@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ListInHouseStockDateField } from "./listInHouseStockDateField";
 
 export type ListInHouseStockParams = {
   /**
@@ -21,4 +22,8 @@ export type ListInHouseStockParams = {
    * @maximum 100
    */
   limit?: number;
+  allergen_id?: string | null;
+  from_date?: Date | null;
+  to_date?: Date | null;
+  date_field?: ListInHouseStockDateField;
 };

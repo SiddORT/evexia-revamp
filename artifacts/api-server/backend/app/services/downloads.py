@@ -11,6 +11,7 @@ from app.services.master_policy import MASTERS, master_allowed
 
 MODULES = {
     "shipments": "Shipments",
+    "in_house_stock": "In-house stock",
     "kits_orders": "Kits & Consumables",
     "spt_orders": "SPT",
     "lupin_orders": "Lupin",
@@ -32,6 +33,7 @@ MODULES = {
 # Metadata combinations represent actual supported actions, not arbitrary extensions.
 BROWSER = {
     "shipments": {"export": {"CSV", "XLSX"}},
+    "in_house_stock": {"export": {"CSV", "XLSX"}},
     "kits_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     "spt_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     "lupin_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
@@ -92,7 +94,7 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     except AuthError:
         db.rollback()
         raise HTTPException(401, "Authentication required") from None
-    if source == "shipments":
+    if source in ("shipments", "in_house_stock"):
         from app.services.capability_policy import is_super_admin
         if not is_super_admin(verified):
             db.rollback()

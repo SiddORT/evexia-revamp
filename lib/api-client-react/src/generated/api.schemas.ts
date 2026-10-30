@@ -12986,7 +12986,38 @@ export type ListInHouseStockParams = {
    * @maximum 100
    */
   limit?: number;
+  allergen_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  date_field?: ListInHouseStockDateField;
 };
+
+export type ListInHouseStockDateField =
+  (typeof ListInHouseStockDateField)[keyof typeof ListInHouseStockDateField];
+
+export const ListInHouseStockDateField = {
+  recorded: "recorded",
+  expiry: "expiry",
+} as const;
+
+export type ExportInHouseStockParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  allergen_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  date_field?: ExportInHouseStockDateField;
+};
+
+export type ExportInHouseStockDateField =
+  (typeof ExportInHouseStockDateField)[keyof typeof ExportInHouseStockDateField];
+
+export const ExportInHouseStockDateField = {
+  recorded: "recorded",
+  expiry: "expiry",
+} as const;
 
 export type GetInHouseStockReferencesParams = {
   /**
@@ -13003,6 +13034,7 @@ export type GetInHouseStockReferencesParams = {
    * @maximum 100
    */
   limit?: number;
+  include_inactive?: boolean;
 };
 
 export type ReviewInventoryInitializationParams = {

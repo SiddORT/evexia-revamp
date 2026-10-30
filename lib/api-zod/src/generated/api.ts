@@ -531,6 +531,13 @@ export const createInHouseStockResponseNotesMax = 2000;
 export const createInHouseStockResponseQuantityMax = 11;
 export const createInHouseStockResponseReserveOnlyDefault = true;
 export const createInHouseStockResponseUnitMax = 40;
+export const exportInHouseStockQueryQueryMax = 200;
+export const exportInHouseStockResponseItemsItemBatchMax = 100;
+export const exportInHouseStockResponseItemsItemConcentrationMax = 200;
+export const exportInHouseStockResponseItemsItemNotesMax = 2000;
+export const exportInHouseStockResponseItemsItemQuantityMax = 11;
+export const exportInHouseStockResponseItemsItemReserveOnlyDefault = true;
+export const exportInHouseStockResponseItemsItemUnitMax = 40;
 export const previewInHouseStockBodyBatchMax = 100;
 export const previewInHouseStockBodyConcentrationMax = 200;
 export const previewInHouseStockBodyNotesMax = 2000;
@@ -548,6 +555,7 @@ export const getInHouseStockReferencesQueryOffsetMin = 0;
 export const getInHouseStockReferencesQueryOffsetMax = 1000000;
 export const getInHouseStockReferencesQueryLimitDefault = 25;
 export const getInHouseStockReferencesQueryLimitMax = 100;
+export const getInHouseStockReferencesQueryIncludeInactiveDefault = false;
 export const reconcileInHouseStockResponseResultOneBatchMax = 100;
 export const reconcileInHouseStockResponseResultOneConcentrationMax = 200;
 export const reconcileInHouseStockResponseResultOneNotesMax = 2000;
@@ -11513,6 +11521,8 @@ export const ResubmitImmunotherapyOrderResponse = zod.object({
  */
 export const listInHouseStockQueryQueryDefault = ``;
 
+export const listInHouseStockQueryDateFieldDefault = `recorded`;
+
 export const ListInHouseStockQueryParams = zod.object({
   query: zod.coerce
     .string()
@@ -11530,6 +11540,12 @@ export const ListInHouseStockQueryParams = zod.object({
     .min(1)
     .max(listInHouseStockQueryLimitMax)
     .default(listInHouseStockQueryLimitDefault),
+  allergen_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  date_field: zod
+    .enum(["recorded", "expiry"])
+    .default(listInHouseStockQueryDateFieldDefault),
 });
 
 export const listInHouseStockResponseItemsItemBatchDefault = ``;
@@ -11669,6 +11685,81 @@ export const CreateInHouseStockResponse = zod.object({
 });
 
 /**
+ * @summary Export
+ */
+export const exportInHouseStockQueryQueryDefault = ``;
+
+export const exportInHouseStockQueryDateFieldDefault = `recorded`;
+
+export const ExportInHouseStockQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportInHouseStockQueryQueryMax)
+    .default(exportInHouseStockQueryQueryDefault),
+  allergen_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  date_field: zod
+    .enum(["recorded", "expiry"])
+    .default(exportInHouseStockQueryDateFieldDefault),
+});
+
+export const exportInHouseStockResponseItemsItemBatchDefault = ``;
+
+export const exportInHouseStockResponseItemsItemNotesDefault = ``;
+
+export const exportInHouseStockResponseItemsItemUnitDefault = ``;
+
+export const ExportInHouseStockResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      allergenId: zod.string().uuid(),
+      allergenName: zod.string(),
+      allergenVersion: zod.number().int(),
+      batch: zod
+        .string()
+        .max(exportInHouseStockResponseItemsItemBatchMax)
+        .default(exportInHouseStockResponseItemsItemBatchDefault),
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
+      categoryVersion: zod.number().int(),
+      concentration: zod
+        .string()
+        .min(1)
+        .max(exportInHouseStockResponseItemsItemConcentrationMax),
+      createdAt: zod.string(),
+      expired: zod.boolean(),
+      expiryDate: zod.coerce.date(),
+      id: zod.string().uuid(),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      locationVersion: zod.number().int(),
+      notes: zod
+        .string()
+        .max(exportInHouseStockResponseItemsItemNotesMax)
+        .default(exportInHouseStockResponseItemsItemNotesDefault),
+      quantity: zod
+        .string()
+        .min(1)
+        .max(exportInHouseStockResponseItemsItemQuantityMax),
+      reserveOnly: zod
+        .literal(true)
+        .default(exportInHouseStockResponseItemsItemReserveOnlyDefault),
+      unit: zod
+        .string()
+        .max(exportInHouseStockResponseItemsItemUnitMax)
+        .default(exportInHouseStockResponseItemsItemUnitDefault),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Preview
  */
 export const previewInHouseStockBodyBatchDefault = ``;
@@ -11772,6 +11863,9 @@ export const GetInHouseStockReferencesQueryParams = zod.object({
     .min(1)
     .max(getInHouseStockReferencesQueryLimitMax)
     .default(getInHouseStockReferencesQueryLimitDefault),
+  include_inactive: zod.coerce
+    .boolean()
+    .default(getInHouseStockReferencesQueryIncludeInactiveDefault),
 });
 
 export const GetInHouseStockReferencesResponse = zod.object({

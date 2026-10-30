@@ -1,4 +1,9 @@
 import { getSession, inHouseStockRequest as request } from '../auth/adminSession.js';
+import { writeOrderCsv } from './orderTransferCsv.js';
+import { writeOrderWorkbook } from './orderTransferWorkbook.js';
+import { captureExportPreferences } from './exportPreferences.js';
+import { presentExportTable } from './exportDatePresentation.js';
+import { downloadBlob, prepareDownload } from './downloads.js';
 
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v !== '' && v != null));
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,7 +22,29 @@ const adapt = (d, withCategory) => ({
   filtered: d?.filtered ?? 0,
 });
 export const listAllergenReferences = (_kind, params, signal) => request('/references/allergens', { params: clean({ query: params?.query, offset: params?.offset, limit: params?.limit }), signal }).then((d) => adapt(d, true));
+export const listFilterAllergens = (_kind, params, signal) => request('/references/allergens', { params: clean({ query: params?.query, offset: params?.offset, limit: params?.limit, include_inactive: true }), signal }).then((d) => adapt(d, true));
 export const listLocationReferences = (_kind, params, signal) => request('/references/locations', { params: clean({ query: params?.query, offset: params?.offset, limit: params?.limit }), signal }).then((d) => adapt(d, false));
+
+export function exportInHouseStock(filters, format) {
+  if (!['csv', 'xlsx'].includes(format)) throw new Error('Unsupported export format.');
+  return prepareDownload(`in-house-stock/${format}`, async () => {
+    const preferences = captureExportPreferences();
+    const data = await request('/export', { params: clean(filters) });
+    if (!Array.isArray(data?.items) || !Number.isSafeInteger(data.filtered)
+        || data.filtered !== data.items.length || data.items.length > 2000) {
+      throw new Error('The complete export could not be confirmed. No file was released.');
+    }
+    if (!data.items.length) throw new Error('No in-house stock matches these filters.');
+    const headers = ['Sr No', 'Allergen', 'Category', 'Concentration', 'Quantity', 'Unit', 'Expiry date', 'Expiry status', 'Storage location', 'Batch', 'Notes', 'Recorded (UTC)', 'Recorded by'];
+    const rows = data.items.map((r, i) => [String(i + 1), r.allergenName, r.categoryName,
+      r.concentration, r.quantity, r.unit || '', r.expiryDate, r.expired ? 'Expired' : 'In date',
+      r.locationName, r.batch, r.notes, r.createdAt, r.actor].map((v) => v == null ? '' : String(v)));
+    const table = presentExportTable(headers, rows, { calendarColumns: [6], timestampColumns: [11] }, preferences);
+    const blob = format === 'csv' ? new Blob([writeOrderCsv(table)], { type: 'text/csv;charset=utf-8' }) : writeOrderWorkbook(table);
+    await downloadBlob(blob, `evexia-in-house-stock.${format}`, { source: 'in_house_stock', kind: 'export', format: format.toUpperCase() });
+    return rows.length;
+  });
+}
 
 export const newId = () => globalThis.crypto.randomUUID();
 const owner = () => String(getSession()?.user?.id || '');

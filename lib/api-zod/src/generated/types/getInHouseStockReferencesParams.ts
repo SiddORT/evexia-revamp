@@ -21,4 +21,5 @@ export type GetInHouseStockReferencesParams = {
    * @maximum 100
    */
   limit?: number;
+  include_inactive?: boolean;
 };
