@@ -12,20 +12,82 @@ Concentration is required independent descriptive text (200 characters), not a
 copy of catalogue concentration or a conversion formula. Quantity is a required
 plain decimal string, positive through 1000000, at most three fractional digits;
 validation occurs before persistence. The canonical representation has three
-places. An explicit descriptive unit (40 characters) is required. No implicit
-equivalence to purchased or order-ready units is asserted.
+places. Current entry forms explicitly label quantity in ml and omit the unit
+field; the blank saved unit means this entry contract's ml. Historical explicit
+descriptive units (40 characters) remain unchanged. No free-text unit conversion
+or equivalence to purchased stock is inferred.
 
 Expiry is an explicit valid calendar date, never derived. Past dates are
 accepted, retained and clearly marked Expired using the server's UTC calendar
 day; expiry day itself is inclusive. Batch/reference (100 characters) and notes
 (2000 characters) are optional.
 
-No ordinary inventory source type is added. Reserve creation writes only its
-own record/request tables and one audit event in one transaction. It does not
-write purchased stock, lots, balances, postings, alerts, movements, assembly or
-order availability. A reserve identifier is not an inventory lot identifier.
-Dilution, consumption, release into usable inventory, edits, deletion, imports,
-exports and corrections are deliberately absent.
+Reserve creation still writes only its own record/request tables and an audit
+event. It never creates inventory. A reserve identifier is not a lot identifier.
+Only the separately reviewed movement workflow below can consume a reserve.
+Saved reserve entries cannot be edited or deleted.
+
+## Reviewed movement and dilution
+
+Move Stocks includes available reserve batches only for the protected Super
+Admin, with existing movement-create authorization also required. No new
+assignable Staff permission is added. Every reserve line requires an explicit
+Yes or No dilution choice. No preserves quantity, concentration, expiry and
+reserve classification at the destination, including legacy descriptive values.
+It cannot make concentrate order-ready or selectable for assembly/adjustment.
+
+Yes permits exactly **2-fold, 5-fold or 10-fold**. Source input ml is consumed;
+destination output ml = input × factor, and output percentage = input percentage
+÷ factor. **10 ml at 10%, 10-fold → 100 ml at 1%**. Resulting expiry is movement
+date plus two calendar years, clamping February 29 to February 28 when necessary;
+it is neither based on nor capped by original expiry. The original reserve
+snapshot is not rewritten.
+
+Dilution accepts only blank-unit current ml entries or explicit `ml`, and plain
+positive percentage strings up to 100%, with at most six fractional digits.
+Legacy ratios, text, other units and arbitrary factors are rejected with an
+actionable error. Quantities must be exactly representable at 0.001 and no more
+than 1000000; resulting concentration must be exactly representable at six
+decimals. No silent rounding, catalogue concentration edit, clinical advice,
+diluent recipe, pricing change or automatic backfill occurs.
+
+The server review binds actor, source/destination snapshots, movement date,
+batch identity, exact quantities and current source/destination balances.
+The modal shows input/output, concentration and expiry before confirmation.
+Dismissal returns to the retained draft without writing; changed values or
+balances require another review. Only confirmation writes stock.
+
+`0078_reserve_movements` follows `0077_settlements` under the existing automatic
+migration policy. Append-only `in_house_postings` records per-location reserve
+debits/credits. Remaining availability is original quantity plus these postings,
+never an inventory balance; both original quantity and remaining location
+balances are shown. Dilution creates one distinct immutable inventory lot per
+movement/reserve with `reserve_movement_id`, encrypted reserve/batch/movement
+provenance, resulting percentage and expiry. It is not a second reserve.
+Subsequent ordinary transfers retain the lot identity and metadata without
+performing another conversion. Stock Status labels concentrations batch-specific
+and shows each lot's actual concentration, expiry, unit and origin. Historical
+concentrations absent from saved evidence display unavailable, not today's
+catalogue concentration.
+
+Mixed operations always acquire the inventory lock before the reserve lock and
+before location row locks. Reserve-only entry/reads use the reserve lock alone.
+Movement, reserve postings, converted lot/balance/posting, audit and actor-bound
+durable retry outcome commit atomically. Existing movement reconciliation shares
+the lock and durably cancels absent identities, preventing delayed originals from
+committing after a negative outcome. Failed commits have no partial stock effects.
+Raw-reserve movements and historical reference choices remain protected from Staff.
+
+New encrypted descriptions use existing `inventory:movement`, `inventory:lot`
+and `inventory:retry` purposes under independent PR keys. No new plaintext
+descriptive columns or encryption purpose is introduced. Reserve postings expose
+only operational IDs and exact quantities. Historical encryption inventories are
+unchanged; key rotation must retain these existing purposes and original keys.
+
+Focused verification: `sh scripts/test-reserve-movements.sh` uses a private
+synthetic PostgreSQL database and runs only new reserve movement cases. Browser
+presentation checks use `scripts/start-in-house-stock-crud-preview.sh` against a
+separate synthetic fixture, not the bound development or production database.
 
 ## Persistence, privacy and concurrency
 

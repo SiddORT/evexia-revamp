@@ -53,6 +53,10 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0078_reserve_movements"]:
+            db.execute(text('SELECT id,reserve_id,movement_id,location_id,delta,"before","after" FROM in_house_postings LIMIT 0'))
+            db.execute(text("SELECT reserve_movement_id FROM inventory_lots LIMIT 0"))
+            revisions = ["0077_settlements"]
         if revisions == ["0077_settlements"]:
             db.execute(text("SELECT id,actor_id,mr_id,date,created_at,payload_ciphertext FROM settlement_batches LIMIT 0"))
             db.execute(text("SELECT id,batch_id,kind,order_id,payload_ciphertext,verified_at,verified_by FROM settlement_entries LIMIT 0"))

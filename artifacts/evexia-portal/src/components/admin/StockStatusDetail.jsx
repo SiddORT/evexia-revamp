@@ -1,3 +1,4 @@
+import { concentrationLabel, lotOriginLabel } from '../../services/serverInventory.js';
 import { useEffect, useMemo, useState } from 'react';
 import Dialog from './Dialog.jsx';
 import DataTable from './DataTable.jsx';
@@ -32,8 +33,9 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
   const lotById = useMemo(() => Object.fromEntries(row.lots.map((l) => [l.lotId, l])), [row]);
   const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
   const lotColumns = [
-    { key: 'o', label: 'Origin', render: (l) => l.source === 'adjustment' ? <>Manual adjustment<span className="stock-sub">{l.adjustmentId}</span></> : l.source === 'opening' ? <>Opening stock<span className="stock-sub">{l.unitRate != null ? `Rate ${l.unitRate}` : 'Rate unavailable'}{l.openingValue != null ? ` · value ${l.openingValue}` : ''}</span></> : l.itemKind === 'combo' ? 'Assembly' : 'Receipt' },
-    { key: 'b', label: 'Batch', render: (l) => l.batchNo || 'Unavailable' },
+    { key: 'o', label: 'Origin', render: (l) => l.source === 'in_house_dilution' ? lotOriginLabel(l) : l.source === 'adjustment' ? <>Manual adjustment<span className="stock-sub">{l.adjustmentId}</span></> : l.source === 'opening' ? <>Opening stock<span className="stock-sub">{l.unitRate != null ? `Rate ${l.unitRate}` : 'Rate unavailable'}{l.openingValue != null ? ` · value ${l.openingValue}` : ''}</span></> : l.itemKind === 'combo' ? 'Assembly' : 'Receipt' },
+    { key: 'b', label: 'Batch', render: (l) => <>{l.batchNo || 'Unavailable'}{l.reserveId && <span className="stock-sub">In-house dilution from reserve {l.reserveId}</span>}</> },
+    { key: 'conc', label: 'Batch concentration', render: (l) => concentrationLabel(l.resultingConcentration ?? l.concentration) },
     { key: 'r', label: 'Receipt', render: (l) => l.receiptNumber || 'Unavailable' },
     { key: 'e', label: 'Expiry', render: (l) => l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable' },
     { key: 'l', label: 'Location', render: (l) => l.locationId ? l.locationName : 'Unallocated' },
@@ -41,7 +43,7 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
   ];
   const columns = [
     { key: 'd', label: 'Posted', render: (r) => timestamp(r.at) },
-    { key: 'lot', label: 'Lot', render: (r) => lotById[r.lotId] ? (lotById[r.lotId].source === 'opening' ? 'Opening stock lot' : `${lotById[r.lotId].batchNo || 'Batch unavailable'} · ${lotById[r.lotId].source === 'adjustment' ? 'Adjustment lot' : lotById[r.lotId].receiptNumber || 'Assembled combo'}`) : r.lotId.slice(0, 8) },
+    { key: 'lot', label: 'Lot', render: (r) => lotById[r.lotId] ? (lotById[r.lotId].source === 'opening' ? 'Opening stock lot' : `${lotById[r.lotId].batchNo || 'Batch unavailable'} · ${lotOriginLabel(lotById[r.lotId])}`) : r.lotId.slice(0, 8) },
     { key: 'loc', label: 'Location', render: (r) => !r.locationId ? 'Unallocated' : lotById[r.lotId]?.locationId === r.locationId ? lotById[r.lotId].locationName : r.locationId.slice(0, 8) },
     { key: 'dl', label: 'Change', render: (r) => <span className="inv-mono">{r.delta}</span> },
     { key: 'ba', label: 'Before / After', render: (r) => <span className="inv-mono">{r.before} to {r.after}</span> },
@@ -53,7 +55,7 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
     <div className="admin-feedback" role="note">No sales backend is connected. History shows recorded opening, receipt, assembly, manual adjustment and transfer/allocation postings, including saved before/after balances. Opening quantities are explicitly entered, never inferred.</div>
     {row.itemKind === 'combo' && <ComboLots lots={row.lots} />}
     <h3 className="stock-section-title">Lots on hand</h3>
-    <div className="stock-history-table">
+    <div className="stock-history-table stock-lot-table">
       {row.lots.length ? <DataTable columns={lotColumns} rows={row.lots} rowKey={(l) => `${l.lotId}-${l.locationId}`} label="Lots on hand" testIdPrefix="stock-lot" />
         : <div className="admin-empty"><strong>No lots on hand</strong><p>{row.itemKind === 'combo' ? 'No combo quantity remains on hand.' : 'This allergen has no receipt or opening quantity on hand.'}</p></div>}
     </div>

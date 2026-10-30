@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ReserveSavedLocationBalances } from "./reserveSavedLocationBalances";
 
 export interface ReserveSaved {
   actor: string;
@@ -12,6 +13,7 @@ export interface ReserveSaved {
   allergenId: string;
   allergenName: string;
   allergenVersion: number;
+  availableQuantity?: string | null;
   /** @maxLength 100 */
   batch?: string;
   categoryId: string;
@@ -26,6 +28,7 @@ export interface ReserveSaved {
   expired: boolean;
   expiryDate: Date;
   id: string;
+  locationBalances?: ReserveSavedLocationBalances;
   locationId: string;
   locationName: string;
   locationVersion: number;

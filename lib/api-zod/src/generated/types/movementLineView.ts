@@ -7,8 +7,10 @@
  */
 import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
+import type { MovementLineViewDilutionFactor } from "./movementLineViewDilutionFactor";
 import type { MovementLineViewItemKind } from "./movementLineViewItemKind";
 import type { MovementLineViewOpeningLocation } from "./movementLineViewOpeningLocation";
+import type { MovementLineViewSourceKind } from "./movementLineViewSourceKind";
 
 export interface MovementLineView {
   adjustmentId?: string | null;
@@ -16,8 +18,11 @@ export interface MovementLineView {
   assemblyId?: string | null;
   batchNo: string | null;
   comboProductId?: string | null;
+  concentration?: string | null;
   destinationAfter: string;
   destinationBefore: string;
+  destinationLotId?: string | null;
+  dilutionFactor?: MovementLineViewDilutionFactor;
   expiryDate: Date | null;
   historicalData?: string | null;
   itemKind?: MovementLineViewItemKind;
@@ -37,11 +42,18 @@ export interface MovementLineView {
   receivedDate: Date | null;
   recipe?: InventoryRecipeSnapshot | null;
   recordedDate?: Date | null;
+  reserveId?: string | null;
+  reserveOnly?: boolean;
+  resultingConcentration?: string | null;
+  resultingExpiryDate?: Date | null;
+  resultingQuantity?: string | null;
   sellingPrice?: string | null;
   source?: string | null;
   sourceAfter: string;
   sourceBefore: string;
   sourceComponents?: InventoryComponentProvenance[] | null;
+  sourceKind?: MovementLineViewSourceKind;
+  sourceMovementId?: string | null;
   unit: string;
   unitRate?: string | null;
 }

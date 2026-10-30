@@ -1,29 +1,29 @@
 {
   "status": "reviewed_candidate_requires_release_policy",
-  "review_scope": "Pinned PostgreSQL 17 fresh path through 0076_in_house_stock. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and graph-validated automatic migrations. No separate per-migration human approval is required. Embedded historical migration guards remain authoritative and are never bypassed. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
-  "authorization_policy_sha256": "74d6202c0c0119f36cafe5298e54d4602c0856677af8978e142a2e5f28743bd4",
-  "target": "0076_in_house_stock",
+  "review_scope": "Pinned PostgreSQL 17 fresh path through 0078_reserve_movements. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and graph-validated automatic migrations. No separate per-migration human approval is required. Embedded historical migration guards remain authoritative and are never bypassed. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
+  "authorization_policy_sha256": "98d79db73a43db5282afa8d5ac929d796e7b1d115d366b71bcb7bc206e61dd72",
+  "target": "0078_reserve_movements",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "8d35e90fa091fe303d21586881b8c2acaa15ec0fec7f34ede0354564bd68fdc0",
+  "policy_sha256": "0042b985ac3eb3ec89d3992dfbfcb0638f3e27665a3d07be6403cc606bded178",
   "release_sources": {
     "artifacts/api-server/backend/app/services/initialization_diagnostics.py": "9732dd29159788eb77976a7ed70635e49ca76d2982e0c42fafcb99ed2ff04a6f",
     "artifacts/api-server/backend/app/fresh_install.py": "598f82b5b09044679c27ba169132e8f93c2f674770c6d51b96ed10fd58559fa3",
     "artifacts/api-server/backend/app/services/release_authorization.py": "35e5d197660405ce3be22eff58ed21c967e9fd7a3f4ad03f2864607f5b05879f",
     "scripts/validate-release-artifact.py": "cf4f0962f660e37d99580babb7c9dd5e50539e685baa662166355396944d020f",
-    "scripts/release-authorization-policy.json": "74d6202c0c0119f36cafe5298e54d4602c0856677af8978e142a2e5f28743bd4",
+    "scripts/release-authorization-policy.json": "98d79db73a43db5282afa8d5ac929d796e7b1d115d366b71bcb7bc206e61dd72",
     ".github/workflows/deploy.yml": "38e5ddd8c41f4cf52996259726fdaa9b8c2cd7b2e42f7d720fb3c4663833cd68",
     ".github/workflows/release-validation.yml": "0e6e9c616236d85c175878dd3636eacb5a4de71ffae79ce4a05690ca01f25eba",
     "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
     "artifacts/api-server/backend/app/services/fresh_recovery.py": "af8e518d8427f3bbc5d18607f8a11bc39a9761b6330b52a762d63c3d6b690681",
-    "scripts/fresh-install-catalog.json": "2ec9ac5d5e06c0711a926095c853d751f23969ea50a1c503bbd1b1a3e0e528ef",
+    "scripts/fresh-install-catalog.json": "bd4cf7cb3c7923be5b72911a5d5e49d3c199139417287f285bd73f00597bc47b",
     "scripts/operator-retirement.sh": "07c315caab994b0315b78272763d91b71b18744c83b5ac3c46880961a5bbb505",
     "scripts/deploy-migrations.py": "44d404c3f367b96150db76092ad150545f784b6010526edb5c38d59e44776995",
     "scripts/initialize-api.sh": "4e46f0ef6f47a04d43eafb27fd111943e319a8cff2108291d2af6fc2a2461142",
-    "artifacts/api-server/backend/app/core/schema.py": "1161a99662273b6848768377fb45f9962c2837c193cc5de8d2cce99cd0ee5888",
-    "artifacts/api-server/backend/app/db/models.py": "08bcb5a4689c8df7151372e7854e4649952b04d0536a53ef7214ab254e69a3ac",
+    "artifacts/api-server/backend/app/core/schema.py": "85bcd8de938c29e026c42023805b5f56f5576c1597aef59f98f56897650ac108",
+    "artifacts/api-server/backend/app/db/models.py": "c4a2e02a7a89b9c7d1732dd066859a5d4fe3235173a63fbd50689717393c2198",
     "artifacts/api-server/backend/app/bootstrap.py": "6a7707596acf4c628ff56fd990efd7f044929f9533bfbf92318870842a3fd1f7",
-    "artifacts/api-server/backend/app/api/v1/system.py": "1bd9e1564c0075245dec4ab8213bc72a1cbcdc7a5f0c408741e9834a6f6f8d04",
-    "development-contract.json": "4956c938e20e9c3831f99af61f222d31806fc84cd93a215ddf9816cb5bd6cfe2",
+    "artifacts/api-server/backend/app/api/v1/system.py": "00d23a19ed360fc8b0a5a74d5cc26313ca90c1253341e42a6314a80678a6e572",
+    "development-contract.json": "0543ecd3f7b8aed62bfcb7e310da8d00af307d85ab2e29f014602c2131d7caf1",
     "scripts/review-schema-release.py": "ea49cf0dd4980c74708d8df2590b2e3268a1388e796da5740bf2de74f0540f5d",
     "scripts/development-sync.py": "a4a421a58120fd7efba5b738d8848ecfd8b7778d8a8137e559960a757f1d0d7f",
     "scripts/frontend-runtime.mjs": "89e1998bea39facc318e3e13e1381fe32fbdf80b4ed376c17f8d31d6785dacab",
@@ -59,7 +59,7 @@
     "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
-    "app/services/account_crypto.py": "16e55198ea366eff18b3e3b7aa593678d0df5fc0049965ee3acd9b73c50aabd4",
+    "app/services/account_crypto.py": "321df50a7877418733443a7c353eb77895f45ea1da24f82b3653b02f3f24fea6",
     "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {
@@ -145,6 +145,8 @@
     "0073_order_decisions": "82d0290bac8a59c4bf85e2d1acb2690131d1d63971fa1b3a450a909856ee347e",
     "0074_business_numbers": "8ecbfe607112dbd776c233c54c5555fe05d591d82052781a1b1a4844db363928",
     "0075_shipments": "6b11b27a377ca58df64ec6488d43384b4e59700cf5f5325ec69c39b6e7442d2f",
-    "0076_in_house_stock": "4e7e7e4298f9241d4d297430c3a0d3a9fba7216a4289b3fbbfc1ae6a03262a32"
+    "0076_in_house_stock": "4e7e7e4298f9241d4d297430c3a0d3a9fba7216a4289b3fbbfc1ae6a03262a32",
+    "0077_settlements": "8f2dcc9aee461a5839be61f036aa1e9770eb53a5d1131524ebebf9ab5d14a485",
+    "0078_reserve_movements": "693b966c4b4f1801263db7492b86a2a7aa490173e0873b3404277bb728f72adc"
   }
 }

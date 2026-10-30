@@ -161,6 +161,7 @@ def ready(db):
         ["0076_in_house_stock"],
         # Additive settlement receipts do not change account anchors.
         ["0077_settlements"],
+        ["0078_reserve_movements"],
     ):
         raise AccountCryptoError()
     current = crypto()

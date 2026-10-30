@@ -1,4 +1,4 @@
-"""Dedicated protected reserve endpoints; no ordinary inventory source type."""
+"""Dedicated protected reserve entries; reviewed movements are separately authorized."""
 import uuid
 from datetime import date
 from typing import Literal

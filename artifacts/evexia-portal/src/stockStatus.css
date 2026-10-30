@@ -83,6 +83,13 @@
 .stock-history-table .admin-table td:nth-child(2), .stock-history-table .admin-table td:nth-child(3) { overflow-wrap: anywhere; }
 .stock-status { text-transform: capitalize; font-weight: 700; color: var(--admin-text-soft); }
 .stock-detail { width: min(100%, 860px); }
+.stock-detail .stock-lot-table .admin-table { min-width: 1100px; }
+.stock-detail .stock-lot-table .admin-table :is(th, td):nth-child(n) {
+  white-space: normal; overflow-wrap: anywhere; text-align: left; width: 12%;
+}
+.stock-detail .stock-lot-table .admin-table :is(th, td):first-child { width: 22%; }
+.stock-detail .stock-lot-table .admin-table :is(th, td):nth-child(2) { width: 18%; }
+.stock-detail .stock-lot-table .admin-table :is(th, td):last-child { width: 12%; text-align: right; }
 .stock-detail, .stock-report-dialog { min-width: 0; }
 .stock-detail [role="tabpanel"] { min-width: 0; }
 .stock-detail__bar { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin: 14px 0; border-bottom: 1px solid var(--admin-border); }

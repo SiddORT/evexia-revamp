@@ -46,10 +46,13 @@ activation/recovery handoff; process repair is not live email recovery.
 # EVEXIA Portal
 
 In-house Stock is a protected Super Admin-only server concentrate reserve under
-Inventory, not an ordinary stock source. Never credit usable stock, expose it
-to order/assembly/movement/adjustment choices, or infer dilution from these
-entries. Concentration, quantity unit and expiry are independently entered;
-saved identities are immutable snapshots. See `docs/in-house-stock.md`.
+Inventory, separate from ordinary inventory. Only the protected Super Admin may
+move reserves through reviewed Move Stocks. An explicit No transfers reserve
+classification unchanged; explicit Yes with 2-, 5- or 10-fold dilution consumes
+input reserve and creates a distinct destination lot. Never infer conversion,
+backfill existing reserves, expose raw reserves to orders/assemblies/adjustments,
+or change catalogue concentrations. Saved identities are immutable snapshots.
+See `docs/in-house-stock.md`.
 Add in-house stock uses the existing server preview in a review modal before
 explicit confirmation. Modal dismissal preserves the draft and invalidates that
 review; pending saves cannot be dismissed, and uncertain outcomes retain the

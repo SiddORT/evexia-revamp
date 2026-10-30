@@ -7,8 +7,10 @@
  */
 import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
+import type { InventoryReferenceDilutionFactor } from "./inventoryReferenceDilutionFactor";
 import type { InventoryReferenceItemKind } from "./inventoryReferenceItemKind";
 import type { InventoryReferenceOpeningLocation } from "./inventoryReferenceOpeningLocation";
+import type { InventoryReferenceSourceKind } from "./inventoryReferenceSourceKind";
 
 export interface InventoryReference {
   adjustmentId?: string | null;
@@ -17,6 +19,9 @@ export interface InventoryReference {
   available?: string | null;
   batchNo?: string | null;
   comboProductId?: string | null;
+  concentration?: string | null;
+  destinationLotId?: string | null;
+  dilutionFactor?: InventoryReferenceDilutionFactor;
   expiryDate?: Date | null;
   historicalData?: string | null;
   id: string;
@@ -32,9 +37,16 @@ export interface InventoryReference {
   receiptNumber?: string | null;
   recipe?: InventoryRecipeSnapshot | null;
   recordedDate?: Date | null;
+  reserveId?: string | null;
+  reserveOnly?: boolean;
+  resultingConcentration?: string | null;
+  resultingExpiryDate?: Date | null;
+  resultingQuantity?: string | null;
   sellingPrice?: string | null;
   source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
+  sourceKind?: InventoryReferenceSourceKind;
+  sourceMovementId?: string | null;
   unit?: string | null;
   unitRate?: string | null;
 }

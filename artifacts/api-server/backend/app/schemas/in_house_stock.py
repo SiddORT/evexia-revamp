@@ -65,6 +65,8 @@ class ReserveSnapshot(ReserveInput):
 
 
 class ReserveSaved(ReserveSnapshot):
+    availableQuantity: str | None = None
+    locationBalances: list[dict[str, str]] | None = None
     id: uuid.UUID
     actorId: uuid.UUID
     actor: str

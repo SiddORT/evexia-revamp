@@ -13,7 +13,15 @@ const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter
 export const listStock = (params, signal) => request('/stock', { params: clean({ ...params, product_ids: params?.product_ids?.join?.(',') ?? params?.product_ids }), signal });
 export const stockHistory = (id, params, signal) => request(`/stock/${id}/history`, { params: clean(params), signal });
 export const getAdjustment = (id, signal) => request(`/adjustments/${id}`, { signal });
-export const lotOriginLabel = (lot) => lot.source === 'adjustment'
+export const isReserveLine = (lot) => lot?.sourceKind === 'reserve' || lot?.source === 'in_house_reserve' || lot?.reserveOnly === true;
+export const isDilutedLot = (lot) => Boolean(lot?.reserveId) && lot?.sourceKind !== 'reserve' && lot?.source !== 'in_house_reserve' && !lot?.reserveOnly;
+/** Actual batch concentration only; never derived from the current catalogue. */
+export const concentrationLabel = (value) => (value == null || String(value).trim() === '' ? 'Concentration unavailable' : String(value));
+export const DILUTION_FACTORS = [2, 5, 10];
+export const lotOriginLabel = (lot) => isReserveLine(lot)
+  ? `In-house reserve${lot.reserveId ? ` ${lot.reserveId}` : ''} (reserve only, not inventory)`
+  : isDilutedLot(lot) ? `In-house dilution from reserve ${lot.reserveId}`
+  : lot.source === 'adjustment'
   ? `Manual adjustment${lot.adjustmentId ? ` ${lot.adjustmentId}` : ''}`
   : lot.source === 'opening' ? `Opening stock${lot.openingId ? ` ${lot.openingId}` : ''}`
   : lot.receiptNumber || (lot.itemKind === 'combo' ? 'Assembled combo' : 'Receipt unavailable');
@@ -118,6 +126,7 @@ export const LEDGER_TYPES = [
   { value: '', label: 'All transaction types' }, { value: 'opening', label: 'Opening stock' }, { value: 'receipt', label: 'Receipt' },
   { value: 'receipt_correction', label: 'Receipt correction' }, { value: 'transfer', label: 'Transfer' }, { value: 'allocation', label: 'Allocation' },
   { value: 'assembly_consumption', label: 'Assembly consumption' }, { value: 'adjustment', label: 'Manual adjustment' },
+  { value: 'dilution', label: 'In-house dilution' },
 ];
 export const typeLabel = (t) => LEDGER_TYPES.find((o) => o.value === t)?.label || String(t || 'Entry');
 const adjKey = () => `evexia.adjust.pending:${ownerMove()}`;

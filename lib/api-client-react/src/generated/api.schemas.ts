@@ -439,13 +439,33 @@ export interface AssemblyComponent {
   unit: string;
 }
 
+export type MoveLineDilutionFactor =
+  (typeof MoveLineDilutionFactor)[keyof typeof MoveLineDilutionFactor] | null;
+
+export const MoveLineDilutionFactor = {
+  NUMBER_2: 2,
+  NUMBER_5: 5,
+  NUMBER_10: 10,
+} as const;
+
+export type MoveLineSourceKind =
+  (typeof MoveLineSourceKind)[keyof typeof MoveLineSourceKind];
+
+export const MoveLineSourceKind = {
+  inventory: "inventory",
+  reserve: "reserve",
+} as const;
+
 export interface MoveLine {
+  dilute?: boolean | null;
+  dilutionFactor?: MoveLineDilutionFactor;
   lotId: string;
   /**
    * @maxLength 11
    * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
    */
   quantity: string;
+  sourceKind?: MoveLineSourceKind;
 }
 
 export interface AssemblyCreate {
@@ -3433,6 +3453,16 @@ export interface InventoryInitializationPage {
   offset: number;
 }
 
+export type InventoryLotViewDilutionFactor =
+  | (typeof InventoryLotViewDilutionFactor)[keyof typeof InventoryLotViewDilutionFactor]
+  | null;
+
+export const InventoryLotViewDilutionFactor = {
+  NUMBER_2: 2,
+  NUMBER_5: 5,
+  NUMBER_10: 10,
+} as const;
+
 export type InventoryLotViewItemKind =
   (typeof InventoryLotViewItemKind)[keyof typeof InventoryLotViewItemKind];
 
@@ -3442,6 +3472,14 @@ export const InventoryLotViewItemKind = {
 } as const;
 
 export type InventoryLotViewOpeningLocation = { [key: string]: unknown } | null;
+
+export type InventoryLotViewSourceKind =
+  (typeof InventoryLotViewSourceKind)[keyof typeof InventoryLotViewSourceKind];
+
+export const InventoryLotViewSourceKind = {
+  inventory: "inventory",
+  reserve: "reserve",
+} as const;
 
 export interface InventoryRecipeMember {
   allergenId: string;
@@ -3462,6 +3500,9 @@ export interface InventoryLotView {
   assemblyId?: string | null;
   batchNo: string | null;
   comboProductId?: string | null;
+  concentration?: string | null;
+  destinationLotId?: string | null;
+  dilutionFactor?: InventoryLotViewDilutionFactor;
   expiryDate: string | null;
   historicalData?: string | null;
   itemKind?: InventoryLotViewItemKind;
@@ -3482,12 +3523,29 @@ export interface InventoryLotView {
   receivedDate: string | null;
   recipe?: InventoryRecipeSnapshot | null;
   recordedDate?: string | null;
+  reserveId?: string | null;
+  reserveOnly?: boolean;
+  resultingConcentration?: string | null;
+  resultingExpiryDate?: string | null;
+  resultingQuantity?: string | null;
   sellingPrice?: string | null;
   source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
+  sourceKind?: InventoryLotViewSourceKind;
+  sourceMovementId?: string | null;
   unit: string;
   unitRate?: string | null;
 }
+
+export type InventoryReferenceDilutionFactor =
+  | (typeof InventoryReferenceDilutionFactor)[keyof typeof InventoryReferenceDilutionFactor]
+  | null;
+
+export const InventoryReferenceDilutionFactor = {
+  NUMBER_2: 2,
+  NUMBER_5: 5,
+  NUMBER_10: 10,
+} as const;
 
 export type InventoryReferenceItemKind =
   | (typeof InventoryReferenceItemKind)[keyof typeof InventoryReferenceItemKind]
@@ -3502,6 +3560,14 @@ export type InventoryReferenceOpeningLocation = {
   [key: string]: unknown;
 } | null;
 
+export type InventoryReferenceSourceKind =
+  (typeof InventoryReferenceSourceKind)[keyof typeof InventoryReferenceSourceKind];
+
+export const InventoryReferenceSourceKind = {
+  inventory: "inventory",
+  reserve: "reserve",
+} as const;
+
 export interface InventoryReference {
   adjustmentId?: string | null;
   assembledQuantity?: string | null;
@@ -3509,6 +3575,9 @@ export interface InventoryReference {
   available?: string | null;
   batchNo?: string | null;
   comboProductId?: string | null;
+  concentration?: string | null;
+  destinationLotId?: string | null;
+  dilutionFactor?: InventoryReferenceDilutionFactor;
   expiryDate?: string | null;
   historicalData?: string | null;
   id: string;
@@ -3524,9 +3593,16 @@ export interface InventoryReference {
   receiptNumber?: string | null;
   recipe?: InventoryRecipeSnapshot | null;
   recordedDate?: string | null;
+  reserveId?: string | null;
+  reserveOnly?: boolean;
+  resultingConcentration?: string | null;
+  resultingExpiryDate?: string | null;
+  resultingQuantity?: string | null;
   sellingPrice?: string | null;
   source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
+  sourceKind?: InventoryReferenceSourceKind;
+  sourceMovementId?: string | null;
   unit?: string | null;
   unitRate?: string | null;
 }
@@ -6303,6 +6379,16 @@ export interface MoveInput {
   staffId?: string | null;
 }
 
+export type MovementLineViewDilutionFactor =
+  | (typeof MovementLineViewDilutionFactor)[keyof typeof MovementLineViewDilutionFactor]
+  | null;
+
+export const MovementLineViewDilutionFactor = {
+  NUMBER_2: 2,
+  NUMBER_5: 5,
+  NUMBER_10: 10,
+} as const;
+
 export type MovementLineViewItemKind =
   (typeof MovementLineViewItemKind)[keyof typeof MovementLineViewItemKind];
 
@@ -6313,14 +6399,25 @@ export const MovementLineViewItemKind = {
 
 export type MovementLineViewOpeningLocation = { [key: string]: unknown } | null;
 
+export type MovementLineViewSourceKind =
+  (typeof MovementLineViewSourceKind)[keyof typeof MovementLineViewSourceKind];
+
+export const MovementLineViewSourceKind = {
+  inventory: "inventory",
+  reserve: "reserve",
+} as const;
+
 export interface MovementLineView {
   adjustmentId?: string | null;
   assembledQuantity?: string | null;
   assemblyId?: string | null;
   batchNo: string | null;
   comboProductId?: string | null;
+  concentration?: string | null;
   destinationAfter: string;
   destinationBefore: string;
+  destinationLotId?: string | null;
+  dilutionFactor?: MovementLineViewDilutionFactor;
   expiryDate: string | null;
   historicalData?: string | null;
   itemKind?: MovementLineViewItemKind;
@@ -6340,11 +6437,18 @@ export interface MovementLineView {
   receivedDate: string | null;
   recipe?: InventoryRecipeSnapshot | null;
   recordedDate?: string | null;
+  reserveId?: string | null;
+  reserveOnly?: boolean;
+  resultingConcentration?: string | null;
+  resultingExpiryDate?: string | null;
+  resultingQuantity?: string | null;
   sellingPrice?: string | null;
   source?: string | null;
   sourceAfter: string;
   sourceBefore: string;
   sourceComponents?: InventoryComponentProvenance[] | null;
+  sourceKind?: MovementLineViewSourceKind;
+  sourceMovementId?: string | null;
   unit: string;
   unitRate?: string | null;
 }
@@ -9108,12 +9212,15 @@ export interface ReserveInput {
   unit?: string;
 }
 
+export type ReserveSavedLocationBalances = { [key: string]: string }[] | null;
+
 export interface ReserveSaved {
   actor: string;
   actorId: string;
   allergenId: string;
   allergenName: string;
   allergenVersion: number;
+  availableQuantity?: string | null;
   /** @maxLength 100 */
   batch?: string;
   categoryId: string;
@@ -9128,6 +9235,7 @@ export interface ReserveSaved {
   expired: boolean;
   expiryDate: string;
   id: string;
+  locationBalances?: ReserveSavedLocationBalances;
   locationId: string;
   locationName: string;
   locationVersion: number;

@@ -3,7 +3,7 @@ import { useResourceActions } from '../../auth/useMasterActions.js';
 import ComboProvenance from './ComboProvenance.jsx';
 import { X } from 'lucide-react';
 import { containDialogTab } from './dialogKeyboard.js';
-import { getMovement, lotOriginLabel } from '../../services/serverInventory.js';
+import { concentrationLabel, getMovement, lotOriginLabel } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import '../../poActivityDrawer.css';
 import '../../inventoryServer.css';
@@ -61,8 +61,9 @@ export default function MovementDrawer({ id, onClose, returnFocusTo }) {
         </dl>
         <section className="inv-drawer-section"><h3>Items</h3>
           <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Product</th><th scope="col">Batch / receipt</th><th scope="col">Quantity</th><th scope="col">Source before / after</th><th scope="col">Destination before / after</th></tr></thead>
-            <tbody>{m.lines.map((l) => <Fragment key={l.lotId}><tr><td>{l.productName}{l.itemKind === 'combo' && <span className="stock-sub">Assembled combo</span>}</td><td>{l.source === 'opening' ? 'Opening stock' : l.batchNo || 'Batch unavailable'}<span className="stock-sub">{l.source === 'opening' ? `Opening stock${l.openingId ? ` ${l.openingId}` : ''} · rate ${l.unitRate ?? 'unavailable'} · value ${l.openingValue ?? 'unavailable'}${l.openingLocation?.name ? ` · opened at ${l.openingLocation.name}` : ' · opened Unallocated'} · no receipt or expiry recorded` : `${lotOriginLabel(l)} · exp ${l.expiryDate ? date(l.expiryDate) : 'unavailable'}`}</span></td>
-              <td className="inv-mono">{l.quantity}</td><td className="inv-mono">{l.sourceBefore} to {l.sourceAfter}</td><td className="inv-mono">{l.destinationBefore} to {l.destinationAfter}</td></tr>
+            <tbody>{m.lines.map((l) => <Fragment key={l.lotId}><tr><td>{l.productName}{l.itemKind === 'combo' && <span className="stock-sub">Assembled combo</span>}</td><td>{l.source === 'opening' ? 'Opening stock' : l.batchNo || 'Batch unavailable'}<span className="stock-sub">{l.source === 'opening' ? `Opening stock${l.openingId ? ` ${l.openingId}` : ''} · rate ${l.unitRate ?? 'unavailable'} · value ${l.openingValue ?? 'unavailable'}${l.openingLocation?.name ? ` · opened at ${l.openingLocation.name}` : ' · opened Unallocated'} · no receipt or expiry recorded` : `${lotOriginLabel(l)} · exp ${l.expiryDate ? date(l.expiryDate) : 'unavailable'}`}</span>
+                {l.itemKind !== 'combo' && <span className="stock-sub">Concentration {concentrationLabel(l.concentration)}{l.dilutionFactor ? ` to ${concentrationLabel(l.resultingConcentration)} · new expiry ${l.resultingExpiryDate ? date(l.resultingExpiryDate) : 'unavailable'}${l.destinationLotId ? ` · destination lot ${l.destinationLotId}` : ''}` : ''}{l.sourceMovementId ? ` · from movement ${l.sourceMovementId}` : ''}</span>}</td>
+              <td className="inv-mono">{l.quantity} {l.unit}{l.dilutionFactor ? <span className="stock-sub">{l.dilutionFactor}-fold dilution to {l.resultingQuantity ?? 'unavailable'} ml</span> : l.sourceKind === 'reserve' ? <span className="stock-sub">Not diluted</span> : null}</td><td className="inv-mono">{l.sourceBefore} to {l.sourceAfter}</td><td className="inv-mono">{l.destinationBefore} to {l.destinationAfter}</td></tr>
               {l.itemKind === 'combo' && l.source !== 'opening' && <tr><td colSpan={5}><ComboProvenance item={l} /></td></tr>}</Fragment>)}</tbody></table></div>
           <p className="mr-form__hint">Allergens use procurement quantity units; finished products use whole combos. Quantities are not summed across products. Opening value describes the original opening quantity, not the transferred quantity or current valuation.</p>
         </section>

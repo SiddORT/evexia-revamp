@@ -64,8 +64,10 @@ def test_create_history_isolation_dedup_search_and_reconcile(client):
     before.pop("asOf", None)
     after.pop("asOf", None)
     assert after == before
-    assert api.get("/api/v1/admin/inventory/references/lots", headers=headers,
-        params={"source_id": fields["locationId"]}).json()["items"] == []
+    choices = api.get("/api/v1/admin/inventory/references/lots", headers=headers,
+        params={"source_id": fields["locationId"]}).json()["items"]
+    assert len(choices) == 1 and choices[0]["sourceKind"] == "reserve"
+    assert choices[0]["reserveOnly"] and choices[0]["id"] == saved["id"]
     row = db.get(AllergenProduct, uuid.UUID(item["id"]))
     row.name = "Changed catalogue name"
     row.concentration = "Purchased new concentration"
@@ -73,8 +75,11 @@ def test_create_history_isolation_dedup_search_and_reconcile(client):
     db.get(ProductCategory, row.category_id).name = "Changed category"
     db.get(StorageLocation, uuid.UUID(fields["locationId"])).name = "Changed location"
     db.commit()
-    assert api.get(BASE + "/" + saved["id"], headers=headers).json() == saved
-    assert api.get(BASE, headers=headers, params={"query": saved["allergenName"], "limit": 1}).json()["items"] == [saved]
+    detail = api.get(BASE + "/" + saved["id"], headers=headers).json()
+    assert {k: v for k, v in detail.items() if k not in {"availableQuantity", "locationBalances"}} == {
+        k: v for k, v in saved.items() if k not in {"availableQuantity", "locationBalances"}}
+    assert detail["availableQuantity"] == saved["quantity"]
+    assert api.get(BASE, headers=headers, params={"query": saved["allergenName"], "limit": 1}).json()["items"] == [detail]
     assert api.get(BASE, headers=headers, params={"query": "not-found"}).json()["filtered"] == 0
     assert api.get(BASE, headers=headers, params={"offset": 1}).json()["items"] == []
     encrypted = db.get(InHouseStock, uuid.UUID(saved["id"])).payload_ciphertext

@@ -5,12 +5,17 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { MoveLineDilutionFactor } from "./moveLineDilutionFactor";
+import type { MoveLineSourceKind } from "./moveLineSourceKind";
 
 export interface MoveLine {
+  dilute?: boolean | null;
+  dilutionFactor?: MoveLineDilutionFactor;
   lotId: string;
   /**
    * @maxLength 11
    * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
    */
   quantity: string;
+  sourceKind?: MoveLineSourceKind;
 }

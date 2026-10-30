@@ -64,3 +64,12 @@
   .move-stocks-page .ms-qty { grid-column: 1 / -1; }
   .move-stocks-page .ms-footer .ms-head-actions { width: 100%; }
 }
+
+.ms-dilute { border: 0; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.35rem; min-width: 0; }
+.ms-dilute legend { font-size: 0.85em; font-weight: 600; padding: 0; }
+.ms-dilute__choices { display: flex; gap: 1rem; }
+.ms-dilute__choices label { display: inline-flex; align-items: center; gap: 0.35rem; }
+.ms-review-dialog { width: min(1040px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; }
+.ms-review-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 0 0 1rem; }
+.ms-review-meta dt { font-size: 0.8em; opacity: 0.75; }
+.ms-review-meta dd { margin: 0; font-weight: 600; }

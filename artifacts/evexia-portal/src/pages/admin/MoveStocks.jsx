@@ -38,7 +38,7 @@ export default function MoveStocks() {
   ];
 
   return <AdminLayout title="Move Stocks"><div className="move-stocks-page">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks</p><h1>Move stocks</h1><p className="admin-page-head__description">Append-only transfers of receipt lots between storage locations.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks</p><h1>Move stocks</h1><p className="admin-page-head__description">Reviewed, append-only stock transfers and authorized in-house reserve movements.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button" disabled={!can.create} onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-move"><Plus size={16} /> Move stock</button></div></div>
     <section className="admin-panel" aria-label="Stock movement list">
       <div className="admin-allergen-toolbar">

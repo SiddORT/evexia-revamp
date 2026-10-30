@@ -365,7 +365,12 @@ def stock(db, actor, params):
                 item["lots"].append(dict(**meta, lotId=str(lot.id), locationId=lid,
                                          locationName=locations[lid], quantity=q(balance.quantity)))
                 item["quantity"] = q(Decimal(item["quantity"]) + balance.quantity)
-                item["state"] = "adjustment_backed" if lot.adjustment_id else ("opening_backed" if lot.opening_id else ("assembled" if lot.combo_id else "receipt_backed"))
+                item["state"] = "in_house_dilution" if lot.reserve_movement_id else ("adjustment_backed" if lot.adjustment_id else ("opening_backed" if lot.opening_id else ("assembled" if lot.combo_id else "receipt_backed")))
+        # Catalogue concentration is not a label for mixed-concentration batches.
+        for item in result.values():
+            if any(l.get("source") == "in_house_dilution" for l in item["lots"]):
+                item["concentration"] = "Batch-specific — see lots"
+                item["unit"] = "Batch-specific — see lots"
         for item in result.values():
             item["unallocatedQuantity"] = q(sum((Decimal(l["quantity"]) for l in item["lots"] if l["locationId"] is None), Decimal(0)))
         rows = list(result.values())
@@ -431,7 +436,7 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
         capability = ("stock_movement", "create" if kind in ("staff", "lots") else None)
     else:
         raise PRError("Unsupported reference purpose.", 403, "access_denied")
-    def work(_, crypto):
+    def work(current, crypto):
         if purpose == "opening_stock":
             # Use the shared master's predicates, and page in SQL before the
             # inventory-wide bounded loader can hide a large master directory.
@@ -449,6 +454,8 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
             choices = {}
             for row in rows:
                 movement = crypto.open(row.id, "movement", row.payload_ciphertext)
+                if not reserve_visible(current, movement):
+                    continue
                 if kind == "movement-allergens":
                     for key, name in movement_allergens(movement).items():
                         choices.setdefault(key, name)
@@ -479,6 +486,10 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
                 provenance = ("Adjustment " + str(lot.adjustment_id)) if lot.adjustment_id else (("Opening stock " + meta["openingId"]) if lot.opening_id else (meta.get("receiptNumber") or "Assembled combo"))
                 data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta.get('batchNo') or 'Batch unavailable'} · {provenance}",
                                  **meta, available=q(balance.quantity)))
+            if source_id and current.user.is_protected_system_admin and current.role == "super_admin":
+                from app.services import reserve_movements
+                reserve_movements.acquire(db, current)
+                data.extend(reserve_movements.choices(db, crypto, source_id))
         data = sorted([r for r in data if query.strip().casefold() in r["name"].casefold()], key=lambda r: (r["name"], r["id"]))
         return dict(items=data[offset:offset + limit], filtered=len(data), offset=offset, limit=limit)
     return transaction(db, actor, work, capability=capability)
@@ -493,8 +504,11 @@ def unallocated_snapshot():
     return dict(id=None, name="Unallocated", address="", pincode="", countryCode="", state="", city="", version=0)
 
 
-def review_move(db, crypto, body):
+def review_move(db, crypto, body, actor=None):
     require_complete(db)
+    if any(line.sourceKind == "reserve" for line in body.lines):
+        from app.services import reserve_movements
+        reserve_movements.acquire(db, actor)
     locations = {}
     if body.sourceId is None:
         locations[None] = unallocated_snapshot()
@@ -516,6 +530,9 @@ def review_move(db, crypto, body):
         if line.lotId in seen or quantity(line.quantity) <= 0:
             raise PRError("Each lot must occur once with a positive quantity.", 422, "inventory_line")
         seen.add(line.lotId)
+        if line.sourceKind == "reserve":
+            lines.append(reserve_movements.review_line(db, crypto, body, line))
+            continue
         lot = db.get(Lot, line.lotId)
         balance = balance_at(db, line.lotId, body.sourceId)
         if not lot or not balance or balance.quantity < Decimal(line.quantity):
@@ -527,18 +544,23 @@ def review_move(db, crypto, body):
             raise PRError("Assembled products move only as positive whole combos.", 422, "inventory_combo_quantity")
         destination = balance_at(db, lot.id, body.destinationId)
         src, dst, amount = balance.quantity, destination.quantity if destination else Decimal(0), quantity(line.quantity)
-        lines.append(dict(**crypto.open(lot.id, "lot", lot.payload_ciphertext), lotId=str(lot.id),
+        metadata = crypto.open(lot.id, "lot", lot.payload_ciphertext)
+        # A later unchanged transfer is not another dilution.
+        metadata.update(sourceKind="inventory", dilutionFactor=None,
+            resultingQuantity=q(amount), resultingConcentration=metadata.get("concentration"),
+            resultingExpiryDate=metadata.get("expiryDate"))
+        lines.append(dict(**metadata, lotId=str(lot.id),
             quantity=q(amount), sourceBefore=q(src), sourceAfter=q(src - amount),
             destinationBefore=q(dst), destinationAfter=q(dst + amount), productVersion=product.version))
     data = dict(source=locations[body.sourceId], destination=locations[body.destinationId],
                 date=body.date.isoformat(), deliveryMode=body.deliveryMode,
                 staffId=str(body.staffId) if body.staffId else None, deliveredBy=name,
                 staffVersion=staff_version, lines=lines)
-    return dict(movement=data, reviewToken=crypto.digests(data)[crypto.active])
+    return dict(movement=data, reviewToken=crypto.digests([str(actor.user.id), data])[crypto.active])
 
 
 def preview(db, actor, body):
-    return transaction(db, actor, lambda _, c: review_move(db, c, body), capability=("stock_movement", "create"))
+    return transaction(db, actor, lambda current, c: review_move(db, c, body, current), capability=("stock_movement", "create"))
 
 
 def create(db, actor, body):
@@ -549,10 +571,13 @@ def create(db, actor, body):
             if old.actor_id != current.user.id or old.digest not in hashes.values():
                 raise PRError("Request identity is closed or conflicts. Reconcile before a new save.", 409, "inventory_retry")
             return public_movement(current, crypto.open(old.key, "retry", old.payload_ciphertext))
-        review = review_move(db, crypto, body)
+        review = review_move(db, crypto, body, current)
         if review["reviewToken"] != body.reviewToken:
             raise PRError("Stock or reference choices changed. Review your preserved draft again.", 409, "inventory_review_stale")
         now, mid = utcnow(), uuid.uuid4()
+        for line in review["movement"]["lines"]:
+            if line.get("sourceKind") == "reserve" and line.get("dilutionFactor"):
+                line["destinationLotId"] = str(uuid.uuid5(mid, line["reserveId"]))
         event = AuditEvent(actor_id=current.user.id, session_id=current.session_id,
             action="inventory_allocated" if body.sourceId is None else "inventory_moved",
             resource_type="inventory_movement", resource_id=mid,
@@ -570,6 +595,10 @@ def create(db, actor, body):
                         payload_ciphertext=crypto.seal(mid, "movement", data)))
         db.flush()
         for line in review["movement"]["lines"]:
+            if line.get("sourceKind") == "reserve":
+                from app.services import reserve_movements
+                reserve_movements.commit_line(db, crypto, current, body, line, mid)
+                continue
             lot = db.get(Lot, uuid.UUID(line["lotId"]))
             post(db, lot, body.sourceId, -Decimal(line["quantity"]), f"move:{mid}", current, mid)
             post(db, lot, body.destinationId, Decimal(line["quantity"]), f"move:{mid}", current, mid)
@@ -586,6 +615,11 @@ def public_movement(actor, data):
     return {**data,
             "activity": data["activity"] if allowed(actor, "stock_movement", "activity") else [],
             "summary": data["summary"] if allowed(actor, "stock_movement", "analytics") else None}
+
+
+def reserve_visible(actor, data):
+    return (actor.user.is_protected_system_admin and actor.role == "super_admin") or not any(
+        line.get("sourceKind") == "reserve" for line in data["lines"])
 
 
 def reconcile(db, actor, key):
@@ -626,6 +660,7 @@ def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=N
             statement = statement.where(Movement.id == record_id)
         rows = bounded(db, statement.order_by(Movement.created_at.desc(), Movement.id))
         data = [crypto.open(r.id, "movement", r.payload_ciphertext) for r in rows]
+        data = [r for r in data if reserve_visible(current, r)]
         if section is None:
             for item in data:
                 if not allowed(current, "stock_movement", "activity"):
@@ -644,7 +679,8 @@ def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=N
             and query.strip().casefold() in " ".join([
             r["source"]["name"], r["destination"]["name"], r["deliveredBy"],
             *[l["productName"] for l in r["lines"]]]).casefold()]
-        return dict(items=data[offset:offset + limit], filtered=len(data), total=len(rows), limit=limit, offset=offset,
+        return dict(items=data[offset:offset + limit], filtered=len(data), total=sum(
+            reserve_visible(current, crypto.open(r.id, "movement", r.payload_ciphertext)) for r in rows), limit=limit, offset=offset,
                     summary=dict(movements=len(data), lots=sum(len(r["lines"]) for r in data),
                                  scope="All matching committed movements; no mixed-product quantity total.")
                     if allowed(current, "stock_movement", "analytics") else None)

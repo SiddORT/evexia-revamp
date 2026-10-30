@@ -6,8 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
+import type { InventoryLotViewDilutionFactor } from "./inventoryLotViewDilutionFactor";
 import type { InventoryLotViewItemKind } from "./inventoryLotViewItemKind";
 import type { InventoryLotViewOpeningLocation } from "./inventoryLotViewOpeningLocation";
+import type { InventoryLotViewSourceKind } from "./inventoryLotViewSourceKind";
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
 
 export interface InventoryLotView {
@@ -16,6 +18,9 @@ export interface InventoryLotView {
   assemblyId?: string | null;
   batchNo: string | null;
   comboProductId?: string | null;
+  concentration?: string | null;
+  destinationLotId?: string | null;
+  dilutionFactor?: InventoryLotViewDilutionFactor;
   expiryDate: Date | null;
   historicalData?: string | null;
   itemKind?: InventoryLotViewItemKind;
@@ -36,9 +41,16 @@ export interface InventoryLotView {
   receivedDate: Date | null;
   recipe?: InventoryRecipeSnapshot | null;
   recordedDate?: Date | null;
+  reserveId?: string | null;
+  reserveOnly?: boolean;
+  resultingConcentration?: string | null;
+  resultingExpiryDate?: Date | null;
+  resultingQuantity?: string | null;
   sellingPrice?: string | null;
   source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
+  sourceKind?: InventoryLotViewSourceKind;
+  sourceMovementId?: string | null;
   unit: string;
   unitRate?: string | null;
 }

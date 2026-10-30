@@ -19,7 +19,7 @@ from app.services.inventory_adjustments import product, identity
 from app.services.purchase_received_crypto import ReceiptCrypto
 from app.core.config import get_settings
 
-TYPES = {"opening", "receipt", "receipt_correction", "transfer", "allocation",
+TYPES = {"opening", "receipt", "receipt_correction", "transfer", "allocation", "dilution",
          "assembly_consumption", "adjustment"}
 
 
@@ -119,7 +119,8 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
         for lot in lots:
             if lot.accepted <= 0:
                 continue
-            origin = (f"adjustment:{lot.adjustment_id}" if lot.adjustment_id else
+            origin = (f"dilution:{lot.reserve_movement_id}" if lot.reserve_movement_id else
+                      f"adjustment:{lot.adjustment_id}" if lot.adjustment_id else
                       f"opening:{lot.opening_id}" if lot.opening_id else None)
             credits = [p for p in raw if p.lot_id == lot.id and
                        (p.source_key == origin if origin else p.source_key.startswith(f"receipt:{lot.receipt_id}:"))]
@@ -137,7 +138,8 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
         groups = defaultdict(list)
         for row in raw:
             # Transfers are one atomic event per allergen (all its lots/legs).
-            groups[f"move:{row.movement_id}" if row.movement_id else str(row.id)].append(row)
+            groups[(f"dilution:{row.movement_id}" if row.source_key.startswith("dilution:") else
+                    f"move:{row.movement_id}") if row.movement_id else str(row.id)].append(row)
         events = []
         for gid, rows in groups.items():
             first = rows[0]
@@ -146,7 +148,22 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
             at, business, actor_name, reason = first.created_at, None, "Unavailable (legacy actor snapshot)", "Unavailable (not retained)"
             kind, sid, available = None, None, False
             reference = first.source_key
-            if first.movement_id:
+            if first.source_key.startswith("dilution:"):
+                movement = db.get(inv.Movement, first.movement_id)
+                if not movement:
+                    fail("A dilution movement source is missing.")
+                data = crypto.open(movement.id, "movement", movement.payload_ciphertext)
+                for row in rows:
+                    converted = by_id[row.lot_id]
+                    line = next((l for l in data["lines"] if l.get("destinationLotId") == str(row.lot_id)), None)
+                    if (converted.reserve_movement_id != movement.id or not line or
+                            row.location_id != movement.destination_id or row.delta != converted.accepted or
+                            row.delta != Decimal(line["resultingQuantity"]) or row.before != 0):
+                        fail("A dilution has inconsistent conversion evidence.")
+                tx, kind, sid, available = "dilution", "movement", str(movement.id), True
+                at, business, actor_name = movement.created_at, data.get("date"), data.get("actor", actor_name)
+                reference, reason = f"In-house dilution {str(movement.id)[:8]}", "Explicit reviewed reserve conversion; source reserve is a separate balance."
+            elif first.movement_id:
                 movement = db.get(inv.Movement, first.movement_id)
                 if not movement:
                     fail("A transfer source is missing.")

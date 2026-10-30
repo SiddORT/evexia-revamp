@@ -9,6 +9,20 @@ class MoveLine(BaseModel):
     model_config = ConfigDict(extra="forbid")
     lotId: uuid.UUID
     quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    sourceKind: Literal["inventory", "reserve"] = "inventory"
+    dilute: bool | None = None
+    dilutionFactor: Literal[2, 5, 10] | None = None
+
+    @model_validator(mode="after")
+    def dilution_choice(self):
+        if self.sourceKind == "reserve":
+            if self.dilute is None:
+                raise ValueError("Choose Yes or No for dilution of each reserve.")
+            if self.dilute != (self.dilutionFactor is not None):
+                raise ValueError("Choose a factor only when diluting.")
+        elif self.dilute is not None or self.dilutionFactor is not None:
+            raise ValueError("Dilution applies only to protected in-house reserves.")
+        return self
 
 
 class MoveInput(BaseModel):
@@ -84,6 +98,16 @@ class InventoryRecipeSnapshot(BaseModel):
 
 
 class InventoryProvenance(BaseModel):
+    sourceKind: Literal["inventory", "reserve"] = "inventory"
+    reserveId: uuid.UUID | None = None
+    reserveOnly: bool = False
+    concentration: str | None = None
+    resultingConcentration: str | None = None
+    resultingQuantity: str | None = None
+    resultingExpiryDate: date | None = None
+    dilutionFactor: Literal[2, 5, 10] | None = None
+    destinationLotId: uuid.UUID | None = None
+    sourceMovementId: uuid.UUID | None = None
     source: str | None = None
     adjustmentId: uuid.UUID | None = None
     openingId: uuid.UUID | None = None

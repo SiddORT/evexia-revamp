@@ -8467,6 +8467,45 @@
             ],
             "title": "Comboproductid"
           },
+          "concentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concentration"
+          },
+          "destinationLotId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destinationlotid"
+          },
+          "dilutionFactor": {
+            "anyOf": [
+              {
+                "enum": [
+                  2,
+                  5,
+                  10
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilutionfactor"
+          },
           "expiryDate": {
             "anyOf": [
               {
@@ -8652,6 +8691,57 @@
             ],
             "title": "Recordeddate"
           },
+          "reserveId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserveid"
+          },
+          "reserveOnly": {
+            "default": false,
+            "title": "Reserveonly",
+            "type": "boolean"
+          },
+          "resultingConcentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingconcentration"
+          },
+          "resultingExpiryDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingexpirydate"
+          },
+          "resultingQuantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingquantity"
+          },
           "sellingPrice": {
             "anyOf": [
               {
@@ -8687,6 +8777,27 @@
               }
             ],
             "title": "Sourcecomponents"
+          },
+          "sourceKind": {
+            "default": "inventory",
+            "enum": [
+              "inventory",
+              "reserve"
+            ],
+            "title": "Sourcekind",
+            "type": "string"
+          },
+          "sourceMovementId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcemovementid"
           },
           "unit": {
             "title": "Unit",
@@ -8849,6 +8960,45 @@
             ],
             "title": "Comboproductid"
           },
+          "concentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concentration"
+          },
+          "destinationLotId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destinationlotid"
+          },
+          "dilutionFactor": {
+            "anyOf": [
+              {
+                "enum": [
+                  2,
+                  5,
+                  10
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilutionfactor"
+          },
           "expiryDate": {
             "anyOf": [
               {
@@ -9010,6 +9160,57 @@
             ],
             "title": "Recordeddate"
           },
+          "reserveId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserveid"
+          },
+          "reserveOnly": {
+            "default": false,
+            "title": "Reserveonly",
+            "type": "boolean"
+          },
+          "resultingConcentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingconcentration"
+          },
+          "resultingExpiryDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingexpirydate"
+          },
+          "resultingQuantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingquantity"
+          },
           "sellingPrice": {
             "anyOf": [
               {
@@ -9045,6 +9246,27 @@
               }
             ],
             "title": "Sourcecomponents"
+          },
+          "sourceKind": {
+            "default": "inventory",
+            "enum": [
+              "inventory",
+              "reserve"
+            ],
+            "title": "Sourcekind",
+            "type": "string"
+          },
+          "sourceMovementId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcemovementid"
           },
           "unit": {
             "anyOf": [
@@ -15524,6 +15746,33 @@
       "MoveLine": {
         "additionalProperties": false,
         "properties": {
+          "dilute": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilute"
+          },
+          "dilutionFactor": {
+            "anyOf": [
+              {
+                "enum": [
+                  2,
+                  5,
+                  10
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilutionfactor"
+          },
           "lotId": {
             "format": "uuid",
             "title": "Lotid",
@@ -15533,6 +15782,15 @@
             "maxLength": 11,
             "pattern": "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
             "title": "Quantity",
+            "type": "string"
+          },
+          "sourceKind": {
+            "default": "inventory",
+            "enum": [
+              "inventory",
+              "reserve"
+            ],
+            "title": "Sourcekind",
             "type": "string"
           }
         },
@@ -15639,6 +15897,17 @@
             ],
             "title": "Comboproductid"
           },
+          "concentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concentration"
+          },
           "destinationAfter": {
             "title": "Destinationafter",
             "type": "string"
@@ -15646,6 +15915,34 @@
           "destinationBefore": {
             "title": "Destinationbefore",
             "type": "string"
+          },
+          "destinationLotId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destinationlotid"
+          },
+          "dilutionFactor": {
+            "anyOf": [
+              {
+                "enum": [
+                  2,
+                  5,
+                  10
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilutionfactor"
           },
           "expiryDate": {
             "anyOf": [
@@ -15820,6 +16117,57 @@
             ],
             "title": "Recordeddate"
           },
+          "reserveId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserveid"
+          },
+          "reserveOnly": {
+            "default": false,
+            "title": "Reserveonly",
+            "type": "boolean"
+          },
+          "resultingConcentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingconcentration"
+          },
+          "resultingExpiryDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingexpirydate"
+          },
+          "resultingQuantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultingquantity"
+          },
           "sellingPrice": {
             "anyOf": [
               {
@@ -15863,6 +16211,27 @@
               }
             ],
             "title": "Sourcecomponents"
+          },
+          "sourceKind": {
+            "default": "inventory",
+            "enum": [
+              "inventory",
+              "reserve"
+            ],
+            "title": "Sourcekind",
+            "type": "string"
+          },
+          "sourceMovementId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcemovementid"
           },
           "unit": {
             "title": "Unit",
@@ -23616,6 +23985,17 @@
             "title": "Allergenversion",
             "type": "integer"
           },
+          "availableQuantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availablequantity"
+          },
           "batch": {
             "default": "",
             "maxLength": 100,
@@ -23658,6 +24038,23 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "locationBalances": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locationbalances"
           },
           "locationId": {
             "format": "uuid",

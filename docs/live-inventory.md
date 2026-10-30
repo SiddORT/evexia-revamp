@@ -1,8 +1,9 @@
 # Separate in-house concentrate reserve
 
 Inventory > In-house Stock records independently labelled manufactured allergen
-concentrate, not usable stock. These protected server records never create lots,
-postings, balances or ordinary inventory sources. Dilution/release is deferred.
+concentrate, not usable stock. Entry creation never creates inventory. Protected
+Super Admin Move Stocks now supports explicit reviewed 2-, 5- and 10-fold
+dilution into distinct inventory lots; undiluted transfers stay reserve-only.
 See [In-house stock](in-house-stock.md) for its boundary and retry contract.
 
 # Live Stock Inventory — merge handoff

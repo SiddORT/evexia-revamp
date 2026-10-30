@@ -79,8 +79,8 @@ function InHouseStockListInner() {
   const columns = [
     { key: 'sr', label: 'Sr No', render: (_r, i) => i + 1 },
     { key: 'allergen', label: 'Allergen', render: (r) => <><strong className="admin-table__name">{r.allergenName}</strong><span className="stock-sub">{r.categoryName || 'Uncategorised'}</span></> },
-    { key: 'conc', label: 'Concentration', render: (r) => r.concentration },
-    { key: 'qty', label: 'Quantity (ml)', render: (r) => <span className="inv-mono">{r.quantity} {r.unit}</span> },
+    { key: 'conc', label: 'Concentration', render: (r) => r.concentration || 'Unavailable' },
+    { key: 'qty', label: 'Quantity (ml)', render: (r) => <><span className="inv-mono">{r.quantity} {r.unit}</span><span className="stock-sub">Original recorded quantity</span>{r.availableQuantity != null && <span className="stock-sub inv-mono" data-testid={`text-in-house-available-${r.id}`}>Available {r.availableQuantity} {r.unit || 'ml'}{r.locationBalances?.length ? ` · ${r.locationBalances.map((b) => `${b.locationName}: ${b.quantity}`).join(', ')}` : ''}</span>}</> },
     { key: 'exp', label: 'Expiry', render: (r) => <>{date(r.expiryDate)}<span className="stock-sub" data-testid={`status-in-house-expiry-${r.id}`}>{r.expired ? 'Expired' : 'In date'}</span></> },
     { key: 'loc', label: 'Location', render: (r) => <>{r.locationName}{r.batch && <span className="stock-sub">Batch {r.batch}</span>}</> },
     { key: 'rec', label: 'Recorded', render: (r) => <>{timestamp(r.createdAt)}<span className="stock-sub">{r.actor}</span></> },

@@ -19,6 +19,7 @@ class InventoryLot(Base):
     assembly_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("product_assemblies.id"), unique=True)
     opening_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("opening_stock.id"), unique=True)
     adjustment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_adjustments.id"), unique=True)
+    reserve_movement_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_movements.id"), index=True)
     origin_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
     accepted: Mapped[Decimal] = mapped_column(Numeric())
     payload_ciphertext: Mapped[str] = mapped_column(Text)

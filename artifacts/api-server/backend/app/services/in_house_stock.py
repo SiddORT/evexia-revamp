@@ -1,4 +1,4 @@
-"""Append-only concentrate reserves. No lot, posting, balance or order writes."""
+"""Append-only concentrate entry snapshots; movements use separate postings."""
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import select, text, func, or_
@@ -13,7 +13,7 @@ from app.services.purchase_received import transaction as protected_transaction
 from app.services.purchase_received_crypto import PRError
 from app.services.zones import label
 
-# Separate serialization namespace; this reserve never takes the stock ledger lock.
+# Entry/read serialization; mixed movements take inventory then this lock.
 LOCK = 145579
 INPUT_FIELDS = ("allergenId", "concentration", "quantity", "unit", "expiryDate", "locationId", "batch", "notes")
 
@@ -128,7 +128,11 @@ def listing(db, actor, query="", offset=0, limit=25, allergen_id=None,
     def work(_, crypto):
         # Explicit finite encrypted scan; never return a misleading partial result.
         rows = bounded(db, select(Reserve).order_by(Reserve.created_at.desc(), Reserve.id))
-        data = [expired(crypto.open(r.id, "in_house_reserve", r.payload_ciphertext)) for r in rows]
+        from app.services.reserve_movements import availability
+        data = []
+        for row in rows:
+            record = expired(crypto.open(row.id, "in_house_reserve", row.payload_ciphertext))
+            data.append({**record, **availability(db, record)})
         term = query.strip().casefold()
         def matches_filters(record):
             day = record["expiryDate"] if date_field == "expiry" else record["createdAt"][:10]
@@ -149,5 +153,7 @@ def detail(db, actor, record_id):
         row = db.get(Reserve, record_id)
         if not row:
             raise PRError("Concentrate reserve not found.", 404, "reserve_not_found")
-        return expired(crypto.open(row.id, "in_house_reserve", row.payload_ciphertext))
+        from app.services.reserve_movements import availability
+        record = expired(crypto.open(row.id, "in_house_reserve", row.payload_ciphertext))
+        return {**record, **availability(db, record)}
     return transaction(db, actor, work)

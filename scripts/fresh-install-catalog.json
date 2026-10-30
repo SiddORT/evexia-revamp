@@ -1,4 +1,28 @@
 {
+  "0078_reserve_movements": {
+    "sha256": "84ecdc049f94f4cf38f7c88b6500c0feb222b7b4fc271b5fa973358d4742563c",
+    "tables": [
+      "account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products",
+      "audit_events", "auth_sessions", "combo_product_members", "combo_product_revisions", "combo_products",
+      "communication_channels", "communication_configurations", "courier_partners", "custom_roles",
+      "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants",
+      "download_logs", "email_attempts", "email_templates", "files", "headquarter_areas", "headquarters",
+      "immunotherapy_attachments", "immunotherapy_items", "immunotherapy_orders", "immunotherapy_requests",
+      "in_house_postings", "in_house_stock", "in_house_stock_requests", "inventory_adjustment_requests",
+      "inventory_adjustments", "inventory_balances", "inventory_lots", "inventory_movements", "inventory_postings",
+      "inventory_receipt_states", "inventory_requests", "kits_attachments", "kits_orders", "kits_requests",
+      "language_changes", "languages", "login_attempts", "lupin_attachments", "lupin_order_patients",
+      "lupin_orders", "lupin_requests", "mr_directory", "mr_profiles", "mr_zone_assignments",
+      "opening_balance_import_reviews", "opening_balances", "opening_stock", "opening_stock_requests",
+      "patient_directory", "patients", "pr_batch_allocations", "pr_batch_counters", "pr_batch_settings",
+      "procurement_documents", "product_assemblies", "product_categories", "product_requests",
+      "purchase_order_audit", "purchase_order_lines", "purchase_order_requests", "purchase_orders",
+      "purchase_receipt_history", "purchase_receipt_requests", "purchase_receipt_sources", "purchase_receipts",
+      "refresh_sessions", "role_hostnames", "sales_targets", "settlement_batches", "settlement_entries",
+      "settlement_rejections", "spt_order_patients", "spt_orders", "spt_patients", "spt_requests",
+      "staff_login_identifiers", "staff_profiles", "storage_locations", "users", "vendors", "zones"
+    ]
+  },
   "0076_in_house_stock": {
     "sha256": "7c0d00a1ca5bdb90a88fc19f4b9f84ae74223c08ec3eb314c0ec6a676f920768",
     "tables": [

@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "revision": "0078_reserve_movements",
+  "postgresql": "17",
+  "catalog_sha256": "84ecdc049f94f4cf38f7c88b6500c0feb222b7b4fc271b5fa973358d4742563c",
+  "command": "EVEXIA_RESERVE_CATALOG=$PWD/generated-artifacts/catalog-reserve-movements/observation.json sh scripts/test-reserve-movements.sh",
+  "scope": "Catalog observed during focused new-feature movement create/read checks using a private synthetic PostgreSQL fixture. The final focused suite separately passed all 18 arithmetic, reserve transfer, Staff authorization, retry recovery, stale review, concurrency and rollback checks. This is catalog evidence, not broad release approval, production initialization, recovery evidence or authorization to modify an existing database.",
+  "evidence_reference": "generated-artifacts/catalog-reserve-movements/observation.json"
+}
