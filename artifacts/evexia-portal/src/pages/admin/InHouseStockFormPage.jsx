@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
+import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
 import InHousePendingBanner from '../../components/admin/InHousePendingBanner.jsx';
 import InHouseStockDialog, { InHouseFacts } from '../../components/admin/InHouseStockDialog.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
@@ -16,6 +17,7 @@ import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
 import '../../openingStock.css';
+import '../../allergen.css';
 
 const BASE = '/admin/inventory/in-house-stock';
 const BLANK = { allergen: null, concentration: '', quantity: '', expiryDate: '', location: null, batch: '', notes: '' };
@@ -129,11 +131,11 @@ function InHouseStockForm() {
             <ReferenceSelect id="ih-allergen" label="Allergen" kind="in-house-allergens" fetchPage={listAllergenReferences} value={draft.allergen?.value || ''} selected={draft.allergen} placeholder="Select active allergen" invalid={Boolean(errors.allergen)} describedBy={desc('allergen')} showResultHint={false}
               onChange={(_v, o) => set('allergen', o ? { value: o.value, label: o.label } : null)} />{hint('allergen', 'Active allergens only; category shown in brackets.')}{err('allergen')}</div>
           <div className="ms-field"><label htmlFor="ih-concentration">Concentration <span className="mr-form__required">*</span></label>
-            <select id="ih-concentration" className="mr-form__control" value={draft.concentration} onChange={(e) => set('concentration', e.target.value)} required
-              aria-invalid={Boolean(errors.concentration)} aria-describedby={desc('concentration')} data-testid="select-in-house-concentration">
-              <option value="">Select concentration</option>
-              {ALLERGEN_CONCENTRATIONS.map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>{hint('concentration', 'Select the concentration held in stock.')}{err('concentration')}</div>
+            <AllergenSearchableSelect id="ih-concentration" label="Concentration" value={draft.concentration} disabled={locked} placeholder="Select concentration"
+              invalid={Boolean(errors.concentration)} describedBy={desc('concentration')} testId="select-in-house-concentration"
+              options={ALLERGEN_CONCENTRATIONS.map((value) => ({ value, label: value }))}
+              onChange={(value) => set('concentration', value)} />
+            {hint('concentration', 'Select the concentration held in stock.')}{err('concentration')}</div>
           {text('quantity', 'Quantity', 12, { required: true, inputMode: 'decimal', hint: 'Positive, up to 1000000, max 3 decimals.' })}
           <div className="ms-field"><label htmlFor="ih-expiryDate">Expiry date <span className="mr-form__required">*</span></label>
             <input id="ih-expiryDate" type="date" className="mr-form__control" value={draft.expiryDate} onChange={(e) => set('expiryDate', e.target.value)} required aria-invalid={Boolean(errors.expiryDate)} aria-describedby={desc('expiryDate')} data-testid="input-in-house-expiryDate" />
