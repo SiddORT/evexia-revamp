@@ -67,6 +67,7 @@ export default function AdminLayout({ title, children }) {
   const [mastersOpen, setMastersOpen] = useState(isMastersPath(location));
   const [inventoryOpen, setInventoryOpen] = useState(location.startsWith('/admin/inventory'));
   const [ordersOpen, setOrdersOpen] = useState(isOrdersPath(location));
+  const [accountsOpen, setAccountsOpen] = useState(location.startsWith('/admin/accounts/'));
   const [userManagementOpen, setUserManagementOpen] = useState(isUserManagementPath(location));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [compact, setCompact] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
@@ -115,6 +116,7 @@ export default function AdminLayout({ title, children }) {
   const showUserSubnav = showUserManagement && !isCollapsed && (searching || userManagementOpen);
   const showInventorySubnav = showInventory && !isCollapsed && (searching || inventoryOpen);
   const showOrdersSubnav = showOrders && !isCollapsed && (searching || ordersOpen);
+  const showAccountsSubnav = showAccounts && !isCollapsed && (searching || accountsOpen);
 
   function clearSearch() {
     setSearch('');
@@ -170,6 +172,7 @@ export default function AdminLayout({ title, children }) {
     if (isMastersPath(location)) setMastersOpen(true);
     if (location.startsWith('/admin/inventory')) setInventoryOpen(true);
     if (isOrdersPath(location)) setOrdersOpen(true);
+    if (location.startsWith('/admin/accounts/')) setAccountsOpen(true);
     if (isUserManagementPath(location)) setUserManagementOpen(true);
   }, [location]);
 
@@ -279,8 +282,12 @@ export default function AdminLayout({ title, children }) {
             })}
           </div>
           {showShipments && <Link href="/admin/shipments" className={`admin-nav__item${location === '/admin/shipments' ? ' admin-nav__item--active' : ''}`} aria-label="Shipments" title={isCollapsed ? 'Shipments' : undefined} aria-current={location === '/admin/shipments' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-shipments"><Truck size={17} aria-hidden="true" /><span className="admin-nav__label">Shipments</span></Link>}
-          {showAccounts && <div className="admin-nav__group-accounts"><p className="admin-nav__label admin-nav__section-label" aria-hidden="true">Accounts</p>
-            <Link href="/admin/accounts/settlements" className={`admin-nav__item${location === '/admin/accounts/settlements' ? ' admin-nav__item--active' : ''}`} aria-label="Accounts: Settlements" title={isCollapsed ? 'Settlements' : undefined} aria-current={location === '/admin/accounts/settlements' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-accounts-settlements"><Wallet size={17} aria-hidden="true" /><span className="admin-nav__label">Settlements</span></Link></div>}
+          {showAccounts && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/accounts/') ? ' admin-nav__item--active' : ''}`} aria-label="Accounts" title={isCollapsed ? 'Expand Accounts' : undefined} aria-expanded={showAccountsSubnav} aria-controls="admin-accounts-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setAccountsOpen(true); } else setAccountsOpen((open) => !open); }} data-testid="button-toggle-accounts">
+            <Wallet size={17} aria-hidden="true" /><span className="admin-nav__label">Accounts</span><ChevronDown size={15} className={`admin-nav__chevron${showAccountsSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
+          </button>}
+          <div id="admin-accounts-subnav" className="admin-nav__sub" hidden={!showAccountsSubnav}>
+            {showAccounts && <Link href="/admin/accounts/settlements" className={`admin-nav__item${location === '/admin/accounts/settlements' ? ' admin-nav__item--active' : ''}`} aria-label="Accounts: Settlements" aria-current={location === '/admin/accounts/settlements' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-accounts-settlements"><Wallet size={16} aria-hidden="true" /><span className="admin-nav__label">Settlements</span></Link>}
+          </div>
           {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${isUserManagementPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
