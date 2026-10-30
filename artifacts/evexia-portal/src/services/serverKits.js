@@ -18,6 +18,7 @@ function failure(error, stage, mrPresentation) {
     kits_retry: 'Keep this draft unchanged. Ask the operator to review the original submission before starting another order.',
   };
   const detail = upload ? privateUploadMessage(error?.code, error?.status)
+    : /^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(error?.code || '') ? error.message
     : (Object.hasOwn(messages, error?.code) ? messages[error.code] : '')
     || (error?.status === 401 ? 'Check your sign-in before retrying this draft.'
       : error?.status === 403 ? 'Access was denied. Ask an administrator to review your access.'
@@ -34,6 +35,8 @@ function failure(error, stage, mrPresentation) {
       : 'Your draft and verified uploads remain here.'}${reference}`);
   result.stage = !upload && error?.status === 422 ? 'validation' : stage;
   result.ambiguous = ambiguous;
+  result.code = error?.code;
+  result.status = error?.status;
   return result;
 }
 

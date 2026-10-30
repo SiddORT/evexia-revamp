@@ -169,6 +169,8 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
     data = resolve(db, keys, body, previous, order_date)
     from app.services.order_approval import preserve
     preserve(actor, "spt", data, previous)
+    from app.services.order_eligibility import enforce
+    enforce(db, keys, "spt", data, row=row, order_date=order_date, previous=previous)
     if not row:
         identity = uuid.uuid4()
         number = db.scalar(text("SELECT nextval('spt_order_number_seq')"))

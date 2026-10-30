@@ -282,6 +282,8 @@ def resubmit(db, actor, identity, body, kind):
             history.append({"decision": "resubmit", "actor": str(current.user.id), "at": utcnow().isoformat(), "version": row.version + 1})
             snapshot.update(status=target, approval=None, rejection=None, reviewDecision=None,
                             correctionSaved=False, reviewHistory=history)
+            from app.services.order_eligibility import enforce
+            enforce(db, keys, kind, snapshot, row=row, previous=previous)
             row.status = target
             row.version += 1
             row.updated_by, row.updated_at = current.user.id, utcnow()

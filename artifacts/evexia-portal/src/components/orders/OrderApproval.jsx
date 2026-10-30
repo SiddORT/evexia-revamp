@@ -67,7 +67,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
       setUncertain(keep);
       if (!keep) submission.current = null;
       setError(cause.message || 'Decision was not confirmed.');
-      if (!keep && cause.status === 409) {
+      if (!keep && cause.status === 409 && !/^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(cause.code || '')) {
         setConflict('The saved order changed. Reopen its saved view separately before making a decision.');
         try {
           const current = await request(`/${order.id}`);

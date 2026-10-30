@@ -1003,13 +1003,13 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'shipments'
     ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}(?:\/(?:ship|delivery|return))?)$/
     : resource === 'spt-orders'
-    ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
     : resource === 'lupin-orders'
-    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36})$/i
+    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
     : resource === 'immunotherapy-orders'
     ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
     : resource === 'kits-orders'
-    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
@@ -1019,7 +1019,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : /^(?:|\/(?:export|overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
   const immunotherapyDecision = resource === 'immunotherapy-orders'
     && /^\/[0-9a-f-]{36}\/(?:approve|reject|resubmit)$/i.test(path);
-  if (!allowed.test(path) || (immunotherapyDecision && body === undefined)) {
+  const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
+  if ((!allowed.test(path) && !eligibilityPreview) || ((immunotherapyDecision || eligibilityPreview) && body === undefined)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
   if ((file !== undefined && (resource !== 'products' || !['/import/review', '/import/commit'].includes(path)))
@@ -1048,7 +1049,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const epoch = generation;
   const readScope = contactReadScope();
   const owner = state.user?.id;
-  const mutation = writing && !path.endsWith('/preview') && path !== '/import/review';
+  const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource) && state.user?.identity_kind === 'mr';
   const check = () => {
@@ -1118,6 +1119,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     const error = new SessionError(resource === 'settlements' && response.status === 403
       ? 'Settlement access denied. Admin is read-only; MRs may record only against their own eligible saved orders.'
       : response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
+      : /^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(data?.error?.code || '') && typeof data?.error?.message === 'string' ? data.error.message
       : response.status >= 500 && !(batchOperation && typeof data?.error?.message === 'string') ? uncertain().message
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);

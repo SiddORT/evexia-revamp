@@ -155,3 +155,87 @@ An unauthenticated screenshot attempt could not load the existing preview
 ingress. No workflow was started/restarted to repair it, because that could
 implicitly activate schema changes or release workflows. The protected
 settlement screens therefore have not been visually verified in this workspace.
+
+## MR order eligibility
+
+MR placement, submitted-order corrections and explicit rejected-order
+resubmissions share a server financial policy across Immunotherapy, SPT, Lupin,
+and Kits & Consumables. Admin placement is unchanged.
+
+- A positive **MR Payment Limit** must accommodate the existing unpaid balance
+  plus the proposed order's unpaid amount. Equality is allowed. Replacements
+  remove the old order before adding its replacement and retain its committed
+  payments, so one order never consumes credit twice.
+- A positive **MR Doctor Days Limit** blocks the selected Doctor if an owned
+  unpaid order is **older than**, not equal to, that many calendar days. Days
+  run from the immutable saved order date using the Asia/Kolkata business date,
+  while a positive balance remains. This includes a replacement's retained
+  original date; edits/resubmission never restart the clock.
+- Each zero setting independently disables that restriction. Doctor Master
+  payment/day settings are neither additional limits nor fallbacks.
+- Obligations include pending `Confirmed`/SPT `Saved`, legacy `Approved`,
+  `In process`, `Shipped`, legacy `Delivered`, and `Returned`. Shipment returns
+  do not create financial credit. `Draft`, `Rejected`, void and cancelled
+  placements are excluded. Rejected corrections are savable, with eligibility
+  checked again on explicit resubmission. Incomplete SPT Drafts consume no
+  credit and remain savable.
+- One source order is counted once regardless of patient membership. Amounts
+  use the exact saved total less committed settlement entries only.
+  Paid/Partial/Unpaid labels, browser/demo payments, current catalogue prices,
+  and independent Kits Business Parking are not receipts or offsets.
+- An enabled rule fails clearly if required totals/settings/history are
+  unknown, inconsistent, unreadable or exceed bounded complete-history
+  evaluation. A corrected pricing basis awaiting Admin review is not treated
+  as a trustworthy proposed price. This means unpriced new Immunotherapy or
+  Kits orders **cannot be MR-placed with an enabled financial rule** until
+  authoritative pricing is available; no guessed catalogue price or zero
+  fallback is introduced. Admin can still place/review orders.
+
+The `/eligibility` preview under each existing order resource takes the typed
+final order input (or version-bound resubmission body), optional saved order ID,
+and resubmit flag. It returns structured reasons and MR-scoped balances/settings.
+It never exposes another MR's finances. Final writes do not trust preview
+results: they independently enforce the policy in the committing transaction.
+Existing committed idempotency replies replay before any new policy evaluation.
+
+Lock ordering is policy → shared settlement/eligibility financial lock →
+authenticated identity/assignment graph → request key → source/reference/file
+rows. Orders, review/resubmission, settlements and shipment lifecycle writes
+participate. MR setting/master mutations already share the outer policy lock.
+Inventory advice takes the inventory lock later, within the same policy scope.
+No new schema or financial-opening transaction is introduced.
+
+Only Immunotherapy currently persists actual allergen component references.
+Advice sums the authoritative lifetime lot/location balances, including
+Unallocated quantities, exactly as Stock Status does. Zero is unavailable stock;
+positive stock at or below an existing threshold is low stock. Missing receipt
+coverage, unavailable inventory schema or missing product evidence is explicitly
+**unavailable to check**, never zero or healthy. Advice exposes only selected
+allergen labels, aggregate quantity, threshold and state, not ledger/location
+details. No recipe is inferred for Kits, SPT or Lupin. No demand conversion,
+reservation, deduction or fulfillment block is added.
+
+The MR forms check finances before showing the existing themed accessible
+continue/cancel stock popup. The advice is bound to the frozen submission and
+account; editing after cancellation needs a fresh check. Cancelling or a
+financial rejection retains values and permitted verified uploads. Once an
+order request has been sent, unchanged retries bypass a new browser preview and
+retain the existing uncertain-outcome recovery/key behavior; the server still
+replays or enforces atomically.
+
+### Eligibility handoff and validation boundary
+
+Only offline OpenAPI/client generation, generated-library TypeScript
+compilation, static source parsing/transformation, contract comparison and
+lock/caller inspection were performed. No regression suite, release check,
+release workflow, API/database integration test, browser transaction test,
+workflow restart, migration or production activation was performed. The changed
+protected screens were not signed into for visual verification. Runtime
+concurrency, multi-session financial boundaries and popup keyboard behavior
+remain unverified; these require separate permission to test.
+
+The current saved order and committed settlement schemas/data must already be
+available, along with their decryption keys. Inventory initialization is not a
+placement prerequisite: incomplete coverage produces advisory unavailable-check
+messages. No service restart was attempted because existing startup workflows
+can implicitly run forbidden checks or migrations.

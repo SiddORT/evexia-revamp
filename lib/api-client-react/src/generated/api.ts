@@ -126,6 +126,7 @@ import type {
   DownloadStockProductSampleParams,
   DownloadURLResponse,
   DownloadVendorSampleParams,
+  EligibilityPreview,
   EmailLogFilters,
   EmailLogPage,
   EmailModernLayout,
@@ -194,6 +195,7 @@ import type {
   HeadquarterVersion,
   HeadquarterZonePage,
   HealthStatus,
+  ImmEligibilityInput,
   ImmImport,
   ImmImportResult,
   ImmImportReview,
@@ -210,6 +212,7 @@ import type {
   InventoryStockPage,
   InvitationRequest,
   InvitationResult,
+  KitsEligibilityInput,
   KitsImport,
   KitsImportResult,
   KitsPage,
@@ -290,6 +293,7 @@ import type {
   LookupMRPincodeParams,
   LookupPatientPincodeParams,
   LookupStorageLocationPincodeParams,
+  LupinEligibilityInput,
   LupinImport,
   LupinImportResult,
   LupinPage,
@@ -498,6 +502,7 @@ import type {
   ShipmentDispatch,
   ShipmentPage,
   ShipmentRecord,
+  SptEligibilityInput,
   SptImport,
   SptImportResult,
   SptPage,
@@ -8581,6 +8586,129 @@ export const useCreateImmunotherapyOrder = <
   return useMutation(getCreateImmunotherapyOrderMutationOptions(options));
 };
 
+export const getPreviewImmunotherapyEligibilityUrl = () => {
+  return `/api/v1/admin/immunotherapy-orders/eligibility`;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const previewImmunotherapyEligibility = async (
+  immEligibilityInput: ImmEligibilityInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EligibilityPreview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<EligibilityPreview>(
+    getPreviewImmunotherapyEligibilityUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(immEligibilityInput),
+    },
+  );
+};
+
+export const getPreviewImmunotherapyEligibilityMutationKey = () =>
+  ["previewImmunotherapyEligibility"] as const;
+
+export const getPreviewImmunotherapyEligibilityMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewImmunotherapyEligibility>>,
+    TError,
+    PreviewImmunotherapyEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewImmunotherapyEligibility>>,
+  TError,
+  PreviewImmunotherapyEligibilityMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewImmunotherapyEligibilityMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewImmunotherapyEligibility>>,
+    PreviewImmunotherapyEligibilityMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewImmunotherapyEligibility(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewImmunotherapyEligibilityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewImmunotherapyEligibility>>
+>;
+export type PreviewImmunotherapyEligibilityMutationBody =
+  BodyType<ImmEligibilityInput>;
+export type PreviewImmunotherapyEligibilityMutationError =
+  ErrorType<ErrorEnvelope>;
+export type PreviewImmunotherapyEligibilityMutationVariables = {
+  data: BodyType<ImmEligibilityInput>;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const usePreviewImmunotherapyEligibility = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewImmunotherapyEligibility>>,
+    TError,
+    PreviewImmunotherapyEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewImmunotherapyEligibility>>,
+  TError,
+  PreviewImmunotherapyEligibilityMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getPreviewImmunotherapyEligibilityMutationOptions(options),
+  );
+};
+
 export const getExportImmunotherapyOrdersUrl = (
   params?: ExportImmunotherapyOrdersParams,
 ) => {
@@ -12847,6 +12975,122 @@ export const useUploadKitsAttachment = <
   return useMutation(getUploadKitsAttachmentMutationOptions(options));
 };
 
+export const getPreviewKitsEligibilityUrl = () => {
+  return `/api/v1/admin/kits-orders/eligibility`;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const previewKitsEligibility = async (
+  kitsEligibilityInput: KitsEligibilityInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EligibilityPreview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<EligibilityPreview>(getPreviewKitsEligibilityUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(kitsEligibilityInput),
+  });
+};
+
+export const getPreviewKitsEligibilityMutationKey = () =>
+  ["previewKitsEligibility"] as const;
+
+export const getPreviewKitsEligibilityMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewKitsEligibility>>,
+    TError,
+    PreviewKitsEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewKitsEligibility>>,
+  TError,
+  PreviewKitsEligibilityMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewKitsEligibilityMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewKitsEligibility>>,
+    PreviewKitsEligibilityMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewKitsEligibility(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewKitsEligibilityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewKitsEligibility>>
+>;
+export type PreviewKitsEligibilityMutationBody = BodyType<KitsEligibilityInput>;
+export type PreviewKitsEligibilityMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewKitsEligibilityMutationVariables = {
+  data: BodyType<KitsEligibilityInput>;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const usePreviewKitsEligibility = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewKitsEligibility>>,
+    TError,
+    PreviewKitsEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewKitsEligibility>>,
+  TError,
+  PreviewKitsEligibilityMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewKitsEligibilityMutationOptions(options));
+};
+
 export const getExportKitsOrdersUrl = (params?: ExportKitsOrdersParams) => {
   const normalizedParams = new URLSearchParams();
 
@@ -15401,6 +15645,123 @@ export const useCancelLupinUpload = <
   TContext
 > => {
   return useMutation(getCancelLupinUploadMutationOptions(options));
+};
+
+export const getPreviewLupinEligibilityUrl = () => {
+  return `/api/v1/admin/lupin-orders/eligibility`;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const previewLupinEligibility = async (
+  lupinEligibilityInput: LupinEligibilityInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EligibilityPreview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<EligibilityPreview>(getPreviewLupinEligibilityUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(lupinEligibilityInput),
+  });
+};
+
+export const getPreviewLupinEligibilityMutationKey = () =>
+  ["previewLupinEligibility"] as const;
+
+export const getPreviewLupinEligibilityMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewLupinEligibility>>,
+    TError,
+    PreviewLupinEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewLupinEligibility>>,
+  TError,
+  PreviewLupinEligibilityMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewLupinEligibilityMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewLupinEligibility>>,
+    PreviewLupinEligibilityMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewLupinEligibility(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewLupinEligibilityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewLupinEligibility>>
+>;
+export type PreviewLupinEligibilityMutationBody =
+  BodyType<LupinEligibilityInput>;
+export type PreviewLupinEligibilityMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewLupinEligibilityMutationVariables = {
+  data: BodyType<LupinEligibilityInput>;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const usePreviewLupinEligibility = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewLupinEligibility>>,
+    TError,
+    PreviewLupinEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewLupinEligibility>>,
+  TError,
+  PreviewLupinEligibilityMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewLupinEligibilityMutationOptions(options));
 };
 
 export const getExportLupinOrdersUrl = (params?: ExportLupinOrdersParams) => {
@@ -34287,6 +34648,122 @@ export const useCreateSptOrder = <
   TContext
 > => {
   return useMutation(getCreateSptOrderMutationOptions(options));
+};
+
+export const getPreviewSptEligibilityUrl = () => {
+  return `/api/v1/admin/spt-orders/eligibility`;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const previewSptEligibility = async (
+  sptEligibilityInput: SptEligibilityInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EligibilityPreview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<EligibilityPreview>(getPreviewSptEligibilityUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(sptEligibilityInput),
+  });
+};
+
+export const getPreviewSptEligibilityMutationKey = () =>
+  ["previewSptEligibility"] as const;
+
+export const getPreviewSptEligibilityMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewSptEligibility>>,
+    TError,
+    PreviewSptEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewSptEligibility>>,
+  TError,
+  PreviewSptEligibilityMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewSptEligibilityMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewSptEligibility>>,
+    PreviewSptEligibilityMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewSptEligibility(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewSptEligibilityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewSptEligibility>>
+>;
+export type PreviewSptEligibilityMutationBody = BodyType<SptEligibilityInput>;
+export type PreviewSptEligibilityMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewSptEligibilityMutationVariables = {
+  data: BodyType<SptEligibilityInput>;
+};
+
+/**
+ * @summary Eligibility
+ */
+export const usePreviewSptEligibility = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewSptEligibility>>,
+    TError,
+    PreviewSptEligibilityMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewSptEligibility>>,
+  TError,
+  PreviewSptEligibilityMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewSptEligibilityMutationOptions(options));
 };
 
 export const getExportSptOrdersUrl = (params?: ExportSptOrdersParams) => {

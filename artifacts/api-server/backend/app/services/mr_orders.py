@@ -13,6 +13,10 @@ def authorize(db, actor, resource=None, action=None):
     # This branch only acquires a lock; revalidation below grants the access.
     from app.services.zone_policy import lock_policy
     lock_policy(db)
+    # Shared with settlements and lifecycle writers, before User/graph/order
+    # locks. Admin writes participate in serialization, not in MR restrictions.
+    from app.services.order_eligibility import lock as financial_lock
+    financial_lock(db)
     current = revalidate_identity(db, actor, lock=True)
     db.info["order_mr_id"] = None
     if current.role == "mr":

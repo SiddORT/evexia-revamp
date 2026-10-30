@@ -50,6 +50,15 @@ MULTIPART = {
 }
 
 
+from app.schemas.order_eligibility import ImmEligibilityInput, EligibilityPreview
+from app.services.order_eligibility import preview as eligibility_preview
+
+
+@router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewImmunotherapyEligibility")
+def eligibility(body: ImmEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return eligibility_preview(db, actor, "immunotherapy", body)
+
+
 @router.post("/{record_id}/approve", response_model=ImmRecord, operation_id="approveImmunotherapyOrder")
 def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "immunotherapy")

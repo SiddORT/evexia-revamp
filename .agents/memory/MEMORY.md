@@ -113,3 +113,4 @@
 - [Doctor overview financial boundary](doctor-overview-financial-boundary.md) — real saved facts only; payment flags do not establish debt, credit or deadlines.
 - [Shipment listing scope](shipment-listing-scope.md) — show In process, Shipped and Returned together by default; shipping must not hide an order.
 - [Settlement policy](settlement-policy.md) — only owning MRs post; Super Admin is read-only, prior payments start at zero and legacy flags are not receipts.
+- [MR eligibility policy](mr-eligibility-policy.md) — MR-owned financial settings, independent zero restrictions, saved-order-date aging and advisory allergen warnings.

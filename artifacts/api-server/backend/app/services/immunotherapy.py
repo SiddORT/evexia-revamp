@@ -296,6 +296,8 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     data = resolved(db, body, previous)
     from app.services.order_approval import preserve
     preserve(actor, "immunotherapy", data, previous)
+    from app.services.order_eligibility import enforce
+    enforce(db, keys, "immunotherapy", data, row=row, order_date=body.orderDate, previous=previous)
     from app.services.immunotherapy_pricing import issue
     now = utcnow()
     if not row:

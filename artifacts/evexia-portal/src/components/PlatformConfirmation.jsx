@@ -83,7 +83,7 @@ function Choice({ choice }) {
     <section ref={ref} className="platform-confirm" role="alertdialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
       <p className="platform-confirm__eyebrow">Please confirm</p>
       <h2 id={`${id}-title`}>{choice.title}</h2>
-      <p id={`${id}-description`}>{choice.description}</p>
+      <p id={`${id}-description`} style={choice.preserveLines ? { whiteSpace: 'pre-line' } : undefined}>{choice.description}</p>
       <div className="platform-confirm__actions">
         <button ref={cancel} type="button" onClick={() => settle(false)}>{choice.cancelLabel || 'Cancel'}</button>
         <button type="button" className={choice.destructive ? 'platform-confirm__danger' : ''} onClick={() => settle(true)}>{choice.actionLabel}</button>

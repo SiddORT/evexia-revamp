@@ -395,6 +395,25 @@ export interface AllergenStatus {
   status: AllergenStatusStatus;
 }
 
+export type AllergenStockAdviceState =
+  (typeof AllergenStockAdviceState)[keyof typeof AllergenStockAdviceState];
+
+export const AllergenStockAdviceState = {
+  unavailable_stock: "unavailable_stock",
+  low_stock: "low_stock",
+  healthy: "healthy",
+  unavailable_check: "unavailable_check",
+} as const;
+
+export interface AllergenStockAdvice {
+  allergenId: string;
+  message: string;
+  name: string;
+  quantity?: string | null;
+  state: AllergenStockAdviceState;
+  threshold?: string | null;
+}
+
 export interface AllergenVersion {
   /** @minimum 1 */
   expected_version: number;
@@ -2442,6 +2461,28 @@ export interface DownloadURLResponse {
   url: string;
 }
 
+export interface EligibilityReason {
+  ageDays?: number | null;
+  balance: string;
+  code: string;
+  limit: string;
+  message: string;
+  proposed?: string | null;
+}
+
+export interface EligibilityPreview {
+  businessDate?: string | null;
+  doctorDaysLimit?: number | null;
+  eligible: boolean;
+  outstanding?: string | null;
+  paymentLimit?: string | null;
+  proposedBalance?: string | null;
+  reasons: EligibilityReason[];
+  replay?: boolean;
+  resultingOutstanding?: string | null;
+  stockAdvice: AllergenStockAdvice[];
+}
+
 export type EmailLogFiltersPurpose =
   (typeof EmailLogFiltersPurpose)[keyof typeof EmailLogFiltersPurpose] | null;
 
@@ -2983,6 +3024,99 @@ export interface ImmBottle {
   mrp?: string | null;
 }
 
+export type ImmWriteDecision =
+  (typeof ImmWriteDecision)[keyof typeof ImmWriteDecision] | null;
+
+export const ImmWriteDecision = {
+  approve: "approve",
+  reject: "reject",
+} as const;
+
+export type ImmWriteDosage =
+  (typeof ImmWriteDosage)[keyof typeof ImmWriteDosage];
+
+export const ImmWriteDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export type ImmWritePricingBasis =
+  (typeof ImmWritePricingBasis)[keyof typeof ImmWritePricingBasis] | null;
+
+export const ImmWritePricingBasis = {
+  allergen_rates: "allergen_rates",
+  legacy_bottle_mrp: "legacy_bottle_mrp",
+  suborder_mrp_v1: "suborder_mrp_v1",
+} as const;
+
+export type ImmWriteShipping =
+  (typeof ImmWriteShipping)[keyof typeof ImmWriteShipping];
+
+export const ImmWriteShipping = {
+  patient: "patient",
+  doctor: "doctor",
+} as const;
+
+export type ImmWriteStatus =
+  (typeof ImmWriteStatus)[keyof typeof ImmWriteStatus];
+
+export const ImmWriteStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface ImmWrite {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  decision?: ImmWriteDecision;
+  doctorId: string;
+  dosage: ImmWriteDosage;
+  expected_version?: number | null;
+  /**
+   * @minItems 1
+   * @maxItems 1000
+   */
+  groups: ImmBottle[];
+  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
+  histamine: string;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  patientId: string;
+  poNumber?: string | null;
+  pricingBasis?: ImmWritePricingBasis;
+  /** @maxLength 4000 */
+  remarks?: string;
+  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
+  saline: string;
+  shipping: ImmWriteShipping;
+  status?: ImmWriteStatus;
+}
+
+export interface OrderApproval {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+}
+
+export interface ImmEligibilityInput {
+  orderId?: string | null;
+  resubmit?: boolean;
+  values: ImmWrite | OrderApproval;
+}
+
 export type ImmInputDosage =
   (typeof ImmInputDosage)[keyof typeof ImmInputDosage];
 
@@ -3220,87 +3354,6 @@ export interface ImmUploadPolicy {
   maxBytes: number;
   maxFiles: number;
   types: string[];
-}
-
-export type ImmWriteDecision =
-  (typeof ImmWriteDecision)[keyof typeof ImmWriteDecision] | null;
-
-export const ImmWriteDecision = {
-  approve: "approve",
-  reject: "reject",
-} as const;
-
-export type ImmWriteDosage =
-  (typeof ImmWriteDosage)[keyof typeof ImmWriteDosage];
-
-export const ImmWriteDosage = {
-  PD: "PD",
-  DD: "DD",
-  B1: "B1",
-  B2: "B2",
-  B3: "B3",
-  B4: "B4",
-  B5: "B5",
-  B6: "B6",
-  B7: "B7",
-  B8: "B8",
-} as const;
-
-export type ImmWritePricingBasis =
-  (typeof ImmWritePricingBasis)[keyof typeof ImmWritePricingBasis] | null;
-
-export const ImmWritePricingBasis = {
-  allergen_rates: "allergen_rates",
-  legacy_bottle_mrp: "legacy_bottle_mrp",
-  suborder_mrp_v1: "suborder_mrp_v1",
-} as const;
-
-export type ImmWriteShipping =
-  (typeof ImmWriteShipping)[keyof typeof ImmWriteShipping];
-
-export const ImmWriteShipping = {
-  patient: "patient",
-  doctor: "doctor",
-} as const;
-
-export type ImmWriteStatus =
-  (typeof ImmWriteStatus)[keyof typeof ImmWriteStatus];
-
-export const ImmWriteStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface ImmWrite {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  decision?: ImmWriteDecision;
-  doctorId: string;
-  dosage: ImmWriteDosage;
-  expected_version?: number | null;
-  /**
-   * @minItems 1
-   * @maxItems 1000
-   */
-  groups: ImmBottle[];
-  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
-  histamine: string;
-  idempotencyKey: string;
-  mrId: string;
-  orderDate?: string | null;
-  patientId: string;
-  poNumber?: string | null;
-  pricingBasis?: ImmWritePricingBasis;
-  /** @maxLength 4000 */
-  remarks?: string;
-  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
-  saline: string;
-  shipping: ImmWriteShipping;
-  status?: ImmWriteStatus;
 }
 
 export interface InventoryComponentProvenance {
@@ -3592,10 +3645,10 @@ export interface KitsConfiguration {
   volume?: string;
 }
 
-export type KitsInputOrderFor =
-  (typeof KitsInputOrderFor)[keyof typeof KitsInputOrderFor];
+export type KitsUpdateOrderFor =
+  (typeof KitsUpdateOrderFor)[keyof typeof KitsUpdateOrderFor];
 
-export const KitsInputOrderFor = {
+export const KitsUpdateOrderFor = {
   doctor: "doctor",
   mr: "mr",
 } as const;
@@ -3608,10 +3661,10 @@ export interface KitsRecipient {
   phone?: string;
 }
 
-export type KitsInputPaymentStatus =
-  (typeof KitsInputPaymentStatus)[keyof typeof KitsInputPaymentStatus];
+export type KitsUpdatePaymentStatus =
+  (typeof KitsUpdatePaymentStatus)[keyof typeof KitsUpdatePaymentStatus];
 
-export const KitsInputPaymentStatus = {
+export const KitsUpdatePaymentStatus = {
   Unpaid: "Unpaid",
   Paid: "Paid",
   Partial: "Partial",
@@ -3636,6 +3689,144 @@ export interface KitsPricingInput {
   lancetsRate?: string | null;
   trayRate?: string | null;
 }
+
+export type KitsUpdateShipping =
+  (typeof KitsUpdateShipping)[keyof typeof KitsUpdateShipping];
+
+export const KitsUpdateShipping = {
+  doctor: "doctor",
+  mr: "mr",
+  other: "other",
+} as const;
+
+export type KitsUpdateStatus =
+  (typeof KitsUpdateStatus)[keyof typeof KitsUpdateStatus];
+
+export const KitsUpdateStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface KitsUpdate {
+  /** @maxLength 12 */
+  applicators?: string;
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  businessParking?: string | null;
+  doctorId: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  kit?: KitsConfiguration;
+  /** @maxLength 12 */
+  lancets?: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  orderFor?: KitsUpdateOrderFor;
+  other?: KitsRecipient;
+  patientId?: string | null;
+  paymentStatus?: KitsUpdatePaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
+  /** @maxLength 4000 */
+  remarks?: string;
+  shipping?: KitsUpdateShipping;
+  status?: KitsUpdateStatus;
+  /** @maxLength 12 */
+  tray?: string;
+}
+
+export type KitsWriteOrderFor =
+  (typeof KitsWriteOrderFor)[keyof typeof KitsWriteOrderFor];
+
+export const KitsWriteOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type KitsWritePaymentStatus =
+  (typeof KitsWritePaymentStatus)[keyof typeof KitsWritePaymentStatus];
+
+export const KitsWritePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type KitsWriteShipping =
+  (typeof KitsWriteShipping)[keyof typeof KitsWriteShipping];
+
+export const KitsWriteShipping = {
+  doctor: "doctor",
+  mr: "mr",
+  other: "other",
+} as const;
+
+export type KitsWriteStatus =
+  (typeof KitsWriteStatus)[keyof typeof KitsWriteStatus];
+
+export const KitsWriteStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface KitsWrite {
+  /** @maxLength 12 */
+  applicators?: string;
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  businessParking?: string | null;
+  doctorId: string;
+  idempotencyKey: string;
+  kit?: KitsConfiguration;
+  /** @maxLength 12 */
+  lancets?: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  orderFor?: KitsWriteOrderFor;
+  other?: KitsRecipient;
+  patientId?: string | null;
+  paymentStatus?: KitsWritePaymentStatus;
+  poNumber?: string | null;
+  pricing?: KitsPricingInput | null;
+  /** @maxLength 4000 */
+  remarks?: string;
+  shipping?: KitsWriteShipping;
+  status?: KitsWriteStatus;
+  /** @maxLength 12 */
+  tray?: string;
+}
+
+export interface KitsEligibilityInput {
+  orderId?: string | null;
+  resubmit?: boolean;
+  values: KitsUpdate | KitsWrite | OrderApproval;
+}
+
+export type KitsInputOrderFor =
+  (typeof KitsInputOrderFor)[keyof typeof KitsInputOrderFor];
+
+export const KitsInputOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type KitsInputPaymentStatus =
+  (typeof KitsInputPaymentStatus)[keyof typeof KitsInputPaymentStatus];
+
+export const KitsInputPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
 
 export type KitsInputShipping =
   (typeof KitsInputShipping)[keyof typeof KitsInputShipping];
@@ -3852,138 +4043,6 @@ export interface KitsPage {
   items: KitsRecord[];
   nextCursor: string | null;
   total: number;
-}
-
-export type KitsUpdateOrderFor =
-  (typeof KitsUpdateOrderFor)[keyof typeof KitsUpdateOrderFor];
-
-export const KitsUpdateOrderFor = {
-  doctor: "doctor",
-  mr: "mr",
-} as const;
-
-export type KitsUpdatePaymentStatus =
-  (typeof KitsUpdatePaymentStatus)[keyof typeof KitsUpdatePaymentStatus];
-
-export const KitsUpdatePaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export type KitsUpdateShipping =
-  (typeof KitsUpdateShipping)[keyof typeof KitsUpdateShipping];
-
-export const KitsUpdateShipping = {
-  doctor: "doctor",
-  mr: "mr",
-  other: "other",
-} as const;
-
-export type KitsUpdateStatus =
-  (typeof KitsUpdateStatus)[keyof typeof KitsUpdateStatus];
-
-export const KitsUpdateStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface KitsUpdate {
-  /** @maxLength 12 */
-  applicators?: string;
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  businessParking?: string | null;
-  doctorId: string;
-  /** @minimum 1 */
-  expected_version: number;
-  idempotencyKey: string;
-  kit?: KitsConfiguration;
-  /** @maxLength 12 */
-  lancets?: string;
-  mrId?: string | null;
-  orderDate?: string | null;
-  orderFor?: KitsUpdateOrderFor;
-  other?: KitsRecipient;
-  patientId?: string | null;
-  paymentStatus?: KitsUpdatePaymentStatus;
-  poNumber?: string | null;
-  pricing?: KitsPricingInput | null;
-  /** @maxLength 4000 */
-  remarks?: string;
-  shipping?: KitsUpdateShipping;
-  status?: KitsUpdateStatus;
-  /** @maxLength 12 */
-  tray?: string;
-}
-
-export type KitsWriteOrderFor =
-  (typeof KitsWriteOrderFor)[keyof typeof KitsWriteOrderFor];
-
-export const KitsWriteOrderFor = {
-  doctor: "doctor",
-  mr: "mr",
-} as const;
-
-export type KitsWritePaymentStatus =
-  (typeof KitsWritePaymentStatus)[keyof typeof KitsWritePaymentStatus];
-
-export const KitsWritePaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export type KitsWriteShipping =
-  (typeof KitsWriteShipping)[keyof typeof KitsWriteShipping];
-
-export const KitsWriteShipping = {
-  doctor: "doctor",
-  mr: "mr",
-  other: "other",
-} as const;
-
-export type KitsWriteStatus =
-  (typeof KitsWriteStatus)[keyof typeof KitsWriteStatus];
-
-export const KitsWriteStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface KitsWrite {
-  /** @maxLength 12 */
-  applicators?: string;
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  businessParking?: string | null;
-  doctorId: string;
-  idempotencyKey: string;
-  kit?: KitsConfiguration;
-  /** @maxLength 12 */
-  lancets?: string;
-  mrId?: string | null;
-  orderDate?: string | null;
-  orderFor?: KitsWriteOrderFor;
-  other?: KitsRecipient;
-  patientId?: string | null;
-  paymentStatus?: KitsWritePaymentStatus;
-  poNumber?: string | null;
-  pricing?: KitsPricingInput | null;
-  /** @maxLength 4000 */
-  remarks?: string;
-  shipping?: KitsWriteShipping;
-  status?: KitsWriteStatus;
-  /** @maxLength 12 */
-  tray?: string;
 }
 
 export type LanguageChangeResponseAction =
@@ -4347,6 +4406,100 @@ export interface LoginRequest {
   remember_me?: boolean;
 }
 
+export type LupinUpdatePaymentStatus =
+  (typeof LupinUpdatePaymentStatus)[keyof typeof LupinUpdatePaymentStatus];
+
+export const LupinUpdatePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinUpdateStatus =
+  (typeof LupinUpdateStatus)[keyof typeof LupinUpdateStatus];
+
+export const LupinUpdateStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface LupinUpdate {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinUpdatePaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinUpdateStatus;
+}
+
+export type LupinWritePaymentStatus =
+  (typeof LupinWritePaymentStatus)[keyof typeof LupinWritePaymentStatus];
+
+export const LupinWritePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type LupinWriteStatus =
+  (typeof LupinWriteStatus)[keyof typeof LupinWriteStatus];
+
+export const LupinWriteStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface LupinWrite {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  patientCount: number;
+  /** @maxItems 200 */
+  patientIds?: string[];
+  paymentStatus?: LupinWritePaymentStatus;
+  /** @maxLength 32 */
+  price: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: LupinWriteStatus;
+}
+
+export interface LupinEligibilityInput {
+  orderId?: string | null;
+  resubmit?: boolean;
+  values: LupinUpdate | LupinWrite | OrderApproval;
+}
+
 export type LupinInputPaymentStatus =
   (typeof LupinInputPaymentStatus)[keyof typeof LupinInputPaymentStatus];
 
@@ -4502,97 +4655,9 @@ export interface LupinPage {
   total: number;
 }
 
-export type LupinUpdatePaymentStatus =
-  (typeof LupinUpdatePaymentStatus)[keyof typeof LupinUpdatePaymentStatus];
-
-export const LupinUpdatePaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export type LupinUpdateStatus =
-  (typeof LupinUpdateStatus)[keyof typeof LupinUpdateStatus];
-
-export const LupinUpdateStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface LupinUpdate {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  doctorId: string;
-  /** @minimum 1 */
-  expected_version: number;
-  idempotencyKey: string;
-  mrId: string;
-  orderDate?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 1000000
-   */
-  patientCount: number;
-  /** @maxItems 200 */
-  patientIds?: string[];
-  paymentStatus?: LupinUpdatePaymentStatus;
-  /** @maxLength 32 */
-  price: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  status?: LupinUpdateStatus;
-}
-
 export interface LupinUploadCancellation {
   cancelled: boolean;
   id: string;
-}
-
-export type LupinWritePaymentStatus =
-  (typeof LupinWritePaymentStatus)[keyof typeof LupinWritePaymentStatus];
-
-export const LupinWritePaymentStatus = {
-  Unpaid: "Unpaid",
-  Paid: "Paid",
-  Partial: "Partial",
-} as const;
-
-export type LupinWriteStatus =
-  (typeof LupinWriteStatus)[keyof typeof LupinWriteStatus];
-
-export const LupinWriteStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface LupinWrite {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  doctorId: string;
-  idempotencyKey: string;
-  mrId: string;
-  orderDate?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 1000000
-   */
-  patientCount: number;
-  /** @maxItems 200 */
-  patientIds?: string[];
-  paymentStatus?: LupinWritePaymentStatus;
-  /** @maxLength 32 */
-  price: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  status?: LupinWriteStatus;
 }
 
 export interface MRChoice {
@@ -6799,12 +6864,6 @@ export interface OpeningReview {
   reviewToken: string;
   rows: OpeningReviewedRow[];
   summary: OpeningSummary;
-}
-
-export interface OrderApproval {
-  /** @minimum 1 */
-  expected_version: number;
-  idempotencyKey: string;
 }
 
 export interface OrderRejection {
@@ -10187,6 +10246,34 @@ export interface SptPatientInput {
   source: SptPatientInputSource;
 }
 
+export type SptWriteStatus =
+  (typeof SptWriteStatus)[keyof typeof SptWriteStatus];
+
+export const SptWriteStatus = {
+  Draft: "Draft",
+  Saved: "Saved",
+  Rejected: "Rejected",
+} as const;
+
+export interface SptWrite {
+  doctorId?: string | null;
+  expected_version?: number | null;
+  idempotencyKey: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  /** @maxItems 200 */
+  patients?: SptPatientInput[];
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: SptWriteStatus;
+}
+
+export interface SptEligibilityInput {
+  orderId?: string | null;
+  resubmit?: boolean;
+  values: SptWrite | OrderApproval;
+}
+
 export type SptInputStatus =
   (typeof SptInputStatus)[keyof typeof SptInputStatus];
 
@@ -10355,28 +10442,6 @@ export interface SptRegistration {
    * @maxLength 100
    */
   name: string;
-}
-
-export type SptWriteStatus =
-  (typeof SptWriteStatus)[keyof typeof SptWriteStatus];
-
-export const SptWriteStatus = {
-  Draft: "Draft",
-  Saved: "Saved",
-  Rejected: "Rejected",
-} as const;
-
-export interface SptWrite {
-  doctorId?: string | null;
-  expected_version?: number | null;
-  idempotencyKey: string;
-  mrId?: string | null;
-  orderDate?: string | null;
-  /** @maxItems 200 */
-  patients?: SptPatientInput[];
-  /** @maxLength 4000 */
-  remarks?: string;
-  status?: SptWriteStatus;
 }
 
 export interface StaffAccess {

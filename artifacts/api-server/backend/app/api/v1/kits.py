@@ -40,6 +40,15 @@ def filters(search: str = Query("", max_length=200), status: Status | None = Non
         doctor_id=doctor_id, mr_id=mr_id, patient_id=patient_id, from_date=from_date, to_date=to_date)
 
 
+from app.schemas.order_eligibility import KitsEligibilityInput, EligibilityPreview
+from app.services.order_eligibility import preview as eligibility_preview
+
+
+@router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewKitsEligibility")
+def eligibility(body: KitsEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return eligibility_preview(db, actor, "kits", body)
+
+
 @router.post("/{record_id}/approve", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="approveKitsOrder")
 def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "kits")

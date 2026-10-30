@@ -6,6 +6,8 @@ import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { request } from '../../services/serverImmunotherapy.js';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import './orderActions.css';
+import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
+import { registerEligibilityConfirmation } from '../../services/orderFreshness.js';
 
 const Context = createContext({ portal: 'admin', mr: null });
 export const useOrderPortal = () => useContext(Context);
@@ -27,6 +29,8 @@ export default function OrderPortalLayout(props) {
 
 export function MROrderBoundary({ children }) {
   const { user } = useAdminSession();
+  const confirm = usePlatformConfirm();
+  useEffect(() => registerEligibilityConfirmation(confirm), [confirm]);
   const scope = contactReadScope(user);
   const [mr, setMr] = useState(null), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   useEffect(() => {

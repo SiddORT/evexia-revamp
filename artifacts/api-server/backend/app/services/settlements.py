@@ -17,7 +17,7 @@ from app.services.settlement_crypto import seal, unseal
 
 # A separate financial lock serializes reads, reconciliation and posting; source
 # row locks additionally coordinate with the existing order/lifecycle writers.
-LOCK = 145580
+from app.services.order_eligibility import LOCK
 SCAN_LIMIT = 20000
 HISTORY_LIMIT = 50000
 ZERO = Decimal("0.00")

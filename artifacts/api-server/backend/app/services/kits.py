@@ -199,6 +199,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     data = resolved(db, actor, keys, body, previous)
     from app.services.order_approval import preserve
     preserve(actor, "kits", data, previous)
+    from app.services.order_eligibility import enforce
+    enforce(db, keys, "kits", data, row=row, order_date=body.orderDate, previous=previous)
     if not row:
         number = db.scalar(text("SELECT nextval('kits_order_number_seq')"))
         from app.services.business_numbers import format_number

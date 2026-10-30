@@ -25,6 +25,8 @@ EXPORT_LIMIT = 5000
 def transaction(db, actor, work):
     try:
         lock_policy(db)
+        from app.services.order_eligibility import lock as financial_lock
+        financial_lock(db)
         current = revalidate_identity(db, actor, lock=True)
         if not is_super_admin(current):
             raise ImmError("Shipments require Super Admin access.", 403, "access_denied")

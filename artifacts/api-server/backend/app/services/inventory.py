@@ -84,6 +84,56 @@ def q(value):
     return format(value, ".3f")
 
 
+def selected_allergen_advice(db, identities):
+    """Narrow MR advice, not permission to read stock/locations/lots/history.
+
+    Sum the same lifetime lot/location balances as stock(), including
+    Unallocated stock. Missing receipt initialization is never catalogue zero.
+    A savepoint keeps a missing inventory schema advisory, not a failed order.
+    """
+    from sqlalchemy.exc import SQLAlchemyError
+    ids = sorted({uuid.UUID(str(identity)) for identity in identities})
+    if not ids:
+        return []
+    unknown = [dict(allergenId=str(identity), name="Selected allergen", state="unavailable_check",
+                    quantity=None, threshold=None,
+                    message="Inventory coverage is unavailable to check. This is advisory; you may continue.")
+               for identity in ids]
+    try:
+        with db.begin_nested():
+            lock(db)
+            context = coverage(db)
+            products = {p.id: p for p in db.scalars(select(AllergenProduct).where(AllergenProduct.id.in_(ids)))}
+            if not context["complete"]:
+                return [{**item, "name": products[uuid.UUID(item["allergenId"])].name
+                         if uuid.UUID(item["allergenId"]) in products else item["name"]} for item in unknown]
+            totals = dict(db.execute(select(Lot.product_id, func.sum(Balance.quantity))
+                .join(Balance, Balance.lot_id == Lot.id).where(Lot.product_id.in_(ids))
+                .group_by(Lot.product_id)).all())
+            result = []
+            for identity in ids:
+                product = products.get(identity)
+                if not product:
+                    result.append(next(item for item in unknown if item["allergenId"] == str(identity)))
+                    continue
+                amount = totals.get(identity, Decimal(0))
+                threshold = product.threshold_limit
+                if not amount.is_finite() or amount < 0 or (threshold is not None and (not threshold.is_finite() or threshold < 0)):
+                    result.append({**next(item for item in unknown if item["allergenId"] == str(identity)), "name": product.name})
+                    continue
+                state = "unavailable_stock" if amount == 0 else (
+                    "low_stock" if threshold is not None and amount <= threshold else "healthy")
+                message = ("No stock available." if amount == 0 else
+                           f"Low stock: {q(amount)} at or below threshold {threshold}." if state == "low_stock" else
+                           f"Stock present: {q(amount)}.")
+                result.append(dict(allergenId=str(identity), name=product.name, state=state,
+                    quantity=q(amount), threshold=str(threshold) if threshold is not None else None,
+                    message=message + " Procurement quantity units; no demand conversion or reservation. Advisory only."))
+            return result
+    except SQLAlchemyError:
+        return unknown
+
+
 def balance_at(db, lot_id, location):
     return db.scalar(select(Balance).where(Balance.lot_id == lot_id, Balance.location_id == location))
 

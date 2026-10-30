@@ -38,6 +38,15 @@ def filters(search: str = Query("", max_length=200), status: LupinStatus | None 
         doctor_id=doctor_id, mr_id=mr_id, patient_id=patient_id, from_date=from_date, to_date=to_date)
 
 
+from app.schemas.order_eligibility import LupinEligibilityInput, EligibilityPreview
+from app.services.order_eligibility import preview as eligibility_preview
+
+
+@router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewLupinEligibility")
+def eligibility(body: LupinEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return eligibility_preview(db, actor, "lupin", body)
+
+
 @router.post("/{record_id}/edit", response_model=LupinRecord, operation_id="updateLupinOrder")
 def edit(record_id: uuid.UUID, body: LupinUpdate, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.update(db, actor, record_id, body)

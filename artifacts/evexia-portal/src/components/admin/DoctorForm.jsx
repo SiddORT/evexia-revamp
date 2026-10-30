@@ -30,7 +30,8 @@ const TABS = [
 const FIELD_INFO = {
   orderDiscount: 'Original percentage must be 0 to 100. Up to six source decimal places are rounded half-up to two when saved (1.005 → 1.01).',
   phone: 'Select the phone country and enter its national number. The selection is saved and also applies to the alternate phone.',
-  daysLimit: 'Saved business setting only. No payment ledger, order placement or overdue-payment blocking engine is connected.',
+  daysLimit: 'Doctor Master setting only; not enforced for MR placement. MR orders use the owning MR’s Doctor Days Limit, measured from each saved order date while a positive balance remains.',
+  paymentLimit: 'Doctor Master setting only; not an additional MR credit limit or fallback. MR placement uses the owning MR’s Payment Limit across all four real order types.',
   gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
   pincode: 'A six-digit Indian PIN fills country, state and city when exactly one place matches. Multiple places require selection. District is used as city when no city is returned. Other countries use the geography catalogue.',
 };

@@ -167,8 +167,9 @@ function Form() {
       submission.current = null; saving.current = false; setUncertain(false);
       navigate(`${BASE}/${order.id}`);
     } catch (error) {
-      setUncertain(Boolean(error.ambiguous));
-      if (!error.ambiguous) submission.current = null;
+      const keep = uncertain || Boolean(error.ambiguous);
+      setUncertain(keep);
+      if (!keep) submission.current = null;
       setErrors({ [error.stage || 'save']: error.message || 'Order was not saved. Your draft is preserved; retry.' });
       requestAnimationFrame(() => summaryRef.current?.focus());
     } finally { saving.current = false; setBusy(false); }

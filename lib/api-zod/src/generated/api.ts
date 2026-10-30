@@ -443,6 +443,14 @@ export const createImmunotherapyOrderBodyRemarksMax = 4000;
 export const createImmunotherapyOrderResponseCorrectionSavedDefault = false;
 export const createImmunotherapyOrderResponseMrEditableDefault = false;
 export const createImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
+export const previewImmunotherapyEligibilityBodyResubmitDefault = false;
+export const previewImmunotherapyEligibilityBodyValuesOneAttachmentIdsMax = 10;
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemIdMax = 100;
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsMax = 100;
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsMax = 1000;
+export const previewImmunotherapyEligibilityBodyValuesOnePoNumberOneMax = 100;
+export const previewImmunotherapyEligibilityBodyValuesOneRemarksMax = 4000;
+export const previewImmunotherapyEligibilityResponseReplayDefault = false;
 export const exportImmunotherapyOrdersQuerySearchMax = 200;
 export const exportImmunotherapyOrdersResponseItemsItemCorrectionSavedDefault = false;
 export const exportImmunotherapyOrdersResponseItemsItemMrEditableDefault = false;
@@ -716,6 +724,58 @@ export const createKitsOrderResponsePricingOneTrayRateOneMax = 32;
 export const createKitsOrderResponsePricingNeedsReviewDefault = false;
 export const createKitsOrderResponseRemarksMax = 4000;
 export const createKitsOrderResponseTrayMax = 12;
+export const previewKitsEligibilityBodyResubmitDefault = false;
+export const previewKitsEligibilityBodyValuesOneApplicatorsMax = 12;
+export const previewKitsEligibilityBodyValuesOneAttachmentIdsMax = 10;
+export const previewKitsEligibilityBodyValuesOneBusinessParkingOneMax = 32;
+export const previewKitsEligibilityBodyValuesOneKitCustomMax = 32;
+export const previewKitsEligibilityBodyValuesOneKitQuantityMax = 12;
+export const previewKitsEligibilityBodyValuesOneKitVolumeMax = 32;
+export const previewKitsEligibilityBodyValuesOneLancetsMax = 12;
+export const previewKitsEligibilityBodyValuesOneOtherAddressCityMax = 200;
+export const previewKitsEligibilityBodyValuesOneOtherAddressCountryMax = 200;
+export const previewKitsEligibilityBodyValuesOneOtherAddressLandmarkMax = 1000;
+export const previewKitsEligibilityBodyValuesOneOtherAddressLine1Max = 1000;
+export const previewKitsEligibilityBodyValuesOneOtherAddressLine2Max = 1000;
+export const previewKitsEligibilityBodyValuesOneOtherAddressPincodeMax = 32;
+export const previewKitsEligibilityBodyValuesOneOtherAddressStateMax = 200;
+export const previewKitsEligibilityBodyValuesOneOtherNameMax = 200;
+export const previewKitsEligibilityBodyValuesOneOtherPhoneMax = 25;
+export const previewKitsEligibilityBodyValuesOnePoNumberOneMax = 200;
+export const previewKitsEligibilityBodyValuesOnePricingOneApplicatorsRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesOnePricingOneDiscountValueMax = 32;
+export const previewKitsEligibilityBodyValuesOnePricingOneForwardingChargesMax = 32;
+export const previewKitsEligibilityBodyValuesOnePricingOneKitRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesOnePricingOneLancetsRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesOnePricingOneTrayRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesOneRemarksMax = 4000;
+export const previewKitsEligibilityBodyValuesOneTrayMax = 12;
+export const previewKitsEligibilityBodyValuesTwoApplicatorsMax = 12;
+export const previewKitsEligibilityBodyValuesTwoAttachmentIdsMax = 10;
+export const previewKitsEligibilityBodyValuesTwoBusinessParkingOneMax = 32;
+export const previewKitsEligibilityBodyValuesTwoKitCustomMax = 32;
+export const previewKitsEligibilityBodyValuesTwoKitQuantityMax = 12;
+export const previewKitsEligibilityBodyValuesTwoKitVolumeMax = 32;
+export const previewKitsEligibilityBodyValuesTwoLancetsMax = 12;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressCityMax = 200;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressCountryMax = 200;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressLandmarkMax = 1000;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressLine1Max = 1000;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressLine2Max = 1000;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressPincodeMax = 32;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressStateMax = 200;
+export const previewKitsEligibilityBodyValuesTwoOtherNameMax = 200;
+export const previewKitsEligibilityBodyValuesTwoOtherPhoneMax = 25;
+export const previewKitsEligibilityBodyValuesTwoPoNumberOneMax = 200;
+export const previewKitsEligibilityBodyValuesTwoPricingOneApplicatorsRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesTwoPricingOneDiscountValueMax = 32;
+export const previewKitsEligibilityBodyValuesTwoPricingOneForwardingChargesMax = 32;
+export const previewKitsEligibilityBodyValuesTwoPricingOneKitRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesTwoPricingOneLancetsRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesTwoPricingOneTrayRateOneMax = 32;
+export const previewKitsEligibilityBodyValuesTwoRemarksMax = 4000;
+export const previewKitsEligibilityBodyValuesTwoTrayMax = 12;
+export const previewKitsEligibilityResponseReplayDefault = false;
 export const exportKitsOrdersQuerySearchMax = 200;
 export const exportKitsOrdersResponseItemsItemApplicatorsMax = 12;
 export const exportKitsOrdersResponseItemsItemAttachmentIdsMax = 10;
@@ -1046,6 +1106,18 @@ export const createLupinOrderResponsePatientIdsMax = 200;
 export const createLupinOrderResponsePriceMax = 32;
 export const createLupinOrderResponsePricingNeedsReviewDefault = false;
 export const createLupinOrderResponseRemarksMax = 4000;
+export const previewLupinEligibilityBodyResubmitDefault = false;
+export const previewLupinEligibilityBodyValuesOneAttachmentIdsMax = 10;
+export const previewLupinEligibilityBodyValuesOnePatientCountMax = 1000000;
+export const previewLupinEligibilityBodyValuesOnePatientIdsMax = 200;
+export const previewLupinEligibilityBodyValuesOnePriceMax = 32;
+export const previewLupinEligibilityBodyValuesOneRemarksMax = 4000;
+export const previewLupinEligibilityBodyValuesTwoAttachmentIdsMax = 10;
+export const previewLupinEligibilityBodyValuesTwoPatientCountMax = 1000000;
+export const previewLupinEligibilityBodyValuesTwoPatientIdsMax = 200;
+export const previewLupinEligibilityBodyValuesTwoPriceMax = 32;
+export const previewLupinEligibilityBodyValuesTwoRemarksMax = 4000;
+export const previewLupinEligibilityResponseReplayDefault = false;
 export const exportLupinOrdersQuerySearchMax = 200;
 export const exportLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
 export const exportLupinOrdersResponseItemsItemCorrectionSavedDefault = false;
@@ -2018,6 +2090,11 @@ export const createSptOrderBodyRemarksMax = 4000;
 export const createSptOrderResponseCorrectionSavedDefault = false;
 export const createSptOrderResponseMrEditableDefault = false;
 export const createSptOrderResponsePricingNeedsReviewDefault = false;
+export const previewSptEligibilityBodyResubmitDefault = false;
+export const previewSptEligibilityBodyValuesOnePatientsItemAmountMax = 16;
+export const previewSptEligibilityBodyValuesOnePatientsMax = 200;
+export const previewSptEligibilityBodyValuesOneRemarksMax = 4000;
+export const previewSptEligibilityResponseReplayDefault = false;
 export const exportSptOrdersQuerySearchMax = 200;
 export const exportSptOrdersResponseItemsItemCorrectionSavedDefault = false;
 export const exportSptOrdersResponseItemsItemMrEditableDefault = false;
@@ -9980,6 +10057,225 @@ export const CreateImmunotherapyOrderResponse = zod.object({
 });
 
 /**
+ * @summary Eligibility
+ */
+
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemRateOneRegExp =
+  new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemResultRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemSuborderIdOneRegExp =
+  new RegExp("^(?:SUB(?:[0-9]{3,12}|-[0-9]{6,12})|IT-[0-9]{6,}[A-Z]+)$");
+
+export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemMrpOneRegExp =
+  new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
+
+export const previewImmunotherapyEligibilityBodyValuesOneHistamineRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+
+export const previewImmunotherapyEligibilityBodyValuesOneRemarksDefault = ``;
+
+export const previewImmunotherapyEligibilityBodyValuesOneSalineRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+export const previewImmunotherapyEligibilityBodyValuesOneStatusDefault = `Confirmed`;
+
+export const PreviewImmunotherapyEligibilityBody = zod.object({
+  orderId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  resubmit: zod
+    .boolean()
+    .default(previewImmunotherapyEligibilityBodyResubmitDefault),
+  values: zod.union([
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(previewImmunotherapyEligibilityBodyValuesOneAttachmentIdsMax)
+        .optional(),
+      decision: zod
+        .union([zod.enum(["approve", "reject"]), zod.null()])
+        .optional(),
+      doctorId: zod.string().uuid(),
+      dosage: zod.enum([
+        "PD",
+        "DD",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+      ]),
+      expected_version: zod
+        .union([zod.number().int().min(1), zod.null()])
+        .optional(),
+      groups: zod
+        .array(
+          zod.object({
+            id: zod
+              .string()
+              .min(1)
+              .max(previewImmunotherapyEligibilityBodyValuesOneGroupsItemIdMax),
+            items: zod
+              .array(
+                zod.object({
+                  allergenId: zod.string().uuid(),
+                  dilution: zod
+                    .union([
+                      zod
+                        .string()
+                        .regex(
+                          previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemDilutionOneRegExp,
+                        ),
+                      zod.null(),
+                    ])
+                    .optional(),
+                  extract: zod
+                    .union([
+                      zod
+                        .string()
+                        .regex(
+                          previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemExtractOneRegExp,
+                        ),
+                      zod.null(),
+                    ])
+                    .optional(),
+                  rate: zod
+                    .union([
+                      zod
+                        .string()
+                        .regex(
+                          previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemRateOneRegExp,
+                        ),
+                      zod.null(),
+                    ])
+                    .optional(),
+                  result: zod
+                    .string()
+                    .regex(
+                      previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemResultRegExp,
+                    ),
+                  suborderId: zod
+                    .union([
+                      zod
+                        .string()
+                        .regex(
+                          previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemSuborderIdOneRegExp,
+                        ),
+                      zod.null(),
+                    ])
+                    .optional(),
+                }),
+              )
+              .min(1)
+              .max(
+                previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsMax,
+              ),
+            mrp: zod
+              .union([
+                zod
+                  .string()
+                  .regex(
+                    previewImmunotherapyEligibilityBodyValuesOneGroupsItemMrpOneRegExp,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+          }),
+        )
+        .min(1)
+        .max(previewImmunotherapyEligibilityBodyValuesOneGroupsMax),
+      histamine: zod
+        .string()
+        .regex(previewImmunotherapyEligibilityBodyValuesOneHistamineRegExp),
+      idempotencyKey: zod.string().uuid(),
+      mrId: zod.string().uuid(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientId: zod.string().uuid(),
+      poNumber: zod
+        .union([
+          zod
+            .string()
+            .min(1)
+            .max(previewImmunotherapyEligibilityBodyValuesOnePoNumberOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      pricingBasis: zod
+        .union([
+          zod.enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"]),
+          zod.null(),
+        ])
+        .optional(),
+      remarks: zod
+        .string()
+        .max(previewImmunotherapyEligibilityBodyValuesOneRemarksMax)
+        .default(previewImmunotherapyEligibilityBodyValuesOneRemarksDefault),
+      saline: zod
+        .string()
+        .regex(previewImmunotherapyEligibilityBodyValuesOneSalineRegExp),
+      shipping: zod.enum(["patient", "doctor"]),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(previewImmunotherapyEligibilityBodyValuesOneStatusDefault),
+    }),
+    zod.object({
+      expected_version: zod.number().int().min(1),
+      idempotencyKey: zod.string().uuid(),
+    }),
+  ]),
+});
+
+export const PreviewImmunotherapyEligibilityResponse = zod.object({
+  businessDate: zod.union([zod.string(), zod.null()]).optional(),
+  doctorDaysLimit: zod.union([zod.number().int(), zod.null()]).optional(),
+  eligible: zod.boolean(),
+  outstanding: zod.union([zod.string(), zod.null()]).optional(),
+  paymentLimit: zod.union([zod.string(), zod.null()]).optional(),
+  proposedBalance: zod.union([zod.string(), zod.null()]).optional(),
+  reasons: zod.array(
+    zod.object({
+      ageDays: zod.union([zod.number().int(), zod.null()]).optional(),
+      balance: zod.string(),
+      code: zod.string(),
+      limit: zod.string(),
+      message: zod.string(),
+      proposed: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  replay: zod
+    .boolean()
+    .default(previewImmunotherapyEligibilityResponseReplayDefault),
+  resultingOutstanding: zod.union([zod.string(), zod.null()]).optional(),
+  stockAdvice: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      message: zod.string(),
+      name: zod.string(),
+      quantity: zod.union([zod.string(), zod.null()]).optional(),
+      state: zod.enum([
+        "unavailable_stock",
+        "low_stock",
+        "healthy",
+        "unavailable_check",
+      ]),
+      threshold: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+});
+
+/**
  * @summary Export
  */
 export const exportImmunotherapyOrdersQuerySearchDefault = ``;
@@ -14572,6 +14868,524 @@ export const UploadKitsAttachmentResponse = zod.object({
 });
 
 /**
+ * @summary Eligibility
+ */
+
+export const previewKitsEligibilityBodyValuesOneApplicatorsDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneKitCustomDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneKitProductDefault = ``;
+export const previewKitsEligibilityBodyValuesOneKitQuantityDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneKitVolumeDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneLancetsDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOrderForDefault = `doctor`;
+export const previewKitsEligibilityBodyValuesOneOtherAddressCityDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherAddressCountryDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherAddressLandmarkDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherAddressLine1Default = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherAddressLine2Default = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherAddressPincodeDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherAddressStateDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherNameDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneOtherPhoneDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOnePaymentStatusDefault = `Unpaid`;
+
+export const previewKitsEligibilityBodyValuesOneRemarksDefault = ``;
+
+export const previewKitsEligibilityBodyValuesOneShippingDefault = `doctor`;
+export const previewKitsEligibilityBodyValuesOneStatusDefault = `Confirmed`;
+export const previewKitsEligibilityBodyValuesOneTrayDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoApplicatorsDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoKitCustomDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoKitProductDefault = ``;
+export const previewKitsEligibilityBodyValuesTwoKitQuantityDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoKitVolumeDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoLancetsDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOrderForDefault = `doctor`;
+export const previewKitsEligibilityBodyValuesTwoOtherAddressCityDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherAddressCountryDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherAddressLandmarkDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherAddressLine1Default = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherAddressLine2Default = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherAddressPincodeDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherAddressStateDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherNameDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoOtherPhoneDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoPaymentStatusDefault = `Unpaid`;
+
+export const previewKitsEligibilityBodyValuesTwoRemarksDefault = ``;
+
+export const previewKitsEligibilityBodyValuesTwoShippingDefault = `doctor`;
+export const previewKitsEligibilityBodyValuesTwoStatusDefault = `Confirmed`;
+export const previewKitsEligibilityBodyValuesTwoTrayDefault = ``;
+
+export const PreviewKitsEligibilityBody = zod.object({
+  orderId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  resubmit: zod.boolean().default(previewKitsEligibilityBodyResubmitDefault),
+  values: zod.union([
+    zod.object({
+      applicators: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesOneApplicatorsMax)
+        .default(previewKitsEligibilityBodyValuesOneApplicatorsDefault),
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(previewKitsEligibilityBodyValuesOneAttachmentIdsMax)
+        .optional(),
+      businessParking: zod
+        .union([
+          zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesOneBusinessParkingOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      doctorId: zod.string().uuid(),
+      expected_version: zod.number().int().min(1),
+      idempotencyKey: zod.string().uuid(),
+      kit: zod
+        .object({
+          custom: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesOneKitCustomMax)
+            .default(previewKitsEligibilityBodyValuesOneKitCustomDefault),
+          product: zod
+            .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+            .default(previewKitsEligibilityBodyValuesOneKitProductDefault),
+          quantity: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesOneKitQuantityMax)
+            .default(previewKitsEligibilityBodyValuesOneKitQuantityDefault),
+          volume: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesOneKitVolumeMax)
+            .default(previewKitsEligibilityBodyValuesOneKitVolumeDefault),
+        })
+        .optional(),
+      lancets: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesOneLancetsMax)
+        .default(previewKitsEligibilityBodyValuesOneLancetsDefault),
+      mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      orderFor: zod
+        .enum(["doctor", "mr"])
+        .default(previewKitsEligibilityBodyValuesOneOrderForDefault),
+      other: zod
+        .object({
+          address: zod
+            .object({
+              city: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressCityMax)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressCityDefault,
+                ),
+              country: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressCountryMax)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressCountryDefault,
+                ),
+              landmark: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressLandmarkMax)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressLandmarkDefault,
+                ),
+              line1: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressLine1Max)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressLine1Default,
+                ),
+              line2: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressLine2Max)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressLine2Default,
+                ),
+              pincode: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressPincodeMax)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressPincodeDefault,
+                ),
+              state: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesOneOtherAddressStateMax)
+                .default(
+                  previewKitsEligibilityBodyValuesOneOtherAddressStateDefault,
+                ),
+            })
+            .optional(),
+          name: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesOneOtherNameMax)
+            .default(previewKitsEligibilityBodyValuesOneOtherNameDefault),
+          phone: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesOneOtherPhoneMax)
+            .default(previewKitsEligibilityBodyValuesOneOtherPhoneDefault),
+        })
+        .optional(),
+      patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(previewKitsEligibilityBodyValuesOnePaymentStatusDefault),
+      poNumber: zod
+        .union([
+          zod.string().max(previewKitsEligibilityBodyValuesOnePoNumberOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      pricing: zod
+        .union([
+          zod.object({
+            applicatorsRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesOnePricingOneApplicatorsRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            discountType: zod.enum(["percent", "inr"]),
+            discountValue: zod
+              .string()
+              .max(
+                previewKitsEligibilityBodyValuesOnePricingOneDiscountValueMax,
+              ),
+            forwardingCharges: zod
+              .string()
+              .max(
+                previewKitsEligibilityBodyValuesOnePricingOneForwardingChargesMax,
+              ),
+            kitRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesOnePricingOneKitRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            lancetsRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesOnePricingOneLancetsRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            trayRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesOnePricingOneTrayRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      remarks: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesOneRemarksMax)
+        .default(previewKitsEligibilityBodyValuesOneRemarksDefault),
+      shipping: zod
+        .enum(["doctor", "mr", "other"])
+        .default(previewKitsEligibilityBodyValuesOneShippingDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(previewKitsEligibilityBodyValuesOneStatusDefault),
+      tray: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesOneTrayMax)
+        .default(previewKitsEligibilityBodyValuesOneTrayDefault),
+    }),
+    zod.object({
+      applicators: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesTwoApplicatorsMax)
+        .default(previewKitsEligibilityBodyValuesTwoApplicatorsDefault),
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(previewKitsEligibilityBodyValuesTwoAttachmentIdsMax)
+        .optional(),
+      businessParking: zod
+        .union([
+          zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesTwoBusinessParkingOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      doctorId: zod.string().uuid(),
+      idempotencyKey: zod.string().uuid(),
+      kit: zod
+        .object({
+          custom: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesTwoKitCustomMax)
+            .default(previewKitsEligibilityBodyValuesTwoKitCustomDefault),
+          product: zod
+            .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+            .default(previewKitsEligibilityBodyValuesTwoKitProductDefault),
+          quantity: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesTwoKitQuantityMax)
+            .default(previewKitsEligibilityBodyValuesTwoKitQuantityDefault),
+          volume: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesTwoKitVolumeMax)
+            .default(previewKitsEligibilityBodyValuesTwoKitVolumeDefault),
+        })
+        .optional(),
+      lancets: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesTwoLancetsMax)
+        .default(previewKitsEligibilityBodyValuesTwoLancetsDefault),
+      mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      orderFor: zod
+        .enum(["doctor", "mr"])
+        .default(previewKitsEligibilityBodyValuesTwoOrderForDefault),
+      other: zod
+        .object({
+          address: zod
+            .object({
+              city: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressCityMax)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressCityDefault,
+                ),
+              country: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressCountryMax)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressCountryDefault,
+                ),
+              landmark: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressLandmarkMax)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressLandmarkDefault,
+                ),
+              line1: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressLine1Max)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressLine1Default,
+                ),
+              line2: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressLine2Max)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressLine2Default,
+                ),
+              pincode: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressPincodeMax)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressPincodeDefault,
+                ),
+              state: zod
+                .string()
+                .max(previewKitsEligibilityBodyValuesTwoOtherAddressStateMax)
+                .default(
+                  previewKitsEligibilityBodyValuesTwoOtherAddressStateDefault,
+                ),
+            })
+            .optional(),
+          name: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesTwoOtherNameMax)
+            .default(previewKitsEligibilityBodyValuesTwoOtherNameDefault),
+          phone: zod
+            .string()
+            .max(previewKitsEligibilityBodyValuesTwoOtherPhoneMax)
+            .default(previewKitsEligibilityBodyValuesTwoOtherPhoneDefault),
+        })
+        .optional(),
+      patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(previewKitsEligibilityBodyValuesTwoPaymentStatusDefault),
+      poNumber: zod
+        .union([
+          zod.string().max(previewKitsEligibilityBodyValuesTwoPoNumberOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      pricing: zod
+        .union([
+          zod.object({
+            applicatorsRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesTwoPricingOneApplicatorsRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            discountType: zod.enum(["percent", "inr"]),
+            discountValue: zod
+              .string()
+              .max(
+                previewKitsEligibilityBodyValuesTwoPricingOneDiscountValueMax,
+              ),
+            forwardingCharges: zod
+              .string()
+              .max(
+                previewKitsEligibilityBodyValuesTwoPricingOneForwardingChargesMax,
+              ),
+            kitRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesTwoPricingOneKitRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            lancetsRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesTwoPricingOneLancetsRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            trayRate: zod
+              .union([
+                zod
+                  .string()
+                  .max(
+                    previewKitsEligibilityBodyValuesTwoPricingOneTrayRateOneMax,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      remarks: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesTwoRemarksMax)
+        .default(previewKitsEligibilityBodyValuesTwoRemarksDefault),
+      shipping: zod
+        .enum(["doctor", "mr", "other"])
+        .default(previewKitsEligibilityBodyValuesTwoShippingDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(previewKitsEligibilityBodyValuesTwoStatusDefault),
+      tray: zod
+        .string()
+        .max(previewKitsEligibilityBodyValuesTwoTrayMax)
+        .default(previewKitsEligibilityBodyValuesTwoTrayDefault),
+    }),
+    zod.object({
+      expected_version: zod.number().int().min(1),
+      idempotencyKey: zod.string().uuid(),
+    }),
+  ]),
+});
+
+export const PreviewKitsEligibilityResponse = zod.object({
+  businessDate: zod.union([zod.string(), zod.null()]).optional(),
+  doctorDaysLimit: zod.union([zod.number().int(), zod.null()]).optional(),
+  eligible: zod.boolean(),
+  outstanding: zod.union([zod.string(), zod.null()]).optional(),
+  paymentLimit: zod.union([zod.string(), zod.null()]).optional(),
+  proposedBalance: zod.union([zod.string(), zod.null()]).optional(),
+  reasons: zod.array(
+    zod.object({
+      ageDays: zod.union([zod.number().int(), zod.null()]).optional(),
+      balance: zod.string(),
+      code: zod.string(),
+      limit: zod.string(),
+      message: zod.string(),
+      proposed: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  replay: zod.boolean().default(previewKitsEligibilityResponseReplayDefault),
+  resultingOutstanding: zod.union([zod.string(), zod.null()]).optional(),
+  stockAdvice: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      message: zod.string(),
+      name: zod.string(),
+      quantity: zod.union([zod.string(), zod.null()]).optional(),
+      state: zod.enum([
+        "unavailable_stock",
+        "low_stock",
+        "healthy",
+        "unavailable_check",
+      ]),
+      threshold: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+});
+
+/**
  * @summary Export
  */
 export const exportKitsOrdersQuerySearchDefault = ``;
@@ -17825,6 +18639,144 @@ export const CancelLupinUploadParams = zod.object({
 export const CancelLupinUploadResponse = zod.object({
   cancelled: zod.boolean(),
   id: zod.string().uuid(),
+});
+
+/**
+ * @summary Eligibility
+ */
+
+export const previewLupinEligibilityBodyValuesOnePaymentStatusDefault = `Unpaid`;
+
+export const previewLupinEligibilityBodyValuesOneRemarksDefault = ``;
+
+export const previewLupinEligibilityBodyValuesOneStatusDefault = `Confirmed`;
+
+export const previewLupinEligibilityBodyValuesTwoPaymentStatusDefault = `Unpaid`;
+
+export const previewLupinEligibilityBodyValuesTwoRemarksDefault = ``;
+
+export const previewLupinEligibilityBodyValuesTwoStatusDefault = `Confirmed`;
+
+export const PreviewLupinEligibilityBody = zod.object({
+  orderId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  resubmit: zod.boolean().default(previewLupinEligibilityBodyResubmitDefault),
+  values: zod.union([
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(previewLupinEligibilityBodyValuesOneAttachmentIdsMax)
+        .optional(),
+      doctorId: zod.string().uuid(),
+      expected_version: zod.number().int().min(1),
+      idempotencyKey: zod.string().uuid(),
+      mrId: zod.string().uuid(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(previewLupinEligibilityBodyValuesOnePatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(previewLupinEligibilityBodyValuesOnePatientIdsMax)
+        .optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(previewLupinEligibilityBodyValuesOnePaymentStatusDefault),
+      price: zod.string().max(previewLupinEligibilityBodyValuesOnePriceMax),
+      remarks: zod
+        .string()
+        .max(previewLupinEligibilityBodyValuesOneRemarksMax)
+        .default(previewLupinEligibilityBodyValuesOneRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(previewLupinEligibilityBodyValuesOneStatusDefault),
+    }),
+    zod.object({
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(previewLupinEligibilityBodyValuesTwoAttachmentIdsMax)
+        .optional(),
+      doctorId: zod.string().uuid(),
+      idempotencyKey: zod.string().uuid(),
+      mrId: zod.string().uuid(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patientCount: zod
+        .number()
+        .int()
+        .min(1)
+        .max(previewLupinEligibilityBodyValuesTwoPatientCountMax),
+      patientIds: zod
+        .array(zod.string().uuid())
+        .max(previewLupinEligibilityBodyValuesTwoPatientIdsMax)
+        .optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(previewLupinEligibilityBodyValuesTwoPaymentStatusDefault),
+      price: zod.string().max(previewLupinEligibilityBodyValuesTwoPriceMax),
+      remarks: zod
+        .string()
+        .max(previewLupinEligibilityBodyValuesTwoRemarksMax)
+        .default(previewLupinEligibilityBodyValuesTwoRemarksDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(previewLupinEligibilityBodyValuesTwoStatusDefault),
+    }),
+    zod.object({
+      expected_version: zod.number().int().min(1),
+      idempotencyKey: zod.string().uuid(),
+    }),
+  ]),
+});
+
+export const PreviewLupinEligibilityResponse = zod.object({
+  businessDate: zod.union([zod.string(), zod.null()]).optional(),
+  doctorDaysLimit: zod.union([zod.number().int(), zod.null()]).optional(),
+  eligible: zod.boolean(),
+  outstanding: zod.union([zod.string(), zod.null()]).optional(),
+  paymentLimit: zod.union([zod.string(), zod.null()]).optional(),
+  proposedBalance: zod.union([zod.string(), zod.null()]).optional(),
+  reasons: zod.array(
+    zod.object({
+      ageDays: zod.union([zod.number().int(), zod.null()]).optional(),
+      balance: zod.string(),
+      code: zod.string(),
+      limit: zod.string(),
+      message: zod.string(),
+      proposed: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  replay: zod.boolean().default(previewLupinEligibilityResponseReplayDefault),
+  resultingOutstanding: zod.union([zod.string(), zod.null()]).optional(),
+  stockAdvice: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      message: zod.string(),
+      name: zod.string(),
+      quantity: zod.union([zod.string(), zod.null()]).optional(),
+      state: zod.enum([
+        "unavailable_stock",
+        "low_stock",
+        "healthy",
+        "unavailable_check",
+      ]),
+      threshold: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
 });
 
 /**
@@ -34987,6 +35939,94 @@ export const CreateSptOrderResponse = zod.object({
   ]),
   total: zod.string(),
   version: zod.number().int(),
+});
+
+/**
+ * @summary Eligibility
+ */
+
+export const previewSptEligibilityBodyValuesOnePatientsItemAmountDefault = ``;
+
+export const previewSptEligibilityBodyValuesOneRemarksDefault = ``;
+
+export const previewSptEligibilityBodyValuesOneStatusDefault = `Draft`;
+
+export const PreviewSptEligibilityBody = zod.object({
+  orderId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  resubmit: zod.boolean().default(previewSptEligibilityBodyResubmitDefault),
+  values: zod.union([
+    zod.object({
+      doctorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      expected_version: zod
+        .union([zod.number().int().min(1), zod.null()])
+        .optional(),
+      idempotencyKey: zod.string().uuid(),
+      mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      patients: zod
+        .array(
+          zod.object({
+            amount: zod
+              .string()
+              .max(previewSptEligibilityBodyValuesOnePatientsItemAmountMax)
+              .default(
+                previewSptEligibilityBodyValuesOnePatientsItemAmountDefault,
+              ),
+            id: zod.string().uuid(),
+            source: zod.enum(["master", "spt"]),
+          }),
+        )
+        .max(previewSptEligibilityBodyValuesOnePatientsMax)
+        .optional(),
+      remarks: zod
+        .string()
+        .max(previewSptEligibilityBodyValuesOneRemarksMax)
+        .default(previewSptEligibilityBodyValuesOneRemarksDefault),
+      status: zod
+        .enum(["Draft", "Saved", "Rejected"])
+        .default(previewSptEligibilityBodyValuesOneStatusDefault),
+    }),
+    zod.object({
+      expected_version: zod.number().int().min(1),
+      idempotencyKey: zod.string().uuid(),
+    }),
+  ]),
+});
+
+export const PreviewSptEligibilityResponse = zod.object({
+  businessDate: zod.union([zod.string(), zod.null()]).optional(),
+  doctorDaysLimit: zod.union([zod.number().int(), zod.null()]).optional(),
+  eligible: zod.boolean(),
+  outstanding: zod.union([zod.string(), zod.null()]).optional(),
+  paymentLimit: zod.union([zod.string(), zod.null()]).optional(),
+  proposedBalance: zod.union([zod.string(), zod.null()]).optional(),
+  reasons: zod.array(
+    zod.object({
+      ageDays: zod.union([zod.number().int(), zod.null()]).optional(),
+      balance: zod.string(),
+      code: zod.string(),
+      limit: zod.string(),
+      message: zod.string(),
+      proposed: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  replay: zod.boolean().default(previewSptEligibilityResponseReplayDefault),
+  resultingOutstanding: zod.union([zod.string(), zod.null()]).optional(),
+  stockAdvice: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      message: zod.string(),
+      name: zod.string(),
+      quantity: zod.union([zod.string(), zod.null()]).optional(),
+      state: zod.enum([
+        "unavailable_stock",
+        "low_stock",
+        "healthy",
+        "unavailable_check",
+      ]),
+      threshold: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
 });
 
 /**

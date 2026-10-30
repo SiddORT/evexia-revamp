@@ -29,6 +29,15 @@ def filters(search: str = Query("", max_length=200), status: ReadStatus | None =
         patient_id=patient_id, from_date=from_date, to_date=to_date)
 
 
+from app.schemas.order_eligibility import SptEligibilityInput, EligibilityPreview
+from app.services.order_eligibility import preview as eligibility_preview
+
+
+@router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewSptEligibility")
+def eligibility(body: SptEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return eligibility_preview(db, actor, "spt", body)
+
+
 @router.post("/{record_id}/approve", response_model=SptRecord, operation_id="approveSptOrder")
 def approve(record_id: uuid.UUID, body: OrderApproval, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return approve_order(db, actor, record_id, body, "spt")
