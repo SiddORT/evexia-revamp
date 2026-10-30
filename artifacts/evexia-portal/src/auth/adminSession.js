@@ -1207,9 +1207,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.groups)
       || !data.patient || !data.doctor || !data.mr || !Array.isArray(data.attachments)) throw uncertain();
   } else if (mutation && resource === 'in-house-stock') {
+    // Match ReserveInput's omitted-unit default without coercing malformed supplied units.
+    if (body.unit !== undefined && typeof body.unit !== 'string') throw uncertain();
+    const expectedUnit = body.unit === undefined ? '' : body.unit.trim();
     if (!/^[0-9a-f-]{36}$/i.test(data?.id || '') || data.reserveOnly !== true
       || data.allergenId !== body.allergenId || data.locationId !== body.locationId
-      || data.concentration !== body.concentration.trim() || data.unit !== body.unit.trim()
+      || data.concentration !== body.concentration.trim() || data.unit !== expectedUnit
       || data.expiryDate !== body.expiryDate || !/^\d+\.\d{3}$/.test(data.quantity || '')
       || typeof data.actor !== 'string' || typeof data.createdAt !== 'string') throw uncertain();
   } else if (mutation && resource === 'products') {
