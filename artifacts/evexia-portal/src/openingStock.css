@@ -18,6 +18,16 @@
 .opening-stock-import .admin-button { max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; }
 .opening-stock-import .mr-form__control { min-height: 42px; height: auto; padding-block: 8px; }
 
+/* Let inline menus escape only this entry card; retain its border and radius. */
+.opening-stock-form .admin-panel.opening-stock-form__panel { overflow: visible; }
+/* Raise the container-query row as well as its open selector above subsequent
+   rows and the footer, while staying below header (20) and dialog (80) layers. */
+.opening-stock-form .opening-stock-form__row:has(.searchable-select--open) {
+  position: relative;
+  z-index: 10;
+}
+.opening-stock-form .searchable-select.searchable-select--open { z-index: 10; }
+
 /* Only manual opening-stock rows share label/control tracks. Selector feedback
    stays intact below its control; the remove action starts at control height. */
 .opening-stock-form__row {
