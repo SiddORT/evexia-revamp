@@ -382,6 +382,16 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
     else:
         raise PRError("Unsupported reference purpose.", 403, "access_denied")
     def work(_, crypto):
+        if purpose == "opening_stock":
+            # Use the shared master's predicates, and page in SQL before the
+            # inventory-wide bounded loader can hide a large master directory.
+            from app.services.locations import predicates
+            filters = predicates(query, "active")
+            filtered = db.scalar(select(func.count()).select_from(StorageLocation).where(*filters))
+            rows = db.scalars(select(StorageLocation).where(*filters).order_by(
+                StorageLocation.name, StorageLocation.id).offset(offset).limit(limit))
+            return dict(items=[dict(id=str(r.id), name=r.name) for r in rows],
+                        filtered=filtered, offset=offset, limit=limit)
         if kind.startswith("movement-"):
             # Historical choices must not disappear when a catalogue row is
             # renamed, inactivated or deleted. Latest saved label per ID wins.

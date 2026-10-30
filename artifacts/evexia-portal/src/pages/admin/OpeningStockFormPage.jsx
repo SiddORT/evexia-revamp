@@ -37,11 +37,18 @@ export default function OpeningStockFormPage() {
   const [review, setReview] = useState(null);
   const [blocked, setBlocked] = useState(false);
   const [tick, setTick] = useState(0);
+  const [locationRevision, setLocationRevision] = useState(0);
   const [done, setDone] = useState(false);
   const keyRef = useRef(null);
   const lock = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    // The master can change in another tab while this draft remains mounted.
+    const refresh = () => { if (document.visibilityState === 'visible') setLocationRevision((r) => r + 1); };
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, []);
   useEffect(() => { if (done) navigate(BASE); }, [done, navigate]);
   useEffect(() => {
     const read = () => { try { setBlocked(Boolean(pendingOpening())); } catch { setBlocked(true); } };
@@ -126,6 +133,8 @@ export default function OpeningStockFormPage() {
       <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
         <div className="ms-fields"><div className="ms-field"><label htmlFor="os-date">Recorded date <span className="mr-form__required">*</span></label>
           <input id="os-date" type="date" className="mr-form__control" value={draft.recordedDate} onChange={(e) => { reset(); setDraft((d) => ({ ...d, recordedDate: e.target.value })); setErrors((x) => ({ ...x, date: undefined })); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'os-date-error' : undefined} data-testid="input-opening-date" />{err('date')}</div></div>
+        <div><button type="button" className="admin-button admin-button--secondary" onClick={() => setLocationRevision((r) => r + 1)}>Refresh storage locations</button>
+          <p className="mr-form__hint">Choices come from active Storage Location Master records. Search by name or address, or load more below each location field. Refresh keeps your entered rows and selected locations; the server rechecks them before saving.</p></div>
         {err('rows')}
         {draft.rows.map((r, i) => <div key={r.rowId} className="opening-stock-form__row" data-testid={`row-opening-${i}`}>
           <div className={`opening-stock-form__controls${draft.rows.length > 1 ? ' opening-stock-form__controls--removable' : ''}`}>
@@ -135,7 +144,7 @@ export default function OpeningStockFormPage() {
           <div className="ms-field"><label htmlFor={`os-qty-${i}`}>Quantity ({r.item?.itemKind === 'combo' ? 'units' : 'ml'}) <span className="mr-form__required">*</span></label><input id={`os-qty-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(i, { quantity: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-qty-${i}`} /></div>
           <div className="ms-field"><InfoDisclosure id={`os-rate-${r.rowId}-help`} title="Unit rate" text="Entered cost per unit, not MRP or selling price. This can also be a weighted-average cost per unit." testId={`button-opening-rate-info-${i}`}><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label></InfoDisclosure><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /></div>
           <div className="ms-field"><label htmlFor={`os-loc-${i}`}>Storage location</label>
-            <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={openingLocationReferences} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
+            <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={openingLocationReferences} refreshKey={locationRevision} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
               onChange={(_v, o) => patchRow(i, { location: o ? { value: o.value, label: o.label } : UNALLOCATED })} /></div>
           {draft.rows.length > 1 && <button type="button" className="admin-button admin-button--secondary opening-stock-form__remove" aria-label={`Remove opening stock row ${i + 1}`} onClick={() => { reset(); setDraft((d) => ({ ...d, rows: d.rows.filter((_x, j) => j !== i) })); }} data-testid={`button-remove-opening-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
           </div>

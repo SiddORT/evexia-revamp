@@ -6,7 +6,7 @@ import '../../inventoryServer.css';
 const PAGE = 50;
 
 /** Server-searched, server-paged choices. "Load more" keeps later choices reachable. */
-export default function ReferenceSelect({ id, label, kind, extra, value, selected, onChange, exclude, pinned = [], placeholder, invalid, describedBy, fetchPage, disabled = false, showResultHint = true, multiple = false, selections = [], maxSelections = 100 }) {
+export default function ReferenceSelect({ id, label, kind, extra, value, selected, onChange, exclude, pinned = [], placeholder, invalid, describedBy, fetchPage, disabled = false, showResultHint = true, multiple = false, selections = [], maxSelections = 100, refreshKey = 0 }) {
   const [query, setQuery] = useState('');
   const [state, setState] = useState({ items: [], filtered: 0, loading: true, error: '' });
   const [tick, setTick] = useState(0);
@@ -23,7 +23,7 @@ export default function ReferenceSelect({ id, label, kind, extra, value, selecte
   }
   useEffect(() => { const t = setTimeout(() => run(0, true), query ? 250 : 0); return () => { clearTimeout(t); seq.current++; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, extraKey, tick, kind]);
+  }, [query, extraKey, tick, kind, refreshKey]);
 
   const options = useMemo(() => {
     const map = new Map();
