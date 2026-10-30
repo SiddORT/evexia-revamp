@@ -3,12 +3,17 @@ import { X } from 'lucide-react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import { enterModal, isTopModal } from '../modalLayers.js';
 
-export default function Dialog({ title, eyebrow, description, titleInfo, onClose, children, footer, className = '' }) {
+export default function Dialog({ title, eyebrow, description, titleInfo, onClose, children, footer, className = '', dismissDisabled = false, returnFocusRef }) {
   const id = useId();
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  onCloseRef.current = () => { if (!dismissDisabled) onClose(); };
+  const returnFocus = useRef(returnFocusRef);
+  useEffect(() => {
+    // Opt-in pending state: keep focus inside even when every action is disabled.
+    if (dismissDisabled && isTopModal(dialogRef.current)) dialogRef.current?.focus();
+  }, [dismissDisabled]);
   useEffect(() => {
     const previouslyFocused = document.activeElement;
     const leaveLayer = enterModal(dialogRef.current);
@@ -34,7 +39,10 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
       if (event.key === 'Tab') {
         const focusable = [...(dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, a[href], [tabindex]:not([tabindex="-1"])') || [])]
           .filter((element) => element.getClientRects().length > 0);
-        if (!focusable.length) return;
+        if (!focusable.length) {
+          if (dialogRef.current?.hasAttribute('tabindex')) { event.preventDefault(); dialogRef.current.focus(); }
+          return;
+        }
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
@@ -45,17 +53,18 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
     return () => {
       leaveLayer();
       document.removeEventListener('keydown', handleKey, true);
-      if (previouslyFocused?.isConnected && !document.querySelector('[data-platform-confirmation]')) previouslyFocused.focus();
+      const target = returnFocus.current?.current || previouslyFocused;
+      if (target?.isConnected && !document.querySelector('[data-platform-confirmation]')) target.focus();
     };
   }, []);
   return (
-    <div className="admin-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className={`admin-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} ref={dialogRef}>
+    <div className="admin-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onCloseRef.current(); }}>
+      <section className={`admin-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} ref={dialogRef} tabIndex={dismissDisabled ? -1 : undefined}>
         <div className="admin-dialog__top">
            <div><p className="admin-dialog__eyebrow">{eyebrow || 'Zone Master'}</p>
              {titleInfo ? <InfoDisclosure id={`${id}-help`} title={title} text={titleInfo} testId="button-zone-info"><h2 id={`${id}-title`}>{title}</h2></InfoDisclosure> : <h2 id={`${id}-title`}>{title}</h2>}
            </div>
-          <button type="button" ref={closeRef} className="admin-icon-button" aria-label="Close dialog" onClick={onClose} data-testid="button-close-dialog"><X size={18} /></button>
+          <button type="button" ref={closeRef} className="admin-icon-button" aria-label="Close dialog" onClick={() => onCloseRef.current()} disabled={dismissDisabled} data-testid="button-close-dialog"><X size={18} /></button>
         </div>
         {description && <p className="admin-dialog__description" id={`${id}-description`}>{description}</p>}
         {children}

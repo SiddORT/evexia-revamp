@@ -12,3 +12,24 @@
 .inv-drawer-section{margin-top:18px}
 .inv-drawer-section h3{margin:0 0 8px;font-size:.95rem}
 .inv-period{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px}
+
+/* Only the new-entry review uses a fixed header/footer and scrolling facts. */
+.admin-dialog.inhouse-review-dialog{width:min(100%,640px);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.inhouse-review-dialog > .admin-dialog__top,
+.inhouse-review-dialog > .admin-dialog__description,
+.inhouse-review-dialog > .admin-dialog__actions{flex-shrink:0}
+.inhouse-review-dialog__content{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.inhouse-review-dialog .inhouse-facts{grid-template-columns:minmax(0,max-content) minmax(0,1fr)!important}
+.inhouse-review-dialog .inhouse-facts dt{overflow-wrap:anywhere}
+.inhouse-review-dialog > .admin-dialog__actions{flex-wrap:wrap}
+.inhouse-review-dialog > .admin-dialog__actions .admin-button{white-space:normal}
+@media(max-width:480px){
+  .admin-dialog.inhouse-review-dialog{padding:16px}
+  .inhouse-review-dialog > .admin-dialog__description{margin-bottom:12px}
+  .inhouse-review-dialog > .admin-dialog__actions{margin-top:14px}
+}
+@media(max-height:480px){
+  .admin-dialog.inhouse-review-dialog{padding:12px}
+  .inhouse-review-dialog > .admin-dialog__description{margin:8px 0}
+  .inhouse-review-dialog > .admin-dialog__actions{margin-top:8px}
+}

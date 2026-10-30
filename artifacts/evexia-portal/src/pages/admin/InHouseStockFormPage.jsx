@@ -6,6 +6,7 @@ import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
 import InHousePendingBanner from '../../components/admin/InHousePendingBanner.jsx';
 import InHouseStockDialog, { InHouseFacts } from '../../components/admin/InHouseStockDialog.jsx';
+import Dialog from '../../components/admin/Dialog.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { isSuperAdminIdentity } from '../../auth/capabilities.js';
@@ -42,6 +43,7 @@ function InHouseStockForm() {
   const [tick, setTick] = useState(0);
   const [saved, setSaved] = useState(null);
   const keyRef = useRef(null);
+  const reviewButtonRef = useRef(null);
   const lock = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -54,6 +56,7 @@ function InHouseStockForm() {
   }, [tick]);
   const locked = Boolean(busy) || Boolean(review) || blocked || Boolean(saved);
   const reset = () => { keyRef.current = null; setReview(null); };
+  const dismissReview = () => { if (!lock.current && busy !== 'save') reset(); };
   const set = (k, v) => { reset(); setDraft((d) => ({ ...d, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
 
   function validate() {
@@ -110,6 +113,11 @@ function InHouseStockForm() {
   const dirty = !saved && (Boolean(review) || Object.keys(baseline.current).some((k) => draft[k] !== baseline.current[k]));
   const leaveGuard = useProductDraftNavigation({ dirty, busy: Boolean(busy), uncertain: blocked, message: 'Discard this unsaved in-house stock entry and leave? Nothing has been committed.' });
   const leave = () => leaveGuard(BASE);
+  const resolvePending = (r) => {
+    keyRef.current = null; setTick((t) => t + 1);
+    if (r.state === 'committed') { setMessage(''); setReview(null); if (r.result?.id) setSaved(r.result); else navigate(BASE); return; }
+    setReview(null); setMessage('The earlier save was not committed. Your draft is preserved; review it again to save.');
+  };
   const desc = (k) => errors[k] ? `ih-${k}-error` : undefined;
   const err = (k) => errors[k] && <p id={`ih-${k}-error`} className="mr-form__error" role="alert">{errors[k]}</p>;
   const text = (k, label, max, extra = {}) => <div className="ms-field"><label htmlFor={`ih-${k}`}>{label}{extra.required && <> <span className="mr-form__required">*</span></>}</label>
@@ -119,10 +127,8 @@ function InHouseStockForm() {
   return <AdminLayout title="Add in-house stock"><div className="move-stocks-page opening-stock-form">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / In-house stock / New</p><h1>Add in-house stock</h1><p className="admin-page-head__description">{RESERVE_NOTE} Review the canonical values before committing.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={leave} disabled={busy === 'save'} data-testid="button-back-in-house"><ArrowLeft size={16} /> All in-house stock</button></div></div>
-    <InHousePendingBanner refreshSignal={tick} onResolved={(r) => { keyRef.current = null; setTick((t) => t + 1);
-      if (r.state === 'committed') { setMessage(''); setReview(null); if (r.result?.id) setSaved(r.result); else navigate(BASE); return; }
-      setReview(null); setMessage('The earlier save was not committed. Your draft is preserved; review it again to save.'); }} />
-    {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
+    {!review && <InHousePendingBanner refreshSignal={tick} onResolved={resolvePending} />}
+    {!review && message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
     <section className="admin-panel in-house-stock-form__panel" aria-label="New in-house stock"><form onSubmit={submitReview} noValidate>
       <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
         <div className="ms-fields">
@@ -148,16 +154,24 @@ function InHouseStockForm() {
           <textarea id="ih-notes" className="mr-form__control" rows={3} maxLength={2000} value={draft.notes} onChange={(e) => set('notes', e.target.value)} aria-invalid={Boolean(errors.notes)} aria-describedby={desc('notes')} data-testid="input-in-house-notes" />
           {err('notes')}</div>
       </div></fieldset>
-      {review && <div className="ms-form-body" data-testid="panel-in-house-review"><h2 className="ms-section-title">Review before committing</h2>
-        <p className="mr-form__hint">{RESERVE_NOTE} Values below are canonical as returned by the server.</p>
-        <InHouseFacts record={review.record} date={date} /></div>}
       <div className="ms-footer"><span>{blocked ? 'Saving is blocked until the earlier outcome is checked.' : review ? 'Nothing is saved until you confirm.' : 'Reviewed on the server before commit.'}</span><div className="ms-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={leave} disabled={busy === 'save'} data-testid="button-cancel-in-house">Cancel</button>
-        {review ? <>
-          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busy) || blocked} onClick={reset} data-testid="button-edit-in-house">Back to edit</button>
-          <button type="button" className="admin-button" disabled={Boolean(busy) || blocked} onClick={confirm} data-testid="button-confirm-in-house">{busy === 'save' ? 'Saving…' : 'Confirm and save'}</button></>
-          : <button type="submit" className="admin-button" disabled={locked} data-testid="button-review-in-house">{busy === 'preview' ? 'Reviewing…' : 'Review entry'}</button>}</div></div>
+        <button type="submit" ref={reviewButtonRef} className="admin-button" aria-disabled={locked} data-testid="button-review-in-house">{busy === 'preview' ? 'Reviewing…' : 'Review entry'}</button></div></div>
     </form></section>
+    {review && <Dialog className="inhouse-review-dialog" eyebrow="Inventory / In-house stock" title="Review before committing"
+      description={`${RESERVE_NOTE} Values below are canonical as returned by the server.`}
+      onClose={dismissReview} dismissDisabled={busy === 'save'} returnFocusRef={reviewButtonRef}
+      footer={<>
+        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busy)} onClick={dismissReview} data-testid="button-edit-in-house">Back to edit</button>
+        <button type="button" className="admin-button" disabled={Boolean(busy) || blocked} onClick={confirm} data-testid="button-confirm-in-house">{busy === 'save' ? 'Saving…' : 'Confirm and save'}</button>
+      </>}>
+      <div className="inhouse-review-dialog__content" role="region" aria-label="Reviewed stock details" tabIndex={0} data-testid="panel-in-house-review">
+        {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
+        {busy !== 'save' && <InHousePendingBanner refreshSignal={tick} onResolved={resolvePending} />}
+        <InHouseFacts record={review.record} date={date} />
+        <p className="mr-form__hint" role="status">{busy === 'save' ? 'Saving…' : blocked ? 'Saving is blocked until the earlier outcome is checked.' : 'Nothing is saved until you confirm.'}</p>
+      </div>
+    </Dialog>}
     {saved && <InHouseStockDialog id={saved.id} initial={saved.allergenName ? saved : null} onClose={() => navigate(BASE)} />}
   </div></AdminLayout>;
 }
