@@ -206,6 +206,7 @@ def mutate(db, actor, kind, identity, body, operation):
                            409, "shipment_stale")
         snapshot = service.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
         shipping = dict(snapshot.get("shipment") or {})
+        previously_delivered = bool(shipping.get("actualDeliveryDate"))
         now = utcnow()
         today = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
         old_status = "In process" if row.status == "Approved" else row.status
@@ -254,5 +255,13 @@ def mutate(db, actor, kind, identity, body, operation):
         db.add(service.Retry(key=key, actor_id=current.user.id,
             response_ciphertext=service.seal(keys, "requests", key, dict(request=payload, result=result))))
         db.flush()
+        from app.services.order_notifications import emit
+        notification_kind = {"IT": "immunotherapy", "Kit": "kits", "SPT": "spt", "Lupin": "lupin"}[kind]
+        if operation != "delivery" or not previously_delivered:
+            emit(db, keys, notification_kind, row,
+                 {"ship": "order_shipped", "delivery": "order_delivered", "return": "order_returned"}[operation],
+                 f"shipment:{operation}:{row.version}")
+        if operation == "ship" and shipping.get("actualDeliveryDate"):
+            emit(db, keys, notification_kind, row, "order_delivered", f"shipment:delivery:{row.version}")
         return result
     return transaction(db, actor, work)

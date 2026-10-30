@@ -326,6 +326,8 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
         resource_type="immunotherapy_order", resource_id=row.id, outcome="success",
         request_id=db.info.get("request_id"), created_at=utcnow()))
     db.flush()
+    from app.services.order_notifications import placed
+    placed(db, keys, "immunotherapy", row, previous)
     return project(keys, row)
 
 

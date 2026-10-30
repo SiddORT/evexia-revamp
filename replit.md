@@ -45,6 +45,20 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+Order-event notifications target only the protected Super Admin and the
+authenticated **placing MR**, never managers, other MRs or ordinary staff.
+The shared Settings order-template library covers Email/SMS/WABA; Email uses the
+saved default encrypted SMTP, WABA supports explicit Meta Cloud template messages,
+and SMS vendors remain blocked until their real wire contract is reviewed.
+Blocked history never replays after configuration changes; uncertain external
+outcomes never auto-resend. Forward `0079_order_notifications` and development
+source metadata are prepared, not executed. This delivery is source-only: no
+tests, builds, regression/release/validation wrappers, runtime/browser probes,
+live sends, business mutations, migrations or service activation were performed.
+Only offline contract/client generation and source metadata generation were
+used. See `docs/order-event-notifications.md` for identity, retention, provider
+contracts and fresh-catalog/key-custody limitations.
+
 In-house Stock is a protected Super Admin-only server concentrate reserve under
 Inventory, separate from ordinary inventory. Only the protected Super Admin may
 move reserves through reviewed Move Stocks. An explicit No transfers reserve

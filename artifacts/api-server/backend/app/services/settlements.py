@@ -335,6 +335,10 @@ def post(db, actor, body):
             db.add(Entry(id=identity, batch_id=body.idempotency_key, kind=item.kind, order_id=item.id,
                          payload_ciphertext=seal(keys, "entries", identity, dict(amount=item.amount)),
                          verified_at=None, verified_by=None))
+        from app.services.order_notifications import emit
+        for item, row, _total in chosen:
+            emit(db, keys, {"IT": "immunotherapy", "Kit": "kits", "SPT": "spt", "Lupin": "lupin"}[item.kind],
+                 row, "order_transaction", f"transaction:{body.idempotency_key}", amount=fmt(Decimal(item.amount)))
         db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
                          action="settlement_recorded", resource_type="settlement_batch",
                          resource_id=body.idempotency_key, outcome="success",

@@ -1,5 +1,11 @@
 # Automatic migration policy
 
+The order-event notification source adds forward `0079_order_notifications`.
+Its development declaration/source-integrity metadata is generated without
+executing migrations. This feature's no-runtime restriction leaves production
+fresh-install catalog/release evidence at its earlier real target; do not
+fabricate or bypass that evidence. See [order-event-notifications.md](order-event-notifications.md).
+
 The project's standing policy is automatic migration execution in **both Replit
 development and VPS deployment**. No separate human approval or per-revision
 classification is required by the normal runners.

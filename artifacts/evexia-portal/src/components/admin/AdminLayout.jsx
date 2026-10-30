@@ -6,10 +6,11 @@ import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, isSuperAdminIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
 import { interceptNavigation } from '../../auth/navigationGuard.js';
-import { logoutAdmin } from '../../auth/adminSession.js';
+import { logoutAdmin, sessionEpoch } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
 import { recordPageVisit, flushActivityBeforeExit } from '../../activity/activityTracker.js';
+import NotificationBell from '../notifications/NotificationBell.jsx';
 import ActivityRecordingStatus from '../../activity/ActivityRecordingStatus.jsx';
 import { ORDER_DESTINATIONS } from '../../config/orders.js';
 
@@ -313,6 +314,7 @@ export default function AdminLayout({ title, children }) {
             <span className="admin-header__page">{title}</span>
           </div>
           <div className="admin-header__actions">
+          {!staff && isSuperAdminIdentity(user) && <NotificationBell key={`${user.id}/super_admin/${sessionEpoch()}`} portal="admin" />}
           <DropdownMenu.Root>
             <div className="admin-profile">
               <DropdownMenu.Trigger asChild>

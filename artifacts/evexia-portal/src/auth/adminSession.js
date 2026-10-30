@@ -1385,3 +1385,74 @@ export function safeAdminReturn(value) {
   if (value.split('/').some((part) => part === '.' || part === '..')) return '/admin';
   return value;
 }
+
+// Order event notifications: verified Super Admin or verified MR only. Never
+// ordinary staff. Template/delivery administration is Super Admin only.
+// Mutations are never replayed; an uncertain save keeps the caller's draft.
+export async function orderNotificationRequest(path = '', body, { signal } = {}) {
+  const inbox = /^\/notifications(?:\/[0-9a-f-]{36}\/(?:read|open))?$/i.test(path);
+  const deliveries = /^\/admin\/order-notification-deliveries\?offset=\d+&limit=(?:[1-9]|1\d|2[0-5])$/.test(path);
+  const templates = /^\/admin\/order-event-templates(?:\/[0-9a-f-]{36}\/(?:edit|delete))?$/i.test(path);
+  if ((!inbox && !deliveries && !templates) || (body !== undefined && (deliveries || path === '/notifications'))
+      || (body === undefined && /\/(?:read|open|edit|delete)$/.test(path))) {
+    throw new SessionError('Unsupported notification operation.');
+  }
+  const mutation = body !== undefined;
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Sign in again before retrying.', 401);
+    }
+    const kind = state.user.identity_kind;
+    if (inbox ? !(kind === 'super_admin' || kind === 'mr') : kind !== 'super_admin') {
+      throw new SessionError('Order notifications are not available for this account.', 403);
+    }
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, portalOf(state.user));
+  check();
+  const uncertain = () => {
+    const error = new SessionError(mutation
+      ? 'Outcome could not be confirmed. Load latest and review before retrying; the change may already be saved.'
+      : 'Unable to load notifications. Check your connection and retry.');
+    error.ambiguous = mutation;
+    return error;
+  };
+  let response, data;
+  try {
+    response = await fetch(`/api/v1${path}`, {
+      method: mutation ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(mutation ? { 'Content-Type': 'application/json' } : {}) },
+      ...(mutation ? { body: JSON.stringify(body) } : {}),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+    data = await response.json().catch(() => null);
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    throw uncertain();
+  }
+  if (pending) await pending;
+  try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
+  if (!response.ok) {
+    if (response.status === 401) { restorationAllowed = false; clear(); }
+    const code = data?.error?.code;
+    const error = new SessionError(response.status === 409
+      ? 'Another template already uses this event for this channel, or the template changed. Your draft is kept. Load latest and review.'
+      : response.status === 404 ? (path.endsWith('/open') ? 'This order is no longer available or you no longer have access to it.' : 'This item no longer exists. Load latest.')
+      : response.status === 403 ? (path.endsWith('/open') ? 'You are not authorized to open this order.' : 'Order notifications are not available for this account.')
+      : response.status === 422 ? 'Some fields are invalid. Check required values and allowed placeholders; your draft is kept.'
+      : response.status === 401 ? 'Your session expired. Sign in again.'
+      : uncertain().message, response.status);
+    error.code = code;
+    error.ambiguous = mutation && response.status >= 500;
+    throw error;
+  }
+  if (data === null) throw uncertain();
+  return data;
+}
+
+// Local session epoch (no server session ID is exposed). Changes on every
+// sign-in/out/identity change so account-scoped UI can reset ephemeral state.
+export const sessionEpoch = () => generation;

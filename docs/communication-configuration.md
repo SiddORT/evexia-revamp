@@ -1,3 +1,12 @@
+# Order event delivery
+
+Shared order-event Email/SMS/WABA templates, recipient rules, exact supported
+provider contract, blocked/unknown attempt states and source-only rollout limits
+are described in [Order event notifications](order-event-notifications.md).
+Saving configurations does not replay historical blocked notifications. SMS
+vendor transports remain unsupported until their actual contract is reviewed;
+WABA supports only the explicit Meta Cloud template-message adapter.
+
 # Shared encrypted Communication configuration
 
 ## Email template storage is separate from transport

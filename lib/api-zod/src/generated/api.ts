@@ -1530,6 +1530,53 @@ export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityMax
 export const reconcileOpeningStockRequestResponseResultOneRecordsItemUnitRateMax = 64;
 export const getOpeningStockResponseQuantityMax = 11;
 export const getOpeningStockResponseUnitRateMax = 64;
+export const listOrderEventTemplatesResponseItemsItemDltIdMax = 60;
+export const listOrderEventTemplatesResponseItemsItemHtmlMax = 100000;
+export const listOrderEventTemplatesResponseItemsItemLanguageMax = 20;
+export const listOrderEventTemplatesResponseItemsItemNameMax = 100;
+export const listOrderEventTemplatesResponseItemsItemParametersMax = 8;
+export const listOrderEventTemplatesResponseItemsItemProviderTemplateMax = 100;
+export const listOrderEventTemplatesResponseItemsItemSubjectMax = 200;
+export const listOrderEventTemplatesResponseItemsItemTextMax = 20000;
+export const createOrderEventTemplateBodyDltIdMax = 60;
+export const createOrderEventTemplateBodyHtmlMax = 100000;
+export const createOrderEventTemplateBodyLanguageMax = 20;
+export const createOrderEventTemplateBodyNameMax = 100;
+export const createOrderEventTemplateBodyParametersMax = 8;
+export const createOrderEventTemplateBodyProviderTemplateMax = 100;
+export const createOrderEventTemplateBodySubjectMax = 200;
+export const createOrderEventTemplateBodyTextMax = 20000;
+export const createOrderEventTemplateResponseDltIdMax = 60;
+export const createOrderEventTemplateResponseHtmlMax = 100000;
+export const createOrderEventTemplateResponseLanguageMax = 20;
+export const createOrderEventTemplateResponseNameMax = 100;
+export const createOrderEventTemplateResponseParametersMax = 8;
+export const createOrderEventTemplateResponseProviderTemplateMax = 100;
+export const createOrderEventTemplateResponseSubjectMax = 200;
+export const createOrderEventTemplateResponseTextMax = 20000;
+export const deleteOrderEventTemplateBodyVersionMax = 2147483646;
+export const editOrderEventTemplateBodyDltIdMax = 60;
+export const editOrderEventTemplateBodyHtmlMax = 100000;
+export const editOrderEventTemplateBodyLanguageMax = 20;
+export const editOrderEventTemplateBodyNameMax = 100;
+export const editOrderEventTemplateBodyParametersMax = 8;
+export const editOrderEventTemplateBodyProviderTemplateMax = 100;
+export const editOrderEventTemplateBodySubjectMax = 200;
+export const editOrderEventTemplateBodyTextMax = 20000;
+export const editOrderEventTemplateBodyVersionMax = 2147483646;
+export const editOrderEventTemplateResponseDltIdMax = 60;
+export const editOrderEventTemplateResponseHtmlMax = 100000;
+export const editOrderEventTemplateResponseLanguageMax = 20;
+export const editOrderEventTemplateResponseNameMax = 100;
+export const editOrderEventTemplateResponseParametersMax = 8;
+export const editOrderEventTemplateResponseProviderTemplateMax = 100;
+export const editOrderEventTemplateResponseSubjectMax = 200;
+export const editOrderEventTemplateResponseTextMax = 20000;
+export const listOrderNotificationDeliveriesQueryOffsetDefault = 0;
+export const listOrderNotificationDeliveriesQueryOffsetMin = 0;
+export const listOrderNotificationDeliveriesQueryOffsetMax = 10000;
+export const listOrderNotificationDeliveriesQueryLimitDefault = 25;
+export const listOrderNotificationDeliveriesQueryLimitMax = 50;
 export const listPatientDirectoryQueryQueryMax = 200;
 export const listPatientDirectoryQueryZoneIdMax = 36;
 export const listPatientDirectoryQueryMrIdMax = 36;
@@ -25682,6 +25729,315 @@ export const GetOpeningStockAnalyticsResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listOrderEventTemplatesResponseItemsItemDltIdDefault = ``;
+
+export const listOrderEventTemplatesResponseItemsItemHtmlDefault = ``;
+
+export const listOrderEventTemplatesResponseItemsItemLanguageDefault = ``;
+
+export const listOrderEventTemplatesResponseItemsItemProviderTemplateDefault = ``;
+
+export const listOrderEventTemplatesResponseItemsItemSubjectDefault = ``;
+
+export const ListOrderEventTemplatesResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      key: zod.string(),
+      label: zod.string(),
+    }),
+  ),
+  items: zod.array(
+    zod.object({
+      channel: zod.enum(["email", "sms", "waba"]),
+      dltId: zod
+        .string()
+        .max(listOrderEventTemplatesResponseItemsItemDltIdMax)
+        .default(listOrderEventTemplatesResponseItemsItemDltIdDefault),
+      enabled: zod.boolean(),
+      eventKey: zod.union([zod.string(), zod.null()]).optional(),
+      html: zod
+        .string()
+        .max(listOrderEventTemplatesResponseItemsItemHtmlMax)
+        .default(listOrderEventTemplatesResponseItemsItemHtmlDefault),
+      id: zod.string().uuid(),
+      language: zod
+        .string()
+        .max(listOrderEventTemplatesResponseItemsItemLanguageMax)
+        .default(listOrderEventTemplatesResponseItemsItemLanguageDefault),
+      name: zod
+        .string()
+        .min(1)
+        .max(listOrderEventTemplatesResponseItemsItemNameMax),
+      parameters: zod
+        .array(zod.string())
+        .max(listOrderEventTemplatesResponseItemsItemParametersMax)
+        .optional(),
+      providerTemplate: zod
+        .string()
+        .max(listOrderEventTemplatesResponseItemsItemProviderTemplateMax)
+        .default(
+          listOrderEventTemplatesResponseItemsItemProviderTemplateDefault,
+        ),
+      readiness: zod.string(),
+      subject: zod
+        .string()
+        .max(listOrderEventTemplatesResponseItemsItemSubjectMax)
+        .default(listOrderEventTemplatesResponseItemsItemSubjectDefault),
+      text: zod
+        .string()
+        .min(1)
+        .max(listOrderEventTemplatesResponseItemsItemTextMax),
+      version: zod.number().int(),
+    }),
+  ),
+  variables: zod.array(zod.string()),
+});
+
+/**
+ * @summary Create
+ */
+export const createOrderEventTemplateBodyDltIdDefault = ``;
+
+export const createOrderEventTemplateBodyHtmlDefault = ``;
+
+export const createOrderEventTemplateBodyLanguageDefault = ``;
+
+export const createOrderEventTemplateBodyProviderTemplateDefault = ``;
+
+export const createOrderEventTemplateBodySubjectDefault = ``;
+
+export const CreateOrderEventTemplateBody = zod.object({
+  channel: zod.enum(["email", "sms", "waba"]),
+  dltId: zod
+    .string()
+    .max(createOrderEventTemplateBodyDltIdMax)
+    .default(createOrderEventTemplateBodyDltIdDefault),
+  enabled: zod.boolean(),
+  eventKey: zod.union([zod.string(), zod.null()]).optional(),
+  html: zod
+    .string()
+    .max(createOrderEventTemplateBodyHtmlMax)
+    .default(createOrderEventTemplateBodyHtmlDefault),
+  language: zod
+    .string()
+    .max(createOrderEventTemplateBodyLanguageMax)
+    .default(createOrderEventTemplateBodyLanguageDefault),
+  name: zod.string().min(1).max(createOrderEventTemplateBodyNameMax),
+  parameters: zod
+    .array(zod.string())
+    .max(createOrderEventTemplateBodyParametersMax)
+    .optional(),
+  providerTemplate: zod
+    .string()
+    .max(createOrderEventTemplateBodyProviderTemplateMax)
+    .default(createOrderEventTemplateBodyProviderTemplateDefault),
+  subject: zod
+    .string()
+    .max(createOrderEventTemplateBodySubjectMax)
+    .default(createOrderEventTemplateBodySubjectDefault),
+  text: zod.string().min(1).max(createOrderEventTemplateBodyTextMax),
+});
+
+export const createOrderEventTemplateResponseDltIdDefault = ``;
+
+export const createOrderEventTemplateResponseHtmlDefault = ``;
+
+export const createOrderEventTemplateResponseLanguageDefault = ``;
+
+export const createOrderEventTemplateResponseProviderTemplateDefault = ``;
+
+export const createOrderEventTemplateResponseSubjectDefault = ``;
+
+export const CreateOrderEventTemplateResponse = zod.object({
+  channel: zod.enum(["email", "sms", "waba"]),
+  dltId: zod
+    .string()
+    .max(createOrderEventTemplateResponseDltIdMax)
+    .default(createOrderEventTemplateResponseDltIdDefault),
+  enabled: zod.boolean(),
+  eventKey: zod.union([zod.string(), zod.null()]).optional(),
+  html: zod
+    .string()
+    .max(createOrderEventTemplateResponseHtmlMax)
+    .default(createOrderEventTemplateResponseHtmlDefault),
+  id: zod.string().uuid(),
+  language: zod
+    .string()
+    .max(createOrderEventTemplateResponseLanguageMax)
+    .default(createOrderEventTemplateResponseLanguageDefault),
+  name: zod.string().min(1).max(createOrderEventTemplateResponseNameMax),
+  parameters: zod
+    .array(zod.string())
+    .max(createOrderEventTemplateResponseParametersMax)
+    .optional(),
+  providerTemplate: zod
+    .string()
+    .max(createOrderEventTemplateResponseProviderTemplateMax)
+    .default(createOrderEventTemplateResponseProviderTemplateDefault),
+  readiness: zod.string(),
+  subject: zod
+    .string()
+    .max(createOrderEventTemplateResponseSubjectMax)
+    .default(createOrderEventTemplateResponseSubjectDefault),
+  text: zod.string().min(1).max(createOrderEventTemplateResponseTextMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteOrderEventTemplateParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const DeleteOrderEventTemplateBody = zod.object({
+  version: zod
+    .number()
+    .int()
+    .min(1)
+    .max(deleteOrderEventTemplateBodyVersionMax),
+});
+
+export const DeleteOrderEventTemplateResponse = zod.unknown();
+
+/**
+ * @summary Edit
+ */
+export const EditOrderEventTemplateParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const editOrderEventTemplateBodyDltIdDefault = ``;
+
+export const editOrderEventTemplateBodyHtmlDefault = ``;
+
+export const editOrderEventTemplateBodyLanguageDefault = ``;
+
+export const editOrderEventTemplateBodyProviderTemplateDefault = ``;
+
+export const editOrderEventTemplateBodySubjectDefault = ``;
+
+export const EditOrderEventTemplateBody = zod.object({
+  channel: zod.enum(["email", "sms", "waba"]),
+  dltId: zod
+    .string()
+    .max(editOrderEventTemplateBodyDltIdMax)
+    .default(editOrderEventTemplateBodyDltIdDefault),
+  enabled: zod.boolean(),
+  eventKey: zod.union([zod.string(), zod.null()]).optional(),
+  html: zod
+    .string()
+    .max(editOrderEventTemplateBodyHtmlMax)
+    .default(editOrderEventTemplateBodyHtmlDefault),
+  language: zod
+    .string()
+    .max(editOrderEventTemplateBodyLanguageMax)
+    .default(editOrderEventTemplateBodyLanguageDefault),
+  name: zod.string().min(1).max(editOrderEventTemplateBodyNameMax),
+  parameters: zod
+    .array(zod.string())
+    .max(editOrderEventTemplateBodyParametersMax)
+    .optional(),
+  providerTemplate: zod
+    .string()
+    .max(editOrderEventTemplateBodyProviderTemplateMax)
+    .default(editOrderEventTemplateBodyProviderTemplateDefault),
+  subject: zod
+    .string()
+    .max(editOrderEventTemplateBodySubjectMax)
+    .default(editOrderEventTemplateBodySubjectDefault),
+  text: zod.string().min(1).max(editOrderEventTemplateBodyTextMax),
+  version: zod.number().int().min(1).max(editOrderEventTemplateBodyVersionMax),
+});
+
+export const editOrderEventTemplateResponseDltIdDefault = ``;
+
+export const editOrderEventTemplateResponseHtmlDefault = ``;
+
+export const editOrderEventTemplateResponseLanguageDefault = ``;
+
+export const editOrderEventTemplateResponseProviderTemplateDefault = ``;
+
+export const editOrderEventTemplateResponseSubjectDefault = ``;
+
+export const EditOrderEventTemplateResponse = zod.object({
+  channel: zod.enum(["email", "sms", "waba"]),
+  dltId: zod
+    .string()
+    .max(editOrderEventTemplateResponseDltIdMax)
+    .default(editOrderEventTemplateResponseDltIdDefault),
+  enabled: zod.boolean(),
+  eventKey: zod.union([zod.string(), zod.null()]).optional(),
+  html: zod
+    .string()
+    .max(editOrderEventTemplateResponseHtmlMax)
+    .default(editOrderEventTemplateResponseHtmlDefault),
+  id: zod.string().uuid(),
+  language: zod
+    .string()
+    .max(editOrderEventTemplateResponseLanguageMax)
+    .default(editOrderEventTemplateResponseLanguageDefault),
+  name: zod.string().min(1).max(editOrderEventTemplateResponseNameMax),
+  parameters: zod
+    .array(zod.string())
+    .max(editOrderEventTemplateResponseParametersMax)
+    .optional(),
+  providerTemplate: zod
+    .string()
+    .max(editOrderEventTemplateResponseProviderTemplateMax)
+    .default(editOrderEventTemplateResponseProviderTemplateDefault),
+  readiness: zod.string(),
+  subject: zod
+    .string()
+    .max(editOrderEventTemplateResponseSubjectMax)
+    .default(editOrderEventTemplateResponseSubjectDefault),
+  text: zod.string().min(1).max(editOrderEventTemplateResponseTextMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Deliveries
+ */
+
+export const ListOrderNotificationDeliveriesQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listOrderNotificationDeliveriesQueryOffsetMin)
+    .max(listOrderNotificationDeliveriesQueryOffsetMax)
+    .default(listOrderNotificationDeliveriesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listOrderNotificationDeliveriesQueryLimitMax)
+    .default(listOrderNotificationDeliveriesQueryLimitDefault),
+});
+
+export const ListOrderNotificationDeliveriesResponse = zod.object({
+  hasMore: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      category: zod.union([zod.string(), zod.null()]),
+      channel: zod.enum(["email", "sms", "waba"]),
+      createdAt: zod.coerce.date(),
+      event: zod.string(),
+      eventId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      kind: zod.enum(["immunotherapy", "spt", "lupin", "kits"]),
+      number: zod.string(),
+      recipient: zod.enum(["Super Admin", "Placing MR"]),
+      status: zod.string(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listPatientDirectoryQueryQueryDefault = ``;
 
 export const listPatientDirectoryQueryStatusDefault = `all`;
@@ -43942,6 +44298,54 @@ export const GetHealthStatusResponse = zod.unknown();
  * @summary Readiness
  */
 export const GetReadinessResponse = zod.unknown();
+
+/**
+ * @summary Feed
+ */
+export const ListOrderNotificationsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      amount: zod.union([zod.string(), zod.null()]),
+      createdAt: zod.coerce.date(),
+      event: zod.string(),
+      id: zod.string().uuid(),
+      kind: zod.enum(["immunotherapy", "spt", "lupin", "kits"]),
+      mrName: zod.string(),
+      number: zod.string(),
+      read: zod.boolean(),
+      status: zod.string(),
+    }),
+  ),
+  unreadCount: zod.number().int(),
+});
+
+/**
+ * @summary Target
+ */
+export const OpenOrderNotificationParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const OpenOrderNotificationResponse = zod.object({
+  kind: zod.enum(["immunotherapy", "spt", "lupin", "kits"]),
+  orderId: zod.string().uuid(),
+});
+
+/**
+ * @summary Read
+ */
+export const ReadOrderNotificationParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const ReadOrderNotificationBody = zod.object({
+  read: zod.boolean(),
+});
+
+export const ReadOrderNotificationResponse = zod.object({
+  id: zod.string().uuid(),
+  read: zod.boolean(),
+});
 
 /**
  * @summary Resolve

@@ -221,6 +221,9 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                 action=f"{kind}_{'approved' if decision == 'approve' else 'rejected'}", resource_type=f"{kind}_order", resource_id=row.id,
                 outcome="success", request_id=db.info.get("request_id"), created_at=utcnow()))
             db.flush()
+            from app.services.order_notifications import emit
+            emit(db, keys, kind, row, "order_confirmed" if decision == "approve" else "order_rejected",
+                 f"decision:{row.version}")
             return service.project(keys, row)
         return service.idempotent(db, current, keys, body.idempotencyKey,
             {"operation": decision, "id": str(identity), "body": body.model_dump(mode="json")}, write)
@@ -292,6 +295,8 @@ def resubmit(db, actor, identity, body, kind):
                 resource_type=f"{kind}_order", resource_id=row.id, outcome="success",
                 request_id=db.info.get("request_id"), created_at=utcnow()))
             db.flush()
+            from app.services.order_notifications import emit
+            emit(db, keys, kind, row, "order_resubmitted", f"resubmit:{row.version}")
             return service.project(keys, row)
         return service.idempotent(db, current, keys, body.idempotencyKey,
             {"operation": "resubmit", "id": str(identity), "body": body.model_dump(mode="json")}, write)

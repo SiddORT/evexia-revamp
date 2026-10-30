@@ -3,8 +3,9 @@ import { Link, useLocation } from 'wouter';
 import { CreditCard, LayoutDashboard, LogOut, Stethoscope, Target, Settings as Cog, User } from 'lucide-react';
 import { useAdminSession } from '../auth/AdminBoundary.jsx';
 import { interceptNavigation } from '../auth/navigationGuard.js';
-import { logoutAdmin } from '../auth/adminSession.js';
+import { logoutAdmin, sessionEpoch } from '../auth/adminSession.js';
 import { mrDisplayIdentity } from '../auth/displayIdentity.js';
+import NotificationBell from '../components/notifications/NotificationBell.jsx';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAdminPreferences } from '../components/admin/adminPreferences.js';
 import { createWorkspace } from '../services/mrWorkspaceDemo.js';
@@ -94,6 +95,7 @@ function Shell() {
     <header className="mrw-top"><div className="mrw-top__bar">
       <Link href="/mr/home" className="mrw-brand" aria-label="EVEXIA MR dashboard"><BrandMark /></Link>
       <nav id="mrw-nav" className="mrw-nav" aria-label="MR navigation">{NAV.map(([l, h, k, Icon]) => k === 'orders' ? <OrdersNavigation key={k} /> : k === 'accounts' ? <AccountsNavigation key={k} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}><Icon className="mrw-nav__icon" size={20} aria-hidden="true" /><span>{l}</span></Link>)}</nav>
+      {user?.identity_kind === 'mr' && user?.mr_id && <NotificationBell key={`${user.id}/mr/${user.mr_id}/${sessionEpoch()}`} portal="mr" />}
       <div className="mrw-profile" ref={menuRef}>
         <button type="button" ref={btnRef} className="mrw-avatar" aria-haspopup="menu" aria-expanded={menu} aria-label={`Profile menu for ${name}. Account ID: ${account}.`} onClick={() => setMenu(!menu)} data-testid="button-profile-menu"><User size={20} aria-hidden="true" /><span className="mrw-profile__identity"><strong>{name}</strong><span>{account}</span></span></button>
         {menu && <div className="mrw-menu" role="menu" aria-label="Profile" onKeyDown={menuKeys}>

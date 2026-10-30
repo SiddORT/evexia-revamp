@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './messageTemplates.css';
 import MessageTemplateEditor from './MessageTemplateEditor.jsx';
 import MessageTemplatePreview from './MessageTemplatePreview.jsx';
+import OrderEventTemplates from './OrderEventTemplates.jsx';
 import EmailTemplateLibrary from './EmailTemplateLibrary.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { MESSAGE_TEMPLATES_KEY, SYSTEM_TEMPLATES, deleteMessageTemplate, loadMessageTemplates } from '../../services/messageTemplates.js';
@@ -10,7 +11,7 @@ function loadSms() {
   try { return { snap: loadMessageTemplates(), error: '' }; }
   catch (e) { return { snap: null, error: e?.message || 'Saved SMS templates could not be read.' }; }
 }
-const CHANNELS = [['email', 'Email'], ['sms', 'SMS']];
+const CHANNELS = [['email', 'Email (shared: recovery and invitations)'], ['sms', 'SMS (legacy, this browser only)'], ['order', 'Order events (shared: Email, SMS, WABA)']];
 
 export default function MessageTemplateSettings({ onGuardChange }) {
   const confirm = usePlatformConfirm();
@@ -26,17 +27,18 @@ export default function MessageTemplateSettings({ onGuardChange }) {
   useEffect(() => { parentGuard.current?.(guard); return () => parentGuard.current?.(null); }, [guard]);
   const choose = async (c) => { if (c !== channel && await guard()) { dirty.current = false; busy.current = false; setChannel(c); return true; } return false; };
   const keyboard = async (e, i) => {
-    const next = ['ArrowRight', 'ArrowLeft'].includes(e.key) ? (i + 1) % 2 : e.key === 'Home' ? 0 : e.key === 'End' ? 1 : null;
+    const next = ['ArrowRight', 'ArrowLeft'].includes(e.key) ? (e.key === 'ArrowRight' ? i + 1 : i - 1 + CHANNELS.length) % CHANNELS.length : e.key === 'Home' ? 0 : e.key === 'End' ? CHANNELS.length - 1 : null;
     if (next === null) return;
     e.preventDefault(); if (await choose(CHANNELS[next][0])) document.getElementById(`mt-tab-${CHANNELS[next][0]}`)?.focus();
   };
   return <section className="admin-panel admin-settings__section mt" aria-labelledby="mt-heading">
-    <h2 id="mt-heading">Email and SMS templates</h2>
+    <h2 id="mt-heading">Message templates</h2>
     <div className="admin-tabs" role="tablist" aria-label="Template channel">{CHANNELS.map(([c, label], i) =>
       <button key={c} type="button" role="tab" id={`mt-tab-${c}`} aria-selected={channel === c} aria-controls="mt-panel"
         tabIndex={channel === c ? 0 : -1} onClick={() => choose(c)} onKeyDown={(e) => keyboard(e, i)} data-testid={`tab-template-${c}`}>{label}</button>)}</div>
     <div role="tabpanel" id="mt-panel" aria-labelledby={`mt-tab-${channel}`}>
-      {channel === 'email' ? <EmailTemplateLibrary guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />
+      {channel === 'order' ? <OrderEventTemplates guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />
+        : channel === 'email' ? <EmailTemplateLibrary guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />
         : <SmsLibrary guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />}
     </div>
   </section>;
@@ -64,7 +66,7 @@ function SmsLibrary({ guard, onDirtyChange, onBusyChange }) {
     finally { setBusy(false); onBusyChange(false); }
   };
   return <>
-    <div className="mt-head"><p className="mt-note">SMS authoring and preview only. SMS templates remain in this browser; nothing is sent.</p>
+    <div className="mt-head"><p className="mt-note"><strong>Legacy local SMS.</strong> SMS authoring and preview only. SMS templates remain in this browser; nothing is sent.</p>
       <button type="button" className="admin-button" onClick={() => open({ id: null, channel: 'sms', name: '', description: '', content: { body: '', providerTemplateId: '' } })} data-testid="button-template-new">New SMS template</button></div>
     <p className="mt-note">SMS examples are not connected to backend events. Saving does not register or approve a DLT template. Enter your own provider reference.</p>
     {status && <p role="status">{status}</p>}

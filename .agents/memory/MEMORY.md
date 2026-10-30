@@ -115,3 +115,4 @@
 - [Settlement policy](settlement-policy.md) — only owning MRs post; Super Admin is read-only, prior payments start at zero and legacy flags are not receipts.
 - [MR eligibility policy](mr-eligibility-policy.md) — MR-owned financial settings, independent zero restrictions, saved-order-date aging and advisory allergen warnings.
 - [In-house dilution policy](in-house-dilution-policy.md) — only reviewed 2/5/10-fold conversions create inventory; undiluted moves stay reserve-only.
+- [Order notification policy](order-notification-policy.md) — placing MR only; configuration changes never replay blocked history and unknown sends never auto-resend.

@@ -253,6 +253,7 @@ import type {
   ListMRReferenceChoicesParams,
   ListOpeningBalancesParams,
   ListOpeningStockParams,
+  ListOrderNotificationDeliveriesParams,
   ListOwnSessionsParams,
   ListPatientDirectoryParams,
   ListPatientDoctorChoicesParams,
@@ -350,6 +351,16 @@ import type {
   OpeningSaved,
   OpeningSummary,
   OrderApproval,
+  OrderNotificationDeliveryPage,
+  OrderNotificationFeed,
+  OrderNotificationReadInput,
+  OrderNotificationReadResult,
+  OrderNotificationTarget,
+  OrderNotificationTemplateEdit,
+  OrderNotificationTemplateInput,
+  OrderNotificationTemplatePage,
+  OrderNotificationTemplateRecord,
+  OrderNotificationVersion,
   OrderRejection,
   POActivityPage,
   POAnalytics,
@@ -21062,6 +21073,557 @@ export function useGetOpeningStockAnalytics<
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetOpeningStockAnalyticsQueryOptions(
     recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListOrderEventTemplatesUrl = () => {
+  return `/api/v1/admin/order-event-templates`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listOrderEventTemplates = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationTemplatePage> => {
+  return customFetch<OrderNotificationTemplatePage>(
+    getListOrderEventTemplatesUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListOrderEventTemplatesQueryKey = () => {
+  return [`/api/v1/admin/order-event-templates`] as const;
+};
+
+export const getListOrderEventTemplatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOrderEventTemplates>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderEventTemplates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOrderEventTemplatesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOrderEventTemplates>>
+  > = ({ signal }) => listOrderEventTemplates({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderEventTemplates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOrderEventTemplatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOrderEventTemplates>>
+>;
+export type ListOrderEventTemplatesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListOrderEventTemplates<
+  TData = Awaited<ReturnType<typeof listOrderEventTemplates>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderEventTemplates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOrderEventTemplatesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateOrderEventTemplateUrl = () => {
+  return `/api/v1/admin/order-event-templates`;
+};
+
+/**
+ * @summary Create
+ */
+export const createOrderEventTemplate = async (
+  orderNotificationTemplateInput: OrderNotificationTemplateInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationTemplateRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OrderNotificationTemplateRecord>(
+    getCreateOrderEventTemplateUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(orderNotificationTemplateInput),
+    },
+  );
+};
+
+export const getCreateOrderEventTemplateMutationKey = () =>
+  ["createOrderEventTemplate"] as const;
+
+export const getCreateOrderEventTemplateMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOrderEventTemplate>>,
+    TError,
+    CreateOrderEventTemplateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createOrderEventTemplate>>,
+  TError,
+  CreateOrderEventTemplateMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateOrderEventTemplateMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createOrderEventTemplate>>,
+    CreateOrderEventTemplateMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createOrderEventTemplate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateOrderEventTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createOrderEventTemplate>>
+>;
+export type CreateOrderEventTemplateMutationBody =
+  BodyType<OrderNotificationTemplateInput>;
+export type CreateOrderEventTemplateMutationError = ErrorType<ErrorEnvelope>;
+export type CreateOrderEventTemplateMutationVariables = {
+  data: BodyType<OrderNotificationTemplateInput>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateOrderEventTemplate = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOrderEventTemplate>>,
+    TError,
+    CreateOrderEventTemplateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createOrderEventTemplate>>,
+  TError,
+  CreateOrderEventTemplateMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateOrderEventTemplateMutationOptions(options));
+};
+
+export const getDeleteOrderEventTemplateUrl = (identity: string) => {
+  return `/api/v1/admin/order-event-templates/${identity}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteOrderEventTemplate = async (
+  identity: string,
+  orderNotificationVersion: OrderNotificationVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<unknown>(getDeleteOrderEventTemplateUrl(identity), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderNotificationVersion),
+  });
+};
+
+export const getDeleteOrderEventTemplateMutationKey = () =>
+  ["deleteOrderEventTemplate"] as const;
+
+export const getDeleteOrderEventTemplateMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOrderEventTemplate>>,
+    TError,
+    DeleteOrderEventTemplateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOrderEventTemplate>>,
+  TError,
+  DeleteOrderEventTemplateMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteOrderEventTemplateMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOrderEventTemplate>>,
+    DeleteOrderEventTemplateMutationVariables
+  > = (props) => {
+    const { identity, data } = props ?? {};
+
+    return deleteOrderEventTemplate(identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOrderEventTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOrderEventTemplate>>
+>;
+export type DeleteOrderEventTemplateMutationBody =
+  BodyType<OrderNotificationVersion>;
+export type DeleteOrderEventTemplateMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteOrderEventTemplateMutationVariables = {
+  identity: string;
+  data: BodyType<OrderNotificationVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteOrderEventTemplate = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOrderEventTemplate>>,
+    TError,
+    DeleteOrderEventTemplateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOrderEventTemplate>>,
+  TError,
+  DeleteOrderEventTemplateMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteOrderEventTemplateMutationOptions(options));
+};
+
+export const getEditOrderEventTemplateUrl = (identity: string) => {
+  return `/api/v1/admin/order-event-templates/${identity}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editOrderEventTemplate = async (
+  identity: string,
+  orderNotificationTemplateEdit: OrderNotificationTemplateEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationTemplateRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OrderNotificationTemplateRecord>(
+    getEditOrderEventTemplateUrl(identity),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(orderNotificationTemplateEdit),
+    },
+  );
+};
+
+export const getEditOrderEventTemplateMutationKey = () =>
+  ["editOrderEventTemplate"] as const;
+
+export const getEditOrderEventTemplateMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editOrderEventTemplate>>,
+    TError,
+    EditOrderEventTemplateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editOrderEventTemplate>>,
+  TError,
+  EditOrderEventTemplateMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditOrderEventTemplateMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editOrderEventTemplate>>,
+    EditOrderEventTemplateMutationVariables
+  > = (props) => {
+    const { identity, data } = props ?? {};
+
+    return editOrderEventTemplate(identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditOrderEventTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editOrderEventTemplate>>
+>;
+export type EditOrderEventTemplateMutationBody =
+  BodyType<OrderNotificationTemplateEdit>;
+export type EditOrderEventTemplateMutationError = ErrorType<ErrorEnvelope>;
+export type EditOrderEventTemplateMutationVariables = {
+  identity: string;
+  data: BodyType<OrderNotificationTemplateEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditOrderEventTemplate = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editOrderEventTemplate>>,
+    TError,
+    EditOrderEventTemplateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editOrderEventTemplate>>,
+  TError,
+  EditOrderEventTemplateMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditOrderEventTemplateMutationOptions(options));
+};
+
+export const getListOrderNotificationDeliveriesUrl = (
+  params?: ListOrderNotificationDeliveriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/order-notification-deliveries?${stringifiedParams}`
+    : `/api/v1/admin/order-notification-deliveries`;
+};
+
+/**
+ * @summary Deliveries
+ */
+export const listOrderNotificationDeliveries = async (
+  params?: ListOrderNotificationDeliveriesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationDeliveryPage> => {
+  return customFetch<OrderNotificationDeliveryPage>(
+    getListOrderNotificationDeliveriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListOrderNotificationDeliveriesQueryKey = (
+  params?: ListOrderNotificationDeliveriesParams,
+) => {
+  return [
+    `/api/v1/admin/order-notification-deliveries`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListOrderNotificationDeliveriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOrderNotificationDeliveries>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListOrderNotificationDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOrderNotificationDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListOrderNotificationDeliveriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOrderNotificationDeliveries>>
+  > = ({ signal }) =>
+    listOrderNotificationDeliveries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderNotificationDeliveries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOrderNotificationDeliveriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOrderNotificationDeliveries>>
+>;
+export type ListOrderNotificationDeliveriesQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Deliveries
+ */
+
+export function useListOrderNotificationDeliveries<
+  TData = Awaited<ReturnType<typeof listOrderNotificationDeliveries>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListOrderNotificationDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOrderNotificationDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOrderNotificationDeliveriesQueryOptions(
+    params,
     options,
   );
 
@@ -43145,6 +43707,295 @@ export function useGetReadiness<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListOrderNotificationsUrl = () => {
+  return `/api/v1/notifications`;
+};
+
+/**
+ * @summary Feed
+ */
+export const listOrderNotifications = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationFeed> => {
+  return customFetch<OrderNotificationFeed>(getListOrderNotificationsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOrderNotificationsQueryKey = () => {
+  return [`/api/v1/notifications`] as const;
+};
+
+export const getListOrderNotificationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOrderNotifications>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderNotifications>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOrderNotificationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOrderNotifications>>
+  > = ({ signal }) => listOrderNotifications({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderNotifications>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOrderNotificationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOrderNotifications>>
+>;
+export type ListOrderNotificationsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Feed
+ */
+
+export function useListOrderNotifications<
+  TData = Awaited<ReturnType<typeof listOrderNotifications>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderNotifications>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOrderNotificationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getOpenOrderNotificationUrl = (identity: string) => {
+  return `/api/v1/notifications/${identity}/open`;
+};
+
+/**
+ * @summary Target
+ */
+export const openOrderNotification = async (
+  identity: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationTarget> => {
+  return customFetch<OrderNotificationTarget>(
+    getOpenOrderNotificationUrl(identity),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getOpenOrderNotificationMutationKey = () =>
+  ["openOrderNotification"] as const;
+
+export const getOpenOrderNotificationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof openOrderNotification>>,
+    TError,
+    OpenOrderNotificationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof openOrderNotification>>,
+  TError,
+  OpenOrderNotificationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getOpenOrderNotificationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof openOrderNotification>>,
+    OpenOrderNotificationMutationVariables
+  > = (props) => {
+    const { identity } = props ?? {};
+
+    return openOrderNotification(identity, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type OpenOrderNotificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof openOrderNotification>>
+>;
+
+export type OpenOrderNotificationMutationError = ErrorType<ErrorEnvelope>;
+export type OpenOrderNotificationMutationVariables = { identity: string };
+
+/**
+ * @summary Target
+ */
+export const useOpenOrderNotification = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof openOrderNotification>>,
+    TError,
+    OpenOrderNotificationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof openOrderNotification>>,
+  TError,
+  OpenOrderNotificationMutationVariables,
+  TContext
+> => {
+  return useMutation(getOpenOrderNotificationMutationOptions(options));
+};
+
+export const getReadOrderNotificationUrl = (identity: string) => {
+  return `/api/v1/notifications/${identity}/read`;
+};
+
+/**
+ * @summary Read
+ */
+export const readOrderNotification = async (
+  identity: string,
+  orderNotificationReadInput: OrderNotificationReadInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderNotificationReadResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OrderNotificationReadResult>(
+    getReadOrderNotificationUrl(identity),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(orderNotificationReadInput),
+    },
+  );
+};
+
+export const getReadOrderNotificationMutationKey = () =>
+  ["readOrderNotification"] as const;
+
+export const getReadOrderNotificationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof readOrderNotification>>,
+    TError,
+    ReadOrderNotificationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof readOrderNotification>>,
+  TError,
+  ReadOrderNotificationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReadOrderNotificationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof readOrderNotification>>,
+    ReadOrderNotificationMutationVariables
+  > = (props) => {
+    const { identity, data } = props ?? {};
+
+    return readOrderNotification(identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReadOrderNotificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof readOrderNotification>>
+>;
+export type ReadOrderNotificationMutationBody =
+  BodyType<OrderNotificationReadInput>;
+export type ReadOrderNotificationMutationError = ErrorType<ErrorEnvelope>;
+export type ReadOrderNotificationMutationVariables = {
+  identity: string;
+  data: BodyType<OrderNotificationReadInput>;
+};
+
+/**
+ * @summary Read
+ */
+export const useReadOrderNotification = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof readOrderNotification>>,
+    TError,
+    ReadOrderNotificationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof readOrderNotification>>,
+  TError,
+  ReadOrderNotificationMutationVariables,
+  TContext
+> => {
+  return useMutation(getReadOrderNotificationMutationOptions(options));
+};
 
 export const getResolvePortalHostnameUrl = (
   params: ResolvePortalHostnameParams,

@@ -53,6 +53,13 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0079_order_notifications"]:
+            db.execute(text("SELECT id,kind,order_id,user_id,mr_id,payload_ciphertext FROM order_notification_origins LIMIT 0"))
+            db.execute(text("SELECT id,kind,order_id,source_key,event,placer_user_id,placer_mr_id,created_at,payload_ciphertext FROM order_notification_events LIMIT 0"))
+            db.execute(text('SELECT id,event_id,user_id,"read",created_at FROM order_notification_alerts LIMIT 0'))
+            db.execute(text("SELECT id,event_id,user_id,channel,status,category,configuration_id,configuration_version,template_id,template_version,destination_index,lease_token,lease_until,created_at,updated_at FROM order_notification_deliveries LIMIT 0"))
+            db.execute(text("SELECT id,channel,event_key,name,enabled,version,subject,html,text,dlt_id,provider_template,language,parameters,created_by,updated_by FROM order_event_templates LIMIT 0"))
+            revisions = ["0078_reserve_movements"]
         if revisions == ["0078_reserve_movements"]:
             db.execute(text('SELECT id,reserve_id,movement_id,location_id,delta,"before","after" FROM in_house_postings LIMIT 0'))
             db.execute(text("SELECT reserve_movement_id FROM inventory_lots LIMIT 0"))

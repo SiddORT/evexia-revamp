@@ -162,6 +162,8 @@ def ready(db):
         # Additive settlement receipts do not change account anchors.
         ["0077_settlements"],
         ["0078_reserve_movements"],
+        # Additive notification events retain account envelopes and anchors.
+        ["0079_order_notifications"],
     ):
         raise AccountCryptoError()
     current = crypto()

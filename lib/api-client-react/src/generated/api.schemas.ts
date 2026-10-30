@@ -6970,6 +6970,243 @@ export interface OpeningReview {
   summary: OpeningSummary;
 }
 
+export type OrderNotificationAlertKind =
+  (typeof OrderNotificationAlertKind)[keyof typeof OrderNotificationAlertKind];
+
+export const OrderNotificationAlertKind = {
+  immunotherapy: "immunotherapy",
+  spt: "spt",
+  lupin: "lupin",
+  kits: "kits",
+} as const;
+
+export interface OrderNotificationAlert {
+  amount: string | null;
+  createdAt: string;
+  event: string;
+  id: string;
+  kind: OrderNotificationAlertKind;
+  mrName: string;
+  number: string;
+  read: boolean;
+  status: string;
+}
+
+export type OrderNotificationDeliveryRecordChannel =
+  (typeof OrderNotificationDeliveryRecordChannel)[keyof typeof OrderNotificationDeliveryRecordChannel];
+
+export const OrderNotificationDeliveryRecordChannel = {
+  email: "email",
+  sms: "sms",
+  waba: "waba",
+} as const;
+
+export type OrderNotificationDeliveryRecordKind =
+  (typeof OrderNotificationDeliveryRecordKind)[keyof typeof OrderNotificationDeliveryRecordKind];
+
+export const OrderNotificationDeliveryRecordKind = {
+  immunotherapy: "immunotherapy",
+  spt: "spt",
+  lupin: "lupin",
+  kits: "kits",
+} as const;
+
+export type OrderNotificationDeliveryRecordRecipient =
+  (typeof OrderNotificationDeliveryRecordRecipient)[keyof typeof OrderNotificationDeliveryRecordRecipient];
+
+export const OrderNotificationDeliveryRecordRecipient = {
+  Super_Admin: "Super Admin",
+  Placing_MR: "Placing MR",
+} as const;
+
+export interface OrderNotificationDeliveryRecord {
+  category: string | null;
+  channel: OrderNotificationDeliveryRecordChannel;
+  createdAt: string;
+  event: string;
+  eventId: string;
+  id: string;
+  kind: OrderNotificationDeliveryRecordKind;
+  number: string;
+  recipient: OrderNotificationDeliveryRecordRecipient;
+  status: string;
+  updatedAt: string;
+}
+
+export interface OrderNotificationDeliveryPage {
+  hasMore: boolean;
+  items: OrderNotificationDeliveryRecord[];
+  limit: number;
+  offset: number;
+}
+
+export interface OrderNotificationEventChoice {
+  key: string;
+  label: string;
+}
+
+export interface OrderNotificationFeed {
+  items: OrderNotificationAlert[];
+  unreadCount: number;
+}
+
+export interface OrderNotificationReadInput {
+  read: boolean;
+}
+
+export interface OrderNotificationReadResult {
+  id: string;
+  read: boolean;
+}
+
+export type OrderNotificationTargetKind =
+  (typeof OrderNotificationTargetKind)[keyof typeof OrderNotificationTargetKind];
+
+export const OrderNotificationTargetKind = {
+  immunotherapy: "immunotherapy",
+  spt: "spt",
+  lupin: "lupin",
+  kits: "kits",
+} as const;
+
+export interface OrderNotificationTarget {
+  kind: OrderNotificationTargetKind;
+  orderId: string;
+}
+
+export type OrderNotificationTemplateEditChannel =
+  (typeof OrderNotificationTemplateEditChannel)[keyof typeof OrderNotificationTemplateEditChannel];
+
+export const OrderNotificationTemplateEditChannel = {
+  email: "email",
+  sms: "sms",
+  waba: "waba",
+} as const;
+
+export interface OrderNotificationTemplateEdit {
+  channel: OrderNotificationTemplateEditChannel;
+  /** @maxLength 60 */
+  dltId?: string;
+  enabled: boolean;
+  eventKey?: string | null;
+  /** @maxLength 100000 */
+  html?: string;
+  /** @maxLength 20 */
+  language?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @maxItems 8 */
+  parameters?: string[];
+  /** @maxLength 100 */
+  providerTemplate?: string;
+  /** @maxLength 200 */
+  subject?: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  text: string;
+  /**
+   * @minimum 1
+   * @maximum 2147483646
+   */
+  version: number;
+}
+
+export type OrderNotificationTemplateInputChannel =
+  (typeof OrderNotificationTemplateInputChannel)[keyof typeof OrderNotificationTemplateInputChannel];
+
+export const OrderNotificationTemplateInputChannel = {
+  email: "email",
+  sms: "sms",
+  waba: "waba",
+} as const;
+
+export interface OrderNotificationTemplateInput {
+  channel: OrderNotificationTemplateInputChannel;
+  /** @maxLength 60 */
+  dltId?: string;
+  enabled: boolean;
+  eventKey?: string | null;
+  /** @maxLength 100000 */
+  html?: string;
+  /** @maxLength 20 */
+  language?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @maxItems 8 */
+  parameters?: string[];
+  /** @maxLength 100 */
+  providerTemplate?: string;
+  /** @maxLength 200 */
+  subject?: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  text: string;
+}
+
+export type OrderNotificationTemplateRecordChannel =
+  (typeof OrderNotificationTemplateRecordChannel)[keyof typeof OrderNotificationTemplateRecordChannel];
+
+export const OrderNotificationTemplateRecordChannel = {
+  email: "email",
+  sms: "sms",
+  waba: "waba",
+} as const;
+
+export interface OrderNotificationTemplateRecord {
+  channel: OrderNotificationTemplateRecordChannel;
+  /** @maxLength 60 */
+  dltId?: string;
+  enabled: boolean;
+  eventKey?: string | null;
+  /** @maxLength 100000 */
+  html?: string;
+  id: string;
+  /** @maxLength 20 */
+  language?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @maxItems 8 */
+  parameters?: string[];
+  /** @maxLength 100 */
+  providerTemplate?: string;
+  readiness: string;
+  /** @maxLength 200 */
+  subject?: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  text: string;
+  version: number;
+}
+
+export interface OrderNotificationTemplatePage {
+  events: OrderNotificationEventChoice[];
+  items: OrderNotificationTemplateRecord[];
+  variables: string[];
+}
+
+export interface OrderNotificationVersion {
+  /**
+   * @minimum 1
+   * @maximum 2147483646
+   */
+  version: number;
+}
+
 export interface OrderRejection {
   /** @minimum 1 */
   expected_version: number;
@@ -14199,6 +14436,19 @@ export const DownloadOpeningStockSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListOrderNotificationDeliveriesParams = {
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+};
 
 export type ListPatientDirectoryParams = {
   /**

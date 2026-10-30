@@ -191,6 +191,8 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
             spt_patient_id=patient.id if patient.source == "spt" else None))
     audit(db, actor, "spt_updated" if previous else "spt_created", row.id)
     db.flush()
+    from app.services.order_notifications import placed
+    placed(db, keys, "spt", row, previous)
     return project(keys, row)
 
 

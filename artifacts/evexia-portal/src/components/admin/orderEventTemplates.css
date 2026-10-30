@@ -1,0 +1,25 @@
+.oet { display: grid; gap: 14px; }
+.oet-matrix-wrap { overflow-x: auto; border: 1px solid var(--admin-border); border-radius: 10px; }
+.oet-matrix { width: 100%; border-collapse: collapse; font-size: 12px; }
+.oet-matrix caption { text-align: left; padding: 10px 12px 4px; font-weight: 700; color: var(--admin-text); }
+.oet-matrix th, .oet-matrix td { padding: 8px 12px; text-align: left; border-top: 1px solid var(--admin-border); white-space: nowrap; }
+.oet-matrix thead th { color: var(--admin-text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.oet-pill { display: inline-block; padding: 2px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); }
+.oet-pill--on, .oet-tag--on { background: var(--admin-state-soft); color: var(--admin-accent); }
+.oet-pill--none { background: transparent; border: 1px dashed var(--admin-border); color: var(--admin-text-soft); }
+.oet-form { display: grid; gap: 12px; padding-bottom: 20px; }
+.oet-edit-fields { display: grid; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.oet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: end; }
+.oet-check { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+.oet-params { display: grid; gap: 8px; border: 1px solid var(--admin-border); border-radius: 10px; padding: 10px 12px; }
+.oet-params legend { font-size: 12px; font-weight: 700; padding: 0 4px; }
+.oet-pnum { font-family: ui-monospace, monospace; font-size: 12px; min-width: 40px; }
+.oet-frame { width: 100%; min-height: 320px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-chrome); }
+.oet-pre { white-space: pre-wrap; padding: 10px 12px; border-radius: 8px; background: var(--admin-chrome); border: 1px solid var(--admin-border); font-size: 12px; }
+.oet-plist { margin: 0; padding-left: 18px; font-size: 12px; }
+.oet-deliv { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--admin-border); }
+.oet-deliv h3 { margin: 0; font-size: 14px; }
+.oet-skel { display: grid; gap: 8px; }
+.oet-skel span { height: 14px; border-radius: 6px; background: var(--admin-state-soft); animation: oet-pulse 1.2s ease-in-out infinite; }
+@keyframes oet-pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .oet-skel span { animation: none; } }

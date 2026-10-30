@@ -53,6 +53,15 @@ def resolve(db, settings):
     if len(rows) != 1:
         raise SavedSMTPUnavailable("saved_smtp_invalid")
     row = rows[0]
+    return resolve_record(row, settings)
+
+
+def resolve_record(row, settings):
+    """Resolve exactly the already-selected default's single-statement snapshot.
+
+    Internal worker use only; callers must select the default themselves. This
+    does not add an administrative read/decrypt endpoint or a fallback server.
+    """
     if row.type != "smtp":
         raise SavedSMTPUnavailable("saved_smtp_unsupported")
     try:

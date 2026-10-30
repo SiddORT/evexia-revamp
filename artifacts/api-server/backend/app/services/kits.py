@@ -222,6 +222,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
         action="kits_updated" if previous else "kits_created", resource_type="kits_order",
         resource_id=row.id, outcome="success", request_id=db.info.get("request_id"), created_at=utcnow()))
     db.flush()
+    from app.services.order_notifications import placed
+    placed(db, keys, "kits", row, previous)
     return project(keys, row)
 
 
