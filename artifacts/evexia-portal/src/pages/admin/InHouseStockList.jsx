@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronDown, Eye, FileDown, Plus, Search } from 'lucide-react';
+import { ChevronDown, Eye, FileDown, Filter, Plus, Search } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -8,6 +8,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import InHousePendingBanner from '../../components/admin/InHousePendingBanner.jsx';
 import InHouseStockDialog from '../../components/admin/InHouseStockDialog.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { useAdminDateFormatters, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { isSuperAdminIdentity } from '../../auth/capabilities.js';
@@ -64,6 +65,7 @@ function InHouseStockListInner() {
   const changeDate = (key, value) => { setDates((d) => ({ ...d, [key]: value })); setPage(1); setExportMessage(null); };
   const resetFilters = () => { setSearch(''); setApplied(''); setAllergen(null); setDates({ from_date: '', to_date: '', date_field: 'recorded' }); setPage(1); setExportMessage(null); };
   const hasFilters = Boolean(applied || allergen || dates.from_date || dates.to_date);
+  const activeFilterCount = [allergen, dates.from_date, dates.to_date].filter(Boolean).length;
   async function runExport(format) {
     if (exporting || loading || error || dateError || applied !== search.trim()) return;
     setExporting(format); setExportMessage(null);
@@ -101,11 +103,16 @@ function InHouseStockListInner() {
     {exportMessage && <div className={`admin-feedback admin-feedback--${exportMessage.ok ? 'success' : 'error'}`} role={exportMessage.ok ? 'status' : 'alert'}>{exportMessage.text}</div>}
     <InHousePendingBanner onResolved={() => load()} />
     <section className="admin-panel" aria-label="In-house stock list">
-      <div className="admin-toolbar">
+      <div className="in-house-filter-toolbar">
+      <div className="in-house-filter-toolbar__top master-filter-toolbar">
+        <div className="in-house-filter-toolbar__search">
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={load} data-testid="button-refresh-in-house">Refresh</button>
         <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search in-house stock</span><input type="search" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search allergen, batch or location" data-testid="input-search-in-house" /></label>
-        <button type="button" className="admin-button admin-button--secondary" onClick={resetFilters} data-testid="button-reset-in-house-filters">Reset filters</button>
+        </div>
+        <MasterFilterReset disabled={!search && !allergen && !dates.from_date && !dates.to_date && dates.date_field === 'recorded'} onClick={resetFilters} testId="button-reset-in-house-filters" />
       </div>
+      <details className="in-house-filter-disclosure">
+        <summary data-testid="button-toggle-in-house-filters"><Filter size={15} aria-hidden="true" />Filter records{activeFilterCount > 0 && ` · ${activeFilterCount} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
       <div className="in-house-filters">
         <div className="ms-field"><label htmlFor="in-house-filter-allergen">Allergen</label>
           <ReferenceSelect id="in-house-filter-allergen" label="Filter by allergen" kind="in-house-filter-allergens"
@@ -117,6 +124,8 @@ function InHouseStockListInner() {
         </select></label>
         <label className="ms-field">From date<input className="mr-form__control" type="date" value={dates.from_date} max={dates.to_date || undefined} onChange={(e) => changeDate('from_date', e.target.value)} aria-invalid={Boolean(dateError)} data-testid="input-in-house-from-date" /></label>
         <label className="ms-field">To date<input className="mr-form__control" type="date" value={dates.to_date} min={dates.from_date || undefined} onChange={(e) => changeDate('to_date', e.target.value)} aria-invalid={Boolean(dateError)} data-testid="input-in-house-to-date" /></label>
+      </div>
+      </details>
       </div>
       {error ? <div className="admin-empty" role="alert"><strong>In-house stock could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={load} data-testid="button-retry-in-house">Try again</button></div> : <>
         <DataTable columns={columns} rows={items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="In-house stock" testIdPrefix="in-house" loading={loading}

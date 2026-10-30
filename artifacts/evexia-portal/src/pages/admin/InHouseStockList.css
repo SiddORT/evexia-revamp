@@ -1,10 +1,23 @@
+.in-house-filter-toolbar { display: grid; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--admin-border); min-width: 0; }
+.in-house-filter-toolbar__top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.in-house-filter-toolbar__search { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; flex: 1 1 420px; max-width: 620px; min-width: 0; }
+.in-house-filter-toolbar__search > .admin-button { flex: 0 0 auto; }
+.in-house-filter-toolbar__search .admin-search { flex: 1 1 260px; min-width: 0; min-height: 40px; box-sizing: border-box; }
+.in-house-filter-toolbar__search input { width: 100%; min-width: 0; }
+.in-house-filter-toolbar__top .master-filter-actions { margin-left: auto; }
+.in-house-filter-disclosure { min-width: 0; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-state-link); }
+.in-house-filter-disclosure summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--admin-text); font-size: 12px; font-weight: 700; list-style: none; }
+.in-house-filter-disclosure summary::-webkit-details-marker { display: none; }
+.in-house-filter-disclosure summary svg { flex: none; }
+.in-house-filter-disclosure summary svg:last-child { margin-left: auto; transition: transform .16s ease; }
+.in-house-filter-disclosure[open] summary svg:last-child { transform: rotate(180deg); }
+.in-house-filter-disclosure summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .in-house-filters {
   display: grid;
   grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(140px, 1fr));
   align-items: start;
   gap: 12px;
-  padding: 16px;
-  border-top: 1px solid var(--admin-border);
+  padding: 0 12px 12px;
 }
 .in-house-filters > * { min-width: 0; }
 .in-house-filters .mr-form__control { width: 100%; box-sizing: border-box; }
@@ -12,4 +25,8 @@
 .in-house-export-menu__item { padding: 9px 12px; border-radius: 6px; cursor: pointer; outline: none; font-size: 13px; }
 .in-house-export-menu__item[data-highlighted] { background: var(--admin-table-head); }
 @media (max-width: 1000px) { .in-house-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .in-house-filters { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) {
+  .in-house-filters { grid-template-columns: minmax(0, 1fr); }
+  .in-house-filter-toolbar__search { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .in-house-filter-disclosure summary svg:last-child { transition: none; } }
