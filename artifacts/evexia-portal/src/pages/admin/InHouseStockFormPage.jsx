@@ -108,14 +108,11 @@ function InHouseStockForm() {
   const dirty = !saved && (Boolean(review) || Object.keys(BLANK).some((k) => draft[k] !== BLANK[k]));
   const leaveGuard = useProductDraftNavigation({ dirty, busy: Boolean(busy), uncertain: blocked, message: 'Discard this unsaved in-house stock entry and leave? Nothing has been committed.' });
   const leave = () => leaveGuard(BASE);
-  const desc = (k) => [errors[k] && `ih-${k}-error`, `ih-${k}-hint`].filter(Boolean).join(' ');
+  const desc = (k) => errors[k] ? `ih-${k}-error` : undefined;
   const err = (k) => errors[k] && <p id={`ih-${k}-error`} className="mr-form__error" role="alert">{errors[k]}</p>;
-  const hint = (k, t) => <p id={`ih-${k}-hint`} className="mr-form__hint">{t}</p>;
-  const today = new Date(); const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const pastExpiry = validDay(draft.expiryDate) && draft.expiryDate < todayIso;
   const text = (k, label, max, extra = {}) => <div className="ms-field"><label htmlFor={`ih-${k}`}>{label}{extra.required && <> <span className="mr-form__required">*</span></>}</label>
     <input id={`ih-${k}`} className="mr-form__control" autoComplete="off" maxLength={max} value={draft[k]} onChange={(e) => set(k, e.target.value)} inputMode={extra.inputMode} required={extra.required}
-      aria-invalid={Boolean(errors[k])} aria-describedby={desc(k)} data-testid={`input-in-house-${k}`} />{hint(k, extra.hint)}{err(k)}</div>;
+      aria-invalid={Boolean(errors[k])} aria-describedby={desc(k)} data-testid={`input-in-house-${k}`} />{err(k)}</div>;
 
   return <AdminLayout title="Add in-house stock"><div className="move-stocks-page opening-stock-form">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / In-house stock / New</p><h1>Add in-house stock</h1><p className="admin-page-head__description">{RESERVE_NOTE} Review the canonical values before committing.</p></div>
@@ -129,25 +126,25 @@ function InHouseStockForm() {
         <div className="ms-fields">
           <div className="ms-field"><label htmlFor="ih-allergen">Allergen <span className="mr-form__required">*</span></label>
             <ReferenceSelect id="ih-allergen" label="Allergen" kind="in-house-allergens" fetchPage={listAllergenReferences} value={draft.allergen?.value || ''} selected={draft.allergen} placeholder="Select active allergen" invalid={Boolean(errors.allergen)} describedBy={desc('allergen')} showResultHint={false}
-              onChange={(_v, o) => set('allergen', o ? { value: o.value, label: o.label } : null)} />{hint('allergen', 'Active allergens only; category shown in brackets.')}{err('allergen')}</div>
+              onChange={(_v, o) => set('allergen', o ? { value: o.value, label: o.label } : null)} />{err('allergen')}</div>
           <div className="ms-field"><label htmlFor="ih-concentration">Concentration <span className="mr-form__required">*</span></label>
             <AllergenSearchableSelect id="ih-concentration" label="Concentration" value={draft.concentration} disabled={locked} placeholder="Select concentration"
               invalid={Boolean(errors.concentration)} describedBy={desc('concentration')} testId="select-in-house-concentration"
               options={ALLERGEN_CONCENTRATIONS.map((value) => ({ value, label: value }))}
               onChange={(value) => set('concentration', value)} />
-            {hint('concentration', 'Select the concentration held in stock.')}{err('concentration')}</div>
-          {text('quantity', 'Quantity', 12, { required: true, inputMode: 'decimal', hint: 'Positive, up to 1000000, max 3 decimals.' })}
+            {err('concentration')}</div>
+          {text('quantity', 'Quantity', 12, { required: true, inputMode: 'decimal' })}
           <div className="ms-field"><label htmlFor="ih-expiryDate">Expiry date <span className="mr-form__required">*</span></label>
             <input id="ih-expiryDate" type="date" className="mr-form__control" value={draft.expiryDate} onChange={(e) => set('expiryDate', e.target.value)} required aria-invalid={Boolean(errors.expiryDate)} aria-describedby={desc('expiryDate')} data-testid="input-in-house-expiryDate" />
-            {hint('expiryDate', pastExpiry ? `Past date: this entry will be saved as Expired (${date(draft.expiryDate)}).` : 'Past dates are allowed and marked Expired.')}{err('expiryDate')}</div>
+            {err('expiryDate')}</div>
           <div className="ms-field"><label htmlFor="ih-location">Storage location <span className="mr-form__required">*</span></label>
             <ReferenceSelect id="ih-location" label="Storage location" kind="in-house-locations" fetchPage={listLocationReferences} value={draft.location?.value || ''} selected={draft.location} placeholder="Select location" invalid={Boolean(errors.location)} describedBy={desc('location')} showResultHint={false}
-              onChange={(_v, o) => set('location', o ? { value: o.value, label: o.label } : null)} />{hint('location', 'Where the reserve is physically held.')}{err('location')}</div>
-          {text('batch', 'Batch', 100, { hint: 'Optional, up to 100 characters.' })}
+              onChange={(_v, o) => set('location', o ? { value: o.value, label: o.label } : null)} />{err('location')}</div>
+          {text('batch', 'Batch', 100)}
         </div>
         <div className="ms-field"><label htmlFor="ih-notes">Notes</label>
           <textarea id="ih-notes" className="mr-form__control" rows={3} maxLength={2000} value={draft.notes} onChange={(e) => set('notes', e.target.value)} aria-invalid={Boolean(errors.notes)} aria-describedby={desc('notes')} data-testid="input-in-house-notes" />
-          {hint('notes', `${draft.notes.length}/2000`)}{err('notes')}</div>
+          {err('notes')}</div>
       </div></fieldset>
       {review && <div className="ms-form-body" data-testid="panel-in-house-review"><h2 className="ms-section-title">Review before committing</h2>
         <p className="mr-form__hint">{RESERVE_NOTE} Values below are canonical as returned by the server.</p>
