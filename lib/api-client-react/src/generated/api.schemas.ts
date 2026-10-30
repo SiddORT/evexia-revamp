@@ -9883,6 +9883,203 @@ export interface SessionPage {
   offset: number;
 }
 
+export type SettlementAllocationKind =
+  (typeof SettlementAllocationKind)[keyof typeof SettlementAllocationKind];
+
+export const SettlementAllocationKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export interface SettlementAllocation {
+  /** @pattern ^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$ */
+  amount: string;
+  /** @pattern ^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$ */
+  expected_paid: string;
+  /** @minimum 1 */
+  expected_version: number;
+  id: string;
+  kind: SettlementAllocationKind;
+}
+
+export type SettlementBatchResultMode =
+  (typeof SettlementBatchResultMode)[keyof typeof SettlementBatchResultMode];
+
+export const SettlementBatchResultMode = {
+  Cash: "Cash",
+  UPI: "UPI",
+  Bank_transfer: "Bank transfer",
+  Cheque: "Cheque",
+  Card: "Card",
+  Other: "Other",
+} as const;
+
+export type SettlementPostedAllocationKind =
+  (typeof SettlementPostedAllocationKind)[keyof typeof SettlementPostedAllocationKind];
+
+export const SettlementPostedAllocationKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export interface SettlementPostedAllocation {
+  amount: string;
+  id: string;
+  kind: SettlementPostedAllocationKind;
+}
+
+export interface SettlementBatchResult {
+  date: string;
+  entries: SettlementPostedAllocation[];
+  id: string;
+  mode: SettlementBatchResultMode;
+  total: string;
+}
+
+export type SettlementInputMode =
+  (typeof SettlementInputMode)[keyof typeof SettlementInputMode];
+
+export const SettlementInputMode = {
+  Cash: "Cash",
+  UPI: "UPI",
+  Bank_transfer: "Bank transfer",
+  Cheque: "Cheque",
+  Card: "Card",
+  Other: "Other",
+} as const;
+
+export interface SettlementInput {
+  date: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  entries: SettlementAllocation[];
+  idempotency_key: string;
+  mode: SettlementInputMode;
+}
+
+export interface SettlementPerson {
+  code?: string | null;
+  contactsMasked?: boolean;
+  email?: string | null;
+  id?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  qualification?: string | null;
+}
+
+export type SettlementRecordKind =
+  (typeof SettlementRecordKind)[keyof typeof SettlementRecordKind];
+
+export const SettlementRecordKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type SettlementTransactionMode =
+  (typeof SettlementTransactionMode)[keyof typeof SettlementTransactionMode];
+
+export const SettlementTransactionMode = {
+  Cash: "Cash",
+  UPI: "UPI",
+  Bank_transfer: "Bank transfer",
+  Cheque: "Cheque",
+  Card: "Card",
+  Other: "Other",
+} as const;
+
+export type SettlementTransactionVerification =
+  (typeof SettlementTransactionVerification)[keyof typeof SettlementTransactionVerification];
+
+export const SettlementTransactionVerification = {
+  No_transactions: "No transactions",
+  Not_verified: "Not verified",
+  Verified: "Verified",
+} as const;
+
+export interface SettlementTransaction {
+  actorId: string;
+  amount: string;
+  batchId: string;
+  createdAt: string;
+  date: string;
+  id: string;
+  mode: SettlementTransactionMode;
+  verification: SettlementTransactionVerification;
+}
+
+export type SettlementRecordVerification =
+  (typeof SettlementRecordVerification)[keyof typeof SettlementRecordVerification];
+
+export const SettlementRecordVerification = {
+  No_transactions: "No transactions",
+  Not_verified: "Not verified",
+  Verified: "Verified",
+} as const;
+
+export interface SettlementRecord {
+  balance: string | null;
+  date: string;
+  doctor: SettlementPerson | null;
+  id: string;
+  key: string;
+  kind: SettlementRecordKind;
+  mr: SettlementPerson | null;
+  number: string;
+  paid: string;
+  patients: SettlementPerson[];
+  total: string | null;
+  transactions: SettlementTransaction[];
+  verification: SettlementRecordVerification;
+  version: number;
+}
+
+export interface SettlementPage {
+  items: SettlementRecord[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type SettlementReconciliationStatus =
+  (typeof SettlementReconciliationStatus)[keyof typeof SettlementReconciliationStatus];
+
+export const SettlementReconciliationStatus = {
+  committed: "committed",
+  absent: "absent",
+  rejected: "rejected",
+} as const;
+
+export interface SettlementRejectedOutcome {
+  code: string;
+  message: string;
+}
+
+export interface SettlementReconciliation {
+  batch: SettlementBatchResult | null;
+  rejection?: SettlementRejectedOutcome | null;
+  status: SettlementReconciliationStatus;
+}
+
+export interface SettlementReference {
+  id: string;
+  name: string;
+}
+
+export interface SettlementReferences {
+  items: SettlementReference[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export interface ShipmentCommand {
   /** @minimum 1 */
   expected_version: number;
@@ -14996,6 +15193,66 @@ export const DownloadSalesTargetSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListSettlementsParams = {
+  kind?: ListSettlementsKind;
+  order_from?: string | null;
+  order_to?: string | null;
+  payment_from?: string | null;
+  payment_to?: string | null;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  verification?: ListSettlementsVerification;
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListSettlementsKind =
+  (typeof ListSettlementsKind)[keyof typeof ListSettlementsKind];
+
+export const ListSettlementsKind = {
+  All: "All",
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type ListSettlementsVerification =
+  (typeof ListSettlementsVerification)[keyof typeof ListSettlementsVerification];
+
+export const ListSettlementsVerification = {
+  All: "All",
+  No_transactions: "No transactions",
+  Not_verified: "Not verified",
+  Verified: "Verified",
+} as const;
+
+export type SettlementReferencesParams = {
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
 
 export type ListShipmentsParams = {
   /**

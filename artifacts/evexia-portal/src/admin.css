@@ -617,4 +617,4 @@
 @media (max-width: 390px) {
   .admin-header__page { display: none; }
   .admin-appearance__trigger { gap: 3px; }
-}
+}.admin-nav__section-label { margin: 10px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--admin-text-soft); }

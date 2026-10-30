@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, Archive, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, Wallet, Archive, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, isSuperAdminIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
@@ -102,6 +102,7 @@ export default function AdminLayout({ title, children }) {
     (!staff || canReadResource(user, ({ 'kits-consumables': 'kits', immunotherapy: 'immunotherapy', spt: 'spt', lupin: 'lupin' })[destination.slug]))
     && (!searching || 'orders'.includes(query) || `${destination.label} ${destination.keywords || ''}`.toLocaleLowerCase().includes(query)));
   const showOrders = visibleOrders.length > 0;
+  const showAccounts = !staff && isSuperAdminIdentity(user) && (!searching || 'accounts settlements payments transactions'.includes(query));
   const showShipments = !staff && isSuperAdminIdentity(user) && (!searching || 'shipments courier tracking delivery'.includes(query));
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
@@ -278,6 +279,8 @@ export default function AdminLayout({ title, children }) {
             })}
           </div>
           {showShipments && <Link href="/admin/shipments" className={`admin-nav__item${location === '/admin/shipments' ? ' admin-nav__item--active' : ''}`} aria-label="Shipments" title={isCollapsed ? 'Shipments' : undefined} aria-current={location === '/admin/shipments' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-shipments"><Truck size={17} aria-hidden="true" /><span className="admin-nav__label">Shipments</span></Link>}
+          {showAccounts && <div className="admin-nav__group-accounts"><p className="admin-nav__label admin-nav__section-label" aria-hidden="true">Accounts</p>
+            <Link href="/admin/accounts/settlements" className={`admin-nav__item${location === '/admin/accounts/settlements' ? ' admin-nav__item--active' : ''}`} aria-label="Accounts: Settlements" title={isCollapsed ? 'Settlements' : undefined} aria-current={location === '/admin/accounts/settlements' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-accounts-settlements"><Wallet size={17} aria-hidden="true" /><span className="admin-nav__label">Settlements</span></Link></div>}
           {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${isUserManagementPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
@@ -290,7 +293,7 @@ export default function AdminLayout({ title, children }) {
               <ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Roles & Permissions</span>
             </Link>}
           </div>
-          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && !showShipments && !showInHouse && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
+          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && !showShipments && !showAccounts && !showInHouse && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>

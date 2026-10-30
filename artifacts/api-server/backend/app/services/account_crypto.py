@@ -159,6 +159,8 @@ def ready(db):
         # Shipment status CHECK expansion changes no account encryption anchors.
         ["0075_shipments"],
         ["0076_in_house_stock"],
+        # Additive settlement receipts do not change account anchors.
+        ["0077_settlements"],
     ):
         raise AccountCryptoError()
     current = crypto()

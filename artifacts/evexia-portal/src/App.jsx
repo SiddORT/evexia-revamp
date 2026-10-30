@@ -24,6 +24,7 @@ import Masters from './pages/admin/Masters.jsx';
 import LanguageMaster from './pages/admin/LanguageMaster.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 const Shipments = lazyRoute(() => import('./pages/admin/Shipments.jsx'));
+const AccountsSettlements = lazyRoute(() => import('./pages/admin/AccountsSettlements.jsx'));
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
 const MRMaster = lazyRoute(() => import('./pages/admin/MRMaster.jsx'));
 const MRFormPage = lazyRoute(() => import('./pages/admin/MRFormPage.jsx'));
@@ -128,6 +129,7 @@ function App() {
       <Route path="/admin/languages" component={LanguageMaster} />
       <Route path="/admin/masters/zones" component={ZoneMaster} />
       <Route path="/admin/shipments" component={Shipments} />
+      <Route path="/admin/accounts/settlements" component={AccountsSettlements} />
       <Route path="/admin/masters/courier-partners" component={CourierPartnerMaster} />
       <Route path="/admin/masters/sales-targets" component={SalesTargetMaster} />
       <Route path="/admin/masters/mrs" component={MRMaster} />

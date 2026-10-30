@@ -1974,6 +1974,24 @@ export const editSalesTargetResponseStartYearMax = 9998;
 export const setSalesTargetStatusResponseEndYearMin = 2;
 export const setSalesTargetStatusResponseEndYearMax = 9999;
 export const setSalesTargetStatusResponseStartYearMax = 9998;
+export const listSettlementsQueryOffsetDefault = 0;
+export const listSettlementsQueryOffsetMin = 0;
+export const listSettlementsQueryOffsetMax = 20000;
+export const listSettlementsQueryLimitDefault = 25;
+export const listSettlementsQueryLimitMax = 100;
+export const listSettlementsResponseItemsItemDoctorOneContactsMaskedDefault = false;
+export const listSettlementsResponseItemsItemMrOneContactsMaskedDefault = false;
+export const listSettlementsResponseItemsItemPatientsItemContactsMaskedDefault = false;
+export const settlementOrderHistoryResponseDoctorOneContactsMaskedDefault = false;
+export const settlementOrderHistoryResponseMrOneContactsMaskedDefault = false;
+export const settlementOrderHistoryResponsePatientsItemContactsMaskedDefault = false;
+export const settlementReferencesQuerySearchMax = 100;
+export const settlementReferencesQueryOffsetDefault = 0;
+export const settlementReferencesQueryOffsetMin = 0;
+export const settlementReferencesQueryOffsetMax = 20000;
+export const settlementReferencesQueryLimitDefault = 25;
+export const settlementReferencesQueryLimitMax = 100;
+export const recordSettlementBodyEntriesMax = 100;
 export const listShipmentsQueryOffsetDefault = 0;
 export const listShipmentsQueryOffsetMin = 0;
 export const listShipmentsQueryOffsetMax = 20000;
@@ -34136,6 +34154,340 @@ export const SetSalesTargetStatusResponse = zod.object({
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
   zoneName: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listSettlementsQueryKindDefault = `All`;
+export const listSettlementsQueryVerificationDefault = `All`;
+
+export const ListSettlementsQueryParams = zod.object({
+  kind: zod
+    .enum(["All", "IT", "Kit", "SPT", "Lupin"])
+    .default(listSettlementsQueryKindDefault),
+  order_from: zod.union([zod.date(), zod.null()]).optional(),
+  order_to: zod.union([zod.date(), zod.null()]).optional(),
+  payment_from: zod.union([zod.date(), zod.null()]).optional(),
+  payment_to: zod.union([zod.date(), zod.null()]).optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  verification: zod
+    .enum(["All", "No transactions", "Not verified", "Verified"])
+    .default(listSettlementsQueryVerificationDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listSettlementsQueryOffsetMin)
+    .max(listSettlementsQueryOffsetMax)
+    .default(listSettlementsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listSettlementsQueryLimitMax)
+    .default(listSettlementsQueryLimitDefault),
+});
+
+export const ListSettlementsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      balance: zod.union([zod.string(), zod.null()]),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementsResponseItemsItemDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      key: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementsResponseItemsItemMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      paid: zod.string(),
+      patients: zod.array(
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementsResponseItemsItemPatientsItemContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+      ),
+      total: zod.union([zod.string(), zod.null()]),
+      transactions: zod.array(
+        zod.object({
+          actorId: zod.string(),
+          amount: zod.string(),
+          batchId: zod.string(),
+          createdAt: zod.string(),
+          date: zod.string(),
+          id: zod.string(),
+          mode: zod.enum([
+            "Cash",
+            "UPI",
+            "Bank transfer",
+            "Cheque",
+            "Card",
+            "Other",
+          ]),
+          verification: zod.enum([
+            "No transactions",
+            "Not verified",
+            "Verified",
+          ]),
+        }),
+      ),
+      verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Order History
+ */
+export const SettlementOrderHistoryParams = zod.object({
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  identity: zod.coerce.string().uuid(),
+});
+
+export const SettlementOrderHistoryResponse = zod.object({
+  balance: zod.union([zod.string(), zod.null()]),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(settlementOrderHistoryResponseDoctorOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  key: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(settlementOrderHistoryResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  paid: zod.string(),
+  patients: zod.array(
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          settlementOrderHistoryResponsePatientsItemContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  total: zod.union([zod.string(), zod.null()]),
+  transactions: zod.array(
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      batchId: zod.string(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      id: zod.string(),
+      mode: zod.enum([
+        "Cash",
+        "UPI",
+        "Bank transfer",
+        "Cheque",
+        "Card",
+        "Other",
+      ]),
+      verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+    }),
+  ),
+  verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary References
+ */
+export const SettlementReferencesParams = zod.object({
+  kind: zod.enum(["doctors", "mrs", "patients"]),
+});
+
+export const settlementReferencesQuerySearchDefault = ``;
+
+export const SettlementReferencesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(settlementReferencesQuerySearchMax)
+    .default(settlementReferencesQuerySearchDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(settlementReferencesQueryOffsetMin)
+    .max(settlementReferencesQueryOffsetMax)
+    .default(settlementReferencesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(settlementReferencesQueryLimitMax)
+    .default(settlementReferencesQueryLimitDefault),
+});
+
+export const SettlementReferencesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileSettlementParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const ReconcileSettlementResponse = zod.object({
+  batch: zod.union([
+    zod.object({
+      date: zod.string(),
+      entries: zod.array(
+        zod.object({
+          amount: zod.string(),
+          id: zod.string(),
+          kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+        }),
+      ),
+      id: zod.string(),
+      mode: zod.enum([
+        "Cash",
+        "UPI",
+        "Bank transfer",
+        "Cheque",
+        "Card",
+        "Other",
+      ]),
+      total: zod.string(),
+    }),
+    zod.null(),
+  ]),
+  rejection: zod
+    .union([
+      zod.object({
+        code: zod.string(),
+        message: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["committed", "absent", "rejected"]),
+});
+
+/**
+ * @summary Post
+ */
+export const recordSettlementBodyEntriesItemAmountRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,2})?$",
+);
+export const recordSettlementBodyEntriesItemExpectedPaidRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,2})?$",
+);
+
+export const RecordSettlementBody = zod.object({
+  date: zod.coerce.date(),
+  entries: zod
+    .array(
+      zod.object({
+        amount: zod.string().regex(recordSettlementBodyEntriesItemAmountRegExp),
+        expected_paid: zod
+          .string()
+          .regex(recordSettlementBodyEntriesItemExpectedPaidRegExp),
+        expected_version: zod.number().int().min(1),
+        id: zod.string().uuid(),
+        kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      }),
+    )
+    .min(1)
+    .max(recordSettlementBodyEntriesMax),
+  idempotency_key: zod.string().uuid(),
+  mode: zod.enum(["Cash", "UPI", "Bank transfer", "Cheque", "Card", "Other"]),
+});
+
+export const RecordSettlementResponse = zod.object({
+  date: zod.string(),
+  entries: zod.array(
+    zod.object({
+      amount: zod.string(),
+      id: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+    }),
+  ),
+  id: zod.string(),
+  mode: zod.enum(["Cash", "UPI", "Bank transfer", "Cheque", "Card", "Other"]),
+  total: zod.string(),
 });
 
 /**

@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0077_settlements": "automatic",
     "0076_in_house_stock": "automatic",
     "0075_shipments": "automatic",
     "0074_business_numbers": "automatic",

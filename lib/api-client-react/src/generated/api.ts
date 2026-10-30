@@ -266,6 +266,7 @@ import type {
   ListReportingSessionsParams,
   ListReportingUsersParams,
   ListSalesTargetsParams,
+  ListSettlementsParams,
   ListShipmentsParams,
   ListSptOrdersParams,
   ListStaffAccessParams,
@@ -482,6 +483,13 @@ import type {
   SessionListResponse,
   SessionPage,
   SessionResponse,
+  SettlementBatchResult,
+  SettlementInput,
+  SettlementPage,
+  SettlementReconciliation,
+  SettlementRecord,
+  SettlementReferences,
+  SettlementReferencesParams,
   ShipmentCommand,
   ShipmentCouriers,
   ShipmentCouriersParams,
@@ -32774,6 +32782,533 @@ export const useSetSalesTargetStatus = <
   TContext
 > => {
   return useMutation(getSetSalesTargetStatusMutationOptions(options));
+};
+
+export const getListSettlementsUrl = (params?: ListSettlementsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/settlements?${stringifiedParams}`
+    : `/api/v1/admin/settlements`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listSettlements = async (
+  params?: ListSettlementsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SettlementPage> => {
+  return customFetch<SettlementPage>(getListSettlementsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSettlementsQueryKey = (params?: ListSettlementsParams) => {
+  return [`/api/v1/admin/settlements`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSettlementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSettlements>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSettlementsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSettlementsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSettlements>>> = ({
+    signal,
+  }) => listSettlements(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSettlementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSettlements>>
+>;
+export type ListSettlementsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListSettlements<
+  TData = Awaited<ReturnType<typeof listSettlements>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSettlementsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSettlementsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSettlementOrderHistoryUrl = (
+  kind: "IT" | "Kit" | "SPT" | "Lupin",
+  identity: string,
+) => {
+  return `/api/v1/admin/settlements/history/${kind}/${identity}`;
+};
+
+/**
+ * @summary Order History
+ */
+export const settlementOrderHistory = async (
+  kind: "IT" | "Kit" | "SPT" | "Lupin",
+  identity: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SettlementRecord> => {
+  return customFetch<SettlementRecord>(
+    getSettlementOrderHistoryUrl(kind, identity),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getSettlementOrderHistoryQueryKey = (
+  kind: "IT" | "Kit" | "SPT" | "Lupin",
+  identity: string,
+) => {
+  return [`/api/v1/admin/settlements/history/${kind}/${identity}`] as const;
+};
+
+export const getSettlementOrderHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof settlementOrderHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "IT" | "Kit" | "SPT" | "Lupin",
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof settlementOrderHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSettlementOrderHistoryQueryKey(kind, identity);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof settlementOrderHistory>>
+  > = ({ signal }) =>
+    settlementOrderHistory(kind, identity, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled:
+      kind !== null &&
+      kind !== undefined &&
+      identity !== null &&
+      identity !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof settlementOrderHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type SettlementOrderHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof settlementOrderHistory>>
+>;
+export type SettlementOrderHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Order History
+ */
+
+export function useSettlementOrderHistory<
+  TData = Awaited<ReturnType<typeof settlementOrderHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "IT" | "Kit" | "SPT" | "Lupin",
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof settlementOrderHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getSettlementOrderHistoryQueryOptions(
+    kind,
+    identity,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSettlementReferencesUrl = (
+  kind: "doctors" | "mrs" | "patients",
+  params?: SettlementReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/settlements/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/settlements/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const settlementReferences = async (
+  kind: "doctors" | "mrs" | "patients",
+  params?: SettlementReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SettlementReferences> => {
+  return customFetch<SettlementReferences>(
+    getSettlementReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getSettlementReferencesQueryKey = (
+  kind: "doctors" | "mrs" | "patients",
+  params?: SettlementReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/settlements/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getSettlementReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof settlementReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "doctors" | "mrs" | "patients",
+  params?: SettlementReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof settlementReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSettlementReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof settlementReferences>>
+  > = ({ signal }) =>
+    settlementReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof settlementReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type SettlementReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof settlementReferences>>
+>;
+export type SettlementReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useSettlementReferences<
+  TData = Awaited<ReturnType<typeof settlementReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "doctors" | "mrs" | "patients",
+  params?: SettlementReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof settlementReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getSettlementReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReconcileSettlementUrl = (key: string) => {
+  return `/api/v1/admin/settlements/requests/${key}`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileSettlement = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SettlementReconciliation> => {
+  return customFetch<SettlementReconciliation>(getReconcileSettlementUrl(key), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getReconcileSettlementQueryKey = (key: string) => {
+  return [`/api/v1/admin/settlements/requests/${key}`] as const;
+};
+
+export const getReconcileSettlementQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileSettlement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileSettlement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileSettlementQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileSettlement>>
+  > = ({ signal }) => reconcileSettlement(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileSettlement>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileSettlementQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileSettlement>>
+>;
+export type ReconcileSettlementQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reconcile
+ */
+
+export function useReconcileSettlement<
+  TData = Awaited<ReturnType<typeof reconcileSettlement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileSettlement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileSettlementQueryOptions(key, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRecordSettlementUrl = () => {
+  return `/api/v1/admin/settlements/transactions`;
+};
+
+/**
+ * @summary Post
+ */
+export const recordSettlement = async (
+  settlementInput: SettlementInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SettlementBatchResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SettlementBatchResult>(getRecordSettlementUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(settlementInput),
+  });
+};
+
+export const getRecordSettlementMutationKey = () =>
+  ["recordSettlement"] as const;
+
+export const getRecordSettlementMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordSettlement>>,
+    TError,
+    RecordSettlementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordSettlement>>,
+  TError,
+  RecordSettlementMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordSettlementMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordSettlement>>,
+    RecordSettlementMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return recordSettlement(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordSettlementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordSettlement>>
+>;
+export type RecordSettlementMutationBody = BodyType<SettlementInput>;
+export type RecordSettlementMutationError = ErrorType<ErrorEnvelope>;
+export type RecordSettlementMutationVariables = {
+  data: BodyType<SettlementInput>;
+};
+
+/**
+ * @summary Post
+ */
+export const useRecordSettlement = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordSettlement>>,
+    TError,
+    RecordSettlementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordSettlement>>,
+  TError,
+  RecordSettlementMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordSettlementMutationOptions(options));
 };
 
 export const getListShipmentsUrl = (params?: ListShipmentsParams) => {

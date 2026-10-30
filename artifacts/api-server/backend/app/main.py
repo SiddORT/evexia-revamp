@@ -83,6 +83,7 @@ from app.services.purchase_received_crypto import PRError
 from app.api.v1.products import router as products_router
 from app.api.v1.opening_stock import router as opening_stock_router
 from app.api.v1.in_house_stock import router as in_house_stock_router
+from app.api.v1.settlements import router as settlements_router
 
 
 def error_body(request, status, message, code=None, fields=None):
@@ -333,6 +334,8 @@ def create_app() -> FastAPI:
     @app.exception_handler(POError)
     async def purchase_order_error(request: Request, exc: POError):
         headers = {"X-Immunotherapy-Outcome": "rejected"} if isinstance(exc, ImmError) and getattr(exc, "terminal", False) else None
+        if isinstance(exc, ImmError) and getattr(exc, "settlement_terminal", False):
+            headers = {"X-Settlement-Outcome": "rejected"}
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status, headers=headers)
 
     @app.exception_handler(MRError)
@@ -391,6 +394,7 @@ def create_app() -> FastAPI:
     app.include_router(products_router, prefix="/api/v1")
     app.include_router(opening_stock_router, prefix="/api/v1")
     app.include_router(in_house_stock_router, prefix="/api/v1")
+    app.include_router(settlements_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.include_router(role_urls_router, prefix="/api/v1")
     app.include_router(communication_router, prefix="/api/v1")

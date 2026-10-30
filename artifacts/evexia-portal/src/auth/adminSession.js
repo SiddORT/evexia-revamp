@@ -996,7 +996,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'in-house-stock'
+  const allowed = resource === 'settlements'
+    ? /^(?:|\/transactions|\/references\/(?:doctors|mrs|patients)|\/requests\/[0-9a-f-]{36}|\/history\/(?:IT|Kit|SPT|Lupin)\/[0-9a-f-]{36})$/
+    : resource === 'in-house-stock'
     ? /^(?:|\/preview|\/export|\/references\/(?:allergens|locations)|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36})$/i
     : resource === 'shipments'
     ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}(?:\/(?:ship|delivery|return))?)$/
@@ -1030,6 +1032,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (resource === 'settlements' && writing !== (path === '/transactions')) {
+    throw new SessionError('Settlement history is read-only. Use Add Transaction to record a payment.');
+  }
   if (resource === 'in-house-stock' && writing && path !== '' && path !== '/preview') {
     throw new SessionError('Concentrate reserves are append-only.');
   }
@@ -1045,11 +1050,15 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const owner = state.user?.id;
   const mutation = writing && !path.endsWith('/preview') && path !== '/import/review';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
-  const mrOrder = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && state.user?.identity_kind === 'mr';
+  const mrOrder = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource) && state.user?.identity_kind === 'mr';
   const check = () => {
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
+    }
+    if (resource === 'settlements' && (writing ? state.user?.identity_kind !== 'mr'
+      : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
+      throw new SessionError('Settlements are restricted to MRs and read-only Super Admin access.', 403);
     }
     if (!mrOrder && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {
       throw new SessionError('Workspace operation access denied.', 403);
@@ -1065,7 +1074,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const form = file === undefined ? null : new FormData();
   if (form) form.append('file', file);
   const uncertain = () => {
-    const error = new SessionError(batchOperation
+    const error = new SessionError(resource === 'settlements'
+      ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
+        : 'Settlements could not be loaded. Check your connection and retry.'
+      : batchOperation
       ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
       : resource === 'in-house-stock'
       ? mutation ? 'Save outcome is unconfirmed. Your draft is preserved; check the save outcome before another save.'
@@ -1103,7 +1115,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       error.ambiguous = mutation;
       throw error;
     }
-    const error = new SessionError(response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
+    const error = new SessionError(resource === 'settlements' && response.status === 403
+      ? 'Settlement access denied. Admin is read-only; MRs may record only against their own eligible saved orders.'
+      : response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
       : response.status >= 500 && !(batchOperation && typeof data?.error?.message === 'string') ? uncertain().message
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
@@ -1111,6 +1125,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (resource === 'immunotherapy-orders') {
       error.terminal = response.status >= 400 && response.status < 500
         && response.headers.get('X-Immunotherapy-Outcome') === 'rejected';
+    }
+    if (resource === 'settlements') {
+      error.terminal = response.status >= 400 && response.status < 500
+        && response.headers.get('X-Settlement-Outcome') === 'rejected';
     }
     error.ambiguous = mutation && response.status >= 500;
     if (resource === 'kits-orders') error.requestId = response.headers.get('X-Request-ID') || data?.error?.request_id;

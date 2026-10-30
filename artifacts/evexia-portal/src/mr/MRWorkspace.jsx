@@ -15,9 +15,11 @@ import { Dashboard, Settings, Targets } from './Screens.jsx';
 import { DoctorDetail, DoctorForm, DoctorImport, DoctorList } from './Doctors.jsx';
 import LiveOrders from './LiveOrders.jsx';
 import OrdersNavigation from './OrdersNavigation.jsx';
+import AccountsNavigation from './AccountsNavigation.jsx';
+import MRAccountsSettlements from './AccountsSettlements.jsx';
 import { PaymentDetail, PaymentForm, PaymentList } from './Payments.jsx';
 
-const NAV = [['Dashboard', '/mr/home', 'home', LayoutDashboard], ['Doctors', '/mr/doctors', 'doctors', Stethoscope], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets', Target], ['Payments', '/mr/payments', 'payments', CreditCard]];
+const NAV = [['Dashboard', '/mr/home', 'home', LayoutDashboard], ['Doctors', '/mr/doctors', 'doctors', Stethoscope], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets', Target], ['Payments', '/mr/payments', 'payments', CreditCard], ['Accounts', '/mr/accounts', 'accounts']];
 const dec = (s) => { try { return decodeURIComponent(s); } catch { return ''; } };
 
 function Provider({ owner, children }) {
@@ -47,6 +49,7 @@ function Routes() {
   if (a === 'orders') return <LiveOrders />;
   if (a === 'targets' && !b) return <Targets />;
   if (a === 'payments') { if (!b) return <PaymentList />; if (b === 'new' && !c) return <PaymentForm />; if (!c) return <PaymentDetail id={b} />; }
+  if (a === 'accounts' && b === 'settlements' && !c) return <MRAccountsSettlements />;
   if (a === 'settings' && !b) return <Settings />;
   return <div className="mrw-card"><Empty title="Page not found" text="That MR page does not exist." to="/mr/home" action="Go to dashboard" /></div>;
 }
@@ -90,7 +93,7 @@ function Shell() {
   return <div className="admin-shell mrw" data-admin-theme={theme} data-admin-appearance={appearance}>
     <header className="mrw-top"><div className="mrw-top__bar">
       <Link href="/mr/home" className="mrw-brand" aria-label="EVEXIA MR dashboard"><BrandMark /></Link>
-      <nav id="mrw-nav" className="mrw-nav" aria-label="MR navigation">{NAV.map(([l, h, k, Icon]) => k === 'orders' ? <OrdersNavigation key={k} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}><Icon className="mrw-nav__icon" size={20} aria-hidden="true" /><span>{l}</span></Link>)}</nav>
+      <nav id="mrw-nav" className="mrw-nav" aria-label="MR navigation">{NAV.map(([l, h, k, Icon]) => k === 'orders' ? <OrdersNavigation key={k} /> : k === 'accounts' ? <AccountsNavigation key={k} /> : <Link key={k} href={h} aria-current={active(k) ? 'page' : undefined} data-testid={`link-nav-${k}`}><Icon className="mrw-nav__icon" size={20} aria-hidden="true" /><span>{l}</span></Link>)}</nav>
       <div className="mrw-profile" ref={menuRef}>
         <button type="button" ref={btnRef} className="mrw-avatar" aria-haspopup="menu" aria-expanded={menu} aria-label={`Profile menu for ${name}. Account ID: ${account}.`} onClick={() => setMenu(!menu)} data-testid="button-profile-menu"><User size={20} aria-hidden="true" /><span className="mrw-profile__identity"><strong>{name}</strong><span>{account}</span></span></button>
         {menu && <div className="mrw-menu" role="menu" aria-label="Profile" onKeyDown={menuKeys}>

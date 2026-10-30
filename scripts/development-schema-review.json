@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0076_in_house_stock",
-  "policy_sha256": "8d35e90fa091fe303d21586881b8c2acaa15ec0fec7f34ede0354564bd68fdc0",
+  "target": "0077_settlements",
+  "policy_sha256": "0042b985ac3eb3ec89d3992dfbfcb0638f3e27665a3d07be6403cc606bded178",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -85,7 +85,8 @@
     "0073_order_decisions": "82d0290bac8a59c4bf85e2d1acb2690131d1d63971fa1b3a450a909856ee347e",
     "0074_business_numbers": "8ecbfe607112dbd776c233c54c5555fe05d591d82052781a1b1a4844db363928",
     "0075_shipments": "6b11b27a377ca58df64ec6488d43384b4e59700cf5f5325ec69c39b6e7442d2f",
-    "0076_in_house_stock": "4e7e7e4298f9241d4d297430c3a0d3a9fba7216a4289b3fbbfc1ae6a03262a32"
+    "0076_in_house_stock": "4e7e7e4298f9241d4d297430c3a0d3a9fba7216a4289b3fbbfc1ae6a03262a32",
+    "0077_settlements": "8f2dcc9aee461a5839be61f036aa1e9770eb53a5d1131524ebebf9ab5d14a485"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",
