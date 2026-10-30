@@ -82,6 +82,7 @@ from app.api.v1.inventory import router as inventory_router
 from app.services.purchase_received_crypto import PRError
 from app.api.v1.products import router as products_router
 from app.api.v1.opening_stock import router as opening_stock_router
+from app.api.v1.in_house_stock import router as in_house_stock_router
 
 
 def error_body(request, status, message, code=None, fields=None):
@@ -389,6 +390,7 @@ def create_app() -> FastAPI:
     app.include_router(inventory_router, prefix="/api/v1")
     app.include_router(products_router, prefix="/api/v1")
     app.include_router(opening_stock_router, prefix="/api/v1")
+    app.include_router(in_house_stock_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.include_router(role_urls_router, prefix="/api/v1")
     app.include_router(communication_router, prefix="/api/v1")

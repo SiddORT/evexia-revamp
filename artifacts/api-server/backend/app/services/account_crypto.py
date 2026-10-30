@@ -158,6 +158,7 @@ def ready(db):
         ["0074_business_numbers"],
         # Shipment status CHECK expansion changes no account encryption anchors.
         ["0075_shipments"],
+        ["0076_in_house_stock"],
     ):
         raise AccountCryptoError()
     current = crypto()

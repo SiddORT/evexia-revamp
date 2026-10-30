@@ -1,3 +1,10 @@
+# Separate in-house concentrate reserve
+
+Inventory > In-house Stock records independently labelled manufactured allergen
+concentrate, not usable stock. These protected server records never create lots,
+postings, balances or ordinary inventory sources. Dilution/release is deferred.
+See [In-house stock](in-house-stock.md) for its boundary and retry contract.
+
 # Live Stock Inventory — merge handoff
 
 Opening Stock extends this same ledger with opening-source allergen and

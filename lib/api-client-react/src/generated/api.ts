@@ -164,6 +164,7 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  GetInHouseStockReferencesParams,
   GetInventoryLedgerParams,
   GetInventoryReferencesParams,
   GetInventoryStockHistoryParams,
@@ -236,6 +237,7 @@ import type {
   ListHeadquarterZoneChoicesParams,
   ListHeadquartersParams,
   ListImmunotherapyOrdersParams,
+  ListInHouseStockParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
   ListKitsOrdersParams,
@@ -412,6 +414,13 @@ import type {
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
+  ReserveCreate,
+  ReserveInput,
+  ReservePage,
+  ReserveReconciliation,
+  ReserveReferences,
+  ReserveReview,
+  ReserveSaved,
   ResetPasswordRequest,
   ResetPasswordResponse,
   ResolveCreatedMRParams,
@@ -9982,6 +9991,632 @@ export const useResubmitImmunotherapyOrder = <
 > => {
   return useMutation(getResubmitImmunotherapyOrderMutationOptions(options));
 };
+
+export const getListInHouseStockUrl = (params?: ListInHouseStockParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/in-house-stock?${stringifiedParams}`
+    : `/api/v1/admin/in-house-stock`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listInHouseStock = async (
+  params?: ListInHouseStockParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReservePage> => {
+  return customFetch<ReservePage>(getListInHouseStockUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInHouseStockQueryKey = (
+  params?: ListInHouseStockParams,
+) => {
+  return [`/api/v1/admin/in-house-stock`, ...(params ? [params] : [])] as const;
+};
+
+export const getListInHouseStockQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInHouseStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInHouseStockParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInHouseStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInHouseStockQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInHouseStock>>
+  > = ({ signal }) => listInHouseStock(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInHouseStock>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInHouseStockQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInHouseStock>>
+>;
+export type ListInHouseStockQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListInHouseStock<
+  TData = Awaited<ReturnType<typeof listInHouseStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInHouseStockParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInHouseStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInHouseStockQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateInHouseStockUrl = () => {
+  return `/api/v1/admin/in-house-stock`;
+};
+
+/**
+ * @summary Create
+ */
+export const createInHouseStock = async (
+  reserveCreate: ReserveCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReserveSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ReserveSaved>(getCreateInHouseStockUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(reserveCreate),
+  });
+};
+
+export const getCreateInHouseStockMutationKey = () =>
+  ["createInHouseStock"] as const;
+
+export const getCreateInHouseStockMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInHouseStock>>,
+    TError,
+    CreateInHouseStockMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInHouseStock>>,
+  TError,
+  CreateInHouseStockMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateInHouseStockMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInHouseStock>>,
+    CreateInHouseStockMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInHouseStock(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInHouseStockMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInHouseStock>>
+>;
+export type CreateInHouseStockMutationBody = BodyType<ReserveCreate>;
+export type CreateInHouseStockMutationError = ErrorType<ErrorEnvelope>;
+export type CreateInHouseStockMutationVariables = {
+  data: BodyType<ReserveCreate>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateInHouseStock = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInHouseStock>>,
+    TError,
+    CreateInHouseStockMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInHouseStock>>,
+  TError,
+  CreateInHouseStockMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateInHouseStockMutationOptions(options));
+};
+
+export const getPreviewInHouseStockUrl = () => {
+  return `/api/v1/admin/in-house-stock/preview`;
+};
+
+/**
+ * @summary Preview
+ */
+export const previewInHouseStock = async (
+  reserveInput: ReserveInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReserveReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ReserveReview>(getPreviewInHouseStockUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(reserveInput),
+  });
+};
+
+export const getPreviewInHouseStockMutationKey = () =>
+  ["previewInHouseStock"] as const;
+
+export const getPreviewInHouseStockMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewInHouseStock>>,
+    TError,
+    PreviewInHouseStockMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewInHouseStock>>,
+  TError,
+  PreviewInHouseStockMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewInHouseStockMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewInHouseStock>>,
+    PreviewInHouseStockMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewInHouseStock(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewInHouseStockMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewInHouseStock>>
+>;
+export type PreviewInHouseStockMutationBody = BodyType<ReserveInput>;
+export type PreviewInHouseStockMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewInHouseStockMutationVariables = {
+  data: BodyType<ReserveInput>;
+};
+
+/**
+ * @summary Preview
+ */
+export const usePreviewInHouseStock = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewInHouseStock>>,
+    TError,
+    PreviewInHouseStockMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewInHouseStock>>,
+  TError,
+  PreviewInHouseStockMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewInHouseStockMutationOptions(options));
+};
+
+export const getGetInHouseStockReferencesUrl = (
+  kind: "allergens" | "locations",
+  params?: GetInHouseStockReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/in-house-stock/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/in-house-stock/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const getInHouseStockReferences = async (
+  kind: "allergens" | "locations",
+  params?: GetInHouseStockReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReserveReferences> => {
+  return customFetch<ReserveReferences>(
+    getGetInHouseStockReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInHouseStockReferencesQueryKey = (
+  kind: "allergens" | "locations",
+  params?: GetInHouseStockReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/in-house-stock/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInHouseStockReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInHouseStockReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "allergens" | "locations",
+  params?: GetInHouseStockReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInHouseStockReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetInHouseStockReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInHouseStockReferences>>
+  > = ({ signal }) =>
+    getInHouseStockReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInHouseStockReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInHouseStockReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInHouseStockReferences>>
+>;
+export type GetInHouseStockReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useGetInHouseStockReferences<
+  TData = Awaited<ReturnType<typeof getInHouseStockReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "allergens" | "locations",
+  params?: GetInHouseStockReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInHouseStockReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInHouseStockReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReconcileInHouseStockUrl = (key: string) => {
+  return `/api/v1/admin/in-house-stock/requests/${key}`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileInHouseStock = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReserveReconciliation> => {
+  return customFetch<ReserveReconciliation>(getReconcileInHouseStockUrl(key), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getReconcileInHouseStockQueryKey = (key: string) => {
+  return [`/api/v1/admin/in-house-stock/requests/${key}`] as const;
+};
+
+export const getReconcileInHouseStockQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileInHouseStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileInHouseStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileInHouseStockQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileInHouseStock>>
+  > = ({ signal }) => reconcileInHouseStock(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileInHouseStock>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileInHouseStockQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileInHouseStock>>
+>;
+export type ReconcileInHouseStockQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reconcile
+ */
+
+export function useReconcileInHouseStock<
+  TData = Awaited<ReturnType<typeof reconcileInHouseStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileInHouseStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileInHouseStockQueryOptions(key, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetInHouseStockUrl = (recordId: string) => {
+  return `/api/v1/admin/in-house-stock/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getInHouseStock = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReserveSaved> => {
+  return customFetch<ReserveSaved>(getGetInHouseStockUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInHouseStockQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/in-house-stock/${recordId}`] as const;
+};
+
+export const getGetInHouseStockQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInHouseStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInHouseStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInHouseStockQueryKey(recordId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getInHouseStock>>> = ({
+    signal,
+  }) => getInHouseStock(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInHouseStock>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInHouseStockQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInHouseStock>>
+>;
+export type GetInHouseStockQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetInHouseStock<
+  TData = Awaited<ReturnType<typeof getInHouseStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInHouseStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInHouseStockQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getReconcileInventoryAdjustmentUrl = (key: string) => {
   return `/api/v1/admin/inventory/adjustment-requests/${key}`;

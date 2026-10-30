@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, Archive, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, isSuperAdminIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
@@ -96,7 +96,8 @@ export default function AdminLayout({ title, children }) {
   const showPR = canReadResource(user, 'purchase_received') && (!searching || 'inventory purchase received pr receipts'.includes(query));
   const showMoveStocks = canReadResource(user, 'stock_movement') && (!searching || 'inventory move stocks transfer'.includes(query));
   const showStockStatus = canReadResource(user, 'stock_status') && (!searching || 'inventory stock status allergens'.includes(query));
-  const showInventory = showPO || showPR || showMoveStocks || showStockStatus;
+  const showInHouse = !staff && isSuperAdminIdentity(user) && (!searching || 'inventory in-house stock reserve allergens'.includes(query));
+  const showInventory = showPO || showPR || showMoveStocks || showStockStatus || showInHouse;
   const visibleOrders = ORDER_DESTINATIONS.filter((destination) =>
     (!staff || canReadResource(user, ({ 'kits-consumables': 'kits', immunotherapy: 'immunotherapy', spt: 'spt', lupin: 'lupin' })[destination.slug]))
     && (!searching || 'orders'.includes(query) || `${destination.label} ${destination.keywords || ''}`.toLocaleLowerCase().includes(query)));
@@ -264,6 +265,7 @@ export default function AdminLayout({ title, children }) {
             {showPR && <Link href="/admin/inventory/purchase-received" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-received') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Received" aria-current={location === '/admin/inventory/purchase-received' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-received"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Received</span></Link>}
             {showMoveStocks && <Link href="/admin/inventory/move-stocks" className={`admin-nav__item${location.startsWith('/admin/inventory/move-stocks') ? ' admin-nav__item--active' : ''}`} aria-label="Move stocks" aria-current={location.startsWith('/admin/inventory/move-stocks') ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-move-stocks"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Move stocks</span></Link>}
             {showStockStatus && <Link href="/admin/inventory/stock-status" className={`admin-nav__item${location === '/admin/inventory/stock-status' ? ' admin-nav__item--active' : ''}`} aria-label="Stock Status" aria-current={location === '/admin/inventory/stock-status' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-stock-status"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Stock Status</span></Link>}
+            {showInHouse && <Link href="/admin/inventory/in-house-stock" className={`admin-nav__item${location.startsWith('/admin/inventory/in-house-stock') ? ' admin-nav__item--active' : ''}`} aria-label="In-house Stock" aria-current={location.startsWith('/admin/inventory/in-house-stock') ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-in-house-stock"><Archive size={16} aria-hidden="true" /><span className="admin-nav__label">In-house Stock</span></Link>}
           </div>
           {showOrders && <button type="button" disabled={searching} className={`admin-nav__item${isOrdersPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="Orders" title={isCollapsed ? 'Expand Orders' : undefined} aria-expanded={showOrdersSubnav} aria-controls="admin-orders-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setOrdersOpen(true); } else setOrdersOpen((open) => !open); }} data-testid="button-toggle-orders">
             <ClipboardList size={17} aria-hidden="true" /><span className="admin-nav__label">Orders</span><ChevronDown size={15} className={`admin-nav__chevron${showOrdersSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
@@ -288,7 +290,7 @@ export default function AdminLayout({ title, children }) {
               <ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Roles & Permissions</span>
             </Link>}
           </div>
-          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && !showShipments && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
+          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && !showShipments && !showInHouse && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>

@@ -9002,6 +9002,172 @@ export interface ReportSummary {
   total_users: number;
 }
 
+export interface ReserveCreate {
+  allergenId: string;
+  /** @maxLength 100 */
+  batch?: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  expiryDate: string;
+  idempotencyKey: string;
+  locationId: string;
+  /** @maxLength 2000 */
+  notes?: string;
+  /**
+   * @minLength 1
+   * @maxLength 11
+   */
+  quantity: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  /**
+   * @minLength 1
+   * @maxLength 40
+   */
+  unit: string;
+}
+
+export interface ReserveInput {
+  allergenId: string;
+  /** @maxLength 100 */
+  batch?: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  expiryDate: string;
+  locationId: string;
+  /** @maxLength 2000 */
+  notes?: string;
+  /**
+   * @minLength 1
+   * @maxLength 11
+   */
+  quantity: string;
+  /**
+   * @minLength 1
+   * @maxLength 40
+   */
+  unit: string;
+}
+
+export interface ReserveSaved {
+  actor: string;
+  actorId: string;
+  allergenId: string;
+  allergenName: string;
+  allergenVersion: number;
+  /** @maxLength 100 */
+  batch?: string;
+  categoryId: string;
+  categoryName: string;
+  categoryVersion: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  createdAt: string;
+  expired: boolean;
+  expiryDate: string;
+  id: string;
+  locationId: string;
+  locationName: string;
+  locationVersion: number;
+  /** @maxLength 2000 */
+  notes?: string;
+  /**
+   * @minLength 1
+   * @maxLength 11
+   */
+  quantity: string;
+  reserveOnly?: true;
+  /**
+   * @minLength 1
+   * @maxLength 40
+   */
+  unit: string;
+}
+
+export interface ReservePage {
+  filtered: number;
+  items: ReserveSaved[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type ReserveReconciliationState =
+  (typeof ReserveReconciliationState)[keyof typeof ReserveReconciliationState];
+
+export const ReserveReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export interface ReserveReconciliation {
+  result: ReserveSaved | null;
+  state: ReserveReconciliationState;
+}
+
+export interface ReserveReference {
+  categoryId?: string | null;
+  categoryName?: string | null;
+  id: string;
+  name: string;
+  version: number;
+}
+
+export interface ReserveReferences {
+  filtered: number;
+  items: ReserveReference[];
+  limit: number;
+  offset: number;
+}
+
+export interface ReserveSnapshot {
+  allergenId: string;
+  allergenName: string;
+  allergenVersion: number;
+  /** @maxLength 100 */
+  batch?: string;
+  categoryId: string;
+  categoryName: string;
+  categoryVersion: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  expired: boolean;
+  expiryDate: string;
+  locationId: string;
+  locationName: string;
+  locationVersion: number;
+  /** @maxLength 2000 */
+  notes?: string;
+  /**
+   * @minLength 1
+   * @maxLength 11
+   */
+  quantity: string;
+  reserveOnly?: true;
+  /**
+   * @minLength 1
+   * @maxLength 40
+   */
+  unit: string;
+}
+
+export interface ReserveReview {
+  record: ReserveSnapshot;
+  reviewToken: string;
+}
+
 export interface ResetPasswordRequest {
   /**
    * @minLength 12
@@ -12815,6 +12981,40 @@ export type ImmunotherapyReferencesParams = {
    */
   limit?: number;
   selected?: string | null;
+};
+
+export type ListInHouseStockParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetInHouseStockReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
 };
 
 export type ReviewInventoryInitializationParams = {

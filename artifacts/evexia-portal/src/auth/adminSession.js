@@ -917,6 +917,7 @@ export const openingBalanceRequest = (path, options) => masterRequest('opening-b
 
 export const purchaseReceivedRequest = (path, options) => purchaseOrderRequest(path, options, 'purchase-received');
 export const inventoryRequest = (path, options) => purchaseOrderRequest(path, options, 'inventory');
+export const inHouseStockRequest = (path, options) => purchaseOrderRequest(path, options, 'in-house-stock');
 
 
 /** Opening Stock transport: JSON, multipart review and logged blob downloads. */
@@ -995,7 +996,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'shipments'
+  const allowed = resource === 'in-house-stock'
+    ? /^(?:|\/preview|\/references\/(?:allergens|locations)|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36})$/i
+    : resource === 'shipments'
     ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}(?:\/(?:ship|delivery|return))?)$/
     : resource === 'spt-orders'
     ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
@@ -1027,6 +1030,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (resource === 'in-house-stock' && writing && path !== '' && path !== '/preview') {
+    throw new SessionError('Concentrate reserves are append-only.');
+  }
   if (resource === 'shipments' && (writing !== /\/(?:ship|delivery|return)$/.test(path))) {
     throw new SessionError('Unsupported shipment operation.');
   }
@@ -1061,6 +1067,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const uncertain = () => {
     const error = new SessionError(batchOperation
       ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
+      : resource === 'in-house-stock'
+      ? mutation ? 'Save outcome is unconfirmed. Your draft is preserved; check the save outcome before another save.'
+        : 'Unable to load in-house concentrate reserves. Check your connection and retry.'
       : mutation
       ? 'Save outcome is unconfirmed. Retry the same reviewed order to check or finish this save safely.'
       : 'Unable to load purchase orders. Check your connection and retry.');
@@ -1120,6 +1129,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, Admin rates, optional PO length, patient assignments and prescriptions. Your draft is preserved.';
     }
     if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');
+    if (resource === 'in-house-stock' && response.status === 422) attachMasterValidation(error, data, 'In-house stock');
     if (batchOperation && path === '/batch-settings') {
       if (response.status === 422) {
         error.message = mutation
@@ -1178,6 +1188,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       if (!Number.isInteger(data?.imported) || data.imported !== body.entries.length || !Array.isArray(data.orders)) throw uncertain();
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.groups)
       || !data.patient || !data.doctor || !data.mr || !Array.isArray(data.attachments)) throw uncertain();
+  } else if (mutation && resource === 'in-house-stock') {
+    if (!/^[0-9a-f-]{36}$/i.test(data?.id || '') || data.reserveOnly !== true
+      || data.allergenId !== body.allergenId || data.locationId !== body.locationId
+      || data.concentration !== body.concentration.trim() || data.unit !== body.unit.trim()
+      || data.expiryDate !== body.expiryDate || !/^\d+\.\d{3}$/.test(data.quantity || '')
+      || typeof data.actor !== 'string' || typeof data.createdAt !== 'string') throw uncertain();
   } else if (mutation && resource === 'products') {
     if (path === '/import/commit') {
       if (data?.kind !== 'product_import' || data.id !== params.idempotency_key

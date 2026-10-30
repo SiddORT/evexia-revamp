@@ -508,6 +508,58 @@ export const rejectImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const resubmitImmunotherapyOrderResponseCorrectionSavedDefault = false;
 export const resubmitImmunotherapyOrderResponseMrEditableDefault = false;
 export const resubmitImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
+export const listInHouseStockQueryQueryMax = 200;
+export const listInHouseStockQueryOffsetDefault = 0;
+export const listInHouseStockQueryOffsetMin = 0;
+export const listInHouseStockQueryOffsetMax = 1000000;
+export const listInHouseStockQueryLimitDefault = 25;
+export const listInHouseStockQueryLimitMax = 100;
+export const listInHouseStockResponseItemsItemBatchMax = 100;
+export const listInHouseStockResponseItemsItemConcentrationMax = 200;
+export const listInHouseStockResponseItemsItemNotesMax = 2000;
+export const listInHouseStockResponseItemsItemQuantityMax = 11;
+export const listInHouseStockResponseItemsItemReserveOnlyDefault = true;
+export const listInHouseStockResponseItemsItemUnitMax = 40;
+export const createInHouseStockBodyBatchMax = 100;
+export const createInHouseStockBodyConcentrationMax = 200;
+export const createInHouseStockBodyNotesMax = 2000;
+export const createInHouseStockBodyQuantityMax = 11;
+export const createInHouseStockBodyUnitMax = 40;
+export const createInHouseStockResponseBatchMax = 100;
+export const createInHouseStockResponseConcentrationMax = 200;
+export const createInHouseStockResponseNotesMax = 2000;
+export const createInHouseStockResponseQuantityMax = 11;
+export const createInHouseStockResponseReserveOnlyDefault = true;
+export const createInHouseStockResponseUnitMax = 40;
+export const previewInHouseStockBodyBatchMax = 100;
+export const previewInHouseStockBodyConcentrationMax = 200;
+export const previewInHouseStockBodyNotesMax = 2000;
+export const previewInHouseStockBodyQuantityMax = 11;
+export const previewInHouseStockBodyUnitMax = 40;
+export const previewInHouseStockResponseRecordBatchMax = 100;
+export const previewInHouseStockResponseRecordConcentrationMax = 200;
+export const previewInHouseStockResponseRecordNotesMax = 2000;
+export const previewInHouseStockResponseRecordQuantityMax = 11;
+export const previewInHouseStockResponseRecordReserveOnlyDefault = true;
+export const previewInHouseStockResponseRecordUnitMax = 40;
+export const getInHouseStockReferencesQueryQueryMax = 200;
+export const getInHouseStockReferencesQueryOffsetDefault = 0;
+export const getInHouseStockReferencesQueryOffsetMin = 0;
+export const getInHouseStockReferencesQueryOffsetMax = 1000000;
+export const getInHouseStockReferencesQueryLimitDefault = 25;
+export const getInHouseStockReferencesQueryLimitMax = 100;
+export const reconcileInHouseStockResponseResultOneBatchMax = 100;
+export const reconcileInHouseStockResponseResultOneConcentrationMax = 200;
+export const reconcileInHouseStockResponseResultOneNotesMax = 2000;
+export const reconcileInHouseStockResponseResultOneQuantityMax = 11;
+export const reconcileInHouseStockResponseResultOneReserveOnlyDefault = true;
+export const reconcileInHouseStockResponseResultOneUnitMax = 40;
+export const getInHouseStockResponseBatchMax = 100;
+export const getInHouseStockResponseConcentrationMax = 200;
+export const getInHouseStockResponseNotesMax = 2000;
+export const getInHouseStockResponseQuantityMax = 11;
+export const getInHouseStockResponseReserveOnlyDefault = true;
+export const getInHouseStockResponseUnitMax = 40;
 export const reconcileInventoryAdjustmentResponseAdjustmentOneBatchNoOneMax = 120;
 export const reconcileInventoryAdjustmentResponseAdjustmentOneQuantityMax = 11;
 export const reconcileInventoryAdjustmentResponseAdjustmentOneReasonMax = 2000;
@@ -11454,6 +11506,367 @@ export const ResubmitImmunotherapyOrderResponse = zod.object({
   ]),
   totalMinor: zod.union([zod.number().int(), zod.null()]),
   version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listInHouseStockQueryQueryDefault = ``;
+
+export const ListInHouseStockQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listInHouseStockQueryQueryMax)
+    .default(listInHouseStockQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listInHouseStockQueryOffsetMin)
+    .max(listInHouseStockQueryOffsetMax)
+    .default(listInHouseStockQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listInHouseStockQueryLimitMax)
+    .default(listInHouseStockQueryLimitDefault),
+});
+
+export const listInHouseStockResponseItemsItemBatchDefault = ``;
+
+export const listInHouseStockResponseItemsItemNotesDefault = ``;
+
+export const ListInHouseStockResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      allergenId: zod.string().uuid(),
+      allergenName: zod.string(),
+      allergenVersion: zod.number().int(),
+      batch: zod
+        .string()
+        .max(listInHouseStockResponseItemsItemBatchMax)
+        .default(listInHouseStockResponseItemsItemBatchDefault),
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
+      categoryVersion: zod.number().int(),
+      concentration: zod
+        .string()
+        .min(1)
+        .max(listInHouseStockResponseItemsItemConcentrationMax),
+      createdAt: zod.string(),
+      expired: zod.boolean(),
+      expiryDate: zod.coerce.date(),
+      id: zod.string().uuid(),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      locationVersion: zod.number().int(),
+      notes: zod
+        .string()
+        .max(listInHouseStockResponseItemsItemNotesMax)
+        .default(listInHouseStockResponseItemsItemNotesDefault),
+      quantity: zod
+        .string()
+        .min(1)
+        .max(listInHouseStockResponseItemsItemQuantityMax),
+      reserveOnly: zod
+        .literal(true)
+        .default(listInHouseStockResponseItemsItemReserveOnlyDefault),
+      unit: zod.string().min(1).max(listInHouseStockResponseItemsItemUnitMax),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createInHouseStockBodyBatchDefault = ``;
+
+export const createInHouseStockBodyNotesDefault = ``;
+
+export const createInHouseStockBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CreateInHouseStockBody = zod.object({
+  allergenId: zod.string().uuid(),
+  batch: zod
+    .string()
+    .max(createInHouseStockBodyBatchMax)
+    .default(createInHouseStockBodyBatchDefault),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(createInHouseStockBodyConcentrationMax),
+  expiryDate: zod.coerce.date(),
+  idempotencyKey: zod.string().uuid(),
+  locationId: zod.string().uuid(),
+  notes: zod
+    .string()
+    .max(createInHouseStockBodyNotesMax)
+    .default(createInHouseStockBodyNotesDefault),
+  quantity: zod.string().min(1).max(createInHouseStockBodyQuantityMax),
+  reviewToken: zod.string().regex(createInHouseStockBodyReviewTokenRegExp),
+  unit: zod.string().min(1).max(createInHouseStockBodyUnitMax),
+});
+
+export const createInHouseStockResponseBatchDefault = ``;
+
+export const createInHouseStockResponseNotesDefault = ``;
+
+export const CreateInHouseStockResponse = zod.object({
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  allergenId: zod.string().uuid(),
+  allergenName: zod.string(),
+  allergenVersion: zod.number().int(),
+  batch: zod
+    .string()
+    .max(createInHouseStockResponseBatchMax)
+    .default(createInHouseStockResponseBatchDefault),
+  categoryId: zod.string().uuid(),
+  categoryName: zod.string(),
+  categoryVersion: zod.number().int(),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(createInHouseStockResponseConcentrationMax),
+  createdAt: zod.string(),
+  expired: zod.boolean(),
+  expiryDate: zod.coerce.date(),
+  id: zod.string().uuid(),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  locationVersion: zod.number().int(),
+  notes: zod
+    .string()
+    .max(createInHouseStockResponseNotesMax)
+    .default(createInHouseStockResponseNotesDefault),
+  quantity: zod.string().min(1).max(createInHouseStockResponseQuantityMax),
+  reserveOnly: zod
+    .literal(true)
+    .default(createInHouseStockResponseReserveOnlyDefault),
+  unit: zod.string().min(1).max(createInHouseStockResponseUnitMax),
+});
+
+/**
+ * @summary Preview
+ */
+export const previewInHouseStockBodyBatchDefault = ``;
+
+export const previewInHouseStockBodyNotesDefault = ``;
+
+export const PreviewInHouseStockBody = zod.object({
+  allergenId: zod.string().uuid(),
+  batch: zod
+    .string()
+    .max(previewInHouseStockBodyBatchMax)
+    .default(previewInHouseStockBodyBatchDefault),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(previewInHouseStockBodyConcentrationMax),
+  expiryDate: zod.coerce.date(),
+  locationId: zod.string().uuid(),
+  notes: zod
+    .string()
+    .max(previewInHouseStockBodyNotesMax)
+    .default(previewInHouseStockBodyNotesDefault),
+  quantity: zod.string().min(1).max(previewInHouseStockBodyQuantityMax),
+  unit: zod.string().min(1).max(previewInHouseStockBodyUnitMax),
+});
+
+export const previewInHouseStockResponseRecordBatchDefault = ``;
+
+export const previewInHouseStockResponseRecordNotesDefault = ``;
+
+export const PreviewInHouseStockResponse = zod.object({
+  record: zod.object({
+    allergenId: zod.string().uuid(),
+    allergenName: zod.string(),
+    allergenVersion: zod.number().int(),
+    batch: zod
+      .string()
+      .max(previewInHouseStockResponseRecordBatchMax)
+      .default(previewInHouseStockResponseRecordBatchDefault),
+    categoryId: zod.string().uuid(),
+    categoryName: zod.string(),
+    categoryVersion: zod.number().int(),
+    concentration: zod
+      .string()
+      .min(1)
+      .max(previewInHouseStockResponseRecordConcentrationMax),
+    expired: zod.boolean(),
+    expiryDate: zod.coerce.date(),
+    locationId: zod.string().uuid(),
+    locationName: zod.string(),
+    locationVersion: zod.number().int(),
+    notes: zod
+      .string()
+      .max(previewInHouseStockResponseRecordNotesMax)
+      .default(previewInHouseStockResponseRecordNotesDefault),
+    quantity: zod
+      .string()
+      .min(1)
+      .max(previewInHouseStockResponseRecordQuantityMax),
+    reserveOnly: zod
+      .literal(true)
+      .default(previewInHouseStockResponseRecordReserveOnlyDefault),
+    unit: zod.string().min(1).max(previewInHouseStockResponseRecordUnitMax),
+  }),
+  reviewToken: zod.string(),
+});
+
+/**
+ * @summary References
+ */
+export const GetInHouseStockReferencesParams = zod.object({
+  kind: zod.enum(["allergens", "locations"]),
+});
+
+export const getInHouseStockReferencesQueryQueryDefault = ``;
+
+export const GetInHouseStockReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getInHouseStockReferencesQueryQueryMax)
+    .default(getInHouseStockReferencesQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getInHouseStockReferencesQueryOffsetMin)
+    .max(getInHouseStockReferencesQueryOffsetMax)
+    .default(getInHouseStockReferencesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getInHouseStockReferencesQueryLimitMax)
+    .default(getInHouseStockReferencesQueryLimitDefault),
+});
+
+export const GetInHouseStockReferencesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      categoryId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      categoryName: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileInHouseStockParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const reconcileInHouseStockResponseResultOneBatchDefault = ``;
+
+export const reconcileInHouseStockResponseResultOneNotesDefault = ``;
+
+export const ReconcileInHouseStockResponse = zod.object({
+  result: zod.union([
+    zod.object({
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      allergenId: zod.string().uuid(),
+      allergenName: zod.string(),
+      allergenVersion: zod.number().int(),
+      batch: zod
+        .string()
+        .max(reconcileInHouseStockResponseResultOneBatchMax)
+        .default(reconcileInHouseStockResponseResultOneBatchDefault),
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
+      categoryVersion: zod.number().int(),
+      concentration: zod
+        .string()
+        .min(1)
+        .max(reconcileInHouseStockResponseResultOneConcentrationMax),
+      createdAt: zod.string(),
+      expired: zod.boolean(),
+      expiryDate: zod.coerce.date(),
+      id: zod.string().uuid(),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      locationVersion: zod.number().int(),
+      notes: zod
+        .string()
+        .max(reconcileInHouseStockResponseResultOneNotesMax)
+        .default(reconcileInHouseStockResponseResultOneNotesDefault),
+      quantity: zod
+        .string()
+        .min(1)
+        .max(reconcileInHouseStockResponseResultOneQuantityMax),
+      reserveOnly: zod
+        .literal(true)
+        .default(reconcileInHouseStockResponseResultOneReserveOnlyDefault),
+      unit: zod
+        .string()
+        .min(1)
+        .max(reconcileInHouseStockResponseResultOneUnitMax),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetInHouseStockParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getInHouseStockResponseBatchDefault = ``;
+
+export const getInHouseStockResponseNotesDefault = ``;
+
+export const GetInHouseStockResponse = zod.object({
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  allergenId: zod.string().uuid(),
+  allergenName: zod.string(),
+  allergenVersion: zod.number().int(),
+  batch: zod
+    .string()
+    .max(getInHouseStockResponseBatchMax)
+    .default(getInHouseStockResponseBatchDefault),
+  categoryId: zod.string().uuid(),
+  categoryName: zod.string(),
+  categoryVersion: zod.number().int(),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(getInHouseStockResponseConcentrationMax),
+  createdAt: zod.string(),
+  expired: zod.boolean(),
+  expiryDate: zod.coerce.date(),
+  id: zod.string().uuid(),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  locationVersion: zod.number().int(),
+  notes: zod
+    .string()
+    .max(getInHouseStockResponseNotesMax)
+    .default(getInHouseStockResponseNotesDefault),
+  quantity: zod.string().min(1).max(getInHouseStockResponseQuantityMax),
+  reserveOnly: zod
+    .literal(true)
+    .default(getInHouseStockResponseReserveOnlyDefault),
+  unit: zod.string().min(1).max(getInHouseStockResponseUnitMax),
 });
 
 /**

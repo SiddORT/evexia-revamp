@@ -45,6 +45,14 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+In-house Stock is a protected Super Admin-only server concentrate reserve under
+Inventory, not an ordinary stock source. Never credit usable stock, expose it
+to order/assembly/movement/adjustment choices, or infer dilution from these
+entries. Concentration, quantity unit and expiry are independently entered;
+saved identities are immutable snapshots. See `docs/in-house-stock.md`.
+For this delivery the user explicitly limited further verification to new
+feature CRUD and responsiveness; do not run regression or release checks.
+
 Immunotherapy approval constraint repair is source-only: forward
 `0072_imm_approved_status` adds the application's existing `Approved` state to
 the database CHECK without changing historical migrations or saved orders.

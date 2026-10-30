@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "revision": "0076_in_house_stock",
+  "postgresql": "17.5",
+  "catalog_sha256": "7c0d00a1ca5bdb90a88fc19f4b9f84ae74223c08ec3eb314c0ec6a676f920768",
+  "command": "EVEXIA_IN_HOUSE_CATALOG=generated-artifacts/catalog-0076/catalog-observation.json sh scripts/test-api-foundation.sh tests/test_in_house_stock.py",
+  "scope": "Actual private socket-only synthetic PostgreSQL catalog observation, recorded before the user restricted further checks to CRUD and responsiveness. The observation passed; the accompanying initial feature tests had three failed assertions, not a passing suite. Later focused CRUD checks are documented separately. No production, original-development migration, release approval, recovery evidence or release validation is claimed.",
+  "evidence_reference": "generated-artifacts/catalog-0076/catalog-observation.json"
+}
