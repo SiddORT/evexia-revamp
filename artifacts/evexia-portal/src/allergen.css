@@ -5,7 +5,9 @@
 .admin-allergen-desktop .admin-table th,
 .admin-allergen-desktop .admin-table td { white-space: nowrap; }
 .admin-allergen-desktop .admin-table th:nth-child(2),
-.admin-allergen-desktop .admin-table td:nth-child(2) { min-width: 175px; white-space: normal; }
+.admin-allergen-desktop .admin-table td:nth-child(2) { width: 1%; white-space: nowrap; }
+.admin-allergen-desktop .admin-table th:nth-child(3),
+.admin-allergen-desktop .admin-table td:nth-child(3) { min-width: 175px; white-space: normal; }
 .admin-allergen-name { display: block; min-width: 145px; color: var(--admin-text); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
 .admin-allergen-secondary { color: var(--admin-text-soft); font-size: 11px; }
 .admin-allergen-reference { color: var(--admin-text); overflow-wrap: anywhere; }
