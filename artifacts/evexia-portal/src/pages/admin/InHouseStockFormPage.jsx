@@ -121,7 +121,7 @@ function InHouseStockForm() {
       if (r.state === 'committed') { setMessage(''); setReview(null); if (r.result?.id) setSaved(r.result); else navigate(BASE); return; }
       setReview(null); setMessage('The earlier save was not committed. Your draft is preserved; review it again to save.'); }} />
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
-    <section className="admin-panel" aria-label="New in-house stock"><form onSubmit={submitReview} noValidate>
+    <section className="admin-panel in-house-stock-form__panel" aria-label="New in-house stock"><form onSubmit={submitReview} noValidate>
       <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
         <div className="ms-fields">
           <div className="ms-field"><label htmlFor="ih-allergen">Allergen <span className="mr-form__required">*</span></label>

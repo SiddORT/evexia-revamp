@@ -17,6 +17,10 @@
 .move-stocks-page .ms-field { display: grid; gap: 6px; align-content: start; min-width: 0; }
 .move-stocks-page .searchable-select { position: relative; min-width: 0; }
 .move-stocks-page .searchable-select--open { z-index: 5; }
+/* Only the in-house entry card lets its inline Concentration menu escape.
+   Keep the panel's border/radius and stay below header and dialog layers. */
+.move-stocks-page .admin-panel.in-house-stock-form__panel { overflow: visible; }
+.move-stocks-page .in-house-stock-form__panel .admin-allergen-combobox.searchable-select--open { z-index: 10; }
 .move-stocks-page .searchable-select__control { display: flex; align-items: center; height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
 .move-stocks-page .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .move-stocks-page .searchable-select__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }
