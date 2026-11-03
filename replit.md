@@ -556,14 +556,20 @@ Source/diff review only; no checks or service restarts were run for this change.
 ## IT Pricing Rules configuration
 
 Pricing Rules is a standalone protected Super Admin page directly below Orders.
-It stores category/allergen targets, a date-only cutoff, and two alternative INR
-rates, with explicit copy and stale/conflicting/uncertain-save protection.
+One atomic rule stores explicit multiple categories and up to 100 total allergen
+targets, a date-only cutoff and two alternative INR rates. Preserve original
+target-category attribution, exact legacy retries, and stale/conflicting/unknown
+save protection. Category membership is not an allergen wildcard. Scoped
+allergen Select all must collect every matching page or change nothing; the list
+uses full-dataset live search with no filter/apply/refresh toolbar actions.
 No order workflow fetches or applies these rules, including Immunotherapy.
 Future automatic application is IT-only and still requires explicit approval.
 Catalogue prices and clinical extract/dilution behavior are unchanged.
-See `docs/it-pricing-rules.md`. The additive migration is unapplied; source/diff
-review and static artifact generation only, with no tests, builds, runtime
-verification, managed-service restarts, live writes or production activation.
+See `docs/it-pricing-rules.md`. Forward `0087_pricing_rule_categories` and
+coordinated schema/readiness/maintenance metadata are prepared but unapplied.
+Source/diff review only: no automated checks, codegen/validation wrappers,
+builds/typechecks, runtime/browser verification, managed-service restarts,
+live writes, migration execution or production activation.
 
 ## Assets
 

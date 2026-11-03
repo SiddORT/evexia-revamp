@@ -7,6 +7,7 @@
  */
 
 export interface ItPricingRuleInput {
+  allergenCategoryIds?: { [key: string]: string } | null;
   /** @maxLength 64 */
   afterRate: string;
   /**
@@ -16,7 +17,8 @@ export interface ItPricingRuleInput {
   allergenIds: string[];
   /** @maxLength 64 */
   beforeRate: string;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryIds?: string[] | null;
   cutoff: Date;
   idempotencyKey: string;
 }

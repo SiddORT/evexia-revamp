@@ -3979,6 +3979,7 @@ export interface InvitationResult {
 
 export interface ItPricingAllergenReference {
   categoryId: string;
+  savedCategoryId?: string | null;
   id: string;
   name: string;
   status: string;
@@ -3991,6 +3992,7 @@ export interface ItPricingReference {
 }
 
 export interface ItPricingReferencePage {
+  catalogueVersion: string;
   items: (ItPricingAllergenReference | ItPricingReference)[];
   limit: number;
   offset: number;
@@ -3998,6 +4000,7 @@ export interface ItPricingReferencePage {
 }
 
 export interface ItPricingRuleEdit {
+  allergenCategoryIds?: { [key: string]: string } | null;
   /** @maxLength 64 */
   afterRate: string;
   /**
@@ -4007,7 +4010,8 @@ export interface ItPricingRuleEdit {
   allergenIds: string[];
   /** @maxLength 64 */
   beforeRate: string;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryIds?: string[] | null;
   cutoff: string;
   /**
    * @minimum 1
@@ -4018,6 +4022,7 @@ export interface ItPricingRuleEdit {
 }
 
 export interface ItPricingRuleInput {
+  allergenCategoryIds?: { [key: string]: string } | null;
   /** @maxLength 64 */
   afterRate: string;
   /**
@@ -4027,7 +4032,8 @@ export interface ItPricingRuleInput {
   allergenIds: string[];
   /** @maxLength 64 */
   beforeRate: string;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryIds?: string[] | null;
   cutoff: string;
   idempotencyKey: string;
 }
@@ -4037,6 +4043,7 @@ export interface ItPricingRuleSaved {
   allergens: ItPricingAllergenReference[];
   beforeRate: string;
   category: ItPricingReference;
+  categories: ItPricingReference[];
   cutoff: string;
   id: string;
   version: number;
@@ -15167,6 +15174,8 @@ export const DownloadPatientSampleFormat = {
 } as const;
 
 export type ListItPricingRulesParams = {
+  /** @maxLength 100 */
+  query?: string;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -15185,6 +15194,7 @@ export type GetItPricingRuleReferencesParams = {
    */
   query?: string;
   categoryId?: string | null;
+  categoryIds?: string[] | null;
   /**
    * @minimum 0
    * @maximum 1000000

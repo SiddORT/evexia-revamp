@@ -10533,6 +10533,11 @@
       },
       "ItPricingAllergenReference": {
         "properties": {
+          "savedCategoryId": {
+            "anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}],
+            "default": null,
+            "title": "Savedcategoryid"
+          },
           "categoryId": {
             "format": "uuid",
             "title": "Categoryid",
@@ -10587,6 +10592,10 @@
       },
       "ItPricingReferencePage": {
         "properties": {
+          "catalogueVersion": {
+            "type": "string",
+            "title": "Catalogueversion"
+          },
           "items": {
             "items": {
               "anyOf": [
@@ -10615,6 +10624,7 @@
           }
         },
         "required": [
+          "catalogueVersion",
           "items",
           "total",
           "offset",
@@ -10626,6 +10636,11 @@
       "ItPricingRuleEdit": {
         "additionalProperties": false,
         "properties": {
+          "allergenCategoryIds": {
+            "anyOf": [{"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}, "maxProperties": 100}, {"type": "null"}],
+            "default": null,
+            "title": "Allergencategoryids"
+          },
           "afterRate": {
             "maxLength": 64,
             "title": "Afterrate",
@@ -10647,9 +10662,14 @@
             "type": "string"
           },
           "categoryId": {
-            "format": "uuid",
-            "title": "Categoryid",
-            "type": "string"
+            "anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}],
+            "default": null,
+            "title": "Categoryid"
+          },
+          "categoryIds": {
+            "anyOf": [{"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1, "maxItems": 100}, {"type": "null"}],
+            "default": null,
+            "title": "Categoryids"
           },
           "cutoff": {
             "format": "date",
@@ -10669,7 +10689,6 @@
           }
         },
         "required": [
-          "categoryId",
           "allergenIds",
           "cutoff",
           "beforeRate",
@@ -10683,6 +10702,11 @@
       "ItPricingRuleInput": {
         "additionalProperties": false,
         "properties": {
+          "allergenCategoryIds": {
+            "anyOf": [{"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}, "maxProperties": 100}, {"type": "null"}],
+            "default": null,
+            "title": "Allergencategoryids"
+          },
           "afterRate": {
             "maxLength": 64,
             "title": "Afterrate",
@@ -10704,9 +10728,14 @@
             "type": "string"
           },
           "categoryId": {
-            "format": "uuid",
-            "title": "Categoryid",
-            "type": "string"
+            "anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}],
+            "default": null,
+            "title": "Categoryid"
+          },
+          "categoryIds": {
+            "anyOf": [{"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1, "maxItems": 100}, {"type": "null"}],
+            "default": null,
+            "title": "Categoryids"
           },
           "cutoff": {
             "format": "date",
@@ -10720,7 +10749,6 @@
           }
         },
         "required": [
-          "categoryId",
           "allergenIds",
           "cutoff",
           "beforeRate",
@@ -10763,6 +10791,11 @@
       },
       "ItPricingRuleSaved": {
         "properties": {
+          "categories": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/ItPricingReference"},
+            "title": "Categories"
+          },
           "afterRate": {
             "title": "Afterrate",
             "type": "string"
@@ -10800,6 +10833,7 @@
           "id",
           "version",
           "category",
+          "categories",
           "allergens",
           "cutoff",
           "beforeRate",
@@ -99297,6 +99331,12 @@
         "parameters": [
           {
             "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {"default": "", "maxLength": 100, "title": "Query", "type": "string"}
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -99855,6 +99895,14 @@
       "get": {
         "operationId": "getItPricingRuleReferences",
         "parameters": [
+          {
+            "in": "query",
+            "name": "categoryIds",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {"anyOf": [{"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1, "maxItems": 100}, {"type": "null"}], "title": "Categoryids"}
+          },
           {
             "in": "path",
             "name": "kind",

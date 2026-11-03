@@ -30290,6 +30290,7 @@ export const SetPatientDirectoryStatusResponse = zod.object({
  */
 
 export const ListItPricingRulesQueryParams = zod.object({
+  query: zod.coerce.string().max(100).default(""),
   offset: zod.coerce
     .number()
     .int()
@@ -30311,6 +30312,7 @@ export const ListItPricingRulesResponse = zod.object({
       allergens: zod.array(
         zod.object({
           categoryId: zod.string().uuid(),
+          savedCategoryId: zod.string().uuid().nullable().optional(),
           id: zod.string().uuid(),
           name: zod.string(),
           status: zod.string(),
@@ -30322,6 +30324,7 @@ export const ListItPricingRulesResponse = zod.object({
         name: zod.string(),
         status: zod.string(),
       }),
+      categories: zod.array(zod.object({ id: zod.string().uuid(), name: zod.string(), status: zod.string() })),
       cutoff: zod.coerce.date(),
       id: zod.string().uuid(),
       version: zod.number().int(),
@@ -30337,13 +30340,15 @@ export const ListItPricingRulesResponse = zod.object({
  */
 
 export const CreateItPricingRuleBody = zod.object({
+  allergenCategoryIds: zod.record(zod.string().uuid(), zod.string().uuid()).nullable().optional(),
   afterRate: zod.string().max(createItPricingRuleBodyAfterRateMax),
   allergenIds: zod
     .array(zod.string().uuid())
     .min(1)
     .max(createItPricingRuleBodyAllergenIdsMax),
   beforeRate: zod.string().max(createItPricingRuleBodyBeforeRateMax),
-  categoryId: zod.string().uuid(),
+  categoryId: zod.string().uuid().nullable().optional(),
+  categoryIds: zod.array(zod.string().uuid()).min(1).max(100).nullable().optional(),
   cutoff: zod.coerce.date(),
   idempotencyKey: zod.string().uuid(),
 });
@@ -30353,6 +30358,7 @@ export const CreateItPricingRuleResponse = zod.object({
   allergens: zod.array(
     zod.object({
       categoryId: zod.string().uuid(),
+      savedCategoryId: zod.string().uuid().nullable().optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -30364,6 +30370,7 @@ export const CreateItPricingRuleResponse = zod.object({
     name: zod.string(),
     status: zod.string(),
   }),
+  categories: zod.array(zod.object({ id: zod.string().uuid(), name: zod.string(), status: zod.string() })),
   cutoff: zod.coerce.date(),
   id: zod.string().uuid(),
   version: zod.number().int(),
@@ -30384,6 +30391,7 @@ export const GetItPricingRuleReferencesQueryParams = zod.object({
     .max(getItPricingRuleReferencesQueryQueryMax)
     .default(getItPricingRuleReferencesQueryQueryDefault),
   categoryId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  categoryIds: zod.array(zod.string().uuid()).min(1).max(100).nullable().optional(),
   offset: zod.coerce
     .number()
     .int()
@@ -30399,10 +30407,12 @@ export const GetItPricingRuleReferencesQueryParams = zod.object({
 });
 
 export const GetItPricingRuleReferencesResponse = zod.object({
+  catalogueVersion: zod.string(),
   items: zod.array(
     zod.union([
       zod.object({
         categoryId: zod.string().uuid(),
+        savedCategoryId: zod.string().uuid().nullable().optional(),
         id: zod.string().uuid(),
         name: zod.string(),
         status: zod.string(),
@@ -30431,6 +30441,7 @@ export const GetItPricingRuleResponse = zod.object({
   allergens: zod.array(
     zod.object({
       categoryId: zod.string().uuid(),
+      savedCategoryId: zod.string().uuid().nullable().optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -30442,6 +30453,7 @@ export const GetItPricingRuleResponse = zod.object({
     name: zod.string(),
     status: zod.string(),
   }),
+  categories: zod.array(zod.object({ id: zod.string().uuid(), name: zod.string(), status: zod.string() })),
   cutoff: zod.coerce.date(),
   id: zod.string().uuid(),
   version: zod.number().int(),
@@ -30455,13 +30467,15 @@ export const EditItPricingRuleParams = zod.object({
 });
 
 export const EditItPricingRuleBody = zod.object({
+  allergenCategoryIds: zod.record(zod.string().uuid(), zod.string().uuid()).nullable().optional(),
   afterRate: zod.string().max(editItPricingRuleBodyAfterRateMax),
   allergenIds: zod
     .array(zod.string().uuid())
     .min(1)
     .max(editItPricingRuleBodyAllergenIdsMax),
   beforeRate: zod.string().max(editItPricingRuleBodyBeforeRateMax),
-  categoryId: zod.string().uuid(),
+  categoryId: zod.string().uuid().nullable().optional(),
+  categoryIds: zod.array(zod.string().uuid()).min(1).max(100).nullable().optional(),
   cutoff: zod.coerce.date(),
   expected_version: zod
     .number()
@@ -30476,6 +30490,7 @@ export const EditItPricingRuleResponse = zod.object({
   allergens: zod.array(
     zod.object({
       categoryId: zod.string().uuid(),
+      savedCategoryId: zod.string().uuid().nullable().optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -30487,6 +30502,7 @@ export const EditItPricingRuleResponse = zod.object({
     name: zod.string(),
     status: zod.string(),
   }),
+  categories: zod.array(zod.object({ id: zod.string().uuid(), name: zod.string(), status: zod.string() })),
   cutoff: zod.coerce.date(),
   id: zod.string().uuid(),
   version: zod.number().int(),

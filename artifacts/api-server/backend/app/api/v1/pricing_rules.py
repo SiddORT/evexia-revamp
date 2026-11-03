@@ -17,16 +17,18 @@ manager = require_permissions("admin.access")
 
 @router.get("", response_model=ItPricingRulePage, operation_id="listItPricingRules")
 def listing(offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
+            query: str = Query("", max_length=100),
             actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.listing(db, actor, offset, limit)
+    return service.listing(db, actor, offset, limit, query)
 
 
 @router.get("/references/{kind}", response_model=ItPricingReferencePage, operation_id="getItPricingRuleReferences")
 def references(kind: Literal["categories", "allergens"], query: str = Query("", max_length=200),
                categoryId: uuid.UUID | None = None, offset: int = Query(0, ge=0, le=1000000),
                limit: int = Query(25, ge=1, le=100),
+               categoryIds: list[uuid.UUID] | None = Query(None, min_length=1, max_length=100),
                actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.references(db, actor, kind, query, offset, limit, categoryId)
+    return service.references(db, actor, kind, query, offset, limit, categoryId, categoryIds)
 
 
 @router.get("/{record_id}", response_model=ItPricingRuleSaved, operation_id="getItPricingRule")

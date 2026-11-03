@@ -1,5 +1,5 @@
 .pricing-rules-page { display: grid; gap: 18px; }
-.pricing-rules-note { margin: 0; padding: 12px 14px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-accent); border-radius: 10px; background: var(--admin-state-soft); color: var(--admin-text-soft); font-size: 0.875rem; line-height: 1.5; }
+.pricing-rules-note { margin: 0; color: var(--admin-text-soft); font-size: 0.8125rem; line-height: 1.5; }
 .pricing-rules-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .pricing-rule-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 16px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-surface); color: var(--admin-text); }
 .pricing-rule-row h2 { margin: 0 0 6px; font-size: 1rem; overflow-wrap: anywhere; }
@@ -15,7 +15,7 @@
 .pricing-editor { display: grid; gap: 16px; }
 .pricing-editor fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 16px; min-width: 0; }
 .pricing-editor__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.pricing-field { display: grid; gap: 6px; min-width: 0; font-size: 0.875rem; color: var(--admin-text); }
+.pricing-field { display: grid; align-content: start; gap: 6px; min-width: 0; font-size: 0.875rem; color: var(--admin-text); }
 .pricing-field > span:first-child, .pricing-field > label { font-weight: 600; }
 .pricing-field small { color: var(--admin-text-soft); line-height: 1.45; }
 .pricing-input { width: 100%; min-height: 40px; padding: 8px 11px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-variant-numeric: tabular-nums; }
@@ -30,6 +30,24 @@
 .pricing-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; font-size: 0.875rem; color: var(--admin-text-soft); }
 .pricing-pager div { display: flex; gap: 6px; }
 .pricing-skeleton { height: 74px; border-radius: 12px; background: var(--admin-state-soft); animation: pricing-pulse 1.4s ease-in-out infinite; }
+.pricing-editor h2 { margin: 0; font-size: 1.125rem; overflow-wrap: anywhere; }
+.pricing-multi { display: grid; gap: 6px; min-width: 0; }
+.pricing-multi .searchable-select__control input { font-size: 0.875rem; }
+.pricing-multi__menu { z-index: 40; overscroll-behavior: contain; }
+.pricing-multi__scope { display: grid; gap: 6px; padding: 6px 8px 10px; border-bottom: 1px solid var(--admin-border); }
+.pricing-multi__heading { margin: 0; padding: 10px 8px 4px; font-size: 0.8125rem; color: var(--admin-text-soft); overflow-wrap: anywhere; }
+.pricing-multi .searchable-select__option { justify-content: flex-start; font-size: 0.875rem; }
+.pricing-multi__check { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--admin-border); border-radius: 4px; }
+.pricing-multi [aria-selected="true"] .pricing-multi__check { background: var(--admin-accent); color: var(--admin-surface); }
+.pricing-multi [aria-disabled="true"] { cursor: default; opacity: .65; }
+.pricing-multi__selected { display: grid; gap: 6px; max-height: 150px; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
+.pricing-multi__clear { justify-self: start; border: 0; padding: 4px 0; background: transparent; color: var(--admin-accent); font: inherit; font-size: 0.8125rem; cursor: pointer; }
+.pricing-multi__clear:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.pricing-rule-row__targets { max-height: 180px; overflow-y: auto; padding: 2px; }
+.pricing-list-search { display: flex; align-items: center; gap: 8px; width: min(100%, 480px); border: 1px solid var(--admin-border); border-radius: 9px; padding: 0 11px; color: var(--admin-text-soft); background: var(--admin-surface); }
+.pricing-list-search:focus-within { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.pricing-list-search input { min-width: 0; width: 100%; min-height: 40px; border: 0; outline: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 0.875rem; }
+.pricing-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @keyframes pricing-pulse { 50% { opacity: 0.55; } }
 @media (prefers-reduced-motion: reduce) { .pricing-skeleton { animation: none; } }
 @media (max-width: 767px) {

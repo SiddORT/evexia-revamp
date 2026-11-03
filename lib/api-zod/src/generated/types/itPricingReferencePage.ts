@@ -9,6 +9,7 @@ import type { ItPricingAllergenReference } from "./itPricingAllergenReference";
 import type { ItPricingReference } from "./itPricingReference";
 
 export interface ItPricingReferencePage {
+  catalogueVersion: string;
   items: (ItPricingAllergenReference | ItPricingReference)[];
   limit: number;
   offset: number;

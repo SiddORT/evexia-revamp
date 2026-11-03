@@ -15,10 +15,13 @@ historical orders, and catalogue prices are unchanged.
 
 ## Saved contract
 
-A rule references a real shared category UUID and 1–100 distinct shared allergen
-UUIDs. Every target must be active, non-deleted, and currently in that category
-when saved. Names are read from the shared masters, not used as identities.
-Historical reads show inactive/deleted references and category moves explicitly.
+A single rule references 1–100 explicit shared category UUIDs and 1–100 distinct
+shared allergen UUIDs in total. Every target must be active, non-deleted, and
+currently in a selected active category when saved. Selecting a category does
+not select its present or future allergens. Names come from shared masters, not
+identity matching. Each target also records its category **at explicit save**;
+historical reads show inactive/deleted references and category moves explicitly,
+even when the new category is another category selected in the same rule.
 A physically missing reference fails the read rather than returning an empty
 successful list.
 
@@ -35,10 +38,33 @@ category). Any overlap is rejected, even if the cutoff or rates differ. This is
 configuration conflict rejection, not approval of a future lookup precedence.
 Moving a master allergen does not move or rewrite its existing rule.
 
-Copy preloads the source cutoff/rates but clears the destination category and
+Copy preloads the source cutoff/rates but clears the destination categories and
 allergens. It is editable and requires an explicit create save. Changing category
-clears all selected allergens. Copy never mutates the source or overwrites an
-existing destination.
+selection retains compatible selections: adding a category keeps existing
+allergens; removing one removes only allergens attributed to that category.
+Copy never mutates the source or overwrites an existing destination.
+
+Both category and allergen controls are searchable finite multi-selects with
+selected counts and removable selections. The allergen popup groups by stable
+category UUID and readable category name; choices remain checked while searching
+and paging. There is no category Select all.
+
+Allergen **Select all** collects every matching active allergen in the currently
+selected categories, not just the displayed page. With no search this means all
+eligible allergens in those categories. Every page carries a fingerprint of the
+complete filtered catalogue; changed fingerprints/totals, duplicate or missing
+results, transport failure, or a union exceeding the 100-target cap leave the
+selection unchanged. Narrow the search/categories or remove selections when
+over the cap. Existing selections outside the search are retained. Search/scope
+changes, popup closure and editor teardown cancel pending work. No partial or
+future membership is implied.
+
+The saved-rule list has one live search bar, not separate filter/apply/refresh
+controls. Literal category/allergen-name matching runs on the full server-side
+dataset before pagination, including historical inactive/deleted references,
+with each matching rule counted once. Query changes reset pagination and cancel
+previous requests. No-matches is distinct from a never-configured empty list.
+Saves reload the current result set automatically; load failures offer Retry.
 
 ## Persistence and concurrency
 
@@ -53,6 +79,26 @@ resolver, delete, bulk import/export, or order consumer.
 - `it_pricing_rule_targets`: FK-backed memberships and unique allergen target
   constraint.
 - `it_pricing_rule_requests`: actor-bound encrypted immutable request/outcome.
+
+Forward migration `0087_pricing_rule_categories` follows the existing
+`0086_immunotherapy_extract` head; no applied migration is rewritten. It adds
+explicit `it_pricing_rule_categories` membership and a saved `category_id` on
+each target. Existing membership and attribution are copied from each rule's
+original category, **never** today's possibly moved allergen. Rates, cutoff,
+versions, actor history, requests and encrypted outcomes are not rewritten.
+The original rule category column remains a compatibility anchor, not the full
+category set. Coordinated source/readiness/maintenance metadata names the
+successor and retains all predecessor readiness probes and encryption inventories.
+
+New requests use `categoryIds`; the original `categoryId` format remains
+accepted, including historical exact retries. Both formats together are rejected.
+The UI also sends `allergenCategoryIds` to assert the category seen at selection
+time, so a move during editing cannot be silently reclassified at save. Legacy
+edits without this map reject moves of retained historical targets. An explicit
+remove/reselect in the UI records the new attribution. Saved responses contain
+`categories`, the compatibility `category`, current allergen `categoryId`, and
+`savedCategoryId`. Historical encrypted responses are adapted in memory only;
+the original canonical request identity and stored outcomes remain intact.
 
 The existing validated PR encryption keyring is reused with independent
 `it-pricing-rule` and `it-pricing-request` authenticated field domains. Category
@@ -87,16 +133,18 @@ successor without changing encryption inventories or accepting unknown heads.
 
 ## Source handoff and activation limitations
 
-Delivery was reviewed by source/diff only: UI/API envelopes, date inclusion,
+Delivery was reviewed by source/diff only: UI/API envelopes, multi-category
+membership and historical attribution, complete paged selection, search/counts,
+date inclusion,
 exact money normalization, authorization, reference checks, target conflicts,
 idempotent retry/rejection handling, stale edits, and the absence of order
-consumers. Static OpenAPI/client generation and development schema source
-metadata generation were performed; they do not start services or validate
-runtime behavior.
+consumers. OpenAPI, generated-client source and coordinated schema-source metadata
+were updated directly. Code-generation/check wrappers were not run because they
+can chain typechecks or broader validation; regeneration remains unverified.
 
 **No regression/release suites, typechecks, builds, browser/runtime checks,
 managed-service restarts, live-data edits, migrations, deployment, or production
-activation were performed.** The additive migration is unapplied. Database
+activation were performed.** The new additive migration is unapplied. Database
 constraints, concurrency, encrypted round-trips, shared-browser persistence,
 navigation/accessibility, and responsive appearance remain runtime-unverified.
 No fresh-install catalogue fingerprint or release-validation evidence was

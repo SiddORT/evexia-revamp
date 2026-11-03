@@ -24830,6 +24830,10 @@ export const getGetItPricingRuleReferencesUrl = (
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    if (key === "categoryIds" && Array.isArray(value)) {
+      value.forEach((id) => normalizedParams.append(key, id));
+      return;
+    }
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? "null" : String(value));
     }

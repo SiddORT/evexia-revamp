@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0086_immunotherapy_extract",
-  "policy_sha256": "743c9fbeec5e11fad6b23345c894f90a72ba85abc844da3eaca5881c9d63af4b",
+  "target": "0087_pricing_rule_categories",
+  "policy_sha256": "bad1c6c6b36b6b5a27859010cb0f30fbe58d216e6cfb2503276cf113aff91ead",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -96,7 +96,8 @@
     "0084_allergen_expiry": "02850e2c4fbcabc7bb6833569b61ff873cd92867f20c19102397b5f3e0e1b65e",
     "0085_placement_email_details": "352c34bb83b6c4138ac94247edc5140c9ff6817e157bc33ee45b9b1a26a8d8e2",
     "0086_immunotherapy_extract": "09cfc45f62cc6fece2fe03e25f644b186fe2a38e58b61355b010379c475b5220",
-    "0086_it_pricing_rules": "3961e4274d460d49ad130954f28f6805fdd8a4e2efd708c22fc4079d581bcba5"
+    "0086_it_pricing_rules": "3961e4274d460d49ad130954f28f6805fdd8a4e2efd708c22fc4079d581bcba5",
+    "0087_pricing_rule_categories": "039380523742ee0e424496530c916526e94af17cb9666fe15b99c4ed125fe130"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

@@ -29,6 +29,14 @@ class PricingRuleTarget(Base):
     )
     rule_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("it_pricing_rules.id"), primary_key=True)
     allergen_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("allergen_products.id"), primary_key=True)
+    # Immutable attribution at explicit save, not today's catalogue category.
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("product_categories.id"), nullable=False)
+
+
+class PricingRuleCategory(Base):
+    __tablename__ = "it_pricing_rule_categories"
+    rule_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("it_pricing_rules.id"), primary_key=True)
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("product_categories.id"), primary_key=True)
 
 
 class PricingRuleRequest(Base):

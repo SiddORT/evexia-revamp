@@ -1161,7 +1161,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   };
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (resource === 'products' && key === 'allergen_ids' && Array.isArray(value)) {
+    if (((resource === 'products' && key === 'allergen_ids') || (resource === 'pricing-rules' && key === 'categoryIds')) && Array.isArray(value)) {
       value.forEach((id) => search.append(key, String(id)));
     } else if (value !== '' && value != null) search.set(key, String(value));
   });

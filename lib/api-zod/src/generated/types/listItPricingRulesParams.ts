@@ -7,6 +7,8 @@
  */
 
 export type ListItPricingRulesParams = {
+  /** @maxLength 100 */
+  query?: string;
   /**
    * @minimum 0
    * @maximum 1000000

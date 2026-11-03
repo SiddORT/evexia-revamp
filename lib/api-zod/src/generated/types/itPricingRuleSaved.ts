@@ -13,6 +13,7 @@ export interface ItPricingRuleSaved {
   allergens: ItPricingAllergenReference[];
   beforeRate: string;
   category: ItPricingReference;
+  categories: ItPricingReference[];
   cutoff: Date;
   id: string;
   version: number;

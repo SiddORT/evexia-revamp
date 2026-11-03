@@ -2,18 +2,47 @@
 import re
 import uuid
 from datetime import date
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 from app.schemas.rates import rate
 
 
 class ItPricingRuleInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    categoryId: uuid.UUID
+    categoryId: uuid.UUID | None = None  # Original request/retry format remains supported.
+    categoryIds: list[uuid.UUID] | None = Field(default=None, min_length=1, max_length=100)
     allergenIds: list[uuid.UUID] = Field(min_length=1, max_length=100)
+    allergenCategoryIds: dict[uuid.UUID, uuid.UUID] | None = Field(default=None, max_length=100)
     cutoff: date
     beforeRate: str = Field(max_length=64)
     afterRate: str = Field(max_length=64)
     idempotencyKey: uuid.UUID
+
+    @model_validator(mode="after")
+    def category_selection(self):
+        if (self.categoryId is None) == (self.categoryIds is None):
+            raise ValueError("Provide either categoryIds or the legacy categoryId")
+        if self.allergenCategoryIds is not None and set(self.allergenCategoryIds) != set(self.allergenIds):
+            raise ValueError("Provide the selected category for every selected allergen")
+        return self
+
+    @field_validator("categoryIds")
+    @classmethod
+    def distinct_categories(cls, value):
+        if value is not None:
+            if len(set(value)) != len(value):
+                raise ValueError("Select each category only once")
+            return sorted(value, key=str)
+        return value
+
+    def selected_categories(self):
+        return self.categoryIds if self.categoryIds is not None else [self.categoryId]
+
+    def retry_body(self):
+        # Preserve the exact historical canonical shape (including edit version).
+        excluded = {"idempotencyKey", "categoryIds" if self.categoryId is not None else "categoryId"}
+        if self.allergenCategoryIds is None:
+            excluded.add("allergenCategoryIds")
+        return self.model_dump(mode="json", exclude=excluded)
 
     @field_validator("cutoff", mode="before")
     @classmethod
@@ -47,16 +76,28 @@ class ItPricingReference(BaseModel):
 
 class ItPricingAllergenReference(ItPricingReference):
     categoryId: uuid.UUID
+    savedCategoryId: uuid.UUID | None = None
 
 
 class ItPricingRuleSaved(BaseModel):
     id: uuid.UUID
     version: int
     category: ItPricingReference
+    categories: list[ItPricingReference]
     allergens: list[ItPricingAllergenReference]
     cutoff: date
     beforeRate: str
     afterRate: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def historical_outcome(cls, value):
+        # Adapt original encrypted outcomes in memory; never rewrite retry history.
+        if isinstance(value, dict) and "categories" not in value:
+            value = {**value, "categories": [value["category"]],
+                     "allergens": [{**a, "savedCategoryId": value["category"]["id"]}
+                                   for a in value["allergens"]]}
+        return value
 
 
 class ItPricingRulePage(BaseModel):
@@ -71,3 +112,4 @@ class ItPricingReferencePage(BaseModel):
     total: int
     offset: int
     limit: int
+    catalogueVersion: str
