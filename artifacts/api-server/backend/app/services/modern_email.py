@@ -4,7 +4,19 @@
 def modern_html(event):
     if event == "mr_immunotherapy_placed":
         from app.services.immunotherapy_placement_notification import HTML
-        return '<div style="font-family:Arial,sans-serif;color:#28263a;padding:24px;line-height:1.7">' + HTML + '</div>'
+        return (
+            '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5fa;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#28263a"><tr><td align="center">'
+            '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border:1px solid #ddd7e5;border-radius:16px;border-collapse:separate">'
+            '<tr><td style="padding:28px;background-color:#f0eaf5;text-align:center">'
+            '<img src="/images/evexia-logo.png" alt="EVEXIA Life Sciences" width="154" height="80">'
+            '<p style="font-size:12px;color:#6c5d7f;letter-spacing:1px;margin:16px 0">EVEXIA LIFE SCIENCES</p></td></tr>'
+            '<tr><td style="padding:28px;line-height:1.7">'
+            '<h1 style="font-size:26px;line-height:1.3;color:#187368;margin:0 0 24px">Immunotherapy order placed</h1>'
+            + HTML +
+            '<hr style="border:1px solid #ddd7e5">'
+            '<p style="font-size:12px;color:#6c5d7f">EVEXIA Life Sciences</p>'
+            '</td></tr></table></td></tr></table>'
+        )
     invitation = event in ("account_invitation", "mr_invitation")
     mr = event == "mr_invitation"
     title = ("Welcome to the MR portal" if mr else "Welcome to the Admin workspace") if invitation else "Reset your password"
