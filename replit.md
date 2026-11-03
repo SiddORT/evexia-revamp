@@ -507,6 +507,18 @@ Necessary contract generation/formatting is not runtime verification.
 - `artifacts/evexia-portal/src/services/serverZones.js`, `src/hooks/useZones.js` — shared Zone Master transport and state; `src/services/zones.js` remains the untouched legacy demo dataset for unrelated masters.
 - `artifacts/evexia-portal/public/images/` — coordinated role photography
 
+## New MR Immunotherapy grouping
+
+New MR placements, including resumed incomplete drafts on final submission,
+use category-UUID/Mix groups: up to three Mix children per SUB and isolated
+No Mix children. The server reconstructs groups from authoritative masters and
+issues one parent-derived SUB header per group, already using suborder MRP.
+Draft groups have no issued identity. Saved grouping basis and membership stay
+historical; compatible edits never automatically repack or renumber SUBs.
+This does not change historical conversion or unrelated Admin creation policy.
+See `docs/immunotherapy-backend.md` and `docs/mr-order-workflows.md`.
+Source/diff review only; no checks or service restarts were run for this change.
+
 ## Assets
 
 The supplied transparent EVEXIA logo is displayed by the shared brand component on the landing and login form panels, not over the role photography. Keep the original artwork intact; the local PNG is only cropped to remove transparent margins. The logo is a small raster source, so do not stretch it unnecessarily or redraw it.

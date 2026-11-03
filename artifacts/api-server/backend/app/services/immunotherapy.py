@@ -116,15 +116,17 @@ def project(keys, row):
 def review_policy(db, body, previous):
     """One boundary for direct writes and import review/commit, before resolution."""
     from app.services.mr_orders import scope_identity
-    from app.services.immunotherapy_pricing import basis, financials, RATE_BASIS, LEGACY_BASIS
+    from app.services.immunotherapy_pricing import basis, financials, RATE_BASIS, LEGACY_BASIS, SUBORDER_BASIS
     if previous and (previous.get("approval") or previous["status"] in {"In process", "Shipped", "Delivered", "Returned"}):
         raise ImmError("Approved or closed orders are read-only.", 409, "order_edit_closed")
     decision = getattr(body, "decision", None)
     if decision:
         raise ImmError("Save changes first, then use the version-bound Approve or Reject action.", 422, "imm_admin_review")
     if scope_identity(db):
-        saved_basis = previous.get("pricingBasis", LEGACY_BASIS) if previous else RATE_BASIS
-        if body.pricingBasis is not None and body.pricingBasis != saved_basis:
+        saved_basis = previous.get("pricingBasis", LEGACY_BASIS) if previous else SUBORDER_BASIS
+        if body.pricingBasis is not None and body.pricingBasis != saved_basis and not (
+            not previous and body.pricingBasis == RATE_BASIS
+        ):
             raise ImmError("MR cannot change an order's financial basis.", 403, "imm_admin_review")
         if body.status != (previous["status"] if previous else "Confirmed") or body.poNumber is not None or any(
             g.mrp is not None or any(i.rate is not None or i.extract is not None or i.dilution is not None for i in g.items) for g in body.groups
@@ -204,7 +206,12 @@ def resolved(db, body, previous=None):
     value.pop("orderDate", None)
     from app.services.immunotherapy_pricing import prepare, retain_provenance, RATE_BASIS, SUBORDER_BASIS
     from app.services.mr_orders import scope_identity
-    value["pricingBasis"], value["groups"] = prepare(body, previous, ImmError, mr=bool(scope_identity(db)))
+    from app.services.immunotherapy_grouping import governed, placement, retain_basis
+    new_mr = bool(scope_identity(db)) and not previous
+    if new_mr:
+        value["pricingBasis"] = SUBORDER_BASIS
+    else:
+        value["pricingBasis"], value["groups"] = prepare(body, previous, ImmError, mr=bool(scope_identity(db)))
     retain_provenance(value, previous)
     if scope_identity(db) and previous:
         value["poNumber"] = previous.get("poNumber")
@@ -231,6 +238,18 @@ def resolved(db, body, previous=None):
         value["recipient"] = person(eligible(db, recipient_kind, recipient_id), recipient_kind)
     else:
         value["recipient"] = value[recipient_key]
+    # Follow the existing person-then-allergen lock order. Resolve masters in
+    # deterministic UUID order before planning new or changed membership.
+    # Saved children use their immutable basis, never today's master flags.
+    grouped_edit = governed(previous)
+    old_members = {(g["id"], i["allergenId"]) for g in previous["groups"] for i in g["items"]} if grouped_edit else set()
+    needed = {i.allergenId for g in body.groups for i in g.items
+              if new_mr or (grouped_edit and (g.id, str(i.allergenId)) not in old_members)}
+    grouping_masters = {str(aid): eligible(db, "allergens", aid) for aid in sorted(needed)}
+    if new_mr:
+        value["groups"] = placement(value["groups"], grouping_masters, ImmError)
+    else:
+        retain_basis(value["groups"], previous, grouping_masters, ImmError)
     # Retain each occurrence's actual saved snapshot. The same allergen in two
     # SUBs may legitimately have different historical master descriptions.
     retained = {}
@@ -320,9 +339,9 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     db.flush()
     db.execute(delete(Item).where(Item.order_id == row.id))
     db.execute(delete(Attachment).where(Attachment.order_id == row.id))
-    for pos, group in enumerate(body.groups):
-        for item in group.items:
-            db.add(Item(order_id=row.id, bottle=pos, allergen_id=item.allergenId))
+    for pos, group in enumerate(data["groups"]):
+        for item in group["items"]:
+            db.add(Item(order_id=row.id, bottle=pos, allergen_id=uuid.UUID(item["allergenId"])))
     for file_id in body.attachmentIds:
         db.add(Attachment(order_id=row.id, file_id=file_id))
     db.add(AuditEvent(actor_id=actor.user.id, session_id=actor.session_id,
@@ -456,7 +475,8 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None,
         items, last = [], None
         def choice(row):
             if kind == "allergens":
-                return dict(id=str(row.id), name=row.name, concentration=row.concentration)
+                return dict(id=str(row.id), name=row.name, concentration=row.concentration,
+                            categoryId=str(row.category_id), mix=row.mix)
             data = person(row, kind)
             if kind == "patients":
                 owner = db.get(Patient, row.id)

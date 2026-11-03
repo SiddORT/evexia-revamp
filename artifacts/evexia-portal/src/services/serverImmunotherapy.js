@@ -1,6 +1,7 @@
 import { getSession, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { orderRequest } from './orderFreshness.js';
+import { MR_GROUPING_POLICY, mrCompositionError } from './immunotherapyGrouping.js';
 
 export const request = (path = '', options) => orderRequest(path, options, 'immunotherapy-orders');
 const optionalPO = (value) => typeof value === 'string' && !value.trim() ? null : value || null;
@@ -102,6 +103,7 @@ export function orderErrors(v, hasPrescription, { mr = false, previous = null } 
   for (const group of v.groups) {
     if (!group.items.length || group.items.length > 100) errors[`group-${group.id}`] = 'Add between one and 100 allergens to this group in Allergen Details.';
     else if (groupingError(group.items)) errors[`group-${group.id}`] = groupingError(group.items);
+    else if (group.compositionPolicy === MR_GROUPING_POLICY && mrCompositionError(group.items)) errors[`group-${group.id}`] = mrCompositionError(group.items);
     if (!mr && group.mrp != null && group.mrp !== '' && parseAmount(group.mrp) === null) errors[`mrp-${group.id}`] = PRICE_HELP;
     for (const item of group.items) if (!mr && item.rate != null && item.rate !== '' && parseAmount(item.rate) === null) errors[`rate-${group.id}-${item.allergenId}`] = 'Enter a non-negative INR rate with up to ten whole digits and two decimal places.';
     for (const item of group.items) if (!RESULT.test(item.result)) errors[`result-${group.id}-${item.allergenId}`] = RESULT_HELP;
@@ -195,6 +197,7 @@ export function saveErrors(cause, v) {
   }
   if (cause.code === 'mr_order_assignment') errors.mrId = 'The order must use your signed-in saved MR assignment. Re-select an associated patient and Doctor.';
   if (cause.code === 'imm_total') errors.groups = 'Order value must not exceed ₹10 crore.';
+  if (cause.code === 'imm_grouping') errors.groups = 'A grouped SUB allows at most three Mix allergens from one category. No Mix allergens must remain alone. Saved SUBs cannot be automatically repacked; review this composition.';
   if (cause.code === 'imm_pricing') errors.form = 'Approval requires one MRP per SUB, extract/dilution for every child and a verified patient prescription. PO is optional. Drafts and rejection need no invented values.';
   if (cause.code === 'imm_pricing_basis') errors.groups = 'Historical pricing stays unchanged until Admin explicitly adopts suborder MRP. Individual historical rates and bottle MRPs are read-only.';
   if (cause.code === 'imm_suborder') errors.groups = 'Retain exact saved SUB identities, each separately with its initial allergen when converting. Save the initial submission first to issue missing SUBs. Your draft is preserved.';

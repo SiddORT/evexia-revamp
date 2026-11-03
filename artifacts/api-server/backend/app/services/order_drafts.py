@@ -108,7 +108,7 @@ def references_and_files(db, actor, kind, payload, identity):
     groups = value.get("groups", [])
     entries = payload.get("allergenEntries", {})
     if (not isinstance(patients, list) or len(patients) > 200
-            or not isinstance(groups, list) or len(groups) > 100
+            or not isinstance(groups, list) or len(groups) > (1000 if kind == "immunotherapy" and scope_identity(db) else 100)
             or not isinstance(entries, dict)):
         raise ImmError("Invalid draft rows.", 422, "draft_payload")
     for patient in patients:

@@ -3,9 +3,10 @@ import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import SearchableSelect from '../admin/SearchableSelect.jsx';
 import { DOSES, skinResultError } from '../../services/serverImmunotherapy.js';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
+import { MR_GROUPING_POLICY, mrCompositionError } from '../../services/immunotherapyGrouping.js';
 
 // Canonical suborder cards: header SUB id + MRP, expandable rows. No bottle UI.
-export default function SuborderCards({ groups, onChange, errors, disabled, readOnly, admin, allergenOptions, allergens, allergenList, dosage, entries, setEntries, onUpdate }) {
+export default function SuborderCards({ groups, savedGroups = [], onChange, errors, disabled, readOnly, admin, allergenOptions, allergens, allergenList, dosage, entries, setEntries, onUpdate }) {
   const [open, setOpen] = useState(() => new Set(groups.slice(0, 1).map((g) => g.id)));
   const confirm = usePlatformConfirm();
   const [msg, setMsg] = useState({});
@@ -17,13 +18,17 @@ export default function SuborderCards({ groups, onChange, errors, disabled, read
   const toggle = (id) => setOpen((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   function add(g) {
     const e = entries[g.id] || {};
+    const retained = savedGroups.find((group) => group.id === g.id)?.items.find((i) => i.allergenId === e.allergenId);
+    const candidate = { allergenId: e.allergenId, result: e.result, allergen: e.allergen, extract: null, dilution: null,
+      ...(retained?.groupingBasis ? { groupingBasis: retained.groupingBasis } : {}) };
     const problem = !DOSES.includes(dosage) ? 'Choose a dosage before adding an allergen.' : !e.allergenId || !e.allergen ? 'Select an Allergen Name.'
       : skinResultError(e.result || '') || (g.items.some((i) => i.allergenId === e.allergenId) ? 'Duplicate allergens within a suborder are not allowed.' : '')
+        || (g.compositionPolicy === MR_GROUPING_POLICY ? mrCompositionError([...g.items, candidate]) : '')
         || (g.items.length >= 100 ? 'Use at most 100 children in one SUB.' : '')
         || (groups.reduce((n, x) => n + x.items.length, 0) >= 1000 ? 'Use at most 1,000 children per order.' : '');
     if (problem) { setMsg((m) => ({ ...m, [g.id]: problem })); return; }
     setMsg((m) => ({ ...m, [g.id]: '' }));
-    upd(g.id, (x) => ({ ...x, items: [...x.items, { allergenId: e.allergenId, result: e.result, allergen: e.allergen, extract: null, dilution: null }] }));
+    upd(g.id, (x) => ({ ...x, items: [...x.items, candidate] }));
     setEntries((s) => ({ ...s, [g.id]: { allergenId: '', result: '' } }));
   }
   async function remove(g, it) {
@@ -47,6 +52,7 @@ export default function SuborderCards({ groups, onChange, errors, disabled, read
         </div>
         {errors[`mrp-${g.id}`] && <p className="imm-error" id={`imm-mrp-error-${gi}`} role="alert">{errors[`mrp-${g.id}`]}</p>}
         {isOpen && <div className="imm-sub__body" id={`imm-sub-body-${gi}`}>
+          {g.compositionPolicy === MR_GROUPING_POLICY && <p className="imm-hint">Saved MR grouping: up to three Mix allergens from one category; No Mix stays alone. Existing children retain their placement basis, even if masters change. Edits never repack or renumber saved SUBs.</p>}
           <div className="imm-sub__table" role="table" aria-label={`Allergens in suborder ${g.id}`}>
             <div className="imm-sub__row imm-sub__row--head" role="row">{['Sr. No.', 'Allergen Name', 'Skin Test Result (mm)', 'Available quantity', 'Extract (ml)', 'Dilution (ml)', 'Action'].map((h) => <span role="columnheader" key={h}>{h}</span>)}</div>
             {g.items.map((it, ii) => { const k = `${g.id}-${it.allergenId}`; const rk = `result-${k}`;

@@ -7,6 +7,7 @@ import { DownloadOrderFile, OrderFileList } from '../orders/OrderFiles.jsx';
 import { downloadPrescription, money, mrEditable, orderLocked, orderTotalMinor, parseAmount, prescriptionBlob, request } from '../../services/serverImmunotherapy.js';
 import OrderApproval from '../orders/OrderApproval.jsx';
 import PrescriptionViewer from './PrescriptionViewer.jsx';
+import { MR_GROUPING_POLICY } from '../../services/immunotherapyGrouping.js';
 import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
 
@@ -65,9 +66,10 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
           <p className="kits-hint">Saved order facts only; order status is not evidence of treatment administration.</p>
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-allergens"><h2 id="imm-s-allergens">Saved allergen composition and results</h2>
-          <p className="kits-hint">Original bottle membership and saved allergen details are retained; missing history is not inferred from current masters.</p>
+          <p className="kits-hint">Saved SUB or original bottle membership and allergen details are retained; missing history is not inferred from current masters.</p>
           {groups.length ? groups.map((group, index) => <section className="imm-saved-order__bottle" key={group.id || index} aria-label={`Saved group ${index + 1}`}>
             <h3>{canonical ? `Suborder ${group.id}` : `Saved group ${index + 1}`}</h3>
+            {group.compositionPolicy === MR_GROUPING_POLICY && <p className="kits-hint">Saved MR category/Mix grouping. This membership and SUB identity do not change when masters change.</p>}
             {!mrPortal && <Facts rows={[['Internal group', group.id], ...(legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : canonical ? [['MRP', money(parseAmount(group.mrp))]] : [])]} />}
             {group.items?.length ? <ul className="imm-saved-order__allergens">{group.items.map((item, itemIndex) => <li key={`${item.allergenId}-${itemIndex}`}>
               <Facts rows={[

@@ -478,6 +478,56 @@ state/owner/content changes or cleanup while any saved order still references
 the file. Unattached reservations remain under the existing recoverable file
 lifecycle; metadata alone is never treated as an upload.
 
+## New MR category/Mix grouping
+
+New MR placements (including final submission of older incomplete drafts) now
+start directly in `suborder_mrp_v1`. This narrowly supersedes unrestricted
+composition for new MR placements only, not Admin creation or saved history.
+Authorized bounded allergen references expose `categoryId` and boolean `mix`;
+they expose no extra catalogue prices or storage details.
+
+Placement resolves and locks the selected active masters, ignoring client group
+identities and eligibility claims. Selection order within each category is
+batched into up to three Mix children per SUB; a fourth starts another SUB.
+Different category UUIDs never share a SUB, even when display names match.
+Every No Mix occurrence is isolated. Existing per-group duplicate constraints
+remain: distinct occurrences in different groups are retained, never deduplicated.
+Repeated occurrences cannot share a header's child identity key.
+
+Only final placement allocates parent-derived SUB headers (`IT-000001A`, etc.).
+Children have no separately issued SUB identity or price. The relational item
+index is written from reconstructed membership, not submitted grouping.
+Existing version, transaction, idempotency/rejection and draft-submit locks are
+unchanged. A lost-response retry keeps its exact request/key; a committed request
+recovers the saved order without regrouping against subsequently changed masters
+or repeating placement side effects.
+
+Each new grouped header carries the server-owned encrypted
+`compositionPolicy: mr_category_mix_v1`; each child retains its authoritative
+`groupingBasis` (`categoryId`, `mix`). These are additive saved group data, not
+writable request fields, historical allergen snapshot amendments, schema
+migrations or backfills. Mere reads do not write or consult current masters.
+Retained children keep their basis on edits; added/replaced membership resolves
+current eligible master metadata. Applicable edits must still obey category,
+three-child and No Mix limits, without silently merging, repacking, inventing,
+recycling or renumbering saved headers. Removed headers are not reused.
+
+MR and Admin consume the same saved headers and children. Admin reviews one MRP
+per header; existing child extract/dilution, prescription and approval checks
+remain mandatory. A grouped order is already canonical and never goes through
+the historical per-occurrence conversion. Unmarked historical orders retain
+their original prices, occurrences, identities and explicit conversion rules;
+missing old metadata is never interpreted as evidence for this policy.
+CSV/XLSX imports pass through the same policy and cannot submit grouping evidence.
+
+Source/diff review covered same-category three-plus-one overflow, category
+separation, No Mix isolation, duplicate occurrences, draft removal/repacking,
+older draft metadata hydration, master changes, saved edits, totals, canonical
+review and request/draft retry boundaries. **Runtime behavior is unverified.**
+At the user's request no regression/release checks, tests, builds, typechecks,
+smoke requests, browser checks, broad validation wrappers, service restarts,
+migrations, live data edits or deployments were performed for this change.
+
 ## CSV / Excel
 
 The eight-column toolbar/review UI is retained. Immunotherapy alone uses a server

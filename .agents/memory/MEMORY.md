@@ -119,3 +119,4 @@
 - [MR sales achievement policy](mr-sales-achievement-policy.md) — approved orders count by saved order date/owner; collections and delivered-only accounting stay separate.
 - [Order draft privacy](order-draft-privacy.md) — incomplete entry is creator-private; normal order permissions do not authorize draft sharing or reassignment.
 - [Allergen concentration meaning](allergen-concentration-meaning.md) — catalogue concentration strings have no approved display unit; preserve historical descriptions without interpretation.
+- [MR Immunotherapy grouping](mr-immunotherapy-grouping-policy.md) — new MR placement only: category/Mix batches of three; saved membership and unrelated historical policy remain intact.

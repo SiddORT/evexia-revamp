@@ -216,6 +216,31 @@ MR assignment and recheck all returned order ownership before releasing a saved
 result. Legacy Admin retry envelopes stay usable for Admin, not newly promoted
 MR access. A reassigned order cannot be recovered through a stale retry.
 
+## Immunotherapy grouping at new MR placement
+
+The new MR entry form proposes same-category Mix groups of up to three selected
+allergens, with a fourth in another group; No Mix selections are always alone.
+All selected occurrences and entered skin-test results are preserved. Incomplete
+draft saves/resumes retain this working composition and any unfinished picker
+entries without allocating real SUB identities. Older incomplete drafts hydrate
+only their selected references with bounded concurrency when grouping metadata
+is missing. Unavailable metadata is explicit, not assumed Mix or assigned to a
+fictional category. Removal can repack proposed groups, never saved SUBs.
+
+Final placement reconstructs groups using authoritative locked master metadata,
+not draft/client flags, and immediately issues one parent-derived SUB per actual
+group. A grouped SUB is priced once in Admin review, with its children retaining
+their individual test results and existing clinical review requirements.
+The MR and Admin saved editor/summary use identical stored IDs/membership.
+Future master changes do not regroup saved orders. Saved composition changes
+validate the saved basis for retained children and current metadata for added
+membership, without automatically merging, repacking or renumbering SUBs.
+Existing historical orders and unrelated Admin creation retain their policy.
+See `immunotherapy-backend.md` for persistence and retry boundaries.
+
+This addition was reviewed in source/diffs only. No checks, wrappers, browser
+verification, service restarts, live writes or deployment were run.
+
 ## Delivery evidence
 
 **Source review only. Untested at the user's request.** No automated tests,

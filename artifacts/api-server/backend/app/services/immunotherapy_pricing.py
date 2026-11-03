@@ -142,6 +142,18 @@ def prepare_suborders(groups, previous, error, *, mr=False):
                     item[field] = retained.get(field)
             item.pop("rate", None)
             item.pop("suborderId", None)
+        if converted and saved.get("compositionPolicy"):
+            from app.services.immunotherapy_grouping import POLICY, validate
+            group["compositionPolicy"] = saved["compositionPolicy"]
+            if saved["compositionPolicy"] == POLICY:
+                # Existing children retain their placement evidence. Newly added
+                # children are authoritatively resolved by resolved(), not here.
+                for item in group["items"]:
+                    old_item = old_items.get(item["allergenId"], {})
+                    if old_item.get("groupingBasis"):
+                        item["groupingBasis"] = deepcopy(old_item["groupingBasis"])
+                if all(i.get("groupingBasis") for i in group["items"]):
+                    validate(group, error)
     return groups
 
 
@@ -166,6 +178,13 @@ def issue(value, previous, order_number=None):
              if re.fullmatch(r"(?:SUB(?:[0-9]{3,12}|-[0-9]{6,12})|IT-[0-9]{6,}[A-Z]+)", g["id"])]
     next_number = max([next_number, *[n + 1 for n in used]])
     if value.get("pricingBasis") == SUBORDER_BASIS:
+        if not previous:
+            from app.services.immunotherapy_grouping import POLICY
+            for group in value["groups"]:
+                if group.get("compositionPolicy") != POLICY or not order_number:
+                    raise ValueError("Only authoritative MR placement can issue initial grouped headers")
+                group["id"] = suborder_number(order_number, next_number)
+                next_number += 1
         value["nextSuborderNumber"] = next_number
         return
     for group in value["groups"]:

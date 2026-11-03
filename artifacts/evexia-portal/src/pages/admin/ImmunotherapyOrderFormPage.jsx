@@ -18,6 +18,8 @@ import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
 import ImmunotherapyConflictDetails from '../../components/immunotherapy/ImmunotherapyConflictDetails.jsx';
 import SuborderCards from '../../components/immunotherapy/SuborderCards.jsx';
+import MRPlacementAllergens from '../../components/immunotherapy/MRPlacementAllergens.jsx';
+import { arrangeMRSelections } from '../../services/immunotherapyGrouping.js';
 import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
@@ -78,7 +80,9 @@ function Editor({ order, mode, draft }) {
   const [, navigate] = useLocation();
   const readOnly = mode === 'view' || orderLocked(order) || !(order ? can.edit : can.add) || (mrPortal && order && !mrEditable(order));
   const isNew = !order;
-  const initial = useRef(order ? fromOrder(order) : draft?.payload.values || { ...blank(), mrId: authenticatedMR?.id || '' });
+  const entryValues = draft?.payload.values || { ...blank(), mrId: authenticatedMR?.id || '' };
+  const initial = useRef(order ? fromOrder(order) : mrPortal ? { ...entryValues, pricingBasis: SUBORDER_BASIS,
+    groups: arrangeMRSelections(entryValues.groups.flatMap((g) => g.items)) } : entryValues);
   // Only server-loaded saved associations or successful verified uploads count.
   // A filename, local metadata, pending upload or transfer claim is not evidence.
   const verifiedFiles = useRef(new Map((order?.attachments || draft?.payload.values.attachments || []).map((f) => [f.id, order?.patientId || draft?.payload.values.patientId])));
@@ -121,7 +125,10 @@ function Editor({ order, mode, draft }) {
     ...v.groups.flatMap((g) => g.items.map((i) => i.allergen)),
     ...Object.values(allergenEntries).map((entry) => entry.allergen),
   ]);
-  const DOCTORS = doctors.items, MRS = mrs.items, ALLERGENS = allergens.items;
+  const DOCTORS = doctors.items, MRS = mrs.items;
+  // Choice metadata is current when available; saved item snapshots remain
+  // untouched and are still used for historical display and retained children.
+  const ALLERGENS = allergens.items.map((a) => allergens.liveItems.find((live) => live.id === a.id) || a);
   const snap = { patients: patients.items };
   useEffect(() => {
     alive.current = true;
@@ -465,7 +472,8 @@ function Editor({ order, mode, draft }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-allergens"><h2 id="imm-h-allergens" tabIndex={-1}>Allergen Details</h2>
-          <p className="imm-hint">{canonical ? 'Each SUB has one MRP, regardless of child count. Extract and dilution are independent ml entries, not calculated recipes. These quantities may remain blank when saving a draft.' : 'Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same saved group.'}</p>
+          <p className="imm-hint">{mrPortal && isNew ? 'Select an allergen, enter its Skin Test Result (mm), then press Add. Proposed groups are not server-issued SUBs.'
+            : canonical ? 'Each SUB has one MRP, regardless of child count. Extract and dilution are independent ml entries, not calculated recipes. These quantities may remain blank when saving a draft.' : 'Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same saved group.'}</p>
           {!canonical && adminReview && order && !readOnly && <div className="imm-reprice">
             <strong>{legacy ? 'Legacy pricing is shown read-only' : 'Previous grouping is shown read-only'}</strong>
             <p className="imm-hint">Adopt one header MRP per existing SUB, initially containing its own saved allergen. Existing SUB numbers and original bottle history are preserved, never merged. Occurrence rates become header MRPs; bottle MRPs are not distributed or inferred. Opening Edit or Cancel changes nothing. The new total below is saved only when you explicitly Update/save.</p>
@@ -476,7 +484,10 @@ function Editor({ order, mode, draft }) {
           {!canonical && !order && <p className="imm-hint">Suborder IDs are issued by the server on first save; Admin can then adopt suborder MRP for pricing edits.</p>}
           {!readOnly && <ReferenceState source={allergens} label="allergens" />}
           <Err id="imm-groups-err" text={errors.groups} />
-          {canonical ? <SuborderCards groups={v.groups} onChange={(groups) => set({ groups })} errors={errors} disabled={dis} readOnly={readOnly} admin={adminReview}
+          {mrPortal && isNew ? <MRPlacementAllergens groups={v.groups} onChange={(groups) => setV((current) => ({ ...current,
+            groups: typeof groups === 'function' ? groups(current.groups) : groups }))} entries={allergenEntries} setEntries={setAllergenEntries}
+            allergens={allergens} disabled={dis} dosage={v.dosage} errors={errors} />
+          : canonical ? <SuborderCards groups={v.groups} savedGroups={order?.groups} onChange={(groups) => set({ groups })} errors={errors} disabled={dis} readOnly={readOnly} admin={adminReview}
             allergenOptions={allergenOptions} allergens={allergens} allergenList={ALLERGENS} dosage={v.dosage}
             entries={allergenEntries} setEntries={setAllergenEntries} onUpdate={() => save()} />
           : <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
