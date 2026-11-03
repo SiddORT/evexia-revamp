@@ -180,6 +180,7 @@ import type {
   GetInventoryLedgerParams,
   GetInventoryReferencesParams,
   GetInventoryStockHistoryParams,
+  GetItPricingRuleReferencesParams,
   GetLanguageHistoryParams,
   GetOpeningStockItemsParams,
   GetPurchaseOrderChangesParams,
@@ -224,6 +225,11 @@ import type {
   InventoryStockPage,
   InvitationRequest,
   InvitationResult,
+  ItPricingReferencePage,
+  ItPricingRuleEdit,
+  ItPricingRuleInput,
+  ItPricingRulePage,
+  ItPricingRuleSaved,
   KitsEligibilityInput,
   KitsImport,
   KitsImportResult,
@@ -257,6 +263,7 @@ import type {
   ListInventoryExpiryParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
+  ListItPricingRulesParams,
   ListKitsOrdersParams,
   ListLanguagesParams,
   ListLupinOrdersParams,
@@ -24260,6 +24267,546 @@ export const useSetPatientDirectoryStatus = <
   TContext
 > => {
   return useMutation(getSetPatientDirectoryStatusMutationOptions(options));
+};
+
+export const getListItPricingRulesUrl = (params?: ListItPricingRulesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listItPricingRules = async (
+  params?: ListItPricingRulesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ItPricingRulePage> => {
+  return customFetch<ItPricingRulePage>(getListItPricingRulesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListItPricingRulesQueryKey = (
+  params?: ListItPricingRulesParams,
+) => {
+  return [`/api/v1/admin/pricing-rules`, ...(params ? [params] : [])] as const;
+};
+
+export const getListItPricingRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listItPricingRules>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListItPricingRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listItPricingRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListItPricingRulesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listItPricingRules>>
+  > = ({ signal }) => listItPricingRules(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listItPricingRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListItPricingRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listItPricingRules>>
+>;
+export type ListItPricingRulesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListItPricingRules<
+  TData = Awaited<ReturnType<typeof listItPricingRules>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListItPricingRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listItPricingRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListItPricingRulesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateItPricingRuleUrl = () => {
+  return `/api/v1/admin/pricing-rules`;
+};
+
+/**
+ * @summary Create
+ */
+export const createItPricingRule = async (
+  itPricingRuleInput: ItPricingRuleInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ItPricingRuleSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ItPricingRuleSaved>(getCreateItPricingRuleUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(itPricingRuleInput),
+  });
+};
+
+export const getCreateItPricingRuleMutationKey = () =>
+  ["createItPricingRule"] as const;
+
+export const getCreateItPricingRuleMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createItPricingRule>>,
+    TError,
+    CreateItPricingRuleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createItPricingRule>>,
+  TError,
+  CreateItPricingRuleMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateItPricingRuleMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createItPricingRule>>,
+    CreateItPricingRuleMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createItPricingRule(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateItPricingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createItPricingRule>>
+>;
+export type CreateItPricingRuleMutationBody = BodyType<ItPricingRuleInput>;
+export type CreateItPricingRuleMutationError = ErrorType<ErrorEnvelope>;
+export type CreateItPricingRuleMutationVariables = {
+  data: BodyType<ItPricingRuleInput>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateItPricingRule = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createItPricingRule>>,
+    TError,
+    CreateItPricingRuleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createItPricingRule>>,
+  TError,
+  CreateItPricingRuleMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateItPricingRuleMutationOptions(options));
+};
+
+export const getGetItPricingRuleReferencesUrl = (
+  kind: "categories" | "allergens",
+  params?: GetItPricingRuleReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const getItPricingRuleReferences = async (
+  kind: "categories" | "allergens",
+  params?: GetItPricingRuleReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ItPricingReferencePage> => {
+  return customFetch<ItPricingReferencePage>(
+    getGetItPricingRuleReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetItPricingRuleReferencesQueryKey = (
+  kind: "categories" | "allergens",
+  params?: GetItPricingRuleReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetItPricingRuleReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getItPricingRuleReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "categories" | "allergens",
+  params?: GetItPricingRuleReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getItPricingRuleReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetItPricingRuleReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getItPricingRuleReferences>>
+  > = ({ signal }) =>
+    getItPricingRuleReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getItPricingRuleReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetItPricingRuleReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getItPricingRuleReferences>>
+>;
+export type GetItPricingRuleReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useGetItPricingRuleReferences<
+  TData = Awaited<ReturnType<typeof getItPricingRuleReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "categories" | "allergens",
+  params?: GetItPricingRuleReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getItPricingRuleReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetItPricingRuleReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetItPricingRuleUrl = (recordId: string) => {
+  return `/api/v1/admin/pricing-rules/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getItPricingRule = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ItPricingRuleSaved> => {
+  return customFetch<ItPricingRuleSaved>(getGetItPricingRuleUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetItPricingRuleQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/pricing-rules/${recordId}`] as const;
+};
+
+export const getGetItPricingRuleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getItPricingRule>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getItPricingRule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetItPricingRuleQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getItPricingRule>>
+  > = ({ signal }) => getItPricingRule(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getItPricingRule>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetItPricingRuleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getItPricingRule>>
+>;
+export type GetItPricingRuleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetItPricingRule<
+  TData = Awaited<ReturnType<typeof getItPricingRule>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getItPricingRule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetItPricingRuleQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEditItPricingRuleUrl = (recordId: string) => {
+  return `/api/v1/admin/pricing-rules/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editItPricingRule = async (
+  recordId: string,
+  itPricingRuleEdit: ItPricingRuleEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ItPricingRuleSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ItPricingRuleSaved>(getEditItPricingRuleUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(itPricingRuleEdit),
+  });
+};
+
+export const getEditItPricingRuleMutationKey = () =>
+  ["editItPricingRule"] as const;
+
+export const getEditItPricingRuleMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editItPricingRule>>,
+    TError,
+    EditItPricingRuleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editItPricingRule>>,
+  TError,
+  EditItPricingRuleMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditItPricingRuleMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editItPricingRule>>,
+    EditItPricingRuleMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return editItPricingRule(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditItPricingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editItPricingRule>>
+>;
+export type EditItPricingRuleMutationBody = BodyType<ItPricingRuleEdit>;
+export type EditItPricingRuleMutationError = ErrorType<ErrorEnvelope>;
+export type EditItPricingRuleMutationVariables = {
+  recordId: string;
+  data: BodyType<ItPricingRuleEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditItPricingRule = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editItPricingRule>>,
+    TError,
+    EditItPricingRuleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editItPricingRule>>,
+  TError,
+  EditItPricingRuleMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditItPricingRuleMutationOptions(options));
 };
 
 export const getListProductCategoriesUrl = (

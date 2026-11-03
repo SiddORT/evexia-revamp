@@ -3,11 +3,12 @@ import { useLocation } from 'wouter';
 import { continueNavigation, setNavigationGuard } from './navigationGuard.js';
 import { usePlatformConfirm } from '../components/PlatformConfirmation.jsx';
 
-export default function useConfirmedNavigation(state, message, onAccepted) {
+// options.actionLabel(state) optionally overrides the confirm label; existing callers keep defaults.
+export default function useConfirmedNavigation(state, message, onAccepted, options = {}) {
   const [, navigate] = useLocation();
   const confirm = usePlatformConfirm();
   const latest = useRef();
-  latest.current = { state, message, navigate, onAccepted };
+  latest.current = { state, message, navigate, onAccepted, options };
   const readState = () => typeof latest.current.state === 'function' ? latest.current.state() : latest.current.state;
   const pending = useRef(false);
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function useConfirmedNavigation(state, message, onAccepted) {
       pending.current = true;
       void (async () => {
         try {
-          if (!await confirm(typeof message === 'function' ? message(state) : message, { title: 'Leave this draft?', actionLabel: state.uncertain ? 'Leave and keep recovery' : 'Discard and leave' })) return;
+          if (!await confirm(typeof message === 'function' ? message(state) : message, { title: 'Leave this draft?', actionLabel: latest.current.options?.actionLabel?.(state) || (state.uncertain ? 'Leave and keep recovery' : 'Discard and leave') })) return;
           if (!mounted || readState().busy || readState().blocked) return;
           latest.current.onAccepted?.();
           continueNavigation(request, latest.current.navigate);

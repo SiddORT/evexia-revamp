@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0085_placement_email_details",
-  "policy_sha256": "b81b95c4494e132da008f27814657d8a848850ffdf6a6271164c8c5590e54025",
+  "target": "0086_it_pricing_rules",
+  "policy_sha256": "1814fb27fa964faccab4d407371b99f54982f71246250981f358ff24b3c47363",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -94,7 +94,8 @@
     "0082_order_drafts": "61006db6ec1eb42ab2fa105f1717207e3b3536bc373e808c9e678332c10cfd05",
     "0083_immunotherapy_batches": "9719b35d416fa4df11526362bb11bd655bb1bc4a711df4e1480a0d113be6b9c1",
     "0084_allergen_expiry": "02850e2c4fbcabc7bb6833569b61ff873cd92867f20c19102397b5f3e0e1b65e",
-    "0085_placement_email_details": "352c34bb83b6c4138ac94247edc5140c9ff6817e157bc33ee45b9b1a26a8d8e2"
+    "0085_placement_email_details": "352c34bb83b6c4138ac94247edc5140c9ff6817e157bc33ee45b9b1a26a8d8e2",
+    "0086_it_pricing_rules": "3961e4274d460d49ad130954f28f6805fdd8a4e2efd708c22fc4079d581bcba5"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

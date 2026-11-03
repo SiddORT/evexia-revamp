@@ -1791,6 +1791,24 @@ export const setPatientDirectoryStatusResponsePhoneMax = 20;
 export const setPatientDirectoryStatusResponsePincodeMin = 2;
 export const setPatientDirectoryStatusResponsePincodeMax = 12;
 export const setPatientDirectoryStatusResponseStateMax = 100;
+export const listItPricingRulesQueryOffsetDefault = 0;
+export const listItPricingRulesQueryOffsetMin = 0;
+export const listItPricingRulesQueryOffsetMax = 1000000;
+export const listItPricingRulesQueryLimitDefault = 25;
+export const listItPricingRulesQueryLimitMax = 100;
+export const createItPricingRuleBodyAfterRateMax = 64;
+export const createItPricingRuleBodyAllergenIdsMax = 100;
+export const createItPricingRuleBodyBeforeRateMax = 64;
+export const getItPricingRuleReferencesQueryQueryMax = 200;
+export const getItPricingRuleReferencesQueryOffsetDefault = 0;
+export const getItPricingRuleReferencesQueryOffsetMin = 0;
+export const getItPricingRuleReferencesQueryOffsetMax = 1000000;
+export const getItPricingRuleReferencesQueryLimitDefault = 25;
+export const getItPricingRuleReferencesQueryLimitMax = 100;
+export const editItPricingRuleBodyAfterRateMax = 64;
+export const editItPricingRuleBodyAllergenIdsMax = 100;
+export const editItPricingRuleBodyBeforeRateMax = 64;
+export const editItPricingRuleBodyExpectedVersionMax = 2147483646;
 export const listProductCategoriesQueryQueryMax = 200;
 export const listProductCategoriesQueryMinPriceOneMax = 64;
 export const listProductCategoriesQueryMaxPriceOneMax = 64;
@@ -30088,6 +30106,213 @@ export const SetPatientDirectoryStatusResponse = zod.object({
   version: zod.number().int(),
   zoneId: zod.union([zod.string().uuid(), zod.null()]),
   zoneName: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+
+export const ListItPricingRulesQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listItPricingRulesQueryOffsetMin)
+    .max(listItPricingRulesQueryOffsetMax)
+    .default(listItPricingRulesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listItPricingRulesQueryLimitMax)
+    .default(listItPricingRulesQueryLimitDefault),
+});
+
+export const ListItPricingRulesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      afterRate: zod.string(),
+      allergens: zod.array(
+        zod.object({
+          categoryId: zod.string().uuid(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.string(),
+        }),
+      ),
+      beforeRate: zod.string(),
+      category: zod.object({
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+      }),
+      cutoff: zod.coerce.date(),
+      id: zod.string().uuid(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const CreateItPricingRuleBody = zod.object({
+  afterRate: zod.string().max(createItPricingRuleBodyAfterRateMax),
+  allergenIds: zod
+    .array(zod.string().uuid())
+    .min(1)
+    .max(createItPricingRuleBodyAllergenIdsMax),
+  beforeRate: zod.string().max(createItPricingRuleBodyBeforeRateMax),
+  categoryId: zod.string().uuid(),
+  cutoff: zod.coerce.date(),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const CreateItPricingRuleResponse = zod.object({
+  afterRate: zod.string(),
+  allergens: zod.array(
+    zod.object({
+      categoryId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  beforeRate: zod.string(),
+  category: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string(),
+    status: zod.string(),
+  }),
+  cutoff: zod.coerce.date(),
+  id: zod.string().uuid(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary References
+ */
+export const GetItPricingRuleReferencesParams = zod.object({
+  kind: zod.enum(["categories", "allergens"]),
+});
+
+export const getItPricingRuleReferencesQueryQueryDefault = ``;
+
+export const GetItPricingRuleReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getItPricingRuleReferencesQueryQueryMax)
+    .default(getItPricingRuleReferencesQueryQueryDefault),
+  categoryId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getItPricingRuleReferencesQueryOffsetMin)
+    .max(getItPricingRuleReferencesQueryOffsetMax)
+    .default(getItPricingRuleReferencesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getItPricingRuleReferencesQueryLimitMax)
+    .default(getItPricingRuleReferencesQueryLimitDefault),
+});
+
+export const GetItPricingRuleReferencesResponse = zod.object({
+  items: zod.array(
+    zod.union([
+      zod.object({
+        categoryId: zod.string().uuid(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+      }),
+      zod.object({
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+      }),
+    ]),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetItPricingRuleParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetItPricingRuleResponse = zod.object({
+  afterRate: zod.string(),
+  allergens: zod.array(
+    zod.object({
+      categoryId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  beforeRate: zod.string(),
+  category: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string(),
+    status: zod.string(),
+  }),
+  cutoff: zod.coerce.date(),
+  id: zod.string().uuid(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditItPricingRuleParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const EditItPricingRuleBody = zod.object({
+  afterRate: zod.string().max(editItPricingRuleBodyAfterRateMax),
+  allergenIds: zod
+    .array(zod.string().uuid())
+    .min(1)
+    .max(editItPricingRuleBodyAllergenIdsMax),
+  beforeRate: zod.string().max(editItPricingRuleBodyBeforeRateMax),
+  categoryId: zod.string().uuid(),
+  cutoff: zod.coerce.date(),
+  expected_version: zod
+    .number()
+    .int()
+    .min(1)
+    .max(editItPricingRuleBodyExpectedVersionMax),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const EditItPricingRuleResponse = zod.object({
+  afterRate: zod.string(),
+  allergens: zod.array(
+    zod.object({
+      categoryId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  beforeRate: zod.string(),
+  category: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string(),
+    status: zod.string(),
+  }),
+  cutoff: zod.coerce.date(),
+  id: zod.string().uuid(),
+  version: zod.number().int(),
 });
 
 /**

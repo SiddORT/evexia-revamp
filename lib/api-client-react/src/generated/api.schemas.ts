@@ -3938,6 +3938,78 @@ export interface InvitationResult {
   status: InvitationResultStatus;
 }
 
+export interface ItPricingAllergenReference {
+  categoryId: string;
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface ItPricingReference {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface ItPricingReferencePage {
+  items: (ItPricingAllergenReference | ItPricingReference)[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface ItPricingRuleEdit {
+  /** @maxLength 64 */
+  afterRate: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  allergenIds: string[];
+  /** @maxLength 64 */
+  beforeRate: string;
+  categoryId: string;
+  cutoff: string;
+  /**
+   * @minimum 1
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  idempotencyKey: string;
+}
+
+export interface ItPricingRuleInput {
+  /** @maxLength 64 */
+  afterRate: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  allergenIds: string[];
+  /** @maxLength 64 */
+  beforeRate: string;
+  categoryId: string;
+  cutoff: string;
+  idempotencyKey: string;
+}
+
+export interface ItPricingRuleSaved {
+  afterRate: string;
+  allergens: ItPricingAllergenReference[];
+  beforeRate: string;
+  category: ItPricingReference;
+  cutoff: string;
+  id: string;
+  version: number;
+}
+
+export interface ItPricingRulePage {
+  items: ItPricingRuleSaved[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export interface KitsAddress {
   /** @maxLength 200 */
   city?: string;
@@ -15037,6 +15109,37 @@ export const DownloadPatientSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListItPricingRulesParams = {
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetItPricingRuleReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  categoryId?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
 
 export type ListProductCategoriesParams = {
   /**

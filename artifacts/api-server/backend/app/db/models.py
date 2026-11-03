@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.db import pricing_rule_models  # noqa: F401 - independent configuration tables
 
 
 class Timestamps:

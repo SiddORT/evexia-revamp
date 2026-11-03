@@ -1,0 +1,41 @@
+.pricing-rules-page { display: grid; gap: 18px; }
+.pricing-rules-note { margin: 0; padding: 12px 14px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-accent); border-radius: 10px; background: var(--admin-state-soft); color: var(--admin-text-soft); font-size: 0.875rem; line-height: 1.5; }
+.pricing-rules-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pricing-rule-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 16px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-surface); color: var(--admin-text); }
+.pricing-rule-row h2 { margin: 0 0 6px; font-size: 1rem; overflow-wrap: anywhere; }
+.pricing-rule-row__chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pricing-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--admin-border); background: var(--admin-state-soft); font-size: 0.8125rem; color: var(--admin-text); max-width: 100%; overflow-wrap: anywhere; }
+.pricing-chip--deleted { border-style: dashed; color: var(--admin-danger); }
+.pricing-chip button { display: inline-grid; place-items: center; border: 0; background: transparent; color: inherit; padding: 2px; border-radius: 999px; cursor: pointer; }
+.pricing-chip button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 1px; }
+.pricing-rule-row__rates { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 12px; font-size: 0.875rem; overflow-wrap: anywhere; }
+.pricing-rule-row__rates dt { color: var(--admin-text-soft); }
+.pricing-rule-row__rates dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+.pricing-rule-row__actions { display: flex; gap: 6px; }
+.pricing-editor { display: grid; gap: 16px; }
+.pricing-editor fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 16px; min-width: 0; }
+.pricing-editor__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pricing-field { display: grid; gap: 6px; min-width: 0; font-size: 0.875rem; color: var(--admin-text); }
+.pricing-field > span:first-child, .pricing-field > label { font-weight: 600; }
+.pricing-field small { color: var(--admin-text-soft); line-height: 1.45; }
+.pricing-input { width: 100%; min-height: 40px; padding: 8px 11px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-variant-numeric: tabular-nums; }
+.pricing-input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.pricing-input[aria-invalid="true"] { border-color: var(--admin-danger); }
+.pricing-field__error { color: var(--admin-danger); font-size: 0.8125rem; }
+.pricing-field--wide { grid-column: span 2; min-width: 0; }
+.pricing-chip__warn { font-weight: 600; }
+.pricing-editor__actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.pricing-latest { padding: 12px 14px; border: 1px dashed var(--admin-border); border-radius: 10px; display: grid; gap: 8px; }
+.pricing-latest h3 { margin: 0; font-size: 0.9375rem; }
+.pricing-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; font-size: 0.875rem; color: var(--admin-text-soft); }
+.pricing-pager div { display: flex; gap: 6px; }
+.pricing-skeleton { height: 74px; border-radius: 12px; background: var(--admin-state-soft); animation: pricing-pulse 1.4s ease-in-out infinite; }
+@keyframes pricing-pulse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .pricing-skeleton { animation: none; } }
+@media (max-width: 767px) {
+  .pricing-rule-row { grid-template-columns: 1fr; }
+  .pricing-editor__grid { grid-template-columns: minmax(0, 1fr); }
+  .pricing-field--wide { grid-column: auto; }
+  .pricing-editor__actions { justify-content: stretch; }
+  .pricing-editor__actions .admin-button { flex: 1 1 auto; }
+}

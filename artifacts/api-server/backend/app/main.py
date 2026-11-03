@@ -67,6 +67,8 @@ logger = logging.getLogger("evexia.api")
 logging.getLogger("uvicorn.access").disabled = True
 from app.api.v1.allergens import router as allergens_router
 from app.services.allergens import AllergenError
+from app.api.v1.pricing_rules import router as pricing_rules_router
+from app.services.pricing_rules import PricingRuleError
 from app.api.v1.purchase_orders import router as purchase_orders_router
 from app.services.purchase_orders import POError
 from app.api.v1.immunotherapy import router as immunotherapy_router
@@ -207,6 +209,14 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
+        if request.url.path.startswith("/api/v1/admin/pricing-rules"):
+            # Return known locations only, never authored prices or arbitrary keys.
+            allowed = {"categoryId", "allergenIds", "cutoff", "beforeRate", "afterRate",
+                       "idempotencyKey", "expected_version", "record_id", "kind",
+                       "query", "offset", "limit"}
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": item["field"] if item["field"] in locations else "body",
+                       "code": item["code"]} for item in fields]
         if request.url.path.startswith(("/api/v1/admin/communication", "/api/v1/admin/email-templates",
                                         "/api/v1/admin/products", "/api/v1/admin/opening-stock", "/api/v1/admin/kits-orders", "/api/v1/admin/spt-orders", "/api/v1/admin/lupin-orders",
                                         "/api/v1/admin/purchase-received/batch-settings",
@@ -345,6 +355,10 @@ def create_app() -> FastAPI:
     async def allergen_error(request: Request, exc: AllergenError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(PricingRuleError)
+    async def pricing_rule_error(request: Request, exc: PricingRuleError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(PRError)
     async def purchase_received_error(request: Request, exc: PRError):
         return JSONResponse(status_code=exc.status, content={"error": {"code": exc.code, "message": exc.message}})
@@ -402,6 +416,7 @@ def create_app() -> FastAPI:
     app.include_router(product_categories_router, prefix="/api/v1")
     app.include_router(opening_balances_router, prefix="/api/v1")
     app.include_router(allergens_router, prefix="/api/v1")
+    app.include_router(pricing_rules_router, prefix="/api/v1")
     app.include_router(purchase_orders_router, prefix="/api/v1")
     app.include_router(immunotherapy_router, prefix="/api/v1")
     app.include_router(kits_router, prefix="/api/v1")

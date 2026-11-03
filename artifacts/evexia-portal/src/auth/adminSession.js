@@ -1043,6 +1043,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const responseResource = draftSubmission ? `${draftKind}-orders` : resource;
   const allowed = draftResource
     ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
+    : resource === 'pricing-rules'
+    ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'settlements'
     ? /^(?:|\/transactions|\/references\/(?:doctors|mrs|patients)|\/requests\/[0-9a-f-]{36}|\/history\/(?:IT|Kit|SPT|Lupin)\/[0-9a-f-]{36})$/
     : resource === 'in-house-stock'
@@ -1080,6 +1082,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
+    || (writing && path !== '' && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
+    || (!writing && path.endsWith('/edit')))) {
+    throw new SessionError('Unsupported Pricing Rules configuration operation.');
+  }
   if (resource === 'settlements' && writing !== (path === '/transactions')) {
     throw new SessionError('Settlement history is read-only. Use Add Transaction to record a payment.');
   }
@@ -1104,6 +1111,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
     }
+    if (resource === 'pricing-rules' && !isSuperAdminIdentity(state.user)) {
+      throw new SessionError('Pricing Rules require the protected Super Admin.', 403);
+    }
     if (resource === 'settlements' && (writing ? state.user?.identity_kind !== 'mr'
       : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
       throw new SessionError('Settlements are restricted to MRs and read-only Super Admin access.', 403);
@@ -1122,7 +1132,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const form = file === undefined ? null : new FormData();
   if (form) form.append('file', file);
   const uncertain = () => {
-    const error = new SessionError(resource === 'settlements'
+    const error = new SessionError(resource === 'pricing-rules'
+      ? mutation ? 'Pricing Rule save outcome is unconfirmed. Your editor is preserved. Retry only the unchanged submission to confirm or finish it safely.'
+        : 'Pricing Rules could not be loaded. Check your connection and retry.'
+      : resource === 'settlements'
       ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
         : 'Settlements could not be loaded. Check your connection and retry.'
       : batchOperation
@@ -1168,7 +1181,13 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       error.ambiguous = mutation;
       throw error;
     }
-    const error = new SessionError(resource === 'settlements' && response.status === 403
+    const error = new SessionError(resource === 'pricing-rules'
+      ? response.status === 403 ? 'Pricing Rules require the protected Super Admin.'
+        : response.status >= 500 ? uncertain().message
+        : typeof data?.error?.message === 'string' && (response.status !== 422 || /^pricing_rule_/.test(data?.error?.code || '')) ? data.error.message
+        : response.status === 422 ? 'Check the category, active matching allergens, real cutoff date, and both required nonnegative INR prices (up to 12 integer and 6 source decimal places).'
+        : 'Pricing Rules request failed. Your editor is preserved.'
+      : resource === 'settlements' && response.status === 403
       ? 'Settlement access denied. Admin is read-only; MRs may record only against their own eligible saved orders.'
       : response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
       : /^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(data?.error?.code || '') && typeof data?.error?.message === 'string' ? data.error.message

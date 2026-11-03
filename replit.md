@@ -541,6 +541,18 @@ This does not change historical conversion or unrelated Admin creation policy.
 See `docs/immunotherapy-backend.md` and `docs/mr-order-workflows.md`.
 Source/diff review only; no checks or service restarts were run for this change.
 
+## IT Pricing Rules configuration
+
+Pricing Rules is a standalone protected Super Admin page directly below Orders.
+It stores category/allergen targets, a date-only cutoff, and two alternative INR
+rates, with explicit copy and stale/conflicting/uncertain-save protection.
+No order workflow fetches or applies these rules, including Immunotherapy.
+Future automatic application is IT-only and still requires explicit approval.
+Catalogue prices and clinical extract/dilution behavior are unchanged.
+See `docs/it-pricing-rules.md`. The additive migration is unapplied; source/diff
+review and static artifact generation only, with no tests, builds, runtime
+verification, managed-service restarts, live writes or production activation.
+
 ## Assets
 
 The supplied transparent EVEXIA logo is displayed by the shared brand component on the landing and login form panels, not over the role photography. Keep the original artwork intact; the local PNG is only cropped to remove transparent margins. The logo is a small raster source, so do not stretch it unnecessarily or redraw it.
