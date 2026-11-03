@@ -7,7 +7,7 @@ export const roleConfig = {
     description: 'For administration, operations and management.',
     cta: 'Login as Admin',
     image: '/images/admin-role.jpg',
-    imagePosition: '56% 20%',
+    imagePosition: '35% 20%',
     intro: 'Secure access for EVEXIA administration, operations and management.',
     visualTitle: 'Keep the whole picture in view.',
     visualCopy: 'A clear, considered workspace for the people who keep EVEXIA moving.',
