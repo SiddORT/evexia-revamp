@@ -109,6 +109,7 @@ def project(keys, row):
     from app.services.order_approval import editable, eligibility
     value = {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "status": status(row.status)}
     return {**value, "mrEditable": editable("immunotherapy", value), "decisionEligibility": eligibility("immunotherapy", value),
+            "orderBatchNo": (value.get("orderBatch") or {}).get("number"),
             "audit": audit_metadata(row),
             "id": str(row.id), "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
@@ -202,6 +203,10 @@ def resolved(db, body, previous=None):
         raise ImmError("Attach at least one verified prescription for the selected patient before saving or importing this order.",
                        422, "imm_prescription_required")
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version"})
+    # Internal immutable business metadata is never accepted from a write body.
+    # Import review must retain it too, without allocating or changing history.
+    if previous and previous.get("orderBatch") is not None:
+        value["orderBatch"] = previous["orderBatch"]
     value.pop("attachmentIds")
     value.pop("orderDate", None)
     from app.services.immunotherapy_pricing import prepare, retain_provenance, RATE_BASIS, SUBORDER_BASIS
@@ -332,6 +337,8 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     else:
         row.version += 1
     issue(data, previous, row.number)
+    from app.services.immunotherapy_batches import issue as issue_batch
+    issue_batch(db, data, previous, order_date=row.date)
     row.patient_id, row.doctor_id, row.mr_id = body.patientId, body.doctorId, body.mrId
     row.status, row.updated_by = body.status, actor.user.id
     row.updated_at = now

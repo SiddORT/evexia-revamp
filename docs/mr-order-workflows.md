@@ -1,5 +1,28 @@
 # MR live order workflows
 
+## Immunotherapy Order Batch No
+
+Final placement, including explicit submission of a saved incomplete draft,
+issues the same persisted read-only batch shown in the authorized Admin and MR
+lists, editors and summaries: `E | PD | 11 | 0002` (or the actual placement
+dosage, including B1–B8). The sequence starts at 0001 each full year/month,
+shared across all dosages and actors; the month comes from the saved order date
+under the existing Asia/Kolkata convention. Four-digit padding is a minimum,
+not a maximum. There is deliberately no visible year, so the label is not a
+globally unique order identity.
+
+Drafts say **Generated on placement** and allocate nothing. Legacy orders say
+**Unavailable**; no historical batch is inferred or backfilled. Saved batch
+labels retain their placement dosage even after a permitted dosage edit.
+Unchanged final-placement retries reuse the same saved order and label.
+Existing IT/SUB numbering, MR ownership, grouping, prescription verification
+and financial/review behavior are unchanged.
+
+This delivery is source-reviewed only. Migration `0083_immunotherapy_batches`
+is prepared but unapplied by this work. No tests, regression/release checks,
+validation/completion wrappers, services, runtime/browser probes or deployments
+were run. See [the backend contract and limitations](immunotherapy-backend.md#order-batch-no-source-only-delivery).
+
 ## Scope
 
 The existing EVEXIA MR shell now uses the same authenticated server order

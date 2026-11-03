@@ -9,7 +9,7 @@ import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, prescriptionBlob, skinResultError, mrEditable, orderLocked, convertToSuborders, SUBORDER_BASIS } from '../../services/serverImmunotherapy.js';
+import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, orderBatchLabel, prescriptionBlob, skinResultError, mrEditable, orderLocked, convertToSuborders, SUBORDER_BASIS } from '../../services/serverImmunotherapy.js';
 import { createPatient, patientLanguageChoices } from '../../services/serverPatients.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js';
@@ -399,6 +399,7 @@ function Editor({ order, mode, draft }) {
       {persistent.notice}
       {persistent.saved && (JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) || JSON.stringify(allergenEntries) !== JSON.stringify(persistent.saved.payload.allergenEntries || {})) && <p role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
     </div>}
+    <dl className="imm-facts"><div><dt>Order Batch No</dt><dd>{orderBatchLabel(order)}</dd></div></dl>
     {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">
       <h2 id="imm-recovery-title">Save outcome is unconfirmed</h2>
       <p>{errors.form || 'The server response did not confirm the outcome.'}</p>

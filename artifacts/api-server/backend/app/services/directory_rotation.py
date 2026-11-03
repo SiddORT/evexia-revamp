@@ -41,7 +41,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
     "0070_mr_account_numbers", "0071_order_review_audit", "0072_imm_approved_status", "0073_order_decisions",
     "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements",
-    "0082_order_drafts"})
+    "0082_order_drafts", "0083_immunotherapy_batches"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -65,7 +65,7 @@ def _fields(db):
                     "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
                     "0070_mr_account_numbers", "0071_order_review_audit", "0072_imm_approved_status", "0073_order_decisions",
                     "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements",
-                    "0082_order_drafts"):
+                    "0082_order_drafts", "0083_immunotherapy_batches"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -89,6 +89,10 @@ def _lock(db, exclusive=False):
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
     # The status CHECK expansion changes no encryption inventory or lock scope.
+    if revisions == ["0083_immunotherapy_batches"]:
+        # No new encrypted domain; retain every predecessor maintenance lock.
+        db.execute(text(f"LOCK TABLE immunotherapy_batch_counters IN {mode} MODE NOWAIT"))
+        revisions = ["0082_order_drafts"]
     if revisions == ["0082_order_drafts"]:
         db.execute(text(f"LOCK TABLE order_drafts,order_draft_requests,order_draft_attachments,"
                         f"settlement_batches,settlement_entries,settlement_rejections,"
@@ -260,7 +264,7 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches"):
         for name, (model, pk, field, domain) in _order_payloads(db).items():
             _, unseal = _order_crypto(name)
             cursor, count = None, 0
@@ -296,7 +300,7 @@ def _order_payloads(db):
         "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
     }
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    if revision == "0082_order_drafts":
+    if revision in ("0082_order_drafts", "0083_immunotherapy_batches"):
         from app.db.order_draft_models import OrderDraft, OrderDraftRequest
         from app.db.settlement_models import SettlementBatch, SettlementEntry, SettlementRejection
         from app.db.order_notification_models import OrderNotificationOrigin, OrderEvent

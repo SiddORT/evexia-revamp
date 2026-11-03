@@ -3322,6 +3322,7 @@ export type ImmRecordRejection = { [key: string]: unknown } | null;
 export type ImmRecordReviewHistoryItem = { [key: string]: unknown };
 
 export interface ImmRecord {
+  orderBatchNo?: string | null;
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;

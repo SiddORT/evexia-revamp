@@ -17,7 +17,7 @@ import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmP
 import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import { useAuditColumns, withAuditColumns } from '../../components/orders/orderAuditColumns.jsx';
-import { STATUSES, request, money, shippingRecipient, orderTotalMinor, mrEditable, orderLocked } from '../../services/serverImmunotherapy.js';
+import { STATUSES, request, money, shippingRecipient, orderTotalMinor, orderBatchLabel, mrEditable, orderLocked } from '../../services/serverImmunotherapy.js';
 import { createImmunotherapyTransferAdapter } from '../../services/immunotherapyTransfers.js';
 import '../../immunotherapy.css';
 
@@ -98,6 +98,7 @@ export default function ImmunotherapyOrders() {
     { key: 'sel', label: <input type="checkbox" className="imm-check" aria-label="Select eligible In process orders on this page" checked={allPage} disabled={!pageEligible.length} onChange={togglePage} data-testid="check-imm-page" />, render: (o) => <input type="checkbox" className="imm-check" aria-label={eligible(o) ? `Select ${o.number}` : `${o.number} is ${o.status}; only In process orders can be printed`} checked={selected.has(o.id)} disabled={!eligible(o)} onChange={() => toggle(o.id)} data-testid={`check-imm-${o.id}`} /> },
     { key: 'serial', label: 'Sr No.', render: (_o, index) => <span className="imm-num">{index + 1}</span> },
     { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="imm-cell-sub">{date(o.date)}</span></> },
+    { key: 'orderBatchNo', label: 'Order Batch No', render: orderBatchLabel },
     { key: 'patient', label: 'Patient', render: (o) => <><strong>{o.patient.name}</strong><span className="imm-cell-sub">{o.patient.phone}</span></> },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="imm-cell-sub">{o.mr.name}</span></> },
     { key: 'dosage', label: 'Dosage', render: (o) => o.dosage },

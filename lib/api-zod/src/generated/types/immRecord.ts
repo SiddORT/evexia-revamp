@@ -22,6 +22,7 @@ import type { ImmRecordReviewHistoryItem } from "./immRecordReviewHistoryItem";
 import type { ImmRecordStatus } from "./immRecordStatus";
 
 export interface ImmRecord {
+  orderBatchNo?: string | null;
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;

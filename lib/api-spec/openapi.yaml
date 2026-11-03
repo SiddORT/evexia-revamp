@@ -7517,6 +7517,13 @@
       },
       "ImmRecord": {
         "properties": {
+          "orderBatchNo": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "title": "Orderbatchno"
+          },
           "approval": {
             "anyOf": [
               {

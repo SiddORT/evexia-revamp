@@ -4,7 +4,7 @@ import { ArrowLeft, Eye, Pencil } from 'lucide-react';
 import AdminLayout, { useOrderActions, useOrderBase, useOrderPortal } from '../orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../admin/adminPreferences.js';
 import { DownloadOrderFile, OrderFileList } from '../orders/OrderFiles.jsx';
-import { downloadPrescription, money, mrEditable, orderLocked, orderTotalMinor, parseAmount, prescriptionBlob, request } from '../../services/serverImmunotherapy.js';
+import { downloadPrescription, money, mrEditable, orderLocked, orderTotalMinor, orderBatchLabel, parseAmount, prescriptionBlob, request } from '../../services/serverImmunotherapy.js';
 import OrderApproval from '../orders/OrderApproval.jsx';
 import PrescriptionViewer from './PrescriptionViewer.jsx';
 import { MR_GROUPING_POLICY } from '../../services/immunotherapyGrouping.js';
@@ -53,6 +53,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-order"><h2 id="imm-s-order">Order details</h2>
           <Facts rows={[
             ['Order number', order.number], ['Date', order.date ? date(order.date) : null], ['Status', order.status],
+            ['Order Batch No', orderBatchLabel(order)],
             ['Patient', order.patient?.name], ['Doctor', order.doctor?.name], ['MR', order.mr?.name],
             ['Dosage', order.dosage], ['Histamine (mm)', order.histamine], ['Saline (mm)', order.saline],
             // Keep MR's existing saved value/decision/PO presentation, without

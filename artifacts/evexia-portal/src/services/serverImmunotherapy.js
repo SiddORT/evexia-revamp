@@ -36,6 +36,8 @@ export const totalMinor = (groups, basis = 'legacy_bottle_mrp') => {
 };
 // Read/print/export consumers use the authoritative saved amount, never reprice.
 export const orderTotalMinor = (order) => order.totalMinor == null ? null : BigInt(order.totalMinor);
+// Presentation only: never derive a batch from editable dosage or client time.
+export const orderBatchLabel = (order) => order ? order.orderBatchNo || 'Unavailable' : 'Generated on placement';
 export const money = (minor) => minor === null ? 'Awaiting pricing' : `₹${(minor / 100n).toLocaleString('en-IN')}.${String(minor % 100n).padStart(2, '0')}`;
 export const orderLocked = (o) => Boolean(o && (o.approval || ['In process', 'Shipped', 'Delivered', 'Returned'].includes(o.status)));
 export const mrEditable = (order) => Boolean(order.mrEditable);

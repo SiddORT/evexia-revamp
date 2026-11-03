@@ -17,6 +17,15 @@ deploy without authorization for that operation.
 
 # Development release compatibility
 
+Immunotherapy final placement now issues an immutable encrypted Order Batch No
+such as `E | PD | 11 | 0002`, shared across actors/dosages per full saved-order
+year/month. Drafts allocate nothing; historical missing batches remain
+Unavailable. IT/SUB/inventory numbering is independent. Forward
+`0083_immunotherapy_batches` and coordinated source metadata are prepared, not
+executed by this work. No tests, check wrappers, service restarts or runtime
+probes were run; runtime behavior and migration execution remain unverified.
+See `docs/immunotherapy-backend.md`.
+
 Explicit order drafts use the shared MR/Admin editors. Immunotherapy, Kits and
 Lupin store creator-private encrypted incomplete documents; SPT retains its
 existing durable draft contract. Only explicit final submission creates normal

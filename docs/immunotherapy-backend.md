@@ -1,5 +1,86 @@
 # Admin Immunotherapy orders
 
+## Order Batch No (source-only delivery)
+
+New final placements issue a server-owned `orderBatchNo`, for example
+`E | PD | 11 | 0002`. The dosage segment is the actual placement dosage
+(`PD`, `DD`, or `B1`–`B8`), not a new clinical choice. Spaces around each pipe
+are intentional. Month is two digits; ordinal padding is a **minimum** of four
+digits, so 9999 is followed by 10000 without wrap or truncation.
+
+One counter is shared by every Immunotherapy placement in a full calendar
+year/month, regardless of dosage, MR or placing actor. The authoritative saved
+order date selects the month, using the existing Asia/Kolkata date convention
+when no explicit permitted order date was supplied. The first committed
+placement in each month starts at 0001; January and the same month in a later
+year have independent counters. No year appears in the label: identical labels
+in different years are expected and never replace UUID or IT order identity.
+
+The new `immunotherapy_batch_counters` table stores only a first-of-month date
+and an integral positive NUMERIC high-water mark. An atomic PostgreSQL
+`INSERT ... ON CONFLICT ... DO UPDATE ... RETURNING` serializes competing
+placements on the same month until transaction completion. Counter increments,
+order snapshots, existing SUB issuance, attachment associations, audit events,
+notifications and retry outcomes share the existing transaction. Failed writes
+roll back the increment; no increment commits without its placement. There is
+no dosage/actor partition or reuse of the IT, SUB, PR or inventory counters.
+
+The encrypted order snapshot stores `orderBatch` with the exact issued label,
+full year/month, ordinal string and placement dosage. Public `ImmRecord`
+projects the saved label as optional nullable `orderBatchNo`. Strict write and
+import schemas do not accept either generated field, and the handwritten
+client explicitly allowlists writable inputs. Existing orders without this
+envelope project null and display **Unavailable**; reads and legacy edits
+never allocate or fabricate it. Subsequent dosage changes do not rename an
+issued batch. Approval/rejection and shipment operations retain the original
+encrypted snapshot envelope.
+
+The final creation boundary is the shared `immunotherapy.apply()` path:
+direct Admin/MR placement, final submission of a creator-private draft, and
+permitted new import commits all reach it after their existing checks.
+Incomplete draft persistence and import review never reach issuance. Direct
+unchanged retries recover the current saved order under the existing
+actor/key/payload lock before calling placement again. Draft submission links
+its saved order inside the same transaction and reopens that linked order on
+retry. Import retries likewise recover their existing saved orders. Nothing
+changes prescription, ownership, category/Mix grouping, pricing, approval,
+order-date immutability or IT/SUB-number policy.
+
+Existing authorized Admin/MR lists, saved editors and shared summaries use
+the persisted response field. Unsaved/resumed draft editors say **Generated on
+placement**, never preview an assumed ordinal or calculate a label from the
+editable dosage/browser clock. No document template or notification payload
+was changed.
+
+### Prepared migration and source review limits
+
+Forward migration `0083_immunotherapy_batches`, after `0082_order_drafts`,
+creates the empty counter table only. Applied migration sources are unchanged.
+There is no historical backfill, saved-order rewrite or sequence initialization
+from historical orders. Downgrade refuses to discard issued high-water marks.
+The coordinated development declaration, automatic migration classification,
+source-byte integrity metadata and explicit account/directory compatibility
+are updated. Readiness inherits the complete predecessor probe chain and adds
+the counter-table probe. Source pins were updated directly from source hashes;
+no metadata/check wrapper or application module was executed. The additive
+OpenAPI response declaration and checked-in client response types/Zod readers
+were edited directly without running code generation.
+
+Static tracing covered shared month scope, full-year separation, December/
+January boundaries, backdated permitted imports, mixed dosages/actors, atomic
+counter conflict handling, unchanged retry recovery, failed transaction and
+savepoint rollback, incomplete drafts, legacy reads/edits, dosage corrections,
+approval/shipment snapshot retention, and ordinals above 9999. This is source
+reasoning, **not evidence of successful execution**.
+
+**No tests were added, changed or run; no builds, regression/release checks,
+validation/completion wrappers, service starts/restarts, browser/manual runtime
+probes, live data edits, migration execution or deployment were performed.**
+The migration remains unapplied by this work, and running-schema, concurrency,
+persistence, retry and UI behavior remain unverified. Production catalog and
+release evidence retain their existing real targets; they were not fabricated
+or relabeled. Activation belongs to the separately authorized normal lifecycle.
+
 ## Suborder-header review contract (current, source-only backend delivery)
 
 This section supersedes all per-occurrence-rate editing and historical

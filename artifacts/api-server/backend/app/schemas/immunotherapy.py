@@ -99,6 +99,7 @@ class ImmRecord(BaseModel):
     """Encrypted document projected only after protected authorization."""
     id: uuid.UUID
     number: str
+    orderBatchNo: str | None = None
     date: str
     version: int
     patientId: uuid.UUID

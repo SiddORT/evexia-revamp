@@ -1,9 +1,22 @@
 """Operational references only; all historical personal/order details are encrypted."""
 import uuid
+from decimal import Decimal
 from datetime import date, datetime
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
+
+
+class ImmunotherapyBatchCounter(Base):
+    """One transactional high-water mark per full calendar year/month."""
+    __tablename__ = "immunotherapy_batch_counters"
+    __table_args__ = (
+        CheckConstraint("EXTRACT(DAY FROM month) = 1", name="ck_imm_batch_month"),
+        CheckConstraint("last_ordinal > 0 AND last_ordinal = trunc(last_ordinal)",
+                        name="ck_imm_batch_ordinal"),
+    )
+    month: Mapped[date] = mapped_column(Date, primary_key=True)
+    last_ordinal: Mapped[Decimal] = mapped_column(Numeric)
 
 
 class ImmunotherapyOrder(Base):
