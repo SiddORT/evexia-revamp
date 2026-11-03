@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0083_immunotherapy_batches",
-  "policy_sha256": "256c8b07ff86953b473531100a1f815a39b749134b7601b80ed9888388a7293e",
+  "target": "0084_allergen_expiry",
+  "policy_sha256": "81ba0c00b8a3f4ac6b9fe41b84b7af150cacba7b2f8806e0088451fcebc6618e",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -92,7 +92,8 @@
     "0080_admin_email": "b66ac6cad1de165406bf388fbadc52ad6a81fa8408b84cc7fabfd3c3f38a2d6f",
     "0081_immunotherapy_alerts": "d624359cf0588c5a175c097959665b1d3f732bb4eca17e5f9cd8eda9bed6ccad",
     "0082_order_drafts": "61006db6ec1eb42ab2fa105f1717207e3b3536bc373e808c9e678332c10cfd05",
-    "0083_immunotherapy_batches": "9719b35d416fa4df11526362bb11bd655bb1bc4a711df4e1480a0d113be6b9c1"
+    "0083_immunotherapy_batches": "9719b35d416fa4df11526362bb11bd655bb1bc4a711df4e1480a0d113be6b9c1",
+    "0084_allergen_expiry": "02850e2c4fbcabc7bb6833569b61ff873cd92867f20c19102397b5f3e0e1b65e"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

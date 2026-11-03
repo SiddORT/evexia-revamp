@@ -87,6 +87,7 @@ from app.api.v1.settlements import router as settlements_router
 from app.api.v1.mr_sales import router as mr_sales_router
 from app.api.v1.order_notifications import router as order_notifications_router
 from app.api.v1.order_drafts import router as order_drafts_router
+from app.api.v1.inventory_expiry import router as inventory_expiry_router
 
 
 def error_body(request, status, message, code=None, fields=None):
@@ -119,6 +120,8 @@ def create_app() -> FastAPI:
         from app.services.order_notification_worker import run
         stop = asyncio.Event()
         worker = asyncio.create_task(run(stop), name="order-notification-worker")
+        from app.services.expiry_worker import run as expiry_run
+        expiry_worker = asyncio.create_task(expiry_run(stop), name="allergen-expiry-worker")
         try:
             yield
         finally:
@@ -127,6 +130,7 @@ def create_app() -> FastAPI:
             # durable sending leases unknown, never automatically replays them.
             stop.set()
             await worker
+            await expiry_worker
 
     app = FastAPI(
         title="EVEXIA API", version="1.0.0", lifespan=lifespan,
@@ -135,6 +139,7 @@ def create_app() -> FastAPI:
         responses={status: {"model": ErrorEnvelope} for status in
                    (400, 401, 403, 404, 408, 409, 413, 415, 422, 429, 500, 503)},
     )
+    app.include_router(inventory_expiry_router, prefix="/api/v1")
     app.add_middleware(
         CORSMiddleware, allow_origins=origins, allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE"], allow_headers=["Authorization", "Content-Type"],

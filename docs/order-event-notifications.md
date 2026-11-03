@@ -1,3 +1,10 @@
+# Independent allergen expiry digest
+
+Allergen expiry uses its own lifecycle worker and daily claims, not sales-order
+events or their recipients. It reuses the default saved SMTP transport and
+protected Admin resolution without changing order-event behavior. See
+[allergen-expiry-disposal.md](allergen-expiry-disposal.md).
+
 # MR Immunotherapy placement: scoped Super Admin policy
 
 This section overrides the generic recipient/channel/template rules below **only**

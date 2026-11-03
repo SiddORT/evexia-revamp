@@ -1,4 +1,4 @@
-from app.db import in_house_stock_models, settlement_models  # noqa: F401 - separate append-only tables
+from app.db import in_house_stock_models, settlement_models, expiry_models  # noqa: F401 - separate append-only tables
 from app.db import product_models  # noqa: F401 - register forward inventory FK targets
 from app.db import opening_stock_models  # noqa: F401 - register opening source FK
 import secrets

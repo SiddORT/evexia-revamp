@@ -17,6 +17,14 @@ deploy without authorization for that operation.
 
 # Development release compatibility
 
+Allergen expiry source uses Kolkata start-of-expiry-date exclusion, separate
+Expiring Soon/Expired Products views, actual purchase/manufacturing cost only,
+immutable reasoned disposal and one protected-Admin default-SMTP daily digest.
+Unknown costs/dates are not inferred from prices or historical openings.
+Forward `0084_allergen_expiry` and API/generated source are prepared only.
+No tests, gates, migrations, restarts, runtime/browser probes or live emails
+were run. See `docs/allergen-expiry-disposal.md` for operational limits.
+
 Immunotherapy final placement now issues an immutable encrypted Order Batch No
 such as `E | PD | 11 | 0002`, shared across actors/dosages per full saved-order
 year/month. Drafts allocate nothing; historical missing batches remain

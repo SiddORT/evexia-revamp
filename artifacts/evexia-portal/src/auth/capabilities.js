@@ -115,6 +115,7 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
       || /^\/filter-references\/(?:categories|allergens)$/.test(path)) && grant(null);
   }
   if (resource === 'inventory') {
+    if (/^\/expiry(?:\/|$)/.test(path)) return isSuperAdminIdentity(user);
     if (!writing && path === '/references/locations' && params.purpose === 'opening_stock') return canReadResource(user, 'opening_stock');
     if (!writing && ['/references/staff', '/references/lots'].includes(path)) return hasCapability(user, 'stock_movement', 'create');
     if (path === '/stock') return !writing && (params.snapshot

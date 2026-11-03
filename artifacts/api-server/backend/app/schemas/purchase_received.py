@@ -5,9 +5,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.purchase_orders import POResponse
 from app.schemas.procurement_documents import DocumentContext
+from app.schemas.expiry import ActualCost
 
 
-class PRLineInput(BaseModel):
+class PRLineInput(ActualCost):
     model_config = ConfigDict(extra="forbid")
     lineId: uuid.UUID
     receivedQty: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
@@ -52,6 +53,8 @@ class PRDelete(BaseModel):
 
 
 class PRLineSnapshot(BaseModel):
+    actualUnitCost: str | None = None
+    costProvenance: str | None = None
     lineId: uuid.UUID
     productId: uuid.UUID
     productName: str

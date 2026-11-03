@@ -22,8 +22,8 @@ import '../../openingStock.css';
 import '../../allergen.css';
 
 const BASE = '/admin/inventory/in-house-stock';
-const BLANK = { allergen: null, concentration: '', quantity: '', expiryDate: '', location: null, batch: '', notes: '' };
-const FIELD_KEYS = ['allergenId', 'concentration', 'quantity', 'unit', 'expiryDate', 'locationId', 'batch', 'notes'];
+const BLANK = { allergen: null, concentration: '', quantity: '', expiryDate: '', location: null, batch: '', notes: '', actualUnitCost: '', costProvenance: '' };
+const FIELD_KEYS = ['allergenId', 'concentration', 'quantity', 'unit', 'expiryDate', 'locationId', 'batch', 'notes', 'actualUnitCost', 'costProvenance'];
 
 export default function InHouseStockFormPage() {
   const { user } = useAdminSession();
@@ -68,11 +68,16 @@ function InHouseStockForm() {
     if (!validDay(draft.expiryDate)) e.expiryDate = 'Enter a valid expiry date.';
     if (!draft.location) e.location = 'Select a storage location.';
     if (draft.batch.trim().length > 100) e.batch = 'Batch must be 100 characters or fewer.';
+    if (draft.actualUnitCost.trim() && !/^(?:0|[1-9]\d{0,8})(?:\.\d{1,6})?$/.test(draft.actualUnitCost.trim())) e.actualUnitCost = 'Enter a plain decimal: up to 9 whole digits and 6 decimals.';
+    const prov = draft.costProvenance.trim();
+    if (draft.actualUnitCost.trim() && (prov.length < 3 || prov.length > 1000)) e.costProvenance = 'Describe the cost source in 3 to 1000 characters.';
+    else if (!draft.actualUnitCost.trim() && prov) e.costProvenance = 'Enter a unit cost, or clear the cost source.';
     if (draft.notes.length > 2000) e.notes = 'Notes must be 2000 characters or fewer.';
     return e;
   }
   const body = () => ({ allergenId: draft.allergen.value, concentration: draft.concentration.trim(), quantity: draft.quantity.trim(),
-    expiryDate: draft.expiryDate, locationId: draft.location.value, batch: draft.batch.trim(), notes: draft.notes.trim() });
+    expiryDate: draft.expiryDate, locationId: draft.location.value, batch: draft.batch.trim(), notes: draft.notes.trim(),
+    actualUnitCost: draft.actualUnitCost.trim() || null, costProvenance: draft.actualUnitCost.trim() ? draft.costProvenance.trim() : null });
   function showFieldErrors(error) {
     const next = {};
     for (const [f, m] of Object.entries(error?.fields || {})) {
@@ -149,6 +154,10 @@ function InHouseStockForm() {
             <ReferenceSelect id="ih-location" label="Storage location" kind="in-house-locations" fetchPage={listLocationReferences} value={draft.location?.value || ''} selected={draft.location} placeholder="Select location" invalid={Boolean(errors.location)} describedBy={desc('location')} showResultHint={false}
               onChange={(_v, o) => set('location', o ? { value: o.value, label: o.label } : null)} />{err('location')}</div>
           {text('batch', 'Batch', 100)}
+          {text('actualUnitCost', 'Actual unit cost (INR per ml, optional)', 16, { inputMode: 'decimal' })}
+          <div className="ms-field"><label htmlFor="ih-costProvenance">Cost source{draft.actualUnitCost.trim() && <> <span className="mr-form__required">*</span></>}</label>
+            <input id="ih-costProvenance" className="mr-form__control" maxLength={1000} autoComplete="off" value={draft.costProvenance} onChange={(e) => set('costProvenance', e.target.value)} placeholder="Manufacturing worksheet reference" aria-invalid={Boolean(errors.costProvenance)} aria-describedby={desc('costProvenance')} data-testid="input-in-house-costProvenance" />{err('costProvenance')}
+            <p className="mr-form__hint">Recorded as actual manufacturing cost. Leave both blank if unknown; it is shown as cost unavailable. Selling price is never used as cost.</p></div>
         </div>
         <div className="ms-field"><label htmlFor="ih-notes">Notes</label>
           <textarea id="ih-notes" className="mr-form__control" rows={3} maxLength={2000} value={draft.notes} onChange={(e) => set('notes', e.target.value)} aria-invalid={Boolean(errors.notes)} aria-describedby={desc('notes')} data-testid="input-in-house-notes" />

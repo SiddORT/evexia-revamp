@@ -1,3 +1,13 @@
+# Expiry and actual manufacturing cost
+
+The expiry extension preserves separate reserve balances and approved dilution
+rules. Expiry-today reserves cannot be transferred or diluted. New entries may
+capture documented manufacturing cost; diluted outputs inherit source cost
+divided by their approved factor. Disposal consumes only remaining expired
+reserve stock and keeps immutable history. See
+[allergen-expiry-disposal.md](allergen-expiry-disposal.md). This work was
+source-only: no migrations, services, runtime probes or verification ran.
+
 # In-house allergen concentrate reserves
 
 Inventory > **In-house Stock** is a separate server-backed append-only reserve

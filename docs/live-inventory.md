@@ -1,3 +1,11 @@
+# Allergen expiry extension
+
+Current source adds automatic Kolkata-date exclusion, protected expiry views,
+actual-cost evidence and reasoned disposal without relocating expired stock.
+See [allergen-expiry-disposal.md](allergen-expiry-disposal.md) for source-only
+activation limits, missing expiry/cost handling, complete totals and retry rules.
+The older activation records below are historical, not proof this extension ran.
+
 # Separate in-house concentrate reserve
 
 Inventory > In-house Stock records independently labelled manufactured allergen

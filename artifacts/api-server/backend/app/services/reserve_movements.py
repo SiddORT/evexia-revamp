@@ -30,8 +30,9 @@ def balances(db, record):
 
 def availability(db, record):
     from app.services.inventory import q
+    from app.services.expiry_policy import usable
     amounts = balances(db, record)
-    return dict(availableQuantity=q(sum(amounts.values(), Decimal(0))),
+    return dict(availableQuantity=q(sum(amounts.values(), Decimal(0))) if usable(record) else "0.000",
         locationBalances=[dict(locationId=key, locationName=db.get(StorageLocation, uuid.UUID(key)).name,
                                quantity=q(amount)) for key, amount in sorted(amounts.items()) if amount])
 
@@ -50,6 +51,9 @@ def choices(db, crypto, source_id):
     result = []
     for row in bounded(db, select(InHouseStock).order_by(InHouseStock.id)):
         record = crypto.open(row.id, "in_house_reserve", row.payload_ciphertext)
+        from app.services.expiry_policy import usable
+        if not usable(record):
+            continue
         amount = balances(db, record).get(str(source_id), Decimal(0))
         if amount > 0:
             meta = metadata(record)
@@ -91,6 +95,8 @@ def review_line(db, crypto, body, line):
     if not row:
         raise PRError("In-house reserve is unavailable. Refresh source balances.", 409, "reserve_missing")
     record = crypto.open(row.id, "in_house_reserve", row.payload_ciphertext)
+    from app.services.expiry_policy import require_usable
+    require_usable(record)
     product = db.get(AllergenProduct, uuid.UUID(record["allergenId"]))
     if not product or product.deleted_at or product.status != "active":
         raise PRError("This reserve's allergen is no longer active. Select an available active allergen batch.", 409, "inventory_product")
@@ -114,6 +120,9 @@ def review_line(db, crypto, body, line):
 
 def commit_line(db, crypto, current, body, line, mid):
     from app.services.inventory import Lot, post
+    from app.services.expiry_policy import require_usable
+    reserve = db.get(InHouseStock, uuid.UUID(line["reserveId"]))
+    require_usable(crypto.open(reserve.id, "in_house_reserve", reserve.payload_ciphertext))
     amount = Decimal(line["quantity"])
     db.add(InHousePosting(reserve_id=uuid.UUID(line["reserveId"]), movement_id=mid, location_id=body.sourceId,
         delta=-amount, before=Decimal(line["sourceBefore"]), after=Decimal(line["sourceAfter"])))

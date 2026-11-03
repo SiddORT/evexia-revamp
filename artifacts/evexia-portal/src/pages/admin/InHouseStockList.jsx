@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronDown, Eye, FileDown, Filter, Plus, Search } from 'lucide-react';
+import { AlertTriangle, CalendarClock, ChevronDown, Eye, FileDown, Filter, Plus, Search } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -99,6 +99,8 @@ function InHouseStockListInner() {
             <DropdownMenu.Item className="in-house-export-menu__item" onSelect={() => runExport('xlsx')} data-testid="menu-in-house-export-xlsx">Download XLSX</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/inventory/expiring')} data-testid="button-in-house-expiring"><CalendarClock size={16} /> Expiring soon</button>
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/inventory/expired')} data-testid="button-in-house-expired"><AlertTriangle size={16} /> Expired and disposal</button>
         <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-in-house"><Plus size={16} /> Add in-house stock</button></div></div>
     {exportMessage && <div className={`admin-feedback admin-feedback--${exportMessage.ok ? 'success' : 'error'}`} role={exportMessage.ok ? 'status' : 'alert'}>{exportMessage.text}</div>}
     <InHousePendingBanner onResolved={() => load()} />

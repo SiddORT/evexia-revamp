@@ -1,3 +1,11 @@
+# Daily allergen expiry digest
+
+The new expiry worker uses only the saved default SMTP configuration and active
+protected system Admin's account email. Daily state is visible in the expiry
+screens. Blocked, failed and uncertain days are not automatically replayed after
+configuration repairs. No live send was performed. See
+[allergen-expiry-disposal.md](allergen-expiry-disposal.md).
+
 # Order event delivery
 
 Shared order-event Email/SMS/WABA templates, recipient rules, exact supported

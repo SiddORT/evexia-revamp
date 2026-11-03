@@ -303,6 +303,7 @@ def review_assembly(db, crypto, body):
         if not balance or balance.quantity < amount:
             raise PRError("Insufficient component stock at the selected location. Review your retained draft.", 409, "assembly_insufficient")
         meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
+        inv.require_usable(meta)
         # Explicit output identity is separate from component identity. Never
         # extend a known source expiry or silently derive an invented batch.
         expiry = meta.get("expiryDate")

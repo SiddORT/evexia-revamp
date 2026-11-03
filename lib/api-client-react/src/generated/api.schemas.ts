@@ -785,6 +785,30 @@ export interface CommunicationVersion {
   version: number;
 }
 
+export type CostInputSourceKind =
+  (typeof CostInputSourceKind)[keyof typeof CostInputSourceKind];
+
+export const CostInputSourceKind = {
+  lot: "lot",
+  reserve: "reserve",
+} as const;
+
+export interface CostInput {
+  batchId: string;
+  idempotencyKey: string;
+  /**
+   * @minLength 3
+   * @maxLength 1000
+   */
+  provenance: string;
+  sourceKind: CostInputSourceKind;
+  /**
+   * @maxLength 16
+   * @pattern ^(?:0|[1-9]\d{0,8})(?:\.\d{1,6})?$
+   */
+  unitCost: string;
+}
+
 export type CourierEditStatus =
   (typeof CourierEditStatus)[keyof typeof CourierEditStatus];
 
@@ -1042,6 +1066,57 @@ export interface DesignationStatus {
 export interface DesignationVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export type DisposalCreateSourceKind =
+  (typeof DisposalCreateSourceKind)[keyof typeof DisposalCreateSourceKind];
+
+export const DisposalCreateSourceKind = {
+  lot: "lot",
+  reserve: "reserve",
+} as const;
+
+export interface DisposalCreate {
+  batchId: string;
+  idempotencyKey: string;
+  locationId: string | null;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  /**
+   * @minLength 3
+   * @maxLength 1000
+   */
+  reason: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  sourceKind: DisposalCreateSourceKind;
+}
+
+export type DisposalInputSourceKind =
+  (typeof DisposalInputSourceKind)[keyof typeof DisposalInputSourceKind];
+
+export const DisposalInputSourceKind = {
+  lot: "lot",
+  reserve: "reserve",
+} as const;
+
+export interface DisposalInput {
+  batchId: string;
+  locationId: string | null;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  /**
+   * @minLength 3
+   * @maxLength 1000
+   */
+  reason: string;
+  sourceKind: DisposalInputSourceKind;
 }
 
 export type DoctorBulkOperation =
@@ -2836,6 +2911,123 @@ export interface EventPage {
   offset: number;
 }
 
+export type ExpiryCostEvidenceSourceKind =
+  (typeof ExpiryCostEvidenceSourceKind)[keyof typeof ExpiryCostEvidenceSourceKind];
+
+export const ExpiryCostEvidenceSourceKind = {
+  lot: "lot",
+  reserve: "reserve",
+} as const;
+
+export interface ExpiryCostEvidence {
+  actor: string;
+  actorId: string;
+  at: string;
+  basis: string;
+  batchId: string;
+  currency: "INR";
+  id: string;
+  origin: string;
+  provenance: string;
+  sourceKind: ExpiryCostEvidenceSourceKind;
+  unitCost: string;
+}
+
+export type ExpiryDigestStateStatus =
+  (typeof ExpiryDigestStateStatus)[keyof typeof ExpiryDigestStateStatus];
+
+export const ExpiryDigestStateStatus = {
+  preparing: "preparing",
+  sending: "sending",
+  blocked: "blocked",
+  failed: "failed",
+  unknown: "unknown",
+  accepted: "accepted",
+} as const;
+
+export interface ExpiryDigestState {
+  category: string | null;
+  day: string;
+  status: ExpiryDigestStateStatus;
+}
+
+export type InventoryExpiryRowCostTargetKind =
+  (typeof InventoryExpiryRowCostTargetKind)[keyof typeof InventoryExpiryRowCostTargetKind];
+
+export const InventoryExpiryRowCostTargetKind = {
+  lot: "lot",
+  reserve: "reserve",
+} as const;
+
+export type InventoryExpiryRowSourceKind =
+  (typeof InventoryExpiryRowSourceKind)[keyof typeof InventoryExpiryRowSourceKind];
+
+export const InventoryExpiryRowSourceKind = {
+  lot: "lot",
+  reserve: "reserve",
+} as const;
+
+export type InventoryExpiryRowStatus =
+  (typeof InventoryExpiryRowStatus)[keyof typeof InventoryExpiryRowStatus];
+
+export const InventoryExpiryRowStatus = {
+  expired: "expired",
+  today: "today",
+  next15: "next15",
+  future: "future",
+  unknown: "unknown",
+} as const;
+
+export interface InventoryExpiryRow {
+  actor?: string | null;
+  actorId?: string | null;
+  appendOnly?: boolean | null;
+  at?: string | null;
+  batchId: string;
+  batchNo: string;
+  category: string;
+  costProvenance: string | null;
+  costSnapshot: ExpiryCostEvidence | null;
+  costTargetId: string;
+  costTargetKind: InventoryExpiryRowCostTargetKind;
+  costTargetUnit: string;
+  expiredValue: string | null;
+  expiryDate: string | null;
+  id?: string | null;
+  locationId: string | null;
+  locationName: string;
+  productName: string;
+  quantity: string;
+  reason?: string | null;
+  sourceKind: InventoryExpiryRowSourceKind;
+  status: InventoryExpiryRowStatus;
+  unit: string;
+  unitCost: string | null;
+}
+
+export interface ExpiryDisposalReview {
+  batch: InventoryExpiryRow;
+  reviewToken: string;
+}
+
+export interface ExpiryQuantityGroup {
+  quantity: string;
+  unit: string;
+}
+
+export type ExpiryReconciliationState =
+  (typeof ExpiryReconciliationState)[keyof typeof ExpiryReconciliationState];
+
+export const ExpiryReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export interface ExpiryReconciliation {
+  result: InventoryExpiryRow | ExpiryCostEvidence | null;
+  state: ExpiryReconciliationState;
+}
+
 export type FileResponseCategory =
   (typeof FileResponseCategory)[keyof typeof FileResponseCategory];
 
@@ -3322,7 +3514,6 @@ export type ImmRecordRejection = { [key: string]: unknown } | null;
 export type ImmRecordReviewHistoryItem = { [key: string]: unknown };
 
 export interface ImmRecord {
-  orderBatchNo?: string | null;
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;
@@ -3342,6 +3533,7 @@ export interface ImmRecord {
   mrEditable?: boolean;
   mrId: string;
   number: string;
+  orderBatchNo?: string | null;
   patient: ImmRecordPatient;
   patientId: string;
   poNumber?: string | null;
@@ -3445,6 +3637,27 @@ export interface InventoryCoverage {
   openings: string;
   pendingReceipts: number;
   sales: string;
+}
+
+export interface InventoryExpirySummary {
+  disposedUncostedBatches: number;
+  disposedUncostedQuantities: ExpiryQuantityGroup[];
+  disposedValue: string;
+  pendingValue: string;
+  scope: string;
+  uncostedBatches: number;
+  uncostedQuantities: ExpiryQuantityGroup[];
+  unknownExpiryBatches: number;
+}
+
+export interface InventoryExpiryPage {
+  asOf: string;
+  digest: ExpiryDigestState | null;
+  filtered: number;
+  items: InventoryExpiryRow[];
+  limit: number;
+  offset: number;
+  summary: InventoryExpirySummary;
 }
 
 export interface InventoryHistoryItem {
@@ -7697,11 +7910,13 @@ export interface PRLineInput {
    * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
    */
   acceptedQty: string;
+  actualUnitCost?: string | null;
   /**
    * @minLength 1
    * @maxLength 120
    */
   batchNo: string;
+  costProvenance?: string | null;
   expiryDate: string;
   lineId: string;
   /**
@@ -7795,8 +8010,10 @@ export interface PRInput {
 
 export interface PRLineSnapshot {
   acceptedQty: string;
+  actualUnitCost?: string | null;
   balanceAfterQty: string | null;
   batchNo: string;
+  costProvenance?: string | null;
   expiryDate: string;
   lineId: string;
   orderedQty: string;
@@ -9527,6 +9744,7 @@ export interface ReportSummary {
 }
 
 export interface ReserveCreate {
+  actualUnitCost?: string | null;
   allergenId: string;
   /** @maxLength 100 */
   batch?: string;
@@ -9535,6 +9753,7 @@ export interface ReserveCreate {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   expiryDate: string;
   idempotencyKey: string;
   locationId: string;
@@ -9552,6 +9771,7 @@ export interface ReserveCreate {
 }
 
 export interface ReserveInput {
+  actualUnitCost?: string | null;
   allergenId: string;
   /** @maxLength 100 */
   batch?: string;
@@ -9560,6 +9780,7 @@ export interface ReserveInput {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   expiryDate: string;
   locationId: string;
   /** @maxLength 2000 */
@@ -9578,6 +9799,7 @@ export type ReserveSavedLocationBalances = { [key: string]: string }[] | null;
 export interface ReserveSaved {
   actor: string;
   actorId: string;
+  actualUnitCost?: string | null;
   allergenId: string;
   allergenName: string;
   allergenVersion: number;
@@ -9592,6 +9814,7 @@ export interface ReserveSaved {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   createdAt: string;
   expired: boolean;
   expiryDate: string;
@@ -9649,6 +9872,7 @@ export interface ReserveReferences {
 }
 
 export interface ReserveSnapshot {
+  actualUnitCost?: string | null;
   allergenId: string;
   allergenName: string;
   allergenVersion: number;
@@ -9662,6 +9886,7 @@ export interface ReserveSnapshot {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   expired: boolean;
   expiryDate: string;
   locationId: string;
@@ -13768,6 +13993,80 @@ export type GetInHouseStockReferencesParams = {
   limit?: number;
   include_inactive?: boolean;
 };
+
+export type ListInventoryExpiryParams = {
+  view?: ListInventoryExpiryView;
+  group?: ListInventoryExpiryGroup;
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListInventoryExpiryView =
+  (typeof ListInventoryExpiryView)[keyof typeof ListInventoryExpiryView];
+
+export const ListInventoryExpiryView = {
+  soon: "soon",
+  expired: "expired",
+  history: "history",
+} as const;
+
+export type ListInventoryExpiryGroup =
+  (typeof ListInventoryExpiryGroup)[keyof typeof ListInventoryExpiryGroup];
+
+export const ListInventoryExpiryGroup = {
+  all: "all",
+  today: "today",
+  next15: "next15",
+} as const;
+
+export type RefreshInventoryExpiryParams = {
+  view?: RefreshInventoryExpiryView;
+  group?: RefreshInventoryExpiryGroup;
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type RefreshInventoryExpiryView =
+  (typeof RefreshInventoryExpiryView)[keyof typeof RefreshInventoryExpiryView];
+
+export const RefreshInventoryExpiryView = {
+  soon: "soon",
+  expired: "expired",
+  history: "history",
+} as const;
+
+export type RefreshInventoryExpiryGroup =
+  (typeof RefreshInventoryExpiryGroup)[keyof typeof RefreshInventoryExpiryGroup];
+
+export const RefreshInventoryExpiryGroup = {
+  all: "all",
+  today: "today",
+  next15: "next15",
+} as const;
 
 export type ReviewInventoryInitializationParams = {
   /**

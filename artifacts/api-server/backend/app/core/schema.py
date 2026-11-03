@@ -1,3 +1,3 @@
 """Generated coordinated schema; author development-contract.json instead."""
 
-SCHEMA_REVISION = "0083_immunotherapy_batches"
+SCHEMA_REVISION = "0084_allergen_expiry"

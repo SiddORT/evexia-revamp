@@ -10,6 +10,7 @@ import type { ReserveSavedLocationBalances } from "./reserveSavedLocationBalance
 export interface ReserveSaved {
   actor: string;
   actorId: string;
+  actualUnitCost?: string | null;
   allergenId: string;
   allergenName: string;
   allergenVersion: number;
@@ -24,6 +25,7 @@ export interface ReserveSaved {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   createdAt: string;
   expired: boolean;
   expiryDate: Date;

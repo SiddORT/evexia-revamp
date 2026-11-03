@@ -2,7 +2,8 @@ import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { downloadBlob } from '../../services/downloads.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, SlidersHorizontal, ChevronDown, Eye, FileDown, FileText, Filter, RefreshCw, Search } from 'lucide-react';
+import { Link } from 'wouter';
+import { AlertTriangle, CalendarClock, BookOpen, SlidersHorizontal, ChevronDown, Eye, FileDown, FileText, Filter, RefreshCw, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -128,6 +129,8 @@ export default function StockStatus() {
   return <AdminLayout title="Stock Status"><div className="stock-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Stock</p><h1>Stock status</h1><p className="admin-page-head__description">Current stock from accepted receipts, assemblies, opening stock and committed transfers. Unallocated opening stock is shown separately.</p></div>
       <div className="stock-actions">
+        {isSuperAdmin() && <><Link href="/admin/inventory/expiring" className="admin-button admin-button--secondary" data-testid="link-expiring-stock"><CalendarClock size={15} /> Expiring soon</Link>
+        <Link href="/admin/inventory/expired" className="admin-button admin-button--secondary" data-testid="link-expired-stock"><AlertTriangle size={15} /> Expired and disposal</Link></>}
         <button type="button" className="admin-button admin-button--secondary" onClick={exportCsv} disabled={!can.export || disabled} data-testid="button-export-stock"><FileDown size={15} /> Export</button>
         <button type="button" className="admin-button" onClick={openReport} disabled={!can.export || disabled} data-testid="button-inventory-report"><FileText size={15} /> Inventory Report</button>
       </div></div>

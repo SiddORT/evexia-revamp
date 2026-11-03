@@ -53,6 +53,16 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0084_allergen_expiry"]:
+            db.execute(text("SELECT id,source_kind,batch_id,actor_id,created_at,payload_ciphertext FROM inventory_batch_costs LIMIT 0"))
+            db.execute(text("SELECT id,source_kind,batch_id,actor_id,event_id,created_at,payload_ciphertext FROM inventory_expiry_disposals LIMIT 0"))
+            db.execute(text("SELECT key,actor_id,digest,payload_ciphertext FROM inventory_expiry_requests LIMIT 0"))
+            db.execute(text("SELECT source_kind,cursor,updated_at FROM inventory_expiry_scans LIMIT 0"))
+            db.execute(text("SELECT source_kind,batch_id,detected_at FROM inventory_expiry_separations LIMIT 0"))
+            db.execute(text("SELECT day,status,category,updated_at,lease_until,token FROM inventory_expiry_digests LIMIT 0"))
+            db.execute(text("SELECT key,subject,introduction FROM inventory_expiry_templates LIMIT 0"))
+            db.execute(text("SELECT disposal_id FROM in_house_postings LIMIT 0"))
+            revisions = ["0083_immunotherapy_batches"]
         if revisions == ["0083_immunotherapy_batches"]:
             db.execute(text("SELECT month,last_ordinal FROM immunotherapy_batch_counters LIMIT 0"))
             revisions = ["0082_order_drafts"]

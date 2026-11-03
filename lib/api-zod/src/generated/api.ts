@@ -522,37 +522,55 @@ export const listInHouseStockQueryOffsetMin = 0;
 export const listInHouseStockQueryOffsetMax = 1000000;
 export const listInHouseStockQueryLimitDefault = 25;
 export const listInHouseStockQueryLimitMax = 100;
+export const listInHouseStockResponseItemsItemActualUnitCostOneMax = 16;
 export const listInHouseStockResponseItemsItemBatchMax = 100;
 export const listInHouseStockResponseItemsItemConcentrationMax = 200;
+export const listInHouseStockResponseItemsItemCostProvenanceOneMin = 3;
+export const listInHouseStockResponseItemsItemCostProvenanceOneMax = 1000;
 export const listInHouseStockResponseItemsItemNotesMax = 2000;
 export const listInHouseStockResponseItemsItemQuantityMax = 11;
 export const listInHouseStockResponseItemsItemReserveOnlyDefault = true;
 export const listInHouseStockResponseItemsItemUnitMax = 40;
+export const createInHouseStockBodyActualUnitCostOneMax = 16;
 export const createInHouseStockBodyBatchMax = 100;
 export const createInHouseStockBodyConcentrationMax = 200;
+export const createInHouseStockBodyCostProvenanceOneMin = 3;
+export const createInHouseStockBodyCostProvenanceOneMax = 1000;
 export const createInHouseStockBodyNotesMax = 2000;
 export const createInHouseStockBodyQuantityMax = 11;
 export const createInHouseStockBodyUnitMax = 40;
+export const createInHouseStockResponseActualUnitCostOneMax = 16;
 export const createInHouseStockResponseBatchMax = 100;
 export const createInHouseStockResponseConcentrationMax = 200;
+export const createInHouseStockResponseCostProvenanceOneMin = 3;
+export const createInHouseStockResponseCostProvenanceOneMax = 1000;
 export const createInHouseStockResponseNotesMax = 2000;
 export const createInHouseStockResponseQuantityMax = 11;
 export const createInHouseStockResponseReserveOnlyDefault = true;
 export const createInHouseStockResponseUnitMax = 40;
 export const exportInHouseStockQueryQueryMax = 200;
+export const exportInHouseStockResponseItemsItemActualUnitCostOneMax = 16;
 export const exportInHouseStockResponseItemsItemBatchMax = 100;
 export const exportInHouseStockResponseItemsItemConcentrationMax = 200;
+export const exportInHouseStockResponseItemsItemCostProvenanceOneMin = 3;
+export const exportInHouseStockResponseItemsItemCostProvenanceOneMax = 1000;
 export const exportInHouseStockResponseItemsItemNotesMax = 2000;
 export const exportInHouseStockResponseItemsItemQuantityMax = 11;
 export const exportInHouseStockResponseItemsItemReserveOnlyDefault = true;
 export const exportInHouseStockResponseItemsItemUnitMax = 40;
+export const previewInHouseStockBodyActualUnitCostOneMax = 16;
 export const previewInHouseStockBodyBatchMax = 100;
 export const previewInHouseStockBodyConcentrationMax = 200;
+export const previewInHouseStockBodyCostProvenanceOneMin = 3;
+export const previewInHouseStockBodyCostProvenanceOneMax = 1000;
 export const previewInHouseStockBodyNotesMax = 2000;
 export const previewInHouseStockBodyQuantityMax = 11;
 export const previewInHouseStockBodyUnitMax = 40;
+export const previewInHouseStockResponseRecordActualUnitCostOneMax = 16;
 export const previewInHouseStockResponseRecordBatchMax = 100;
 export const previewInHouseStockResponseRecordConcentrationMax = 200;
+export const previewInHouseStockResponseRecordCostProvenanceOneMin = 3;
+export const previewInHouseStockResponseRecordCostProvenanceOneMax = 1000;
 export const previewInHouseStockResponseRecordNotesMax = 2000;
 export const previewInHouseStockResponseRecordQuantityMax = 11;
 export const previewInHouseStockResponseRecordReserveOnlyDefault = true;
@@ -564,14 +582,20 @@ export const getInHouseStockReferencesQueryOffsetMax = 1000000;
 export const getInHouseStockReferencesQueryLimitDefault = 25;
 export const getInHouseStockReferencesQueryLimitMax = 100;
 export const getInHouseStockReferencesQueryIncludeInactiveDefault = false;
+export const reconcileInHouseStockResponseResultOneActualUnitCostOneMax = 16;
 export const reconcileInHouseStockResponseResultOneBatchMax = 100;
 export const reconcileInHouseStockResponseResultOneConcentrationMax = 200;
+export const reconcileInHouseStockResponseResultOneCostProvenanceOneMin = 3;
+export const reconcileInHouseStockResponseResultOneCostProvenanceOneMax = 1000;
 export const reconcileInHouseStockResponseResultOneNotesMax = 2000;
 export const reconcileInHouseStockResponseResultOneQuantityMax = 11;
 export const reconcileInHouseStockResponseResultOneReserveOnlyDefault = true;
 export const reconcileInHouseStockResponseResultOneUnitMax = 40;
+export const getInHouseStockResponseActualUnitCostOneMax = 16;
 export const getInHouseStockResponseBatchMax = 100;
 export const getInHouseStockResponseConcentrationMax = 200;
+export const getInHouseStockResponseCostProvenanceOneMin = 3;
+export const getInHouseStockResponseCostProvenanceOneMax = 1000;
 export const getInHouseStockResponseNotesMax = 2000;
 export const getInHouseStockResponseQuantityMax = 11;
 export const getInHouseStockResponseReserveOnlyDefault = true;
@@ -594,6 +618,27 @@ export const previewInventoryAdjustmentResponseAdjustmentReasonMax = 2000;
 export const getInventoryAdjustmentResponseBatchNoOneMax = 120;
 export const getInventoryAdjustmentResponseQuantityMax = 11;
 export const getInventoryAdjustmentResponseReasonMax = 2000;
+export const listInventoryExpiryQueryQueryMax = 200;
+export const listInventoryExpiryQueryOffsetDefault = 0;
+export const listInventoryExpiryQueryOffsetMin = 0;
+export const listInventoryExpiryQueryOffsetMax = 1000000;
+export const listInventoryExpiryQueryLimitDefault = 25;
+export const listInventoryExpiryQueryLimitMax = 100;
+export const recordActualBatchCostBodyProvenanceMin = 3;
+export const recordActualBatchCostBodyProvenanceMax = 1000;
+export const recordActualBatchCostBodyUnitCostMax = 16;
+export const disposeExpiredInventoryBodyQuantityMax = 11;
+export const disposeExpiredInventoryBodyReasonMin = 3;
+export const disposeExpiredInventoryBodyReasonMax = 1000;
+export const refreshInventoryExpiryQueryQueryMax = 200;
+export const refreshInventoryExpiryQueryOffsetDefault = 0;
+export const refreshInventoryExpiryQueryOffsetMin = 0;
+export const refreshInventoryExpiryQueryOffsetMax = 1000000;
+export const refreshInventoryExpiryQueryLimitDefault = 25;
+export const refreshInventoryExpiryQueryLimitMax = 100;
+export const reviewExpiryDisposalBodyQuantityMax = 11;
+export const reviewExpiryDisposalBodyReasonMin = 3;
+export const reviewExpiryDisposalBodyReasonMax = 1000;
 export const reviewInventoryInitializationQueryOffsetDefault = 0;
 export const reviewInventoryInitializationQueryOffsetMin = 0;
 export const reviewInventoryInitializationQueryOffsetMax = 1000000;
@@ -1925,7 +1970,10 @@ export const createPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax
 export const createPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
 export const createPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
 export const createPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const createPurchaseReceivedBodyLinesItemActualUnitCostOneMax = 16;
 export const createPurchaseReceivedBodyLinesItemBatchNoMax = 120;
+export const createPurchaseReceivedBodyLinesItemCostProvenanceOneMin = 3;
+export const createPurchaseReceivedBodyLinesItemCostProvenanceOneMax = 1000;
 export const createPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
 export const createPurchaseReceivedBodyLinesMax = 100;
 export const createPurchaseReceivedBodyOtherNameOneMax = 120;
@@ -1971,7 +2019,10 @@ export const previewPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMa
 export const previewPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const previewPurchaseReceivedBodyLinesItemActualUnitCostOneMax = 16;
 export const previewPurchaseReceivedBodyLinesItemBatchNoMax = 120;
+export const previewPurchaseReceivedBodyLinesItemCostProvenanceOneMin = 3;
+export const previewPurchaseReceivedBodyLinesItemCostProvenanceOneMax = 1000;
 export const previewPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
 export const previewPurchaseReceivedBodyLinesMax = 100;
 export const previewPurchaseReceivedBodyOtherNameOneMax = 120;
@@ -1991,7 +2042,10 @@ export const editPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax =
 export const editPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
 export const editPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
 export const editPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const editPurchaseReceivedBodyLinesItemActualUnitCostOneMax = 16;
 export const editPurchaseReceivedBodyLinesItemBatchNoMax = 120;
+export const editPurchaseReceivedBodyLinesItemCostProvenanceOneMin = 3;
+export const editPurchaseReceivedBodyLinesItemCostProvenanceOneMax = 1000;
 export const editPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
 export const editPurchaseReceivedBodyLinesMax = 100;
 export const editPurchaseReceivedBodyOtherNameOneMax = 120;
@@ -2005,7 +2059,10 @@ export const previewPurchaseReceivedEditBodyDocumentContextOnePresentationTimeZo
 export const previewPurchaseReceivedEditBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseReceivedEditBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax = 11;
+export const previewPurchaseReceivedEditBodyLinesItemActualUnitCostOneMax = 16;
 export const previewPurchaseReceivedEditBodyLinesItemBatchNoMax = 120;
+export const previewPurchaseReceivedEditBodyLinesItemCostProvenanceOneMin = 3;
+export const previewPurchaseReceivedEditBodyLinesItemCostProvenanceOneMax = 1000;
 export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyMax = 11;
 export const previewPurchaseReceivedEditBodyLinesMax = 100;
 export const previewPurchaseReceivedEditBodyOtherNameOneMax = 120;
@@ -10481,6 +10538,7 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
         .default(exportImmunotherapyOrdersResponseItemsItemMrEditableDefault),
       mrId: zod.string().uuid(),
       number: zod.string(),
+      orderBatchNo: zod.union([zod.string(), zod.null()]).optional(),
       patient: zod.record(zod.string(), zod.unknown()),
       patientId: zod.string().uuid(),
       poNumber: zod.union([zod.string(), zod.null()]).optional(),
@@ -11555,6 +11613,7 @@ export const ApproveImmunotherapyOrderResponse = zod.object({
     .default(approveImmunotherapyOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
   number: zod.string(),
+  orderBatchNo: zod.union([zod.string(), zod.null()]).optional(),
   patient: zod.record(zod.string(), zod.unknown()),
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
@@ -11860,6 +11919,7 @@ export const RejectImmunotherapyOrderResponse = zod.object({
     .default(rejectImmunotherapyOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
   number: zod.string(),
+  orderBatchNo: zod.union([zod.string(), zod.null()]).optional(),
   patient: zod.record(zod.string(), zod.unknown()),
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
@@ -11938,6 +11998,7 @@ export const ResubmitImmunotherapyOrderResponse = zod.object({
     .default(resubmitImmunotherapyOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
   number: zod.string(),
+  orderBatchNo: zod.union([zod.string(), zod.null()]).optional(),
   patient: zod.record(zod.string(), zod.unknown()),
   patientId: zod.string().uuid(),
   poNumber: zod.union([zod.string(), zod.null()]).optional(),
@@ -12002,6 +12063,8 @@ export const ListInHouseStockQueryParams = zod.object({
     .default(listInHouseStockQueryDateFieldDefault),
 });
 
+export const listInHouseStockResponseItemsItemActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 export const listInHouseStockResponseItemsItemBatchDefault = ``;
 
 export const listInHouseStockResponseItemsItemNotesDefault = ``;
@@ -12014,6 +12077,15 @@ export const ListInHouseStockResponse = zod.object({
     zod.object({
       actor: zod.string(),
       actorId: zod.string().uuid(),
+      actualUnitCost: zod
+        .union([
+          zod
+            .string()
+            .max(listInHouseStockResponseItemsItemActualUnitCostOneMax)
+            .regex(listInHouseStockResponseItemsItemActualUnitCostOneRegExp),
+          zod.null(),
+        ])
+        .optional(),
       allergenId: zod.string().uuid(),
       allergenName: zod.string(),
       allergenVersion: zod.number().int(),
@@ -12029,6 +12101,15 @@ export const ListInHouseStockResponse = zod.object({
         .string()
         .min(1)
         .max(listInHouseStockResponseItemsItemConcentrationMax),
+      costProvenance: zod
+        .union([
+          zod
+            .string()
+            .min(listInHouseStockResponseItemsItemCostProvenanceOneMin)
+            .max(listInHouseStockResponseItemsItemCostProvenanceOneMax),
+          zod.null(),
+        ])
+        .optional(),
       createdAt: zod.string(),
       expired: zod.boolean(),
       expiryDate: zod.coerce.date(),
@@ -12064,6 +12145,10 @@ export const ListInHouseStockResponse = zod.object({
 /**
  * @summary Create
  */
+
+export const createInHouseStockBodyActualUnitCostOneRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$",
+);
 export const createInHouseStockBodyBatchDefault = ``;
 
 export const createInHouseStockBodyNotesDefault = ``;
@@ -12074,6 +12159,15 @@ export const createInHouseStockBodyReviewTokenRegExp = new RegExp(
 export const createInHouseStockBodyUnitDefault = ``;
 
 export const CreateInHouseStockBody = zod.object({
+  actualUnitCost: zod
+    .union([
+      zod
+        .string()
+        .max(createInHouseStockBodyActualUnitCostOneMax)
+        .regex(createInHouseStockBodyActualUnitCostOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   allergenId: zod.string().uuid(),
   batch: zod
     .string()
@@ -12083,6 +12177,15 @@ export const CreateInHouseStockBody = zod.object({
     .string()
     .min(1)
     .max(createInHouseStockBodyConcentrationMax),
+  costProvenance: zod
+    .union([
+      zod
+        .string()
+        .min(createInHouseStockBodyCostProvenanceOneMin)
+        .max(createInHouseStockBodyCostProvenanceOneMax),
+      zod.null(),
+    ])
+    .optional(),
   expiryDate: zod.coerce.date(),
   idempotencyKey: zod.string().uuid(),
   locationId: zod.string().uuid(),
@@ -12098,6 +12201,9 @@ export const CreateInHouseStockBody = zod.object({
     .default(createInHouseStockBodyUnitDefault),
 });
 
+export const createInHouseStockResponseActualUnitCostOneRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$",
+);
 export const createInHouseStockResponseBatchDefault = ``;
 
 export const createInHouseStockResponseNotesDefault = ``;
@@ -12107,6 +12213,15 @@ export const createInHouseStockResponseUnitDefault = ``;
 export const CreateInHouseStockResponse = zod.object({
   actor: zod.string(),
   actorId: zod.string().uuid(),
+  actualUnitCost: zod
+    .union([
+      zod
+        .string()
+        .max(createInHouseStockResponseActualUnitCostOneMax)
+        .regex(createInHouseStockResponseActualUnitCostOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   allergenId: zod.string().uuid(),
   allergenName: zod.string(),
   allergenVersion: zod.number().int(),
@@ -12122,6 +12237,15 @@ export const CreateInHouseStockResponse = zod.object({
     .string()
     .min(1)
     .max(createInHouseStockResponseConcentrationMax),
+  costProvenance: zod
+    .union([
+      zod
+        .string()
+        .min(createInHouseStockResponseCostProvenanceOneMin)
+        .max(createInHouseStockResponseCostProvenanceOneMax),
+      zod.null(),
+    ])
+    .optional(),
   createdAt: zod.string(),
   expired: zod.boolean(),
   expiryDate: zod.coerce.date(),
@@ -12166,6 +12290,8 @@ export const ExportInHouseStockQueryParams = zod.object({
     .default(exportInHouseStockQueryDateFieldDefault),
 });
 
+export const exportInHouseStockResponseItemsItemActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 export const exportInHouseStockResponseItemsItemBatchDefault = ``;
 
 export const exportInHouseStockResponseItemsItemNotesDefault = ``;
@@ -12178,6 +12304,15 @@ export const ExportInHouseStockResponse = zod.object({
     zod.object({
       actor: zod.string(),
       actorId: zod.string().uuid(),
+      actualUnitCost: zod
+        .union([
+          zod
+            .string()
+            .max(exportInHouseStockResponseItemsItemActualUnitCostOneMax)
+            .regex(exportInHouseStockResponseItemsItemActualUnitCostOneRegExp),
+          zod.null(),
+        ])
+        .optional(),
       allergenId: zod.string().uuid(),
       allergenName: zod.string(),
       allergenVersion: zod.number().int(),
@@ -12193,6 +12328,15 @@ export const ExportInHouseStockResponse = zod.object({
         .string()
         .min(1)
         .max(exportInHouseStockResponseItemsItemConcentrationMax),
+      costProvenance: zod
+        .union([
+          zod
+            .string()
+            .min(exportInHouseStockResponseItemsItemCostProvenanceOneMin)
+            .max(exportInHouseStockResponseItemsItemCostProvenanceOneMax),
+          zod.null(),
+        ])
+        .optional(),
       createdAt: zod.string(),
       expired: zod.boolean(),
       expiryDate: zod.coerce.date(),
@@ -12228,6 +12372,10 @@ export const ExportInHouseStockResponse = zod.object({
 /**
  * @summary Preview
  */
+
+export const previewInHouseStockBodyActualUnitCostOneRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$",
+);
 export const previewInHouseStockBodyBatchDefault = ``;
 
 export const previewInHouseStockBodyNotesDefault = ``;
@@ -12235,6 +12383,15 @@ export const previewInHouseStockBodyNotesDefault = ``;
 export const previewInHouseStockBodyUnitDefault = ``;
 
 export const PreviewInHouseStockBody = zod.object({
+  actualUnitCost: zod
+    .union([
+      zod
+        .string()
+        .max(previewInHouseStockBodyActualUnitCostOneMax)
+        .regex(previewInHouseStockBodyActualUnitCostOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   allergenId: zod.string().uuid(),
   batch: zod
     .string()
@@ -12244,6 +12401,15 @@ export const PreviewInHouseStockBody = zod.object({
     .string()
     .min(1)
     .max(previewInHouseStockBodyConcentrationMax),
+  costProvenance: zod
+    .union([
+      zod
+        .string()
+        .min(previewInHouseStockBodyCostProvenanceOneMin)
+        .max(previewInHouseStockBodyCostProvenanceOneMax),
+      zod.null(),
+    ])
+    .optional(),
   expiryDate: zod.coerce.date(),
   locationId: zod.string().uuid(),
   notes: zod
@@ -12257,6 +12423,8 @@ export const PreviewInHouseStockBody = zod.object({
     .default(previewInHouseStockBodyUnitDefault),
 });
 
+export const previewInHouseStockResponseRecordActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 export const previewInHouseStockResponseRecordBatchDefault = ``;
 
 export const previewInHouseStockResponseRecordNotesDefault = ``;
@@ -12265,6 +12433,15 @@ export const previewInHouseStockResponseRecordUnitDefault = ``;
 
 export const PreviewInHouseStockResponse = zod.object({
   record: zod.object({
+    actualUnitCost: zod
+      .union([
+        zod
+          .string()
+          .max(previewInHouseStockResponseRecordActualUnitCostOneMax)
+          .regex(previewInHouseStockResponseRecordActualUnitCostOneRegExp),
+        zod.null(),
+      ])
+      .optional(),
     allergenId: zod.string().uuid(),
     allergenName: zod.string(),
     allergenVersion: zod.number().int(),
@@ -12279,6 +12456,15 @@ export const PreviewInHouseStockResponse = zod.object({
       .string()
       .min(1)
       .max(previewInHouseStockResponseRecordConcentrationMax),
+    costProvenance: zod
+      .union([
+        zod
+          .string()
+          .min(previewInHouseStockResponseRecordCostProvenanceOneMin)
+          .max(previewInHouseStockResponseRecordCostProvenanceOneMax),
+        zod.null(),
+      ])
+      .optional(),
     expired: zod.boolean(),
     expiryDate: zod.coerce.date(),
     locationId: zod.string().uuid(),
@@ -12356,6 +12542,8 @@ export const ReconcileInHouseStockParams = zod.object({
   key: zod.coerce.string().uuid(),
 });
 
+export const reconcileInHouseStockResponseResultOneActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 export const reconcileInHouseStockResponseResultOneBatchDefault = ``;
 
 export const reconcileInHouseStockResponseResultOneNotesDefault = ``;
@@ -12367,6 +12555,17 @@ export const ReconcileInHouseStockResponse = zod.object({
     zod.object({
       actor: zod.string(),
       actorId: zod.string().uuid(),
+      actualUnitCost: zod
+        .union([
+          zod
+            .string()
+            .max(reconcileInHouseStockResponseResultOneActualUnitCostOneMax)
+            .regex(
+              reconcileInHouseStockResponseResultOneActualUnitCostOneRegExp,
+            ),
+          zod.null(),
+        ])
+        .optional(),
       allergenId: zod.string().uuid(),
       allergenName: zod.string(),
       allergenVersion: zod.number().int(),
@@ -12382,6 +12581,15 @@ export const ReconcileInHouseStockResponse = zod.object({
         .string()
         .min(1)
         .max(reconcileInHouseStockResponseResultOneConcentrationMax),
+      costProvenance: zod
+        .union([
+          zod
+            .string()
+            .min(reconcileInHouseStockResponseResultOneCostProvenanceOneMin)
+            .max(reconcileInHouseStockResponseResultOneCostProvenanceOneMax),
+          zod.null(),
+        ])
+        .optional(),
       createdAt: zod.string(),
       expired: zod.boolean(),
       expiryDate: zod.coerce.date(),
@@ -12420,6 +12628,9 @@ export const GetInHouseStockParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
 
+export const getInHouseStockResponseActualUnitCostOneRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$",
+);
 export const getInHouseStockResponseBatchDefault = ``;
 
 export const getInHouseStockResponseNotesDefault = ``;
@@ -12429,6 +12640,15 @@ export const getInHouseStockResponseUnitDefault = ``;
 export const GetInHouseStockResponse = zod.object({
   actor: zod.string(),
   actorId: zod.string().uuid(),
+  actualUnitCost: zod
+    .union([
+      zod
+        .string()
+        .max(getInHouseStockResponseActualUnitCostOneMax)
+        .regex(getInHouseStockResponseActualUnitCostOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   allergenId: zod.string().uuid(),
   allergenName: zod.string(),
   allergenVersion: zod.number().int(),
@@ -12444,6 +12664,15 @@ export const GetInHouseStockResponse = zod.object({
     .string()
     .min(1)
     .max(getInHouseStockResponseConcentrationMax),
+  costProvenance: zod
+    .union([
+      zod
+        .string()
+        .min(getInHouseStockResponseCostProvenanceOneMin)
+        .max(getInHouseStockResponseCostProvenanceOneMax),
+      zod.null(),
+    ])
+    .optional(),
   createdAt: zod.string(),
   expired: zod.boolean(),
   expiryDate: zod.coerce.date(),
@@ -12714,6 +12943,481 @@ export const GetInventoryAdjustmentResponse = zod.object({
   reason: zod.string().min(1).max(getInventoryAdjustmentResponseReasonMax),
   scope: zod.string(),
   unit: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listInventoryExpiryQueryViewDefault = `expired`;
+export const listInventoryExpiryQueryGroupDefault = `all`;
+export const listInventoryExpiryQueryQueryDefault = ``;
+
+export const ListInventoryExpiryQueryParams = zod.object({
+  view: zod
+    .enum(["soon", "expired", "history"])
+    .default(listInventoryExpiryQueryViewDefault),
+  group: zod
+    .enum(["all", "today", "next15"])
+    .default(listInventoryExpiryQueryGroupDefault),
+  query: zod.coerce
+    .string()
+    .max(listInventoryExpiryQueryQueryMax)
+    .default(listInventoryExpiryQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listInventoryExpiryQueryOffsetMin)
+    .max(listInventoryExpiryQueryOffsetMax)
+    .default(listInventoryExpiryQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listInventoryExpiryQueryLimitMax)
+    .default(listInventoryExpiryQueryLimitDefault),
+});
+
+export const ListInventoryExpiryResponse = zod.object({
+  asOf: zod.string(),
+  digest: zod.union([
+    zod.object({
+      category: zod.union([zod.string(), zod.null()]),
+      day: zod.string(),
+      status: zod.enum([
+        "preparing",
+        "sending",
+        "blocked",
+        "failed",
+        "unknown",
+        "accepted",
+      ]),
+    }),
+    zod.null(),
+  ]),
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      actor: zod.union([zod.string(), zod.null()]).optional(),
+      actorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      appendOnly: zod.union([zod.boolean(), zod.null()]).optional(),
+      at: zod.union([zod.string(), zod.null()]).optional(),
+      batchId: zod.string().uuid(),
+      batchNo: zod.string(),
+      category: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]),
+      costSnapshot: zod.union([
+        zod.object({
+          actor: zod.string(),
+          actorId: zod.string().uuid(),
+          at: zod.string(),
+          basis: zod.string(),
+          batchId: zod.string().uuid(),
+          currency: zod.literal("INR"),
+          id: zod.string().uuid(),
+          origin: zod.string(),
+          provenance: zod.string(),
+          sourceKind: zod.enum(["lot", "reserve"]),
+          unitCost: zod.string(),
+        }),
+        zod.null(),
+      ]),
+      costTargetId: zod.string().uuid(),
+      costTargetKind: zod.enum(["lot", "reserve"]),
+      costTargetUnit: zod.string(),
+      expiredValue: zod.union([zod.string(), zod.null()]),
+      expiryDate: zod.union([zod.string(), zod.null()]),
+      id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
+      locationName: zod.string(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      reason: zod.union([zod.string(), zod.null()]).optional(),
+      sourceKind: zod.enum(["lot", "reserve"]),
+      status: zod.enum(["expired", "today", "next15", "future", "unknown"]),
+      unit: zod.string(),
+      unitCost: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  summary: zod.object({
+    disposedUncostedBatches: zod.number().int(),
+    disposedUncostedQuantities: zod.array(
+      zod.object({
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    disposedValue: zod.string(),
+    pendingValue: zod.string(),
+    scope: zod.string(),
+    uncostedBatches: zod.number().int(),
+    uncostedQuantities: zod.array(
+      zod.object({
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    unknownExpiryBatches: zod.number().int(),
+  }),
+});
+
+/**
+ * @summary Cost
+ */
+
+export const recordActualBatchCostBodyUnitCostRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$",
+);
+
+export const RecordActualBatchCostBody = zod.object({
+  batchId: zod.string().uuid(),
+  idempotencyKey: zod.string().uuid(),
+  provenance: zod
+    .string()
+    .min(recordActualBatchCostBodyProvenanceMin)
+    .max(recordActualBatchCostBodyProvenanceMax),
+  sourceKind: zod.enum(["lot", "reserve"]),
+  unitCost: zod
+    .string()
+    .max(recordActualBatchCostBodyUnitCostMax)
+    .regex(recordActualBatchCostBodyUnitCostRegExp),
+});
+
+export const RecordActualBatchCostResponse = zod.object({
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  at: zod.string(),
+  basis: zod.string(),
+  batchId: zod.string().uuid(),
+  currency: zod.literal("INR"),
+  id: zod.string().uuid(),
+  origin: zod.string(),
+  provenance: zod.string(),
+  sourceKind: zod.enum(["lot", "reserve"]),
+  unitCost: zod.string(),
+});
+
+/**
+ * @summary Dispose
+ */
+
+export const disposeExpiredInventoryBodyQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const disposeExpiredInventoryBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const DisposeExpiredInventoryBody = zod.object({
+  batchId: zod.string().uuid(),
+  idempotencyKey: zod.string().uuid(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  quantity: zod
+    .string()
+    .max(disposeExpiredInventoryBodyQuantityMax)
+    .regex(disposeExpiredInventoryBodyQuantityRegExp),
+  reason: zod
+    .string()
+    .min(disposeExpiredInventoryBodyReasonMin)
+    .max(disposeExpiredInventoryBodyReasonMax),
+  reviewToken: zod.string().regex(disposeExpiredInventoryBodyReviewTokenRegExp),
+  sourceKind: zod.enum(["lot", "reserve"]),
+});
+
+export const DisposeExpiredInventoryResponse = zod.object({
+  actor: zod.union([zod.string(), zod.null()]).optional(),
+  actorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  appendOnly: zod.union([zod.boolean(), zod.null()]).optional(),
+  at: zod.union([zod.string(), zod.null()]).optional(),
+  batchId: zod.string().uuid(),
+  batchNo: zod.string(),
+  category: zod.string(),
+  costProvenance: zod.union([zod.string(), zod.null()]),
+  costSnapshot: zod.union([
+    zod.object({
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      at: zod.string(),
+      basis: zod.string(),
+      batchId: zod.string().uuid(),
+      currency: zod.literal("INR"),
+      id: zod.string().uuid(),
+      origin: zod.string(),
+      provenance: zod.string(),
+      sourceKind: zod.enum(["lot", "reserve"]),
+      unitCost: zod.string(),
+    }),
+    zod.null(),
+  ]),
+  costTargetId: zod.string().uuid(),
+  costTargetKind: zod.enum(["lot", "reserve"]),
+  costTargetUnit: zod.string(),
+  expiredValue: zod.union([zod.string(), zod.null()]),
+  expiryDate: zod.union([zod.string(), zod.null()]),
+  id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  locationName: zod.string(),
+  productName: zod.string(),
+  quantity: zod.string(),
+  reason: zod.union([zod.string(), zod.null()]).optional(),
+  sourceKind: zod.enum(["lot", "reserve"]),
+  status: zod.enum(["expired", "today", "next15", "future", "unknown"]),
+  unit: zod.string(),
+  unitCost: zod.union([zod.string(), zod.null()]),
+});
+
+/**
+ * @summary Listing
+ */
+export const refreshInventoryExpiryQueryViewDefault = `expired`;
+export const refreshInventoryExpiryQueryGroupDefault = `all`;
+export const refreshInventoryExpiryQueryQueryDefault = ``;
+
+export const RefreshInventoryExpiryQueryParams = zod.object({
+  view: zod
+    .enum(["soon", "expired", "history"])
+    .default(refreshInventoryExpiryQueryViewDefault),
+  group: zod
+    .enum(["all", "today", "next15"])
+    .default(refreshInventoryExpiryQueryGroupDefault),
+  query: zod.coerce
+    .string()
+    .max(refreshInventoryExpiryQueryQueryMax)
+    .default(refreshInventoryExpiryQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(refreshInventoryExpiryQueryOffsetMin)
+    .max(refreshInventoryExpiryQueryOffsetMax)
+    .default(refreshInventoryExpiryQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(refreshInventoryExpiryQueryLimitMax)
+    .default(refreshInventoryExpiryQueryLimitDefault),
+});
+
+export const RefreshInventoryExpiryResponse = zod.object({
+  asOf: zod.string(),
+  digest: zod.union([
+    zod.object({
+      category: zod.union([zod.string(), zod.null()]),
+      day: zod.string(),
+      status: zod.enum([
+        "preparing",
+        "sending",
+        "blocked",
+        "failed",
+        "unknown",
+        "accepted",
+      ]),
+    }),
+    zod.null(),
+  ]),
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      actor: zod.union([zod.string(), zod.null()]).optional(),
+      actorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      appendOnly: zod.union([zod.boolean(), zod.null()]).optional(),
+      at: zod.union([zod.string(), zod.null()]).optional(),
+      batchId: zod.string().uuid(),
+      batchNo: zod.string(),
+      category: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]),
+      costSnapshot: zod.union([
+        zod.object({
+          actor: zod.string(),
+          actorId: zod.string().uuid(),
+          at: zod.string(),
+          basis: zod.string(),
+          batchId: zod.string().uuid(),
+          currency: zod.literal("INR"),
+          id: zod.string().uuid(),
+          origin: zod.string(),
+          provenance: zod.string(),
+          sourceKind: zod.enum(["lot", "reserve"]),
+          unitCost: zod.string(),
+        }),
+        zod.null(),
+      ]),
+      costTargetId: zod.string().uuid(),
+      costTargetKind: zod.enum(["lot", "reserve"]),
+      costTargetUnit: zod.string(),
+      expiredValue: zod.union([zod.string(), zod.null()]),
+      expiryDate: zod.union([zod.string(), zod.null()]),
+      id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
+      locationName: zod.string(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      reason: zod.union([zod.string(), zod.null()]).optional(),
+      sourceKind: zod.enum(["lot", "reserve"]),
+      status: zod.enum(["expired", "today", "next15", "future", "unknown"]),
+      unit: zod.string(),
+      unitCost: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  summary: zod.object({
+    disposedUncostedBatches: zod.number().int(),
+    disposedUncostedQuantities: zod.array(
+      zod.object({
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    disposedValue: zod.string(),
+    pendingValue: zod.string(),
+    scope: zod.string(),
+    uncostedBatches: zod.number().int(),
+    uncostedQuantities: zod.array(
+      zod.object({
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    unknownExpiryBatches: zod.number().int(),
+  }),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileExpiryRequestParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const ReconcileExpiryRequestResponse = zod.object({
+  result: zod.union([
+    zod.object({
+      actor: zod.union([zod.string(), zod.null()]).optional(),
+      actorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      appendOnly: zod.union([zod.boolean(), zod.null()]).optional(),
+      at: zod.union([zod.string(), zod.null()]).optional(),
+      batchId: zod.string().uuid(),
+      batchNo: zod.string(),
+      category: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]),
+      costSnapshot: zod.union([
+        zod.object({
+          actor: zod.string(),
+          actorId: zod.string().uuid(),
+          at: zod.string(),
+          basis: zod.string(),
+          batchId: zod.string().uuid(),
+          currency: zod.literal("INR"),
+          id: zod.string().uuid(),
+          origin: zod.string(),
+          provenance: zod.string(),
+          sourceKind: zod.enum(["lot", "reserve"]),
+          unitCost: zod.string(),
+        }),
+        zod.null(),
+      ]),
+      costTargetId: zod.string().uuid(),
+      costTargetKind: zod.enum(["lot", "reserve"]),
+      costTargetUnit: zod.string(),
+      expiredValue: zod.union([zod.string(), zod.null()]),
+      expiryDate: zod.union([zod.string(), zod.null()]),
+      id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
+      locationName: zod.string(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      reason: zod.union([zod.string(), zod.null()]).optional(),
+      sourceKind: zod.enum(["lot", "reserve"]),
+      status: zod.enum(["expired", "today", "next15", "future", "unknown"]),
+      unit: zod.string(),
+      unitCost: zod.union([zod.string(), zod.null()]),
+    }),
+    zod.object({
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      at: zod.string(),
+      basis: zod.string(),
+      batchId: zod.string().uuid(),
+      currency: zod.literal("INR"),
+      id: zod.string().uuid(),
+      origin: zod.string(),
+      provenance: zod.string(),
+      sourceKind: zod.enum(["lot", "reserve"]),
+      unitCost: zod.string(),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Review
+ */
+
+export const reviewExpiryDisposalBodyQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const ReviewExpiryDisposalBody = zod.object({
+  batchId: zod.string().uuid(),
+  locationId: zod.union([zod.string().uuid(), zod.null()]),
+  quantity: zod
+    .string()
+    .max(reviewExpiryDisposalBodyQuantityMax)
+    .regex(reviewExpiryDisposalBodyQuantityRegExp),
+  reason: zod
+    .string()
+    .min(reviewExpiryDisposalBodyReasonMin)
+    .max(reviewExpiryDisposalBodyReasonMax),
+  sourceKind: zod.enum(["lot", "reserve"]),
+});
+
+export const ReviewExpiryDisposalResponse = zod.object({
+  batch: zod.object({
+    actor: zod.union([zod.string(), zod.null()]).optional(),
+    actorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    appendOnly: zod.union([zod.boolean(), zod.null()]).optional(),
+    at: zod.union([zod.string(), zod.null()]).optional(),
+    batchId: zod.string().uuid(),
+    batchNo: zod.string(),
+    category: zod.string(),
+    costProvenance: zod.union([zod.string(), zod.null()]),
+    costSnapshot: zod.union([
+      zod.object({
+        actor: zod.string(),
+        actorId: zod.string().uuid(),
+        at: zod.string(),
+        basis: zod.string(),
+        batchId: zod.string().uuid(),
+        currency: zod.literal("INR"),
+        id: zod.string().uuid(),
+        origin: zod.string(),
+        provenance: zod.string(),
+        sourceKind: zod.enum(["lot", "reserve"]),
+        unitCost: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    costTargetId: zod.string().uuid(),
+    costTargetKind: zod.enum(["lot", "reserve"]),
+    costTargetUnit: zod.string(),
+    expiredValue: zod.union([zod.string(), zod.null()]),
+    expiryDate: zod.union([zod.string(), zod.null()]),
+    id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    locationId: zod.union([zod.string().uuid(), zod.null()]),
+    locationName: zod.string(),
+    productName: zod.string(),
+    quantity: zod.string(),
+    reason: zod.union([zod.string(), zod.null()]).optional(),
+    sourceKind: zod.enum(["lot", "reserve"]),
+    status: zod.enum(["expired", "today", "next15", "future", "unknown"]),
+    unit: zod.string(),
+    unitCost: zod.union([zod.string(), zod.null()]),
+  }),
+  reviewToken: zod.string(),
 });
 
 /**
@@ -25975,6 +26679,7 @@ export const SubmitOrderDraftResponse = zod.union([
       .default(submitOrderDraftResponseOneMrEditableDefault),
     mrId: zod.string().uuid(),
     number: zod.string(),
+    orderBatchNo: zod.union([zod.string(), zod.null()]).optional(),
     patient: zod.record(zod.string(), zod.unknown()),
     patientId: zod.string().uuid(),
     poNumber: zod.union([zod.string(), zod.null()]).optional(),
@@ -32404,8 +33109,10 @@ export const ListPurchaseReceivedResponse = zod.object({
       lines: zod.array(
         zod.object({
           acceptedQty: zod.string(),
+          actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
           balanceAfterQty: zod.union([zod.string(), zod.null()]),
           batchNo: zod.string(),
+          costProvenance: zod.union([zod.string(), zod.null()]).optional(),
           expiryDate: zod.coerce.date(),
           lineId: zod.string().uuid(),
           orderedQty: zod.string(),
@@ -32448,6 +33155,9 @@ export const ListPurchaseReceivedResponse = zod.object({
 export const createPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
+
+export const createPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 
 export const createPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
@@ -32505,10 +33215,30 @@ export const CreatePurchaseReceivedBody = zod.object({
           .string()
           .max(createPurchaseReceivedBodyLinesItemAcceptedQtyMax)
           .regex(createPurchaseReceivedBodyLinesItemAcceptedQtyRegExp),
+        actualUnitCost: zod
+          .union([
+            zod
+              .string()
+              .max(createPurchaseReceivedBodyLinesItemActualUnitCostOneMax)
+              .regex(
+                createPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
         batchNo: zod
           .string()
           .min(1)
           .max(createPurchaseReceivedBodyLinesItemBatchNoMax),
+        costProvenance: zod
+          .union([
+            zod
+              .string()
+              .min(createPurchaseReceivedBodyLinesItemCostProvenanceOneMin)
+              .max(createPurchaseReceivedBodyLinesItemCostProvenanceOneMax),
+            zod.null(),
+          ])
+          .optional(),
         expiryDate: zod.coerce.date(),
         lineId: zod.string().uuid(),
         receivedQty: zod
@@ -32543,8 +33273,10 @@ export const CreatePurchaseReceivedResponse = zod.object({
   lines: zod.array(
     zod.object({
       acceptedQty: zod.string(),
+      actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
       balanceAfterQty: zod.union([zod.string(), zod.null()]),
       batchNo: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]).optional(),
       expiryDate: zod.coerce.date(),
       lineId: zod.string().uuid(),
       orderedQty: zod.string(),
@@ -32864,8 +33596,10 @@ export const ExportPurchaseReceivedResponse = zod.object({
       lines: zod.array(
         zod.object({
           acceptedQty: zod.string(),
+          actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
           balanceAfterQty: zod.union([zod.string(), zod.null()]),
           batchNo: zod.string(),
+          costProvenance: zod.union([zod.string(), zod.null()]).optional(),
           expiryDate: zod.coerce.date(),
           lineId: zod.string().uuid(),
           orderedQty: zod.string(),
@@ -32978,6 +33712,9 @@ export const previewPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
 
+export const previewPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
+
 export const previewPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
@@ -33029,10 +33766,30 @@ export const PreviewPurchaseReceivedBody = zod.object({
           .string()
           .max(previewPurchaseReceivedBodyLinesItemAcceptedQtyMax)
           .regex(previewPurchaseReceivedBodyLinesItemAcceptedQtyRegExp),
+        actualUnitCost: zod
+          .union([
+            zod
+              .string()
+              .max(previewPurchaseReceivedBodyLinesItemActualUnitCostOneMax)
+              .regex(
+                previewPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
         batchNo: zod
           .string()
           .min(1)
           .max(previewPurchaseReceivedBodyLinesItemBatchNoMax),
+        costProvenance: zod
+          .union([
+            zod
+              .string()
+              .min(previewPurchaseReceivedBodyLinesItemCostProvenanceOneMin)
+              .max(previewPurchaseReceivedBodyLinesItemCostProvenanceOneMax),
+            zod.null(),
+          ])
+          .optional(),
         expiryDate: zod.coerce.date(),
         lineId: zod.string().uuid(),
         receivedQty: zod
@@ -33060,8 +33817,10 @@ export const PreviewPurchaseReceivedResponse = zod.object({
     lines: zod.array(
       zod.object({
         acceptedQty: zod.string(),
+        actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
         balanceAfterQty: zod.union([zod.string(), zod.null()]),
         batchNo: zod.string(),
+        costProvenance: zod.union([zod.string(), zod.null()]).optional(),
         expiryDate: zod.coerce.date(),
         lineId: zod.string().uuid(),
         orderedQty: zod.string(),
@@ -33151,8 +33910,10 @@ export const ReconcilePurchaseReceivedResponse = zod.object({
       lines: zod.array(
         zod.object({
           acceptedQty: zod.string(),
+          actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
           balanceAfterQty: zod.union([zod.string(), zod.null()]),
           batchNo: zod.string(),
+          costProvenance: zod.union([zod.string(), zod.null()]).optional(),
           expiryDate: zod.coerce.date(),
           lineId: zod.string().uuid(),
           orderedQty: zod.string(),
@@ -33262,8 +34023,10 @@ export const GetPurchaseReceivedSourceResponse = zod.object({
       lines: zod.array(
         zod.object({
           acceptedQty: zod.string(),
+          actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
           balanceAfterQty: zod.union([zod.string(), zod.null()]),
           batchNo: zod.string(),
+          costProvenance: zod.union([zod.string(), zod.null()]).optional(),
           expiryDate: zod.coerce.date(),
           lineId: zod.string().uuid(),
           orderedQty: zod.string(),
@@ -33345,8 +34108,10 @@ export const GetPurchaseReceivedResponse = zod.object({
   lines: zod.array(
     zod.object({
       acceptedQty: zod.string(),
+      actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
       balanceAfterQty: zod.union([zod.string(), zod.null()]),
       batchNo: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]).optional(),
       expiryDate: zod.coerce.date(),
       lineId: zod.string().uuid(),
       orderedQty: zod.string(),
@@ -33400,8 +34165,10 @@ export const DeletePurchaseReceivedResponse = zod.object({
   lines: zod.array(
     zod.object({
       acceptedQty: zod.string(),
+      actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
       balanceAfterQty: zod.union([zod.string(), zod.null()]),
       batchNo: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]).optional(),
       expiryDate: zod.coerce.date(),
       lineId: zod.string().uuid(),
       orderedQty: zod.string(),
@@ -33490,6 +34257,9 @@ export const editPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
 
+export const editPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
+
 export const editPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
@@ -33547,10 +34317,28 @@ export const EditPurchaseReceivedBody = zod.object({
           .string()
           .max(editPurchaseReceivedBodyLinesItemAcceptedQtyMax)
           .regex(editPurchaseReceivedBodyLinesItemAcceptedQtyRegExp),
+        actualUnitCost: zod
+          .union([
+            zod
+              .string()
+              .max(editPurchaseReceivedBodyLinesItemActualUnitCostOneMax)
+              .regex(editPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp),
+            zod.null(),
+          ])
+          .optional(),
         batchNo: zod
           .string()
           .min(1)
           .max(editPurchaseReceivedBodyLinesItemBatchNoMax),
+        costProvenance: zod
+          .union([
+            zod
+              .string()
+              .min(editPurchaseReceivedBodyLinesItemCostProvenanceOneMin)
+              .max(editPurchaseReceivedBodyLinesItemCostProvenanceOneMax),
+            zod.null(),
+          ])
+          .optional(),
         expiryDate: zod.coerce.date(),
         lineId: zod.string().uuid(),
         receivedQty: zod
@@ -33585,8 +34373,10 @@ export const EditPurchaseReceivedResponse = zod.object({
   lines: zod.array(
     zod.object({
       acceptedQty: zod.string(),
+      actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
       balanceAfterQty: zod.union([zod.string(), zod.null()]),
       batchNo: zod.string(),
+      costProvenance: zod.union([zod.string(), zod.null()]).optional(),
       expiryDate: zod.coerce.date(),
       lineId: zod.string().uuid(),
       orderedQty: zod.string(),
@@ -33668,6 +34458,9 @@ export const PreviewPurchaseReceivedEditParams = zod.object({
 export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
 
+export const previewPurchaseReceivedEditBodyLinesItemActualUnitCostOneRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
+
 export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
 
@@ -33718,10 +34511,32 @@ export const PreviewPurchaseReceivedEditBody = zod.object({
           .string()
           .max(previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax)
           .regex(previewPurchaseReceivedEditBodyLinesItemAcceptedQtyRegExp),
+        actualUnitCost: zod
+          .union([
+            zod
+              .string()
+              .max(previewPurchaseReceivedEditBodyLinesItemActualUnitCostOneMax)
+              .regex(
+                previewPurchaseReceivedEditBodyLinesItemActualUnitCostOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
         batchNo: zod
           .string()
           .min(1)
           .max(previewPurchaseReceivedEditBodyLinesItemBatchNoMax),
+        costProvenance: zod
+          .union([
+            zod
+              .string()
+              .min(previewPurchaseReceivedEditBodyLinesItemCostProvenanceOneMin)
+              .max(
+                previewPurchaseReceivedEditBodyLinesItemCostProvenanceOneMax,
+              ),
+            zod.null(),
+          ])
+          .optional(),
         expiryDate: zod.coerce.date(),
         lineId: zod.string().uuid(),
         receivedQty: zod
@@ -33749,8 +34564,10 @@ export const PreviewPurchaseReceivedEditResponse = zod.object({
     lines: zod.array(
       zod.object({
         acceptedQty: zod.string(),
+        actualUnitCost: zod.union([zod.string(), zod.null()]).optional(),
         balanceAfterQty: zod.union([zod.string(), zod.null()]),
         batchNo: zod.string(),
+        costProvenance: zod.union([zod.string(), zod.null()]).optional(),
         expiryDate: zod.coerce.date(),
         lineId: zod.string().uuid(),
         orderedQty: zod.string(),

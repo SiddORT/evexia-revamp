@@ -22,7 +22,6 @@ import type { ImmRecordReviewHistoryItem } from "./immRecordReviewHistoryItem";
 import type { ImmRecordStatus } from "./immRecordStatus";
 
 export interface ImmRecord {
-  orderBatchNo?: string | null;
   approval?: ImmRecordApproval;
   attachments: ImmRecordAttachmentsItem[];
   audit?: ImmRecordAudit;
@@ -42,6 +41,7 @@ export interface ImmRecord {
   mrEditable?: boolean;
   mrId: string;
   number: string;
+  orderBatchNo?: string | null;
   patient: ImmRecordPatient;
   patientId: string;
   poNumber?: string | null;

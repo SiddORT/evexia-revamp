@@ -600,7 +600,8 @@ export async function roleUrlRequest(path = '', body, { signal } = {}) {
       : response.status === 429 ? 'Too many DNS actions. Wait before retrying.'
       : uncertain().message), response.status);
     error.code = response.status === 409 ? 'role_url_stale' : data?.error?.code;
-    error.ambiguous = mutation && response.status >= 500;
+    error.ambiguous = mutation && (response.status >= 500
+      || (resource === 'inventory' && path.startsWith('/expiry/') && response.status === 408));
     throw error;
   }
   const isDomain = path === '/primary' || path === '/domain-action';
@@ -1054,7 +1055,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
-    ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/(?:history|ledger|adjustment-choices))?|adjustments(?:\/preview|\/[0-9a-f-]{36})?|adjustment-requests\/[0-9a-f-]{36}|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
+    ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/(?:history|ledger|adjustment-choices))?|adjustments(?:\/preview|\/[0-9a-f-]{36})?|adjustment-requests\/[0-9a-f-]{36}|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|expiry(?:\/(?:reconcile|review|disposals|costs)|\/requests\/[0-9a-f-]{36})?|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
     ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i
     : /^(?:|\/(?:export|overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
@@ -1264,6 +1265,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
           || !Number.isSafeInteger(data.imported) || data.imported < 1 || data.imported > 500
           || !Number.isSafeInteger(data.memberRows) || data.memberRows < data.imported * 2 || data.memberRows > 1000) throw uncertain();
     } else if (method !== 'DELETE' && !data?.id) throw uncertain();
+  } else if (mutation && resource === 'inventory' && path.startsWith('/expiry/')) {
+    if (path === '/expiry/review' ? (typeof data?.reviewToken !== 'string' || !data.reviewToken || !data.batch) : (!data || typeof data !== 'object')) throw uncertain();
+    if (path === '/expiry/disposals' && !data.id) throw uncertain();
+    if (path === '/expiry/costs' && (!data.id || typeof data.unitCost !== 'string' || !data.provenance)) throw uncertain();
   } else if (mutation && (!data?.id || (resource !== 'inventory' && !data?.number) || (!(resource === 'inventory' && path === '/adjustments') && !Array.isArray(data.lines)))) throw uncertain();
   if (download) {
     if (!/^[0-9a-f-]{36}$/i.test(response.headers.get('X-Download-Log') || '')) throw new SessionError('Download logging could not be confirmed. No file was released. Retry.');

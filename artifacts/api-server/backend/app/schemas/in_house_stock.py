@@ -5,9 +5,10 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.schemas.expiry import ActualCost
 
 
-class ReserveInput(BaseModel):
+class ReserveInput(ActualCost):
     model_config = ConfigDict(extra="forbid")
     allergenId: uuid.UUID
     concentration: str = Field(min_length=1, max_length=200)

@@ -113,6 +113,9 @@ def review_data(db, crypto, body, existing=None):
         received, accepted = Decimal(line.receivedQty), Decimal(line.acceptedQty)
         available = Decimal(po["balances"][line_id])
         prior = next((l for l in old["lines"] if l["lineId"] == line_id), None) if old else None
+        if prior and (line.actualUnitCost is not None and
+                      (line.actualUnitCost != prior.get("actualUnitCost") or line.costProvenance != prior.get("costProvenance"))):
+            raise PRError("Record missing batch cost through the explicit inventory cost action; receipt edits cannot replace actual cost.", 409, "expiry_cost_retained")
         historical_received = Decimal(prior["receivedQty"]) if prior else Decimal(0)
         if not (0 < received <= 1000000 and 0 <= accepted <= received and accepted <= available and received <= max(available, historical_received)):
             raise PRError("Received quantity must be positive and within available/historical allowance; accepted must be between zero and received and within current remaining capacity.", 422, "pr_quantity")
@@ -125,6 +128,8 @@ def review_data(db, crypto, body, existing=None):
         lines.append(dict(lineId=line_id, productId=src["productId"], productName=prior["productName"] if prior else src["productName"],
             orderedQty=prior["orderedQty"] if prior else src["quantity"], receivedQty=str(received), acceptedQty=str(accepted),
             rejectedQty=str(received - accepted), batchNo=line.batchNo, expiryDate=line.expiryDate.isoformat(),
+            actualUnitCost=prior.get("actualUnitCost") if prior else line.actualUnitCost,
+            costProvenance=prior.get("costProvenance") if prior else line.costProvenance,
             balanceAfterQty=str(after) if after is not None and after >= 0 else None))
     if old:
         data = {k: old[k] for k in ("poId", "poNumber", "poDate", "vendorId", "vendorName", "vendorPhone", "vendorAddress", "vendorGstNo", "locationId", "locationName")}

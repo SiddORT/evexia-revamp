@@ -75,6 +75,7 @@ import type {
   CommunicationRecord,
   CommunicationSnapshot,
   CommunicationVersion,
+  CostInput,
   CourierEdit,
   CourierFields,
   CourierImportResult,
@@ -94,6 +95,8 @@ import type {
   DesignationReview,
   DesignationStatus,
   DesignationVersion,
+  DisposalCreate,
+  DisposalInput,
   DoctorBulk,
   DoctorChoices,
   DoctorContact,
@@ -143,6 +146,9 @@ import type {
   EmailTemplateVersion,
   ErrorEnvelope,
   EventPage,
+  ExpiryCostEvidence,
+  ExpiryDisposalReview,
+  ExpiryReconciliation,
   ExportAllergensParams,
   ExportCourierPartnersParams,
   ExportDesignationsParams,
@@ -210,6 +216,8 @@ import type {
   ImmUploadPolicy,
   ImmWrite,
   ImmunotherapyReferencesParams,
+  InventoryExpiryPage,
+  InventoryExpiryRow,
   InventoryHistoryPage,
   InventoryInitializationPage,
   InventoryReferencePage,
@@ -246,6 +254,7 @@ import type {
   ListHeadquartersParams,
   ListImmunotherapyOrdersParams,
   ListInHouseStockParams,
+  ListInventoryExpiryParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
   ListKitsOrdersParams,
@@ -437,6 +446,7 @@ import type {
   ProvisionMRRequest,
   RecoveryRequest,
   RecoveryResponse,
+  RefreshInventoryExpiryParams,
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
@@ -11290,6 +11300,652 @@ export function useGetInventoryAdjustment<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListInventoryExpiryUrl = (
+  params?: ListInventoryExpiryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/expiry?${stringifiedParams}`
+    : `/api/v1/admin/inventory/expiry`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listInventoryExpiry = async (
+  params?: ListInventoryExpiryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryExpiryPage> => {
+  return customFetch<InventoryExpiryPage>(getListInventoryExpiryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInventoryExpiryQueryKey = (
+  params?: ListInventoryExpiryParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/expiry`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListInventoryExpiryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInventoryExpiry>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInventoryExpiryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryExpiry>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInventoryExpiryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInventoryExpiry>>
+  > = ({ signal }) =>
+    listInventoryExpiry(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInventoryExpiry>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInventoryExpiryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInventoryExpiry>>
+>;
+export type ListInventoryExpiryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListInventoryExpiry<
+  TData = Awaited<ReturnType<typeof listInventoryExpiry>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInventoryExpiryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryExpiry>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInventoryExpiryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRecordActualBatchCostUrl = () => {
+  return `/api/v1/admin/inventory/expiry/costs`;
+};
+
+/**
+ * @summary Cost
+ */
+export const recordActualBatchCost = async (
+  costInput: CostInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ExpiryCostEvidence> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ExpiryCostEvidence>(getRecordActualBatchCostUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(costInput),
+  });
+};
+
+export const getRecordActualBatchCostMutationKey = () =>
+  ["recordActualBatchCost"] as const;
+
+export const getRecordActualBatchCostMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordActualBatchCost>>,
+    TError,
+    RecordActualBatchCostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordActualBatchCost>>,
+  TError,
+  RecordActualBatchCostMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordActualBatchCostMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordActualBatchCost>>,
+    RecordActualBatchCostMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return recordActualBatchCost(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordActualBatchCostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordActualBatchCost>>
+>;
+export type RecordActualBatchCostMutationBody = BodyType<CostInput>;
+export type RecordActualBatchCostMutationError = ErrorType<ErrorEnvelope>;
+export type RecordActualBatchCostMutationVariables = {
+  data: BodyType<CostInput>;
+};
+
+/**
+ * @summary Cost
+ */
+export const useRecordActualBatchCost = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordActualBatchCost>>,
+    TError,
+    RecordActualBatchCostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordActualBatchCost>>,
+  TError,
+  RecordActualBatchCostMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordActualBatchCostMutationOptions(options));
+};
+
+export const getDisposeExpiredInventoryUrl = () => {
+  return `/api/v1/admin/inventory/expiry/disposals`;
+};
+
+/**
+ * @summary Dispose
+ */
+export const disposeExpiredInventory = async (
+  disposalCreate: DisposalCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryExpiryRow> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<InventoryExpiryRow>(getDisposeExpiredInventoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(disposalCreate),
+  });
+};
+
+export const getDisposeExpiredInventoryMutationKey = () =>
+  ["disposeExpiredInventory"] as const;
+
+export const getDisposeExpiredInventoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disposeExpiredInventory>>,
+    TError,
+    DisposeExpiredInventoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof disposeExpiredInventory>>,
+  TError,
+  DisposeExpiredInventoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDisposeExpiredInventoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof disposeExpiredInventory>>,
+    DisposeExpiredInventoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return disposeExpiredInventory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DisposeExpiredInventoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof disposeExpiredInventory>>
+>;
+export type DisposeExpiredInventoryMutationBody = BodyType<DisposalCreate>;
+export type DisposeExpiredInventoryMutationError = ErrorType<ErrorEnvelope>;
+export type DisposeExpiredInventoryMutationVariables = {
+  data: BodyType<DisposalCreate>;
+};
+
+/**
+ * @summary Dispose
+ */
+export const useDisposeExpiredInventory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disposeExpiredInventory>>,
+    TError,
+    DisposeExpiredInventoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof disposeExpiredInventory>>,
+  TError,
+  DisposeExpiredInventoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getDisposeExpiredInventoryMutationOptions(options));
+};
+
+export const getRefreshInventoryExpiryUrl = (
+  params?: RefreshInventoryExpiryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/expiry/reconcile?${stringifiedParams}`
+    : `/api/v1/admin/inventory/expiry/reconcile`;
+};
+
+/**
+ * @summary Listing
+ */
+export const refreshInventoryExpiry = async (
+  params?: RefreshInventoryExpiryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryExpiryPage> => {
+  return customFetch<InventoryExpiryPage>(
+    getRefreshInventoryExpiryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getRefreshInventoryExpiryQueryKey = (
+  params?: RefreshInventoryExpiryParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/expiry/reconcile`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getRefreshInventoryExpiryQueryOptions = <
+  TData = Awaited<ReturnType<typeof refreshInventoryExpiry>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: RefreshInventoryExpiryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof refreshInventoryExpiry>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getRefreshInventoryExpiryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof refreshInventoryExpiry>>
+  > = ({ signal }) =>
+    refreshInventoryExpiry(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof refreshInventoryExpiry>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type RefreshInventoryExpiryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof refreshInventoryExpiry>>
+>;
+export type RefreshInventoryExpiryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useRefreshInventoryExpiry<
+  TData = Awaited<ReturnType<typeof refreshInventoryExpiry>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: RefreshInventoryExpiryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof refreshInventoryExpiry>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getRefreshInventoryExpiryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReconcileExpiryRequestUrl = (key: string) => {
+  return `/api/v1/admin/inventory/expiry/requests/${key}`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileExpiryRequest = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ExpiryReconciliation> => {
+  return customFetch<ExpiryReconciliation>(getReconcileExpiryRequestUrl(key), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getReconcileExpiryRequestQueryKey = (key: string) => {
+  return [`/api/v1/admin/inventory/expiry/requests/${key}`] as const;
+};
+
+export const getReconcileExpiryRequestQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileExpiryRequest>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileExpiryRequest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileExpiryRequestQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileExpiryRequest>>
+  > = ({ signal }) =>
+    reconcileExpiryRequest(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileExpiryRequest>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileExpiryRequestQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileExpiryRequest>>
+>;
+export type ReconcileExpiryRequestQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reconcile
+ */
+
+export function useReconcileExpiryRequest<
+  TData = Awaited<ReturnType<typeof reconcileExpiryRequest>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileExpiryRequest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileExpiryRequestQueryOptions(key, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReviewExpiryDisposalUrl = () => {
+  return `/api/v1/admin/inventory/expiry/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewExpiryDisposal = async (
+  disposalInput: DisposalInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ExpiryDisposalReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ExpiryDisposalReview>(getReviewExpiryDisposalUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(disposalInput),
+  });
+};
+
+export const getReviewExpiryDisposalMutationKey = () =>
+  ["reviewExpiryDisposal"] as const;
+
+export const getReviewExpiryDisposalMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewExpiryDisposal>>,
+    TError,
+    ReviewExpiryDisposalMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewExpiryDisposal>>,
+  TError,
+  ReviewExpiryDisposalMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewExpiryDisposalMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewExpiryDisposal>>,
+    ReviewExpiryDisposalMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return reviewExpiryDisposal(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewExpiryDisposalMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewExpiryDisposal>>
+>;
+export type ReviewExpiryDisposalMutationBody = BodyType<DisposalInput>;
+export type ReviewExpiryDisposalMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewExpiryDisposalMutationVariables = {
+  data: BodyType<DisposalInput>;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewExpiryDisposal = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewExpiryDisposal>>,
+    TError,
+    ReviewExpiryDisposalMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewExpiryDisposal>>,
+  TError,
+  ReviewExpiryDisposalMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewExpiryDisposalMutationOptions(options));
+};
 
 export const getReviewInventoryInitializationUrl = (
   params?: ReviewInventoryInitializationParams,

@@ -1,3 +1,12 @@
+# Allergen expiry digest template
+
+The expiry migration seeds `inventory_expiry_templates.daily_admin`, a separate
+database-backed subject/introduction. The worker appends complete escaped today/
+next-15-day stock sections and trusted authenticated inventory links. This
+addition changes no existing order notification assignments. See
+[allergen-expiry-disposal.md](allergen-expiry-disposal.md) for unverified
+activation/delivery limits and the daily no-replay contract.
+
 # Database email templates
 
 ## Protected library

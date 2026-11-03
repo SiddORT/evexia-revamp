@@ -1,5 +1,12 @@
 # Automatic migration policy
 
+Allergen expiry source prepares `0084_allergen_expiry` and the coordinated
+development declaration/hash metadata. It adds encrypted actual-cost/disposal
+evidence, durable scan/daily claims, template and reserve disposal references.
+No migration, runtime or regression/release gate was executed. Existing
+production fresh-install catalog evidence remains at its genuinely reproduced
+target. See [allergen-expiry-disposal.md](allergen-expiry-disposal.md).
+
 The explicit order-draft source adds forward `0082_order_drafts`. Its development
 declaration and integrity metadata are generated source-only. No migrations,
 services or checks were activated, and fresh-install production catalog evidence

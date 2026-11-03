@@ -8,8 +8,10 @@
 
 export interface PRLineSnapshot {
   acceptedQty: string;
+  actualUnitCost?: string | null;
   balanceAfterQty: string | null;
   batchNo: string;
+  costProvenance?: string | null;
   expiryDate: Date;
   lineId: string;
   orderedQty: string;

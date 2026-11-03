@@ -12,11 +12,13 @@ export interface PRLineInput {
    * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
    */
   acceptedQty: string;
+  actualUnitCost?: string | null;
   /**
    * @minLength 1
    * @maxLength 120
    */
   batchNo: string;
+  costProvenance?: string | null;
   expiryDate: Date;
   lineId: string;
   /**

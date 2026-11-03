@@ -7,6 +7,7 @@
  */
 
 export interface ReserveSnapshot {
+  actualUnitCost?: string | null;
   allergenId: string;
   allergenName: string;
   allergenVersion: number;
@@ -20,6 +21,7 @@ export interface ReserveSnapshot {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   expired: boolean;
   expiryDate: Date;
   locationId: string;

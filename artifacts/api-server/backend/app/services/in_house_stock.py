@@ -15,11 +15,13 @@ from app.services.zones import label
 
 # Entry/read serialization; mixed movements take inventory then this lock.
 LOCK = 145579
-INPUT_FIELDS = ("allergenId", "concentration", "quantity", "unit", "expiryDate", "locationId", "batch", "notes")
+INPUT_FIELDS = ("allergenId", "concentration", "quantity", "unit", "expiryDate", "locationId", "batch", "notes", "actualUnitCost", "costProvenance")
 
 
 def transaction(db, actor, work):
     def run(current, _):
+        from app.services.inventory import lock
+        lock(db)
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK})
         from app.core.config import get_settings
         return work(current, InventoryCrypto(get_settings()))
@@ -28,7 +30,8 @@ def transaction(db, actor, work):
 
 
 def expired(data):
-    return {**data, "expired": data["expiryDate"] < datetime.now(timezone.utc).date().isoformat()}
+    from app.services.expiry_policy import usable
+    return {**data, "expired": not usable(data)}
 
 
 def references(db, actor, kind, query="", offset=0, limit=25, include_inactive=False):
@@ -100,6 +103,11 @@ def create(db, actor, body):
         data.update(id=str(rid), actorId=str(current.user.id), actor=label(db, current.user.id), createdAt=now.isoformat())
         db.add(Reserve(id=rid, actor_id=current.user.id, event_id=event.id, created_at=now,
             payload_ciphertext=crypto.seal(rid, "in_house_reserve", data)))
+        db.flush()
+        if body.actualUnitCost is not None:
+            from app.services.inventory_expiry import record_cost
+            record_cost(db, crypto, current, "reserve", rid, body.actualUnitCost,
+                        body.costProvenance, origin="manufacturing_entry")
         db.add(Retry(key=body.idempotencyKey, actor_id=current.user.id, digest=hashes[crypto.active],
             payload_ciphertext=crypto.seal(body.idempotencyKey, "in_house_retry", data)))
         db.flush()

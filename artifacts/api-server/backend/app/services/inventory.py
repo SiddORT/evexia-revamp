@@ -24,6 +24,7 @@ from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 from app.services.staff_crypto import StaffCrypto
 from app.services.zones import label
 from app.services import purchase_received as receipts
+from app.services.expiry_policy import usable, require_usable
 
 LIMIT = 2000
 LOCK = 145573
@@ -107,9 +108,16 @@ def selected_allergen_advice(db, identities):
             if not context["complete"]:
                 return [{**item, "name": products[uuid.UUID(item["allergenId"])].name
                          if uuid.UUID(item["allergenId"]) in products else item["name"]} for item in unknown]
-            totals = dict(db.execute(select(Lot.product_id, func.sum(Balance.quantity))
-                .join(Balance, Balance.lot_id == Lot.id).where(Lot.product_id.in_(ids))
-                .group_by(Lot.product_id)).all())
+            totals = {}
+            crypto = InventoryCrypto(get_settings())
+            rows = list(db.execute(select(Lot, Balance).join(Balance, Balance.lot_id == Lot.id)
+                    .where(Lot.product_id.in_(ids), Balance.quantity > 0).limit(LIMIT + 1)))
+            if len(rows) > LIMIT:
+                return unknown
+            for lot, balance in rows:
+                meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
+                if usable(meta):
+                    totals[lot.product_id] = totals.get(lot.product_id, Decimal(0)) + balance.quantity
             result = []
             for identity in ids:
                 product = products.get(identity)
@@ -130,7 +138,7 @@ def selected_allergen_advice(db, identities):
                     quantity=q(amount), threshold=str(threshold) if threshold is not None else None,
                     message=message + " Procurement quantity units; no demand conversion or reservation. Advisory only."))
             return result
-    except SQLAlchemyError:
+    except (SQLAlchemyError, PRError):
         return unknown
 
 
@@ -139,6 +147,8 @@ def balance_at(db, lot_id, location):
 
 
 def post(db, lot, location, delta, source, actor, movement=None):
+    if delta < 0 and not lot.combo_id and source.startswith(("assembly:", "adjustment:", "move:")):
+        require_usable(InventoryCrypto(get_settings()).open(lot.id, "lot", lot.payload_ciphertext))
     if location is None and not lot.opening_id:
         raise PRError("Only opening stock can be Unallocated.", 409, "inventory_unallocated")
     row = balance_at(db, lot.id, location)
@@ -188,13 +198,34 @@ def reconcile_receipt(db, actor, data, initializing=False):
         else:
             old = crypto.open(lot.id, "lot", lot.payload_ciphertext)
             changed = metadata and any(old[k] != metadata[k] for k in ("productId", "batchNo", "expiryDate"))
+            from app.services.expiry_policy import state as expiry_state
+            if changed and expiry_state(old.get("expiryDate")) in ("today", "expired"):
+                raise PRError("A saved expired batch cannot be revived by changing its product, batch or expiry.", 409, "inventory_lot_retained")
+            from app.services.inventory_expiry import cost
+            if changed and cost(db, crypto, "lot", lot.id):
+                raise PRError("A batch with recorded actual cost cannot change its identity or expiry. Record a separate genuine batch.", 409, "inventory_lot_retained")
             moved = db.scalar(select(Posting.id).where(Posting.lot_id == lot.id,
                 or_(Posting.movement_id.is_not(None), Posting.source_key.startswith("assembly:"),
-                    Posting.source_key.startswith("adjustment:"))).limit(1))
+                    Posting.source_key.startswith("adjustment:"), Posting.source_key.startswith("disposal:"))).limit(1))
             if changed and moved:
                 raise PRError("This receipt lot has committed transfers or assembly consumption; its product, batch and expiry cannot change.", 409, "inventory_lot_retained")
             if metadata:
                 lot.payload_ciphertext = crypto.seal(lot.id, "lot", metadata)
+        # A committed separation or disposal permanently retains identity.
+        from app.db.expiry_models import ExpirySeparation, ExpiryDisposal
+        if existing and lot in existing:
+            disposed = db.scalar(
+                select(ExpiryDisposal.id).where(ExpiryDisposal.source_kind == "lot", ExpiryDisposal.batch_id == lot.id).limit(1))
+            retained = db.get(ExpirySeparation, ("lot", lot.id)) or disposed
+            if metadata and retained and any(old.get(k) != metadata.get(k) for k in ("productId", "batchNo", "expiryDate")):
+                raise PRError("Expired/disposed batch identity and expiry cannot be rewritten.", 409, "inventory_lot_retained")
+            if disposed and accepted > lot.accepted:
+                raise PRError("A disposed receipt lot cannot receive additional acceptance. Record a separate genuine receipt batch.", 409, "inventory_lot_retained")
+        if line and line.get("actualUnitCost") is not None:
+            from app.services.inventory_expiry import cost, record_cost
+            if not cost(db, crypto, "lot", lot.id):
+                record_cost(db, crypto, actor, "lot", lot.id, line["actualUnitCost"],
+                            line["costProvenance"], origin="purchase_receipt")
         # Reductions occur ONLY at original receipt location, never at a destination.
         post(db, lot, lot.origin_id, accepted - lot.accepted,
              f"receipt:{receipt_id}:{data['version']}", actor)
@@ -313,10 +344,11 @@ def receipt_evidence(db, row, data):
         expected = quantity(line["acceptedQty"]) if data["status"] == "active" else Decimal(0)
         balance = sum((a.quantity for a in amounts), Decimal(0))
         consumed = -sum((p.delta for p in ledger if p.source_key.startswith("assembly:")), Decimal(0))
+        disposed = -sum((p.delta for p in ledger if p.source_key.startswith("disposal:")), Decimal(0))
         evidence.append(dict(lineId=line["lineId"], productId=line["productId"],
             accepted=q(expected), posted=q(lot.accepted) if lot else "0.000",
-            consumedInAssemblies=q(consumed), onHand=q(balance),
-            matches=bool((lot.accepted if lot else Decimal(0)) == expected and expected - consumed == balance)))
+            consumedInAssemblies=q(consumed), disposedQuantity=q(disposed), onHand=q(balance),
+            matches=bool((lot.accepted if lot else Decimal(0)) == expected and expected - consumed - disposed == balance)))
     return evidence
 
 
@@ -357,6 +389,10 @@ def stock(db, actor, params):
                     thresholdLimit=str(product.threshold_limit) if product and product.threshold_limit is not None else None,
                     quantity="0.000", unit=meta["unit"], lots=[], history=[], state="retained_product")
             item = result[pid]
+            if not lot.combo_id and not usable(meta):
+                # Physical balances/history are retained; only usable quantity
+                # and usable-lot selection exclude expired/unknown-expiry stock.
+                continue
             for balance in (b for b in balances if b.lot_id == lot.id and b.quantity):
                 lid = str(balance.location_id) if balance.location_id else None
                 if lid not in locations:
@@ -482,6 +518,8 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, un
             for balance in balances:
                 lot = db.get(Lot, balance.lot_id)
                 meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
+                if not lot.combo_id and not usable(meta):
+                    continue
                 meta.setdefault("itemKind", "combo" if lot.combo_id else "allergen")
                 provenance = ("Adjustment " + str(lot.adjustment_id)) if lot.adjustment_id else (("Opening stock " + meta["openingId"]) if lot.opening_id else (meta.get("receiptNumber") or "Assembled combo"))
                 data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta.get('batchNo') or 'Batch unavailable'} · {provenance}",
@@ -545,6 +583,8 @@ def review_move(db, crypto, body, actor=None):
         destination = balance_at(db, lot.id, body.destinationId)
         src, dst, amount = balance.quantity, destination.quantity if destination else Decimal(0), quantity(line.quantity)
         metadata = crypto.open(lot.id, "lot", lot.payload_ciphertext)
+        if not lot.combo_id:
+            require_usable(metadata)
         # A later unchanged transfer is not another dilution.
         metadata.update(sourceKind="inventory", dilutionFactor=None,
             resultingQuantity=q(amount), resultingConcentration=metadata.get("concentration"),

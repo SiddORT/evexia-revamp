@@ -7,6 +7,7 @@
  */
 
 export interface ReserveCreate {
+  actualUnitCost?: string | null;
   allergenId: string;
   /** @maxLength 100 */
   batch?: string;
@@ -15,6 +16,7 @@ export interface ReserveCreate {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   expiryDate: Date;
   idempotencyKey: string;
   locationId: string;

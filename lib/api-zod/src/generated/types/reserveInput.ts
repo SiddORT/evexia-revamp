@@ -7,6 +7,7 @@
  */
 
 export interface ReserveInput {
+  actualUnitCost?: string | null;
   allergenId: string;
   /** @maxLength 100 */
   batch?: string;
@@ -15,6 +16,7 @@ export interface ReserveInput {
    * @maxLength 200
    */
   concentration: string;
+  costProvenance?: string | null;
   expiryDate: Date;
   locationId: string;
   /** @maxLength 2000 */

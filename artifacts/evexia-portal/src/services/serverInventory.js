@@ -126,6 +126,7 @@ export const LEDGER_TYPES = [
   { value: '', label: 'All transaction types' }, { value: 'opening', label: 'Opening stock' }, { value: 'receipt', label: 'Receipt' },
   { value: 'receipt_correction', label: 'Receipt correction' }, { value: 'transfer', label: 'Transfer' }, { value: 'allocation', label: 'Allocation' },
   { value: 'assembly_consumption', label: 'Assembly consumption' }, { value: 'adjustment', label: 'Manual adjustment' },
+  { value: 'disposal', label: 'Expired-stock disposal' },
   { value: 'dilution', label: 'In-house dilution' },
 ];
 export const typeLabel = (t) => LEDGER_TYPES.find((o) => o.value === t)?.label || String(t || 'Entry');
@@ -156,4 +157,65 @@ export async function forgetAdjustment(key) {
     if (ownerMove() !== owner || pendingAdjustment()?.key !== key) throw new Error('Retry identity changed.');
     localStorage.removeItem(adjKey());
   });
+}
+
+/** Allergen expiry and disposal (Super Admin). Values are exact decimal strings; never parsed as Number. */
+export const EXPIRY_LIMIT = 25;
+export const listExpiry = (params, signal) => request('/expiry', { params: clean(params), signal });
+export const reconcileExpiryRead = (params, signal) => request('/expiry/reconcile', { params: clean(params), signal });
+export const reviewDisposal = (body) => request('/expiry/review', { body });
+export const saveDisposal = (body) => request('/expiry/disposals', { body });
+export const saveExpiryCost = (body) => request('/expiry/costs', { body });
+export const expiryRequestOutcome = (key) => request(`/expiry/requests/${key}`);
+/** Unit cost: up to 9 integer and 6 fractional digits, plain decimal. */
+export const validUnitCost = (v) => /^(?:0|[1-9]\d{0,8})(?:\.\d{1,6})?$/.test(String(v ?? '').trim());
+export const isZeroCost = (v) => /^0(?:\.0+)?$/.test(String(v ?? '').trim());
+/** Provenance is free text: the documented source of the cost (invoice reference, manufacturing worksheet). */
+export const provenanceLabel = (v) => (v == null || String(v).trim() === '' ? 'Source not recorded' : String(v));
+export const validProvenance = (v) => { const t = String(v ?? '').trim(); return t.length >= 3 && t.length <= 1000; };
+/** Shows the server string verbatim with an INR marker; no float rounding. */
+export const inr = (v) => (v == null || v === '' ? 'Cost unavailable' : `INR ${v}`);
+export const EXPIRY_PENDING_EVENT = 'evexia:expiry-pending';
+const expiryKey = () => `evexia.expiry.pending:${ownerMove()}`;
+export function pendingExpiry() {
+  try {
+    if (!ownerMove()) throw new Error();
+    const raw = localStorage.getItem(expiryKey());
+    if (raw === null) return null;
+    const item = JSON.parse(raw);
+    if (item.owner !== ownerMove() || !uuid.test(item.key)) throw new Error();
+    return item;
+  } catch { throw new Error('Expiry save retry identity is unavailable. Restore browser storage/session access; do not start a replacement save until the previous outcome is checked.'); }
+}
+export async function rememberExpiry(key, kind) {
+  const owner = ownerMove();
+  if (!owner || !navigator.locks) throw new Error('A safe save needs browser storage and Web Locks. Nothing was sent.');
+  await navigator.locks.request(`evexia-expiry:${owner}`, () => {
+    const previous = pendingExpiry();
+    if (ownerMove() !== owner || (previous && previous.key !== key)) throw new Error('Another expiry save is unresolved. Check its outcome before saving again.');
+    localStorage.setItem(expiryKey(), JSON.stringify({ owner, key, kind }));
+  });
+  window.dispatchEvent(new Event(EXPIRY_PENDING_EVENT));
+}
+export async function forgetExpiry(key) {
+  const owner = ownerMove();
+  if (!owner || !navigator.locks) throw new Error('Retry storage unavailable; check the outcome before a new save.');
+  await navigator.locks.request(`evexia-expiry:${owner}`, () => {
+    if (ownerMove() !== owner || pendingExpiry()?.key !== key) throw new Error('Retry identity changed.');
+    localStorage.removeItem(expiryKey());
+  });
+  window.dispatchEvent(new Event(EXPIRY_PENDING_EVENT));
+}
+/** Journal the opaque key before sending; keep it when the outcome is uncertain so reloads stay blocked. */
+export async function journaledExpiry(key, kind, send) {
+  await rememberExpiry(key, kind);
+  try {
+    const result = await send();
+    await forgetExpiry(key);
+    return result;
+  } catch (e) {
+    if (e?.ambiguous || !e?.status || e.status >= 500) { e.uncertain = true; throw e; }
+    try { await forgetExpiry(key); } catch { e.uncertain = true; }
+    throw e;
+  }
 }

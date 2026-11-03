@@ -37,6 +37,8 @@ def choices(db, actor, key):
         for bal in balances:
             lot = by_id[bal.lot_id]
             meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
+            if not inv.usable(meta):
+                continue
             location = db.get(StorageLocation, bal.location_id) if bal.location_id else None
             result.append(dict(lotId=str(lot.id), locationId=str(bal.location_id) if bal.location_id else None,
                 locationName=location.name if location else "Unallocated", available=inv.q(bal.quantity),
@@ -68,6 +70,7 @@ def review(db, crypto, body):
         lot = db.get(inv.Lot, body.lotId)
         if not lot or lot.product_id != item.id or lot.combo_id:
             raise inv.PRError("Choose an existing lot for this allergen.", 422, "inventory_lot")
+        inv.require_usable(crypto.open(lot.id, "lot", lot.payload_ciphertext))
         balance = inv.balance_at(db, lot.id, body.locationId)
         if not balance or balance.quantity < amount:
             raise inv.PRError("Insufficient stock in this exact lot/location. Your draft is preserved.", 409, "inventory_insufficient")

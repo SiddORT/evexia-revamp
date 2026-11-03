@@ -20,7 +20,7 @@ from app.services.purchase_received_crypto import ReceiptCrypto
 from app.core.config import get_settings
 
 TYPES = {"opening", "receipt", "receipt_correction", "transfer", "allocation", "dilution",
-         "assembly_consumption", "adjustment"}
+         "assembly_consumption", "adjustment", "disposal"}
 
 
 def fail(message):
@@ -194,6 +194,17 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
                 business, actor_name = data.get("recordedDate"), data.get("actor", actor_name)
                 reason = data.get("remarks") or data.get("reason") or reason
                 reference = f"Opening stock {sid[:8]}" if sid else "Opening stock · source unavailable"
+            elif first.source_key.startswith("disposal:"):
+                from app.db.expiry_models import ExpiryDisposal
+                sid = first.source_key.split(":")[1]
+                record = db.get(ExpiryDisposal, uuid.UUID(sid))
+                if not record:
+                    fail("A disposal posting has no retained disposal evidence.")
+                data = crypto.open(record.id, "expiry_disposal", record.payload_ciphertext)
+                tx, kind, available = "disposal", "disposal", True
+                actor_name, reason = data["actor"], data["reason"]
+                business = data["expiryDate"]
+                reference = f"Expired-stock disposal {sid}"
             elif first.source_key.startswith("assembly:"):
                 sid = first.source_key.split(":")[1]
                 record = db.get(ProductAssembly, uuid.UUID(sid))
