@@ -1,18 +1,16 @@
-.imm-extract-settings { font-family: var(--font-sans); font-size: 13px; line-height: 1.5; color: var(--admin-text); }
-.imm-extract-settings__categories { margin: 20px 0 24px; }
-.imm-extract-settings__category-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; max-width: 48rem; }
+.imm-extract-settings { min-width: 0; font-family: var(--font-sans); font-size: 13px; line-height: 1.5; color: var(--admin-text); }
+.imm-extract-settings__categories { margin: 20px 0 24px; max-width: 48rem; }
 .imm-extract-settings__field { display: grid; align-content: start; gap: 8px; min-width: 0; font-weight: 700; }
-.imm-extract-settings :is(input, select) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
-.imm-extract-settings select { cursor: pointer; }
+.imm-extract-settings__table input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
 .imm-extract-settings input::placeholder { color: var(--admin-text-soft); opacity: 1; }
-.imm-extract-settings :is(input, select):focus { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.imm-extract-settings__table input:focus { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .imm-extract-settings :is(input, select, button, summary):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
 .imm-extract-settings input[aria-invalid="true"] { border-color: var(--admin-danger); }
 .imm-extract-settings :is(input, select):disabled { cursor: not-allowed; opacity: .65; }
 .imm-extract-settings__category-heading { margin: 0; padding-top: 20px; border-top: 1px solid var(--admin-border); font-size: 16px; font-weight: 700; }
 .imm-extract-settings fieldset { min-width: 0; border: 0; padding: 0; margin: 8px 0 16px; }
 .imm-extract-settings__hint { margin: 0 0 16px; color: var(--admin-text-soft); font-size: 12px; }
-.imm-extract-settings__table-wrap { position: relative; overflow-x: auto; padding: 4px; }
+.imm-extract-settings__table-wrap { position: relative; min-width: 0; max-width: 100%; overflow-x: auto; padding: 4px; }
 .imm-extract-settings__table-wrap:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
 .imm-extract-settings__table { width: 100%; min-width: 26rem; border-collapse: collapse; table-layout: fixed; }
 .imm-extract-settings__table th, .imm-extract-settings__table td { padding: 12px; text-align: left; vertical-align: middle; }
@@ -21,6 +19,22 @@
 .imm-extract-settings__table tbody tr + tr { border-top: 1px solid var(--admin-border); }
 .imm-extract-settings__table input { font-variant-numeric: tabular-nums; }
 .imm-extract-settings__table small { display: block; margin-top: 4px; color: var(--admin-text-soft); font-size: 11px; font-weight: 400; }
+.imm-extract-settings__saved { min-width: 0; margin: 16px 0 24px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.imm-extract-settings__saved h4, .imm-extract-settings__editor-heading { margin: 0 0 8px; padding: 0; font-size: 13px; font-weight: 700; }
+.imm-extract-settings__saved-table td { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* Keep the reused master picker self-contained on a cold Settings route.
+   Quantity input styles above deliberately do not target its search field. */
+.imm-extract-settings .admin-allergen-combobox { font-weight: 400; }
+.imm-extract-settings .admin-allergen-combobox__trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; min-height: 38px; padding: 8px 11px; border: 0; background: transparent; color: var(--admin-text); font: inherit; text-align: left; cursor: pointer; }
+.imm-extract-settings .admin-allergen-combobox__trigger span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.imm-extract-settings .admin-allergen-combobox__trigger svg { flex: none; }
+.imm-extract-settings .admin-allergen-combobox__trigger:disabled { opacity: .65; cursor: not-allowed; }
+.imm-extract-settings .admin-allergen-combobox__trigger:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -3px; }
+.imm-extract-settings .admin-allergen-combobox__menu { box-sizing: border-box; max-width: 100%; overscroll-behavior: contain; }
+.imm-extract-settings .admin-allergen-combobox__menu > input { position: sticky; top: 0; z-index: 1; box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; border: 1px solid var(--admin-border); border-radius: 5px; background: var(--admin-surface); color: var(--admin-text); font: inherit; padding: 8px; }
+.imm-extract-settings .admin-allergen-combobox__menu > input:focus-visible { outline-offset: -2px; }
+.imm-extract-settings .searchable-select__option span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.imm-extract-settings .searchable-select__empty .admin-button { display: block; margin-top: 8px; }
 .imm-extract-settings__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .imm-extract-settings__disclosure { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-text-soft); font-size: 12px; }
 .imm-extract-settings__disclosure summary { cursor: pointer; color: var(--admin-text); font-weight: 700; }

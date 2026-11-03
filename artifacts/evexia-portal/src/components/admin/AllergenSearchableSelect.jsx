@@ -3,7 +3,7 @@ import { Check, ChevronDown, X } from 'lucide-react';
 import './searchableSelect.css';
 
 // Allergen-only variant: remote menus own their result filtering and paging.
-export default function AllergenSearchableSelect({ id, label, value, options, selectedLabel, onChange, placeholder, invalid, describedBy, disabled = false, testId, onSearch, loading = false, error = '', onRetry, onMore, remaining = 0, empty }) {
+export default function AllergenSearchableSelect({ id, label, value, options, selectedLabel, onChange, placeholder, invalid, describedBy, disabled = false, testId, onSearch, loading = false, error = '', onRetry, onMore, remaining = 0, hasMore = remaining > 0, moreLabel, empty }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1);
@@ -85,7 +85,7 @@ export default function AllergenSearchableSelect({ id, label, value, options, se
       {loading ? <div className="searchable-select__empty" role="status">Loading {label.toLowerCase()}…</div>
         : error ? <div className="searchable-select__empty" role="alert">{error}<button type="button" disabled={disabled} className="admin-button admin-button--secondary" onClick={onRetry}>Retry</button></div>
         : <>{(empty ?? !matches.length) && <div className="searchable-select__empty" role="status">No matching {label.toLowerCase()}.</div>}
-          {remaining > 0 && <button type="button" disabled={disabled} className="admin-button admin-button--secondary" onClick={onMore} data-testid={`${testId}-more`}>Load more ({remaining} remaining)</button>}</>}
+          {hasMore && <button type="button" disabled={disabled} className="admin-button admin-button--secondary" onClick={onMore} data-testid={`${testId}-more`}>{moreLabel ?? `Load more (${remaining} remaining)`}</button>}</>}
     </div>}
   </div>;
 }
