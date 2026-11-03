@@ -377,6 +377,7 @@ function Editor({ order, mode, draft }) {
     return `imm-${k}`;
   };
   const dis = readOnly || Boolean(pending) || uncertain || reviewBusy || persistent.locked;
+  const hasUnsavedDraftChanges = persistent.saved && (JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) || JSON.stringify(allergenEntries) !== JSON.stringify(persistent.saved.payload.allergenEntries || {}));
   const rf = (k, label, props = {}) => <label className="imm-field">{label}
     <input id={`imm-reg-${k}`} disabled={Boolean(pending)} ref={k === 'name' ? regNameRef : undefined} value={reg[k]} onChange={(e) => setReg({ ...reg, [k]: e.target.value })} aria-invalid={Boolean(regErrors[k])} aria-describedby={regErrors[k] ? `imm-reg-${k}-err` : undefined} data-testid={`input-imm-reg-${k}`} {...props} />
     <Err id={`imm-reg-${k}-err`} text={regErrors[k]} /></label>;
@@ -385,20 +386,23 @@ function Editor({ order, mode, draft }) {
     <Err id={`imm-reg-a-${k}-err`} text={regErrors[`address-${k}`]} /></label>;
 
   return <AdminLayout title="IMMUNOTHERAPY"><div className="imm imm-editor">
-    <div className="admin-page-head">
+    <div className={`admin-page-head${isNew ? ' imm-editor-head--new' : ''}`}>
       <div><p className="admin-page-head__eyebrow">Orders / Immunotherapy</p>
         <h1>{isNew ? 'Add order' : `${readOnly ? 'Order' : 'Edit'} ${order.number}`}</h1>
         <p className="admin-page-head__description">{readOnly ? 'Saved historical order details.' : adminReview && order ? 'Edit SUB pricing, child composition and private prescriptions. Save all pending changes together.' : 'Patient first, then dosage, allergens and shipping.'}</p></div>
       <div className="imm-actions">
+        {isNew && !readOnly && <>
+          <button type="button" className="admin-button admin-button--secondary" disabled={readOnly || Boolean(pending) || uncertain || reviewBusy || persistent.busy} onClick={saveDraft}>{persistent.busy ? 'Saving draft…' : persistent.unknown ? 'Retry unchanged draft save' : 'Save as Draft'}</button>
+          <button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy || persistent.locked} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : 'Submit order'}</button>
+        </>}
         <button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)} data-testid="button-imm-back"><ArrowLeft size={15} aria-hidden="true" />{readOnly ? 'Back' : 'Cancel'}</button>
         {order && readOnly && !orderLocked(order) && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
       </div>
     </div>
-    {!order && <div className="imm-actions">
-      <button type="button" className="admin-button admin-button--secondary" disabled={readOnly || Boolean(pending) || uncertain || reviewBusy || persistent.busy} onClick={saveDraft}>{persistent.busy ? 'Saving draft…' : persistent.unknown ? 'Retry unchanged draft save' : 'Save as Draft'}</button>
+    {isNew && (persistent.notice || hasUnsavedDraftChanges) && <section className="imm-editor-draft-notices" aria-label="Draft save information">
       {persistent.notice}
-      {persistent.saved && (JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) || JSON.stringify(allergenEntries) !== JSON.stringify(persistent.saved.payload.allergenEntries || {})) && <p role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
-    </div>}
+      {hasUnsavedDraftChanges && <p className="imm-editor-draft-notices__unsaved" role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
+    </section>}
     <dl className="imm-facts"><div><dt>Order Batch No</dt><dd>{orderBatchLabel(order)}</dd></div></dl>
     {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">
       <h2 id="imm-recovery-title">Save outcome is unconfirmed</h2>
@@ -549,7 +553,7 @@ function Editor({ order, mode, draft }) {
           {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number (optional)<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label><Err text={errors.poNumber} />
             <p className="imm-hint">Approval requires one MRP per SUB, extract and dilution for every child, valid composition and a verified patient prescription. PO may be omitted. Draft saves may be incomplete; rejection requires no invented prices or clinical quantities.</p></>}
           <p className="imm-hint">Update or Save writes the whole order atomically, including all other pending edits. Changes are saved only after the server confirms success. Saving does not approve or reject the order.</p>
-          <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy || persistent.locked} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Submit order' : 'Save changes'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>
+          {!isNew && <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy || persistent.locked} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : 'Save changes'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>}
         </section>}
       </div>
       <aside className="imm-aside" aria-label="Order summary">

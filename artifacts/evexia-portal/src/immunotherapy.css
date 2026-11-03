@@ -80,6 +80,14 @@
 /* Editor only: match the portal's sans-serif panel hierarchy, not saved
    summaries, listings, prescription dialogs or document templates. */
 .imm-editor { font-family: var(--font-sans); font-size: 13px; font-weight: 400; line-height: 1.5; }
+.imm-editor .imm-editor-head--new { align-items: flex-start; }
+.imm-editor .imm-editor-head--new > :first-child { flex: 1 1 280px; }
+.imm-editor .imm-editor-head--new > .imm-actions { flex: 0 1 auto; margin-left: auto; justify-content: flex-end; }
+.imm-editor .imm-editor-head--new .admin-button { padding-block: 9px; line-height: 1.5; }
+.imm-editor .imm-editor-draft-notices { display: grid; gap: 12px; min-width: 0; margin-bottom: 18px; padding: 14px 16px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-state-link); color: var(--admin-text-soft); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.imm-editor .imm-editor-draft-notices > p { max-width: 80ch; margin: 0; }
+.imm-editor .imm-editor-draft-notices > [role="alert"] { color: var(--admin-danger); font-weight: 600; }
+.imm-editor .imm-editor-draft-notices__unsaved { padding-left: 12px; border-left: 3px solid var(--admin-secondary); color: var(--admin-text); }
 .imm-editor .imm-section > h2 { font-family: var(--font-sans); font-size: 1rem; font-weight: 600; line-height: 1.4; }
 .imm-editor .imm-field { font-size: 12px; font-weight: 600; line-height: 1.5; }
 .imm-editor .imm-field :is(input, select, textarea),
