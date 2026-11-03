@@ -50,9 +50,12 @@ export default function SuborderCards({ groups, onChange, errors, disabled, read
           <div className="imm-sub__table" role="table" aria-label={`Allergens in suborder ${g.id}`}>
             <div className="imm-sub__row imm-sub__row--head" role="row">{['Sr. No.', 'Allergen Name', 'Skin Test Result (mm)', 'Available quantity', 'Extract (ml)', 'Dilution (ml)', 'Action'].map((h) => <span role="columnheader" key={h}>{h}</span>)}</div>
             {g.items.map((it, ii) => { const k = `${g.id}-${it.allergenId}`; const rk = `result-${k}`;
+              const a = allergenList.find((a) => a.id === it.allergenId);
+              const concentration = it.allergen?.concentration || a?.concentration || '';
               return <div className="imm-sub__row" role="row" key={it.allergenId}>
                 <span role="cell" data-label="Sr. No.">{ii + 1}</span>
-                <span role="cell" data-label="Allergen" className="imm-sub__name">{it.allergen?.name || allergenList.find((a) => a.id === it.allergenId)?.name || 'Saved allergen'}</span>
+                <span role="cell" data-label="Allergen" className="imm-sub__name">{it.allergen?.name || a?.name || 'Saved allergen'}
+                  {concentration.trim() && <span className="imm-cell-sub">Concentration: {concentration}</span>}</span>
                 <span data-label="Skin Test Result (mm)">{disabled || readOnly ? it.result : <input inputMode="decimal" id={`imm-r-${gi}-${ii}`} aria-label={`Skin test result in mm for ${it.allergen?.name || 'allergen'} in ${g.id}`} value={it.result} aria-invalid={Boolean(errors[rk])} onChange={(ev) => updItem(g.id, it.allergenId, { result: ev.target.value })} />}{errors[rk] && <em className="imm-error" role="alert">{errors[rk]}</em>}</span>
                 <span data-label="Available quantity">Unavailable</span>
                 {['extract', 'dilution'].map((f) => <span data-label={f === 'extract' ? 'Extract (ml)' : 'Dilution (ml)'} key={f}>{admin ? <>

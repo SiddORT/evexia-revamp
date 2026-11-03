@@ -496,8 +496,11 @@ function Editor({ order, mode, draft }) {
                 <Err id={`group-${g.id}-err`} text={err} />
                 {!g.items.length && <p className="imm-hint">No allergens added.</p>}
                 {g.items.map((it, ii) => { const a = ALLERGENS.find((x) => x.id === it.allergenId); const ek = `result-${g.id}-${it.allergenId}`;
-                  return <div className="imm-item" key={it.allergenId}>
-                    <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}<span className="imm-cell-sub">{it.allergen?.concentration || a?.concentration}</span><span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId || 'pending save (server-assigned)'}</span></div>
+                  const concentration = it.allergen?.concentration || a?.concentration || '';
+                  return <div className={`imm-item${adminReview ? ' imm-item--historical-rate' : ''}`} key={it.allergenId}>
+                    <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}
+                      {concentration.trim() && <span className="imm-cell-sub">Concentration: {concentration}</span>}
+                      {it.suborderId && <span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId}</span>}</div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Skin Test Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" required value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
                     {adminReview && <div className="imm-field"><span>Historical rate (INR)</span><span>{money(parseAmount(it.rate))}</span></div>}
                     {!dis && (!adminReview || !order) && !it.suborderId && g.items.length > 1 && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove unsaved ${it.allergen?.name || a?.name || 'allergen'}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
