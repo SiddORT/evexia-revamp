@@ -13,4 +13,5 @@ export const EmailTemplateEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
   mr_invitation: "mr_invitation",
+  mr_immunotherapy_placed: "mr_immunotherapy_placed",
 } as const;

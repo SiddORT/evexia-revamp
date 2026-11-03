@@ -8,6 +8,7 @@ from app.db.models import AuditEvent
 from app.services.communication import authorize
 from app.services.order_event_contract import EVENTS, VARIABLES
 from app.schemas.order_notifications import OrderNotificationTemplateInput as TemplateInput
+from app.services.immunotherapy_placement_notification import ASSIGNMENT, VARIABLES as PLACEMENT_VARIABLES
 
 FIELDS = {"eventKey": "event_key", "dltId": "dlt_id", "providerTemplate": "provider_template"}
 
@@ -22,15 +23,17 @@ def present(row, readiness="not_assigned"):
 def listing(db, actor, settings):
     authorize(db, actor)
     from app.services.order_notification_transport import readiness
-    rows = list(db.scalars(select(Template).order_by(Template.channel, Template.name).limit(101)))
-    if len(rows) > 100:
+    rows = list(db.scalars(select(Template).order_by(Template.channel, Template.name).limit(103)))
+    if len(rows) > 102:
         raise HTTPException(503, "The shared template library exceeds its safe limit.")
     items = []
     for row in rows:
         code = readiness(db, settings, row.channel, row)[0] if row.event_key else "not_assigned"
         items.append(present(row, code or "ready"))
     db.commit()
-    return dict(items=items, events=[dict(key=k, label=v) for k, v in EVENTS.items()], variables=list(VARIABLES))
+    return dict(items=items, events=[dict(key=k, label=v) for k, v in EVENTS.items()] +
+                [dict(key=ASSIGNMENT, label="MR Immunotherapy order placement · SMS/WABA authoring only")],
+                variables=list(VARIABLES + PLACEMENT_VARIABLES[1:]))
 
 
 def mutate(db, actor, body, identity=None, *, delete=False):
@@ -50,8 +53,8 @@ def mutate(db, actor, body, identity=None, *, delete=False):
             if row and row.channel != body.channel:
                 raise HTTPException(422, "Channel cannot change. Create a separate template.")
             if not row:
-                if db.scalar(select(func.count()).select_from(Template)) >= 100:
-                    raise HTTPException(422, "The shared library supports at most 100 templates.")
+                if db.scalar(select(func.count()).select_from(Template)) >= 102:
+                    raise HTTPException(422, "The shared library supports at most 102 templates.")
                 row = Template(id=uuid.uuid4(), version=1, created_by=current.user.id)
                 db.add(row)
             else:

@@ -2,6 +2,9 @@
 
 
 def modern_html(event):
+    if event == "mr_immunotherapy_placed":
+        from app.services.immunotherapy_placement_notification import HTML
+        return '<div style="font-family:Arial,sans-serif;color:#28263a;padding:24px;line-height:1.7">' + HTML + '</div>'
     invitation = event in ("account_invitation", "mr_invitation")
     mr = event == "mr_invitation"
     title = ("Welcome to the MR portal" if mr else "Welcome to the Admin workspace") if invitation else "Reset your password"

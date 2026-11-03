@@ -18,6 +18,7 @@ function safeList(data) {
     items: data.items.filter((n) => n && typeof n.id === 'string' && UUID.test(n.id)).slice(0, MAX_ITEMS).map((n) => ({
       id: n.id, event: String(n.event ?? ''), kind: String(n.kind ?? ''), number: String(n.number ?? ''), status: String(n.status ?? ''),
       mrName: n.mrName ? String(n.mrName) : '', createdAt: n.createdAt, amount: typeof n.amount === 'string' ? n.amount : null, read: n.read === true,
+      message: typeof n.message === 'string' ? n.message : null,
     })),
   };
 }
@@ -153,9 +154,10 @@ export default function NotificationBell({ portal }) {
       {loading && !data && <ul className="nb__list" aria-busy="true" aria-label="Loading notifications">{[0, 1, 2].map((i) => <li key={i} className="nb__skel"><span /><span /></li>)}</ul>}
       {data && !data.items.length && <div className="nb__empty" data-testid="status-notifications-empty"><Bell size={22} aria-hidden="true" /><strong>No order activity yet</strong><span>Placed, confirmed, shipped and other order events you can access appear here.</span></div>}
       {data && data.items.length > 0 && <ul className="nb__list" aria-label="Recent order notifications">{data.items.map((n) => <li key={n.id} className={`nb__item${n.read ? '' : ' nb__item--unread'}`} data-testid={`row-notification-${n.id}`}>
-        <button type="button" className="nb__open" disabled={busyId === n.id} onClick={() => void openTarget(n)} aria-label={`${n.read ? '' : 'Unread. '}${eventName(n.event)} for ${kindLabel(n.kind)} order ${n.number}. Open order.`} data-testid={`button-open-notification-${n.id}`}>
+        <button type="button" className="nb__open" disabled={busyId === n.id} onClick={() => void openTarget(n)} aria-label={`${n.read ? '' : 'Unread. '}${n.message || `${eventName(n.event)} for ${kindLabel(n.kind)} order ${n.number}.`} Open order.`} data-testid={`button-open-notification-${n.id}`}>
           <span className="nb__line"><strong>{eventName(n.event)}</strong><span className="nb__kind">{kindLabel(n.kind)}</span></span>
           <span className="nb__meta">#{n.number}{n.status ? ` · ${n.status}` : ''}{n.mrName ? ` · ${n.mrName}` : ''}{n.amount ? ` · ${n.amount}` : ''}</span>
+          {n.message && <span className="nb__message">{n.message}</span>}
           <span className="nb__time">{when(n.createdAt)}</span>
         </button>
         <button type="button" className="nb__mark" disabled={busyId === n.id} onClick={() => void setRead(n, !n.read)} aria-label={n.read ? `Mark ${n.number} unread` : `Mark ${n.number} read`} title={n.read ? 'Mark unread' : 'Mark read'} data-testid={`button-toggle-read-${n.id}`}>

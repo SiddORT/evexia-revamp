@@ -100,6 +100,16 @@ class DeliveryHTML(HTMLParser):
 
 
 def validate_template(subject, html, text, event_key):
+    from app.services.immunotherapy_placement_notification import ASSIGNMENT, VARIABLES as PLACEMENT_VARIABLES
+    if event_key == ASSIGNMENT:
+        for source in (subject, html, text):
+            tokens(source, PLACEMENT_VARIABLES)
+        if re.search(r"[\x00-\x1f\x7f-\x9f]", subject):
+            raise ValueError("Invalid subject header.")
+        parsed = DeliveryHTML(html)
+        if parsed.links:
+            raise ValueError("Order alerts contain no action links.")
+        return "".join(parsed.output)
     if event_key not in (None, "password_recovery", "account_invitation", "mr_invitation"):
         raise ValueError("Unsupported backend event.")
     allowed = INVITATION_VARIABLES if event_key in ("account_invitation", "mr_invitation") else VARIABLES
@@ -148,6 +158,15 @@ def render_recovery(template, *, recipient_name, reset_url, expiry_minutes, port
 
 def render_test(template):
     """Narrow test renderer: no caller-provided values, URL, token or live render bypass."""
+    from app.services.immunotherapy_placement_notification import ASSIGNMENT
+    if template.event_key == ASSIGNMENT:
+        from app.services.order_event_contract import render
+        validate_template(template.subject, template.html, template.text, template.event_key)
+        result = render(template, dict(mr_name="Fictional MR Member", patient_name="Fictional Patient",
+                                       placement_date="03/11/2026"))
+        return RenderedEmail("[TEST — EVEXIA] " + result.subject,
+                             "TEST EMAIL — fictional placement; no order was created.\n\n" + result.text,
+                             "<p>TEST EMAIL — fictional placement; no order was created.</p>" + result.html)
     mr = template.event_key == "mr_invitation"
     rendered = _render(template, recipient_name="Fictional MR Member" if mr else "Fictional Staff Member",
                        reset_url="https://email-sample.invalid/not-an-account-action",

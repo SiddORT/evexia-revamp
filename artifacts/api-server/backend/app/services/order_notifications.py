@@ -38,7 +38,7 @@ def placing_identity(db, keys, kind, row):
     return prior
 
 
-def emit(db, keys, kind, row, event, source_key, *, amount=None):
+def emit(db, keys, kind, row, event, source_key, *, amount=None, snapshot=None):
     """Call under the existing business row lock, before its commit.
 
     Natural source keys + SQL uniqueness protect competing/replayed intent.
@@ -59,10 +59,15 @@ def emit(db, keys, kind, row, event, source_key, *, amount=None):
              "order_shipped": "Shipped", "order_delivered": "Delivered",
              "order_returned": "Returned", "order_transaction": "Transaction recorded"}[event]
     now, identity = utcnow(), uuid.uuid4()
+    from app.services.immunotherapy_placement_notification import scoped, facts, ASSIGNMENT
     row_event = Event(id=identity, kind=kind, order_id=row.id, source_key=source_key,
                       event=event, placer_user_id=placer_user, placer_mr_id=placer_mr,
-                      created_at=now, payload_ciphertext=seal(keys, identity,
-                          dict(number=row.number, status=state, mrName=name, amount=amount)))
+                      created_at=now)
+    payload = dict(number=row.number, status=state, mrName=name, amount=amount)
+    special = scoped(row_event)
+    if special and snapshot is not None:
+        payload.update(facts(snapshot, now))
+    row_event.payload_ciphertext = seal(keys, identity, payload)
     db.add(row_event)
     db.flush()
     recipients = set(db.scalars(select(User.id).where(User.is_protected_system_admin.is_(True),
@@ -78,7 +83,16 @@ def emit(db, keys, kind, row, event, source_key, *, amount=None):
     for user_id in sorted(recipients):
         db.add(Alert(id=uuid.uuid4(), event_id=identity, user_id=user_id, read=False, created_at=now))
         for channel in ("email", "sms", "waba"):
-            template = db.scalar(select(Template).where(Template.channel == channel, Template.event_key == event))
+            if special and (channel != "email" or user_id == placer_user):
+                # Preserve MR bell behavior without creating prohibited handoffs.
+                continue
+            if special:
+                from app.db.email_template_models import EmailTemplate, IMMUNOTHERAPY_TEMPLATE_ID
+                template = db.get(EmailTemplate, IMMUNOTHERAPY_TEMPLATE_ID)
+                if template and template.event_key != ASSIGNMENT:
+                    template = None
+            else:
+                template = db.scalar(select(Template).where(Template.channel == channel, Template.event_key == event))
             category, config = readiness(db, settings, channel, template)
             if not category:
                 try:
@@ -97,14 +111,14 @@ def emit(db, keys, kind, row, event, source_key, *, amount=None):
     db.flush()
 
 
-def placed(db, keys, kind, row, previous=None):
+def placed(db, keys, kind, row, previous=None, *, snapshot=None):
     # SPT's unsubmitted Draft is not placement. Draft→Saved is the first event,
     # even when a correction or an Admin submitted the creator's original draft.
     if not previous:
         placing_identity(db, keys, kind, row)
     if row.status == "Draft" or (previous and previous.get("status") != "Draft"):
         return
-    emit(db, keys, kind, row, "order_placed", "placed")
+    emit(db, keys, kind, row, "order_placed", "placed", snapshot=snapshot)
 
 
 def authorize(db, actor):
@@ -134,9 +148,13 @@ def feed(db, actor):
         items = []
         for alert, event in rows:
             payload = unseal(keys, event.id, event.payload_ciphertext)
+            from app.services.immunotherapy_placement_notification import scoped, message
+            admin_message = message(payload) if is_super_admin(current) and scoped(event) else None
+            # Patient facts are restricted to this Super Admin projection.
+            payload = {k: v for k, v in payload.items() if k not in ("patientName", "placementDate")}
             payload = financial_payload(db, event, current.user.id, payload)
             items.append(dict(id=alert.id, event=event.event, kind=event.kind,
-                **payload, createdAt=event.created_at, read=alert.read))
+                **payload, message=admin_message, createdAt=event.created_at, read=alert.read))
     count = db.scalar(select(func.count()).select_from(Alert).where(*clauses, Alert.read.is_(False)))
     db.commit()
     return dict(items=items, unreadCount=count)

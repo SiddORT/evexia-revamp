@@ -2606,6 +2606,7 @@ export const EmailTemplateCreateEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
   mr_invitation: "mr_invitation",
+  mr_immunotherapy_placed: "mr_immunotherapy_placed",
 } as const;
 
 export interface EmailTemplateCreate {
@@ -2643,6 +2644,7 @@ export const EmailTemplateEditEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
   mr_invitation: "mr_invitation",
+  mr_immunotherapy_placed: "mr_immunotherapy_placed",
 } as const;
 
 export interface EmailTemplateEdit {
@@ -2683,6 +2685,7 @@ export const EmailTemplateEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
   mr_invitation: "mr_invitation",
+  mr_immunotherapy_placed: "mr_immunotherapy_placed",
 } as const;
 
 export interface EmailTemplateEvent {
@@ -2700,6 +2703,7 @@ export const EmailTemplateRecordEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
   mr_invitation: "mr_invitation",
+  mr_immunotherapy_placed: "mr_immunotherapy_placed",
 } as const;
 
 export interface EmailTemplateRecord {
@@ -2733,7 +2737,7 @@ export interface EmailTemplateRecord {
 
 export interface EmailTemplateList {
   events: EmailTemplateEvent[];
-  /** @maxItems 102 */
+  /** @maxItems 103 */
   items: EmailTemplateRecord[];
 }
 
@@ -6981,6 +6985,7 @@ export const OrderNotificationAlertKind = {
 } as const;
 
 export interface OrderNotificationAlert {
+  message?: string | null;
   amount: string | null;
   createdAt: string;
   event: string;

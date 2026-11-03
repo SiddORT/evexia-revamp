@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0080_admin_email",
+  "target": "0081_immunotherapy_alerts",
   "policy_sha256": "0042b985ac3eb3ec89d3992dfbfcb0638f3e27665a3d07be6403cc606bded178",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -89,7 +89,8 @@
     "0077_settlements": "8f2dcc9aee461a5839be61f036aa1e9770eb53a5d1131524ebebf9ab5d14a485",
     "0078_reserve_movements": "693b966c4b4f1801263db7492b86a2a7aa490173e0873b3404277bb728f72adc",
     "0079_order_notifications": "ae90ba19a37a2f116a3cbae12f44a1bc61b3555bc19c1b147bbbcb7c7e88f6c8",
-    "0080_admin_email": "b66ac6cad1de165406bf388fbadc52ad6a81fa8408b84cc7fabfd3c3f38a2d6f"
+    "0080_admin_email": "b66ac6cad1de165406bf388fbadc52ad6a81fa8408b84cc7fabfd3c3f38a2d6f",
+    "0081_immunotherapy_alerts": "d624359cf0588c5a175c097959665b1d3f732bb4eca17e5f9cd8eda9bed6ccad"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

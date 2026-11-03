@@ -5782,7 +5782,8 @@
                 "enum": [
                   "password_recovery",
                   "account_invitation",
-                  "mr_invitation"
+                  "mr_invitation",
+                  "mr_immunotherapy_placed"
                 ],
                 "type": "string"
               },
@@ -5842,7 +5843,8 @@
                 "enum": [
                   "password_recovery",
                   "account_invitation",
-                  "mr_invitation"
+                  "mr_invitation",
+                  "mr_immunotherapy_placed"
                 ],
                 "type": "string"
               },
@@ -5899,7 +5901,8 @@
             "enum": [
               "password_recovery",
               "account_invitation",
-              "mr_invitation"
+              "mr_invitation",
+              "mr_immunotherapy_placed"
             ],
             "title": "Key",
             "type": "string"
@@ -5942,7 +5945,7 @@
             "items": {
               "$ref": "#/components/schemas/EmailTemplateRecord"
             },
-            "maxItems": 102,
+            "maxItems": 103,
             "title": "Items",
             "type": "array"
           }
@@ -5969,7 +5972,8 @@
                 "enum": [
                   "password_recovery",
                   "account_invitation",
-                  "mr_invitation"
+                  "mr_invitation",
+                  "mr_immunotherapy_placed"
                 ],
                 "type": "string"
               },
@@ -17950,6 +17954,13 @@
       },
       "OrderNotificationAlert": {
         "properties": {
+          "message": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "title": "Message"
+          },
           "amount": {
             "anyOf": [
               {

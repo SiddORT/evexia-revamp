@@ -11,7 +11,7 @@ function loadSms() {
   try { return { snap: loadMessageTemplates(), error: '' }; }
   catch (e) { return { snap: null, error: e?.message || 'Saved SMS templates could not be read.' }; }
 }
-const CHANNELS = [['email', 'Email (shared: recovery and invitations)'], ['sms', 'SMS (legacy, this browser only)'], ['waba', 'WABA templates']];
+const CHANNELS = [['email', 'Email templates (shared)'], ['order-sms', 'SMS order templates (shared)'], ['sms', 'SMS (legacy, this browser only)'], ['waba', 'WABA templates']];
 
 export default function MessageTemplateSettings({ onGuardChange }) {
   const confirm = usePlatformConfirm();
@@ -37,7 +37,7 @@ export default function MessageTemplateSettings({ onGuardChange }) {
       <button key={c} type="button" role="tab" id={`mt-tab-${c}`} aria-selected={channel === c} aria-controls="mt-panel"
         tabIndex={channel === c ? 0 : -1} onClick={() => choose(c)} onKeyDown={(e) => keyboard(e, i)} data-testid={`tab-template-${c}`}>{label}</button>)}</div>
     <div role="tabpanel" id="mt-panel" aria-labelledby={`mt-tab-${channel}`}>
-      {channel === 'waba' ? <OrderEventTemplates fixedChannel="waba" guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />
+      {['waba', 'order-sms'].includes(channel) ? <OrderEventTemplates key={channel} fixedChannel={channel === 'waba' ? 'waba' : 'sms'} guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />
         : channel === 'email' ? <EmailTemplateLibrary guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />
         : <SmsLibrary guard={guard} onDirtyChange={(d) => { dirty.current = d; }} onBusyChange={(b) => { busy.current = b; }} />}
     </div>

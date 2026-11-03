@@ -73,9 +73,18 @@ def process_one():
                 db.rollback()
                 return
             event = db.scalar(select(Event).where(Event.id == row.event_id).with_for_update())
-            template = db.get(Template, row.template_id) if row.template_id else None
+            from app.services.immunotherapy_placement_notification import scoped
+            if scoped(event):
+                from app.db.email_template_models import EmailTemplate
+                from app.services.order_notification_transport import destination
+                destination(db, get_settings(), event, row.user_id, row.channel)
+                template = db.get(EmailTemplate, row.template_id) if row.template_id else None
+            else:
+                template = db.get(Template, row.template_id) if row.template_id else None
             with crypto_scope(db) as keys:
                 data = unseal(keys, event.id, event.payload_ciphertext)
+                if scoped(event) and (not data.get("patientName") or not data.get("placementDate")):
+                    raise Blocked("placement_facts_unavailable")
                 data = financial_payload(db, event, row.user_id, data)
                 send = prepare(db, get_settings(), row, event, template, variables(event, data, event.created_at))
             # Preparation stays inside the lease transaction; only the sending

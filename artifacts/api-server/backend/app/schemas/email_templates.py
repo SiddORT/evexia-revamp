@@ -11,7 +11,7 @@ class EmailTemplateInput(BaseModel):
     subject: str = Field(min_length=1, max_length=200)
     html: str = Field(min_length=1, max_length=100000)
     text: str = Field(min_length=1, max_length=20000)
-    event_key: Literal["password_recovery", "account_invitation", "mr_invitation"] | None = None
+    event_key: Literal["password_recovery", "account_invitation", "mr_invitation", "mr_immunotherapy_placed"] | None = None
 
     @field_validator("name", "description", "subject", "html", "text")
     @classmethod
@@ -64,12 +64,12 @@ class EmailTemplateRecord(EmailTemplateInput):
 
 
 class EmailTemplateEvent(BaseModel):
-    key: Literal["password_recovery", "account_invitation", "mr_invitation"]
+    key: Literal["password_recovery", "account_invitation", "mr_invitation", "mr_immunotherapy_placed"]
     label: str
     required: bool
     variables: list[str]
 
 
 class EmailTemplateList(BaseModel):
-    items: list[EmailTemplateRecord] = Field(max_length=102)
+    items: list[EmailTemplateRecord] = Field(max_length=103)
     events: list[EmailTemplateEvent]

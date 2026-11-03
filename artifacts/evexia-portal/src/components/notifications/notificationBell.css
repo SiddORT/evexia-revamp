@@ -1,3 +1,4 @@
+.nb__message { display: block; white-space: pre-line; overflow-wrap: anywhere; line-height: 1.5; }
 .nb { position: relative; display: inline-flex; }
 .nb__trigger { position: relative; display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-surface, transparent); color: var(--admin-text-soft); cursor: pointer; transition: background .15s, color .15s; }
 .nb__trigger:hover, .nb__trigger[aria-expanded="true"] { background: var(--admin-state-soft); color: var(--admin-accent); }

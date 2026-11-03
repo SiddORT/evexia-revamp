@@ -11,9 +11,12 @@ const EVENT_LABEL = { order_placed: 'Order placed', order_confirmed: 'Order conf
   order_rejected: 'Order rejected', order_resubmitted: 'Order resubmitted',
   order_shipped: 'Order shipped', order_delivered: 'Order delivered',
   order_returned: 'Order returned', order_transaction: 'MR transaction recorded' };
-const PLACEHOLDERS = ['order_number', 'order_type', 'event_name', 'status', 'mr_name', 'timestamp', 'transaction_amount', 'company_name'];
-const SAMPLE = { order_number: 'IMM-2025-00417', order_type: 'Immunotherapy', event_name: 'Order shipped', status: 'Shipped', mr_name: 'Fictional MR Kavya Rao', timestamp: '14 Mar 2025, 4:12 PM', transaction_amount: 'INR 18,450.00', company_name: 'EVEXIA Life Sciences' };
+const PLACEMENT = 'mr_immunotherapy_placed';
+const PLACEMENT_VARIABLES = ['mr_name', 'patient_name', 'placement_date'];
+const PLACEHOLDERS = ['order_number', 'order_type', 'event_name', 'status', 'mr_name', 'timestamp', 'transaction_amount', 'company_name', 'patient_name', 'placement_date'];
+const SAMPLE = { order_number: 'IMM-2025-00417', order_type: 'Immunotherapy', event_name: 'Order shipped', status: 'Shipped', mr_name: 'Fictional MR Kavya Rao', timestamp: '14 Mar 2025, 4:12 PM', transaction_amount: 'INR 18,450.00', company_name: 'EVEXIA Life Sciences', patient_name: 'Fictional Patient', placement_date: '03/11/2026' };
 const READINESS = {
+  template_only: 'Template only — no SMS/WABA delivery for this trigger',
   ready: 'Ready to send', not_assigned: 'Not assigned to an event', template_required: 'No template for this event', template_disabled: 'Template disabled',
   dlt_template_required: 'DLT template ID required', template_approval_metadata_required: 'Approved provider template name and language required',
   configuration_required: 'Channel provider not configured', configuration_invalid: 'Channel configuration invalid', configuration_unreadable: 'Channel configuration unreadable',
@@ -36,6 +39,10 @@ const dropDraft = (id) => { try { sessionStorage.removeItem(draftKey(id)); } cat
 function missing(t) {
   const m = [];
   if (!t.name?.trim()) m.push('name');
+  if (t.eventKey === PLACEMENT) {
+    if (!t.text?.trim()) m.push('message text');
+    return m;
+  }
   if (t.channel === 'email' && !t.subject?.trim()) m.push('subject');
   if (t.channel === 'email' && !t.html?.trim() && !t.text?.trim()) m.push('HTML or text body');
   if (t.channel === 'sms' && !t.text?.trim()) m.push('message text');
@@ -125,9 +132,10 @@ export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange
 
   return <div className="oet">
     <div className="mt-head"><p className="mt-note">{fixedChannel === 'waba' ? <><strong>WABA templates.</strong> Manage shared WhatsApp Business template references, language and parameter mappings. Saving does not send a message or submit a template for provider approval.</> : <><strong>Shared order event templates.</strong> Stored in the shared database for all browsers. Saving or enabling a template never sends a message; messages go out only when an order event occurs and the channel provider configuration is ready.</>}</p>
-      <div className="mt-row"><button type="button" className="admin-button" disabled={!snap || busy || loading || total >= 100} onClick={() => startEdit(null)} data-testid="button-oet-new">New {CH_LABEL[channel]} template</button>
+      <div className="mt-row"><button type="button" className="admin-button" disabled={!snap || busy || loading || total >= 102} onClick={() => startEdit(null)} data-testid="button-oet-new">New {CH_LABEL[channel]} template</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={loading || busy} onClick={load} data-testid="button-oet-reload">Load latest</button></div></div>
-    {total >= 100 && <p className="mt-note">The 100-template limit is reached. Delete an unused template to add another.</p>}
+    <p className="mt-note">MR Immunotherapy placement SMS and WABA records are authoring only: no delivery is queued or dispatched, even if enabled or provider metadata is entered. Edit the automatic Super Admin email in Email Templates.</p>
+    {total >= 102 && <p className="mt-note">The 102-template limit is reached. Delete an unused template to add another.</p>}
     {loading && !snap && <div className="oet-skel" aria-busy="true" aria-label="Loading templates"><span /><span /><span /></div>}
     {error && <div role="alert" className="admin-feedback admin-feedback--error">{error} <button type="button" onClick={load} disabled={loading}>Retry loading</button></div>}
     {status && <p role="status" data-testid="text-oet-status">{status}</p>}
@@ -136,12 +144,12 @@ export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange
         <thead><tr><th scope="col">Order event</th>{CH.map(([c, l]) => <th key={c} scope="col">{l}</th>)}</tr></thead>
         <tbody>{matrix.map((e) => <tr key={e.key}><th scope="row">{e.label}</th>{CH.map(([c]) => { const t = e.byCh[c]; return <td key={c}>{t ? <span className={`oet-pill${t.enabled ? ' oet-pill--on' : ''}`}>{t.enabled ? 'Enabled' : 'Disabled'} · {readiness(t.readiness)}</span> : <span className="oet-pill oet-pill--none">No template</span>}</td>; })}</tr>)}</tbody></table></div>}
       {!fixedChannel && <div className="admin-tabs" role="group" aria-label="Order event channel">{CH.map(([c, l]) => <button key={c} type="button" aria-pressed={channel === c} className={channel === c ? 'is-on' : ''} onClick={() => setChannel(c)} data-testid={`button-oet-channel-${c}`}>{l}</button>)}</div>}
-      <p role="status" className="mt-note">{items.length} {CH_LABEL[channel]} templates{!fixedChannel && ` · ${total} of 100 total`}</p>
+      <p role="status" className="mt-note">{items.length} {CH_LABEL[channel]} templates{!fixedChannel && ` · ${total} of 102 total`}</p>
       {!items.length && <p className="admin-empty">{fixedChannel ? `No ${CH_LABEL[channel]} templates yet.` : `No ${CH_LABEL[channel]} order event templates. Create one and assign it to an event.`}</p>}
       <ul className="mt-list">{items.map((t) => { const gaps = missing(t); return <li key={t.id} className="mt-card" data-testid={`card-oet-${t.id}`}>
         <div className="mt-tags"><span className="mt-tag">Shared</span><span className="mt-tag">{CH_LABEL[t.channel]} · Version {t.version}</span><span className="mt-tag">Event: {evLabel(t.eventKey)}</span><span className={`mt-tag${t.enabled ? ' oet-tag--on' : ''}`}>{t.enabled ? 'Enabled' : 'Disabled'}</span></div>
         <h3>{t.name}</h3>
-        <p>Readiness: {readiness(t.readiness)}{t.enabled && t.readiness !== 'ready' ? ' (enabled for future eligible events only)' : ''}{gaps.length ? ` · Missing: ${gaps.join(', ')}` : ''}</p>
+        <p>Readiness: {readiness(t.readiness)}{t.enabled && t.readiness !== 'ready' && t.eventKey !== PLACEMENT ? ' (enabled for future eligible events only)' : ''}{gaps.length ? ` · Missing: ${gaps.join(', ')}` : ''}</p>
         <div className="mt-row"><button type="button" disabled={busy} onClick={async () => { if (await guard()) { onDirtyChange(false); setEditor(null); setView(t); } }} data-testid={`button-oet-preview-${t.id}`}>Preview</button>
           <button type="button" disabled={busy} onClick={() => startEdit(t)} data-testid={`button-oet-edit-${t.id}`}>Edit</button>
           <button type="button" disabled={busy} onClick={() => void remove(t)} data-testid={`button-oet-delete-${t.id}`}>Delete</button></div></li>; })}</ul>
@@ -157,15 +165,15 @@ export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange
 
 function Editor({ ed, events, busy, edit, save, discard, reload, close, variables }) {
   const d = ed.draft, c = d.channel;
-  const vars = Array.isArray(variables) && variables.length ? variables.filter((v) => PLACEHOLDERS.includes(v)) : PLACEHOLDERS;
+  const vars = d.eventKey === PLACEMENT ? PLACEMENT_VARIABLES : (Array.isArray(variables) && variables.length ? variables : PLACEHOLDERS).filter((v) => PLACEHOLDERS.includes(v) && !['patient_name', 'placement_date'].includes(v));
   const params = d.parameters || [];
   return <form className="oet-form" onSubmit={(e) => { e.preventDefault(); void save(); }}><fieldset className="oet-edit-fields" disabled={busy}>
     {ed.recovered ? <div className="admin-feedback" role="status">Recovered an unsaved draft from this tab{ed.recoveredVersion != null && ed.base.version != null && ed.recoveredVersion !== ed.base.version ? ` (based on version ${ed.recoveredVersion}; latest is ${ed.base.version} — review before saving)` : ''}. <button type="button" onClick={discard}>Discard draft</button></div> : null}
     {ed.error && <div role="alert" className="admin-feedback admin-feedback--error">{ed.error}{ed.conflict && <> <button type="button" disabled={busy} onClick={reload} data-testid="button-oet-load-latest">Load latest (keep draft)</button></>}</div>}
     <div className="oet-grid">
       <label className="mt-field"><span>Template name</span><input value={d.name} maxLength={100} required onChange={(e) => edit({ name: e.target.value })} data-testid="input-oet-name" /></label>
-      <label className="mt-field"><span>Assigned event</span><select value={d.eventKey || ''} onChange={(e) => edit({ eventKey: e.target.value || null })} data-testid="select-oet-event"><option value="">Unassigned (not triggered)</option>{events.map((ev) => <option key={ev.key} value={ev.key}>{ev.label}</option>)}</select></label>
-      <label className="oet-check"><input type="checkbox" checked={!!d.enabled} onChange={(e) => edit({ enabled: e.target.checked })} data-testid="checkbox-oet-enabled" /> Enabled (sends only once the channel provider is configured and ready)</label>
+      <label className="mt-field"><span>Assigned event</span><select value={d.eventKey || ''} onChange={(e) => edit({ eventKey: e.target.value || null })} data-testid="select-oet-event"><option value="">Unassigned (not triggered)</option>{events.filter((ev) => c !== 'email' || ev.key !== PLACEMENT).map((ev) => <option key={ev.key} value={ev.key}>{ev.label}</option>)}</select></label>
+      {d.eventKey === PLACEMENT ? <p className="mt-note">Template only. Saving requires no approval metadata and cannot activate SMS/WABA delivery.</p> : <label className="oet-check"><input type="checkbox" checked={!!d.enabled} onChange={(e) => edit({ enabled: e.target.checked })} data-testid="checkbox-oet-enabled" /> Enabled (sends only once the channel provider is configured and ready)</label>}
     </div>
     <p className="mt-note">Allowed placeholders: {vars.map((v) => <code key={v}>{`{{${v}}}`}</code>).reduce((a, x, i) => (i ? [...a, ' ', x] : [x]), [])}. Each event has one template per channel; assigning an event already in use returns a conflict and keeps your draft.</p>
     {c === 'email' && <>

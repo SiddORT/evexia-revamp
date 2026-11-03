@@ -9,6 +9,18 @@ ordinary staff, Doctors or Patients.
 **Why:** The user explicitly clarified that the recipient is the placing MR and
 excluded hierarchy/general-staff notifications.
 
+MR-placed Immunotherapy placement is an explicit exception: external delivery
+is Super Admin email only; preserve the placing MR's existing bell. Its SMS and
+WABA copies remain authoring-only even with provider configuration/metadata.
+Only this Super Admin alert/email may include the saved patient name and
+Asia/Kolkata placement date; do not expand this to other events or MR feeds.
+
+**Why:** The user authorized this narrowly scoped placement notification, not
+broader clinical/contact disclosure or additional channel activation.
+
+**How to apply:** Keep other order types and lifecycle recipient rules unchanged;
+do not infer new send authority from template edits or recipient-account edits.
+
 **How to apply:** Preserve immutable creation-time identity through reassignment
 and retention. Notification links are not new order permissions.
 

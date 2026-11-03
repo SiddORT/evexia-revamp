@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.services.order_event_contract import EVENTS, VARIABLES
 from app.services.email_rendering import tokens, DeliveryHTML
+from app.services.immunotherapy_placement_notification import ASSIGNMENT, VARIABLES as PLACEMENT_VARIABLES
 
 Channel = Literal["email", "sms", "waba"]
 Kind = Literal["immunotherapy", "spt", "lupin", "kits"]
@@ -39,10 +40,13 @@ class OrderNotificationTemplateInput(Strict):
     @model_validator(mode="after")
     def content(self):
         self.name = self.name.strip()
-        if not self.name or not self.text.strip() or self.eventKey not in (None, *EVENTS):
+        if not self.name or not self.text.strip() or self.eventKey not in (None, *EVENTS, ASSIGNMENT):
             raise ValueError("Enter a name, content and supported order event.")
+        if self.eventKey == ASSIGNMENT and self.channel == "email":
+            raise ValueError("Edit Immunotherapy placement email in Email Templates.")
+        allowed = PLACEMENT_VARIABLES if self.eventKey == ASSIGNMENT else VARIABLES
         for source in (self.subject, self.html, self.text):
-            tokens(source, VARIABLES)
+            tokens(source, allowed)
         if re.search(r"[\x00-\x1f\x7f-\x9f]", self.name + self.subject):
             raise ValueError("Invalid name or subject.")
         if re.search(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", self.text + self.html):
@@ -63,7 +67,7 @@ class OrderNotificationTemplateInput(Strict):
             raise ValueError("Use the approved provider template name.")
         if self.language and not re.fullmatch(r"[a-z]{2,3}(?:_[A-Z]{2})?", self.language):
             raise ValueError("Enter the approved language code.")
-        if any(p not in VARIABLES for p in self.parameters):
+        if any(p not in allowed for p in self.parameters):
             raise ValueError("Parameter mapping must use supported placeholder names.")
         return self
 
@@ -99,6 +103,7 @@ class OrderNotificationAlert(BaseModel):
     createdAt: datetime
     amount: str | None
     read: bool
+    message: str | None = None
 
 
 class OrderNotificationFeed(BaseModel):

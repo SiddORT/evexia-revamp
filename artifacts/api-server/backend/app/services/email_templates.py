@@ -11,6 +11,9 @@ from app.services.email_rendering import VARIABLES, INVITATION_VARIABLES
 EVENTS = [dict(key=RECOVERY_EVENT, label="Password recovery", required=True, variables=list(VARIABLES))]
 EVENTS.append(dict(key=INVITATION_EVENT, label="Staff invitation · Admin workspace", required=True, variables=list(INVITATION_VARIABLES)))
 EVENTS.append(dict(key=MR_INVITATION_EVENT, label="MR invitation · MR portal", required=True, variables=list(INVITATION_VARIABLES)))
+from app.services.immunotherapy_placement_notification import ASSIGNMENT, VARIABLES as PLACEMENT_VARIABLES
+EVENTS.append(dict(key=ASSIGNMENT, label="MR Immunotherapy order placement · Super Admin", required=True,
+                   variables=list(PLACEMENT_VARIABLES)))
 
 
 class EmailTemplateNotFound(HTTPException):
@@ -73,8 +76,8 @@ def operation(db, actor, *, body=None, row_id=None, action=None):
                 if row and row.id in REQUIRED_TEMPLATES and values["event_key"] != REQUIRED_TEMPLATES[row.id]:
                     reject(409, "Required email assignment cannot be changed.")
                 if action == "create":
-                    if len(list(db.scalars(select(EmailTemplate.id).limit(102)))) >= 102:
-                        reject(409, "The email library is full (102 templates). Delete an unassigned template first.")
+                    if len(list(db.scalars(select(EmailTemplate.id).limit(103)))) >= 103:
+                        reject(409, "The email library is full (103 templates). Delete an unassigned template first.")
                     if body.creation_id in REQUIRED_TEMPLATES or db.get(EmailTemplate, body.creation_id):
                         reject(409, "Creation identity already exists. Load latest templates to reconcile.")
                     row = EmailTemplate(id=body.creation_id, **values, version=1, provenance="administrator",
@@ -95,8 +98,8 @@ def operation(db, actor, *, body=None, row_id=None, action=None):
         if row_id and action is None:
             result = public(row)
         else:
-            rows = list(db.scalars(select(EmailTemplate).order_by(EmailTemplate.id).limit(103)))
-            if len(rows) > 102:
+            rows = list(db.scalars(select(EmailTemplate).order_by(EmailTemplate.id).limit(104)))
+            if len(rows) > 103:
                 reject(503, "Email library exceeds its bound. Contact the operator.")
             result = dict(items=[public(r) for r in rows], events=EVENTS)
         db.commit()

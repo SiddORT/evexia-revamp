@@ -165,6 +165,7 @@ def ready(db):
         # Additive notification events retain account envelopes and anchors.
         ["0079_order_notifications"],
         ["0080_admin_email"],
+        ["0081_immunotherapy_alerts"],
     ):
         raise AccountCryptoError()
     current = crypto()
@@ -175,7 +176,7 @@ def ready(db):
             or not hmac.compare_digest(row.protected_email_index,
                                       current.lookup_index(
                                           "reena.ai20206@gmail.com"
-                                          if revisions == ["0080_admin_email"]
+                                          if revisions in (["0080_admin_email"], ["0081_immunotherapy_alerts"])
                                           else "crm-admin@allergyevexia.in"))):
         raise AccountCryptoError()
     return current

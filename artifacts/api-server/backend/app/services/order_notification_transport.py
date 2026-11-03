@@ -68,11 +68,14 @@ def configuration(db, settings, channel):
 def template_state(template):
     if not template:
         return "template_required"
-    if not template.enabled:
+    from app.services.immunotherapy_placement_notification import ASSIGNMENT
+    if template.event_key == ASSIGNMENT and getattr(template, "channel", "email") != "email":
+        return "template_only"
+    if not getattr(template, "enabled", True):
         return "template_disabled"
-    if template.channel == "sms" and not template.dlt_id:
+    if getattr(template, "channel", "email") == "sms" and not template.dlt_id:
         return "dlt_template_required"
-    if template.channel == "waba" and (not template.provider_template or not template.language):
+    if getattr(template, "channel", "email") == "waba" and (not template.provider_template or not template.language):
         return "template_approval_metadata_required"
     return None
 
@@ -91,6 +94,10 @@ def readiness(db, settings, channel, template):
 def destination(db, settings, event, user_id, channel):
     """Resolve only the protected singleton or the proven placing account."""
     user = db.get(User, user_id)
+    from app.services.immunotherapy_placement_notification import scoped
+    if scoped(event) and (channel != "email" or not user
+            or not user.is_protected_system_admin or user.system_role != "super_admin"):
+        raise Blocked("immunotherapy_admin_email_only")
     if not user or not user.is_active:
         raise Blocked("recipient_unavailable")
     mr = None
@@ -133,6 +140,13 @@ def destination(db, settings, event, user_id, channel):
 
 
 def prepare(db, settings, delivery, event, template, values):
+    from app.services.immunotherapy_placement_notification import scoped, ASSIGNMENT
+    if scoped(event):
+        # Enforce policy before provider resolution, including old pending/leased
+        # attempts. Never reassign generic historical work to this new content.
+        destination(db, settings, event, delivery.user_id, delivery.channel)
+        if not template or template.event_key != ASSIGNMENT:
+            raise Blocked("scoped_template_required")
     code = template_state(template)
     if code:
         raise Blocked(code)

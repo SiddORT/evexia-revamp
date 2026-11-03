@@ -1,3 +1,100 @@
+# MR Immunotherapy placement: scoped Super Admin policy
+
+This section overrides the generic recipient/channel/template rules below **only**
+for `immunotherapy` + `order_placed` with an immutable placing-MR account/profile.
+Other order kinds, lifecycle events and the placing MR's existing bell behavior
+are unchanged.
+
+## Source implementation
+
+- The existing `placed` call runs inside the Immunotherapy save transaction.
+  Failed/rolled-back saves cannot leave an event, alert or delivery behind.
+  Existing source-key, alert-recipient and delivery-recipient uniqueness and
+  serialized idempotency requests remain the only event/outbox mechanism.
+- New scoped events capture only the saved patient-name snapshot and creation
+  calendar date alongside the existing placing-MR name. The date is derived
+  from placement-event creation time in Asia/Kolkata as DD/MM/YYYY, not an editable/backdated
+  order date, worker time, browser locale or a later directory lookup.
+  These facts stay in the existing encrypted immutable event payload.
+- Super Admin's bell renders the exact default message:
+
+  > Notification: MR [Name] has placed an immunotherapy order for patient [Patient Name] on [DD/MM/YYYY].
+  > Kindly note the same for your records.
+  > – Team AllergyEvexia
+
+  The placing MR still receives the original generic bell projection. Patient
+  facts are removed before feed serialization for every actor; only the
+  authorized Super Admin gets the scoped rendered message. Historical payloads
+  lacking facts show the original generic item, without inventing a patient or
+  placement date. Read/unread, retention and saved-order authorization remain
+  unchanged.
+- Only one external intent is created: email to the active protected Super
+  Admin account, resolving its saved validated account mailbox. No MR, manager,
+  Doctor, Patient or ordinary staff destination is substituted.
+- The authoritative email source is the required `mr_immunotherapy_placed`
+  record in **Email Templates**, not the cross-order `order_placed` record in
+  Order event templates. Its subject defaults to
+  `Notification: MR Immunotherapy order placed`. HTML and plain text carry the
+  supplied wording and `{{mr_name}}`, `{{patient_name}}`, `{{placement_date}}`.
+  The existing preview, edit, HTML source/preview, HTML import, Modern layout,
+  literal substitution, concurrency and draft recovery controls are reused.
+  Its explicit test-email action uses only fictional placement data and the
+  existing protected saved-version/quota/default-SMTP path; it creates no order.
+  **No test action was invoked during implementation.**
+- The saved default Communication Email SMTP is the only transport. It must be
+  readable, valid and use TLS/STARTTLS. No environment SMTP, provider or mailbox
+  fallback is added. Existing protected **Order event templates → Channel
+  attempts** reports terminal configuration/recipient failures and
+  pending/accepted/failed/unknown outcomes. Acceptance is not inbox receipt.
+- Shared SMS and WABA copies are discoverable under **SMS order templates
+  (shared)** and **WABA templates** in Message templates (and the order-event
+  authoring surface). They have the same three placeholders and exact text.
+  They are permanently **template-only for this trigger**, regardless of
+  enabled flags, saved providers, DLT IDs or WhatsApp metadata. Blank metadata
+  can be saved; none is invented. Generic assignments retain their own rules.
+- Scoped intent creation skips MR email and all SMS/WABA deliveries entirely.
+  Worker and transport policy independently reject these destinations/channels
+  before resolving providers or handing off. This also covers outstanding
+  scoped `pending`/reclaimable `leased` attempts created by predecessor code.
+  Old generic email intents cannot adopt the new template or missing facts.
+  Already committed `sending` markers retain unknown-send safeguards, never a
+  new send. A provider handoff already performed by old running code cannot be
+  recalled by a source change.
+- Template/configuration edits affect future eligible placements only. A changed
+  pending version blocks; blocked/failed/unknown history is never replayed.
+  Email failure happens after the order commit and cannot undo the order.
+  The bell's fixed business notification is independent of authored email edits.
+
+## Schema and lifecycle prerequisites — not activated or runtime verified
+
+Forward-only `0081_immunotherapy_alerts` follows `0080_admin_email`. It extends
+email assignment/provenance constraints and inserts one required email and two
+template-only records. It never rewrites existing authored templates or
+historical events/deliveries; colliding display names use a distinct system
+suffix. Library bounds reserve room for these additions without evicting custom
+records. There is no data backfill, notification replay or startup send hook.
+
+Development declaration, source fingerprint and account/readiness successor
+metadata are coordinated in source. Readiness resolves the new required email
+record and inherits predecessor capability probes. Existing automatic migration
+policy applies on a future normally authorized lifecycle; **no migration was
+executed, no service started/restarted and no activation was performed here**.
+Do not use a development wrapper as a source-review shortcut.
+
+Before relying on this behavior, a separately authorized lifecycle must apply
+the new schema and load the matching API/worker/frontend sources across all
+processes. It must retain directory/account/Communication encryption access,
+the active protected Super Admin with a valid saved mailbox, the required saved
+template and a valid saved default SMTP. Their actual availability has **not**
+been inspected. Production evidence/approval pins were not fabricated or
+advanced, and this task does not authorize deployment.
+
+Delivery was reviewed in source only. API/client source generation and source
+formatting were performed; **no tests, builds, regression/release checks,
+schema validation commands, browser/runtime/network probes, verification sends,
+business-data mutations or manual migrations were run**. Neither an observed
+SMTP submission nor working inbox delivery is claimed.
+
 # Order event notifications
 
 ## Scope and recipients

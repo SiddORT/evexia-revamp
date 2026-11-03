@@ -19,6 +19,9 @@ KINDS = {"immunotherapy": "Immunotherapy", "spt": "SPT", "lupin": "Lupin",
 
 
 def variables(event, payload, timestamp):
+    from app.services.immunotherapy_placement_notification import scoped, values
+    if scoped(event):
+        return values(payload)
     return dict(order_number=payload["number"], order_type=KINDS[event.kind],
                 event_name=EVENTS[event.event], status=payload["status"],
                 mr_name=payload["mrName"], timestamp=timestamp.isoformat(),
@@ -32,6 +35,10 @@ def substitute(source, values, *, html=False):
 
 def render(template, values):
     safe = "".join(DeliveryHTML(template.html).output)
-    return RenderedEmail(subject=substitute(template.subject, values),
+    import re
+    subject = substitute(template.subject, values)
+    if re.search(r"[\x00-\x1f\x7f-\x9f]", subject) or len(subject) > 998:
+        raise ValueError("Invalid rendered subject.")
+    return RenderedEmail(subject=subject,
                          text=substitute(template.text, values),
                          html=substitute(safe, values, html=True))

@@ -9,6 +9,9 @@ export const SUPPORTED_TOKENS = Object.freeze([
   'expiry_minutes',
   'portal_name',
   'login_id',
+  'mr_name',
+  'patient_name',
+  'placement_date',
 ]);
 
 export const SAMPLE_VALUES = Object.freeze({
@@ -20,6 +23,9 @@ export const SAMPLE_VALUES = Object.freeze({
   expiry_minutes: '15 (fictional)',
   portal_name: 'MR (fictional)',
   login_id: 'mr.fictional',
+  mr_name: 'Fictional MR Member',
+  patient_name: 'Fictional Patient',
+  placement_date: '03/11/2026',
 });
 
 const SUPPORTED_TOKEN_SET = new Set(SUPPORTED_TOKENS);

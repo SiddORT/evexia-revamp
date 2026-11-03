@@ -3,10 +3,14 @@ import { emailTemplateRequest } from '../auth/adminSession.js';
 export const EMAIL_VARIABLES = Object.freeze(['recipient_name', 'company_name', 'reset_url', 'expiry_minutes']);
 export const INVITATION_VARIABLES = Object.freeze([...EMAIL_VARIABLES, 'portal_name', 'login_id']);
 export const isInvitationEvent = (key) => ['account_invitation', 'mr_invitation'].includes(key);
+export const IMMUNOTHERAPY_EVENT = 'mr_immunotherapy_placed';
+export const PLACEMENT_VARIABLES = Object.freeze(['mr_name', 'patient_name', 'placement_date']);
+export const emailVariables = (key) => key === IMMUNOTHERAPY_EVENT ? PLACEMENT_VARIABLES : isInvitationEvent(key) ? INVITATION_VARIABLES : EMAIL_VARIABLES;
 export const EMAIL_EVENT_LABELS = Object.freeze({
   password_recovery: 'Password recovery',
   account_invitation: 'Staff invitation · Admin workspace',
   mr_invitation: 'MR invitation · MR portal',
+  mr_immunotherapy_placed: 'MR Immunotherapy order placement · Super Admin',
 });
 function invalid() {
   const error = new Error('Email templates returned an invalid response. Load latest before retrying; your draft is kept.');
@@ -15,17 +19,17 @@ function invalid() {
 }
 function template(row) {
   if (!row || !/^[0-9a-f-]{36}$/i.test(row.id) || !Number.isInteger(row.version) || row.version < 1 ||
-      typeof row.protected !== 'boolean' || ![null, 'password_recovery', 'account_invitation', 'mr_invitation'].includes(row.event_key) ||
+      typeof row.protected !== 'boolean' || ![null, 'password_recovery', 'account_invitation', 'mr_invitation', IMMUNOTHERAPY_EVENT].includes(row.event_key) ||
       !['name', 'description', 'subject', 'html', 'text'].every((k) => typeof row[k] === 'string')) throw invalid();
   return { id: row.id, channel: 'email', source: row.protected ? 'system' : 'user',
     protected: row.protected, version: row.version, eventKey: row.event_key,
     name: row.name, description: row.description, content: { subject: row.subject, html: row.html, text: row.text } };
 }
 export function emailSnapshot(data) {
-  if (!Array.isArray(data?.items) || data.items.length > 102 || !Array.isArray(data.events) ||
-      data.events.length !== 3 || new Set(data.events.map((e) => e.key)).size !== 3 ||
+  if (!Array.isArray(data?.items) || data.items.length > 103 || !Array.isArray(data.events) ||
+      data.events.length !== 4 || new Set(data.events.map((e) => e.key)).size !== 4 ||
       data.events.some((event) => !Object.hasOwn(EMAIL_EVENT_LABELS, event.key) || event.required !== true
-        || JSON.stringify(event.variables) !== JSON.stringify(isInvitationEvent(event.key) ? INVITATION_VARIABLES : EMAIL_VARIABLES))) throw invalid();
+        || JSON.stringify(event.variables) !== JSON.stringify(emailVariables(event.key)))) throw invalid();
   return { record: { templates: data.items.map(template), events: data.events } };
 }
 export async function loadEmailTemplates(options) {

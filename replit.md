@@ -45,7 +45,18 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
-Order-event notifications target only the protected Super Admin and the
+MR-origin Immunotherapy placement has a narrow exception to the generic
+order-event rules: preserve both existing bells, but external delivery is one
+protected Super Admin email only, using the required Immunotherapy placement
+record in Email Templates and saved default Communication SMTP. Its SMS/WABA
+records are authoring-only even with provider metadata. Patient name and
+Asia/Kolkata placement date appear only in the scoped Super Admin message/email,
+never the MR feed. Forward `0081_immunotherapy_alerts` and source metadata are
+prepared, not applied; delivery/inbox receipt remain unverified. No checks,
+tests, builds, probes, sends, mutations, service starts/restarts or deployments
+are authorized for this source-only work. See `docs/order-event-notifications.md`.
+
+Other order-event notifications target only the protected Super Admin and the
 authenticated **placing MR**, never managers, other MRs or ordinary staff.
 The shared Settings order-template library covers Email/SMS/WABA; Email uses the
 saved default encrypted SMTP, WABA supports explicit Meta Cloud template messages,
