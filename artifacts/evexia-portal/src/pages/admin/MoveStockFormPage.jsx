@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Settings2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
+import ReserveMovementDialog from '../../components/admin/ReserveMovementDialog.jsx';
+import { getInHouseStock } from '../../services/inHouseStock.js';
+import { reserveConfiguration } from '../../services/reserveDilution.js';
+import { resolveReserveShortcut } from '../../services/reserveShortcut.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
-import { concentrationLabel, DILUTION_FACTORS, isReserveLine, forgetMove, INVENTORY_INITIALIZATION_GUIDANCE, listReference, lotOriginLabel, newKey, pendingMove, previewMovement, reconcileMovement, rememberMove, saveMovement, validateLines } from '../../services/serverInventory.js';
+import { concentrationLabel, isReserveLine, forgetMove, INVENTORY_INITIALIZATION_GUIDANCE, listReference, lotOriginLabel, newKey, pendingMove, previewMovement, reconcileMovement, rememberMove, saveMovement, validateLines } from '../../services/serverInventory.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
@@ -40,6 +44,10 @@ export default function MoveStockFormPage() {
   const [review, setReview] = useState(null);
   const [uncertainKey, setUncertainKey] = useState(null);
   const [initializationBlocked, setInitializationBlocked] = useState(false);
+  const [configuration, setConfiguration] = useState(null);
+  const configurationTrigger = useRef(null);
+  const [prefill, setPrefill] = useState({ loading: false, options: [], message: '' });
+  const prefillTarget = useRef(null);
   const reviewButtonRef = useRef(null);
   const sourceId = source?.value || '';
 
@@ -97,6 +105,44 @@ export default function MoveStockFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const values = new URLSearchParams(window.location.search).getAll('reserve');
+    if (!values.length) return;
+    async function resolve() {
+      try {
+        setPrefill({ loading: true, options: [], message: 'Loading the selected reserve and current source locations…' });
+        const resolved = await resolveReserveShortcut(values, {
+          getReserve: getInHouseStock, getLocations: (params) => listReference('locations', params),
+          pending: pendingMove, isCurrent: () => active,
+        });
+        if (!active || !resolved) return;
+        const { options, reserveId } = resolved;
+        setPrefill({ loading: false, options, reserveId, message: options.length > 1 ? 'This reserve has several current source locations. Choose one explicitly below.' : 'Reserve shortcut applied from current server balances. Quantity is editable; choose destination, delivered by and dilution yourself.' });
+        if (options.length === 1) {
+          prefillTarget.current = { reserveId, sourceId: options[0].value };
+          setSource(options[0]);
+        }
+      } catch (e) {
+        if (active) setPrefill({ loading: false, options: [], message: e.message || 'Reserve is missing or inaccessible. No batch was selected.' });
+      }
+    }
+    resolve();
+    return () => { active = false; prefillTarget.current = null; };
+  }, []);
+
+  useEffect(() => {
+    const target = prefillTarget.current;
+    if (!target || lots.loading || lots.loadedFor !== target.sourceId) return;
+    prefillTarget.current = null;
+    try {
+      if (pendingMove()) throw new Error('A previous movement needs recovery. No reserve selection was applied.');
+      const lot = lots.items.find((l) => l.id === target.reserveId && isReserveLine(l));
+      if (!lot) throw new Error('This exact reserve is no longer available at the chosen source. Refresh In-house Stock; no other batch was selected.');
+      setPicked({ [lot.id]: { lot, quantity: lot.available, dilute: null, factor: '' } });
+    } catch (e) { setPrefill((p) => ({ ...p, message: e.message })); }
+  }, [lots]);
+
   const pickedList = Object.values(picked);
   const listed = new Map(lots.items.map((l) => [l.id, l]));
   const fresh = lots.loadedFor === sourceId && !lots.loading && !lots.error && !initializationBlocked;
@@ -105,9 +151,10 @@ export default function MoveStockFormPage() {
   const selectedLines = pickedList.map((p) => ({ lot: listed.get(p.lot.id) || p.lot, quantity: p.quantity, dilute: p.dilute, factor: p.factor }));
   const setPick = (id, patch) => setPicked((p) => (id in p ? { ...p, [id]: { ...p[id], ...patch } } : p));
   const clear = (k) => setErrors((e) => ({ ...e, [k]: undefined }));
-  const locked = Boolean(busy) || Boolean(review) || Boolean(uncertainKey);
+  const locked = Boolean(busy) || Boolean(review) || Boolean(uncertainKey) || prefill.loading;
 
   function changeSource(_v, option) {
+    prefillTarget.current = null;
     setSource(option ? { value: option.value, label: option.label } : null); setPicked({}); setReview(null); setErrors({});
     setLots({ items: [], loading: Boolean(option), error: '', loadedFor: '' });
     if (destination?.value === option?.value) setDestination(null);
@@ -140,11 +187,9 @@ export default function MoveStockFormPage() {
     selectedLines.forEach(({ lot, quantity }) => { if (lot.itemKind === 'combo' && !e[lot.id] && !/^[1-9]\d*(?:\.0{1,3})?$/.test(quantity.trim())) e[lot.id] = 'Assembled combos move only as positive whole combos.'; });
     selectedLines.forEach(({ lot, dilute, factor }) => {
       if (!isReserveLine(lot)) return;
-      const k = `${lot.id}:dilute`;
-      if (dilute !== true && dilute !== false) e[k] = 'Choose Yes or No for dilution of this in-house reserve.';
-      else if (dilute && !DILUTION_FACTORS.includes(Number(factor))) e[k] = 'Choose a 2-fold, 5-fold or 10-fold dilution.';
-      else if (dilute && lot.unit && lot.unit !== 'ml') e[k] = `Dilution needs explicit ml quantities; this reserve is recorded in "${lot.unit}". Choose No to transfer it unchanged or select a supported reserve.`;
-      else if (dilute && !/^(?:0|[1-9]\d{0,2})(?:\.\d{1,6})?%$/.test(String(lot.concentration || ''))) e[k] = `Dilution needs a numeric percentage with up to six decimals; this reserve shows "${lot.concentration || 'unavailable'}". Choose No or select a supported reserve.`;
+      const validation = reserveConfiguration(lot, { quantity: picked[lot.id].quantity, dilute, factor });
+      if (validation.errors.quantity) e[lot.id] = validation.errors.quantity;
+      if (validation.errors.dilute) e[`${lot.id}:dilute`] = validation.errors.dilute;
     });
     return e;
   }
@@ -216,6 +261,14 @@ export default function MoveStockFormPage() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose source batches and a destination. Protected in-house reserves require an explicit dilution choice; No keeps them reserve-only. Quantities allow up to 3 decimals; assembled combos move only in whole numbers.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-move"><ArrowLeft size={16} /> All movements</button></div></div>
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
+    {prefill.message && <div className="admin-feedback" role="status">{prefill.message}
+      {prefill.options.length > 1 && !sourceId && <div className="ms-field"><label htmlFor="reserve-prefill-source">Current source for this reserve</label>
+        <select id="reserve-prefill-source" className="mr-form__control" disabled={locked} value="" onChange={(e) => {
+          const option = prefill.options.find((o) => o.value === e.target.value);
+          if (!option) return;
+          prefillTarget.current = { reserveId: prefill.reserveId, sourceId: option.value }; setSource(option); setPicked({});
+        }}><option value="">Choose current source</option>{prefill.options.map((o) => <option key={o.value} value={o.value}>{o.label} · {o.quantity} ml</option>)}</select></div>}
+    </div>}
     {initializationBlocked && <div className="admin-feedback admin-feedback--error inv-banner" role="alert">
       <div><strong>Receipt initialization review required</strong><p>{INVENTORY_INITIALIZATION_GUIDANCE}</p><p>Review and saving are blocked. After the operator confirms complete initialization, check the status here to reload balances.</p></div>
       <button type="button" className="admin-button admin-button--secondary" disabled={!sourceId || lots.loading || Boolean(busy)} onClick={() => loadLots(sourceId)}>{lots.loading ? 'Checking…' : 'Check initialization status'}</button>
@@ -253,19 +306,17 @@ export default function MoveStockFormPage() {
                 <td><input type="checkbox" id={`ms-p-${l.id}`} checked={on} disabled={initializationBlocked} onChange={() => togglePick(l)} aria-label={`Select ${l.name}`} data-testid={`checkbox-move-lot-${l.id}`} /></td>
                 <td><label htmlFor={`ms-p-${l.id}`} className="ms-product__name">{l.productName}</label><span className="stock-sub">{l.itemKind === 'combo' ? 'Assembled combo, whole combos only · ' : ''}{l.itemKind !== 'combo' ? `${concentrationLabel(l.concentration)} · ` : ''}{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} · {lotOriginLabel(l)} · exp {l.expiryDate ? displayDate(l.expiryDate) : 'unavailable'}{l.itemKind === 'combo' ? ` · assembly ${l.assemblyId || 'link unavailable'}${l.recipe ? ` · recipe v${l.recipe.version}` : ''}${l.mrp != null ? ` · MRP ${l.mrp}, selling ${l.sellingPrice}` : ''}` : ''}</span>{gone && <span className="mr-form__error">No longer available at this source</span>}</td>
                 <td className="inv-mono" data-testid={`text-move-available-${l.id}`}>{gone || initializationBlocked ? 'Unavailable' : `${l.available} ${l.unit || 'ml'}`}</td>
-                <td>{on ? <div className="ms-qty"><label htmlFor={`ms-q-${l.id}`}>Source input quantity ({l.itemKind === 'combo' ? `${l.unit}, whole number` : l.unit || 'ml'})</label>
+                <td>{on && isReserveLine(l) ? <div className="ms-reserve-compact">
+                  <div><strong>{picked[l.id].quantity || 'Not configured'} {picked[l.id].quantity ? l.unit || 'ml' : ''}</strong>
+                    <span className="stock-sub">{picked[l.id].dilute === true ? `${picked[l.id].factor}-fold dilution` : picked[l.id].dilute === false ? 'No dilution · reserve only' : 'Choose dilution in configuration'}</span>
+                    {reserveConfiguration(l, picked[l.id]).output && <span className="stock-sub">Output {reserveConfiguration(l, picked[l.id]).output.quantity} {l.unit || 'ml'} · concentration {reserveConfiguration(l, picked[l.id]).output.concentration}</span>}
+                  </div><button type="button" className="admin-icon-button" disabled={gone || locked || initializationBlocked || !fresh} aria-label={`Configure reserve, ${l.productName}, batch ${l.batchNo || 'unavailable'}`}
+                    onClick={(e) => { configurationTrigger.current = e.currentTarget; setConfiguration(l); }}><Settings2 size={17} aria-hidden="true" /></button>
+                  {err(l.id)}{err(`${l.id}:dilute`)}
+                </div> : on ? <div className="ms-qty"><label htmlFor={`ms-q-${l.id}`}>Source input quantity ({l.itemKind === 'combo' ? `${l.unit}, whole number` : l.unit || 'ml'})</label>
                   <input id={`ms-q-${l.id}`} className="mr-form__control" type="text" inputMode={l.itemKind === 'combo' ? 'numeric' : 'decimal'} autoComplete="off" value={picked[l.id].quantity} onChange={(e) => { const v = e.target.value; setPicked((p) => (l.id in p ? { ...p, [l.id]: { ...p[l.id], quantity: v } } : p)); clear(l.id); clear('lines'); }} aria-invalid={Boolean(errors[l.id])} aria-describedby={errors[l.id] ? `ms-q-${l.id}-error` : undefined} data-testid={`input-move-qty-${l.id}`} />
                   {errors[l.id] && <p id={`ms-q-${l.id}-error`} className="mr-form__error" role="alert">{errors[l.id]}</p>}
-                  {isReserveLine(l) && <fieldset className="ms-dilute" aria-describedby={errors[`${l.id}:dilute`] ? `ms-d-${l.id}-error` : undefined}>
-                    <legend>Dilute this in-house reserve? <span className="mr-form__required">*</span></legend>
-                    <div className="ms-dilute__choices">{[['yes', true, 'Yes'], ['no', false, 'No']].map(([k, v, t]) => <label key={k}><input type="radio" name={`ms-d-${l.id}`} checked={picked[l.id].dilute === v} onChange={() => { setPick(l.id, { dilute: v, factor: v ? picked[l.id].factor : '' }); clear(`${l.id}:dilute`); }} data-testid={`radio-move-dilute-${k}-${l.id}`} /> {t}</label>)}</div>
-                    {picked[l.id].dilute === true && <><label htmlFor={`ms-f-${l.id}`}>Dilution factor</label>
-                      <select id={`ms-f-${l.id}`} className="mr-form__control" value={picked[l.id].factor} onChange={(e) => { setPick(l.id, { factor: e.target.value }); clear(`${l.id}:dilute`); }} data-testid={`select-move-factor-${l.id}`}>
-                        <option value="">Select factor</option>{DILUTION_FACTORS.map((f) => <option key={f} value={f}>{f}-fold</option>)}</select>
-                      <span className="mr-form__hint">Source consumes the quantity above; destination receives quantity x factor at concentration / factor, expiring two years after the movement date.</span></>}
-                    {picked[l.id].dilute === false && <span className="mr-form__hint">Moves undiluted; stays a reserve-only concentrate.</span>}
-                    {errors[`${l.id}:dilute`] && <p id={`ms-d-${l.id}-error`} className="mr-form__error" role="alert">{errors[`${l.id}:dilute`]}</p>}
-                  </fieldset>}</div> : <span className="mr-form__hint">Select lot first</span>}</td>
+                  </div> : <span className="mr-form__hint">Select lot first</span>}</td>
               </tr>; })}</tbody></table></div>}
             {errors.lines && <p id="ms-lines-error" className="mr-form__error" role="alert">{errors.lines}</p>}
           </fieldset>
@@ -273,9 +324,13 @@ export default function MoveStockFormPage() {
         </fieldset>
         <div className="ms-footer"><span>Saves to the server only after you confirm the review.</span><div className="ms-head-actions">
           <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} disabled={busy === 'save'} data-testid="button-cancel-move">Cancel</button>
-          <button type="submit" ref={reviewButtonRef} className="admin-button" disabled={locked || initializationBlocked} data-testid="button-review-move">{busy === 'preview' ? 'Reviewing…' : 'Review movement'}</button></div></div>
+          <button type="submit" ref={reviewButtonRef} className="admin-button" disabled={locked || initializationBlocked || Boolean(configuration)} data-testid="button-review-move">{busy === 'preview' ? 'Reviewing…' : 'Review movement'}</button></div></div>
       </form>
     </section>
+    {configuration && <ReserveMovementDialog lot={configuration} sourceName={source?.label} applied={picked[configuration.id]} displayDate={displayDate} returnFocusRef={configurationTrigger}
+      onClose={() => setConfiguration(null)} onApply={(draft) => {
+        setPick(configuration.id, draft); clear(configuration.id); clear(`${configuration.id}:dilute`); clear('lines'); setReview(null); setConfiguration(null);
+      }} />}
     {review && <Dialog title="Review stock movement" eyebrow="Move stocks" className="ms-review-dialog" returnFocusRef={reviewButtonRef}
       description="Server-reviewed summary. Nothing is saved until you confirm; changed inputs or balances need a new review."
       dismissDisabled={busy === 'save' || busy === 'reconcile'} onClose={() => { if (!busy && !uncertainKey) setReview(null); }}

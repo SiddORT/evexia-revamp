@@ -69,22 +69,25 @@ def calculate(amount, concentration, unit, factor, movement_date):
         raise PRError("Dilution requires an explicit ml reserve. This legacy unit cannot be converted; choose No or use a supported reserve.", 422, "reserve_dilution_unit")
     if factor not in (2, 5, 10):
         raise PRError("Choose 2-fold, 5-fold or 10-fold dilution.", 422, "reserve_dilution_factor")
-    if not re.fullmatch(r"(?:0|[1-9]\d{0,2})(?:\.\d{1,6})?%", concentration):
-        raise PRError("Dilution requires a numeric percentage concentration with up to six decimals. Choose No to transfer this descriptive reserve unchanged.", 422, "reserve_dilution_concentration")
+    if not re.fullmatch(r"(?:0|[1-9]\d{0,2})(?:\.\d{1,6})?%?", concentration):
+        raise PRError("Dilution requires a positive plain numeric concentration (up to three integer digits and six decimals), optionally followed by %. Choose No to transfer a descriptive reserve unchanged.", 422, "reserve_dilution_concentration")
     with localcontext() as ctx:
         ctx.prec = 40
-        original = Decimal(concentration[:-1])
-        if not 0 < original <= 100:
-            raise PRError("Dilution requires a percentage above zero and no more than 100%.", 422, "reserve_dilution_concentration")
+        suffix = "%" if concentration.endswith("%") else ""
+        original = Decimal(concentration[:-1] if suffix else concentration)
+        if original <= 0 or (suffix and original > 100):
+            raise PRError("Dilution requires a concentration above zero; explicit percentages cannot exceed 100%.", 422, "reserve_dilution_concentration")
         output = quantity(amount * factor)
         result = original / factor
         if result != result.quantize(Decimal(".000001")):
-            raise PRError("Resulting percentage cannot be represented exactly to six decimals. Choose another approved factor; nothing was saved.", 422, "reserve_dilution_precision")
+            raise PRError("Resulting concentration cannot be represented exactly to six decimals. Choose another approved factor; nothing was saved.", 422, "reserve_dilution_precision")
         if movement_date.year > 9997:
             raise PRError("Movement date cannot represent a two-year expiry. Choose an earlier date.", 422, "reserve_dilution_expiry")
         year = movement_date.year + 2
         expiry = date(year, movement_date.month, min(movement_date.day, calendar.monthrange(year, movement_date.month)[1]))
-        return dict(resultingQuantity=q(output), resultingConcentration=format(result, "f").rstrip("0").rstrip(".") + "%" if "." in format(result, "f") else format(result, "f") + "%",
+        rendered = format(result, "f")
+        rendered = rendered.rstrip("0").rstrip(".") if "." in rendered else rendered
+        return dict(resultingQuantity=q(output), resultingConcentration=rendered + suffix,
                     resultingExpiryDate=expiry.isoformat(), dilutionFactor=factor)
 
 

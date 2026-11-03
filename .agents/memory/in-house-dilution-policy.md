@@ -6,7 +6,10 @@ description: Approved dilution rules and the boundary between concentrate reserv
 Keep manufactured reserve entry snapshots separate from usable inventory. Only
 an explicitly reviewed protected Super Admin movement may dilute input by 2, 5
 or 10; No transfers the concentrate unchanged as reserve-only. Output ml equals
-input ml times factor; percentage equals input percentage divided by factor.
+input ml times factor; concentration equals input concentration divided by factor.
+Positive plain numeric concentrations remain unitless; an explicit percent suffix
+is preserved only when present in the saved source. Never add a percent unit to
+the catalogue's plain numeric values.
 Diluted expiry is movement date plus two calendar years, leap-day clamped,
 not original expiry plus two years and not capped by original expiry.
 

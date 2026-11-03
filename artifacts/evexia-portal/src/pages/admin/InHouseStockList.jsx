@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { AlertTriangle, CalendarClock, ChevronDown, Eye, FileDown, Filter, Plus, Search } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, CalendarClock, ChevronDown, Eye, FileDown, Filter, Plus, Search } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -85,6 +85,8 @@ function InHouseStockListInner() {
     { key: 'loc', label: 'Location', render: (r) => <>{r.locationName}{r.batch && <span className="stock-sub">Batch {r.batch}</span>}</> },
     { key: 'rec', label: 'Recorded', render: (r) => <>{timestamp(r.createdAt)}<span className="stock-sub">{r.actor}</span></> },
     { key: 'act', label: 'Actions', render: (r) => <div className="admin-table__actions">
+      <button type="button" className="admin-icon-button" aria-label={`Move stock, ${r.allergenName}, batch ${r.batch || 'unavailable'}`} title="Move stock"
+        onClick={() => navigate(`/admin/inventory/move-stocks/new?reserve=${encodeURIComponent(r.id)}`)} data-testid={`button-move-in-house-${r.id}`}><ArrowRightLeft size={16} aria-hidden="true" /></button>
       <button type="button" className="admin-icon-button" aria-label={`View details, ${r.allergenName}`} title="Details" onClick={() => setViewing(r)} data-testid={`button-view-in-house-${r.id}`}><Eye size={16} /></button></div> },
   ];
   return <AdminLayout title="In-house stock"><div className="opening-stock-master">

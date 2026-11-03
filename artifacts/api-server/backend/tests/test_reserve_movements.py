@@ -56,6 +56,36 @@ def count(db, model):
     return db.scalar(select(func.count()).select_from(model))
 
 
+@pytest.mark.parametrize("factor,concentration,expected", [
+    (2, "5", "2.5"), (5, "5", "1"), (10, "5", "0.5"),
+    (2, "5%", "2.5%"), (5, "5%", "1%"), (10, "5%", "0.5%"),
+])
+def test_plain_and_percent_preview_create_read(client, factor, concentration, expected):
+    api, db, _ = client
+    headers, _, reserve, move = setup(api, db, concentration=concentration, quantity="100")
+    move["lines"][0].update(quantity="100", dilutionFactor=factor)
+    request, preview = reviewed(api, headers, move)
+    assert count(db, InventoryLot) == count(db, InHousePosting) == 0
+    line = preview["lines"][0]
+    assert line["resultingQuantity"] == f"{100 * factor}.000"
+    assert line["resultingConcentration"] == expected
+    assert line["sourceAfter"] == "0.000"
+    created = api.post(BASE + "/movements", headers=headers, json=request)
+    assert created.status_code == 201, created.text
+    saved = created.json()
+    assert api.get(BASE + "/movements/" + saved["id"], headers=headers).json() == saved
+    assert saved["lines"][0]["resultingConcentration"] == expected
+    assert api.post(BASE + "/movements", headers=headers, json=request).json() == saved
+    assert count(db, InHousePosting) == count(db, InventoryLot) == 1
+    detail = api.get(RESERVES + "/" + reserve["id"], headers=headers).json()
+    assert detail["availableQuantity"] == "0.000"
+    assert detail["concentration"] == concentration  # Original is never rewritten.
+    stocks = api.get(BASE + "/stock", headers=headers).json()["items"]
+    lot = next(l for s in stocks for l in s["lots"] if l.get("reserveId") == reserve["id"])
+    assert lot["concentration"] == expected
+    assert lot["quantity"] == f"{100 * factor}.000"
+
+
 @pytest.mark.parametrize("factor", [2, 5, 10])
 def test_review_commit_and_saved_batch_metadata(client, factor):
     api, db, _ = client
@@ -181,6 +211,8 @@ def test_exact_arithmetic_and_calendar(unit, concentration, amount, factor, day,
     ("vials", "10%", "10", 10), ("ML", "10%", "10", 10),
     ("ml", "1:10", "10", 10), ("ml", "0%", "10", 10), ("ml", "101%", "10", 10),
     ("ml", "0.000001%", "10", 10), ("ml", "10%", "100001", 10), ("ml", "10%", "10", 3),
+    ("ml", "0", "10", 5), ("ml", "0.000001", "10", 2),
+    ("ml", "1000", "10", 5), ("ml", "5.0000001", "10", 5),
 ])
 def test_unsupported_and_unrepresentable_outputs(unit, concentration, amount, factor):
     with pytest.raises(PRError):

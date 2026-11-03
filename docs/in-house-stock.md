@@ -47,14 +47,18 @@ reserve classification at the destination, including legacy descriptive values.
 It cannot make concentrate order-ready or selectable for assembly/adjustment.
 
 Yes permits exactly **2-fold, 5-fold or 10-fold**. Source input ml is consumed;
-destination output ml = input × factor, and output percentage = input percentage
-÷ factor. **10 ml at 10%, 10-fold → 100 ml at 1%**. Resulting expiry is movement
+destination output ml = input × factor, and output concentration = input concentration
+÷ factor. **100 ml at 5, 5-fold → 500 ml at 1; 10-fold → 1000 ml at 0.5**,
+without inventing a concentration unit. Explicit percentages remain compatible:
+**10 ml at 10%, 10-fold → 100 ml at 1%**. Resulting expiry is movement
 date plus two calendar years, clamping February 29 to February 28 when necessary;
 it is neither based on nor capped by original expiry. The original reserve
 snapshot is not rewritten.
 
 Dilution accepts only blank-unit current ml entries or explicit `ml`, and plain
-positive percentage strings up to 100%, with at most six fractional digits.
+positive plain numeric strings with up to three integer digits and six fractional
+digits, optionally suffixed with `%`. Only explicit percentages are capped at
+100%; output preserves the presence or absence of that suffix.
 Legacy ratios, text, other units and arbitrary factors are rejected with an
 actionable error. Quantities must be exactly representable at 0.001 and no more
 than 1000000; resulting concentration must be exactly representable at six
@@ -67,13 +71,48 @@ The modal shows input/output, concentration and expiry before confirmation.
 Dismissal returns to the retained draft without writing; changed values or
 balances require another review. Only confirmation writes stock.
 
+Selected reserve rows expose a **Configure reserve** icon rather than inline
+quantity/dilution inputs. Its separate dialog requires source input and an
+explicit Yes/No decision, offers only the approved factors and calculates exact
+draft output. Apply updates the draft; Cancel, Escape or dismissal discard only
+unapplied dialog edits. Reopening starts from applied values, with focus returned
+to the icon. Configuration never writes stock or bypasses authoritative review.
+
+The **Move stock** row icon in In-house Stock opens the existing form with only
+an opaque reserve identifier in the query string. The form re-reads that exact
+reserve, its current per-location balances, active location choices and source
+lots. One current accessible source is preselected; multiple sources require
+explicit selection. Current available input is an editable default. Missing,
+depleted, inaccessible or stale reserves never fall back to another batch.
+Destination, delivered-by and dilution stay unset. Loading disables edits to
+avoid overwriting them; changing source cancels outstanding preselection.
+A pending movement recovery prevents shortcut application and keeps the
+existing owner-bound recovery identity intact.
+
+Focused workflow verification uses disposable data only. Exact arithmetic and
+shortcut guards can be checked with:
+
+```sh
+node --test artifacts/evexia-portal/src/services/reserveDilution.test.js \
+  artifacts/evexia-portal/src/services/reserveShortcut.test.js
+sh scripts/test-reserve-movements.sh
+```
+
+The shortcut checks include pending recovery before reads and while detail or
+location responses are held, cancellation of late responses, explicit split
+source options and no fallback for invalid/depleted/inaccessible reserves.
+The focused browser journey covers apply/cancel/reopen, keyboard trapping and
+focus return, 390px modal layout, server review before any write, final save,
+direct versus prefilled entry and split/depleted/missing reserve states.
+These checks do not authorize broad release checks or real stock mutations.
+
 `0078_reserve_movements` follows `0077_settlements` under the existing automatic
 migration policy. Append-only `in_house_postings` records per-location reserve
 debits/credits. Remaining availability is original quantity plus these postings,
 never an inventory balance; both original quantity and remaining location
 balances are shown. Dilution creates one distinct immutable inventory lot per
 movement/reserve with `reserve_movement_id`, encrypted reserve/batch/movement
-provenance, resulting percentage and expiry. It is not a second reserve.
+provenance, resulting concentration and expiry. It is not a second reserve.
 Subsequent ordinary transfers retain the lot identity and metadata without
 performing another conversion. Stock Status labels concentrations batch-specific
 and shows each lot's actual concentration, expiry, unit and origin. Historical

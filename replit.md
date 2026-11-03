@@ -114,13 +114,18 @@ input reserve and creates a distinct destination lot. Never infer conversion,
 backfill existing reserves, expose raw reserves to orders/assemblies/adjustments,
 or change catalogue concentrations. Saved identities are immutable snapshots.
 See `docs/in-house-stock.md`.
+Dilution accepts positive saved plain numeric concentrations without adding a
+unit, while preserving explicit percent suffixes for historical percent reserves.
+Each selected reserve is configured through its draft-only row-icon dialog;
+Apply is not a save. In-house Stock's Move stock icon resolves the exact reserve's
+live location balances, asks explicitly when split across sources, and never
+chooses destination, delivery or dilution or replaces pending movement recovery.
 Add in-house stock uses the existing server preview in a review modal before
 explicit confirmation. Modal dismissal preserves the draft and invalidates that
 review; pending saves cannot be dismissed, and uncertain outcomes retain the
-existing recovery flow. This presentation change is source-only: no tests,
-builds, checks, browser/runtime probes or service restarts were performed.
-For this delivery the user explicitly limited further verification to new
-feature CRUD and responsiveness; do not run regression or release checks.
+existing recovery flow. Reserve workflow verification is limited to targeted
+feature CRUD and modal/responsive interactions on disposable synthetic data;
+do not run broad regression, release or completion wrappers for this work.
 
 New In-house Stock drafts prefill editable expiry at local today plus five
 calendar years; new Purchase Received rows use plus two years. Leap days clamp
