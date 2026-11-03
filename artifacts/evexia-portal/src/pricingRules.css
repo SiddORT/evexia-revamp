@@ -1,4 +1,15 @@
 .pricing-rules-page { display: grid; gap: 18px; }
+.pricing-rules-page > .admin-page-head { margin-bottom: 0; }
+.pricing-rules-panel { min-width: 0; }
+.pricing-rules-panel .admin-search { flex: 0 1 440px; width: min(100%, 440px); }
+.pricing-rules-panel .admin-table { table-layout: auto; }
+.pricing-rules-panel .admin-table td { overflow-wrap: anywhere; }
+.pricing-rules-panel .admin-table th { white-space: normal; }
+.pricing-rules-panel .admin-table td:nth-child(2) { min-width: 130px; max-width: 210px; }
+.pricing-rules-panel .admin-table td:nth-child(3) { min-width: 180px; max-width: 310px; }
+.pricing-table__amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.admin-dialog.pricing-editor-dialog { width: min(900px, calc(100vw - 32px)); max-width: 900px; }
+.pricing-editor-dialog .pricing-editor__actions { border-top: 1px solid var(--admin-border); padding-top: 16px; }
 .pricing-rules-note { margin: 0; color: var(--admin-text-soft); font-size: 0.8125rem; line-height: 1.5; }
 .pricing-rules-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .pricing-rule-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 16px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-surface); color: var(--admin-text); }

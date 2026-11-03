@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BadgeIndianRupee, Copy, FolderOpen, Pencil, Plus, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import DataTable from '../../components/admin/DataTable.jsx';
+import Dialog from '../../components/admin/Dialog.jsx';
 import PricingMultiSelect from '../../components/admin/PricingMultiSelect.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { isSuperAdminIdentity } from '../../auth/capabilities.js';
@@ -82,6 +84,19 @@ function PricingWorkspace() {
 
   const pageCount = Math.max(1, Math.ceil(list.total / limit));
   const page = Math.floor(offset / limit) + 1;
+  const columns = [
+    { key: 'serial', label: 'Sr. No.', render: (_, index) => index + 1 },
+    { key: 'categories', label: 'Product categories', render: (rule) => <strong data-testid={`text-pricing-rule-category-${rule.id}`}>{categoryNames(rule)}</strong> },
+    { key: 'allergens', label: 'Allergens', render: (rule) => <ul className="pricing-rule-row__chips pricing-rule-row__targets" aria-label="Allergens">{rule.allergens.map((a) => <li key={a.id} className={`pricing-chip${a.status !== 'active' || a.categoryId !== a.savedCategoryId ? ' pricing-chip--deleted' : ''}`}>{allergenName(rule, a)}</li>)}</ul> },
+    { key: 'cutoff', label: 'Order date cutoff', render: (rule) => <time dateTime={rule.cutoff} data-testid={`text-pricing-rule-cutoff-${rule.id}`}>{showDate(rule.cutoff, prefs)}</time> },
+    { key: 'before', label: 'Before date (INR)', render: (rule) => <span className="pricing-table__amount" data-testid={`text-pricing-rule-before-${rule.id}`}>{shown(rule.beforeRate)}</span> },
+    { key: 'after', label: 'On/after date (INR)', render: (rule) => <span className="pricing-table__amount" data-testid={`text-pricing-rule-after-${rule.id}`}>{shown(rule.afterRate)}</span> },
+    { key: 'version', label: 'Version', render: (rule) => rule.version },
+    { key: 'actions', label: 'Actions', render: (rule) => <div className="pricing-rule-row__actions">
+      <button type="button" className="admin-icon-button" disabled={Boolean(editor)} aria-label={`Edit pricing rule for ${categoryNames(rule)}`} title="Edit" onClick={() => open('edit', rule)} data-testid={`button-edit-pricing-rule-${rule.id}`}><Pencil size={16} aria-hidden="true" /></button>
+      <button type="button" className="admin-icon-button" disabled={Boolean(editor)} aria-label={`Copy pricing rule for ${categoryNames(rule)}`} title="Copy" onClick={() => open('copy', rule)} data-testid={`button-copy-pricing-rule-${rule.id}`}><Copy size={16} aria-hidden="true" /></button>
+    </div> },
+  ];
   return <AdminLayout title="Pricing Rules"><div className="pricing-rules-page">
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Configuration / Pricing</p><h1>Pricing Rules</h1><p className="admin-page-head__description">Date-based selling prices for selected categories and allergens.</p></div>
@@ -92,36 +107,24 @@ function PricingWorkspace() {
     <p className="pricing-rules-note" data-testid="text-pricing-rules-note">Configuration only — no order applies these prices. On/after includes the cutoff day. Selected allergens cannot overlap another rule.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-pricing-rule-feedback">{feedback}</div>}
     {editor && <RuleEditor key={editor.key} editor={editor} onClose={() => setEditor(null)} onSaved={saved} />}
-    <section className="admin-panel" aria-label="Pricing rule list" aria-busy={loading}>
-      <div className="admin-target-toolbar"><div className="admin-target-toolbar__search-row master-filter-toolbar">
-        <label className="pricing-list-search"><Search size={16} aria-hidden="true" /><span className="pricing-sr-only">Search saved rules by category or allergen</span><input type="search" value={query} maxLength={100} placeholder="Search categories or allergens…" onChange={(e) => { listCtl.current?.abort(); setLoading(true); setError(''); setQuery(e.target.value); setOffset(0); }} data-testid="input-search-pricing-rules" /></label>
+    <section className="admin-panel pricing-rules-panel" aria-label="Pricing rule list" aria-busy={loading}>
+      <div className="admin-toolbar master-filter-toolbar"><div className="admin-toolbar__fields">
+        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="pricing-sr-only">Search saved rules by category or allergen</span><input type="search" value={query} maxLength={100} placeholder="Search categories or allergens…" onChange={(e) => { listCtl.current?.abort(); setLoading(true); setError(''); setQuery(e.target.value); setOffset(0); }} data-testid="input-search-pricing-rules" /></label>
       </div></div>
-      {loading ? <div role="status" aria-label="Loading pricing rules" className="pricing-rules-list">{[0, 1, 2].map((i) => <div key={i} className="pricing-skeleton" />)}</div>
+      {loading ? <DataTable columns={columns} loading label="Pricing rules" testIdPrefix="pricing-rule" />
         : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>Pricing rules could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" style={{ marginTop: 16 }} onClick={retry} data-testid="button-retry-pricing-rules">Try again</button></div>
-        : list.items.length ? <ul className="pricing-rules-list" aria-label="Pricing rules">{list.items.map((rule) => <li key={rule.id} className="pricing-rule-row" data-testid={`row-pricing-rule-${rule.id}`}>
-          <div>
-            <h2 data-testid={`text-pricing-rule-category-${rule.id}`}>{categoryNames(rule)}</h2>
-            <ul className="pricing-rule-row__chips pricing-rule-row__targets" aria-label="Allergens">{rule.allergens.map((a) => <li key={a.id} className={`pricing-chip${a.status !== 'active' || a.categoryId !== a.savedCategoryId ? ' pricing-chip--deleted' : ''}`}>{allergenName(rule, a)}</li>)}</ul>
-          </div>
-          <dl className="pricing-rule-row__rates">
-            <dt>Order Date Cutoff</dt><dd data-testid={`text-pricing-rule-cutoff-${rule.id}`}><time dateTime={rule.cutoff}>{showDate(rule.cutoff, prefs)}</time></dd>
-            <dt>Before date (INR)</dt><dd data-testid={`text-pricing-rule-before-${rule.id}`}>{shown(rule.beforeRate)}</dd>
-            <dt>On/after date (INR)</dt><dd data-testid={`text-pricing-rule-after-${rule.id}`}>{shown(rule.afterRate)}</dd>
-            <dt>Version</dt><dd>{rule.version}</dd>
-          </dl>
-          <div className="pricing-rule-row__actions">
-            <button type="button" className="admin-icon-button" disabled={Boolean(editor)} aria-label={`Edit pricing rule for ${categoryNames(rule)}`} title="Edit" onClick={() => open('edit', rule)} data-testid={`button-edit-pricing-rule-${rule.id}`}><Pencil size={16} aria-hidden="true" /></button>
-            <button type="button" className="admin-icon-button" disabled={Boolean(editor)} aria-label={`Copy pricing rule for ${categoryNames(rule)}`} title="Copy" onClick={() => open('copy', rule)} data-testid={`button-copy-pricing-rule-${rule.id}`}><Copy size={16} aria-hidden="true" /></button>
-          </div>
-        </li>)}</ul>
+        : list.items.length ? <DataTable columns={columns} rows={list.items} rowKey={(rule) => rule.id} rowOffset={offset} label="Pricing rules" testIdPrefix="pricing-rule" />
         : <div className="admin-empty" data-testid={query.trim() ? 'status-pricing-rules-no-matches' : 'status-pricing-rules-empty'}><span className="admin-empty__icon"><BadgeIndianRupee size={21} aria-hidden="true" /></span><strong>{query.trim() ? 'No matching pricing rules' : list.total ? 'No rules on this page' : 'No pricing rules yet'}</strong><p>{query.trim() ? 'Try another category or allergen name.' : list.total ? 'Go back to an earlier page.' : 'Add a rule to configure selling prices.'}</p></div>}
-      {!error && !loading && <div className="pricing-pager">
+      {!error && !loading && <div className="admin-panel__foot admin-pagination">
         <span data-testid="text-pricing-rules-count">{list.total ? `${offset + 1}-${Math.min(offset + list.items.length, list.total)} of ${list.total} ${query.trim() ? 'matching ' : ''}rules` : `0 ${query.trim() ? 'matching ' : ''}rules`}</span>
-        <label>Rows <select className="admin-select" value={limit} disabled={loading} onChange={(e) => { setLimit(Number(e.target.value)); setOffset(0); }} data-testid="select-pricing-rules-page-size">{PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
-        <div>
-          <button type="button" className="admin-button admin-button--secondary" disabled={loading || page <= 1} onClick={() => setOffset(Math.max(0, offset - limit))} data-testid="button-pricing-rules-prev">Previous</button>
-          <span aria-live="polite" style={{ alignSelf: 'center' }}>Page {page} of {pageCount}</span>
-          <button type="button" className="admin-button admin-button--secondary" disabled={loading || page >= pageCount} onClick={() => setOffset(offset + limit)} data-testid="button-pricing-rules-next">Next</button>
+        <div className="admin-pagination__controls">
+          <label className="admin-pagination__size">Rows per page <select value={limit} disabled={loading} onChange={(e) => { setLimit(Number(e.target.value)); setOffset(0); }} data-testid="select-pricing-rules-page-size">{PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
+          <nav className="admin-pagination__pages" aria-label="Pricing rule pages">
+            <button type="button" disabled={loading || page <= 1} onClick={() => setOffset(Math.max(0, offset - limit))} data-testid="button-pricing-rules-prev">Previous</button>
+            <button type="button" className="admin-pagination__current" aria-current="page" disabled>{page}</button>
+            <button type="button" disabled={loading || page >= pageCount} onClick={() => setOffset(offset + limit)} data-testid="button-pricing-rules-next">Next</button>
+          </nav>
+          <span className="admin-pagination__total" aria-live="polite">Page {page} of {pageCount}</span>
         </div>
       </div>}
     </section>
@@ -246,8 +249,9 @@ function RuleEditor({ editor, onClose, onSaved }) {
 
   const title = mode === 'edit' ? `Edit rule: ${categoryNames(rule)}` : mode === 'copy' ? `Copy rule from ${categoryNames(rule)}` : 'New pricing rule';
   const err = (k) => errors[k] && <span id={`pricing-${k}-error`} className="pricing-field__error" role="alert">{errors[k]}</span>;
-  return <section className="admin-panel pricing-editor" aria-labelledby="pricing-editor-title" data-testid="form-pricing-rule">
-    <div className="admin-page-head" style={{ margin: 0 }}><div><p className="admin-page-head__eyebrow">{mode === 'copy' ? 'Copy: rates and cutoff copied, choose a new target' : mode === 'edit' ? `Version ${rule.version}` : 'Pricing rule'}</p><h2 id="pricing-editor-title">{title}</h2></div></div>
+  return <Dialog title={title} eyebrow="Configuration / Pricing" onClose={close} dismissDisabled={busy || selectingAll} className="pricing-editor-dialog"
+    description={mode === 'copy' ? 'Rates and cutoff are copied. Choose categories and allergens for the new rule.' : mode === 'edit' ? `Update the selected allergens and date-based prices. Saved version ${rule.version}.` : 'Select categories and allergens, then set the cutoff date and selling prices.'}>
+    <div className="pricing-editor" data-testid="form-pricing-rule">
     {message && <div className={`admin-feedback${uncertain || stale ? '' : ' admin-feedback--error'}`} role="alert" data-testid="status-pricing-rule-error">{message}</div>}
     <form onSubmit={submit} noValidate>
       <fieldset disabled={busy || uncertain}>
@@ -293,5 +297,6 @@ function RuleEditor({ editor, onClose, onSaved }) {
       description={uncertain ? 'The last save could not be confirmed and may already have been saved on the server. Closing discards this attempt and its safe retry; it exists only on this page. Prefer Retry same submission. If you close, check the rule list before saving again.' : 'Your unsaved changes to this pricing rule will be lost.'}
       actionLabel={uncertain ? 'Abandon unconfirmed save' : 'Discard draft'}
       onConfirm={() => { setConfirmClose(false); onClose(); }} onClose={() => setConfirmClose(false)} />}
-  </section>;
+    </div>
+  </Dialog>;
 }
