@@ -17,6 +17,14 @@ deploy without authorization for that operation.
 
 # Development release compatibility
 
+Explicit order drafts use the shared MR/Admin editors. Immunotherapy, Kits and
+Lupin store creator-private encrypted incomplete documents; SPT retains its
+existing durable draft contract. Only explicit final submission creates normal
+order/financial/notification effects. See `docs/order-drafts.md` for ownership,
+retry/version and attachment boundaries, numbering compatibility and source-only
+delivery limits. No regression/release checks or service activation were run for
+this implementation.
+
 PO/PR saved document revisions retain encrypted canonical models with the
 reviewed browser-local template/date snapshot. History reuses authenticated
 audit evidence; PR remains quantity-based, and unavailable legacy layouts must

@@ -24,6 +24,7 @@ export interface SptRecord {
   doctor: SptRecordDoctor;
   doctorId: string | null;
   doctorName: string;
+  draftSavedAt?: string | null;
   id: string;
   mr: SptRecordMr;
   mrEditable?: boolean;

@@ -1034,7 +1034,10 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'settlements'
+  const draftResource = /^order-drafts\/(?:immunotherapy|kits|lupin)$/.test(resource);
+  const allowed = draftResource
+    ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
+    : resource === 'settlements'
     ? /^(?:|\/transactions|\/references\/(?:doctors|mrs|patients)|\/requests\/[0-9a-f-]{36}|\/history\/(?:IT|Kit|SPT|Lupin)\/[0-9a-f-]{36})$/
     : resource === 'in-house-stock'
     ? /^(?:|\/preview|\/export|\/references\/(?:allergens|locations)|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36})$/i
@@ -1089,7 +1092,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const owner = state.user?.id;
   const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
-  const mrOrder = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource) && state.user?.identity_kind === 'mr';
+  const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
   const check = () => {
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
@@ -1162,7 +1165,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
-    if (resource === 'immunotherapy-orders') {
+    if (resource === 'immunotherapy-orders' || (resource === 'order-drafts/immunotherapy' && path.endsWith('/submit'))) {
       error.terminal = response.status >= 400 && response.status < 500
         && response.headers.get('X-Immunotherapy-Outcome') === 'rejected';
     }

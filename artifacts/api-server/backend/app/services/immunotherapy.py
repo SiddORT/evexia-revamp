@@ -66,7 +66,7 @@ def authorize(db, actor, action=None):
     return authorize_order(db, actor, "immunotherapy", action)
 
 
-def transaction(db, actor, work, *, action=None, resource="immunotherapy", response_model=None):
+def transaction(db, actor, work, *, action=None, resource="immunotherapy", response_model=None, before_commit=None):
     try:
         current = authorize_order(db, actor, resource, action)
         with crypto_scope(db) as keys:
@@ -83,6 +83,8 @@ def transaction(db, actor, work, *, action=None, resource="immunotherapy", respo
                 # Validate AND serialize the actual authorized projection before
                 # commit, not only in FastAPI after a write has already committed.
                 result = response_model.model_validate(result).model_dump(mode="json")
+        if before_commit and not isinstance(result, RejectedMutation):
+            before_commit(result)
         db.commit()
     except SQLAlchemyError:
         db.rollback()
@@ -284,6 +286,8 @@ def resolved(db, body, previous=None):
 
 
 def apply(db, actor, keys, body, record_id=None, expected=None):
+    from app.services.order_drafts import protect_attachments
+    protect_attachments(db, body.attachmentIds)
     row = find(db, record_id) if record_id else None
     if row and expected != row.version:
         raise ImmError("This order changed. Your draft is preserved. Reopen the saved order in another tab and reconcile before retrying.", 409, "imm_stale")
@@ -372,12 +376,12 @@ def idempotent(db, actor, keys, key, payload, work, *, terminal_rejections=False
     return result
 
 
-def save(db, actor, body, record_id=None):
+def save(db, actor, body, record_id=None, *, before_commit=None):
     from app.schemas.immunotherapy import ImmRecord
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
         [str(record_id), body.model_dump(mode="json")],
         lambda: apply(db, a, k, body, record_id, body.expected_version), terminal_rejections=True),
-        action="edit" if record_id else "add", response_model=ImmRecord)
+        action="edit" if record_id else "add", response_model=ImmRecord, before_commit=before_commit)
 
 
 def detail(db, actor, record_id):

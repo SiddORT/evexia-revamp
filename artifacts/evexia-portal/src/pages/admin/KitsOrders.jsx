@@ -11,6 +11,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
+import PersistentDrafts from '../../components/orders/PersistentOrderDraft.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { request, STATUSES, PAYMENT_STATUSES } from '../../services/serverKits.js';
 import { createKitsTransferAdapter } from '../../services/kitsTransfers.js';
@@ -91,6 +92,7 @@ export default function KitsOrders() {
         <div className="kits-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
     <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
+    <PersistentDrafts kind="kits" />
     <section className="admin-panel kits-panel kits-listing__panel" aria-label="Kits and consumables orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={

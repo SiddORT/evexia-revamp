@@ -12,6 +12,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
+import PersistentDrafts from '../../components/orders/PersistentOrderDraft.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
 import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
@@ -123,6 +124,7 @@ export default function ImmunotherapyOrders() {
     {error && <div className="imm-errors" role="alert">{error} <button type="button" className="imm-link-btn" onClick={() => setRevision((n) => n + 1)}>Retry</button></div>}
     {loading && <p role="status">Loading saved orders…</p>}
     <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
+    <PersistentDrafts kind="immunotherapy" />
     <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
       <OrderListingFilters masterDisclosure onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
         <label className="imm-field imm-field--grow">

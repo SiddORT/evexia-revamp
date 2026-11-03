@@ -18,6 +18,7 @@ import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
 import ImmunotherapyConflictDetails from '../../components/immunotherapy/ImmunotherapyConflictDetails.jsx';
 import SuborderCards from '../../components/immunotherapy/SuborderCards.jsx';
+import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import '../../excel-import.css';
@@ -57,11 +58,13 @@ export default function ImmunotherapyOrderFormPage({ id, mode }) {
   if (id && !order) return <AdminLayout title="IMMUNOTHERAPY"><div className="imm admin-panel imm-empty">
     <h1>{error ? 'Order unavailable' : 'Loading order…'}</h1>{error && <><p role="alert">{error}</p><button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></>}
     <Link href={BASE}>Back to orders</Link></div></AdminLayout>;
+  if (!id) return <DraftEntry kind="immunotherapy">{(draft) => <Editor order={null} mode="edit" draft={draft} />}</DraftEntry>;
   if (order && mode === 'view') return <ImmunotherapyOrderSummary key={order.id} order={order} />;
   return <Editor key={`${id || 'new'}-${mode}`} order={order} mode={mode} />;
 }
 
-function Editor({ order, mode }) {
+function Editor({ order, mode, draft }) {
+  const persistent = usePersistentOrderDraft('immunotherapy', draft);
   const [decisionRecord, setDecisionRecord] = useState(order);
   const [reviewBusy, setReviewBusy] = useState(false);
   const { date } = useAdminDateFormatters();
@@ -75,14 +78,16 @@ function Editor({ order, mode }) {
   const [, navigate] = useLocation();
   const readOnly = mode === 'view' || orderLocked(order) || !(order ? can.edit : can.add) || (mrPortal && order && !mrEditable(order));
   const isNew = !order;
-  const initial = useRef(order ? fromOrder(order) : { ...blank(), mrId: authenticatedMR?.id || '' });
+  const initial = useRef(order ? fromOrder(order) : draft?.payload.values || { ...blank(), mrId: authenticatedMR?.id || '' });
   // Only server-loaded saved associations or successful verified uploads count.
   // A filename, local metadata, pending upload or transfer claim is not evidence.
-  const verifiedFiles = useRef(new Map((order?.attachments || []).map((f) => [f.id, order.patientId])));
+  const verifiedFiles = useRef(new Map((order?.attachments || draft?.payload.values.attachments || []).map((f) => [f.id, order?.patientId || draft?.payload.values.patientId])));
   const [v, setV] = useState(initial.current);
   const [errors, setErrors] = useState({});
   const [groupMsg, setGroupMsg] = useState({});
-  const [allergenEntries, setAllergenEntries] = useState({});
+  const [allergenEntries, setAllergenEntries] = useState(draft?.payload.allergenEntries || {});
+  const initialEntries = useRef(draft?.payload.allergenEntries || {});
+  const navigationBlocked = useRef(false);
   const [explain, setExplain] = useState('');
   const [reg, setReg] = useState(null);
   const [regErrors, setRegErrors] = useState({});
@@ -160,12 +165,21 @@ function Editor({ order, mode }) {
   const dirty = !readOnly && JSON.stringify(v) !== JSON.stringify(initial.current);
   const regOpen = Boolean(reg);
   const hasAllergenEntry = Object.values(allergenEntries).some((entry) => entry.allergenId || entry.result);
-  dirtyRef.current = dirty || regOpen || Boolean(pending) || uncertain || reviewBusy || uploads.length > 0 || hasAllergenEntry;
+  navigationBlocked.current = Boolean(pending) || uncertain || reviewBusy || persistent.locked;
+  dirtyRef.current = dirty || regOpen || navigationBlocked.current || uploads.length > 0
+    || JSON.stringify(allergenEntries) !== JSON.stringify(initialEntries.current);
   const set = (patch) => setV((cur) => ({ ...cur, ...patch }));
 
   useEffect(() => {
     if (readOnly) return undefined;
-    return setNavigationGuard((request) => { if (!dirtyRef.current) return false; setLeave((current) => current || request); return true; });
+    return setNavigationGuard((request) => {
+      if (!dirtyRef.current) return false;
+      if (busy.current || navigationBlocked.current) {
+        setErrors({ form: 'Keep this order open until the pending save is confirmed. Retry the unchanged save if its outcome is unknown.' });
+        return true;
+      }
+      setLeave((current) => current || request); return true;
+    });
   }, [readOnly]);
 
   useEffect(() => { if (regOpen) regNameRef.current?.focus(); }, [regOpen]);
@@ -260,10 +274,30 @@ function Editor({ order, mode }) {
       busy.current = false; if (alive.current) setPending('');
     }
   }
-  function guarded(href) { if (dirtyRef.current) setLeave({ kind: 'href', href }); else navigate(href); }
+  function guarded(href) {
+    if (busy.current || navigationBlocked.current) {
+      setErrors({ form: 'Keep this order open until the pending save is confirmed.' }); return;
+    }
+    if (dirtyRef.current) setLeave({ kind: 'href', href }); else navigate(href);
+  }
+  async function saveDraft() {
+    if (busy.current || reviewBusy || readOnly || order || uncertain) return;
+    if (reg || uploads.length || fileMsg) {
+      setErrors({ form: 'Finish or cancel registration and resolve/remove pending or failed uploads before saving a draft. Only verified attached files are saved.' });
+      return;
+    }
+    busy.current = true;
+    try {
+      const saved = await persistent.persist({ values: v, allergenEntries });
+      initial.current = saved.payload.values;
+      initialEntries.current = saved.payload.allergenEntries || {};
+      setErrors({});
+    } catch (cause) { setErrors({ form: cause.message }); }
+    finally { busy.current = false; }
+  }
   async function save(decision) {
     if (typeof decision !== 'string') decision = undefined;
-    if (busy.current || reviewBusy || getSession().user?.id !== owner.current) return;
+    if (busy.current || reviewBusy || persistent.locked || getSession().user?.id !== owner.current) return;
     if (reg) { setErrors({ registration: 'Finish or cancel the patient registration before saving the order.' }); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
     if (hasAllergenEntry) { setErrors({ groups: 'Add the entered allergen or explicitly clear its entry before saving.' }); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
     if (uploads.some((u) => ['queued', 'uploading'].includes(u.state))) { setErrors({ attachments: 'Wait for uploads to finish. Only verified prescriptions count.' }); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
@@ -278,7 +312,8 @@ function Editor({ order, mode }) {
     busy.current = true; setPending('save'); setErrors({});
     if (!mutation.current) mutation.current = prepareOrderSave(submission, saveBase.current, crypto.randomUUID());
     try {
-      const saved = await submitOrderSave(mutation.current);
+      const saved = order ? await submitOrderSave(mutation.current)
+        : await persistent.submit(mutation.current.body, () => submitOrderSave(mutation.current));
       if (!alive.current) return;
       initial.current = v; dirtyRef.current = false; setErrors({}); setUncertain(false);
       navigate(`${BASE}/${saved.id}`);
@@ -334,7 +369,7 @@ function Editor({ order, mode }) {
     if (k.startsWith('result-')) { const gi = v.groups.findIndex((g) => k.startsWith(`result-${g.id}-`)); const aid = k.slice(`result-${v.groups[gi]?.id}-`.length); return `imm-r-${gi}-${v.groups[gi]?.items.findIndex((i) => i.allergenId === aid)}`; }
     return `imm-${k}`;
   };
-  const dis = readOnly || Boolean(pending) || uncertain || reviewBusy;
+  const dis = readOnly || Boolean(pending) || uncertain || reviewBusy || persistent.locked;
   const rf = (k, label, props = {}) => <label className="imm-field">{label}
     <input id={`imm-reg-${k}`} disabled={Boolean(pending)} ref={k === 'name' ? regNameRef : undefined} value={reg[k]} onChange={(e) => setReg({ ...reg, [k]: e.target.value })} aria-invalid={Boolean(regErrors[k])} aria-describedby={regErrors[k] ? `imm-reg-${k}-err` : undefined} data-testid={`input-imm-reg-${k}`} {...props} />
     <Err id={`imm-reg-${k}-err`} text={regErrors[k]} /></label>;
@@ -352,6 +387,11 @@ function Editor({ order, mode }) {
         {order && readOnly && !orderLocked(order) && can.edit && (!mrPortal || mrEditable(order)) && <Link href={`${BASE}/${order.id}/edit`} className="admin-button" data-testid="link-imm-to-edit"><Pencil size={15} aria-hidden="true" />Edit</Link>}
       </div>
     </div>
+    {!order && <div className="imm-actions">
+      <button type="button" className="admin-button admin-button--secondary" disabled={readOnly || Boolean(pending) || uncertain || reviewBusy || persistent.busy} onClick={saveDraft}>{persistent.busy ? 'Saving draft…' : persistent.unknown ? 'Retry unchanged draft save' : 'Save as Draft'}</button>
+      {persistent.notice}
+      {persistent.saved && (JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) || JSON.stringify(allergenEntries) !== JSON.stringify(persistent.saved.payload.allergenEntries || {})) && <p role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
+    </div>}
     {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">
       <h2 id="imm-recovery-title">Save outcome is unconfirmed</h2>
       <p>{errors.form || 'The server response did not confirm the outcome.'}</p>
@@ -494,7 +534,7 @@ function Editor({ order, mode }) {
           {adminReview && <><label className="imm-field" htmlFor="imm-poNumber">PO number (optional)<input id="imm-poNumber" value={v.poNumber} maxLength={100} disabled={dis} aria-invalid={Boolean(errors.poNumber)} onChange={(e) => set({ poNumber: e.target.value })} data-testid="input-imm-po" /></label><Err text={errors.poNumber} />
             <p className="imm-hint">Approval requires one MRP per SUB, extract and dilution for every child, valid composition and a verified patient prescription. PO may be omitted. Draft saves may be incomplete; rejection requires no invented prices or clinical quantities.</p></>}
           <p className="imm-hint">Update or Save writes the whole order atomically, including all other pending edits. Changes are saved only after the server confirms success. Saving does not approve or reject the order.</p>
-          <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Save order' : 'Save changes'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>
+          <div className="imm-btn-row"><button type="button" className="admin-button" disabled={Boolean(pending) || reviewBusy || persistent.locked} onClick={save} data-testid="button-imm-save">{pending === 'save' ? 'Saving…' : uncertain ? 'Retry same save safely' : isNew ? 'Submit order' : 'Save changes'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => guarded(BASE)}>Cancel</button></div>
         </section>}
       </div>
       <aside className="imm-aside" aria-label="Order summary">

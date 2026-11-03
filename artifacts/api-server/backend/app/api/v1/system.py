@@ -53,6 +53,11 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0082_order_drafts"]:
+            db.execute(text("SELECT id,kind,created_by,mr_scope,version,payload_ciphertext,last_request,submitted_order_id,submitted_version,created_at,updated_at FROM order_drafts LIMIT 0"))
+            db.execute(text("SELECT draft_id,file_id FROM order_draft_attachments LIMIT 0"))
+            db.execute(text("SELECT key,draft_id,actor_id,response_ciphertext FROM order_draft_requests LIMIT 0"))
+            revisions = ["0081_immunotherapy_alerts"]
         if revisions == ["0081_immunotherapy_alerts"]:
             from app.services.email_templates import resolve_event
             resolve_event(db, "mr_immunotherapy_placed")

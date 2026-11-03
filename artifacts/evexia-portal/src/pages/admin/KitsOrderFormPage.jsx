@@ -8,12 +8,13 @@ import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
 import { KIT_PRODUCTS, STATUSES, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment, attachmentBlob } from '../../services/serverKits.js';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
-import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import KitsOrderEditor from './KitsOrderEditor.jsx';
 import KitsPricingSummary from '../../components/orders/KitsPricingSummary.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
+import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
+import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
 
 const LABELS = { orderFor: 'Order for', doctorId: 'Doctor', mrId: 'MR', products: 'Products', 'kit-product': 'Kit product', 'kit-custom': 'Custom value', 'kit-volume': 'Kit volume', 'kit-quantity': 'Kit quantity', lancets: 'Lancets', applicators: 'Applicators', tray: 'Tray', shipping: 'Shipping', 'other-name': 'Recipient name', 'other-phone': 'Recipient phone', 'other-line1': 'Address line 1', 'other-country': 'Country', 'other-state': 'State', 'other-city': 'City', 'other-pincode': 'Pincode', attachments: 'Attachments' };
 const Err = ({ id, text }) => (text ? <p className="kits-error" id={id} role="alert">{text}</p> : null);
@@ -45,7 +46,7 @@ export default function KitsOrderFormPage({ id, mode = 'view' }) {
       <Link href={BASE} className="admin-button">Back to orders</Link></div></div></AdminLayout>;
     return mode === 'edit' ? <KitsOrderEditor order={order} /> : <Summary order={order} />;
   }
-  return <Form />;
+  return <DraftEntry kind="kits">{(draft) => <Form draft={draft} />}</DraftEntry>;
 }
 
 function Summary({ order: initialOrder }) {
@@ -106,29 +107,31 @@ function Summary({ order: initialOrder }) {
     </div></AdminLayout>;
 }
 
-function Form() {
+function Form({ draft }) {
+  const persistent = usePersistentOrderDraft('kits', draft);
   const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
   const { portal, mr: authenticatedMR } = useOrderPortal();
   const [, navigate] = useLocation();
-  const [v, setV] = useState(() => ({ ...blankOrder(), mrId: authenticatedMR?.id || '' }));
+  const [v, setV] = useState(() => draft?.payload.values || ({ ...blankOrder(), mrId: authenticatedMR?.id || '' }));
   const [errors, setErrors] = useState({});
   const [fileMsg, setFileMsg] = useState('');
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
   const [doctor, setDoctor] = useState(null), [mr, setMr] = useState(authenticatedMR);
   const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState('');
   const submission = useRef(null), saving = useRef(false), uploads = useRef(new Map());
+  const initial = useRef(JSON.stringify(v)), done = useRef(false);
+  const leaveDialog = useOrderDraftNavigation({
+    dirty: !done.current && JSON.stringify(v) !== initial.current,
+    pending: busy || uncertain || persistent.locked,
+    onBlocked: () => setErrors({ save: 'Confirm the pending save before leaving this editor.' }),
+  });
   useEffect(() => {
     if (!can.upload_attachment) return undefined;
     const controller = new AbortController();
     request('/policy', { signal: controller.signal }).then(setPolicy).catch((e) => { if (!controller.signal.aborted) setPolicyError(e.message); });
     return () => controller.abort();
   }, [can.upload_attachment]);
-  useEffect(() => setNavigationGuard(() => {
-    if (!saving.current && !submission.current) return false;
-    setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
-    return true;
-  }), []);
   const summaryRef = useRef(null);
   const set = (p) => setV((c) => ({ ...c, ...p }));
   const setKit = (p) => setV((c) => ({ ...c, kit: { ...c.kit, ...p } }));
@@ -146,8 +149,8 @@ function Form() {
     setFileMsg(msg || sizeError);
     if (!msg && !sizeError) set({ attachments: [...v.attachments, ...files] });
   }
-  async function save() {
-    if (saving.current) return;
+  async function save(asDraft = false) {
+    if (saving.current || !can.add || (asDraft && uncertain) || (!asDraft && persistent.locked)) return;
     if (fileMsg) {
       setErrors({ attachments: 'The rejected files were not attached. Choose valid files, or continue explicitly without them.' });
       requestAnimationFrame(() => summaryRef.current?.focus());
@@ -155,19 +158,31 @@ function Form() {
     }
     saving.current = true; setBusy(true); setErrors({});
     try {
+      if (asDraft) {
+        const attachments = [];
+        for (const file of v.attachments) {
+          if (file.id) { attachments.push(file); continue; }
+          if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
+          attachments.push(uploads.current.get(file));
+        }
+        const saved = await persistent.persist({ values: { ...v, attachments } });
+        setV(saved.payload.values); initial.current = JSON.stringify(saved.payload.values);
+        return;
+      }
       if (!submission.current) {
         const attachments = [];
         for (const file of v.attachments) {
+          if (file.id) { attachments.push(file); continue; }
           if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
           attachments.push(uploads.current.get(file));
         }
         submission.current = { ...orderInput({ ...v, attachments }), idempotencyKey: crypto.randomUUID() };
       }
-      const order = await request('', { body: submission.current });
+      const order = await persistent.submit(submission.current, () => request('', { body: submission.current }));
       submission.current = null; saving.current = false; setUncertain(false);
-      navigate(`${BASE}/${order.id}`);
+      done.current = true; navigate(`${BASE}/${order.id}`);
     } catch (error) {
-      const keep = uncertain || Boolean(error.ambiguous);
+      const keep = !asDraft && (uncertain || Boolean(error.ambiguous));
       setUncertain(keep);
       if (!keep) submission.current = null;
       setErrors({ [error.stage || 'save']: error.message || 'Order was not saved. Your draft is preserved; retry.' });
@@ -191,7 +206,9 @@ function Form() {
     {policyError && <p role="alert">{policyError} <button type="button" className="kits-link" onClick={() => { setPolicyError(''); request('/policy').then(setPolicy).catch((e) => setPolicyError(e.message)); }}>Retry upload policy</button></p>}
     {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="kits-error-summary"><strong>{e.upload ? 'Attachment upload needs attention' : e.save ? 'Order save needs attention' : e.validation ? 'Order validation needs attention' : `Fix ${errList.length} problem${errList.length > 1 ? 's' : ''} before saving`}</strong>
       <ul>{errList.map(([k, m]) => <li key={k}>{['upload', 'save', 'validation'].includes(k) ? <span data-testid={`kits-error-${k}`}>{m}</span> : <button type="button" className="kits-link" onClick={() => focusId(k === 'orderFor' ? `orderFor-${v.orderFor}` : k === 'shipping' ? `shipping-${v.shipping}` : k === 'products' ? 'kit-product' : k)} data-testid={`kits-error-${k}`}>{LABELS[k] || k}: {m}</button>}</li>)}</ul></div>}
-    <fieldset className="kits-layout kits-form-fields" disabled={!can.add || busy || uncertain}>
+    {persistent.notice}
+    {persistent.saved && JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) && <p role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
+    <fieldset className="kits-layout kits-form-fields" disabled={!can.add || busy || uncertain || persistent.locked}>
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-order"><h2 id="kits-h-order">Order details</h2>
           <fieldset className="kits-radios" aria-describedby={e.orderFor ? 'kits-orderFor-err' : undefined}><legend>Order for</legend>
@@ -217,7 +234,7 @@ function Form() {
             <Err id="kits-attachments-err" text={fileMsg || e.attachments} />
             {fileMsg && <button type="button" className="kits-link kits-file-dismiss" onClick={() => { setFileMsg(''); setErrors((current) => ({ ...current, attachments: undefined })); }}>Continue without rejected files</button>}</div>
           <OrderFileList label="Selected attachments" empty="No files selected." data-testid="kits-file-list">{v.attachments.map((f, i) => <OrderFileRow key={`${f.name}-${i}`} name={f.name} size={f.size}
-            status="Selected locally — uploads and verification occur when saving."
+            status={f.id ? 'Verified upload retained in saved draft' : 'Selected locally — uploads and verification occur when saving.'}
             actions={<button type="button" className="admin-icon-button" aria-label={`Remove ${f.name}`} onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} data-testid={`kits-remove-file-${i}`}><X size={16} aria-hidden="true" /></button>} />)}</OrderFileList>
         </section>
       </div>
@@ -245,8 +262,11 @@ function Form() {
       </div>
     </fieldset>
     {!can.upload_attachment && <p role="status">Upload Attachment permission is required for this form's mandatory attachment. Your draft remains in this tab.</p>}
-    <div className="kits-actions"><button type="button" className="admin-button" disabled={!can.add || !can.upload_attachment || busy || !policy} onClick={save} data-testid="kits-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
+    <div className="kits-actions">
+      <button type="button" className="admin-button admin-button--secondary" disabled={!can.add || busy || uncertain} onClick={() => save(true)}>{busy ? 'Saving…' : persistent.unknown ? 'Retry unchanged draft save' : 'Save as Draft'}</button>
+      <button type="button" className="admin-button" disabled={!can.add || !can.upload_attachment || busy || !policy || persistent.locked} onClick={() => save(false)} data-testid="kits-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Submit order'}</button>
       {!busy && !uncertain && <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-cancel">Cancel</Link>}</div>
+    {leaveDialog}
     </div></AdminLayout>;
 }
 

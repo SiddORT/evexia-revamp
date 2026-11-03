@@ -49,6 +49,9 @@ def get_record(db: Session, identity, file_id, action, *, lock=False, readable=F
     if lock:
         row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update().execution_options(populate_existing=True))
     if action in ("delete", "replace", "cancel_lupin_upload"):
+        from app.db.order_draft_models import OrderDraftAttachment
+        if db.scalar(select(OrderDraftAttachment.file_id).where(OrderDraftAttachment.file_id == file_id).limit(1)):
+            raise FileError(409, "file_draft_reference", "File is retained by an order draft; no bytes were removed.")
         from app.db.lupin_models import LupinAttachment
         if db.scalar(select(LupinAttachment.file_id).where(LupinAttachment.file_id == file_id).limit(1)):
             raise FileError(409, "file_order_reference", "File is referenced by a saved Lupin order; no bytes were removed.")

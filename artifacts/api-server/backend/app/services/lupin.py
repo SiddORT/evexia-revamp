@@ -57,7 +57,7 @@ def unseal(keys, table, identity, value):
         raise DirectoryCryptoError() from None
 
 
-def transaction(db, actor, work, *, action=None):
+def transaction(db, actor, work, *, action=None, before_commit=None):
     try:
         current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
@@ -70,6 +70,8 @@ def transaction(db, actor, work, *, action=None):
         result = public_result(current, "lupin", result)
         from app.services.person_contacts import order_result
         result = order_result(current, result)
+        if before_commit:
+            before_commit(result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -152,6 +154,8 @@ def resolved(db, actor, keys, body, previous=None):
 
 
 def apply(db, actor, keys, body, identity=None, expected=None):
+    from app.services.order_drafts import protect_attachments
+    protect_attachments(db, body.attachmentIds)
     row = find(db, identity) if identity else None
     if row and row.version != expected:
         raise ImmError("Order changed. Export and review current values again.", 409, "lupin_stale")
@@ -221,11 +225,11 @@ def idempotent(db, actor, keys, key, payload, work):
     return result
 
 
-def save(db, actor, body):
+def save(db, actor, body, *, before_commit=None):
     if body.orderDate or body.status != "Confirmed" or body.paymentStatus != "Unpaid" or not body.attachmentIds:
         raise ImmError("New orders require attachments and start Confirmed / Unpaid with a server date.", 422, "lupin_create")
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
-        body.model_dump(mode="json"), lambda: apply(db, a, k, body)), action="add")
+        body.model_dump(mode="json"), lambda: apply(db, a, k, body)), action="add", before_commit=before_commit)
 
 
 def detail(db, actor, identity):
@@ -286,6 +290,9 @@ def cancel_upload(db, actor, identity):
                 raise ImmError("Upload unavailable.", 404, "lupin_upload")
             if db.scalar(select(Attachment.file_id).where(Attachment.file_id == identity)):
                 raise ImmError("Saved order files cannot be discarded.", 409, "lupin_attachment")
+            from app.db.order_draft_models import OrderDraftAttachment
+            if db.scalar(select(OrderDraftAttachment.file_id).where(OrderDraftAttachment.file_id == identity)):
+                raise ImmError("Saved draft files cannot be discarded. Save the draft without this attachment first.", 409, "draft_attachment")
         saved["result"] = dict(id=str(identity), cancelled=True)
         if not prior:
             prior = Retry(key=identity, actor_id=a.user.id)

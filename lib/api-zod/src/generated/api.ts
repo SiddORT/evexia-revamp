@@ -1530,6 +1530,47 @@ export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityMax
 export const reconcileOpeningStockRequestResponseResultOneRecordsItemUnitRateMax = 64;
 export const getOpeningStockResponseQuantityMax = 11;
 export const getOpeningStockResponseUnitRateMax = 64;
+export const listOrderDraftsQueryLimitDefault = 25;
+export const listOrderDraftsQueryLimitMax = 50;
+export const submitOrderDraftResponseOneCorrectionSavedDefault = false;
+export const submitOrderDraftResponseOneMrEditableDefault = false;
+export const submitOrderDraftResponseOnePricingNeedsReviewDefault = false;
+export const submitOrderDraftResponseTwoApplicatorsMax = 12;
+export const submitOrderDraftResponseTwoAttachmentIdsMax = 10;
+export const submitOrderDraftResponseTwoBusinessParkingOneMax = 32;
+export const submitOrderDraftResponseTwoCorrectionSavedDefault = false;
+export const submitOrderDraftResponseTwoKitCustomMax = 32;
+export const submitOrderDraftResponseTwoKitQuantityMax = 12;
+export const submitOrderDraftResponseTwoKitVolumeMax = 32;
+export const submitOrderDraftResponseTwoLancetsMax = 12;
+export const submitOrderDraftResponseTwoMrEditableDefault = false;
+export const submitOrderDraftResponseTwoOtherAddressCityMax = 200;
+export const submitOrderDraftResponseTwoOtherAddressCountryMax = 200;
+export const submitOrderDraftResponseTwoOtherAddressLandmarkMax = 1000;
+export const submitOrderDraftResponseTwoOtherAddressLine1Max = 1000;
+export const submitOrderDraftResponseTwoOtherAddressLine2Max = 1000;
+export const submitOrderDraftResponseTwoOtherAddressPincodeMax = 32;
+export const submitOrderDraftResponseTwoOtherAddressStateMax = 200;
+export const submitOrderDraftResponseTwoOtherNameMax = 200;
+export const submitOrderDraftResponseTwoOtherPhoneMax = 25;
+export const submitOrderDraftResponseTwoPoNumberOneMax = 200;
+export const submitOrderDraftResponseTwoPricingOneApplicatorsRateOneMax = 32;
+export const submitOrderDraftResponseTwoPricingOneDiscountValueMax = 32;
+export const submitOrderDraftResponseTwoPricingOneForwardingChargesMax = 32;
+export const submitOrderDraftResponseTwoPricingOneKitRateOneMax = 32;
+export const submitOrderDraftResponseTwoPricingOneLancetsRateOneMax = 32;
+export const submitOrderDraftResponseTwoPricingOneTrayRateOneMax = 32;
+export const submitOrderDraftResponseTwoPricingNeedsReviewDefault = false;
+export const submitOrderDraftResponseTwoRemarksMax = 4000;
+export const submitOrderDraftResponseTwoTrayMax = 12;
+export const submitOrderDraftResponseThreeAttachmentIdsMax = 10;
+export const submitOrderDraftResponseThreeCorrectionSavedDefault = false;
+export const submitOrderDraftResponseThreeMrEditableDefault = false;
+export const submitOrderDraftResponseThreePatientCountMax = 1000000;
+export const submitOrderDraftResponseThreePatientIdsMax = 200;
+export const submitOrderDraftResponseThreePriceMax = 32;
+export const submitOrderDraftResponseThreePricingNeedsReviewDefault = false;
+export const submitOrderDraftResponseThreeRemarksMax = 4000;
 export const listOrderEventTemplatesResponseItemsItemDltIdMax = 60;
 export const listOrderEventTemplatesResponseItemsItemHtmlMax = 100000;
 export const listOrderEventTemplatesResponseItemsItemLanguageMax = 20;
@@ -25768,6 +25809,486 @@ export const GetOpeningStockAnalyticsResponse = zod.object({
 /**
  * @summary Listing
  */
+export const ListOrderDraftsParams = zod.object({
+  kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+});
+
+export const ListOrderDraftsQueryParams = zod.object({
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listOrderDraftsQueryLimitMax)
+    .default(listOrderDraftsQueryLimitDefault),
+});
+
+export const ListOrderDraftsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+      payload: zod.record(zod.string(), zod.unknown()),
+      updatedAt: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetOrderDraftParams = zod.object({
+  kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+  identity: zod.coerce.string().uuid(),
+});
+
+export const GetOrderDraftResponse = zod.object({
+  id: zod.string().uuid(),
+  kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+  payload: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Save
+ */
+export const SaveOrderDraftParams = zod.object({
+  kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+  identity: zod.coerce.string().uuid(),
+});
+
+export const SaveOrderDraftBody = zod.object({
+  expected_version: zod
+    .union([zod.number().int().min(1), zod.null()])
+    .optional(),
+  idempotencyKey: zod.string().uuid(),
+  payload: zod.record(zod.string(), zod.unknown()),
+});
+
+export const SaveOrderDraftResponse = zod.object({
+  id: zod.string().uuid(),
+  kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+  payload: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Submit
+ */
+export const SubmitOrderDraftParams = zod.object({
+  kind: zod.enum(["immunotherapy", "kits", "lupin"]),
+  identity: zod.coerce.string().uuid(),
+});
+
+export const SubmitOrderDraftBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  order: zod.record(zod.string(), zod.unknown()),
+});
+
+export const submitOrderDraftResponseOnePricingBasisDefault = `legacy_bottle_mrp`;
+
+export const submitOrderDraftResponseTwoApplicatorsDefault = ``;
+
+export const submitOrderDraftResponseTwoKitCustomDefault = ``;
+
+export const submitOrderDraftResponseTwoKitProductDefault = ``;
+export const submitOrderDraftResponseTwoKitQuantityDefault = ``;
+
+export const submitOrderDraftResponseTwoKitVolumeDefault = ``;
+
+export const submitOrderDraftResponseTwoLancetsDefault = ``;
+
+export const submitOrderDraftResponseTwoOrderForDefault = `doctor`;
+export const submitOrderDraftResponseTwoOtherAddressCityDefault = ``;
+
+export const submitOrderDraftResponseTwoOtherAddressCountryDefault = ``;
+
+export const submitOrderDraftResponseTwoOtherAddressLandmarkDefault = ``;
+
+export const submitOrderDraftResponseTwoOtherAddressLine1Default = ``;
+
+export const submitOrderDraftResponseTwoOtherAddressLine2Default = ``;
+
+export const submitOrderDraftResponseTwoOtherAddressPincodeDefault = ``;
+
+export const submitOrderDraftResponseTwoOtherAddressStateDefault = ``;
+
+export const submitOrderDraftResponseTwoOtherNameDefault = ``;
+
+export const submitOrderDraftResponseTwoOtherPhoneDefault = ``;
+
+export const submitOrderDraftResponseTwoPaymentStatusDefault = `Unpaid`;
+
+export const submitOrderDraftResponseTwoRemarksDefault = ``;
+
+export const submitOrderDraftResponseTwoShippingDefault = `doctor`;
+export const submitOrderDraftResponseTwoStatusDefault = `Confirmed`;
+export const submitOrderDraftResponseTwoTrayDefault = ``;
+
+export const submitOrderDraftResponseThreePaymentStatusDefault = `Unpaid`;
+
+export const submitOrderDraftResponseThreeRemarksDefault = ``;
+
+export const submitOrderDraftResponseThreeStatusDefault = `Confirmed`;
+
+export const SubmitOrderDraftResponse = zod.union([
+  zod.object({
+    approval: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+    audit: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    correctionSaved: zod
+      .boolean()
+      .default(submitOrderDraftResponseOneCorrectionSavedDefault),
+    date: zod.string(),
+    decisionEligibility: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    doctor: zod.record(zod.string(), zod.unknown()),
+    doctorId: zod.string().uuid(),
+    dosage: zod.string(),
+    groups: zod.array(zod.record(zod.string(), zod.unknown())),
+    histamine: zod.string(),
+    historicalGroups: zod
+      .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+      .optional(),
+    historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+    historicalTotalMinor: zod
+      .union([zod.number().int(), zod.null()])
+      .optional(),
+    id: zod.string().uuid(),
+    mr: zod.record(zod.string(), zod.unknown()),
+    mrEditable: zod
+      .boolean()
+      .default(submitOrderDraftResponseOneMrEditableDefault),
+    mrId: zod.string().uuid(),
+    number: zod.string(),
+    patient: zod.record(zod.string(), zod.unknown()),
+    patientId: zod.string().uuid(),
+    poNumber: zod.union([zod.string(), zod.null()]).optional(),
+    pricingBasis: zod
+      .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
+      .default(submitOrderDraftResponseOnePricingBasisDefault),
+    pricingNeedsReview: zod
+      .boolean()
+      .default(submitOrderDraftResponseOnePricingNeedsReviewDefault),
+    recipient: zod.record(zod.string(), zod.unknown()),
+    rejection: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    remarks: zod.string(),
+    reviewDecision: zod
+      .union([zod.enum(["Approved", "Rejected"]), zod.null()])
+      .optional(),
+    reviewHistory: zod
+      .array(zod.record(zod.string(), zod.unknown()))
+      .optional(),
+    saline: zod.string(),
+    shipping: zod.string(),
+    status: zod.enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ]),
+    totalMinor: zod.union([zod.number().int(), zod.null()]),
+    version: zod.number().int(),
+  }),
+  zod.object({
+    applicators: zod
+      .string()
+      .max(submitOrderDraftResponseTwoApplicatorsMax)
+      .default(submitOrderDraftResponseTwoApplicatorsDefault),
+    approval: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    attachmentIds: zod
+      .array(zod.string().uuid())
+      .max(submitOrderDraftResponseTwoAttachmentIdsMax)
+      .optional(),
+    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+    audit: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    billing: zod.record(zod.string(), zod.unknown()),
+    businessParking: zod
+      .union([
+        zod.string().max(submitOrderDraftResponseTwoBusinessParkingOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    correctionSaved: zod
+      .boolean()
+      .default(submitOrderDraftResponseTwoCorrectionSavedDefault),
+    date: zod.string(),
+    decisionEligibility: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    doctor: zod.record(zod.string(), zod.unknown()),
+    doctorId: zod.string().uuid(),
+    id: zod.string().uuid(),
+    kit: zod
+      .object({
+        custom: zod
+          .string()
+          .max(submitOrderDraftResponseTwoKitCustomMax)
+          .default(submitOrderDraftResponseTwoKitCustomDefault),
+        product: zod
+          .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+          .default(submitOrderDraftResponseTwoKitProductDefault),
+        quantity: zod
+          .string()
+          .max(submitOrderDraftResponseTwoKitQuantityMax)
+          .default(submitOrderDraftResponseTwoKitQuantityDefault),
+        volume: zod
+          .string()
+          .max(submitOrderDraftResponseTwoKitVolumeMax)
+          .default(submitOrderDraftResponseTwoKitVolumeDefault),
+      })
+      .optional(),
+    lancets: zod
+      .string()
+      .max(submitOrderDraftResponseTwoLancetsMax)
+      .default(submitOrderDraftResponseTwoLancetsDefault),
+    mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+    mrEditable: zod
+      .boolean()
+      .default(submitOrderDraftResponseTwoMrEditableDefault),
+    mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    number: zod.string(),
+    orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+    orderFor: zod
+      .enum(["doctor", "mr"])
+      .default(submitOrderDraftResponseTwoOrderForDefault),
+    other: zod
+      .object({
+        address: zod
+          .object({
+            city: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressCityMax)
+              .default(submitOrderDraftResponseTwoOtherAddressCityDefault),
+            country: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressCountryMax)
+              .default(submitOrderDraftResponseTwoOtherAddressCountryDefault),
+            landmark: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressLandmarkMax)
+              .default(submitOrderDraftResponseTwoOtherAddressLandmarkDefault),
+            line1: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressLine1Max)
+              .default(submitOrderDraftResponseTwoOtherAddressLine1Default),
+            line2: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressLine2Max)
+              .default(submitOrderDraftResponseTwoOtherAddressLine2Default),
+            pincode: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressPincodeMax)
+              .default(submitOrderDraftResponseTwoOtherAddressPincodeDefault),
+            state: zod
+              .string()
+              .max(submitOrderDraftResponseTwoOtherAddressStateMax)
+              .default(submitOrderDraftResponseTwoOtherAddressStateDefault),
+          })
+          .optional(),
+        name: zod
+          .string()
+          .max(submitOrderDraftResponseTwoOtherNameMax)
+          .default(submitOrderDraftResponseTwoOtherNameDefault),
+        phone: zod
+          .string()
+          .max(submitOrderDraftResponseTwoOtherPhoneMax)
+          .default(submitOrderDraftResponseTwoOtherPhoneDefault),
+      })
+      .optional(),
+    patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+    patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    paymentStatus: zod
+      .enum(["Unpaid", "Paid", "Partial"])
+      .default(submitOrderDraftResponseTwoPaymentStatusDefault),
+    poNumber: zod
+      .union([
+        zod.string().max(submitOrderDraftResponseTwoPoNumberOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    pricing: zod
+      .union([
+        zod.object({
+          applicatorsRate: zod
+            .union([
+              zod
+                .string()
+                .max(
+                  submitOrderDraftResponseTwoPricingOneApplicatorsRateOneMax,
+                ),
+              zod.null(),
+            ])
+            .optional(),
+          discountAmount: zod.string(),
+          discountType: zod.enum(["percent", "inr"]),
+          discountValue: zod
+            .string()
+            .max(submitOrderDraftResponseTwoPricingOneDiscountValueMax),
+          discounted: zod.string(),
+          forwardingCharges: zod
+            .string()
+            .max(submitOrderDraftResponseTwoPricingOneForwardingChargesMax),
+          gross: zod.string(),
+          gst: zod.string(),
+          kitRate: zod
+            .union([
+              zod
+                .string()
+                .max(submitOrderDraftResponseTwoPricingOneKitRateOneMax),
+              zod.null(),
+            ])
+            .optional(),
+          lancetsRate: zod
+            .union([
+              zod
+                .string()
+                .max(submitOrderDraftResponseTwoPricingOneLancetsRateOneMax),
+              zod.null(),
+            ])
+            .optional(),
+          lineAmounts: zod.record(zod.string(), zod.string()),
+          taxPercentage: zod.string(),
+          taxable: zod.string(),
+          total: zod.string(),
+          trayRate: zod
+            .union([
+              zod
+                .string()
+                .max(submitOrderDraftResponseTwoPricingOneTrayRateOneMax),
+              zod.null(),
+            ])
+            .optional(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    pricingNeedsReview: zod
+      .boolean()
+      .default(submitOrderDraftResponseTwoPricingNeedsReviewDefault),
+    recipient: zod.record(zod.string(), zod.unknown()),
+    rejection: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    remarks: zod
+      .string()
+      .max(submitOrderDraftResponseTwoRemarksMax)
+      .default(submitOrderDraftResponseTwoRemarksDefault),
+    reviewDecision: zod.union([zod.string(), zod.null()]).optional(),
+    reviewHistory: zod
+      .array(zod.record(zod.string(), zod.unknown()))
+      .optional(),
+    shipping: zod
+      .enum(["doctor", "mr", "other"])
+      .default(submitOrderDraftResponseTwoShippingDefault),
+    status: zod
+      .enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ])
+      .default(submitOrderDraftResponseTwoStatusDefault),
+    tray: zod
+      .string()
+      .max(submitOrderDraftResponseTwoTrayMax)
+      .default(submitOrderDraftResponseTwoTrayDefault),
+    version: zod.number().int(),
+  }),
+  zod.object({
+    approval: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    attachmentIds: zod
+      .array(zod.string().uuid())
+      .max(submitOrderDraftResponseThreeAttachmentIdsMax)
+      .optional(),
+    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+    audit: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    correctionSaved: zod
+      .boolean()
+      .default(submitOrderDraftResponseThreeCorrectionSavedDefault),
+    date: zod.string(),
+    decisionEligibility: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    doctor: zod.record(zod.string(), zod.unknown()),
+    doctorId: zod.string().uuid(),
+    id: zod.string().uuid(),
+    mr: zod.record(zod.string(), zod.unknown()),
+    mrEditable: zod
+      .boolean()
+      .default(submitOrderDraftResponseThreeMrEditableDefault),
+    mrId: zod.string().uuid(),
+    number: zod.string(),
+    orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+    patientCount: zod
+      .number()
+      .int()
+      .min(1)
+      .max(submitOrderDraftResponseThreePatientCountMax),
+    patientIds: zod
+      .array(zod.string().uuid())
+      .max(submitOrderDraftResponseThreePatientIdsMax)
+      .optional(),
+    patients: zod.array(zod.record(zod.string(), zod.unknown())),
+    paymentStatus: zod
+      .enum(["Unpaid", "Paid", "Partial"])
+      .default(submitOrderDraftResponseThreePaymentStatusDefault),
+    price: zod.string().max(submitOrderDraftResponseThreePriceMax),
+    pricingNeedsReview: zod
+      .boolean()
+      .default(submitOrderDraftResponseThreePricingNeedsReviewDefault),
+    rejection: zod
+      .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+      .optional(),
+    remarks: zod
+      .string()
+      .max(submitOrderDraftResponseThreeRemarksMax)
+      .default(submitOrderDraftResponseThreeRemarksDefault),
+    reviewDecision: zod.union([zod.string(), zod.null()]).optional(),
+    reviewHistory: zod
+      .array(zod.record(zod.string(), zod.unknown()))
+      .optional(),
+    status: zod
+      .enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ])
+      .default(submitOrderDraftResponseThreeStatusDefault),
+    total: zod.string(),
+    version: zod.number().int(),
+  }),
+]);
+
+/**
+ * @summary Listing
+ */
 export const listOrderEventTemplatesResponseItemsItemDltIdDefault = ``;
 
 export const listOrderEventTemplatesResponseItemsItemHtmlDefault = ``;
@@ -36501,6 +37022,7 @@ export const ListSptOrdersResponse = zod.object({
       doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       doctorId: zod.union([zod.string().uuid(), zod.null()]),
       doctorName: zod.string(),
+      draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
@@ -36606,6 +37128,7 @@ export const CreateSptOrderResponse = zod.object({
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(createSptOrderResponseMrEditableDefault),
@@ -36786,6 +37309,7 @@ export const ExportSptOrdersResponse = zod.object({
       doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       doctorId: zod.union([zod.string().uuid(), zod.null()]),
       doctorName: zod.string(),
+      draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
@@ -36924,6 +37448,7 @@ export const CommitSptImportResponse = zod.object({
       doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       doctorId: zod.union([zod.string().uuid(), zod.null()]),
       doctorName: zod.string(),
+      draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
@@ -37129,6 +37654,7 @@ export const GetSptOrderResponse = zod.object({
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(getSptOrderResponseMrEditableDefault),
@@ -37198,6 +37724,7 @@ export const ApproveSptOrderResponse = zod.object({
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(approveSptOrderResponseMrEditableDefault),
@@ -37298,6 +37825,7 @@ export const EditSptDraftResponse = zod.object({
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(editSptDraftResponseMrEditableDefault),
@@ -37368,6 +37896,7 @@ export const RejectSptOrderResponse = zod.object({
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(rejectSptOrderResponseMrEditableDefault),
@@ -37437,6 +37966,7 @@ export const ResubmitSptOrderResponse = zod.object({
   doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   doctorId: zod.union([zod.string().uuid(), zod.null()]),
   doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(resubmitSptOrderResponseMrEditableDefault),

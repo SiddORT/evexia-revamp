@@ -11,6 +11,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
+import PersistentDrafts from '../../components/orders/PersistentOrderDraft.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { request, STATUSES, PAYMENT_STATUSES, amountMoney } from '../../services/serverLupin.js';
 import { createLupinTransferAdapter } from '../../services/lupinTransfers.js';
@@ -65,6 +66,7 @@ export default function LupinOrders() {
         <div className="lupin-actions">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
       </div>} />
     <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
+    <PersistentDrafts kind="lupin" />
     <section className="admin-panel" aria-label="Lupin orders">
       <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         resetTestId="button-lupin-reset" applyTestId="button-lupin-apply"

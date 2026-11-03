@@ -73,6 +73,7 @@ class SptPatientSnapshot(SptPatient):
 
 
 class SptRecord(Strict):
+    draftSavedAt: str | None = None
     reviewHistory: list[dict] = Field(default_factory=list)
     reviewDecision: str | None = None
     correctionSaved: bool = False

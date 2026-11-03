@@ -80,7 +80,8 @@ def project(keys, row):
     from app.services.order_lifecycle import status
     value["status"] = status(row.status)
     value["decisionEligibility"] = eligibility("spt", value)
-    return {**value, "approval": value.get("approval"), "mrEditable": editable("spt", value),
+    return {**value, "draftSavedAt": row.updated_at.isoformat() if row.status == "Draft" and row.updated_at else None,
+            "approval": value.get("approval"), "mrEditable": editable("spt", value),
         "audit": metadata(row),
         "id": str(row.id), "sourceId": str(row.source_id), "number": row.number,
         "date": row.date.isoformat(), "version": row.version}
@@ -108,6 +109,7 @@ def patient_snapshot(db, keys, identity, source, order_date):
 
 
 def resolve(db, keys, body, previous, order_date):
+    finalizing = bool(previous and previous["status"] == "Draft" and body.status != "Draft")
     if body.status == "Rejected" and (not previous or previous["status"] != "Rejected"):
         raise ImmError("Use the explicit rejection action.", 422, "order_decision")
     if previous and previous["status"] == "Rejected" and body.status != "Rejected":
@@ -120,7 +122,7 @@ def resolve(db, keys, body, previous, order_date):
     changed = {}
     for field, key, kind in (("doctorId", "doctor", "doctors"), ("mrId", "mr", "mrs")):
         identity = getattr(body, field)
-        changed[key] = not previous or previous[field] != value[field]
+        changed[key] = not previous or finalizing or previous[field] != value[field]
         value[key] = (person(eligible(db, kind, identity), kind) if identity else None) if changed[key] else previous[key]
         value[f"{key}Name"] = value[key]["name"] if value[key] else ""
     if body.doctorId and body.mrId and any(changed.values()):
@@ -128,7 +130,7 @@ def resolve(db, keys, body, previous, order_date):
         eligible(db, "mrs", body.mrId)
         if doctor.mrId != body.mrId:
             raise ImmError("Doctor and MR must match the current master assignment.", 422, "spt_relationship")
-    old = {(p["source"], p["id"]): p for p in previous["patients"]} if previous else {}
+    old = {(p["source"], p["id"]): p for p in previous["patients"]} if previous and not finalizing else {}
     value["patients"] = []
     total = Decimal("0")
     for p in body.patients:
@@ -146,7 +148,7 @@ def resolve(db, keys, body, previous, order_date):
                 if not assigned or assigned.mrId != body.mrId:
                     raise ImmError("Patient and MR must match the current Doctor assignment.", 422, "spt_relationship")
         data["amount"] = format(Decimal(p.amount), ".2f") if p.amount else ""
-        if scope_identity(db) and retained and data["amount"] != retained["amount"]:
+        if scope_identity(db) and retained and previous["status"] != "Draft" and data["amount"] != retained["amount"]:
             raise ImmError("Retain saved pricing for existing patients; Admin must review repricing.", 403, "order_pricing")
         total += Decimal(p.amount or "0")
         value["patients"].append(data)
@@ -159,6 +161,8 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
     if row:
         if row.version != expected:
             raise ImmError("This draft changed. Your entries are preserved; load the latest version separately before retrying.", 409, "spt_stale")
+        if row.status != "Draft" and body.status == "Draft":
+            raise ImmError("Submitted SPT orders cannot be converted into drafts.", 409, "spt_submitted")
         from app.services.order_approval import editable
         if not editable("spt", project(keys, row)):
             raise ImmError("Approved SPT orders are read-only. Your draft is preserved.", 409, "spt_readonly")
@@ -173,13 +177,14 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
     enforce(db, keys, "spt", data, row=row, order_date=order_date, previous=previous)
     if not row:
         identity = uuid.uuid4()
-        number = db.scalar(text("SELECT nextval('spt_order_number_seq')"))
-        from app.services.business_numbers import format_number
-        row = Order(id=identity, source_id=source_id or identity, number=format_number("spt", number),
+        row = Order(id=identity, source_id=source_id or identity, number=f"DRAFT-{identity.hex}",
             date=order_date, version=1, created_by=actor.user.id)
         db.add(row)
     else:
         row.version += 1
+    if body.status != "Draft" and row.number == f"DRAFT-{row.id.hex}":
+        from app.services.business_numbers import format_number
+        row.number = format_number("spt", db.scalar(text("SELECT nextval('spt_order_number_seq')")))
     row.doctor_id, row.mr_id, row.status = body.doctorId, body.mrId, body.status
     row.updated_by = actor.user.id
     row.snapshot_ciphertext = seal(keys, "orders", row.id, data)
@@ -314,6 +319,8 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
         if status:
             from app.services.order_lifecycle import filter_status
             clauses.append(filter_status(Order.status, status))
+        elif not complete:
+            clauses.append(Order.status != "Draft")
         if patient_id:
             clauses.append(select(Membership.order_id).where(Membership.order_id == Order.id,
                 (Membership.master_patient_id == patient_id) | (Membership.spt_patient_id == patient_id)).exists())
@@ -352,6 +359,9 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
         finally:
             rows.close()
         counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
+        if not complete:
+            counts = ({"Draft": counts.get("Draft", 0)} if status == "Draft"
+                      else {key: count for key, count in counts.items() if key != "Draft"})
         from app.services.order_lifecycle import counts as display_counts
         return dict(items=items, total=sum(counts.values()), counts=display_counts(counts),
             filtered=len(items) if complete else None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses)),

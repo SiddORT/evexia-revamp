@@ -13,6 +13,7 @@ import { request, blankOrder, totalMinor, money, amountMoney, validateAttachment
 import '../../lupinOrders.css';
 import '../../orderEntry.css';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
+import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
 
 const Err = ({ id, text }) => text ? <p className="lupin-error" id={id} role="alert">{text}</p> : null;
 
@@ -33,7 +34,8 @@ export default function LupinOrderFormPage({ id, mode = 'view' }) {
     {error && <><p role="alert">{error}</p><button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></>}
     <Link href={BASE} className="admin-button">Back to orders</Link>
   </div></div></AdminLayout>;
-  return order ? mode === 'edit' ? <Form key={`${order.id}-edit`} order={order} /> : <Review key={order.id} order={order} /> : <Form />;
+  if (!id) return <DraftEntry kind="lupin">{(draft) => <Form draft={draft} />}</DraftEntry>;
+  return mode === 'edit' ? <Form key={`${order.id}-edit`} order={order} /> : <Review key={order.id} order={order} />;
 }
 
 function Review({ order: initialOrder }) {
@@ -80,13 +82,16 @@ function Review({ order: initialOrder }) {
   </div></AdminLayout>;
 }
 
-function Form({ order: initialOrder }) {
+function Form({ order: initialOrder, draft }) {
+  const persistent = usePersistentOrderDraft('lupin', draft);
+  const draftLock = useRef(false);
+  draftLock.current = persistent.locked;
   const [order, setOrder] = useState(initialOrder);
   const can = useOrderActions('lupin');
   const BASE = useOrderBase('lupin');
   const { mr, portal } = useOrderPortal();
   const [, navigate] = useLocation();
-  const [v, setV] = useState(() => order ? { ...order, patientCount: String(order.patientCount) } : { ...blankOrder(), mrId: mr?.id || '' }), [linked, setLinked] = useState(order?.patients || []), [patientChoice, setPatientChoice] = useState('');
+  const [v, setV] = useState(() => order ? { ...order, patientCount: String(order.patientCount) } : draft?.payload.values || { ...blankOrder(), mrId: mr?.id || '' }), [linked, setLinked] = useState(order?.patients || draft?.payload.linked || []), [patientChoice, setPatientChoice] = useState('');
   const [errors, setErrors] = useState({}), [fileMsg, setFileMsg] = useState(''), [progress, setProgress] = useState('');
   const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState(''), [policyRevision, setPolicyRevision] = useState(0);
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false), [leave, setLeave] = useState(null);
@@ -96,14 +101,14 @@ function Form({ order: initialOrder }) {
   const uploads = useRef(new Map()), failedUploads = useRef(new Set());
   const uploadKeys = useRef(new Map());
   const initial = useRef(JSON.stringify(v));
-  dirty.current = JSON.stringify(v) !== initial.current || uploads.current.size > 0 || failedUploads.current.size > 0 || busy || uncertain;
+  dirty.current = JSON.stringify(v) !== initial.current || uploads.current.size > 0 || failedUploads.current.size > 0 || busy || uncertain || persistent.locked;
   const [decisionRecord, setDecisionRecord] = useState(order);
   const [reviewBusy, setReviewBusy] = useState(false);
   const reviewLock = useRef(false);
   reviewLock.current = reviewBusy;
   dirty.current = dirty.current || reviewBusy;
   const eligible = order ? can.edit && order.mrEditable : can.add;
-  const locked = busy || uncertain || reviewBusy || ownerChanged || !eligible;
+  const locked = busy || uncertain || reviewBusy || ownerChanged || !eligible || persistent.locked;
   const set = (patch) => setV((current) => ({ ...current, ...patch }));
   useEffect(() => {
     alive.current = true;
@@ -126,7 +131,7 @@ function Form({ order: initialOrder }) {
   }, [policyRevision, can.upload_attachment]);
   useEffect(() => setNavigationGuard((target) => {
     if (!dirty.current) return false;
-    if (saving.current || submission.current || reviewLock.current) {
+    if (saving.current || submission.current || reviewLock.current || draftLock.current) {
       setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
       return true;
     }
@@ -167,11 +172,11 @@ function Form({ order: initialOrder }) {
     } catch (e) { setErrors({ attachments: `Private upload cleanup was not confirmed. Keep this draft open and retry. ${e.message}` }); setLeave(null); }
     finally { saving.current = false; if (alive.current) setBusy(false); }
   }
-  async function save(event) {
-    event.preventDefault();
-    if (saving.current || reviewBusy || ownerChanged || !policy) return;
+  async function save(event, asDraft = false) {
+    event?.preventDefault();
+    if (saving.current || reviewBusy || ownerChanged || !eligible || (!asDraft && (!policy || persistent.locked))) return;
     const errs = {};
-    if (!submission.current) {
+    if (!submission.current && !asDraft) {
       if (!v.doctorId) errs.doctorId = 'Choose a real eligible Doctor.';
       if (!v.mrId) errs.mrId = 'Choose the Doctor’s assigned MR.';
       if (!/^\d{1,7}$/.test(v.patientCount) || Number(v.patientCount) < 1 || Number(v.patientCount) > 1000000) errs.patientCount = 'Enter a whole count from 1 to 1,000,000.';
@@ -184,7 +189,7 @@ function Form({ order: initialOrder }) {
     const guard = reportingIdentityGuard();
     saving.current = true; setBusy(true); setErrors({});
     try {
-      if (!submission.current) {
+      if (!submission.current || asDraft) {
         if (failedUploads.current.size) {
           await cleanup([...failedUploads.current]); failedUploads.current.clear();
         }
@@ -202,10 +207,19 @@ function Form({ order: initialOrder }) {
           }
           attachments.push(uploads.current.get(file));
         }
+        if (asDraft) {
+          if (fileMsg) throw new Error('Resolve or dismiss rejected files before saving a draft.');
+          const saved = await persistent.persist({ values: { ...v, attachments }, linked });
+          guard();
+          setV(saved.payload.values); initial.current = JSON.stringify(saved.payload.values);
+          uploads.current.clear(); uploadKeys.current.clear(); failedUploads.current.clear();
+          return;
+        }
         submission.current = { ...orderInput({ ...v, attachments }), ...(order ? { expected_version: order.version } : {}), idempotencyKey: crypto.randomUUID() };
       }
       setProgress('Saving order…');
-      const saved = await request(order ? `/${order.id}/edit` : '', { body: submission.current });
+      const saved = order ? await request(`/${order.id}/edit`, { body: submission.current })
+        : await persistent.submit(submission.current, () => request('', { body: submission.current }));
       guard();
       if (!alive.current) return;
       submission.current = null; uploads.current.clear(); failedUploads.current.clear(); uploadKeys.current.clear();
@@ -247,6 +261,8 @@ function Form({ order: initialOrder }) {
         }
       }} />}
     {uncertain && <p className="lupin-notice" role="alert">Order outcome is unconfirmed. Editing is locked. Retry the unchanged save to recover the same order without a duplicate.</p>}
+    {!order && persistent.notice}
+    {!order && persistent.saved && JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) && <p role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
     {Object.keys(errors).length > 0 && <div className="lupin-errors" role="alert" tabIndex={-1} ref={summary} data-testid="lupin-errors"><strong>Unable to save</strong><ul>{Object.entries(errors).map(([key, text]) => <li key={key}>{text}</li>)}</ul></div>}
     <fieldset disabled={locked} className="lupin-form-fields">
       <section className="admin-panel lupin-section" aria-labelledby="lupin-h-det"><h2 id="lupin-h-det">Order details</h2>
@@ -286,7 +302,9 @@ function Form({ order: initialOrder }) {
     </fieldset>
     {progress && <p className="lupin-hint" role="status" aria-live="polite">{progress}</p>}
     {!can.upload_attachment && <p role="status">Upload Attachment permission is required for this form's mandatory attachment. Your draft remains in this tab.</p>}
-    <div className="lupin-actions"><button ref={saveButton} type="submit" className="admin-button" disabled={!eligible || !can.upload_attachment || busy || reviewBusy || ownerChanged || !policy} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : order ? 'Save changes' : 'Save order'}</button>
+    <div className="lupin-actions">
+      {!order && <button type="button" className="admin-button admin-button--secondary" disabled={!eligible || busy || uncertain || reviewBusy || ownerChanged} onClick={() => save(null, true)}>{busy ? 'Saving…' : persistent.unknown ? 'Retry unchanged draft save' : 'Save as Draft'}</button>}
+      <button ref={saveButton} type="submit" className="admin-button" disabled={!eligible || !can.upload_attachment || busy || reviewBusy || ownerChanged || !policy || persistent.locked} data-testid="button-lupin-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : order ? 'Save changes' : 'Submit order'}</button>
       {!busy && !uncertain && !reviewBusy && <button type="button" className="admin-button admin-button--secondary" onClick={() => dirty.current ? setLeave({ kind: 'href', href: BASE }) : navigate(BASE)} data-testid="link-lupin-cancel">Cancel</button>}
     </div>
     {leave && <ImmDialog title="Discard this Lupin draft?" description="Selected files and unsaved details will be discarded. Known private uploads will be removed before leaving." onClose={() => { if (!busy) setLeave(null); }} returnFocusRef={saveButton}>

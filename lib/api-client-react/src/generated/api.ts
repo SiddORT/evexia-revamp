@@ -126,6 +126,10 @@ import type {
   DownloadStockProductSampleParams,
   DownloadURLResponse,
   DownloadVendorSampleParams,
+  DraftPage,
+  DraftRecord,
+  DraftSubmit,
+  DraftWrite,
   EligibilityPreview,
   EmailLogFilters,
   EmailLogPage,
@@ -253,6 +257,7 @@ import type {
   ListMRReferenceChoicesParams,
   ListOpeningBalancesParams,
   ListOpeningStockParams,
+  ListOrderDraftsParams,
   ListOrderNotificationDeliveriesParams,
   ListOwnSessionsParams,
   ListPatientDirectoryParams,
@@ -21086,6 +21091,467 @@ export function useGetOpeningStockAnalytics<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListOrderDraftsUrl = (
+  kind: "immunotherapy" | "kits" | "lupin",
+  params?: ListOrderDraftsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/order-drafts/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/order-drafts/${kind}`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listOrderDrafts = async (
+  kind: "immunotherapy" | "kits" | "lupin",
+  params?: ListOrderDraftsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DraftPage> => {
+  return customFetch<DraftPage>(getListOrderDraftsUrl(kind, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOrderDraftsQueryKey = (
+  kind: "immunotherapy" | "kits" | "lupin",
+  params?: ListOrderDraftsParams,
+) => {
+  return [
+    `/api/v1/admin/order-drafts/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListOrderDraftsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOrderDrafts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "immunotherapy" | "kits" | "lupin",
+  params?: ListOrderDraftsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOrderDrafts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOrderDraftsQueryKey(kind, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrderDrafts>>> = ({
+    signal,
+  }) => listOrderDrafts(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOrderDrafts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOrderDraftsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOrderDrafts>>
+>;
+export type ListOrderDraftsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListOrderDrafts<
+  TData = Awaited<ReturnType<typeof listOrderDrafts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "immunotherapy" | "kits" | "lupin",
+  params?: ListOrderDraftsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOrderDrafts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOrderDraftsQueryOptions(kind, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetOrderDraftUrl = (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+) => {
+  return `/api/v1/admin/order-drafts/${kind}/${identity}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getOrderDraft = async (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DraftRecord> => {
+  return customFetch<DraftRecord>(getGetOrderDraftUrl(kind, identity), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOrderDraftQueryKey = (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+) => {
+  return [`/api/v1/admin/order-drafts/${kind}/${identity}`] as const;
+};
+
+export const getGetOrderDraftQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrderDraft>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOrderDraft>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOrderDraftQueryKey(kind, identity);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrderDraft>>> = ({
+    signal,
+  }) => getOrderDraft(kind, identity, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled:
+      kind !== null &&
+      kind !== undefined &&
+      identity !== null &&
+      identity !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrderDraft>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOrderDraftQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrderDraft>>
+>;
+export type GetOrderDraftQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetOrderDraft<
+  TData = Awaited<ReturnType<typeof getOrderDraft>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOrderDraft>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOrderDraftQueryOptions(kind, identity, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSaveOrderDraftUrl = (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+) => {
+  return `/api/v1/admin/order-drafts/${kind}/${identity}`;
+};
+
+/**
+ * @summary Save
+ */
+export const saveOrderDraft = async (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+  draftWrite: DraftWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DraftRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DraftRecord>(getSaveOrderDraftUrl(kind, identity), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(draftWrite),
+  });
+};
+
+export const getSaveOrderDraftMutationKey = () => ["saveOrderDraft"] as const;
+
+export const getSaveOrderDraftMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveOrderDraft>>,
+    TError,
+    SaveOrderDraftMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveOrderDraft>>,
+  TError,
+  SaveOrderDraftMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSaveOrderDraftMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveOrderDraft>>,
+    SaveOrderDraftMutationVariables
+  > = (props) => {
+    const { kind, identity, data } = props ?? {};
+
+    return saveOrderDraft(kind, identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveOrderDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveOrderDraft>>
+>;
+export type SaveOrderDraftMutationBody = BodyType<DraftWrite>;
+export type SaveOrderDraftMutationError = ErrorType<ErrorEnvelope>;
+export type SaveOrderDraftMutationVariables = {
+  kind: "immunotherapy" | "kits" | "lupin";
+  identity: string;
+  data: BodyType<DraftWrite>;
+};
+
+/**
+ * @summary Save
+ */
+export const useSaveOrderDraft = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveOrderDraft>>,
+    TError,
+    SaveOrderDraftMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveOrderDraft>>,
+  TError,
+  SaveOrderDraftMutationVariables,
+  TContext
+> => {
+  return useMutation(getSaveOrderDraftMutationOptions(options));
+};
+
+export const getSubmitOrderDraftUrl = (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+) => {
+  return `/api/v1/admin/order-drafts/${kind}/${identity}/submit`;
+};
+
+/**
+ * @summary Submit
+ */
+export const submitOrderDraft = async (
+  kind: "immunotherapy" | "kits" | "lupin",
+  identity: string,
+  draftSubmit: DraftSubmit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord | KitsRecord | LupinRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord | KitsRecord | LupinRecord>(
+    getSubmitOrderDraftUrl(kind, identity),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(draftSubmit),
+    },
+  );
+};
+
+export const getSubmitOrderDraftMutationKey = () =>
+  ["submitOrderDraft"] as const;
+
+export const getSubmitOrderDraftMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitOrderDraft>>,
+    TError,
+    SubmitOrderDraftMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitOrderDraft>>,
+  TError,
+  SubmitOrderDraftMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSubmitOrderDraftMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitOrderDraft>>,
+    SubmitOrderDraftMutationVariables
+  > = (props) => {
+    const { kind, identity, data } = props ?? {};
+
+    return submitOrderDraft(kind, identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitOrderDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitOrderDraft>>
+>;
+export type SubmitOrderDraftMutationBody = BodyType<DraftSubmit>;
+export type SubmitOrderDraftMutationError = ErrorType<ErrorEnvelope>;
+export type SubmitOrderDraftMutationVariables = {
+  kind: "immunotherapy" | "kits" | "lupin";
+  identity: string;
+  data: BodyType<DraftSubmit>;
+};
+
+/**
+ * @summary Submit
+ */
+export const useSubmitOrderDraft = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitOrderDraft>>,
+    TError,
+    SubmitOrderDraftMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitOrderDraft>>,
+  TError,
+  SubmitOrderDraftMutationVariables,
+  TContext
+> => {
+  return useMutation(getSubmitOrderDraftMutationOptions(options));
+};
 
 export const getListOrderEventTemplatesUrl = () => {
   return `/api/v1/admin/order-event-templates`;

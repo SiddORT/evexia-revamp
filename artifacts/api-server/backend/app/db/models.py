@@ -212,3 +212,4 @@ from app.db import spt_models as _spt_models  # noqa: E402,F401
 from app.db import procurement_document_models as _procurement_document_models  # noqa: E402,F401
 from app.db import lupin_models as _lupin_models  # noqa: E402,F401
 from app.db import order_notification_models as _order_notification_models  # noqa: E402,F401
+from app.db import order_draft_models as _order_draft_models  # noqa: E402,F401

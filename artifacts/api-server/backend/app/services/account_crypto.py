@@ -166,6 +166,7 @@ def ready(db):
         ["0079_order_notifications"],
         ["0080_admin_email"],
         ["0081_immunotherapy_alerts"],
+        ["0082_order_drafts"],
     ):
         raise AccountCryptoError()
     current = crypto()
@@ -176,7 +177,7 @@ def ready(db):
             or not hmac.compare_digest(row.protected_email_index,
                                       current.lookup_index(
                                           "reena.ai20206@gmail.com"
-                                          if revisions in (["0080_admin_email"], ["0081_immunotherapy_alerts"])
+                                          if revisions in (["0080_admin_email"], ["0081_immunotherapy_alerts"], ["0082_order_drafts"])
                                           else "crm-admin@allergyevexia.in"))):
         raise AccountCryptoError()
     return current

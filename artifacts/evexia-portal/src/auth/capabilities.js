@@ -90,6 +90,8 @@ const RESOURCE_NAMES = Object.freeze({
 export const workflowAllowed = (user, resource, path = '', { body, method, file, params = {} } = {}) => {
   if (isSuperAdminIdentity(user)) return true;
   if (!isStaffIdentity(user)) return false;
+  const draft = /^order-drafts\/(immunotherapy|kits|lupin)$/.exec(resource);
+  if (draft) return hasCapability(user, draft[1], 'add');
   const writing = body !== undefined || file !== undefined;
   const key = RESOURCE_NAMES[resource];
   const grant = (action) => Array.isArray(action) ? action.some((item) => hasCapability(user, key, item))

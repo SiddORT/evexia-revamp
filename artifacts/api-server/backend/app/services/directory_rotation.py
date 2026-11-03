@@ -40,7 +40,8 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders",
     "0066_spt_registration_owner", "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
     "0070_mr_account_numbers", "0071_order_review_audit", "0072_imm_approved_status", "0073_order_decisions",
-    "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements"})
+    "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements",
+    "0082_order_drafts"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -63,7 +64,8 @@ def _fields(db):
                     "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner",
                     "0067_inventory_adjustments", "0068_category_description", "0069_workspace_permissions",
                     "0070_mr_account_numbers", "0071_order_review_audit", "0072_imm_approved_status", "0073_order_decisions",
-                    "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements"):
+                    "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements",
+                    "0082_order_drafts"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -87,6 +89,11 @@ def _lock(db, exclusive=False):
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
     # The status CHECK expansion changes no encryption inventory or lock scope.
+    if revisions == ["0082_order_drafts"]:
+        db.execute(text(f"LOCK TABLE order_drafts,order_draft_requests,order_draft_attachments,"
+                        f"settlement_batches,settlement_entries,settlement_rejections,"
+                        f"order_notification_origins,order_notification_events IN {mode} MODE NOWAIT"))
+        revisions = ["0078_reserve_movements"]
     if revisions == ["0078_reserve_movements"]:
         revisions = ["0076_in_house_stock"]
     if revisions == ["0076_in_house_stock"]:
@@ -253,7 +260,7 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts"):
         for name, (model, pk, field, domain) in _order_payloads(db).items():
             _, unseal = _order_crypto(name)
             cursor, count = None, 0
@@ -289,6 +296,24 @@ def _order_payloads(db):
         "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
     }
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    if revision == "0082_order_drafts":
+        from app.db.order_draft_models import OrderDraft, OrderDraftRequest
+        from app.db.settlement_models import SettlementBatch, SettlementEntry, SettlementRejection
+        from app.db.order_notification_models import OrderNotificationOrigin, OrderEvent
+        for name, model, field, domain in (
+            ("order_drafts", OrderDraft, "payload_ciphertext", "entry_drafts"),
+            ("order_draft_requests", OrderDraftRequest, "response_ciphertext", "draft_requests"),
+            ("settlement_batches", SettlementBatch, "payload_ciphertext", "batches"),
+            ("settlement_entries", SettlementEntry, "payload_ciphertext", "entries"),
+            ("settlement_rejections", SettlementRejection, "payload_ciphertext", "rejections"),
+            ("order_notification_origins", OrderNotificationOrigin, "payload_ciphertext", "notifications"),
+            ("order_notification_events", OrderEvent, "payload_ciphertext", "notifications"),
+        ):
+            table = model.__table__
+            result[name] = (table, table.c.key if name == "order_draft_requests" else table.c.id, field, domain)
+        # Include all existing sales-order domains without changing any paused
+        # predecessor inventory or silently accepting an arbitrary future head.
+        revision = "0066_spt_registration_owner"
     if revision in ("0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner"):
         from app.db.kits_models import KitsOrder, KitsRequest
         from app.db.file_models import FileRecord
@@ -330,7 +355,13 @@ def _order_payloads(db):
 
 
 def _order_crypto(table):
-    if table.startswith("lupin_"):
+    if table.startswith("settlement_"):
+        from app.services.settlement_crypto import seal, unseal
+    elif table.startswith("order_notification_"):
+        from app.services.order_notification_crypto import seal as notification_seal, unseal as notification_unseal
+        return (lambda keys, domain, identity, value: notification_seal(keys, identity, value),
+                lambda keys, domain, identity, value: notification_unseal(keys, identity, value))
+    elif table.startswith("lupin_"):
         from app.services.lupin import seal, unseal
     elif table.startswith("spt_"):
         from app.services.spt import seal, unseal
@@ -433,7 +464,7 @@ def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=
 def batch(db, settings, *, table, limit=staging.BATCH_LIMIT):
     """Target configuration must match the durable plan; no external cursor is trusted."""
     try:
-        if table in ("immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests", "lupin_orders", "lupin_requests", "lupin_file_names"):
+        if table in ("immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests", "lupin_orders", "lupin_requests", "lupin_file_names", "order_drafts", "order_draft_requests", "settlement_batches", "settlement_entries", "settlement_rejections", "order_notification_origins", "order_notification_events"):
             if type(limit) is not int or not 1 <= limit <= staging.BATCH_LIMIT:
                 raise RotationError()
             return _order_batch(db, settings, table, limit)
@@ -516,7 +547,7 @@ def main(argv=None):
     parser.add_argument("operation", choices=("encrypt", "configuration", "index", "batch", "verify", "finish"))
     parser.add_argument("--target-key-id")
     parser.add_argument("--runtime-role")
-    parser.add_argument("--table", choices=(*FIELDS, "immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests", "lupin_orders", "lupin_requests", "lupin_file_names"))
+    parser.add_argument("--table", choices=(*FIELDS, "immunotherapy_orders", "immunotherapy_requests", "kits_orders", "kits_requests", "kits_file_names", "spt_orders", "spt_patients", "spt_requests", "lupin_orders", "lupin_requests", "lupin_file_names", "order_drafts", "order_draft_requests", "settlement_batches", "settlement_entries", "settlement_rejections", "order_notification_origins", "order_notification_events"))
     parser.add_argument("--limit", type=int, default=staging.BATCH_LIMIT)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--approval")

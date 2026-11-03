@@ -136,7 +136,7 @@ function OrderForm({ order, mode }) {
     { key: 'gender', label: 'Gender', render: (p) => p.gender },
     { key: 'age', label: 'Age', render: (p) => p.age },
     { key: 'amount', label: 'Amount (INR)', render: (p) => readOnly ? <span className="spt-num">{money(totalMinor([p]))}</span> : <>
-      <input id={`spt-amount-${p.id}`} className="spt-input spt-amount" inputMode="decimal" aria-label={`Amount for ${p.name}`} readOnly={Boolean(mrPortal && record?.patients.some((saved) => saved.id === p.id))} value={p.amount} onChange={(e) => setAmount(p.id, e.target.value)} aria-invalid={Boolean(errors[`amount-${p.id}`])} aria-describedby={errors[`amount-${p.id}`] ? `spt-err-${p.id}` : undefined} placeholder="0.00" data-testid={`input-spt-amount-${p.id}`} />
+      <input id={`spt-amount-${p.id}`} className="spt-input spt-amount" inputMode="decimal" aria-label={`Amount for ${p.name}`} readOnly={Boolean(mrPortal && record?.status !== 'Draft' && record?.patients.some((saved) => saved.id === p.id))} value={p.amount} onChange={(e) => setAmount(p.id, e.target.value)} aria-invalid={Boolean(errors[`amount-${p.id}`])} aria-describedby={errors[`amount-${p.id}`] ? `spt-err-${p.id}` : undefined} placeholder="0.00" data-testid={`input-spt-amount-${p.id}`} />
       {errors[`amount-${p.id}`] && <p className="spt-error" id={`spt-err-${p.id}`}>{errors[`amount-${p.id}`]}</p>}</> },
     { key: 'remove', label: 'Remove', render: (p) => readOnly ? '' : <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${p.name}`} onClick={() => remove(p.id)} data-testid={`button-spt-remove-${p.id}`}><Trash2 size={16} aria-hidden="true" /></button> },
   ];
@@ -240,7 +240,7 @@ function OrderForm({ order, mode }) {
         <div className="spt-actions">
           {readOnly ? <Link href={BASE} className="admin-button">All orders</Link> : <>
             {!['Saved', 'Rejected'].includes(record?.status) && <button type="button" disabled={busy || uncertain || reviewBusy} className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>}
-            <button type="button" disabled={busy || uncertain || reviewBusy} className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">{record?.status === 'Rejected' ? 'Save corrections (keep Rejected)' : 'Save'}</button></>}
+            <button type="button" disabled={busy || uncertain || reviewBusy} className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">{record?.status === 'Rejected' ? 'Save corrections (keep Rejected)' : !record || record.status === 'Draft' ? 'Submit order' : 'Save changes'}</button></>}
         </div>
       {leaveDialog}
     </Shell>

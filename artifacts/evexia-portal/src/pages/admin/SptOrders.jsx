@@ -23,7 +23,7 @@ export default function SptOrders() {
   const can = useOrderActions('spt');
   const BASE = useOrderBase('spt');
   const { mr, portal } = useOrderPortal();
-  const { date } = useAdminDateFormatters();
+  const { date, timestamp } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
   const [result, setResult] = useState({ items: [], total: 0, filtered: null, nextCursor: null });
   const [page, setPage] = useState(1), [pageSize, setPageSize] = useState(25), [cursors, setCursors] = useState([null]);
@@ -58,13 +58,13 @@ export default function SptOrders() {
   const baseColumns = [
     { key: 'sr', label: 'Sr. No.', render: (_o, i) => i + 1 },
     { key: 'number', label: 'Order no.', render: (o) => <strong>{o.number}</strong> },
-    { key: 'date', label: 'Date', render: (o) => date(o.date) },
+    { key: 'date', label: applied.status === 'Draft' ? 'Draft saved' : 'Date', render: (o) => o.status === 'Draft' ? (o.draftSavedAt ? timestamp(o.draftSavedAt) : 'Saved time unavailable') : date(o.date) },
     { key: 'doctor', label: 'Doctor', render: (o) => o.doctorName || 'Not chosen' },
     { key: 'mr', label: 'MR', render: (o) => o.mrName || 'Not chosen' },
     { key: 'count', label: 'Patients', render: (o) => o.patients.length },
     { key: 'total', label: 'Total (INR)', render: (o) => <span className="spt-num">{o.total}</span> },
     { key: 'status', label: 'Status', render: (o) => <span className={`admin-badge${o.status === 'Draft' ? ' admin-badge--inactive' : ''}`}>{reviewLabel(o)}</span> },
-    { key: 'action', label: 'Action', render: (o) => <div className="spt-actions"><Link className="admin-icon-button order-view-action" href={`${BASE}/${o.id}`} aria-label={`View ${o.number}`} data-testid={`link-spt-open-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`${o.status === 'Draft' ? 'Resume draft' : 'Edit'} ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
+    { key: 'action', label: 'Action', render: (o) => <div className="spt-actions"><Link className="admin-icon-button order-view-action" href={`${BASE}/${o.id}`} aria-label={`View ${o.number}`} data-testid={`link-spt-open-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className={o.status === 'Draft' ? 'admin-button admin-button--secondary' : 'admin-icon-button order-view-action'} aria-label={`${o.status === 'Draft' ? 'Resume draft' : 'Edit'} ${o.number}`}><Pencil size={16} aria-hidden="true" />{o.status === 'Draft' && 'Resume draft'}</Link>}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);
 
@@ -81,6 +81,10 @@ export default function SptOrders() {
           </div>
           <div className="spt-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
         </div>} />
+        <div className="spt-actions" aria-label="Order views">
+          <button type="button" className="admin-button admin-button--secondary" aria-pressed={applied.status !== 'Draft'} onClick={() => { setDraft(EMPTY); setApplied(EMPTY); resetPage(); }}>Orders</button>
+          <button type="button" className="admin-button admin-button--secondary" aria-pressed={applied.status === 'Draft'} onClick={() => { const values = { ...EMPTY, status: 'Draft' }; setDraft(values); setApplied(values); resetPage(); }}>Drafts — resume incomplete orders</button>
+        </div>
         <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
         <section className="admin-panel" aria-label="SPT orders">
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}

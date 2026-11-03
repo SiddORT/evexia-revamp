@@ -2481,6 +2481,46 @@ export interface DownloadURLResponse {
   url: string;
 }
 
+export type DraftRecordKind =
+  (typeof DraftRecordKind)[keyof typeof DraftRecordKind];
+
+export const DraftRecordKind = {
+  immunotherapy: "immunotherapy",
+  kits: "kits",
+  lupin: "lupin",
+} as const;
+
+export type DraftRecordPayload = { [key: string]: unknown };
+
+export interface DraftRecord {
+  id: string;
+  kind: DraftRecordKind;
+  payload: DraftRecordPayload;
+  updatedAt: string;
+  version: number;
+}
+
+export interface DraftPage {
+  items: DraftRecord[];
+  nextCursor: string | null;
+}
+
+export type DraftSubmitOrder = { [key: string]: unknown };
+
+export interface DraftSubmit {
+  /** @minimum 1 */
+  expected_version: number;
+  order: DraftSubmitOrder;
+}
+
+export type DraftWritePayload = { [key: string]: unknown };
+
+export interface DraftWrite {
+  expected_version?: number | null;
+  idempotencyKey: string;
+  payload: DraftWritePayload;
+}
+
 export interface EligibilityReason {
   ageDays?: number | null;
   balance: string;
@@ -10797,6 +10837,7 @@ export interface SptRecord {
   doctor: SptRecordDoctor;
   doctorId: string | null;
   doctorName: string;
+  draftSavedAt?: string | null;
   id: string;
   mr: SptRecordMr;
   mrEditable?: boolean;
@@ -14519,6 +14560,15 @@ export const DownloadOpeningStockSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListOrderDraftsParams = {
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+};
 
 export type ListOrderNotificationDeliveriesParams = {
   /**

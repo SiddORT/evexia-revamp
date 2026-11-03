@@ -58,6 +58,14 @@ async function beforePlacement(path, options, resource) {
   return { ...options, body: frozen };
 }
 
+// Draft submission uses the same MR eligibility/advisory review before its
+// atomic endpoint. Retain attempted-body identity across uncertain retries.
+export async function prepareOrderPlacement(path, options, resource) {
+  const checked = await beforePlacement(path, options, resource);
+  attempted.add(options.body);
+  return checked;
+}
+
 export function announceOrderChange(kind) {
   window.dispatchEvent(new CustomEvent(EVENT, { detail: kind }));
   if (typeof window.BroadcastChannel === 'function') {

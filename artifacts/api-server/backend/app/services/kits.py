@@ -90,7 +90,7 @@ def unseal(keys, table, identity, value):
         raise DirectoryCryptoError() from None
 
 
-def transaction(db, actor, work, *, action=None):
+def transaction(db, actor, work, *, action=None, before_commit=None):
     try:
         current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
@@ -103,6 +103,8 @@ def transaction(db, actor, work, *, action=None):
         result = public_result(current, "kits", result)
         from app.services.person_contacts import order_result
         result = order_result(current, result)
+        if before_commit:
+            before_commit(result)
         db.commit()
         return result
     except SQLAlchemyError:
@@ -188,6 +190,8 @@ def resolved(db, actor, keys, body, previous=None):
 
 
 def apply(db, actor, keys, body, identity=None, expected=None):
+    from app.services.order_drafts import protect_attachments
+    protect_attachments(db, body.attachmentIds)
     row = find(db, identity) if identity else None
     if row and row.version != expected:
         raise ImmError("Order changed. Export and review current values again.", 409, "kits_stale")
@@ -245,9 +249,9 @@ def idempotent(db, actor, keys, key, payload, work):
     return result
 
 
-def save(db, actor, body):
+def save(db, actor, body, *, before_commit=None):
     return transaction(db, actor, lambda a, k: idempotent(db, a, k, body.idempotencyKey,
-        body.model_dump(mode="json", exclude_unset=True), lambda: apply(db, a, k, body)), action="add")
+        body.model_dump(mode="json", exclude_unset=True), lambda: apply(db, a, k, body)), action="add", before_commit=before_commit)
 
 
 def update(db, actor, identity, body):
