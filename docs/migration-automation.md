@@ -1,5 +1,13 @@
 # Automatic migration policy
 
+Placement-email enrichment prepares content-only successor
+`0085_placement_email_details` and its coordinated development source metadata.
+The assigned email receives missing saved-allergen and order-link sections
+under editor/row locks with a version increment; authored content is not replaced.
+No migration, checks, service activation or email was run. Production catalog
+evidence is not advanced without reproduction. See
+[order-event-notifications.md](order-event-notifications.md).
+
 Allergen expiry source prepares `0084_allergen_expiry` and the coordinated
 development declaration/hash metadata. It adds encrypted actual-cost/disposal
 evidence, durable scan/daily claims, template and reserve disposal references.

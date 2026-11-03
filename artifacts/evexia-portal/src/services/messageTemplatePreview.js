@@ -13,6 +13,7 @@ export const SUPPORTED_TOKENS = Object.freeze([
   'patient_name',
   'placement_date',
 ]);
+export const EMAIL_ONLY_TOKENS = Object.freeze(['allergen_list', 'order_details_url']);
 
 export const SAMPLE_VALUES = Object.freeze({
   recipient_name: 'Aarav Mehta',
@@ -26,9 +27,11 @@ export const SAMPLE_VALUES = Object.freeze({
   mr_name: 'Fictional MR Member',
   patient_name: 'Fictional Patient',
   placement_date: '03/11/2026',
+  allergen_list: 'Fictional group A\n• Fictional Allergen Alpha\n• Fictional Allergen Beta\n\nFictional group B\n• Fictional Allergen Alpha',
+  order_details_url: 'https://email-sample.invalid/admin/orders/immunotherapy/00000000-0000-4000-8000-000000000000',
 });
 
-const SUPPORTED_TOKEN_SET = new Set(SUPPORTED_TOKENS);
+const EMAIL_PREVIEW_TOKENS = [...SUPPORTED_TOKENS, ...EMAIL_ONLY_TOKENS];
 const MAX_HTML_FILE_BYTES = 100_000;
 
 /**
@@ -36,7 +39,8 @@ const MAX_HTML_FILE_BYTES = 100_000;
  * A token must be exactly {{identifier}}; every other brace expression is
  * reported as malformed so callers can keep it visible and explain it.
  */
-export function inspectTokens(text) {
+export function inspectTokens(text, allowedTokens = SUPPORTED_TOKENS) {
+  const supported = new Set(allowedTokens);
   const source = typeof text === 'string' ? text : '';
   const tokens = [];
   const unknown = [];
@@ -110,7 +114,7 @@ export function inspectTokens(text) {
         seenTokens.add(name);
         tokens.push(name);
       }
-      if (!SUPPORTED_TOKEN_SET.has(name) && !seenUnknown.has(name)) {
+      if (!supported.has(name) && !seenUnknown.has(name)) {
         seenUnknown.add(name);
         unknown.push(name);
       }
@@ -137,19 +141,22 @@ function escapeHtmlValue(value) {
  * This is a single pass over the original text; replacement values are never
  * interpreted as tokens or expressions.
  */
-export function substituteTokens(text, values, html = false) {
+export function substituteTokens(text, values, html = false, allowedTokens = SUPPORTED_TOKENS) {
+  const supported = new Set(allowedTokens);
   if (typeof text !== 'string') return '';
   const valueMap = values && (typeof values === 'object' || typeof values === 'function')
     ? values
     : Object.create(null);
 
   return text.replace(/(?<!\{)\{\{([A-Za-z][A-Za-z0-9_]*)\}\}(?!\})/g, (original, token) => {
-    if (!SUPPORTED_TOKEN_SET.has(token) ||
+    if (!supported.has(token) ||
       !Object.prototype.hasOwnProperty.call(valueMap, token) ||
       typeof valueMap[token] !== 'string') {
       return original;
     }
-    return html ? escapeHtmlValue(valueMap[token]) : valueMap[token];
+    if (!html) return valueMap[token];
+    const literal = escapeHtmlValue(valueMap[token]);
+    return token === 'allergen_list' ? literal.replaceAll('\n', '<br>') : literal;
   });
 }
 
@@ -500,7 +507,7 @@ export function buildEmailPreview(html, values = null) {
   // Establish image identity before substitution: a sample value must never
   // turn an untrusted src token into the trusted logo capability.
   const authored = sanitizeEmailHtml(source);
-  const substituted = values === null ? authored : substituteTokens(authored, values, true);
+  const substituted = values === null ? authored : substituteTokens(authored, values, true, EMAIL_PREVIEW_TOKENS);
   const safeContent = sanitizeEmailHtml(substituted, true);
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${PREVIEW_CSP}"><meta name="referrer" content="no-referrer"><style>html,body{margin:0;padding:0}body{padding:16px;color:#222;background:#fff;font:14px/1.5 Arial,sans-serif;overflow-wrap:anywhere}table{border-collapse:collapse;max-width:100%}td,th{vertical-align:top}</style></head><body>${safeContent}</body></html>`;
 }

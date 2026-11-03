@@ -67,6 +67,13 @@ def emit(db, keys, kind, row, event, source_key, *, amount=None, snapshot=None):
     special = scoped(row_event)
     if special and snapshot is not None:
         payload.update(facts(snapshot, now))
+    link_category = None
+    if special:
+        from app.services.immunotherapy_placement_notification import order_url
+        try:
+            payload["orderDetailsUrl"] = order_url(db, settings, row.id)
+        except (ValueError, PermissionError):
+            link_category = "trusted_portal_origin_required"
     row_event.payload_ciphertext = seal(keys, identity, payload)
     db.add(row_event)
     db.flush()
@@ -94,6 +101,8 @@ def emit(db, keys, kind, row, event, source_key, *, amount=None, snapshot=None):
             else:
                 template = db.scalar(select(Template).where(Template.channel == channel, Template.event_key == event))
             category, config = readiness(db, settings, channel, template)
+            if special and link_category:
+                category = link_category
             if not category:
                 try:
                     recipient = destination(db, settings, row_event, user_id, channel)
@@ -151,7 +160,7 @@ def feed(db, actor):
             from app.services.immunotherapy_placement_notification import scoped, message
             admin_message = message(payload) if is_super_admin(current) and scoped(event) else None
             # Patient facts are restricted to this Super Admin projection.
-            payload = {k: v for k, v in payload.items() if k not in ("patientName", "placementDate")}
+            payload = {k: payload[k] for k in ("number", "status", "mrName", "amount") if k in payload}
             payload = financial_payload(db, event, current.user.id, payload)
             items.append(dict(id=alert.id, event=event.event, kind=event.kind,
                 **payload, message=admin_message, createdAt=event.created_at, read=alert.read))

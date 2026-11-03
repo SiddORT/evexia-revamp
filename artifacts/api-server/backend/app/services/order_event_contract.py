@@ -34,11 +34,18 @@ def substitute(source, values, *, html=False):
 
 
 def render(template, values):
-    safe = "".join(DeliveryHTML(template.html).output)
+    from app.services.immunotherapy_placement_notification import ASSIGNMENT
+    from app.services.email_rendering import validate_template
+    placement = template.event_key == ASSIGNMENT
+    safe = (validate_template(template.subject, template.html, template.text, ASSIGNMENT) if placement
+            else "".join(DeliveryHTML(template.html).output))
     import re
     subject = substitute(template.subject, values)
     if re.search(r"[\x00-\x1f\x7f-\x9f]", subject) or len(subject) > 998:
         raise ValueError("Invalid rendered subject.")
+    def html_value(match):
+        literal = escape(values[match[1]], quote=True)
+        return literal.replace("\n", "<br>") if placement and match[1] == "allergen_list" else literal
     return RenderedEmail(subject=subject,
                          text=substitute(template.text, values),
-                         html=substitute(safe, values, html=True))
+                         html=TOKEN.sub(html_value, safe))

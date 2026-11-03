@@ -85,8 +85,15 @@ def process_one():
                 data = unseal(keys, event.id, event.payload_ciphertext)
                 if scoped(event) and (not data.get("patientName") or not data.get("placementDate")):
                     raise Blocked("placement_facts_unavailable")
+                if scoped(event):
+                    from app.services.immunotherapy_placement_notification import email_values
+                    try:
+                        scoped_values = email_values(data)
+                    except ValueError:
+                        raise Blocked("placement_facts_unavailable") from None
                 data = financial_payload(db, event, row.user_id, data)
-                send = prepare(db, get_settings(), row, event, template, variables(event, data, event.created_at))
+                send = prepare(db, get_settings(), row, event, template,
+                               scoped_values if scoped(event) else variables(event, data, event.created_at))
             # Preparation stays inside the lease transaction; only the sending
             # marker is committed before calling an external provider.
             row.status, row.updated_at = "sending", utcnow()

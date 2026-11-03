@@ -17,16 +17,16 @@ export default function MessageTemplatePreview({ channel, content, eventKey = nu
   const report = useMemo(() => {
     const all = { tokens: new Set(), unknown: new Set(), malformed: 0 };
     fields.forEach(([, v]) => {
-      const r = inspectTokens(v || '');
+      const r = inspectTokens(v || '', email ? variables : SUPPORTED_TOKENS);
       (r.tokens || []).forEach((t) => all.tokens.add(t));
       (r.unknown || []).forEach((t) => all.unknown.add(t));
       all.malformed += Array.isArray(r.malformed) ? r.malformed.length : (r.malformed ? Number(r.malformed) || 1 : 0);
     });
     return all;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [c.subject, c.html, c.text, c.body]);
+  }, [c.subject, c.html, c.text, c.body, email, eventKey]);
   const vals = mode === 'sample' ? values : null;
-  const sub = (v) => (vals ? substituteTokens(v || '', vals, false) : (v || ''));
+  const sub = (v) => (vals ? substituteTokens(v || '', vals, false, email ? variables : SUPPORTED_TOKENS) : (v || ''));
   const srcDoc = useMemo(() => (email ? buildEmailPreview(c.html || '', vals) : ''),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [email, c.html, mode, values]);

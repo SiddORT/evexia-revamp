@@ -53,6 +53,11 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0085_placement_email_details"]:
+            # Content-only successor inherits every predecessor readiness probe.
+            from app.services.email_templates import resolve_event
+            resolve_event(db, "mr_immunotherapy_placed")
+            revisions = ["0084_allergen_expiry"]
         if revisions == ["0084_allergen_expiry"]:
             db.execute(text("SELECT id,source_kind,batch_id,actor_id,created_at,payload_ciphertext FROM inventory_batch_costs LIMIT 0"))
             db.execute(text("SELECT id,source_kind,batch_id,actor_id,event_id,created_at,payload_ciphertext FROM inventory_expiry_disposals LIMIT 0"))

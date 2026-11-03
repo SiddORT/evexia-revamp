@@ -1,3 +1,78 @@
+# Placement email enrichment — source only
+
+The MR Immunotherapy placement email now includes `{{allergen_list}}` and
+`{{order_details_url}}` in HTML and plain text. The original notification message
+is retained. The Modern layout and Email Templates supported-token metadata use
+the same additions. Fictional preview/test-render values use an `.invalid` order
+destination, never a live order or account. Browser previews still sanitize
+links into inert spans inside the existing offline sandbox; no outbound resource
+or navigation permission was added.
+
+New placement events capture ordered saved allergen-name occurrences and saved
+group identifiers in the existing encrypted immutable payload. Repeated names
+in different groups remain repeated, including historical names retained by the
+saved order. No master lookup, deduplication, concentration unit, contact,
+prescription or other clinical fact is added. Feed serialization explicitly
+allowlists the original public facts; the Super Admin bell keeps its original
+message and the placing MR's bell/response gains no allergen or URL facts.
+SMS/WABA variables and authoring-only policy are unchanged.
+
+The server constructs
+`https://{admitted-primary-host}/admin/orders/immunotherapy/{saved-order-id}`
+from the existing primary-domain configuration, requiring active, unexpired
+ownership verification. Bootstrap admission is not a substitute for primary
+verification. In development with managed-preview mode explicitly enabled, only
+the configured `REPLIT_DEV_DOMAIN` under `.replit.dev` is used. Neither request
+Host/forwarding headers, arbitrary CORS origins nor a hardcoded workspace host
+are used. The captured URL remains encrypted and is checked again against the
+current admitted origin before handoff. Missing/invalid configuration becomes
+`trusted_portal_origin_required`; a changed captured origin becomes
+`portal_origin_changed`. These are terminal delivery outcomes, not order-save
+failures or a backlog to replay when configuration changes.
+
+The destination is the existing protected Admin read view. The current Admin
+boundary, safe login return path and saved-order permissions remain unchanged;
+the email URL is not a token, grant or public order endpoint. HTML authoring
+permits only an exact `href="{{order_details_url}}"` in this assigned email.
+Recovery/invitation link validation still permits only its reset URL. Names
+and URLs are escaped by single-pass literal substitution; allergen-list
+newlines become HTML breaks only after escaping.
+
+## Migration/configuration prerequisites
+
+Forward-only `0085_placement_email_details` follows `0084_allergen_expiry` and is
+prepared, **not executed**. It updates the authoritative assigned email row,
+not just a default constant. It takes the editor's advisory lock and a row lock,
+reads the latest authored HTML/text, adds only missing list/action/fallback
+sections, enforces size/version limits and conditionally increments the saved
+version. Name, description, subject, existing wording/styles, provenance and
+administrator attribution are retained. An already enriched row is a no-op.
+Existing content is not replaced with Modern or any other default layout.
+No SMS/WABA records, historical events or delivery attempts are updated.
+Pending older template versions remain subject to the existing version-mismatch
+block; administrator drafts opened before the migration must reconcile with the
+new saved version rather than overwrite it.
+
+Old payloads/templates remain readable. Missing historical allergen facts are
+never reconstructed; attempted old work is blocked as
+`placement_facts_unavailable`. A readable legacy or subsequently edited template
+that lacks the additions cannot silently deliver an incomplete email:
+`placement_template_enrichment_required` blocks that attempt without replay.
+Invalid source is `placement_template_invalid`. Automatic sending remains one
+existing outbox intent to the protected Super Admin via saved default SMTP.
+
+The coordinated development schema and source-byte metadata are prepared for
+the successor. A valid primary domain (or explicitly configured development
+managed-preview origin), assigned enriched email and the existing saved default
+SMTP are prerequisites for future eligible sends. Normal migration policy is
+unchanged, but this work did not activate it. Production catalog/release evidence
+has not been fabricated or advanced without separately authorized reproduction.
+
+Source changes were inspected only. No release/regression checks, tests, builds,
+browser/runtime probes, verification emails, data mutations, migration execution,
+service starts/restarts, deployment or runtime activation were performed.
+Runtime delivery, protected navigation and inbox receipt were **not verified**.
+
 # Independent allergen expiry digest
 
 Allergen expiry uses its own lifecycle worker and daily claims, not sales-order
@@ -18,11 +93,13 @@ are unchanged.
   Failed/rolled-back saves cannot leave an event, alert or delivery behind.
   Existing source-key, alert-recipient and delivery-recipient uniqueness and
   serialized idempotency requests remain the only event/outbox mechanism.
-- New scoped events capture only the saved patient-name snapshot and creation
+- New scoped events capture the saved patient-name snapshot and creation
   calendar date alongside the existing placing-MR name. The date is derived
   from placement-event creation time in Asia/Kolkata as DD/MM/YYYY, not an editable/backdated
   order date, worker time, browser locale or a later directory lookup.
-  These facts stay in the existing encrypted immutable event payload.
+  These facts stay in the existing encrypted immutable event payload. Email-only
+  saved allergen/group facts and the server-owned order URL are described above;
+  they never enter the bell message or public event projection.
 - Super Admin's bell renders the exact default message:
 
   > Notification: MR [Name] has placed an immunotherapy order for patient [Patient Name] on [DD/MM/YYYY].
@@ -43,6 +120,9 @@ are unchanged.
   Order event templates. Its subject defaults to
   `Notification: MR Immunotherapy order placed`. HTML and plain text carry the
   supplied wording and `{{mr_name}}`, `{{patient_name}}`, `{{placement_date}}`.
+  The enrichment above additionally supplies the email-only `{{allergen_list}}`
+  and `{{order_details_url}}`; the original three-variable bell/SMS/WABA contract
+  is unchanged.
   The existing preview, edit, HTML source/preview, HTML import, Modern layout,
   literal substitution, concurrency and draft recovery controls are reused.
   Its explicit test-email action uses only fictional placement data and the

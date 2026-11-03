@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0085_placement_email_details": "automatic",
     "0084_allergen_expiry": "automatic",
     "0083_immunotherapy_batches": "automatic",
     "0082_order_drafts": "automatic",

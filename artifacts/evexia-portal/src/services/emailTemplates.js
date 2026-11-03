@@ -4,7 +4,7 @@ export const EMAIL_VARIABLES = Object.freeze(['recipient_name', 'company_name', 
 export const INVITATION_VARIABLES = Object.freeze([...EMAIL_VARIABLES, 'portal_name', 'login_id']);
 export const isInvitationEvent = (key) => ['account_invitation', 'mr_invitation'].includes(key);
 export const IMMUNOTHERAPY_EVENT = 'mr_immunotherapy_placed';
-export const PLACEMENT_VARIABLES = Object.freeze(['mr_name', 'patient_name', 'placement_date']);
+export const PLACEMENT_VARIABLES = Object.freeze(['mr_name', 'patient_name', 'placement_date', 'allergen_list', 'order_details_url']);
 export const emailVariables = (key) => key === IMMUNOTHERAPY_EVENT ? PLACEMENT_VARIABLES : isInvitationEvent(key) ? INVITATION_VARIABLES : EMAIL_VARIABLES;
 export const EMAIL_EVENT_LABELS = Object.freeze({
   password_recovery: 'Password recovery',

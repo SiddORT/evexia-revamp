@@ -25,8 +25,11 @@ def tokens(source, allowed):
 
 
 class DeliveryHTML(HTMLParser):
-    def __init__(self, source):
+    def __init__(self, source, *, link_token="reset_url"):
         super().__init__(convert_charrefs=True)
+        if link_token not in ("reset_url", "order_details_url"):
+            raise ValueError("Unsupported server link.")
+        self.link_token = "{{" + link_token + "}}"
         self.output = []
         self.links = 0
         self.visible_text = []
@@ -46,8 +49,8 @@ class DeliveryHTML(HTMLParser):
             if value is None or re.search(r"[\x00-\x1f\x7f-\x9f]", value):
                 raise ValueError("Invalid HTML attribute.")
             if key == "href" and tag == "a":
-                if value != "{{reset_url}}":
-                    raise ValueError("Recovery links must use exactly {{reset_url}}.")
+                if value != self.link_token:
+                    raise ValueError("Links must use the assigned server-owned URL variable.")
                 self.links += 1
             elif key == "src" and tag == "img":
                 if value != LOGO_SOURCE:
@@ -68,7 +71,7 @@ class DeliveryHTML(HTMLParser):
                         raise ValueError("Unsupported inline styling.")
             clean.append(f'{key}="{escape(value, quote=True)}"')
         if tag == "a" and not any(k == "href" for k, _ in attrs):
-            raise ValueError("Links require the server-owned reset URL.")
+            raise ValueError("Links require the assigned server-owned URL.")
         if tag == "img" and not any(k == "src" for k, _ in attrs):
             raise ValueError("Images require the bundled logo.")
         self.output.append("<" + tag + (" " + " ".join(clean) if clean else "") + ">")
@@ -100,15 +103,20 @@ class DeliveryHTML(HTMLParser):
 
 
 def validate_template(subject, html, text, event_key):
-    from app.services.immunotherapy_placement_notification import ASSIGNMENT, VARIABLES as PLACEMENT_VARIABLES
+    from app.services.immunotherapy_placement_notification import ASSIGNMENT, EMAIL_VARIABLES as PLACEMENT_VARIABLES
     if event_key == ASSIGNMENT:
         for source in (subject, html, text):
             tokens(source, PLACEMENT_VARIABLES)
         if re.search(r"[\x00-\x1f\x7f-\x9f]", subject):
             raise ValueError("Invalid subject header.")
-        parsed = DeliveryHTML(html)
-        if parsed.links:
-            raise ValueError("Order alerts contain no action links.")
+        parsed = DeliveryHTML(html, link_token="order_details_url")
+        # Historical source remains readable; new placeholders must be usable
+        # in both alternatives. Only the dedicated URL can become an href.
+        visible = "".join(parsed.visible_text)
+        for field in ("allergen_list", "order_details_url"):
+            token = "{{" + field + "}}"
+            if token in html + text and (token not in visible or token not in text):
+                raise ValueError("Placement additions require visible HTML and plain text.")
         return "".join(parsed.output)
     if event_key not in (None, "password_recovery", "account_invitation", "mr_invitation"):
         raise ValueError("Unsupported backend event.")
@@ -163,7 +171,9 @@ def render_test(template):
         from app.services.order_event_contract import render
         validate_template(template.subject, template.html, template.text, template.event_key)
         result = render(template, dict(mr_name="Fictional MR Member", patient_name="Fictional Patient",
-                                       placement_date="03/11/2026"))
+                                       placement_date="03/11/2026",
+                                       allergen_list="Fictional group A\n• Fictional Allergen Alpha\n• Fictional Allergen Beta\n\nFictional group B\n• Fictional Allergen Alpha",
+                                       order_details_url="https://email-sample.invalid/admin/orders/immunotherapy/00000000-0000-4000-8000-000000000000"))
         return RenderedEmail("[TEST — EVEXIA] " + result.subject,
                              "TEST EMAIL — fictional placement; no order was created.\n\n" + result.text,
                              "<p>TEST EMAIL — fictional placement; no order was created.</p>" + result.html)

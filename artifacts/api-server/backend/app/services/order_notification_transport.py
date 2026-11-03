@@ -145,8 +145,27 @@ def prepare(db, settings, delivery, event, template, values):
         # Enforce policy before provider resolution, including old pending/leased
         # attempts. Never reassign generic historical work to this new content.
         destination(db, settings, event, delivery.user_id, delivery.channel)
+        from app.services.immunotherapy_placement_notification import order_url
+        try:
+            current_url = order_url(db, settings, event.order_id)
+        except (ValueError, PermissionError):
+            raise Blocked("trusted_portal_origin_required") from None
+        if values.get("order_details_url") != current_url:
+            raise Blocked("portal_origin_changed")
         if not template or template.event_key != ASSIGNMENT:
             raise Blocked("scoped_template_required")
+        from app.services.email_rendering import validate_template, DeliveryHTML
+        try:
+            validate_template(template.subject, template.html, template.text, ASSIGNMENT)
+            parsed = DeliveryHTML(template.html, link_token="order_details_url")
+        except ValueError:
+            raise Blocked("placement_template_invalid") from None
+        if (not parsed.links or any("{{" + name + "}}" not in source
+                for name in ("allergen_list", "order_details_url")
+                for source in ("".join(parsed.visible_text), template.text))):
+            # Old authored templates are readable, but cannot silently send an
+            # incomplete enriched email. No automatic requeue after correction.
+            raise Blocked("placement_template_enrichment_required")
     code = template_state(template)
     if code:
         raise Blocked(code)

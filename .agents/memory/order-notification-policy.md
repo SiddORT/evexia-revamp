@@ -18,6 +18,14 @@ Asia/Kolkata placement date; do not expand this to other events or MR feeds.
 **Why:** The user authorized this narrowly scoped placement notification, not
 broader clinical/contact disclosure or additional channel activation.
 
+Saved allergen names and group occurrences are authorized in the Super Admin
+Immunotherapy placement email only, not bell feeds, MR responses, SMS or WABA.
+The order link must use a server-owned admitted portal origin and conveys no
+additional permission; historical missing facts must not be reconstructed.
+
+**Why:** The user explicitly limited the allergen disclosure and required the
+existing authenticated order-details page rather than public or tokenized access.
+
 **How to apply:** Keep other order types and lifecycle recipient rules unchanged;
 do not infer new send authority from template edits or recipient-account edits.
 

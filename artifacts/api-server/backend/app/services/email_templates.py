@@ -11,7 +11,7 @@ from app.services.email_rendering import VARIABLES, INVITATION_VARIABLES
 EVENTS = [dict(key=RECOVERY_EVENT, label="Password recovery", required=True, variables=list(VARIABLES))]
 EVENTS.append(dict(key=INVITATION_EVENT, label="Staff invitation · Admin workspace", required=True, variables=list(INVITATION_VARIABLES)))
 EVENTS.append(dict(key=MR_INVITATION_EVENT, label="MR invitation · MR portal", required=True, variables=list(INVITATION_VARIABLES)))
-from app.services.immunotherapy_placement_notification import ASSIGNMENT, VARIABLES as PLACEMENT_VARIABLES
+from app.services.immunotherapy_placement_notification import ASSIGNMENT, EMAIL_VARIABLES as PLACEMENT_VARIABLES
 EVENTS.append(dict(key=ASSIGNMENT, label="MR Immunotherapy order placement · Super Admin", required=True,
                    variables=list(PLACEMENT_VARIABLES)))
 

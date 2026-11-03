@@ -3,7 +3,7 @@
 
 def modern_html(event):
     if event == "mr_immunotherapy_placed":
-        from app.services.immunotherapy_placement_notification import HTML
+        from app.services.immunotherapy_placement_notification import EMAIL_HTML as HTML
         return (
             '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5fa;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#28263a"><tr><td align="center">'
             '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border:1px solid #ddd7e5;border-radius:16px;border-collapse:separate">'
