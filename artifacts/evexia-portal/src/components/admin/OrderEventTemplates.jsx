@@ -45,10 +45,11 @@ function missing(t) {
   return m;
 }
 
-export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange }) {
+export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange, fixedChannel = null }) {
   const confirm = usePlatformConfirm();
   const [snap, setSnap] = useState(null), [loading, setLoading] = useState(true), [error, setError] = useState('');
-  const [channel, setChannel] = useState('email'), [editor, setEditor] = useState(null), [view, setView] = useState(null);
+  const [selectedChannel, setChannel] = useState('email'), [editor, setEditor] = useState(null), [view, setView] = useState(null);
+  const channel = fixedChannel || selectedChannel;
   const [status, setStatus] = useState(''), [busy, setBusy] = useState(false);
   const alive = useRef(true), req = useRef(0);
   useEffect(() => { alive.current = true; return () => { alive.current = false; req.current += 1; }; }, []);
@@ -123,7 +124,7 @@ export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange
   };
 
   return <div className="oet">
-    <div className="mt-head"><p className="mt-note"><strong>Shared order event templates.</strong> Stored in the shared database for all browsers. Saving or enabling a template never sends a message; messages go out only when an order event occurs and the channel provider configuration is ready.</p>
+    <div className="mt-head"><p className="mt-note">{fixedChannel === 'waba' ? <><strong>WABA templates.</strong> Manage shared WhatsApp Business template references, language and parameter mappings. Saving does not send a message or submit a template for provider approval.</> : <><strong>Shared order event templates.</strong> Stored in the shared database for all browsers. Saving or enabling a template never sends a message; messages go out only when an order event occurs and the channel provider configuration is ready.</>}</p>
       <div className="mt-row"><button type="button" className="admin-button" disabled={!snap || busy || loading || total >= 100} onClick={() => startEdit(null)} data-testid="button-oet-new">New {CH_LABEL[channel]} template</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={loading || busy} onClick={load} data-testid="button-oet-reload">Load latest</button></div></div>
     {total >= 100 && <p className="mt-note">The 100-template limit is reached. Delete an unused template to add another.</p>}
@@ -131,12 +132,12 @@ export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange
     {error && <div role="alert" className="admin-feedback admin-feedback--error">{error} <button type="button" onClick={load} disabled={loading}>Retry loading</button></div>}
     {status && <p role="status" data-testid="text-oet-status">{status}</p>}
     {snap && <>
-      <div className="oet-matrix-wrap"><table className="oet-matrix" data-testid="table-oet-readiness"><caption>Event coverage and readiness</caption>
+      {!fixedChannel && <div className="oet-matrix-wrap"><table className="oet-matrix" data-testid="table-oet-readiness"><caption>Event coverage and readiness</caption>
         <thead><tr><th scope="col">Order event</th>{CH.map(([c, l]) => <th key={c} scope="col">{l}</th>)}</tr></thead>
-        <tbody>{matrix.map((e) => <tr key={e.key}><th scope="row">{e.label}</th>{CH.map(([c]) => { const t = e.byCh[c]; return <td key={c}>{t ? <span className={`oet-pill${t.enabled ? ' oet-pill--on' : ''}`}>{t.enabled ? 'Enabled' : 'Disabled'} · {readiness(t.readiness)}</span> : <span className="oet-pill oet-pill--none">No template</span>}</td>; })}</tr>)}</tbody></table></div>
-      <div className="admin-tabs" role="group" aria-label="Order event channel">{CH.map(([c, l]) => <button key={c} type="button" aria-pressed={channel === c} className={channel === c ? 'is-on' : ''} onClick={() => setChannel(c)} data-testid={`button-oet-channel-${c}`}>{l}</button>)}</div>
-      <p role="status" className="mt-note">{items.length} {CH_LABEL[channel]} templates · {total} of 100 total</p>
-      {!items.length && <p className="admin-empty">No {CH_LABEL[channel]} order event templates. Create one and assign it to an event.</p>}
+        <tbody>{matrix.map((e) => <tr key={e.key}><th scope="row">{e.label}</th>{CH.map(([c]) => { const t = e.byCh[c]; return <td key={c}>{t ? <span className={`oet-pill${t.enabled ? ' oet-pill--on' : ''}`}>{t.enabled ? 'Enabled' : 'Disabled'} · {readiness(t.readiness)}</span> : <span className="oet-pill oet-pill--none">No template</span>}</td>; })}</tr>)}</tbody></table></div>}
+      {!fixedChannel && <div className="admin-tabs" role="group" aria-label="Order event channel">{CH.map(([c, l]) => <button key={c} type="button" aria-pressed={channel === c} className={channel === c ? 'is-on' : ''} onClick={() => setChannel(c)} data-testid={`button-oet-channel-${c}`}>{l}</button>)}</div>}
+      <p role="status" className="mt-note">{items.length} {CH_LABEL[channel]} templates{!fixedChannel && ` · ${total} of 100 total`}</p>
+      {!items.length && <p className="admin-empty">{fixedChannel ? `No ${CH_LABEL[channel]} templates yet.` : `No ${CH_LABEL[channel]} order event templates. Create one and assign it to an event.`}</p>}
       <ul className="mt-list">{items.map((t) => { const gaps = missing(t); return <li key={t.id} className="mt-card" data-testid={`card-oet-${t.id}`}>
         <div className="mt-tags"><span className="mt-tag">Shared</span><span className="mt-tag">{CH_LABEL[t.channel]} · Version {t.version}</span><span className="mt-tag">Event: {evLabel(t.eventKey)}</span><span className={`mt-tag${t.enabled ? ' oet-tag--on' : ''}`}>{t.enabled ? 'Enabled' : 'Disabled'}</span></div>
         <h3>{t.name}</h3>
@@ -145,12 +146,12 @@ export default function OrderEventTemplates({ guard, onDirtyChange, onBusyChange
           <button type="button" disabled={busy} onClick={() => startEdit(t)} data-testid={`button-oet-edit-${t.id}`}>Edit</button>
           <button type="button" disabled={busy} onClick={() => void remove(t)} data-testid={`button-oet-delete-${t.id}`}>Delete</button></div></li>; })}</ul>
     </>}
-    {(editor || view) && <MessageTemplateDrawer onRequestClose={close} title={editor ? `${editor.base.id ? 'Edit' : 'New'} ${CH_LABEL[editor.draft.channel]} order event template` : view.name}
+    {(editor || view) && <MessageTemplateDrawer onRequestClose={close} title={editor ? `${editor.base.id ? 'Edit' : 'New'} ${CH_LABEL[editor.draft.channel]} ${fixedChannel ? 'template' : 'order event template'}` : view.name}
       subtitle={editor ? 'Saves to the shared database. Saving does not send any message.' : `Shared · Version ${view.version} · ${evLabel(view.eventKey)}`}>
       {editor ? <Editor ed={editor} events={events} busy={busy} edit={edit} save={save} discard={discardDraft} reload={reloadBase} close={close} variables={snap?.variables} />
         : <Preview t={view} />}
     </MessageTemplateDrawer>}
-    <DeliveryAttempts />
+    {!fixedChannel && <DeliveryAttempts />}
   </div>;
 }
 
