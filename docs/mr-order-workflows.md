@@ -241,6 +241,25 @@ MR access. A reassigned order cannot be recovered through a stale retry.
 
 ## Immunotherapy grouping at new MR placement
 
+Shared Super Admin **Immunotherapy → Extract & Dilution** settings now assign
+explicit saved category/rank pairs at new final MR placement only. After the
+existing category/Mix membership is formed, each bottle's children are sorted by
+numeric Skin Test Result descending with stable ties. Rank restarts within each
+bottle, including overflow and No Mix: one child uses row 1; two use rows 1–2;
+three use rows 1–3. No medical quantities are invented, seeded or calculated.
+Missing pairs stay unrecorded for Admin completion. Values and original
+category/version/rank evidence are persisted with the order in its placement
+transaction. Drafts do not capture settings or issue SUBs; committed placement
+retries do not apply later configurations.
+
+MR corrections cannot supply these clinical values; saved quantities and review
+protections remain server-owned. MR exports omit Admin-owned quantities so
+permitted corrections remain importable; Admin saved editors/summaries use the
+same persisted order and values with manual overrides and explicit approval.
+Neither settings changes nor ordinary edits/reads reapply or reorder history.
+See the shared category-ranked section in `immunotherapy-backend.md` for API,
+concurrency and the unapplied migration/runtime verification limits.
+
 The new MR entry form proposes same-category Mix groups of up to three selected
 allergens, with a fourth in another group; No Mix selections are always alone.
 All selected occurrences and entered skin-test results are preserved. Incomplete

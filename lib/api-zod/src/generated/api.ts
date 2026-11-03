@@ -428,6 +428,20 @@ export const editHeadquarterBodyNameMax = 200;
 export const editHeadquarterBodyStateCodeOneMax = 16;
 export const editHeadquarterResponseNameMax = 200;
 export const setHeadquarterStatusResponseNameMax = 200;
+export const listImmunotherapyExtractCategoriesQueryQueryMax = 200;
+export const listImmunotherapyExtractCategoriesQueryOffsetDefault = 0;
+export const listImmunotherapyExtractCategoriesQueryOffsetMin = 0;
+export const listImmunotherapyExtractCategoriesQueryOffsetMax = 1000000;
+export const listImmunotherapyExtractCategoriesQueryLimitDefault = 50;
+export const listImmunotherapyExtractCategoriesQueryLimitMax = 100;
+export const getImmunotherapyExtractSettingsResponseRowsMin = 3;
+export const getImmunotherapyExtractSettingsResponseRowsMax = 3;
+export const saveImmunotherapyExtractSettingsBodyExpectedVersionMin = 0;
+export const saveImmunotherapyExtractSettingsBodyExpectedVersionMax = 2147483646;
+export const saveImmunotherapyExtractSettingsBodyRowsMin = 3;
+export const saveImmunotherapyExtractSettingsBodyRowsMax = 3;
+export const saveImmunotherapyExtractSettingsResponseRowsMin = 3;
+export const saveImmunotherapyExtractSettingsResponseRowsMax = 3;
 export const listImmunotherapyOrdersQuerySearchMax = 200;
 export const listImmunotherapyOrdersQueryLimitDefault = 25;
 export const listImmunotherapyOrdersQueryLimitMax = 100;
@@ -9923,6 +9937,169 @@ export const SetHeadquarterStatusResponse = zod.object({
     zod.null(),
   ]),
   zone_id: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Categories
+ */
+export const listImmunotherapyExtractCategoriesQueryQueryDefault = ``;
+
+export const ListImmunotherapyExtractCategoriesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listImmunotherapyExtractCategoriesQueryQueryMax)
+    .default(listImmunotherapyExtractCategoriesQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listImmunotherapyExtractCategoriesQueryOffsetMin)
+    .max(listImmunotherapyExtractCategoriesQueryOffsetMax)
+    .default(listImmunotherapyExtractCategoriesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listImmunotherapyExtractCategoriesQueryLimitMax)
+    .default(listImmunotherapyExtractCategoriesQueryLimitDefault),
+});
+
+export const ListImmunotherapyExtractCategoriesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  nextOffset: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Read
+ */
+export const GetImmunotherapyExtractSettingsParams = zod.object({
+  category_id: zod.coerce.string().uuid(),
+});
+
+export const getImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const getImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+
+export const GetImmunotherapyExtractSettingsResponse = zod.object({
+  categoryId: zod.string().uuid(),
+  rows: zod
+    .array(
+      zod.object({
+        dilution: zod
+          .union([
+            zod
+              .string()
+              .regex(
+                getImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
+        extract: zod
+          .union([
+            zod
+              .string()
+              .regex(
+                getImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
+      }),
+    )
+    .min(getImmunotherapyExtractSettingsResponseRowsMin)
+    .max(getImmunotherapyExtractSettingsResponseRowsMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Write
+ */
+export const SaveImmunotherapyExtractSettingsParams = zod.object({
+  category_id: zod.coerce.string().uuid(),
+});
+
+export const saveImmunotherapyExtractSettingsBodyRowsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const saveImmunotherapyExtractSettingsBodyRowsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+
+export const SaveImmunotherapyExtractSettingsBody = zod.object({
+  expected_version: zod
+    .number()
+    .int()
+    .min(saveImmunotherapyExtractSettingsBodyExpectedVersionMin)
+    .max(saveImmunotherapyExtractSettingsBodyExpectedVersionMax),
+  rows: zod
+    .array(
+      zod.object({
+        dilution: zod
+          .union([
+            zod
+              .string()
+              .regex(
+                saveImmunotherapyExtractSettingsBodyRowsItemDilutionOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
+        extract: zod
+          .union([
+            zod
+              .string()
+              .regex(
+                saveImmunotherapyExtractSettingsBodyRowsItemExtractOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
+      }),
+    )
+    .min(saveImmunotherapyExtractSettingsBodyRowsMin)
+    .max(saveImmunotherapyExtractSettingsBodyRowsMax),
+});
+
+export const saveImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const saveImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+
+export const SaveImmunotherapyExtractSettingsResponse = zod.object({
+  categoryId: zod.string().uuid(),
+  rows: zod
+    .array(
+      zod.object({
+        dilution: zod
+          .union([
+            zod
+              .string()
+              .regex(
+                saveImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
+        extract: zod
+          .union([
+            zod
+              .string()
+              .regex(
+                saveImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp,
+              ),
+            zod.null(),
+          ])
+          .optional(),
+      }),
+    )
+    .min(saveImmunotherapyExtractSettingsResponseRowsMin)
+    .max(saveImmunotherapyExtractSettingsResponseRowsMax),
+  version: zod.number().int(),
 });
 
 /**

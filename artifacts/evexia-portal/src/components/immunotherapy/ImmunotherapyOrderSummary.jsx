@@ -8,6 +8,7 @@ import { downloadPrescription, money, mrEditable, orderLocked, orderTotalMinor, 
 import OrderApproval from '../orders/OrderApproval.jsx';
 import PrescriptionViewer from './PrescriptionViewer.jsx';
 import { MR_GROUPING_POLICY } from '../../services/immunotherapyGrouping.js';
+import ClinicalAssignment from './ClinicalAssignment.jsx';
 import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
 
@@ -83,6 +84,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
                 ...(canonical ? [['Extract (ml)', item.extract ?? 'Not recorded'], ['Dilution (ml)', item.dilution ?? 'Not recorded']]
                   : !mrPortal ? [['Rate (INR)', money(parseAmount(item.rate))]] : []),
               ]} />
+              {!mrPortal && <ClinicalAssignment item={item} />}
             </li>)}</ul> : <p className="kits-unavailable">No saved allergen details recorded.</p>}
           </section>) : <p className="kits-unavailable">Historical bottle composition not recorded.</p>}
           {canonical && !mrPortal && order.historicalGroups?.length > 0 && <details className="imm-history"><summary>Original grouping and pricing provenance (read-only)</summary>

@@ -1,5 +1,104 @@
 # Admin Immunotherapy orders
 
+## Shared category-ranked Extract & Dilution (source-only delivery)
+
+Super Admin configures **Settings → Immunotherapy → Extract & Dilution**.
+The category picker searches/paginates saved nondeleted Product Categories,
+including inactive categories, by name; persistence uses the category UUID.
+Each category has exactly three ordered extract/dilution pairs using the existing
+exact ml string contract: up to six whole digits and three fractional digits,
+nonnegative; entered zero is valid and distinct from absent/null. There are no
+sample clinical defaults, dose/ratio calculations or concentration interpretations.
+
+`GET /api/v1/admin/immunotherapy-extract-settings/categories` accepts `query`,
+`offset` and `limit`; GET/POST `/{category_id}` read/save one category.
+Both configuration reads and writes require the existing protected Super Admin
+operational-settings authorization, not general order or master permissions.
+MRs and ordinary staff cannot configure values. POST sends exactly three `rows`
+and `expected_version`; absence is version 0 with null quantities, not a seeded
+clinical formulation. First save creates version 1. A version mismatch rejects
+with `imm_extract_stale`; failed/conflicting/unknown saves retain the UI draft.
+The editor blocks uncertain resaves until an explicit reload, keeps edits for
+comparison, displays last-loaded saved rows and only reports save success after
+a matching category/version/row acknowledgement.
+
+The additive `0086_immunotherapy_extract` migration creates the empty
+`immunotherapy_extract_settings` table. It follows the independently merged
+`0086_it_pricing_rules` revision in the linear migration graph; the distinct
+revision IDs remain authoritative despite their shared numeric prefix. The
+existing Pricing Rules migration is unchanged. Values are encrypted using the existing
+Immunotherapy envelope/keyring, bound to the category UUID and a distinct
+`extract-settings` domain. Directory maintenance includes this domain only at
+the new revision, preserving historical inventories. Readiness inherits all
+predecessor probes and checks the new table/columns. Missing schema, unreadable
+ciphertext or invalid stored rows fail explicitly; storage errors are not treated
+as unconfigured values.
+
+### Placement and history boundary
+
+Only new authoritative MR category/Mix final placements receive assignment,
+including successful final submission of a resumable incomplete draft:
+
+- First form membership using the existing grouping policy and issue its original
+  SUB identities; never globally sort/repack or change bottle order.
+- Within each resulting bottle sort children by exact `Decimal(result)`,
+  descending. Stable sort retains equal-result relative order.
+- Use the saved category UUID's rows by resulting child rank, starting at 1
+  for **every** bottle. Three children use rows 1–3; two use 1–2; one uses row 1.
+  Overflow bottles and No Mix singletons independently restart at 1. No category
+  can inherit another category's pairs.
+- Under one shared transaction-level configuration lock, load each effective
+  category version once and copy the actual optional values into the child.
+  All setting writes use the corresponding exclusive lock, including initial
+  insertion, so a placement cannot mix configurations changed mid-placement.
+- Persist immutable per-child `clinicalAssignment` evidence: policy, category UUID,
+  configuration version, assigned rank and both original assigned optional
+  values. Version 0 identifies a missing category configuration; blank values
+  remain null and are identified for Admin completion.
+
+Assignment occurs in the final order transaction, not eligibility previews,
+import reviews, incomplete draft saves or reads. No draft reserves SUBs or
+freezes settings. The existing owner/request-bound retry record is checked
+before placement; a committed retry reads the saved order rather than consulting
+new settings. Configuration failure rolls back placement rather than partially
+committing clinical values.
+
+Admin editor/summary iterate the same saved child order and values, show
+placement evidence and retain normal manual editing and explicit approval.
+Existing completeness checks still require a header MRP, every child's extract
+and dilution, and a verified patient prescription. Defaults never approve an order.
+Manual overrides retain original placement evidence; it is not a claim that
+current edited values still equal the original assignment.
+
+Ordinary MR corrections continue to omit Admin-owned clinical fields; the server
+retains saved quantities by SUB/allergen occurrence and retains Admin review
+protections. MR portable exports omit those fields and assignment provenance
+so unchanged exports can be used for permitted corrections without submitting
+clinical authority. Admin transfers carry quantities normally; incoming
+provenance is never authoritative. No setting changes, saved edits, imports,
+master changes or historical reads reapply defaults or reorder saved children.
+New children in an existing SUB require ordinary Admin completion, not automatic
+reapplication. Historical conversions and unrelated Admin-created compositions
+retain their previous policy and quantities.
+
+### Source trace and verification limits
+
+Source/diff inspection traced three/two/one-child bottles, distinct categories,
+overflow, No Mix, numeric versus lexical order, stable ties, absent/partial
+configuration, version-0 concurrent insertion and version conflicts, consistent
+placement reads, draft/final submission, owner-bound retries, manual overrides,
+MR direct/import corrections, historical reads and approval completeness.
+
+OpenAPI and generated client/Zod source were regenerated using the contract
+exporter and direct generators/formatting, **without** the codegen script's
+typecheck wrapper. No regression/release checks, builds, typechecks, browser
+tests/screenshots, smoke requests, service restarts, live clinical writes,
+deployments or migrations were run. The new migration and coordinated source
+metadata are **prepared but unapplied by this work**. Runtime persistence,
+authorization, locking, placement/retry and responsive/accessibility behavior
+remain unverified; source completion is not operational acceptance. Production
+fresh-install catalog evidence has not been fabricated or advanced.
+
 ## Order Batch No (source-only delivery)
 
 New final placements issue a server-owned `orderBatchNo`, for example

@@ -207,6 +207,9 @@ import type {
   HeadquarterZonePage,
   HealthStatus,
   ImmEligibilityInput,
+  ImmExtractCategories,
+  ImmExtractView,
+  ImmExtractWrite,
   ImmImport,
   ImmImportResult,
   ImmImportReview,
@@ -258,6 +261,7 @@ import type {
   ListDownloadLogsParams,
   ListHeadquarterZoneChoicesParams,
   ListHeadquartersParams,
+  ListImmunotherapyExtractCategoriesParams,
   ListImmunotherapyOrdersParams,
   ListInHouseStockParams,
   ListInventoryExpiryParams,
@@ -8402,6 +8406,343 @@ export const useSetHeadquarterStatus = <
   TContext
 > => {
   return useMutation(getSetHeadquarterStatusMutationOptions(options));
+};
+
+export const getListImmunotherapyExtractCategoriesUrl = (
+  params?: ListImmunotherapyExtractCategoriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/immunotherapy-extract-settings/categories?${stringifiedParams}`
+    : `/api/v1/admin/immunotherapy-extract-settings/categories`;
+};
+
+/**
+ * @summary Categories
+ */
+export const listImmunotherapyExtractCategories = async (
+  params?: ListImmunotherapyExtractCategoriesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmExtractCategories> => {
+  return customFetch<ImmExtractCategories>(
+    getListImmunotherapyExtractCategoriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListImmunotherapyExtractCategoriesQueryKey = (
+  params?: ListImmunotherapyExtractCategoriesParams,
+) => {
+  return [
+    `/api/v1/admin/immunotherapy-extract-settings/categories`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListImmunotherapyExtractCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListImmunotherapyExtractCategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListImmunotherapyExtractCategoriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>
+  > = ({ signal }) =>
+    listImmunotherapyExtractCategories(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListImmunotherapyExtractCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>
+>;
+export type ListImmunotherapyExtractCategoriesQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Categories
+ */
+
+export function useListImmunotherapyExtractCategories<
+  TData = Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListImmunotherapyExtractCategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listImmunotherapyExtractCategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListImmunotherapyExtractCategoriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetImmunotherapyExtractSettingsUrl = (categoryId: string) => {
+  return `/api/v1/admin/immunotherapy-extract-settings/${categoryId}`;
+};
+
+/**
+ * @summary Read
+ */
+export const getImmunotherapyExtractSettings = async (
+  categoryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmExtractView> => {
+  return customFetch<ImmExtractView>(
+    getGetImmunotherapyExtractSettingsUrl(categoryId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetImmunotherapyExtractSettingsQueryKey = (
+  categoryId: string,
+) => {
+  return [
+    `/api/v1/admin/immunotherapy-extract-settings/${categoryId}`,
+  ] as const;
+};
+
+export const getGetImmunotherapyExtractSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetImmunotherapyExtractSettingsQueryKey(categoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>
+  > = ({ signal }) =>
+    getImmunotherapyExtractSettings(categoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: categoryId !== null && categoryId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImmunotherapyExtractSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>
+>;
+export type GetImmunotherapyExtractSettingsQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Read
+ */
+
+export function useGetImmunotherapyExtractSettings<
+  TData = Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImmunotherapyExtractSettingsQueryOptions(
+    categoryId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSaveImmunotherapyExtractSettingsUrl = (categoryId: string) => {
+  return `/api/v1/admin/immunotherapy-extract-settings/${categoryId}`;
+};
+
+/**
+ * @summary Write
+ */
+export const saveImmunotherapyExtractSettings = async (
+  categoryId: string,
+  immExtractWrite: ImmExtractWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmExtractView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmExtractView>(
+    getSaveImmunotherapyExtractSettingsUrl(categoryId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(immExtractWrite),
+    },
+  );
+};
+
+export const getSaveImmunotherapyExtractSettingsMutationKey = () =>
+  ["saveImmunotherapyExtractSettings"] as const;
+
+export const getSaveImmunotherapyExtractSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveImmunotherapyExtractSettings>>,
+    TError,
+    SaveImmunotherapyExtractSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveImmunotherapyExtractSettings>>,
+  TError,
+  SaveImmunotherapyExtractSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSaveImmunotherapyExtractSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveImmunotherapyExtractSettings>>,
+    SaveImmunotherapyExtractSettingsMutationVariables
+  > = (props) => {
+    const { categoryId, data } = props ?? {};
+
+    return saveImmunotherapyExtractSettings(categoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveImmunotherapyExtractSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveImmunotherapyExtractSettings>>
+>;
+export type SaveImmunotherapyExtractSettingsMutationBody =
+  BodyType<ImmExtractWrite>;
+export type SaveImmunotherapyExtractSettingsMutationError =
+  ErrorType<ErrorEnvelope>;
+export type SaveImmunotherapyExtractSettingsMutationVariables = {
+  categoryId: string;
+  data: BodyType<ImmExtractWrite>;
+};
+
+/**
+ * @summary Write
+ */
+export const useSaveImmunotherapyExtractSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveImmunotherapyExtractSettings>>,
+    TError,
+    SaveImmunotherapyExtractSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveImmunotherapyExtractSettings>>,
+  TError,
+  SaveImmunotherapyExtractSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getSaveImmunotherapyExtractSettingsMutationOptions(options),
+  );
 };
 
 export const getListImmunotherapyOrdersUrl = (

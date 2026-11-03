@@ -72,6 +72,7 @@ from app.services.pricing_rules import PricingRuleError
 from app.api.v1.purchase_orders import router as purchase_orders_router
 from app.services.purchase_orders import POError
 from app.api.v1.immunotherapy import router as immunotherapy_router
+from app.api.v1.immunotherapy_extract import router as immunotherapy_extract_router
 from app.api.v1.kits import router as kits_router
 from app.api.v1.spt import router as spt_router
 from app.api.v1.lupin import router as lupin_router
@@ -419,6 +420,7 @@ def create_app() -> FastAPI:
     app.include_router(pricing_rules_router, prefix="/api/v1")
     app.include_router(purchase_orders_router, prefix="/api/v1")
     app.include_router(immunotherapy_router, prefix="/api/v1")
+    app.include_router(immunotherapy_extract_router, prefix="/api/v1")
     app.include_router(kits_router, prefix="/api/v1")
     app.include_router(spt_router, prefix="/api/v1")
     app.include_router(lupin_router, prefix="/api/v1")

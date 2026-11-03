@@ -1045,6 +1045,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
     : resource === 'pricing-rules'
     ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    : resource === 'immunotherapy-extract-settings'
+    ? /^\/(?:categories|[0-9a-f-]{36})$/i
     : resource === 'settlements'
     ? /^(?:|\/transactions|\/references\/(?:doctors|mrs|patients)|\/requests\/[0-9a-f-]{36}|\/history\/(?:IT|Kit|SPT|Lupin)\/[0-9a-f-]{36})$/
     : resource === 'in-house-stock'
@@ -1104,6 +1106,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const readScope = contactReadScope();
   const owner = state.user?.id;
   const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
+  const extractSettingsOperation = resource === 'immunotherapy-extract-settings';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
   const check = () => {
@@ -1138,6 +1141,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : resource === 'settlements'
       ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
         : 'Settlements could not be loaded. Check your connection and retry.'
+      : extractSettingsOperation
+      ? 'Shared Extract & Dilution settings could not be confirmed. Your edits are preserved; load saved settings before saving again.'
       : batchOperation
       ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
       : resource === 'in-house-stock'
@@ -1232,7 +1237,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     throw error;
   }
-  if (mutation && draftResource && !draftSubmission) {
+  if (mutation && extractSettingsOperation) {
+    if (data?.categoryId !== path.slice(1) || data.version !== body.expected_version + 1
+        || JSON.stringify(data.rows) !== JSON.stringify(body.rows)) throw uncertain();
+  } else if (mutation && draftResource && !draftSubmission) {
     if (!validOrderDraft(data, draftKind, path.slice(1))) throw uncertain();
   } else if (batchOperation) {
     if (path === '/batch-settings') {

@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0086_immunotherapy_extract": "automatic",
     "0086_it_pricing_rules": "automatic",
     "0085_placement_email_details": "automatic",
     "0084_allergen_expiry": "automatic",

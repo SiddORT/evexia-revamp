@@ -11,8 +11,12 @@ const SCHEMA = 'evexia.immunotherapy-orders/1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function output(orders, preferences, format) {
   const context = JSON.stringify({ dateFormat: preferences.dateFormat, timeZone: preferences.resolvedTimeZone || preferences.timeZone, clock: preferences.clock, cellEncoding: 'apostrophe-v1' });
+  const mr = getSession().user?.identity_kind === 'mr';
+  const transferable = (details) => !mr ? details : { ...details, groups: details.groups.map((group) => ({
+    ...group, items: group.items.map(({ extract, dilution, clinicalAssignment, ...item }) => item),
+  })) };
   const rows = [HEADERS, ...orders.map(({ id, number, date, ...details }) => [
-    SCHEMA, 'immunotherapy', context, id, number, exportDate(date, preferences), JSON.stringify(details), '[]',
+    SCHEMA, 'immunotherapy', context, id, number, exportDate(date, preferences), JSON.stringify(transferable(details)), '[]',
   ])];
   const blob = format === 'csv' ? new Blob([writeOrderCsv(rows)], { type: 'text/csv;charset=utf-8' }) : writeOrderWorkbook(rows);
   if (blob.size > TRANSFER_MAX_BYTES) throw new Error('Export exceeds 8 MB. Narrow filters; no partial download.');
@@ -23,7 +27,7 @@ export function createImmunotherapyTransferAdapter(filters, onSaved) {
   const ownerGuard = reportingIdentityGuard();
   return {
     instructions: getSession().user?.identity_kind === 'mr'
-      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update only unpriced Confirmed orders, not Admin-reviewed or historically priced orders. Do not supply MRP, allergen rates, extract, dilution or PO number. Attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle/SUB identities and file associations. Patient snapshots never create masters.`
+      ? `Use the original eight-column template and real associated Patient/Doctor IDs. The MR assignment must be your signed-in saved MR ID (${getSession().user.mr_id}); other MR assignments are rejected. Create new orders in the order form with a verified prescription first. Imports can update only unpriced Confirmed orders, not Admin-reviewed or historically priced orders. Do not supply MRP, allergen rates, extract, dilution or PO number. Exports omit Admin-owned clinical values; saved values are retained by the server, never recalculated on correction. Attachment metadata in a spreadsheet cannot attach files. Retain saved dates, versions, bottle/SUB identities and file associations. Patient snapshots never create masters.`
       : 'Create new orders in the form with a verified patient prescription first. New MR orders already use suborder_mrp_v1: retain each grouped SUB with one MRP and its saved children, never split it for conversion. Their saved category/Mix limits apply to composition edits. For historical orders only, Admin explicitly adopts suborder_mrp_v1 with every original issued SUB retained separately. Children carry result (mm), optional extract and dilution (ml). Approval requires complete header pricing and clinical quantities. Empty values remain not recorded. PO is optional. Historical prices and totals remain unchanged without explicit conversion. Retain saved dates, versions, IDs and prescription associations. Approved/closed orders are read-only.',
     release(blob, filename) {
       const guard = prepared.get(blob);

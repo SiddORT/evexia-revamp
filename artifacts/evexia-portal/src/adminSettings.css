@@ -1,3 +1,12 @@
+.imm-extract-settings__field { display: grid; gap: .4rem; margin: 1rem 0; max-width: 36rem; }
+.imm-extract-settings__field input, .imm-extract-settings__field select { width: 100%; min-width: 0; }
+.imm-extract-settings fieldset { min-width: 0; margin: 1rem 0; }
+.imm-extract-settings__table-wrap { overflow-x: auto; }
+.imm-extract-settings__table { width: 100%; border-collapse: collapse; }
+.imm-extract-settings__table th, .imm-extract-settings__table td { padding: .6rem; text-align: left; }
+.imm-extract-settings__table input { width: 100%; min-width: 6rem; }
+.imm-extract-settings__table small { display: block; font-weight: normal; }
+.imm-extract-settings .batch-settings-help { overflow-wrap: anywhere; }
 .admin-settings-body .batch-settings { font-size: 13px; line-height: 1.5; }
 .batch-settings .batch-settings-fields { border: 0; padding: 0; margin: 20px 0; min-width: 0; }
 .batch-settings-fields legend { padding: 0; color: var(--admin-text); font-size: 13px; font-weight: 700; }

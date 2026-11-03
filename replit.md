@@ -17,6 +17,18 @@ deploy without authorization for that operation.
 
 # Development release compatibility
 
+Shared Immunotherapy Extract & Dilution settings are protected Super Admin
+configuration for new MR category/Mix final placements only. Use explicit
+category-ranked ml pairs; one/two-child bottles use the first one/two rows of the
+same table. Never infer clinical quantities, repack saved bottles or reapply
+settings to history. Assignment and immutable provenance are saved atomically;
+manual Admin edits and approval requirements remain. Forward
+`0086_immunotherapy_extract`, readiness/maintenance compatibility, API/generated
+source and coordinated development metadata are prepared but unapplied by this
+work. Only source/diff review and source generation/formatting were performed;
+no tests, validation/release wrappers, runtime probes, restarts, migrations,
+deployments or live clinical edits. See `docs/immunotherapy-backend.md`.
+
 Allergen expiry source uses Kolkata start-of-expiry-date exclusion, separate
 Expiring Soon/Expired Products views, actual purchase/manufacturing cost only,
 immutable reasoned disposal and one protected-Admin default-SMTP daily digest.

@@ -135,6 +135,10 @@ def prepare_suborders(groups, previous, error, *, mr=False):
         for item in group["items"]:
             if item.get("suborderId") is not None or item.get("rate") is not None:
                 raise error("Suborder children have no separate SUB number or price.", 422, "imm_suborder")
+            # Placement evidence stays immutable even after a manual override.
+            # Never accept provenance from a client or reapply current settings.
+            if old_items.get(item["allergenId"], {}).get("clinicalAssignment"):
+                item["clinicalAssignment"] = deepcopy(old_items[item["allergenId"]]["clinicalAssignment"])
             # A missing Admin value in MR corrections is not permission to erase it.
             if mr:
                 retained = old_items.get(item["allergenId"], {})

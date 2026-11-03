@@ -121,3 +121,4 @@
 - [Allergen concentration meaning](allergen-concentration-meaning.md) — catalogue concentration strings have no approved display unit; preserve historical descriptions without interpretation.
 - [MR Immunotherapy grouping](mr-immunotherapy-grouping-policy.md) — new MR placement only: category/Mix batches of three; saved membership and unrelated historical policy remain intact.
 - [Allergen expiry cost authority](allergen-expiry-cost-policy.md) — Kolkata expiry-day exclusion, actual cost only, immutable past loss and no automatic digest replay.
+- [Immunotherapy extract policy](immunotherapy-extract-policy.md) — smaller bottles use the same ranked table; configured values never authorize clinical inference or historical reapplication.

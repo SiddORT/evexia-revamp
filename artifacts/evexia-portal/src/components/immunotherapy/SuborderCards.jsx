@@ -4,6 +4,7 @@ import SearchableSelect from '../admin/SearchableSelect.jsx';
 import { DOSES, skinResultError } from '../../services/serverImmunotherapy.js';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { MR_GROUPING_POLICY, mrCompositionError } from '../../services/immunotherapyGrouping.js';
+import ClinicalAssignment from './ClinicalAssignment.jsx';
 
 // Canonical suborder cards: header SUB id + MRP, expandable rows. No bottle UI.
 export default function SuborderCards({ groups, savedGroups = [], onChange, errors, disabled, readOnly, admin, allergenOptions, allergens, allergenList, dosage, entries, setEntries, onUpdate, hideSuborders = false }) {
@@ -61,7 +62,8 @@ export default function SuborderCards({ groups, savedGroups = [], onChange, erro
               return <div className="imm-sub__row" role="row" key={it.allergenId}>
                 <span role="cell" data-label="Sr. No.">{ii + 1 + (hideSuborders ? groups.slice(0, gi).reduce((count, group) => count + group.items.length, 0) : 0)}</span>
                 <span role="cell" data-label="Allergen" className="imm-sub__name">{it.allergen?.name || a?.name || 'Saved allergen'}
-                  {concentration.trim() && <span className="imm-cell-sub">Concentration: {concentration}</span>}</span>
+                  {concentration.trim() && <span className="imm-cell-sub">Concentration: {concentration}</span>}
+                  {admin && <ClinicalAssignment item={it} />}</span>
                 <span data-label="Skin Test Result (mm)">{disabled || readOnly ? it.result : <input inputMode="decimal" id={`imm-r-${gi}-${ii}`} aria-label={`Skin test result in mm for ${it.allergen?.name || 'allergen'} in ${g.id}`} value={it.result} aria-invalid={Boolean(errors[rk])} onChange={(ev) => updItem(g.id, it.allergenId, { result: ev.target.value })} />}{errors[rk] && <em className="imm-error" role="alert">{errors[rk]}</em>}</span>
                 <span data-label="Available quantity">Unavailable</span>
                 {['extract', 'dilution'].map((f) => <span data-label={f === 'extract' ? 'Extract (ml)' : 'Dilution (ml)'} key={f}>{admin ? <>

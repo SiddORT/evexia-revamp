@@ -3373,6 +3373,45 @@ export interface ImmEligibilityInput {
   values: ImmWrite | OrderApproval;
 }
 
+export interface ImmExtractCategory {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface ImmExtractCategories {
+  items: ImmExtractCategory[];
+  nextOffset: number | null;
+}
+
+export interface ImmExtractPair {
+  dilution?: string | null;
+  extract?: string | null;
+}
+
+export interface ImmExtractView {
+  categoryId: string;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  rows: ImmExtractPair[];
+  version: number;
+}
+
+export interface ImmExtractWrite {
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  rows: ImmExtractPair[];
+}
+
 export type ImmInputDosage =
   (typeof ImmInputDosage)[keyof typeof ImmInputDosage];
 
@@ -13915,6 +13954,23 @@ export type ListHeadquarterZoneChoicesParams = {
    * @maximum 1000000
    */
   offset?: number;
+};
+
+export type ListImmunotherapyExtractCategoriesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
 };
 
 export type ListImmunotherapyOrdersParams = {
