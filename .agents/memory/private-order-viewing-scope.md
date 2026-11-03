@@ -25,3 +25,13 @@ for protected Super Admin, without extending access to ordinary Admin/staff.
 **How to apply:** Reuse the isolated authenticated PDF/image viewer and existing
 server authorization. Do not infer permission to preview unsaved selections,
 change upload requirements, or introduce public file links.
+
+MR may also preview verified, server-uploaded Immunotherapy prescriptions in the
+order form before saving the order, as well as retained prescriptions on edit.
+
+**Why:** The user explicitly requested the same preview used in other forms for
+the uploaded prescription shown on the MR Immunotherapy order-entry screen.
+
+**How to apply:** Reuse the authenticated viewer and existing attachment-read
+permission for verified files only; local, pending and unverified files remain
+outside this extension.
