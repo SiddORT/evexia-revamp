@@ -45,6 +45,17 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+MR Dashboard and Targets report only the authenticated MR's saved financial-year
+target and approved-order sales across Immunotherapy, SPT, Kits and Lupin.
+Approved/In process, Shipped and Delivered contribute by saved order date;
+pending submissions, drafts and returned orders do not. Unknown saved prices
+make aggregates explicitly incomplete, not zero. Admin target CRUD, settlements
+and demo Payments remain separate. This delivery is source-only and untested:
+no tests, builds, checks, validation/release wrappers, runtime/browser probes,
+service activation, migrations, live business mutations or deployments were run.
+Only offline API/client generation and formatting were used. See
+`docs/mr-sales-achievement.md` for scope, scan limits and verification boundaries.
+
 MR-origin Immunotherapy placement has a narrow exception to the generic
 order-event rules: preserve both existing bells, but external delivery is one
 protected Super Admin email only, using the required Immunotherapy placement

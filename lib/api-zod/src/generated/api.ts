@@ -2453,6 +2453,17 @@ export const provisionMRBodyUsernameOneMin = 3;
 export const provisionMRBodyUsernameOneMax = 32;
 export const uploadFileQueryFilenameMax = 255;
 export const replaceFileQueryFilenameMax = 255;
+export const mrSalesAchievementQueryStartYearOneMax = 9998;
+export const mrSalesAchievementQueryOffsetDefault = 0;
+export const mrSalesAchievementQueryOffsetMin = 0;
+export const mrSalesAchievementQueryOffsetMax = 20000;
+export const mrSalesAchievementQueryLimitDefault = 25;
+export const mrSalesAchievementQueryLimitMax = 100;
+export const mrSalesYearsQueryOffsetDefault = 0;
+export const mrSalesYearsQueryOffsetMin = 0;
+export const mrSalesYearsQueryOffsetMax = 10000;
+export const mrSalesYearsQueryLimitDefault = 50;
+export const mrSalesYearsQueryLimitMax = 100;
 export const resolvePortalHostnameQueryHostnameMax = 253;
 
 /**
@@ -44328,17 +44339,108 @@ export const GetHealthStatusResponse = zod.unknown();
 export const GetReadinessResponse = zod.unknown();
 
 /**
+ * @summary Report
+ */
+
+export const mrSalesAchievementQueryPeriodDefault = `all`;
+
+export const MrSalesAchievementQueryParams = zod.object({
+  start_year: zod
+    .union([
+      zod.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(mrSalesAchievementQueryStartYearOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  period: zod
+    .enum(["all", "Q1", "Q2", "Q3", "Q4"])
+    .default(mrSalesAchievementQueryPeriodDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(mrSalesAchievementQueryOffsetMin)
+    .max(mrSalesAchievementQueryOffsetMax)
+    .default(mrSalesAchievementQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(mrSalesAchievementQueryLimitMax)
+    .default(mrSalesAchievementQueryLimitDefault),
+});
+
+export const MrSalesAchievementResponse = zod.object({
+  complete: zod.boolean(),
+  currentYear: zod.number().int(),
+  dateFrom: zod.string(),
+  dateTo: zod.string(),
+  items: zod.array(
+    zod.object({
+      amount: zod.union([zod.string(), zod.null()]),
+      contribution: zod.union([zod.string(), zod.null()]),
+      date: zod.string(),
+      key: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      number: zod.string(),
+      status: zod.enum(["In process", "Shipped", "Delivered"]),
+    }),
+  ),
+  knownSales: zod.string(),
+  limit: zod.number().int(),
+  mrId: zod.string(),
+  offset: zod.number().int(),
+  percentage: zod.union([zod.string(), zod.null()]),
+  period: zod.enum(["all", "Q1", "Q2", "Q3", "Q4"]),
+  remaining: zod.union([zod.string(), zod.null()]),
+  startYear: zod.number().int(),
+  target: zod.union([zod.string(), zod.null()]),
+  targetState: zod.enum(["active", "missing", "inactive", "deleted"]),
+  total: zod.number().int(),
+  unavailableOrders: zod.number().int(),
+});
+
+/**
+ * @summary Years
+ */
+
+export const MrSalesYearsQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(mrSalesYearsQueryOffsetMin)
+    .max(mrSalesYearsQueryOffsetMax)
+    .default(mrSalesYearsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(mrSalesYearsQueryLimitMax)
+    .default(mrSalesYearsQueryLimitDefault),
+});
+
+export const MrSalesYearsResponse = zod.object({
+  currentYear: zod.number().int(),
+  items: zod.array(zod.number().int()),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Feed
  */
 export const ListOrderNotificationsResponse = zod.object({
   items: zod.array(
     zod.object({
-      message: zod.union([zod.string(), zod.null()]).optional(),
       amount: zod.union([zod.string(), zod.null()]),
       createdAt: zod.coerce.date(),
       event: zod.string(),
       id: zod.string().uuid(),
       kind: zod.enum(["immunotherapy", "spt", "lupin", "kits"]),
+      message: zod.union([zod.string(), zod.null()]).optional(),
       mrName: zod.string(),
       number: zod.string(),
       read: zod.boolean(),

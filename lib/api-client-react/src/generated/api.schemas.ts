@@ -6313,6 +6313,84 @@ export interface MRReview {
   valid: boolean;
 }
 
+export type MRSalesOrderKind =
+  (typeof MRSalesOrderKind)[keyof typeof MRSalesOrderKind];
+
+export const MRSalesOrderKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type MRSalesOrderStatus =
+  (typeof MRSalesOrderStatus)[keyof typeof MRSalesOrderStatus];
+
+export const MRSalesOrderStatus = {
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+} as const;
+
+export interface MRSalesOrder {
+  amount: string | null;
+  contribution: string | null;
+  date: string;
+  key: string;
+  kind: MRSalesOrderKind;
+  number: string;
+  status: MRSalesOrderStatus;
+}
+
+export type MRSalesReportPeriod =
+  (typeof MRSalesReportPeriod)[keyof typeof MRSalesReportPeriod];
+
+export const MRSalesReportPeriod = {
+  all: "all",
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+} as const;
+
+export type MRSalesReportTargetState =
+  (typeof MRSalesReportTargetState)[keyof typeof MRSalesReportTargetState];
+
+export const MRSalesReportTargetState = {
+  active: "active",
+  missing: "missing",
+  inactive: "inactive",
+  deleted: "deleted",
+} as const;
+
+export interface MRSalesReport {
+  complete: boolean;
+  currentYear: number;
+  dateFrom: string;
+  dateTo: string;
+  items: MRSalesOrder[];
+  knownSales: string;
+  limit: number;
+  mrId: string;
+  offset: number;
+  percentage: string | null;
+  period: MRSalesReportPeriod;
+  remaining: string | null;
+  startYear: number;
+  target: string | null;
+  targetState: MRSalesReportTargetState;
+  total: number;
+  unavailableOrders: number;
+}
+
+export interface MRSalesYears {
+  currentYear: number;
+  items: number[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export type MRStatusStatus =
   (typeof MRStatusStatus)[keyof typeof MRStatusStatus];
 
@@ -6985,12 +7063,12 @@ export const OrderNotificationAlertKind = {
 } as const;
 
 export interface OrderNotificationAlert {
-  message?: string | null;
   amount: string | null;
   createdAt: string;
   event: string;
   id: string;
   kind: OrderNotificationAlertKind;
+  message?: string | null;
   mrName: string;
   number: string;
   read: boolean;
@@ -16256,6 +16334,45 @@ export type ReplaceFileParams = {
    * @minimum 1
    */
   expected_version: number;
+};
+
+export type MrSalesAchievementParams = {
+  start_year?: number | null;
+  period?: MrSalesAchievementPeriod;
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type MrSalesAchievementPeriod =
+  (typeof MrSalesAchievementPeriod)[keyof typeof MrSalesAchievementPeriod];
+
+export const MrSalesAchievementPeriod = {
+  all: "all",
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+} as const;
+
+export type MrSalesYearsParams = {
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
 };
 
 export type ResolvePortalHostnameParams = {

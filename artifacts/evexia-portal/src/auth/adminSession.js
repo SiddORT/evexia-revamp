@@ -29,6 +29,44 @@ function publish(next) {
 export const getSession = () => state;
 export const subscribeSession = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
 
+// Read-only MR-self reporting. No Admin target permissions or MR selector.
+export async function mrSalesRequest(path = '', { params = {}, signal } = {}) {
+  if (!['', '/years'].includes(path)) throw new SessionError('Unsupported sales report.');
+  const epoch = generation;
+  const scope = contactReadScope();
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || scope !== contactReadScope() || state.status !== 'authenticated' || !token
+      || state.user?.identity_kind !== 'mr' || !state.user?.mr_id) {
+      throw new SessionError('Your MR session changed. Retry after signing in.', 401);
+    }
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'mr');
+  check();
+  let response, data;
+  try {
+    response = await fetch(`/api/v1/mr/sales-achievement${path}?${new URLSearchParams(params)}`, {
+      credentials: 'same-origin', cache: 'no-store', headers: { Authorization: `Bearer ${token}` },
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
+    });
+    data = await response.json();
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new SessionError('Sales achievement could not be loaded. Refresh or retry; no estimates are shown.');
+  }
+  if (pending) await pending;
+  check();
+  if (!response.ok) {
+    if (response.status === 401) await verifySession(true, 'mr');
+    throw new SessionError(response.status === 401 ? 'Session checked. Retry explicitly.'
+      : response.status === 403 ? 'Sales achievement requires your active saved MR identity.'
+      : data?.error?.code === 'mr_sales_limit' ? 'This period exceeds the safe 20,000-order reporting limit. Select a quarter. No partial achievement is shown.'
+      : 'Sales achievement is unavailable. Refresh or retry; no estimates are shown.', response.status);
+  }
+  return data;
+}
+
 // A user ID alone does not distinguish privileged reads from MR-scoped reads.
 export const contactReadScope = (user = state.user) => JSON.stringify([
   user?.id ?? null, user?.identity_kind ?? null, user?.mr_id ?? null,

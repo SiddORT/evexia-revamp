@@ -247,6 +247,21 @@ textarea.mrw-input { padding: 10px 12px; min-height: 88px; }
 }
 .mrw-do-explain { margin-top: 12px; font-size: 12px; color: var(--admin-text-soft); display: grid; gap: 6px; }
 .mrw-do-explain p { margin: 0; }
+.mrw-sales-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 240px)); gap: 16px; }
+.mrw-sales-ranges { margin: 0; padding-left: 18px; color: var(--admin-text-soft); font-size: 12px; display: grid; gap: 6px; }
+.mrw-sales-table { min-width: 0; table-layout: fixed; }
+.mrw-sales-table caption { text-align: left; padding: 0 0 12px; }
+.mrw-sales-table th, .mrw-sales-table td { overflow-wrap: anywhere; white-space: normal; padding: 10px 8px; }
+.mrw-sales-label { display: none; }
+@media (max-width: 800px) {
+  .mrw-sales-table, .mrw-sales-table tbody { display: block; width: 100%; }
+  .mrw-sales-table caption { display: block; }
+  .mrw-sales-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .mrw-sales-table tr { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 0; border-top: 1px solid var(--admin-border); }
+  .mrw-sales-table td { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; padding: 0; border: 0; }
+  .mrw-sales-label { display: block; font-size: 12px; font-weight: 700; color: var(--admin-text-soft); }
+}
+@media (max-width: 450px) { .mrw-sales-filters { grid-template-columns: minmax(0, 1fr); } }
 .mrw-do-domains { min-width: 0; margin-top: 12px; table-layout: fixed; }
 .mrw-do-domains caption { text-align: left; font-weight: 700; padding-bottom: 8px; }
 .mrw-do-domains td, .mrw-do-domains th { overflow-wrap: anywhere; }

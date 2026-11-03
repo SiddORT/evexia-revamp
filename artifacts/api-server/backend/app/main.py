@@ -84,6 +84,7 @@ from app.api.v1.products import router as products_router
 from app.api.v1.opening_stock import router as opening_stock_router
 from app.api.v1.in_house_stock import router as in_house_stock_router
 from app.api.v1.settlements import router as settlements_router
+from app.api.v1.mr_sales import router as mr_sales_router
 from app.api.v1.order_notifications import router as order_notifications_router
 
 
@@ -407,6 +408,7 @@ def create_app() -> FastAPI:
     app.include_router(opening_stock_router, prefix="/api/v1")
     app.include_router(in_house_stock_router, prefix="/api/v1")
     app.include_router(settlements_router, prefix="/api/v1")
+    app.include_router(mr_sales_router, prefix="/api/v1")
     app.include_router(order_notifications_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.include_router(role_urls_router, prefix="/api/v1")

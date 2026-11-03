@@ -317,6 +317,8 @@ import type {
   MRPage,
   MRResponse,
   MRReview,
+  MRSalesReport,
+  MRSalesYears,
   MRStatus,
   MRUsername,
   MRVersion,
@@ -329,6 +331,8 @@ import type {
   MovementSaved,
   MovementSummary,
   MrOrderPatientLanguagesParams,
+  MrSalesAchievementParams,
+  MrSalesYearsParams,
   OpeningActivityPage,
   OpeningBalanceDoctorChoicesParams,
   OpeningBalanceDoctorPage,
@@ -43700,6 +43704,200 @@ export function useGetReadiness<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetReadinessQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getMrSalesAchievementUrl = (params?: MrSalesAchievementParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/mr/sales-achievement?${stringifiedParams}`
+    : `/api/v1/mr/sales-achievement`;
+};
+
+/**
+ * @summary Report
+ */
+export const mrSalesAchievement = async (
+  params?: MrSalesAchievementParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRSalesReport> => {
+  return customFetch<MRSalesReport>(getMrSalesAchievementUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getMrSalesAchievementQueryKey = (
+  params?: MrSalesAchievementParams,
+) => {
+  return [`/api/v1/mr/sales-achievement`, ...(params ? [params] : [])] as const;
+};
+
+export const getMrSalesAchievementQueryOptions = <
+  TData = Awaited<ReturnType<typeof mrSalesAchievement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: MrSalesAchievementParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof mrSalesAchievement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getMrSalesAchievementQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof mrSalesAchievement>>
+  > = ({ signal }) => mrSalesAchievement(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof mrSalesAchievement>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type MrSalesAchievementQueryResult = NonNullable<
+  Awaited<ReturnType<typeof mrSalesAchievement>>
+>;
+export type MrSalesAchievementQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Report
+ */
+
+export function useMrSalesAchievement<
+  TData = Awaited<ReturnType<typeof mrSalesAchievement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: MrSalesAchievementParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof mrSalesAchievement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getMrSalesAchievementQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getMrSalesYearsUrl = (params?: MrSalesYearsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/mr/sales-achievement/years?${stringifiedParams}`
+    : `/api/v1/mr/sales-achievement/years`;
+};
+
+/**
+ * @summary Years
+ */
+export const mrSalesYears = async (
+  params?: MrSalesYearsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRSalesYears> => {
+  return customFetch<MRSalesYears>(getMrSalesYearsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getMrSalesYearsQueryKey = (params?: MrSalesYearsParams) => {
+  return [
+    `/api/v1/mr/sales-achievement/years`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getMrSalesYearsQueryOptions = <
+  TData = Awaited<ReturnType<typeof mrSalesYears>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: MrSalesYearsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof mrSalesYears>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getMrSalesYearsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof mrSalesYears>>> = ({
+    signal,
+  }) => mrSalesYears(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof mrSalesYears>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type MrSalesYearsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof mrSalesYears>>
+>;
+export type MrSalesYearsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Years
+ */
+
+export function useMrSalesYears<
+  TData = Awaited<ReturnType<typeof mrSalesYears>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: MrSalesYearsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof mrSalesYears>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getMrSalesYearsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

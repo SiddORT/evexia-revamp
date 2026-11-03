@@ -8,12 +8,12 @@
 import type { OrderNotificationAlertKind } from "./orderNotificationAlertKind";
 
 export interface OrderNotificationAlert {
-  message?: string | null;
   amount: string | null;
   createdAt: Date;
   event: string;
   id: string;
   kind: OrderNotificationAlertKind;
+  message?: string | null;
   mrName: string;
   number: string;
   read: boolean;

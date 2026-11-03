@@ -13,6 +13,10 @@ is insufficient for a non-protected identity. Sales Target is deliberately not
 an assignable domain in the eight-master staff catalogue. MR self-service,
 achievements, commissions, payroll and broader reports are outside this feature.
 
+The later MR-self achievement extension is explicitly approved and read-only:
+see [MR sales achievement](mr-sales-achievement.md). It does not grant MR access
+to any Admin target CRUD/transfer endpoint or broaden staff permissions.
+
 ## Financial-period and monetary contract
 
 - One live target per server MR and financial start year, including inactive
