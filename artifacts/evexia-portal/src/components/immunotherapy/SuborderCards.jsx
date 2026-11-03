@@ -6,7 +6,7 @@ import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { MR_GROUPING_POLICY, mrCompositionError } from '../../services/immunotherapyGrouping.js';
 
 // Canonical suborder cards: header SUB id + MRP, expandable rows. No bottle UI.
-export default function SuborderCards({ groups, savedGroups = [], onChange, errors, disabled, readOnly, admin, allergenOptions, allergens, allergenList, dosage, entries, setEntries, onUpdate }) {
+export default function SuborderCards({ groups, savedGroups = [], onChange, errors, disabled, readOnly, admin, allergenOptions, allergens, allergenList, dosage, entries, setEntries, onUpdate, hideSuborders = false }) {
   const [open, setOpen] = useState(() => new Set(groups.slice(0, 1).map((g) => g.id)));
   const confirm = usePlatformConfirm();
   const [msg, setMsg] = useState({});
@@ -37,11 +37,11 @@ export default function SuborderCards({ groups, savedGroups = [], onChange, erro
     upd(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }));
     requestAnimationFrame(() => document.getElementById(`imm-sub-toggle-${g.id}`)?.focus());
   }
-  return <div className="imm-sub-list" data-testid="list-imm-suborders">
+  return <div className={`imm-sub-list${hideSuborders ? ' imm-sub-list--flat' : ''}`} data-testid="list-imm-suborders">
     {groups.map((g, gi) => {
-      const isOpen = open.has(g.id); const e = entries[g.id] || { allergenId: '', result: '' };
+      const isOpen = hideSuborders || open.has(g.id); const e = entries[g.id] || { allergenId: '', result: '' };
       return <div className="imm-sub" key={g.id} data-testid={`card-imm-suborder-${gi}`}>
-        <div className="imm-sub__head">
+        {!hideSuborders && <div className="imm-sub__head">
           <button type="button" id={`imm-sub-toggle-${g.id}`} className="imm-sub__toggle" aria-expanded={isOpen} aria-controls={`imm-sub-body-${gi}`} onClick={() => toggle(g.id)} data-testid={`button-imm-sub-toggle-${gi}`}>
             <span className="imm-sub__id">Suborder Id : <b>{g.id}</b></span>
             <ChevronDown size={16} aria-hidden="true" className={isOpen ? 'imm-sub__chev imm-sub__chev--open' : 'imm-sub__chev'} />
@@ -49,17 +49,17 @@ export default function SuborderCards({ groups, savedGroups = [], onChange, erro
           {admin && <label className="imm-sub__mrp">MRP (INR)
             <input id={`imm-mrp-${g.id}`} inputMode="decimal" value={g.mrp ?? ''} disabled={disabled || readOnly} placeholder="Not recorded" aria-label={`MRP in INR for ${g.id}`} aria-invalid={Boolean(errors[`mrp-${g.id}`])} aria-describedby={errors[`mrp-${g.id}`] ? `imm-mrp-error-${gi}` : undefined}
               onChange={(ev) => upd(g.id, (x) => ({ ...x, mrp: ev.target.value }))} data-testid={`input-imm-mrp-${gi}`} /></label>}
-        </div>
+        </div>}
         {errors[`mrp-${g.id}`] && <p className="imm-error" id={`imm-mrp-error-${gi}`} role="alert">{errors[`mrp-${g.id}`]}</p>}
         {isOpen && <div className="imm-sub__body" id={`imm-sub-body-${gi}`}>
-          {g.compositionPolicy === MR_GROUPING_POLICY && <p className="imm-hint">Saved MR grouping: up to three Mix allergens from one category; No Mix stays alone. Existing children retain their placement basis, even if masters change. Edits never repack or renumber saved SUBs.</p>}
-          <div className="imm-sub__table" role="table" aria-label={`Allergens in suborder ${g.id}`}>
-            <div className="imm-sub__row imm-sub__row--head" role="row">{['Sr. No.', 'Allergen Name', 'Skin Test Result (mm)', 'Available quantity', 'Extract (ml)', 'Dilution (ml)', 'Action'].map((h) => <span role="columnheader" key={h}>{h}</span>)}</div>
+          {!hideSuborders && g.compositionPolicy === MR_GROUPING_POLICY && <p className="imm-hint">Saved MR grouping: up to three Mix allergens from one category; No Mix stays alone. Existing children retain their placement basis, even if masters change. Edits never repack or renumber saved SUBs.</p>}
+          <div className="imm-sub__table" role="table" aria-label={hideSuborders ? 'Allergen details' : `Allergens in suborder ${g.id}`}>
+            <div className={`imm-sub__row imm-sub__row--head${hideSuborders && gi > 0 ? ' imm-sub__row--continuation' : ''}`} role="row">{['Sr. No.', 'Allergen Name', 'Skin Test Result (mm)', 'Available quantity', 'Extract (ml)', 'Dilution (ml)', 'Action'].map((h) => <span role="columnheader" key={h}>{h}</span>)}</div>
             {g.items.map((it, ii) => { const k = `${g.id}-${it.allergenId}`; const rk = `result-${k}`;
               const a = allergenList.find((a) => a.id === it.allergenId);
               const concentration = it.allergen?.concentration || a?.concentration || '';
               return <div className="imm-sub__row" role="row" key={it.allergenId}>
-                <span role="cell" data-label="Sr. No.">{ii + 1}</span>
+                <span role="cell" data-label="Sr. No.">{ii + 1 + (hideSuborders ? groups.slice(0, gi).reduce((count, group) => count + group.items.length, 0) : 0)}</span>
                 <span role="cell" data-label="Allergen" className="imm-sub__name">{it.allergen?.name || a?.name || 'Saved allergen'}
                   {concentration.trim() && <span className="imm-cell-sub">Concentration: {concentration}</span>}</span>
                 <span data-label="Skin Test Result (mm)">{disabled || readOnly ? it.result : <input inputMode="decimal" id={`imm-r-${gi}-${ii}`} aria-label={`Skin test result in mm for ${it.allergen?.name || 'allergen'} in ${g.id}`} value={it.result} aria-invalid={Boolean(errors[rk])} onChange={(ev) => updItem(g.id, it.allergenId, { result: ev.target.value })} />}{errors[rk] && <em className="imm-error" role="alert">{errors[rk]}</em>}</span>

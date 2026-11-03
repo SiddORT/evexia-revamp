@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import SearchableSelect from '../admin/SearchableSelect.jsx';
 import { request, skinResultError } from '../../services/serverImmunotherapy.js';
@@ -65,7 +65,6 @@ export default function MRPlacementAllergens({ groups, onChange, entries, setEnt
     setMessage('');
   }
   return <div className="imm-allergen-results">
-    <p className="imm-hint">Mix allergens share a proposed suborder only within the same category, up to three per SUB. No Mix allergens stay alone. IDs are issued only on successful placement; the server rechecks current master metadata.</p>
     {entryRows.map(([key, entry], index) => {
       const update = (patch) => setEntries((current) => ({ ...current, [key]: { ...entry, ...patch } }));
       return <div className="imm-allergen-entry" key={key}>
@@ -83,8 +82,7 @@ export default function MRPlacementAllergens({ groups, onChange, entries, setEnt
     {loading && <p role="status">Loading grouping metadata for saved draft selections…</p>}
     {metadataError && <div role="alert"><p>{metadataError} No selected results have been discarded.</p><button type="button" className="imm-link-btn" disabled={disabled || loading} onClick={() => setRevision((n) => n + 1)}>Retry grouping metadata</button></div>}
     {!items.length && <p className="imm-hint">No allergens added.</p>}
-    {groups.filter((g) => g.items.length).map((g, gi) => <section key={g.id} aria-label={`Proposed suborder ${gi + 1}`}>
-      <h3 className="imm-hint">Proposed suborder {gi + 1} — ID not yet issued</h3>
+    {groups.filter((g) => g.items.length).map((g, gi) => <Fragment key={g.id}>
       {errors[`group-${g.id}`] && <p className="imm-error" role="alert">{errors[`group-${g.id}`]}</p>}
       {g.items.map((item, ii) => {
         const ek = `result-${g.id}-${item.allergenId}`;
@@ -101,6 +99,6 @@ export default function MRPlacementAllergens({ groups, onChange, entries, setEnt
             onClick={() => onChange(arrangeMRSelections(groups.flatMap((group) => group.items.filter((_, index) => group.id !== g.id || index !== ii))))}><Trash2 size={16} aria-hidden="true" /></button>}
         </div>;
       })}
-    </section>)}
+    </Fragment>)}
   </div>;
 }

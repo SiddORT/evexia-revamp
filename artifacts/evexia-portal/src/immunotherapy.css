@@ -194,6 +194,11 @@
 @media (max-width: 960px) { .imm-aside { order: 0; } }
 
 .imm-sub-list { display: grid; gap: 8px; min-width: 0; }
+.imm-sub-list--flat { gap: 0; }
+.imm-sub-list--flat > .imm-sub { border: 0; border-radius: 0; }
+.imm-sub-list--flat .imm-sub__body { border-top: 0; padding: 0; }
+.imm-sub-list--flat .imm-sub__table { position: relative; }
+.imm-sub-list--flat .imm-sub__row--continuation { position: absolute; top: 0; left: 0; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
 .imm-sub { border: 1px solid var(--admin-border); border-radius: 8px; min-width: 0; background: var(--admin-surface); color: var(--admin-text); }
 .imm-sub__head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 10px 14px; }
 .imm-sub__toggle { display: inline-flex; align-items: center; gap: 10px; background: none; color: inherit; border: 0; font: inherit; cursor: pointer; text-align: left; min-height: 44px; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }

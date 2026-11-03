@@ -33,6 +33,9 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
   const { date } = useAdminDateFormatters();
   const mrPortal = portal === 'mr';
   const groups = order.groups || [];
+  const displayGroups = mrPortal && groups.length
+    ? [{ id: 'mr-allergens', items: groups.flatMap((group) => group.items || []) }]
+    : groups;
   const canonical = order.pricingBasis === 'suborder_mrp_v1';
   const legacy = (order.pricingBasis || 'legacy_bottle_mrp') === 'legacy_bottle_mrp';
   const [viewing, setViewing] = useState(null);
@@ -67,14 +70,14 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
           <p className="kits-hint">Saved order facts only; order status is not evidence of treatment administration.</p>
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-allergens"><h2 id="imm-s-allergens">Saved allergen composition and results</h2>
-          <p className="kits-hint">Saved SUB or original bottle membership and allergen details are retained; missing history is not inferred from current masters.</p>
-          {groups.length ? groups.map((group, index) => <section className="imm-saved-order__bottle" key={group.id || index} aria-label={`Saved group ${index + 1}`}>
-            <h3>{canonical ? `Suborder ${group.id}` : `Saved group ${index + 1}`}</h3>
-            {group.compositionPolicy === MR_GROUPING_POLICY && <p className="kits-hint">Saved MR category/Mix grouping. This membership and SUB identity do not change when masters change.</p>}
+          {!mrPortal && <p className="kits-hint">Saved SUB or original bottle membership and allergen details are retained; missing history is not inferred from current masters.</p>}
+          {displayGroups.length ? displayGroups.map((group, index) => <section className={mrPortal ? undefined : 'imm-saved-order__bottle'} key={group.id || index} aria-label={mrPortal ? 'Saved allergens' : `Saved group ${index + 1}`}>
+            {!mrPortal && <h3>{canonical ? `Suborder ${group.id}` : `Saved group ${index + 1}`}</h3>}
+            {!mrPortal && group.compositionPolicy === MR_GROUPING_POLICY && <p className="kits-hint">Saved MR category/Mix grouping. This membership and SUB identity do not change when masters change.</p>}
             {!mrPortal && <Facts rows={[['Internal group', group.id], ...(legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : canonical ? [['MRP', money(parseAmount(group.mrp))]] : [])]} />}
             {group.items?.length ? <ul className="imm-saved-order__allergens">{group.items.map((item, itemIndex) => <li key={`${item.allergenId}-${itemIndex}`}>
               <Facts rows={[
-                ...(!canonical ? [['Suborder ID', item.suborderId || 'Not assigned']] : []), ['Allergen', item.allergen?.name],
+                ...(!mrPortal && !canonical ? [['Suborder ID', item.suborderId || 'Not assigned']] : []), ['Allergen', item.allergen?.name],
                 ...(!mrPortal ? [['Allergen identity', item.allergenId]] : []),
                 ['Concentration', item.allergen?.concentration], ['Skin test result (mm)', item.result],
                 ...(canonical ? [['Extract (ml)', item.extract ?? 'Not recorded'], ['Dilution (ml)', item.dilution ?? 'Not recorded']]

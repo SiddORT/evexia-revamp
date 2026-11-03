@@ -473,7 +473,7 @@ function Editor({ order, mode, draft }) {
         </section>
 
         <section className="admin-panel imm-section" aria-labelledby="imm-h-allergens"><h2 id="imm-h-allergens" tabIndex={-1}>Allergen Details</h2>
-          <p className="imm-hint">{mrPortal && isNew ? 'Select an allergen, enter its Skin Test Result (mm), then press Add. Proposed groups are not server-issued SUBs.'
+          <p className="imm-hint">{mrPortal ? 'Select an allergen, enter its Skin Test Result (mm), then press Add.'
             : canonical ? 'Each SUB has one MRP, regardless of child count. Extract and dilution are independent ml entries, not calculated recipes. These quantities may remain blank when saving a draft.' : 'Select an allergen, enter its Skin Test Result (mm), then press Add. Each allergen can appear only once in the same saved group.'}</p>
           {!canonical && adminReview && order && !readOnly && <div className="imm-reprice">
             <strong>{legacy ? 'Legacy pricing is shown read-only' : 'Previous grouping is shown read-only'}</strong>
@@ -482,13 +482,13 @@ function Editor({ order, mode, draft }) {
             <button type="button" className="admin-button" disabled={dis} onClick={convert} data-testid="button-imm-convert">Adopt suborder MRP in this draft</button>
             {convertMsg && <p className="imm-error" role="alert">{convertMsg}</p>}
           </div>}
-          {!canonical && !order && <p className="imm-hint">Suborder IDs are issued by the server on first save; Admin can then adopt suborder MRP for pricing edits.</p>}
+          {!mrPortal && !canonical && !order && <p className="imm-hint">Suborder IDs are issued by the server on first save; Admin can then adopt suborder MRP for pricing edits.</p>}
           {!readOnly && <ReferenceState source={allergens} label="allergens" />}
           <Err id="imm-groups-err" text={errors.groups} />
           {mrPortal && isNew ? <MRPlacementAllergens groups={v.groups} onChange={(groups) => setV((current) => ({ ...current,
             groups: typeof groups === 'function' ? groups(current.groups) : groups }))} entries={allergenEntries} setEntries={setAllergenEntries}
             allergens={allergens} disabled={dis} dosage={v.dosage} errors={errors} />
-          : canonical ? <SuborderCards groups={v.groups} savedGroups={order?.groups} onChange={(groups) => set({ groups })} errors={errors} disabled={dis} readOnly={readOnly} admin={adminReview}
+          : canonical ? <SuborderCards groups={v.groups} savedGroups={order?.groups} onChange={(groups) => set({ groups })} errors={errors} disabled={dis} readOnly={readOnly} admin={adminReview} hideSuborders={mrPortal}
             allergenOptions={allergenOptions} allergens={allergens} allergenList={ALLERGENS} dosage={v.dosage}
             entries={allergenEntries} setEntries={setAllergenEntries} onUpdate={() => save()} />
           : <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
@@ -497,7 +497,7 @@ function Editor({ order, mode, draft }) {
               const entry = allergenEntries[g.id] || { allergenId: '', result: '' };
               const editEntry = (patch) => setAllergenEntries((entries) => ({ ...entries, [g.id]: { allergenId: '', result: '', ...entries[g.id], ...patch } }));
               return <div className="imm-allergen-results" key={g.id}>
-                {v.groups.length > 1 && <h3 className="imm-hint">Saved group {gi + 1} (internal association retained)</h3>}
+                {!mrPortal && v.groups.length > 1 && <h3 className="imm-hint">Saved group {gi + 1} (internal association retained)</h3>}
                 {!readOnly && (!adminReview || !order) && <div className="imm-allergen-entry">
                   <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Allergen Name</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label={v.groups.length > 1 ? `Allergen Name for saved group ${gi + 1}` : 'Allergen Name'} value={entry.allergenId} options={allergenOptions} onSearch={allergens.onSearch} searchOptions={() => allergenOptions} onChange={(aid) => editEntry({ allergenId: aid, allergen: ALLERGENS.find((a) => a.id === aid) })} placeholder="Select allergen" invalid={Boolean(err)} describedBy={err ? `group-${g.id}-err` : undefined} disabled={dis || !v.dosage} /></div>
                   <label className="imm-field" htmlFor={`imm-entry-result-${gi}`}>Skin Test Result (mm)<input id={`imm-entry-result-${gi}`} inputMode="decimal" required value={entry.result} disabled={dis || !v.dosage} onChange={(e) => editEntry({ result: e.target.value })} aria-invalid={Boolean(err)} aria-describedby={err ? `group-${g.id}-err` : undefined} /></label>
@@ -512,7 +512,7 @@ function Editor({ order, mode, draft }) {
                   return <div className={`imm-item${adminReview ? ' imm-item--historical-rate' : ''}`} key={it.allergenId}>
                     <div className="imm-item__name">{it.allergen?.name || a?.name || 'Saved allergen'}
                       {concentration.trim() && <span className="imm-cell-sub">Concentration: {concentration}</span>}
-                      {it.suborderId && <span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId}</span>}</div>
+                      {!mrPortal && it.suborderId && <span className="imm-suborder" data-testid={`text-imm-suborder-${gi}-${ii}`}>Suborder {it.suborderId}</span>}</div>
                     <div className="imm-field"><label htmlFor={`imm-r-${gi}-${ii}`}>Skin Test Result (mm)</label><input id={`imm-r-${gi}-${ii}`} inputMode="decimal" required value={it.result} disabled={dis} aria-invalid={Boolean(errors[ek])} aria-describedby={errors[ek] ? `${ek}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, items: x.items.map((y) => y.allergenId === it.allergenId ? { ...y, result: e.target.value } : y) }))} /><Err id={`${ek}-err`} text={errors[ek]} /></div>
                     {adminReview && <div className="imm-field"><span>Historical rate (INR)</span><span>{money(parseAmount(it.rate))}</span></div>}
                     {!dis && (!adminReview || !order) && !it.suborderId && g.items.length > 1 && <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove unsaved ${it.allergen?.name || a?.name || 'allergen'}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button>}
