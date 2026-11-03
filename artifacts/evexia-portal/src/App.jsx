@@ -13,6 +13,7 @@ import Dashboard from './pages/admin/Dashboard.jsx';
 import { ORDER_DESTINATIONS } from './config/orders.js';
 const OrderPlaceholder = lazyRoute(() => import('./pages/admin/OrderPlaceholder.jsx'));
 const ImmunotherapyOrders = lazyRoute(() => import('./pages/admin/ImmunotherapyOrders.jsx'));
+const ImmunotherapyDrafts = lazyRoute(() => import('./pages/admin/ImmunotherapyDrafts.jsx'));
 const ImmunotherapyOrderFormPage = lazyRoute(() => import('./pages/admin/ImmunotherapyOrderFormPage.jsx'));
 const SptOrders = lazyRoute(() => import('./pages/admin/SptOrders.jsx'));
 const SptOrderFormPage = lazyRoute(() => import('./pages/admin/SptOrderFormPage.jsx'));
@@ -107,6 +108,7 @@ function App() {
       <Route path="/admin/inventory/move-stocks" component={MoveStocks} />
       <Route path="/admin/inventory/move-stocks/new" component={MoveStockFormPage} />
       <Route path="/admin/orders/immunotherapy" component={ImmunotherapyOrders} />
+      <Route path="/admin/orders/immunotherapy/drafts" component={ImmunotherapyDrafts} />
       <Route path="/admin/orders/immunotherapy/new">{() => <ImmunotherapyOrderFormPage key="new" mode="edit" />}</Route>
       <Route path="/admin/orders/immunotherapy/:id/edit">{(params) => <ImmunotherapyOrderFormPage key={params.id} id={params.id} mode="edit" />}</Route>
       <Route path="/admin/orders/immunotherapy/:id">{(params) => <ImmunotherapyOrderFormPage key={params.id} id={params.id} mode="view" />}</Route>

@@ -3,6 +3,7 @@ import { lazyRoute } from '../components/RouteLoadingBoundary.jsx';
 import { MROrderBoundary } from '../components/orders/OrderPortalContext.jsx';
 
 const ImmunotherapyOrders = lazyRoute(() => import('../pages/admin/ImmunotherapyOrders.jsx'));
+const ImmunotherapyDrafts = lazyRoute(() => import('../pages/admin/ImmunotherapyDrafts.jsx'));
 const ImmunotherapyForm = lazyRoute(() => import('../pages/admin/ImmunotherapyOrderFormPage.jsx'));
 const KitsOrders = lazyRoute(() => import('../pages/admin/KitsOrders.jsx'));
 const KitsForm = lazyRoute(() => import('../pages/admin/KitsOrderFormPage.jsx'));
@@ -18,10 +19,11 @@ export default function LiveOrders() {
   let screen;
   if (!kind || kind === 'new') screen = <section className="mrw-card"><h1>Orders</h1><p>Choose an order type to view saved orders or add an order. These orders are live and shared with Admin, not linked to demo sales or payments.</p></section>;
   else if (kind === 'immunotherapy' && parts.length === 1) screen = <ImmunotherapyOrders />;
+  else if (kind === 'immunotherapy' && id === 'drafts' && parts.length === 2) screen = <ImmunotherapyDrafts />;
   else if (kind === 'kits-consumables' && parts.length === 1) screen = <KitsOrders />;
   else if (kind === 'spt' && parts.length === 1) screen = <SptOrders />;
   else if (kind === 'lupin' && parts.length === 1) screen = <LupinOrders />;
-  else if (kind === 'immunotherapy' && id && parts.length <= 3 && (!action || (action === 'edit' && id !== 'new'))) {
+  else if (kind === 'immunotherapy' && id && id !== 'drafts' && parts.length <= 3 && (!action || (action === 'edit' && id !== 'new'))) {
     screen = <ImmunotherapyForm key={`${id}-${action || 'view'}`} id={id === 'new' ? undefined : id} mode={id === 'new' || action === 'edit' ? 'edit' : 'view'} />;
   } else if (kind === 'kits-consumables' && id && (parts.length === 2 || (parts.length === 3 && action === 'edit' && id !== 'new'))) {
     screen = <KitsForm key={`${id}-${action || 'view'}`} id={id === 'new' ? undefined : id} mode={action === 'edit' ? 'edit' : 'view'} />;

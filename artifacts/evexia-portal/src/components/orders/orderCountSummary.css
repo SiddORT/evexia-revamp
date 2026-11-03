@@ -7,3 +7,6 @@
 .order-count-summary__state { margin: 0 0 8px; font-size: 12px; color: var(--admin-text-soft); overflow-wrap: anywhere; }
 .order-count-summary__state:empty { margin: 0; }
 .order-count-summary__hidden { display: inline-block; width: 0; height: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.order-count-summary__cards--with-action { display: flex; flex-wrap: wrap; }
+.order-count-summary__cards--with-action > .order-count-summary__card { flex: 1 1 120px; }
+.order-count-summary__cards--with-action > .admin-button { flex: 0 1 auto; align-self: center; min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

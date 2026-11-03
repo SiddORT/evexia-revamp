@@ -177,6 +177,7 @@ export const staffPathAllowed = (path, user) => {
     })[workflow[2]];
     if (!resource) return false;
     if (!workflow[3]) return canReadResource(user, resource);
+    if (workflow[2] === 'immunotherapy' && workflow[3] === 'drafts' && !workflow[4]) return hasCapability(user, resource, 'add');
     if (workflow[3] === 'new') return hasCapability(user, resource, resource === 'stock_movement' ? 'create' : 'add');
     if (!/^[0-9a-f-]{36}$/i.test(workflow[3])) return false;
     return workflow[4] ? hasCapability(user, resource, 'edit') : canReadResource(user, resource);
