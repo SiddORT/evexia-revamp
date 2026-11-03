@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Plus, RefreshCw, Wallet } from 'lucide-react';
+import { ChevronDown, Filter, Plus, RefreshCw, Wallet } from 'lucide-react';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import TablePagination from '../admin/TablePagination.jsx';
 import KitsReferenceSelect from '../admin/KitsReferenceSelect.jsx';
@@ -151,6 +151,8 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     {notice && <div className="admin-feedback admin-feedback--success" role="status" data-testid="status-settlement-notice">{notice}</div>}
 
     <section className="admin-panel settle-panel" aria-label="Settlements">
+      <details className="settle-filter-disclosure">
+        <summary data-testid="button-toggle-settlement-filters"><Filter size={15} aria-hidden="true" />Filter records{filterCount > 0 && ` · ${filterCount} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
       <form className="settle-filters" noValidate onSubmit={apply} onReset={(e) => { e.preventDefault(); reset(); }}>
         <fieldset><legend>Order date</legend>
           <label>From<input type="date" value={draft.order_from} max={draft.order_to || undefined} onChange={(e) => set({ order_from: e.target.value })} data-testid="input-order-from" /></label>
@@ -177,6 +179,7 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
         {filterError && <p className="settle-err" role="alert">{filterError}</p>}
         <p className="settle-sub settle-filters__hint">Date ranges include both ends. Payment date matches recorded transactions only, so orders without payments are excluded when it is set.{filterCount ? ` ${filterCount} filter${filterCount > 1 ? 's' : ''} applied.` : ''}</p>
       </form>
+      </details>
 
       {canPost && !error && <div className="settle-selectbar">
         <label><input type="checkbox" checked={allOn} disabled={!visibleEligible.length || loading} onChange={toggleAll} data-testid="checkbox-select-page" />

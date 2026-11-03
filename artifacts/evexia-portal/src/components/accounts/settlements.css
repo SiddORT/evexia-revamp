@@ -12,7 +12,15 @@
 .settle-note svg { flex: none; color: var(--settle-accent); margin-top: 2px; }
 .settle-note p { margin: 0; } .settle-note strong { color: var(--settle-ink); }
 .settle-panel { padding: 0; overflow: hidden; }
-.settle-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px 16px; padding: 16px; border-bottom: 1px solid var(--settle-line); align-items: end; }
+.settle-filter-disclosure { min-width: 0; margin: 14px 16px; border: 1px solid var(--settle-line); border-radius: 8px; background: var(--admin-state-link); }
+.settle-filter-disclosure > summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--settle-ink); font-size: 12px; font-weight: 700; list-style: none; }
+.settle-filter-disclosure > summary::-webkit-details-marker { display: none; }
+.settle-filter-disclosure > summary svg { flex: none; }
+.settle-filter-disclosure > summary svg:last-child { margin-left: auto; transition: transform .16s ease; }
+.settle-filter-disclosure[open] > summary svg:last-child { transform: rotate(180deg); }
+.settle-filter-disclosure > summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .settle-filter-disclosure > summary svg:last-child { transition: none; } }
+.settle-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px 16px; padding: 16px; align-items: end; }
 .settle-filters fieldset { border: 1px solid var(--settle-line); border-radius: 10px; padding: 6px 10px 10px; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .settle-filters legend { font-size: 12px; font-weight: 700; color: var(--settle-soft); padding: 0 4px; }
 .settle-filters fieldset label { display: grid; gap: 4px; font-size: 12px; color: var(--settle-soft); }
