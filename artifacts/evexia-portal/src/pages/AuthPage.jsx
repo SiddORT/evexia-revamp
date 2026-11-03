@@ -14,7 +14,7 @@ export default function AuthPage({ role }) {
   return (
     <main className={`auth-page app-shell${isAdmin ? ' entry-theme' : ''}`} data-admin-theme={isAdmin ? theme : undefined}>
       <section className="auth-visual" aria-label={`${role.title} introduction`}>
-        <img src={`${import.meta.env.BASE_URL}${role.image.replace(/^\//, '')}`} alt="" />
+        <img src={`${import.meta.env.BASE_URL}${role.image.replace(/^\//, '')}`} alt="" style={{ objectPosition: role.imagePosition }} />
         <div className="auth-visual__overlay">
           <div className="auth-visual__content">
             <div className="eyebrow">EVEXIA / {role.short}</div>

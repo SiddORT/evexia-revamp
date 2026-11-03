@@ -5,7 +5,7 @@ export default function PortalCard({ role }) {
   return (
     <Link href={role.path} className="portal-card" data-testid={`link-portal-${role.short.toLowerCase()}`}>
       <div className="portal-card__visual">
-        <img src={role.image} alt="" />
+        <img src={role.image} alt="" style={{ objectPosition: role.imagePosition }} />
         <span className="portal-card__number">{role.short}</span>
       </div>
       <div className="portal-card__body">
