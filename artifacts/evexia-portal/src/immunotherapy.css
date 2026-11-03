@@ -86,6 +86,11 @@
 .imm-editor .imm-sub input { font-family: var(--font-sans); font-size: 13px; font-weight: 400; line-height: 1.5; }
 .imm-editor .searchable-select__control input,
 .imm-editor :is(.searchable-select__option, .searchable-select__empty) { font-size: 13px; font-weight: 400; line-height: 1.5; }
+.imm-editor .imm-order-parties { align-items: start; }
+.imm-editor .imm-order-parties > .imm-field { align-content: start; }
+.imm-editor .imm-order-parties .searchable-select__control,
+.imm-editor .imm-order-parties > .imm-field > input { box-sizing: border-box; height: 42px; min-height: 42px; }
+.imm-editor .imm-order-parties .searchable-select__control input { box-sizing: border-box; height: 40px; min-height: 0; padding: 0 10px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
 .imm-editor .imm-sub__toggle { font-size: 13px; line-height: 1.5; }
 .imm-editor :is(.imm-sub__id b, .imm-sub__name, .imm-sub__mrp) { font-weight: 600; }
 .imm-editor .imm-sub__mrp input { font-weight: 400; }

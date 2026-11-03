@@ -370,9 +370,9 @@ function Editor({ order, mode }) {
       <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="imm-link-btn" onClick={() => focusId(targetFor(k))} data-testid={`link-imm-error-${k}`}>{labelFor(k)}: {m}</button></li>)}</ul></div>}
     <div className="imm-layout">
       <div className="imm-main">
-        <section className="admin-panel imm-section" aria-labelledby="imm-h-patient"><h2 id="imm-h-patient">Patient</h2>
+        <section className="admin-panel imm-section" aria-labelledby="imm-h-patient"><h2 id="imm-h-patient">Order details</h2>
           <p className="imm-hint">Search by name, ID or phone.</p>
-          <div className="imm-grid" style={{ marginTop: 12 }}>
+          <div className="imm-grid imm-order-parties" style={{ marginTop: 12 }}>
             <div className="imm-field"><label htmlFor="imm-patientId">Patient</label>
                <SearchableSelect viewportMenu id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onSearch={patients.onSearch} searchOptions={() => mrPortal ? patients.liveItems.map((p) => ({ value: p.id, label: patientLabel(p, mrPortal) })) : patientOptions} onChange={choosePatient} placeholder="Find a patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
               {!readOnly && <ReferenceState source={patients} label="patients" />}
