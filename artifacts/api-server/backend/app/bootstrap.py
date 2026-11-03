@@ -13,7 +13,7 @@ from app.core.security import hash_password
 from app.db.models import AuditEvent, User
 from app.db.session import session_factory
 
-SUPER_ADMIN_EMAIL = "crm-admin@allergyevexia.in"
+SUPER_ADMIN_EMAIL = "reena.ai20206@gmail.com"
 _BOOTSTRAP_LOCK_ID = 145001
 
 

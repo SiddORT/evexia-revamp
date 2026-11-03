@@ -31,7 +31,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const isSuperAdminRecovery = !reset && kind === 'admin'
-    && identifier.trim().toLowerCase() === 'crm-admin@allergyevexia.in';
+    && identifier.trim().toLowerCase() === 'reena.ai20206@gmail.com';
   useEffect(() => {
     document.title = `${invitation ? 'Set password' : reset ? 'Reset password' : 'Forgot password'} — EVEXIA`;
     function acceptLink() {

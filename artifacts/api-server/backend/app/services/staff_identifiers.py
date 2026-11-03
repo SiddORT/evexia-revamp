@@ -23,7 +23,8 @@ def save_identifiers(db, profile, email, employee_code, staff_crypto):
             raise StaffError("Use an identifier with supported case normalization.", 422,
                              "staff_email_invalid" if field == "email" else "staff_employee_code_invalid")
         digest = current.lookup_index(value.lower())
-        if digest in (current.lookup_index("crm-admin@allergyevexia.in"),
+        if digest in (current.lookup_index("reena.ai20206@gmail.com"),
+                      current.lookup_index("crm-admin@allergyevexia.in"),
                       current.lookup_index("evx-001")):
             raise StaffError("This identifier is reserved for the protected administrator.", 409,
                              "staff_email_duplicate" if field == "email" else "staff_employee_code_duplicate")

@@ -28,3 +28,11 @@ builds, checks, probes, sends, business mutations, migrations or service activat
 
 **How to apply:** Do not describe prepared code/schema as runtime-verified or use
 automatic migration startup as a verification shortcut.
+
+Changing the Admin email does not authorize new notification rules or enabling
+additional sends.
+
+**Why:** The user said they will specify which notifications to send step by step.
+
+**How to apply:** Keep recipient-account maintenance separate from notification
+template, event and delivery activation changes.

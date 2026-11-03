@@ -164,6 +164,7 @@ def ready(db):
         ["0078_reserve_movements"],
         # Additive notification events retain account envelopes and anchors.
         ["0079_order_notifications"],
+        ["0080_admin_email"],
     ):
         raise AccountCryptoError()
     current = crypto()
@@ -172,7 +173,10 @@ def ready(db):
     )).one_or_none()
     if (row is None or not hmac.compare_digest(row.configuration_digest, current.configuration())
             or not hmac.compare_digest(row.protected_email_index,
-                                      current.lookup_index("crm-admin@allergyevexia.in"))):
+                                      current.lookup_index(
+                                          "reena.ai20206@gmail.com"
+                                          if revisions == ["0080_admin_email"]
+                                          else "crm-admin@allergyevexia.in"))):
         raise AccountCryptoError()
     return current
 
