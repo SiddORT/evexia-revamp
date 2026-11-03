@@ -414,7 +414,7 @@ function Editor({ order, mode, draft }) {
         if (!dirty && !hasAllergenEntry && !uploads.length) { dirtyRef.current = false; navigate(`${BASE}/${saved.id}`); }
       }} />}
     {mrPortal && order && !mrEditable(order) && <p className="imm-boundary">This saved order is read-only for MR because it is approved or closed.</p>}
-    {!uncertain && errList.length > 0 && <div className="imm-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="error-imm-summary"><strong>{errors.form && errList.length === 1 ? 'Save not completed — draft preserved' : `Fix ${errList.length} problem${errList.length > 1 ? 's' : ''} before saving`}</strong>
+    {!uncertain && errList.length > 0 && <div className="imm-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="error-imm-summary"><strong>{errors.form && errList.length === 1 ? persistent.unknown ? 'Draft save unconfirmed — entries preserved' : 'Save needs attention — entries preserved' : `Fix ${errList.length} problem${errList.length > 1 ? 's' : ''} before saving`}</strong>
       <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="imm-link-btn" onClick={() => focusId(targetFor(k))} data-testid={`link-imm-error-${k}`}>{labelFor(k)}: {m}</button></li>)}</ul></div>}
     <div className="imm-layout">
       <div className="imm-main">

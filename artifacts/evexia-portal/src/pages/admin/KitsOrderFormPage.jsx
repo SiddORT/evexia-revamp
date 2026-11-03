@@ -185,7 +185,9 @@ function Form({ draft }) {
       const keep = !asDraft && (uncertain || Boolean(error.ambiguous));
       setUncertain(keep);
       if (!keep) submission.current = null;
-      setErrors({ [error.stage || 'save']: error.message || 'Order was not saved. Your draft is preserved; retry.' });
+      setErrors({ [error.stage || 'save']: error.message || (asDraft
+        ? 'Draft save was not confirmed. Your entries are preserved; retry the unchanged draft save.'
+        : 'Order submission was not confirmed. Your entries are preserved; retry the unchanged submission.') });
       requestAnimationFrame(() => summaryRef.current?.focus());
     } finally { saving.current = false; setBusy(false); }
   }

@@ -48,6 +48,20 @@ locks editing/final submission until the same save is confirmed. Failures keep
 the working entries in the mounted editor; success/unknown states are announced
 accessibly. New edits after a saved snapshot are explicitly marked unsaved.
 
+Draft saves are confirmed against the draft ID, kind, positive integer version,
+readable saved timestamp and editor payload shape, not Purchase Order numbering
+or lines. Submission responses use the corresponding normal Immunotherapy,
+Kits or Lupin order validator, including the Kits create UUID safeguard.
+Malformed successes remain uncertain. Explicit retries retain the original
+draft ID, authenticated owner, payload, expected version and request key; only a
+valid confirmed response clears the draft-save lock and updates the resume URL.
+
+The response-validation correction was source-only: no checks, builds, browser
+or manual probes, service starts/restarts, migrations or deployments were run.
+Runtime success and recovery of any particular user's draft remain unverified.
+Previously reported release-log failures are separate, unverified blockers;
+this correction neither repairs them nor establishes release readiness.
+
 SPT retains the same records, source IDs, transfer contract and existing legacy
 numbers. Newly created SPT drafts use an internal `DRAFT-<UUID>` reference rather
 than incrementing the submitted-order sequence; the first final save allocates

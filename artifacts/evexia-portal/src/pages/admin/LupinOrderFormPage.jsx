@@ -132,7 +132,9 @@ function Form({ order: initialOrder, draft }) {
   useEffect(() => setNavigationGuard((target) => {
     if (!dirty.current) return false;
     if (saving.current || submission.current || reviewLock.current || draftLock.current) {
-      setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
+      setErrors({ save: draftLock.current
+        ? 'Keep this editor open and retry the unchanged draft save to confirm its outcome.'
+        : 'Keep this editor open and retry the unchanged submission to confirm its outcome.' });
       return true;
     }
     setLeave(target);
@@ -263,7 +265,7 @@ function Form({ order: initialOrder, draft }) {
     {uncertain && <p className="lupin-notice" role="alert">Order outcome is unconfirmed. Editing is locked. Retry the unchanged save to recover the same order without a duplicate.</p>}
     {!order && persistent.notice}
     {!order && persistent.saved && JSON.stringify(v) !== JSON.stringify(persistent.saved.payload.values) && <p role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
-    {Object.keys(errors).length > 0 && <div className="lupin-errors" role="alert" tabIndex={-1} ref={summary} data-testid="lupin-errors"><strong>Unable to save</strong><ul>{Object.entries(errors).map(([key, text]) => <li key={key}>{text}</li>)}</ul></div>}
+    {Object.keys(errors).length > 0 && <div className="lupin-errors" role="alert" tabIndex={-1} ref={summary} data-testid="lupin-errors"><strong>{persistent.unknown ? 'Draft save unconfirmed' : uncertain ? 'Order save unconfirmed' : 'Save needs attention'}</strong><ul>{Object.entries(errors).map(([key, text]) => <li key={key}>{text}</li>)}</ul></div>}
     <fieldset disabled={locked} className="lupin-form-fields">
       <section className="admin-panel lupin-section" aria-labelledby="lupin-h-det"><h2 id="lupin-h-det">Order details</h2>
         <div className="lupin-entry__identity">

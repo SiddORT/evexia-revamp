@@ -1,16 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { getSession, purchaseOrderRequest } from '../../auth/adminSession.js';
+import { validOrderDraft as validDraft } from '../../auth/orderDraftResponse.js';
 import { prepareOrderPlacement, announceOrderChange } from '../../services/orderFreshness.js';
 import { useAdminDateFormatters } from '../admin/adminPreferences.js';
 import OrderPortalLayout, { useOrderBase, useOrderActions } from './OrderPortalContext.jsx';
 
 const request = (kind, path = '', options) => purchaseOrderRequest(path, options, `order-drafts/${kind}`);
 const queryId = () => new URLSearchParams(window.location.search).get('draft');
-const validDraft = (value, kind, id) => value?.id === id && value.kind === kind
-  && Number.isSafeInteger(value.version) && value.version > 0
-  && typeof value.updatedAt === 'string' && value.payload?.values
-  && typeof value.payload.values === 'object' && !Array.isArray(value.payload.values);
 
 // Only new-order routes use this boundary. Submitted editors never become drafts.
 export function DraftEntry({ kind, children }) {
@@ -68,7 +65,7 @@ export function usePersistentOrderDraft(kind, loaded) {
       const keep = unknown || Boolean(cause.ambiguous);
       setUnknown(keep);
       if (!keep) pending.current = null;
-      setNotice(`${cause.message} ${keep ? 'Editing and final submission are locked. Retry the unchanged draft save.' : 'Your entries remain in this tab; the saved draft was not replaced.'}`);
+      setNotice(`${cause.message} ${keep ? 'Editing and final submission are locked. Retry the unchanged draft save.' : 'Your entries remain in this tab; draft save was not confirmed.'}`);
       throw cause;
     } finally { sending.current = false; setBusy(false); }
   }

@@ -2,6 +2,7 @@
 import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission, hasCapability, canReadResource, isSuperAdminIdentity, workflowAllowed } from './capabilities.js';
 import { captureExportPreferences, exportPreferenceHeader } from '../services/exportPreferences.js';
 import { privateUploadMessage, privateRequestReference, privateFileId } from './privateFileErrors.js';
+import { validOrderDraft } from './orderDraftResponse.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -1036,6 +1037,10 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
   const draftResource = /^order-drafts\/(?:immunotherapy|kits|lupin)$/.test(resource);
+  const draftKind = draftResource ? resource.split('/')[1] : null;
+  const draftSubmission = draftResource && path.endsWith('/submit');
+  // Submission returns the normal order contract, never a Purchase Order.
+  const responseResource = draftSubmission ? `${draftKind}-orders` : resource;
   const allowed = draftResource
     ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
     : resource === 'settlements'
@@ -1125,6 +1130,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : resource === 'in-house-stock'
       ? mutation ? 'Save outcome is unconfirmed. Your draft is preserved; check the save outcome before another save.'
         : 'Unable to load in-house concentrate reserves. Check your connection and retry.'
+      : draftResource
+      ? mutation ? draftSubmission
+        ? 'Order submission outcome is unconfirmed. Keep this editor open and retry the unchanged submission.'
+        : 'Draft save outcome is unconfirmed. Keep this editor open and retry the unchanged draft save.'
+        : 'Unable to load saved drafts. Check your connection and retry.'
       : mutation
       ? 'Save outcome is unconfirmed. Retry the same reviewed order to check or finish this save safely.'
       : 'Unable to load purchase orders. Check your connection and retry.');
@@ -1203,7 +1213,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     throw error;
   }
-  if (batchOperation) {
+  if (mutation && draftResource && !draftSubmission) {
+    if (!validOrderDraft(data, draftKind, path.slice(1))) throw uncertain();
+  } else if (batchOperation) {
     if (path === '/batch-settings') {
       if (!['manual', 'system', 'product'].includes(data?.mode) || !Number.isSafeInteger(data?.version) || data.version < 1
         || typeof data.prefix !== 'string' || !/^[A-Za-z0-9._-]{0,64}$/.test(data.prefix) || typeof data.policyToken !== 'string' || !data.policyToken) throw uncertain();
@@ -1229,7 +1241,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (path === '/patients') {
       if (!data?.id || data.source !== 'spt' || typeof data.name !== 'string') throw uncertain();
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.patients)) throw uncertain();
-  } else if (mutation && resource === 'lupin-orders') {
+  } else if (mutation && responseResource === 'lupin-orders') {
     if (path.startsWith('/attachments/')) {
       if (!data?.id || data.cancelled !== true) throw uncertain();
     } else if (path === '/import/commit') {
@@ -1238,12 +1250,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       || !data.doctor || !data.mr || !Array.isArray(data.patients)
       || !Array.isArray(data.attachments) || !Number.isInteger(data.patientCount)
       || typeof data.price !== 'string' || typeof data.total !== 'string') throw uncertain();
-  } else if (mutation && resource === 'kits-orders') {
+  } else if (mutation && responseResource === 'kits-orders') {
     if (path === '/import/commit') {
       if (data?.imported !== body.entries.length || !Array.isArray(data.orders)) throw uncertain();
     } else if (!data?.id || !data?.number || !Number.isInteger(data.version)
       || !data.doctor || !data.billing || !data.recipient || !Array.isArray(data.attachments)) throw uncertain();
-  } else if (mutation && resource === 'immunotherapy-orders') {
+  } else if (mutation && responseResource === 'immunotherapy-orders') {
     if (path === '/patient-registration') {
       if (!data?.id || !data?.doctorId || data.mrId !== state.user?.mr_id) throw uncertain();
     } else if (path === '/import/commit') {
@@ -1270,6 +1282,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (path === '/expiry/disposals' && !data.id) throw uncertain();
     if (path === '/expiry/costs' && (!data.id || typeof data.unitCost !== 'string' || !data.provenance)) throw uncertain();
   } else if (mutation && (!data?.id || (resource !== 'inventory' && !data?.number) || (!(resource === 'inventory' && path === '/adjustments') && !Array.isArray(data.lines)))) throw uncertain();
+  if (mutation && draftSubmission && (!Number.isSafeInteger(data?.version) || data.version < 1
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data?.id || ''))) {
+    // Includes the UUID safeguard in the normal Kits create wrapper, which
+    // draft submission does not call. Never accept HTTP success alone.
+    throw uncertain();
+  }
   if (download) {
     if (!/^[0-9a-f-]{36}$/i.test(response.headers.get('X-Download-Log') || '')) throw new SessionError('Download logging could not be confirmed. No file was released. Retry.');
     serverDownloads.set(data, downloadGuard); serverInitiations.delete(downloadKey);
