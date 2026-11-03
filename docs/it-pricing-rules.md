@@ -152,3 +152,84 @@ fabricated. The coordinated source target now names the new revision; a later
 authorized lifecycle/startup may attempt schema reconciliation. That activation
 and any required release/fresh-install review are separate from this source
 delivery.
+
+## Pricing editor error investigation — 2026-11-03
+
+This investigation used source/diff review, the two supplied screenshots, and
+already-existing workflow log files only. No tests, builds, typechecks,
+regression/release checks or completion/release wrappers, browser/runtime
+probes, service starts/restarts, migrations, live-data changes, or deployment
+were performed. Runtime behavior of the changes remains unverified.
+
+### Confirmed source defect in save confirmation
+
+The shared authenticated transport let Pricing Rule mutations fall through to
+its Purchase Order success validator. A valid Pricing Rule has neither an order
+`number` nor `lines`, so even a successful create was converted into an ambiguous
+save error **before** `serverPricingRules.savePricingRule` could parse it.
+The existing API workflow logs contain a `POST /admin/pricing-rules` with status
+201. This supports the source finding, but does not establish the outcome of
+any particular pictured attempt: the logs intentionally contain no request body
+or saved-rule identifier.
+
+Pricing Rule mutations now use their own response branch. The transport checks
+the basic identity/version envelope and the existing strict service parser still
+confirms UUIDs, categories, explicit saved allergen membership, normalized
+two-decimal rates, the date-only cutoff, and the expected resulting version.
+No strict Pricing Rule validation was removed.
+
+The editor still freezes category/allergen IDs, saved category attribution,
+normalized rates, cutoff, key and expected edit version once per attempt.
+The backend still validates active references under locks and atomically stores
+membership, encrypted rates/date, encrypted actor-bound request/outcome, and an
+audit event. Identical retries retrieve that original outcome before current
+master validation or edit-version checks. No persistence, encryption, request
+canonicalization, or retry-history schema was changed.
+
+Genuine uncertainty retains the exact attempt and locks edits. A later rejected
+HTTP retry alone also cannot clear an already-uncertain attempt to permit a new
+key. The uncertainty notice is no longer concatenated with a second transport
+warning. Locked selectors describe saving/unconfirmed state, rather than
+incorrectly asking for categories already selected.
+
+### Allergen loading: operational cause remains unresolved
+
+Source trace: the editor passes the complete sorted category-ID set; the
+transport appends a separate `categoryIds` query parameter for each UUID;
+FastAPI accepts that repeated list. The protected reference service validates
+all selected categories are active, filters active/non-deleted allergens by
+that set and literal search, computes the filtered total/fingerprint, and
+orders bounded pages by category and allergen. The response schema retains
+allergen `categoryId`; the client checks pagination, UUIDs, active status,
+selected-category membership, and the catalogue fingerprint before displaying
+category groups. No comma-separated encoding defect was found.
+
+Existing API logs contain successful reference-route responses (status 200),
+but record only `/admin/pricing-rules/references/{kind}` without query
+parameters, kind, response contents or browser-side fetch/JSON errors. They
+cannot identify which request belongs to the screenshot, whether the browser
+received a complete JSON body, or whether a timeout/intermediary failure or a
+different running revision was involved. Older frontend startup logs also
+contain port-in-use errors; these do not establish the cause of this request.
+There is insufficient evidence to claim the underlying dropdown failure has
+been repaired. No speculative query, serialization, keyring, or schema change
+was made, and no local dummy choices were introduced.
+
+Reference delivery/invalid-JSON/service-rejection errors now name allergen or
+category choices, retain selections, and point to Retry choices without
+exposing arbitrary backend details or blaming every error on the connection.
+Strictly malformed successful replies still fail rather than becoming empty
+choices. Loading, successful empty results, failures and obsolete-scope
+responses retain their distinct existing handling.
+
+Select all now uses a Pricing-only content-width compact action and short
+scope text. All-pages matching, explicit finite membership, the 100-allergen
+union cap, all-or-nothing updates, cancellation, busy feedback and keyboard
+focus behavior are unchanged in the shared New/Edit/Copy control.
+
+Resolving the remaining operational question requires a separately authorized
+investigation correlating a failing browser reference request's status,
+response content type, JSON validity and timing with its API request log and
+running revision. Do not record tokens, cookies, request bodies or sensitive
+response content. This handoff does not authorize starting services, probes,
+regression/release checks, migrations or deployment.

@@ -1134,10 +1134,15 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const downloadGuard = download ? reportingIdentityGuard() : null;
   const form = file === undefined ? null : new FormData();
   if (form) form.append('file', file);
-  const uncertain = () => {
+  const pricingChoices = resource === 'pricing-rules' && path.startsWith('/references/');
+  const pricingReadLabel = pricingChoices ? path.endsWith('/allergens') ? 'Allergen choices' : 'Category choices' : 'Pricing Rules';
+  const pricingReadAction = pricingChoices ? 'Retry choices; your selections are retained.' : 'Retry loading Pricing Rules.';
+  const uncertain = (reason = 'delivery') => {
     const error = new SessionError(resource === 'pricing-rules'
       ? mutation ? 'Pricing Rule save outcome is unconfirmed. Your editor is preserved. Retry only the unchanged submission to confirm or finish it safely.'
-        : 'Pricing Rules could not be loaded. Check your connection and retry.'
+        : reason === 'response' ? `${pricingReadLabel} could not be loaded because the service returned an invalid response. ${pricingReadAction}`
+        : reason === 'service' ? `${pricingReadLabel} are unavailable from the service. ${pricingReadAction}`
+        : `${pricingReadLabel} could not be loaded because the request did not complete. ${pricingReadAction}`
       : resource === 'settlements'
       ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
         : 'Settlements could not be loaded. Check your connection and retry.'
@@ -1175,7 +1180,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(file ? 60000 : 20000)]) : AbortSignal.timeout(file ? 60000 : 20000),
     });
     data = response.ok && download ? await response.blob() : await response.json();
-  } catch (error) { if (signal?.aborted) throw error; throw uncertain(); }
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    // A received HTTP/invalid-JSON reply is not evidence of a connection failure.
+    throw uncertain(response ? response.ok ? 'response' : 'service' : 'delivery');
+  }
   if (pending) await pending;
   try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
   if (!response.ok) {
@@ -1188,7 +1197,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     const error = new SessionError(resource === 'pricing-rules'
       ? response.status === 403 ? 'Pricing Rules require the protected Super Admin.'
-        : response.status >= 500 ? uncertain().message
+        : response.status >= 500 ? uncertain('service').message
+        : pricingChoices ? data?.error?.code === 'pricing_rule_category'
+          ? 'Allergen choices require categories that are still active. Your selections are retained; review the selected categories and retry choices.'
+          : `${pricingReadLabel} request was rejected. ${pricingReadAction}`
         : typeof data?.error?.message === 'string' && (response.status !== 422 || /^pricing_rule_/.test(data?.error?.code || '')) ? data.error.message
         : response.status === 422 ? 'Check the category, active matching allergens, real cutoff date, and both required nonnegative INR prices (up to 12 integer and 6 source decimal places).'
         : 'Pricing Rules request failed. Your editor is preserved.'
@@ -1237,7 +1249,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     throw error;
   }
-  if (mutation && extractSettingsOperation) {
+  if (mutation && resource === 'pricing-rules') {
+    // This is a PricingRule, not a PurchaseOrder (no number or lines).
+    // serverPricingRules.savePricingRule strictly parses the rule and confirms
+    // exact submitted categories, saved target membership, rates, date and version.
+    if (!data?.id || !Number.isSafeInteger(data.version) || data.version < 1) throw uncertain('response');
+  } else if (mutation && extractSettingsOperation) {
     if (data?.categoryId !== path.slice(1) || data.version !== body.expected_version + 1
         || JSON.stringify(data.rows) !== JSON.stringify(body.rows)) throw uncertain();
   } else if (mutation && draftResource && !draftSubmission) {

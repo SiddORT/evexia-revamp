@@ -46,6 +46,8 @@
 .pricing-multi .searchable-select__control input { font-size: 0.875rem; }
 .pricing-multi__menu { z-index: 40; overscroll-behavior: contain; }
 .pricing-multi__scope { display: grid; gap: 6px; padding: 6px 8px 10px; border-bottom: 1px solid var(--admin-border); }
+.pricing-multi__scope-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.pricing-multi__scope .pricing-multi__scope-action { flex: 0 0 auto; width: auto; min-height: 30px; padding: 4px 10px; }
 .pricing-multi__heading { margin: 0; padding: 10px 8px 4px; font-size: 0.8125rem; color: var(--admin-text-soft); overflow-wrap: anywhere; }
 .pricing-multi .searchable-select__option { justify-content: flex-start; font-size: 0.875rem; }
 .pricing-multi__check { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--admin-border); border-radius: 4px; }

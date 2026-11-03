@@ -7,7 +7,7 @@ const caption = (item) => `${item.name}${item.status !== 'active' ? ` (${item.st
 
 // Pricing-only finite membership. Never turns category selection into a wildcard.
 export default function PricingMultiSelect({ id, label, values, onChange, fetchPage, scopeKey = '',
-  categories, disabled, invalid, describedBy, max = 100, onBusyChange }) {
+  categories, disabled, disabledPlaceholder = 'Selection locked while saving', invalid, describedBy, max = 100, onBusyChange }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [rows, setItems] = useState([]);
@@ -134,15 +134,17 @@ export default function PricingMultiSelect({ id, label, values, onChange, fetchP
           aria-autocomplete="list" aria-required="true" aria-invalid={Boolean(invalid)}
           aria-describedby={[`${id}-summary`, describedBy].filter(Boolean).join(' ')}
           aria-activedescendant={open && items[active] ? `${id}-option-${active}` : undefined}
-          autoComplete="off" maxLength={100} disabled={disabled} value={open ? query : ''} placeholder={disabled ? 'Choose active categories first' : `Search ${label.toLowerCase()}…`}
+          autoComplete="off" maxLength={100} disabled={disabled} value={open ? query : ''} placeholder={disabled ? disabledPlaceholder : `Search ${label.toLowerCase()}…`}
           onFocus={() => setOpen(true)} onClick={() => setOpen(true)} onKeyDown={keyboard}
           onChange={(e) => { cancel(); setItems([]); setTotal(0); setState('loading'); setActive(-1); setQuery(e.target.value); setOpen(true); }} />
         <ChevronDown className="searchable-select__chevron" size={16} aria-hidden="true" onClick={() => { if (!disabled) { input.current?.focus(); setOpen(true); } }} />
       </div>
       {open && !disabled && <div ref={menu} className="searchable-select__menu pricing-multi__menu" style={style}>
-        {categories && <div className="pricing-multi__scope"><small>{query.trim() ? 'All matching active allergens in selected categories, across every page.' : 'Every active allergen in selected categories, across every page.'}</small>
-          <button type="button" className="admin-button admin-button--secondary" disabled={allBusy} onClick={selectAll}>{allBusy ? 'Selecting…' : 'Select all'}</button>
-          {allBusy && <button type="button" className="admin-button admin-button--secondary" onClick={() => { cancelAll(); setFeedback('Select all cancelled. Selection unchanged.'); }}>Cancel Select all</button>}
+        {categories && <div className="pricing-multi__scope"><small>Matching active allergens in selected categories · all pages</small>
+          <div className="pricing-multi__scope-actions">
+            <button type="button" className="admin-button admin-button--secondary pricing-multi__scope-action" disabled={allBusy} onClick={selectAll}>{allBusy ? 'Selecting…' : 'Select all'}</button>
+            {allBusy && <button type="button" className="admin-button admin-button--secondary pricing-multi__scope-action" onClick={() => { cancelAll(); setFeedback('Select all cancelled. Selection unchanged.'); }}>Cancel Select all</button>}
+          </div>
         </div>}
         <div id={`${id}-options`} role="listbox" aria-label={label} aria-multiselectable="true" aria-busy={state === 'loading'}>
           {groups.map((group) => <div key={group.id} role={categories ? 'group' : undefined} aria-label={group.name}>

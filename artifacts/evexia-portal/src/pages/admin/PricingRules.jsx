@@ -215,9 +215,11 @@ function RuleEditor({ editor, onClose, onSaved }) {
       if (!mounted.current) return;
       busyRef.current = false; setBusy(false);
       const kind = classify(cause);
-      if (kind === 'uncertain') {
-        setAttempt({ ...current, state: 'uncertain' });
-        setMessage(`The save outcome could not be confirmed${cause?.message ? `: ${cause.message}` : ''}. The rule may or may not have been saved. Retry the exact same submission; fields are locked so the server can recognise it.`);
+      if (kind === 'uncertain' || uncertain) {
+        // A later HTTP rejection alone does not settle an earlier unknown save.
+        // Keep its exact frozen body/key/version; never unlock a fresh attempt.
+        setAttempt(Object.freeze({ ...current, state: 'uncertain' }));
+        setMessage('Save unconfirmed; the rule may already be saved. Your draft is preserved and fields are locked. Use Retry same submission to confirm the original outcome.');
       } else if (kind === 'stale') {
         setAttempt(null); setStale(true);
         setMessage('This rule was changed by someone else since you opened it. Your draft is preserved but cannot overwrite the newer version. View the latest saved rule, then close and edit again if needed.');
@@ -248,6 +250,7 @@ function RuleEditor({ editor, onClose, onSaved }) {
   }
 
   const title = mode === 'edit' ? `Edit rule: ${categoryNames(rule)}` : mode === 'copy' ? `Copy rule from ${categoryNames(rule)}` : 'New pricing rule';
+  const lockedPlaceholder = uncertain ? 'Save unconfirmed — retry below' : 'Saving…';
   const err = (k) => errors[k] && <span id={`pricing-${k}-error`} className="pricing-field__error" role="alert">{errors[k]}</span>;
   return <Dialog title={title} eyebrow="Configuration / Pricing" onClose={close} dismissDisabled={busy || selectingAll} className="pricing-editor-dialog"
     description={mode === 'copy' ? 'Rates and cutoff are copied. Choose categories and allergens for the new rule.' : mode === 'edit' ? `Update the selected allergens and date-based prices. Saved version ${rule.version}.` : 'Select categories and allergens, then set the cutoff date and selling prices.'}>
@@ -257,10 +260,10 @@ function RuleEditor({ editor, onClose, onSaved }) {
       <fieldset disabled={busy || uncertain}>
         <div className="pricing-editor__grid">
           <div className="pricing-field"><label htmlFor="pricing-category">Product Categories</label>
-            <PricingMultiSelect id="pricing-category" label="Product Categories" values={form.categories} fetchPage={fetchRuleCategories} invalid={errors.category} describedBy={errors.category ? 'pricing-category-error' : undefined} disabled={busy || uncertain} onChange={changeCategories} />
+            <PricingMultiSelect id="pricing-category" label="Product Categories" values={form.categories} fetchPage={fetchRuleCategories} invalid={errors.category} describedBy={errors.category ? 'pricing-category-error' : undefined} disabled={busy || uncertain} disabledPlaceholder={lockedPlaceholder} onChange={changeCategories} />
             {err('category')}</div>
           <div className="pricing-field pricing-field--wide"><label htmlFor="pricing-allergen">Allergens</label>
-            <PricingMultiSelect id="pricing-allergen" label="Allergens" values={form.allergens} categories={form.categories} scopeKey={categoryKey} fetchPage={fetchAllergens} invalid={errors.allergens} describedBy={errors.allergens ? 'pricing-allergens-error' : undefined} disabled={!categoryKey || busy || uncertain} onChange={(allergens) => set({ allergens })} onBusyChange={setSelectingAll} />
+            <PricingMultiSelect id="pricing-allergen" label="Allergens" values={form.allergens} categories={form.categories} scopeKey={categoryKey} fetchPage={fetchAllergens} invalid={errors.allergens} describedBy={errors.allergens ? 'pricing-allergens-error' : undefined} disabled={!categoryKey || busy || uncertain} disabledPlaceholder={busy || uncertain ? lockedPlaceholder : 'Choose active categories first'} onChange={(allergens) => set({ allergens })} onBusyChange={setSelectingAll} />
             {err('allergens')}</div>
         </div>
         <div className="pricing-editor__grid">
