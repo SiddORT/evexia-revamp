@@ -1,28 +1,31 @@
 .imm-extract-settings { min-width: 0; font-family: var(--font-sans); font-size: 13px; line-height: 1.5; color: var(--admin-text); }
 .admin-panel.imm-extract-settings { overflow: visible; }
-.imm-extract-settings__categories { margin: 20px 0 24px; max-width: 48rem; }
-.imm-extract-settings__field { display: grid; align-content: start; gap: 8px; min-width: 0; font-weight: 700; }
-.imm-extract-settings__table input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
+.imm-extract-settings > h2 { margin: 0 0 6px; }
+.imm-extract-settings > .imm-extract-settings__purpose { margin: 0 0 12px; }
+.imm-extract-settings__categories { margin: 0 0 12px; max-width: 48rem; }
+.imm-extract-settings__field { display: grid; align-content: start; gap: 4px; min-width: 0; font-weight: 700; }
+.imm-extract-settings__table input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
 .imm-extract-settings input::placeholder { color: var(--admin-text-soft); opacity: 1; }
 .imm-extract-settings__table input:focus { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .imm-extract-settings :is(input, select, button, summary):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
 .imm-extract-settings input[aria-invalid="true"] { border-color: var(--admin-danger); }
 .imm-extract-settings :is(input, select):disabled { cursor: not-allowed; opacity: .65; }
-.imm-extract-settings__category-heading { margin: 0; padding-top: 20px; border-top: 1px solid var(--admin-border); font-size: 16px; font-weight: 700; }
-.imm-extract-settings fieldset { min-width: 0; border: 0; padding: 0; margin: 8px 0 16px; }
-.imm-extract-settings__hint { margin: 0 0 16px; color: var(--admin-text-soft); font-size: 12px; }
+.imm-extract-settings form, .imm-extract-settings fieldset { position: relative; min-width: 0; }
+.imm-extract-settings fieldset { border: 0; padding: 0; margin: 0; }
+.imm-extract-settings__form-status { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 4px; }
+.imm-extract-settings__hint { margin: 0; color: var(--admin-text-soft); font-size: 12px; }
+.imm-extract-settings__status { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; font-weight: 700; }
 .imm-extract-settings__table-wrap { position: relative; min-width: 0; max-width: 100%; overflow-x: auto; padding: 4px; }
 .imm-extract-settings__table-wrap:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
 .imm-extract-settings__table { width: 100%; min-width: 26rem; border-collapse: collapse; table-layout: fixed; }
-.imm-extract-settings__table th, .imm-extract-settings__table td { padding: 12px; text-align: left; vertical-align: middle; }
+.imm-extract-settings__table th, .imm-extract-settings__table td { padding: 8px; text-align: left; vertical-align: top; }
 .imm-extract-settings__table thead th { background: var(--admin-table-head); color: var(--admin-text-soft); font-size: 12px; font-weight: 700; }
-.imm-extract-settings__table th:first-child { width: 22%; }
+.imm-extract-settings__table th:first-child { width: 12%; }
+.imm-extract-settings__table tbody th { padding-top: 18px; }
 .imm-extract-settings__table tbody tr + tr { border-top: 1px solid var(--admin-border); }
 .imm-extract-settings__table input { font-variant-numeric: tabular-nums; }
-.imm-extract-settings__table small { display: block; margin-top: 4px; color: var(--admin-text-soft); font-size: 11px; font-weight: 400; }
-.imm-extract-settings__saved { min-width: 0; margin: 16px 0 24px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
-.imm-extract-settings__saved h4, .imm-extract-settings__editor-heading { margin: 0 0 8px; padding: 0; font-size: 13px; font-weight: 700; }
-.imm-extract-settings__saved-table td { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.imm-extract-settings__saved-value { display: block; margin-top: 4px; color: var(--admin-text-soft); font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+.imm-extract-settings__saved-value span { font-variant-numeric: tabular-nums; }
 /* Keep the reused master picker self-contained on a cold Settings route.
    Quantity input styles above deliberately do not target its search field. */
 .imm-extract-settings .admin-allergen-combobox { font-weight: 400; }
@@ -37,22 +40,21 @@
 .imm-extract-settings .searchable-select__option span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .imm-extract-settings .searchable-select__empty .admin-button { display: block; margin-top: 8px; }
 .imm-extract-settings__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.imm-extract-settings__disclosure { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-text-soft); font-size: 12px; }
+.imm-extract-settings__disclosure { margin: 12px 0 0; padding: 0; color: var(--admin-text-soft); font-size: 12px; }
 .imm-extract-settings__disclosure summary { cursor: pointer; color: var(--admin-text); font-weight: 700; }
 .imm-extract-settings__disclosure p { margin: 10px 0 0; }
 .imm-extract-settings__disclosure ul { margin: 10px 0 0; padding-left: 20px; }
 .imm-extract-settings__disclosure li + li { margin-top: 6px; }
-.imm-extract-settings__actions, .imm-extract-settings__secondary-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.imm-extract-settings__actions { justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--admin-border); gap: 16px 24px; }
+.imm-extract-settings__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
 .imm-extract-settings .admin-button { min-width: 0; max-width: 100%; font-family: inherit; }
-.imm-extract-settings .admin-feedback { margin: 12px 0; color: var(--admin-text); font-size: 12px; }
+.imm-extract-settings .admin-feedback { margin: 8px 0; color: var(--admin-text); font-size: 12px; }
+.imm-extract-settings .admin-feedback--error { color: var(--admin-danger); }
 .imm-extract-settings__categories .admin-feedback .admin-button { margin: 8px 0 0; }
 @media (max-width: 600px) {
-  .imm-extract-settings__table th, .imm-extract-settings__table td { padding: 10px 4px; }
-  .imm-extract-settings__table th:first-child { width: 25%; }
-  .imm-extract-settings__table input { padding: 10px 6px; }
-  .imm-extract-settings__actions, .imm-extract-settings__secondary-actions { align-items: stretch; }
-  .imm-extract-settings__secondary-actions { width: 100%; }
+  .imm-extract-settings__table th, .imm-extract-settings__table td { padding-inline: 4px; }
+  .imm-extract-settings__table input { padding-inline: 6px; }
+  .imm-extract-settings__actions { align-items: stretch; }
+  .imm-extract-settings__actions .admin-button { flex: 1 1 auto; }
 }
 .admin-settings-body .batch-settings { font-size: 13px; line-height: 1.5; }
 .batch-settings .batch-settings-fields { border: 0; padding: 0; margin: 20px 0; min-width: 0; }

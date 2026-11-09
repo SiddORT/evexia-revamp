@@ -91,7 +91,7 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
       setSaved(value);
       if (!keep) setRows(editable(value.rows));
       setBlocked(false);
-      if (keep) setNotice('Saved version loaded. Your edits are kept. Compare the saved values table with your editable values before saving, or cancel edits to use the saved values.');
+      if (keep) setNotice('Saved values reloaded; edits retained. Compare beneath each input, or cancel edits to use the saved values.');
     } catch (cause) {
       if (seq === sequence.current) { setError(cause.message); setBlocked(true); }
     } finally { if (seq === sequence.current) { state.current.busy = false; setBusy(false); } }
@@ -126,7 +126,7 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
         rows: rows.map((row) => ({ extract: row.extract === '' ? null : row.extract, dilution: row.dilution === '' ? null : row.dilution })) });
       if (seq !== sequence.current) return;
       setSaved(value); setRows(editable(value.rows));
-      setNotice('Shared settings saved. Only new applicable final placements use these values; saved orders are unchanged.');
+      setNotice('Shared values saved for new applicable placements only. Saved orders are unchanged.');
     } catch (cause) {
       if (seq !== sequence.current) return;
       setError(cause.message);
@@ -136,17 +136,12 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
   if (!allowed) return <section className="admin-panel admin-settings__section"><h2>Immunotherapy — Extract & Dilution</h2><p role="alert">Only Super Admin can configure these shared values.</p></section>;
   const options = categories.items.map((item) => ({ value: item.id, label: categoryLabel(item) }));
   return <section className="admin-panel admin-settings__section imm-extract-settings" aria-busy={busy}>
-    <h2>Immunotherapy — Extract & Dilution</h2>
-    <p>Set shared quantities by category for new applicable placements. Saved orders are unchanged.</p>
-    <details className="imm-extract-settings__disclosure">
-      <summary>Ranking &amp; entry guidance</summary>
-      <p id="imm-extract-precision">Use up to six whole digits and three decimal places in ml. No quantities are prefilled or calculated. Incomplete rows are allowed; missing order quantities need Admin completion before approval.</p>
-      <p>New MR category/Mix bottles rank allergens by numeric Skin Test Result, highest first, within each existing bottle. Ties keep their order. One allergen uses rank 1; two use ranks 1–2; three use all ranks. Overflow bottles and No Mix restart at rank 1. Admin can edit saved quantities; order approval remains explicit.</p>
-    </details>
+    <h2>Extract &amp; Dilution</h2>
+    <p className="imm-extract-settings__purpose">Set shared category quantities for new applicable placements only, leaving saved orders unchanged.</p>
     <div className="imm-extract-settings__categories">
       <div className="imm-extract-settings__field">
-        <label htmlFor="imm-extract-category">Saved category</label>
-        <AllergenSearchableSelect id="imm-extract-category" label="Saved category" value={selected?.id || ''}
+        <label htmlFor="imm-extract-category">Category</label>
+        <AllergenSearchableSelect id="imm-extract-category" label="Category" value={selected?.id || ''}
           options={options} selectedLabel={selected ? categoryLabel(selected) : undefined}
           placeholder="Select a category" disabled={busy} onChange={choose} onSearch={search}
           loading={listBusy} error={listError} onRetry={() => search(query, true)}
@@ -154,45 +149,42 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
           empty={!categories.items.length} />
       </div>
     </div>
-    {busy && <p role="status">Loading or saving shared settings…</p>}
+    {busy && <p className="admin-feedback" role="status">Loading or saving…</p>}
     {error && <p className="admin-feedback admin-feedback--error" role="alert">{error}</p>}
     {notice && <p className="admin-feedback" role="status">{notice}</p>}
     {rows && <form onSubmit={save}>
-      <h3 id="imm-extract-category-heading" className="imm-extract-settings__category-heading">{selected.name}</h3>
-      {saved && <section className="imm-extract-settings__saved" aria-labelledby="imm-extract-saved-heading">
-        <h4 id="imm-extract-saved-heading">Saved values — last loaded snapshot</h4>
-        <p className="imm-extract-settings__hint">{saved.version === 0 ? 'Unconfigured category — no quantities have been saved.' : `Last loaded version ${saved.version}.`} Editing below does not change this snapshot. A confirmed save or explicit reload updates it.</p>
-        <div className="imm-extract-settings__table-wrap" role="region" aria-label="Saved ranked quantities" tabIndex={0}>
-          <table className="imm-extract-settings__table imm-extract-settings__saved-table">
-            <caption className="imm-extract-settings__sr-only">Saved Extract &amp; Dilution quantities in ml for {selected.name}</caption>
-            <thead><tr><th scope="col">Rank</th><th scope="col">Extract (ml)</th><th scope="col">Dilution (ml)</th></tr></thead>
-            <tbody>{saved.rows.map((row, index) => <tr key={index}><th scope="row">{index + 1}</th>
-              <td>{savedQuantity(row.extract)}</td><td>{savedQuantity(row.dilution)}</td>
-            </tr>)}</tbody>
-          </table>
-        </div>
-      </section>}
-      <fieldset disabled={busy} aria-describedby="imm-extract-category-heading">
-        <legend className="imm-extract-settings__editor-heading">Editable values — not saved until confirmed</legend>
+      <div className="imm-extract-settings__form-status">
         <p id="imm-extract-help" className="imm-extract-settings__hint">Blank means not recorded, not zero.</p>
+        <span className="imm-extract-settings__status" role="status">
+          {saved?.version === 0 && <span>Not configured</span>}
+          {dirty && <span>Unsaved changes</span>}
+        </span>
+      </div>
+      <fieldset disabled={busy}>
+        <legend className="imm-extract-settings__sr-only">Edit ranked quantities</legend>
         <div className="imm-extract-settings__table-wrap" role="region" aria-label="Ranked quantities" tabIndex={0}><table className="imm-extract-settings__table">
           <caption className="imm-extract-settings__sr-only">Ranked Extract &amp; Dilution quantities in ml for {selected.name}</caption>
           <thead><tr><th scope="col">Rank</th><th scope="col">Extract (ml)</th><th scope="col">Dilution (ml)</th></tr></thead>
-          <tbody>{rows.map((row, index) => <tr key={index}><th scope="row">{index + 1}{(row.extract === '' || row.dilution === '') && <small>Incomplete</small>}</th>
+          <tbody>{rows.map((row, index) => <tr key={index}><th scope="row">{index + 1}</th>
             {['extract', 'dilution'].map((field) => <td key={field}><input inputMode="decimal" value={row[field]} placeholder="Not recorded" aria-label={`${field === 'extract' ? 'Extract' : 'Dilution'} in ml, rank ${index + 1}`}
-              aria-describedby="imm-extract-help imm-extract-precision" aria-invalid={Boolean(quantityError(row[field]))} onChange={(event) => { const value = event.target.value; setRows((old) => old.map((item, rank) => rank === index ? { ...item, [field]: value } : item)); setNotice(''); }} /></td>)}
+              aria-describedby={`imm-extract-help imm-extract-precision imm-extract-saved-${index}-${field}`} aria-invalid={Boolean(quantityError(row[field]))} onChange={(event) => { const value = event.target.value; setRows((old) => old.map((item, rank) => rank === index ? { ...item, [field]: value } : item)); setNotice(''); }} />
+              <small id={`imm-extract-saved-${index}-${field}`} className="imm-extract-settings__saved-value">Saved: <span>{savedQuantity(saved?.rows[index]?.[field])}</span></small>
+            </td>)}
           </tr>)}</tbody>
         </table></div>
       </fieldset>
-      {blocked && <p className="admin-feedback admin-feedback--error" role="alert">Load saved settings before saving again. Your edits will be kept for comparison.</p>}
+      {blocked && <p className="admin-feedback admin-feedback--error" role="alert">Your edits were retained. Choose “Reload saved” before saving again, then compare the saved values beneath each input.</p>}
       <div className="imm-extract-settings__actions">
-        <button type="submit" className="admin-button" disabled={busy || blocked || !dirty}>Save Extract &amp; Dilution</button>
-        <div className="imm-extract-settings__secondary-actions">
-          <button type="button" className="admin-button admin-button--secondary" disabled={busy || !saved} onClick={() => { setRows(editable(saved.rows)); setNotice('Unsaved edits cancelled.'); setError(''); }}>Cancel edits</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => load()}>Load saved settings</button>
-        </div>
+        <button type="submit" className="admin-button" disabled={busy || blocked || !dirty}>Save changes</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={busy || !saved} onClick={() => { setRows(editable(saved.rows)); setNotice('Unsaved edits cancelled.'); setError(''); }}>Cancel edits</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => load()}>Reload saved</button>
       </div>
     </form>}
-    {selected && !rows && !busy && <button type="button" className="admin-button" onClick={() => load(selected, false)}>Load saved settings</button>}
+    {selected && !rows && !busy && <button type="button" className="admin-button" onClick={() => load(selected, false)}>Reload saved</button>}
+    <details className="imm-extract-settings__disclosure">
+      <summary>Ranking &amp; entry guidance</summary>
+      <p id="imm-extract-precision">Use up to six whole digits and three decimal places in ml. No quantities are prefilled or calculated. Incomplete rows are allowed; missing order quantities need Admin completion before approval.</p>
+      <p>New MR category/Mix bottles rank allergens by numeric Skin Test Result, highest first, within each existing bottle. Ties keep their order. One allergen uses rank 1; two use ranks 1–2; three use all ranks. Overflow bottles and No Mix restart at rank 1. Admin can edit saved quantities; order approval remains explicit.</p>
+    </details>
   </section>;
 }
