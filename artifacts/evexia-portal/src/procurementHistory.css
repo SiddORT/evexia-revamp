@@ -1,0 +1,98 @@
+/* Saved PO/PR history only: no shared activity marker-column layout. */
+.po-activity-drawer.procurement-history {
+  box-sizing: border-box;
+  width: min(660px, 100vw);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.procurement-history .po-activity-drawer__header { align-items: flex-start; }
+.procurement-history .po-activity-drawer__header > div { min-width: 0; }
+.procurement-history .po-activity-drawer__header > button { flex: none; }
+.procurement-history .po-activity-drawer__header h2 { margin: 5px 0 0; font-size: 21px; }
+.procurement-history .po-activity-drawer__body { flex: 1; min-width: 0; }
+.procurement-history p { margin: 0 0 12px; }
+.procurement-history .procurement-history__notice {
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-state-row);
+  color: var(--admin-text-soft);
+  font-size: 12px;
+}
+.procurement-history .procurement-history__event {
+  display: block;
+  min-width: 0;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-surface);
+}
+.procurement-history h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin: 0 0 8px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.procurement-history__action { text-transform: capitalize; }
+.procurement-history__revision {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--admin-state-soft);
+  color: var(--admin-accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+.procurement-history .procurement-history__metadata {
+  display: grid;
+  gap: 3px;
+  color: var(--admin-text-soft);
+  font-size: 12px;
+}
+.procurement-history__metadata strong { font-weight: 600; }
+.procurement-history .procurement-history__summary { margin: 14px 0; }
+.procurement-history h4 { margin: 0 0 10px; font-size: 12px; font-weight: 700; }
+.procurement-history__details { border-top: 1px solid var(--admin-border); padding-top: 14px; }
+.procurement-history__changes { list-style: none; padding: 0; margin: 0; }
+.procurement-history__change { min-width: 0; padding: 12px 0; border-top: 1px solid var(--admin-border); }
+.procurement-history__change:first-child { padding-top: 0; border-top: 0; }
+.procurement-history__change > strong { display: block; font-size: 12px; }
+.procurement-history .procurement-history__values, .procurement-history .procurement-history__documents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.procurement-history .procurement-history__values { margin: 8px 0 0; }
+.procurement-history__values > div { min-width: 0; padding: 10px; background: var(--admin-state-row); border-radius: 6px; }
+.procurement-history .procurement-history__values dt { margin: 0 0 4px; color: var(--admin-text-soft); font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: normal; }
+.procurement-history .procurement-history__values dd { margin: 0; white-space: pre-wrap; font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.procurement-history__line { padding: 8px 10px; margin: 10px 0; border-left: 3px solid; border-radius: 4px; font-size: 12px; }
+.procurement-history__line--added { background: var(--admin-badge-success-bg); color: var(--admin-badge-success-text); }
+.procurement-history__line--removed { background: var(--admin-badge-inactive-bg); color: var(--admin-text-soft); }
+.procurement-history__documents { margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--admin-border); }
+.procurement-history__documents > div { min-width: 0; }
+.procurement-history__documents .po-link { display: block; min-height: 36px; max-width: 100%; }
+.procurement-history__documents p { color: var(--admin-text-soft); font-size: 12px; }
+.procurement-history__pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.procurement-history__pagination > span { color: var(--admin-text-soft); font-size: 12px; }
+.procurement-history button { min-width: 0; white-space: normal; overflow-wrap: anywhere; font-family: inherit; }
+.procurement-history button:disabled { opacity: .5; cursor: not-allowed; }
+.procurement-history button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+.procurement-history [role="alert"] { color: var(--admin-danger); }
+.procurement-history [role="alert"] .admin-button { margin-top: 8px; }
+@media (max-width: 520px) {
+  .procurement-history .po-activity-drawer__header,
+  .procurement-history .po-activity-drawer__body { padding: 16px; }
+  .procurement-history .procurement-history__event { padding: 14px; }
+  .procurement-history .procurement-history__values, .procurement-history .procurement-history__documents { grid-template-columns: minmax(0, 1fr); }
+  .procurement-history__documents { gap: 16px; }
+  .procurement-history__pagination { justify-content: flex-start; }
+  .procurement-history__pagination > span { flex-basis: 100%; order: -1; }
+}

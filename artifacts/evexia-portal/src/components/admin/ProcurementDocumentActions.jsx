@@ -6,6 +6,7 @@ import { useAdminDateFormatters } from './adminPreferences.js';
 import POInvoicePreview from './POInvoicePreview.jsx';
 import PRDocumentPreview from './PRDocumentPreview.jsx';
 import '../../poActivityDrawer.css';
+import '../../procurementHistory.css';
 
 const labels = {
   poDate: 'PO date', expectedDate: 'Expected delivery', receivedDate: 'Received date',
@@ -21,6 +22,16 @@ const labels = {
 const omit = new Set(['id', 'version', 'createdAt', 'updatedAt', 'deletedAt', 'activeReceiptCount', 'source',
   'fulfillment', 'lineId', 'poId', 'documentRevision',
   'supplierStateCode', 'placeOfSupplyCode', 'supplierStateName', 'componentRates']);
+function FieldChange({ name, before, after }) {
+  return <li className="procurement-history__change">
+    <strong>{name}</strong>
+    <dl className="procurement-history__values">
+      <div><dt>Before</dt><dd>{before}</dd></div>
+      <div><dt>After</dt><dd>{after}</dd></div>
+    </dl>
+  </li>;
+}
+
 function Changes({ before, after, action }) {
   const { date } = useAdminDateFormatters();
   if (!after) return <p>Previous and current values unavailable for this legacy event.</p>;
@@ -40,7 +51,7 @@ function Changes({ before, after, action }) {
       if (JSON.stringify(a) === JSON.stringify(b)) continue;
       const name = `${prefix}${labels[key] || key.replace(/([A-Z])/g, ' $1')}`;
       if ((a && typeof a === 'object') || (b && typeof b === 'object')) fields(a, b, `${name} / `, `${keyPrefix}${key}/`);
-      else changes.push(<li key={`${keyPrefix}${prefix}${key}`}><strong>{name}:</strong> {text(key, a)} → {text(key, b)}</li>);
+      else changes.push(<FieldChange key={`${keyPrefix}${prefix}${key}`} name={name} before={text(key, a)} after={text(key, b)} />);
     }
   }
   fields(before, after);
@@ -49,22 +60,22 @@ function Changes({ before, after, action }) {
   for (const line of oldLines) {
     const next = nextLines.find((item) => identity(item) === identity(line));
     if (!next) {
-      changes.push(<li key={`removed-${identity(line)}`}><strong>Removed line: {line.productName}</strong></li>);
+      changes.push(<li className="procurement-history__line procurement-history__line--removed" key={`removed-${identity(line)}`}><strong>− Removed line: {line.productName}</strong></li>);
       fields(line, {}, `Removed ${line.productName} / `, `${identity(line)}/`);
     } else {
       fields(line, next, `${line.productName} / `, `${identity(line)}/`);
       const oldPosition = oldLines.indexOf(line) + 1, newPosition = nextLines.indexOf(next) + 1;
-      if (oldPosition !== newPosition) changes.push(<li key={`position-${identity(line)}`}>{line.productName} / Line position: {oldPosition} → {newPosition}</li>);
+      if (oldPosition !== newPosition) changes.push(<FieldChange key={`position-${identity(line)}`} name={`${line.productName} / Line position`} before={oldPosition} after={newPosition} />);
     }
   }
   for (const line of nextLines) {
     if (!oldLines.some((item) => identity(item) === identity(line))) {
-      changes.push(<li key={`added-${identity(line)}`}><strong>Added line: {line.productName}</strong></li>);
+      changes.push(<li className="procurement-history__line procurement-history__line--added" key={`added-${identity(line)}`}><strong>+ Added line: {line.productName}</strong></li>);
       fields({}, line, `${line.productName} / `, `${identity(line)}/`);
     }
   }
-  return <>{!before && action !== 'created' && <p>Prior values were not reliably saved. The following are known current values, not proof of every historical change.</p>}
-    {changes.length ? <ul>{changes}</ul> : <p>No business-field differences recorded.</p>}</>;
+  return <>{!before && action !== 'created' && <p className="procurement-history__notice">Prior values were not reliably saved. The following are known current values, not proof of every historical change.</p>}
+    {changes.length ? <ul className="procurement-history__changes">{changes}</ul> : <p>No business-field differences recorded.</p>}</>;
 }
 
 function ChangesDrawer({ kind, record, onClose, openDocument, actionError, actionBusy }) {
@@ -90,30 +101,39 @@ function ChangesDrawer({ kind, record, onClose, openDocument, actionError, actio
       .catch((cause) => { if (!controller.signal.aborted) setError(cause.message); });
     return () => controller.abort();
   }, [kind, record.id, offset, nonce]);
-  return <dialog ref={dialog} className="po-activity-drawer" aria-labelledby="saved-changes-title"
+  return <dialog ref={dialog} className="po-activity-drawer procurement-history" aria-labelledby="saved-changes-title"
     onCancel={(event) => { event.preventDefault(); onClose(); }}>
-    <header className="po-activity-drawer__header"><div><p>{record.number}</p><h2 id="saved-changes-title">Changes history</h2></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={onClose} autoFocus aria-label="Close changes history">Close</button></header>
+    <header className="po-activity-drawer__header"><div><p className="po-activity-drawer__number">{record.number}</p><h2 id="saved-changes-title">Changes history</h2></div>
+      <button type="button" className="admin-button admin-button--secondary" onClick={onClose} autoFocus aria-label="Close changes history" data-testid="button-close-procurement-history">Close</button></header>
     <div className="po-activity-drawer__body">
-      <p>Server audit history · oldest first. Editors are authenticated accounts; the PR receiver is a separate recorded person. Older documents may be unavailable.</p>
+      <p className="procurement-history__notice">Server audit history · oldest first. Editors are authenticated accounts; the PR receiver is a separate recorded person. Older documents may be unavailable.</p>
       {actionBusy && <p role="status">Loading saved document…</p>}
       {actionError && <p role="alert">{actionError} Use the same document link to retry.</p>}
-      {error ? <p role="alert">{error} <button type="button" onClick={() => setNonce((n) => n + 1)}>Retry history</button></p>
+      {error ? <p role="alert">{error} <button type="button" className="admin-button admin-button--secondary" data-testid="button-retry-procurement-history" onClick={() => setNonce((n) => n + 1)}>Retry history</button></p>
         : !page ? <p role="status">Loading changes…</p>
-          : <>{page.items.map((event) => <article className="po-event" key={event.id}><div style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-            <h3>{event.action}{event.revision ? ` · Revision ${event.revision}` : ' · Legacy / lifecycle event'}</h3>
-            <p>{timestamp(event.at, true)} · Authenticated editor: {event.actor || 'Unavailable'}</p>
-            <p>{event.summary}</p><Changes before={event.before} after={event.after} action={event.action} />
-            <div className="po-actions">
-              {event.previousRevision ? <><button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.previousRevision, false, e.currentTarget)}>View previous document</button>
-                <button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.previousRevision, true, e.currentTarget)}>Download previous PDF</button></> : <span>Previous document unavailable</span>}
-              {event.revision ? <><button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.revision, false, e.currentTarget)}>View saved document</button>
-                <button type="button" disabled={!can.print} className="po-link" onClick={(e) => openDocument(event.revision, true, e.currentTarget)}>Download saved PDF</button></> : <span>Document unavailable; no historical layout was saved</span>}
+          : <>{page.items.map((event) => <article className="procurement-history__event" key={event.id} data-testid={`card-procurement-history-${event.id}`}>
+            <header className="procurement-history__event-header">
+              <h3><span className="procurement-history__action">{event.action}</span><span className="procurement-history__revision">{event.revision ? `Revision ${event.revision}` : 'Legacy / lifecycle event'}</span></h3>
+              <p className="procurement-history__metadata"><time dateTime={event.at}>{timestamp(event.at, true)}</time><span>Authenticated editor: <strong>{event.actor || 'Unavailable'}</strong></span></p>
+            </header>
+            <p className="procurement-history__summary">{event.summary}</p>
+            <section className="procurement-history__details" aria-label="Recorded field changes">
+              <h4>Field changes</h4><Changes before={event.before} after={event.after} action={event.action} />
+            </section>
+            <div className="procurement-history__documents">
+              <div role="group" aria-label="Previous document"><h4>Previous document</h4>
+                {event.previousRevision ? <><button type="button" disabled={!can.print} className="po-link" data-testid={`button-view-previous-${event.id}`} onClick={(e) => openDocument(event.previousRevision, false, e.currentTarget)}>View previous document</button>
+                  <button type="button" disabled={!can.print} className="po-link" data-testid={`button-download-previous-${event.id}`} onClick={(e) => openDocument(event.previousRevision, true, e.currentTarget)}>Download previous PDF</button></> : <p>Previous document unavailable</p>}
+              </div>
+              <div role="group" aria-label="Saved document"><h4>Saved document</h4>
+                {event.revision ? <><button type="button" disabled={!can.print} className="po-link" data-testid={`button-view-saved-${event.id}`} onClick={(e) => openDocument(event.revision, false, e.currentTarget)}>View saved document</button>
+                  <button type="button" disabled={!can.print} className="po-link" data-testid={`button-download-saved-${event.id}`} onClick={(e) => openDocument(event.revision, true, e.currentTarget)}>Download saved PDF</button></> : <p>Document unavailable; no historical layout was saved</p>}
+              </div>
             </div>
-          </div></article>)}
+          </article>)}
             {!page.items.length && <p>No changes recorded.</p>}
-            <div className="po-actions"><button type="button" disabled={!offset} onClick={() => setOffset((n) => Math.max(0, n - 10))}>Previous changes</button>
-              <span>{page.total} events</span><button type="button" disabled={offset + page.items.length >= page.total} onClick={() => setOffset((n) => n + 10)}>Next changes</button></div></>}
+            <nav className="procurement-history__pagination" aria-label="Changes history pages"><button type="button" className="admin-button admin-button--secondary" data-testid="button-previous-procurement-history" disabled={!offset} onClick={() => setOffset((n) => Math.max(0, n - 10))}>Previous changes</button>
+              <span data-testid="text-procurement-history-count">{page.total} events</span><button type="button" className="admin-button admin-button--secondary" data-testid="button-next-procurement-history" disabled={offset + page.items.length >= page.total} onClick={() => setOffset((n) => n + 10)}>Next changes</button></nav></>}
     </div>
   </dialog>;
 }
