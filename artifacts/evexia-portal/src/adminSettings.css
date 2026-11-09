@@ -1,4 +1,5 @@
 .imm-extract-settings { min-width: 0; font-family: var(--font-sans); font-size: 13px; line-height: 1.5; color: var(--admin-text); }
+.admin-panel.imm-extract-settings { overflow: visible; }
 .imm-extract-settings__categories { margin: 20px 0 24px; max-width: 48rem; }
 .imm-extract-settings__field { display: grid; align-content: start; gap: 8px; min-width: 0; font-weight: 700; }
 .imm-extract-settings__table input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
