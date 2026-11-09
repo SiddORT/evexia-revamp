@@ -11,8 +11,13 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
   onCloseRef.current = () => { if (!dismissDisabled) onClose(); };
   const returnFocus = useRef(returnFocusRef);
   useEffect(() => {
-    // Opt-in pending state: keep focus inside even when every action is disabled.
-    if (dismissDisabled && isTopModal(dialogRef.current)) dialogRef.current?.focus();
+    if (!dismissDisabled || !isTopModal(dialogRef.current)) return;
+    const focused = document.activeElement;
+    // Keep valid in-modal focus (including cancellable pending selectors).
+    // Still provide a fallback when the focused control was disabled by saving.
+    if (dialogRef.current?.contains(focused) && !focused.matches(':disabled')
+      && !focused.closest('[inert]') && focused.getClientRects().length > 0) return;
+    dialogRef.current?.focus();
   }, [dismissDisabled]);
   useEffect(() => {
     const previouslyFocused = document.activeElement;

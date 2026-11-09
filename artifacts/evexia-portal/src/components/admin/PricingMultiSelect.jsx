@@ -77,7 +77,11 @@ export default function PricingMultiSelect({ id, label, values, onChange, fetchP
   }
 
   async function selectAll() {
+    if (latest.current.disabled) return;
     if (allCtl.current && !allCtl.current.signal.aborted) return;
+    // Move within the selector before disabling the focused Select all button.
+    // Otherwise a destination-less blur can close the popup and abort this action.
+    input.current?.focus();
     const ctl = new AbortController(); allCtl.current = ctl;
     const seq = generation.current, scope = scopeKey;
     setAllBusy(true); latest.current.onBusyChange?.(true); setFeedback('Collecting every matching allergen. Selection is unchanged until complete.');

@@ -243,7 +243,7 @@ function RuleEditor({ editor, onClose, onSaved }) {
   }
 
   function close() {
-    if (busyRef.current) return;
+    if (busyRef.current || selectingAll) return;
     if (dirty || uncertain) { setConfirmClose(true); return; }
     onClose();
   }
@@ -290,7 +290,7 @@ function RuleEditor({ editor, onClose, onSaved }) {
         </dl>}
       </div>}
       <div className="pricing-editor__actions" style={{ marginTop: 16 }}>
-        <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={close} data-testid="button-cancel-pricing-rule">{stale ? 'Close draft' : 'Cancel'}</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={busy || selectingAll} onClick={close} data-testid="button-cancel-pricing-rule">{stale ? 'Close draft' : 'Cancel'}</button>
         <button type="submit" className="admin-button" disabled={busy || stale || selectingAll} aria-disabled={busy || undefined} data-testid="button-save-pricing-rule">{busy ? 'Saving…' : uncertain ? 'Retry same submission' : mode === 'edit' ? 'Save changes' : 'Create rule'}</button>
       </div>
     </form>

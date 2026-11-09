@@ -233,3 +233,37 @@ response content type, JSON validity and timing with its API request log and
 running revision. Do not record tokens, cookies, request bodies or sensitive
 response content. This handoff does not authorize starting services, probes,
 regression/release checks, migrations or deployment.
+
+## Select all focus interruption — source-only repair
+
+Source review identified a self-cancellation path shared by New/Edit/Copy:
+Select all reports busy to the editor, which locks Dialog dismissal. Dialog
+previously focused its section unconditionally when that lock became active.
+That focus left PricingMultiSelect, whose blur handler closed the popup and
+aborted the collection before applying its result. This path can interrupt even
+a single matching allergen; it was not reproduced at runtime.
+
+Select all now focuses its still-enabled search input before disabling its
+action button, preventing the focused button's disabled transition from causing
+a destination-less blur. Dialog retains enabled, rendered, non-inert focus
+already inside itself when dismissal locks; it still focuses the section if
+focus is outside or on disabled/unavailable contents. Its Tab trap, Escape and
+backdrop dismissal guards remain intact. The editor's own Cancel button and
+close handler also honor selection busy state.
+
+The dropdown's Cancel Select all action remains enabled and keyboard-reachable
+while collecting. Explicit cancellation, focus/pointer departure, query/category
+scope changes, disabled state and teardown retain their existing abort paths.
+The controller-identity cleanup still prevents an older request from clearing
+a newer action's busy state. The collection still applies one complete union
+only after every page passes the existing checks; selected counts, checks and
+chips derive from that updated draft. Existing selections and saved category
+attribution, active/category response validation, catalogue fingerprints,
+duplicate/missing-page rejection and the 100-target union cap are unchanged.
+No backend, schema, pricing calculation or saved-rule contract was changed.
+
+This repair was reviewed by source/diff only. No tests, builds, typechecks,
+regression/release/completion check wrappers, browser/runtime probes, service
+starts/restarts, preview restoration, migrations or deployment were performed.
+Single-match and multi-page selection, pointer/keyboard focus transitions,
+cancellation and modal behavior remain runtime-unverified.
