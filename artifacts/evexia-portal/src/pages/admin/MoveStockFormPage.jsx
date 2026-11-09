@@ -338,24 +338,49 @@ export default function MoveStockFormPage() {
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busy) || Boolean(uncertainKey)} onClick={() => setReview(null)} data-testid="button-back-edit-move">Back to edit</button>
         {uncertainKey ? <button type="button" className="admin-button" disabled={Boolean(busy)} onClick={() => explicitReconcile(uncertainKey)} data-testid="button-reconcile-move">{busy === 'reconcile' ? 'Checking…' : 'Check save outcome'}</button>
           : <button type="button" className="admin-button" disabled={Boolean(busy) || initializationBlocked} onClick={confirm} data-testid="button-save-move">{busy === 'save' ? 'Saving…' : 'Confirm and move stock'}</button>}</>}>
-      <div data-testid="panel-move-review" aria-busy={busy === 'save'}>
+      <div className="ms-review-content" data-testid="panel-move-review" aria-busy={busy === 'save'} role="region" aria-label="Movement review content" tabIndex={0}>
         {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
         {uncertainKey && <p className="admin-feedback admin-feedback--error" role="status">A save outcome is unchecked. Check it before saving again; your draft is preserved.</p>}
-        <dl className="ms-review-meta">
+        <dl className="movement-locations">
           <div><dt>Source</dt><dd>{review.movement.source?.name || 'Unallocated'}</dd></div>
           <div><dt>Destination</dt><dd>{review.movement.destination?.name}</dd></div>
-          <div><dt>Date</dt><dd>{displayDate(review.movement.date)}</dd></div>
+        </dl>
+        <dl className="movement-facts movement-context">
+          <div><dt>Movement date</dt><dd>{displayDate(review.movement.date)}</dd></div>
           <div><dt>Delivered by</dt><dd>{review.movement.deliveredBy}</dd></div>
         </dl>
-        <div className="inv-scroll" role="region" aria-label="Reviewed lines" tabIndex={0}><table className="inv-lines"><thead><tr><th scope="col">Product / batch</th><th scope="col">Consumed</th><th scope="col">Source before / after</th><th scope="col">Destination before / after</th><th scope="col">Concentration</th><th scope="col">Output / expiry</th></tr></thead>
-          <tbody>{review.movement.lines.map((l) => { const diluted = Boolean(l.dilutionFactor); return <tr key={l.lotId}>
-            <td>{l.productName}<span className="stock-sub">{l.productId} · {l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} · {lotOriginLabel(l)}</span></td>
-            <td className="inv-mono">{l.quantity} {l.unit || 'ml'}</td>
-            <td className="inv-mono">{l.sourceBefore} to {l.sourceAfter}</td>
-            <td className="inv-mono">{l.destinationBefore} to {l.destinationAfter}</td>
-            <td>{concentrationLabel(l.concentration)}{diluted ? <span className="stock-sub">to {concentrationLabel(l.resultingConcentration)} ({l.dilutionFactor}-fold)</span> : l.sourceKind === 'reserve' ? <span className="stock-sub">Not diluted</span> : null}</td>
-            <td className="inv-mono">{diluted ? `${l.resultingQuantity ?? 'unavailable'} ${l.unit || 'ml'}` : `${l.resultingQuantity ?? l.quantity} ${l.unit || 'ml'}`}<span className="stock-sub">Exp {l.expiryDate ? displayDate(l.expiryDate) : 'unavailable'}{diluted ? ` to ${l.resultingExpiryDate ? displayDate(l.resultingExpiryDate) : 'unavailable'}` : ''}</span></td>
-          </tr>; })}</tbody></table></div>
+        <section className="movement-items" aria-label="Reviewed lines">
+          <h3>Items to move</h3>
+          {review.movement.lines.map((l) => { const diluted = Boolean(l.dilutionFactor); return <article className="movement-item" key={l.lotId}>
+            <header className="movement-item__header">
+              <h4>{l.productName}</h4>
+              <p className="movement-item__batch">{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'}</p>
+              <p className="movement-support">{lotOriginLabel(l)}</p>
+              <p className="movement-support">Product reference: {l.productId}</p>
+            </header>
+            <dl className="movement-facts movement-quantities">
+              <div><dt>Consumed quantity</dt><dd>{l.quantity} {l.unit || 'ml'}</dd></div>
+              <div><dt>Output quantity</dt><dd>{diluted ? l.resultingQuantity ?? 'unavailable' : l.resultingQuantity ?? l.quantity} {l.unit || 'ml'}</dd></div>
+              {l.sourceKind === 'reserve' && <div><dt>Dilution</dt><dd>{diluted ? `${l.dilutionFactor}-fold` : 'Not diluted · reserve only'}</dd></div>}
+            </dl>
+            <div className="movement-balances">
+              <section><h5>Source balance</h5><dl className="movement-facts">
+                <div><dt>Before</dt><dd>{l.sourceBefore ?? 'unavailable'}</dd></div>
+                <div><dt>After</dt><dd>{l.sourceAfter ?? 'unavailable'}</dd></div>
+              </dl></section>
+              <section><h5>Destination balance</h5><dl className="movement-facts">
+                <div><dt>Before</dt><dd>{l.destinationBefore ?? 'unavailable'}</dd></div>
+                <div><dt>After</dt><dd>{l.destinationAfter ?? 'unavailable'}</dd></div>
+              </dl></section>
+            </div>
+            <dl className="movement-facts movement-supporting">
+              <div><dt>Original concentration</dt><dd>{concentrationLabel(l.concentration)}</dd></div>
+              {diluted && <div><dt>Resulting concentration</dt><dd>{concentrationLabel(l.resultingConcentration)} ({l.dilutionFactor}-fold)</dd></div>}
+              <div><dt>Original expiry</dt><dd>{l.expiryDate ? displayDate(l.expiryDate) : 'unavailable'}</dd></div>
+              {diluted && <div><dt>Resulting expiry</dt><dd>{l.resultingExpiryDate ? displayDate(l.resultingExpiryDate) : 'unavailable'}</dd></div>}
+            </dl>
+          </article>; })}
+        </section>
       </div>
     </Dialog>}
   </div></AdminLayout>;
