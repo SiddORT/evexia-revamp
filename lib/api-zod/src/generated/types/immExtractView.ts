@@ -6,13 +6,20 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ImmExtractPair } from "./immExtractPair";
+import type { ImmExtractRankedPair } from "./immExtractRankedPair";
+import type { ImmExtractViewDosage } from "./immExtractViewDosage";
 
 export interface ImmExtractView {
   categoryId: string;
+  dosage: ImmExtractViewDosage;
+  legacyRows?: ImmExtractPair[] | null;
+  legacyVersion?: number | null;
+  policy: "category_dosage_count_rank_v2";
   /**
-   * @minItems 3
-   * @maxItems 3
+   * @minItems 6
+   * @maxItems 6
    */
-  rows: ImmExtractPair[];
+  rows: ImmExtractRankedPair[];
+  /** @minimum 0 */
   version: number;
 }

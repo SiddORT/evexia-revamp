@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.api.deps import current_identity
 from app.db.session import get_db
-from app.schemas.immunotherapy_extract import ImmExtractWrite, ImmExtractView, ImmExtractCategories
+from app.schemas.immunotherapy_extract import Dosage, ImmExtractWrite, ImmExtractView, ImmExtractCategories
 from app.services import immunotherapy_extract as service
 
 router = APIRouter(prefix="/admin/immunotherapy-extract-settings", tags=["Immunotherapy Extract Settings"])
@@ -17,8 +17,8 @@ def categories(query: str = Query("", max_length=200), offset: int = Query(0, ge
 
 
 @router.get("/{category_id}", response_model=ImmExtractView, operation_id="getImmunotherapyExtractSettings")
-def read(category_id: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
-    return service.read(db, actor, category_id)
+def read(category_id: uuid.UUID, dosage: Dosage, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return service.read(db, actor, category_id, dosage)
 
 
 @router.post("/{category_id}", response_model=ImmExtractView, operation_id="saveImmunotherapyExtractSettings")

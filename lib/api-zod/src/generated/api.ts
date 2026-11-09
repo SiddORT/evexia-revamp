@@ -434,14 +434,26 @@ export const listImmunotherapyExtractCategoriesQueryOffsetMin = 0;
 export const listImmunotherapyExtractCategoriesQueryOffsetMax = 1000000;
 export const listImmunotherapyExtractCategoriesQueryLimitDefault = 50;
 export const listImmunotherapyExtractCategoriesQueryLimitMax = 100;
-export const getImmunotherapyExtractSettingsResponseRowsMin = 3;
-export const getImmunotherapyExtractSettingsResponseRowsMax = 3;
+export const getImmunotherapyExtractSettingsResponseLegacyRowsOneMin = 3;
+export const getImmunotherapyExtractSettingsResponseLegacyRowsOneMax = 3;
+export const getImmunotherapyExtractSettingsResponseRowsItemCompositionSizeMax = 3;
+export const getImmunotherapyExtractSettingsResponseRowsItemRankMax = 3;
+export const getImmunotherapyExtractSettingsResponseRowsMin = 6;
+export const getImmunotherapyExtractSettingsResponseRowsMax = 6;
+export const getImmunotherapyExtractSettingsResponseVersionMin = 0;
 export const saveImmunotherapyExtractSettingsBodyExpectedVersionMin = 0;
 export const saveImmunotherapyExtractSettingsBodyExpectedVersionMax = 2147483646;
-export const saveImmunotherapyExtractSettingsBodyRowsMin = 3;
-export const saveImmunotherapyExtractSettingsBodyRowsMax = 3;
-export const saveImmunotherapyExtractSettingsResponseRowsMin = 3;
-export const saveImmunotherapyExtractSettingsResponseRowsMax = 3;
+export const saveImmunotherapyExtractSettingsBodyRowsItemCompositionSizeMax = 3;
+export const saveImmunotherapyExtractSettingsBodyRowsItemRankMax = 3;
+export const saveImmunotherapyExtractSettingsBodyRowsMin = 6;
+export const saveImmunotherapyExtractSettingsBodyRowsMax = 6;
+export const saveImmunotherapyExtractSettingsResponseLegacyRowsOneMin = 3;
+export const saveImmunotherapyExtractSettingsResponseLegacyRowsOneMax = 3;
+export const saveImmunotherapyExtractSettingsResponseRowsItemCompositionSizeMax = 3;
+export const saveImmunotherapyExtractSettingsResponseRowsItemRankMax = 3;
+export const saveImmunotherapyExtractSettingsResponseRowsMin = 6;
+export const saveImmunotherapyExtractSettingsResponseRowsMax = 6;
+export const saveImmunotherapyExtractSettingsResponseVersionMin = 0;
 export const listImmunotherapyOrdersQuerySearchMax = 200;
 export const listImmunotherapyOrdersQueryLimitDefault = 25;
 export const listImmunotherapyOrdersQueryLimitMax = 100;
@@ -9981,6 +9993,26 @@ export const GetImmunotherapyExtractSettingsParams = zod.object({
   category_id: zod.coerce.string().uuid(),
 });
 
+export const GetImmunotherapyExtractSettingsQueryParams = zod.object({
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+});
+
+export const getImmunotherapyExtractSettingsResponseLegacyRowsOneItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const getImmunotherapyExtractSettingsResponseLegacyRowsOneItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+
 export const getImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp =
   new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 export const getImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
@@ -9988,9 +10020,62 @@ export const getImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
 
 export const GetImmunotherapyExtractSettingsResponse = zod.object({
   categoryId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  legacyRows: zod
+    .union([
+      zod
+        .array(
+          zod.object({
+            dilution: zod
+              .union([
+                zod
+                  .string()
+                  .regex(
+                    getImmunotherapyExtractSettingsResponseLegacyRowsOneItemDilutionOneRegExp,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            extract: zod
+              .union([
+                zod
+                  .string()
+                  .regex(
+                    getImmunotherapyExtractSettingsResponseLegacyRowsOneItemExtractOneRegExp,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+          }),
+        )
+        .min(getImmunotherapyExtractSettingsResponseLegacyRowsOneMin)
+        .max(getImmunotherapyExtractSettingsResponseLegacyRowsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  legacyVersion: zod.union([zod.number().int(), zod.null()]).optional(),
+  policy: zod.literal("category_dosage_count_rank_v2"),
   rows: zod
     .array(
       zod.object({
+        compositionSize: zod
+          .number()
+          .int()
+          .min(1)
+          .max(
+            getImmunotherapyExtractSettingsResponseRowsItemCompositionSizeMax,
+          ),
         dilution: zod
           .union([
             zod
@@ -10011,11 +10096,19 @@ export const GetImmunotherapyExtractSettingsResponse = zod.object({
             zod.null(),
           ])
           .optional(),
+        rank: zod
+          .number()
+          .int()
+          .min(1)
+          .max(getImmunotherapyExtractSettingsResponseRowsItemRankMax),
       }),
     )
     .min(getImmunotherapyExtractSettingsResponseRowsMin)
     .max(getImmunotherapyExtractSettingsResponseRowsMax),
-  version: zod.number().int(),
+  version: zod
+    .number()
+    .int()
+    .min(getImmunotherapyExtractSettingsResponseVersionMin),
 });
 
 /**
@@ -10031,14 +10124,32 @@ export const saveImmunotherapyExtractSettingsBodyRowsItemExtractOneRegExp =
   new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 
 export const SaveImmunotherapyExtractSettingsBody = zod.object({
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
   expected_version: zod
     .number()
     .int()
     .min(saveImmunotherapyExtractSettingsBodyExpectedVersionMin)
     .max(saveImmunotherapyExtractSettingsBodyExpectedVersionMax),
+  policy: zod.literal("category_dosage_count_rank_v2"),
   rows: zod
     .array(
       zod.object({
+        compositionSize: zod
+          .number()
+          .int()
+          .min(1)
+          .max(saveImmunotherapyExtractSettingsBodyRowsItemCompositionSizeMax),
         dilution: zod
           .union([
             zod
@@ -10059,11 +10170,21 @@ export const SaveImmunotherapyExtractSettingsBody = zod.object({
             zod.null(),
           ])
           .optional(),
+        rank: zod
+          .number()
+          .int()
+          .min(1)
+          .max(saveImmunotherapyExtractSettingsBodyRowsItemRankMax),
       }),
     )
     .min(saveImmunotherapyExtractSettingsBodyRowsMin)
     .max(saveImmunotherapyExtractSettingsBodyRowsMax),
 });
+
+export const saveImmunotherapyExtractSettingsResponseLegacyRowsOneItemDilutionOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+export const saveImmunotherapyExtractSettingsResponseLegacyRowsOneItemExtractOneRegExp =
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
 
 export const saveImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp =
   new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
@@ -10072,9 +10193,62 @@ export const saveImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
 
 export const SaveImmunotherapyExtractSettingsResponse = zod.object({
   categoryId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  legacyRows: zod
+    .union([
+      zod
+        .array(
+          zod.object({
+            dilution: zod
+              .union([
+                zod
+                  .string()
+                  .regex(
+                    saveImmunotherapyExtractSettingsResponseLegacyRowsOneItemDilutionOneRegExp,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+            extract: zod
+              .union([
+                zod
+                  .string()
+                  .regex(
+                    saveImmunotherapyExtractSettingsResponseLegacyRowsOneItemExtractOneRegExp,
+                  ),
+                zod.null(),
+              ])
+              .optional(),
+          }),
+        )
+        .min(saveImmunotherapyExtractSettingsResponseLegacyRowsOneMin)
+        .max(saveImmunotherapyExtractSettingsResponseLegacyRowsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  legacyVersion: zod.union([zod.number().int(), zod.null()]).optional(),
+  policy: zod.literal("category_dosage_count_rank_v2"),
   rows: zod
     .array(
       zod.object({
+        compositionSize: zod
+          .number()
+          .int()
+          .min(1)
+          .max(
+            saveImmunotherapyExtractSettingsResponseRowsItemCompositionSizeMax,
+          ),
         dilution: zod
           .union([
             zod
@@ -10095,11 +10269,19 @@ export const SaveImmunotherapyExtractSettingsResponse = zod.object({
             zod.null(),
           ])
           .optional(),
+        rank: zod
+          .number()
+          .int()
+          .min(1)
+          .max(saveImmunotherapyExtractSettingsResponseRowsItemRankMax),
       }),
     )
     .min(saveImmunotherapyExtractSettingsResponseRowsMin)
     .max(saveImmunotherapyExtractSettingsResponseRowsMax),
-  version: zod.number().int(),
+  version: zod
+    .number()
+    .int()
+    .min(saveImmunotherapyExtractSettingsResponseVersionMin),
 });
 
 /**

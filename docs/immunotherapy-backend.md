@@ -1,26 +1,51 @@
 # Admin Immunotherapy orders
 
-## Shared category-ranked Extract & Dilution (source-only delivery)
+## Dose- and count-specific Extract & Dilution (source-only delivery)
 
 Super Admin configures **Settings → Immunotherapy → Extract & Dilution**.
 The category picker searches/paginates saved nondeleted Product Categories,
 including inactive categories, by name; persistence uses the category UUID.
-Each category has exactly three ordered extract/dilution pairs using the existing
+Each category/dosage has six independent ordered extract/dilution pairs:
+Single rank 1, Double ranks 1–2, Triple ranks 1–3. Dosages are the canonical
+PD, DD and B1–B8 choices; no numeric dose-category mapping is inferred.
+All pairs use the existing
 exact ml string contract: up to six whole digits and three fractional digits,
 nonnegative; entered zero is valid and distinct from absent/null. There are no
 sample clinical defaults, dose/ratio calculations or concentration interpretations.
 
 `GET /api/v1/admin/immunotherapy-extract-settings/categories` accepts `query`,
-`offset` and `limit`; GET/POST `/{category_id}` read/save one category.
+`offset` and `limit`; GET `/{category_id}?dosage=PD` reads one category/dosage;
+POST `/{category_id}` saves the explicitly supplied dosage.
 Both configuration reads and writes require the existing protected Super Admin
 operational-settings authorization, not general order or master permissions.
-MRs and ordinary staff cannot configure values. POST sends exactly three `rows`
-and `expected_version`; absence is version 0 with null quantities, not a seeded
+MRs and ordinary staff cannot configure values. POST sends policy
+`category_dosage_count_rank_v2`, canonical `dosage`, exactly six `rows` with
+explicit `compositionSize` and `rank`, and `expected_version`.
+Rows must follow the Single/Double/Triple rank order. Old three-row write
+contracts are rejected with 422, never converted into the new policy.
+Absence is version 0 with null quantities, not a seeded
 clinical formulation. First save creates version 1. A version mismatch rejects
 with `imm_extract_stale`; failed/conflicting/unknown saves retain the UI draft.
 The editor blocks uncertain resaves until an explicit reload, keeps edits for
 comparison, displays last-loaded saved rows and only reports save success after
-a matching category/version/row acknowledgement.
+a matching category/dosage/version/row acknowledgement. Category and dosage
+switches share the unsaved-edit guard and response invalidation.
+
+The encrypted payload is a strict schemaVersion-2 envelope with all ten dosage
+slots explicitly present, each null or a versioned six-row block. The existing
+category-keyed table and encryption domain are unchanged; no new migration or
+readiness revision is needed for this expansion. The table's version remains a
+category storage revision; optimistic concurrency uses the selected dosage
+block's version. An exclusive settings lock reads/modifies/reseals the latest
+envelope, preserving every other dosage, including concurrent unrelated saves.
+Conflicting saves to the same dosage fail instead of overwriting.
+
+Original three-row encrypted lists are read as legacy evidence only. Their rows
+and original category revision appear as read-only `legacyRows`/`legacyVersion`;
+the first explicit dosage save retains them inside the envelope. No legacy rows
+are cloned into any dosage/count block. Unreadable legacy or new payloads fail
+explicitly, even when the selected dosage is not configured. The existing
+directory key-rotation domain rotates the whole envelope without interpretation.
 
 The additive `0086_immunotherapy_extract` migration creates the empty
 `immunotherapy_extract_settings` table. It follows the independently merged
@@ -43,17 +68,20 @@ including successful final submission of a resumable incomplete draft:
   SUB identities; never globally sort/repack or change bottle order.
 - Within each resulting bottle sort children by exact `Decimal(result)`,
   descending. Stable sort retains equal-result relative order.
-- Use the saved category UUID's rows by resulting child rank, starting at 1
-  for **every** bottle. Three children use rows 1–3; two use 1–2; one uses row 1.
-  Overflow bottles and No Mix singletons independently restart at 1. No category
-  can inherit another category's pairs.
+- Use the authoritative saved order dosage and category UUID, then the actual
+  child count in **each formed bottle**, then the rank. Three children use
+  Triple, two use Double, one uses Single. Four same-category Mix occurrences
+  therefore use Triple and Single for their existing three-item and overflow
+  bottles, never an order-wide count. No Mix uses Single. Values may coincide
+  but never implicitly fall back across counts, categories or dosages.
 - Under one shared transaction-level configuration lock, load each effective
   category version once and copy the actual optional values into the child.
   All setting writes use the corresponding exclusive lock, including initial
   insertion, so a placement cannot mix configurations changed mid-placement.
-- Persist immutable per-child `clinicalAssignment` evidence: policy, category UUID,
-  configuration version, assigned rank and both original assigned optional
-  values. Version 0 identifies a missing category configuration; blank values
+- Persist immutable per-child `clinicalAssignment` evidence: policy
+  `category_dosage_count_rank_v2`, category UUID, saved dosage, composition size,
+  dosage configuration version, assigned rank and both original assigned optional
+  values. Version 0 identifies a missing category/dosage configuration; blank values
   remain null and are identified for Admin completion.
 
 Assignment occurs in the final order transaction, not eligibility previews,
@@ -85,16 +113,20 @@ retain their previous policy and quantities.
 
 Source/diff inspection traced three/two/one-child bottles, distinct categories,
 overflow, No Mix, numeric versus lexical order, stable ties, absent/partial
-configuration, version-0 concurrent insertion and version conflicts, consistent
+configuration, all ten dosage choices, legacy recovery, distinct count blocks,
+version-0 concurrent insertion and dosage-local version conflicts, consistent
 placement reads, draft/final submission, owner-bound retries, manual overrides,
 MR direct/import corrections, historical reads and approval completeness.
 
 OpenAPI and generated client/Zod source were regenerated using the contract
 exporter and direct generators/formatting, **without** the codegen script's
-typecheck wrapper. No regression/release checks, builds, typechecks, browser
+typecheck wrapper. Pre-existing unrelated Pricing Rules contract/generator
+differences were excluded from this change. No regression/release checks, builds, typechecks, browser
 tests/screenshots, smoke requests, service restarts, live clinical writes,
-deployments or migrations were run. The new migration and coordinated source
-metadata are **prepared but unapplied by this work**. Runtime persistence,
+deployments or migrations were run. This dosage/count expansion adds **no schema
+migration** and does not apply the existing `0086_immunotherapy_extract`
+migration or any other pending schema work. Its existing table is still required
+and fails closed when absent. Runtime persistence,
 authorization, locking, placement/retry and responsive/accessibility behavior
 remain unverified; source completion is not operational acceptance. Production
 fresh-install catalog evidence has not been fabricated or advanced.

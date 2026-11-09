@@ -3389,27 +3389,81 @@ export interface ImmExtractPair {
   extract?: string | null;
 }
 
+export interface ImmExtractRankedPair {
+  /**
+   * @minimum 1
+   * @maximum 3
+   */
+  compositionSize: number;
+  dilution?: string | null;
+  extract?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 3
+   */
+  rank: number;
+}
+
+export type ImmExtractViewDosage =
+  (typeof ImmExtractViewDosage)[keyof typeof ImmExtractViewDosage];
+
+export const ImmExtractViewDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
 export interface ImmExtractView {
   categoryId: string;
+  dosage: ImmExtractViewDosage;
+  legacyRows?: ImmExtractPair[] | null;
+  legacyVersion?: number | null;
+  policy: "category_dosage_count_rank_v2";
   /**
-   * @minItems 3
-   * @maxItems 3
+   * @minItems 6
+   * @maxItems 6
    */
-  rows: ImmExtractPair[];
+  rows: ImmExtractRankedPair[];
+  /** @minimum 0 */
   version: number;
 }
 
+export type ImmExtractWriteDosage =
+  (typeof ImmExtractWriteDosage)[keyof typeof ImmExtractWriteDosage];
+
+export const ImmExtractWriteDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
 export interface ImmExtractWrite {
+  dosage: ImmExtractWriteDosage;
   /**
    * @minimum 0
    * @maximum 2147483646
    */
   expected_version: number;
+  policy: "category_dosage_count_rank_v2";
   /**
-   * @minItems 3
-   * @maxItems 3
+   * @minItems 6
+   * @maxItems 6
    */
-  rows: ImmExtractPair[];
+  rows: ImmExtractRankedPair[];
 }
 
 export type ImmInputDosage =
@@ -13979,6 +14033,26 @@ export type ListImmunotherapyExtractCategoriesParams = {
    */
   limit?: number;
 };
+
+export type GetImmunotherapyExtractSettingsParams = {
+  dosage: GetImmunotherapyExtractSettingsDosage;
+};
+
+export type GetImmunotherapyExtractSettingsDosage =
+  (typeof GetImmunotherapyExtractSettingsDosage)[keyof typeof GetImmunotherapyExtractSettingsDosage];
+
+export const GetImmunotherapyExtractSettingsDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
 
 export type ListImmunotherapyOrdersParams = {
   /**

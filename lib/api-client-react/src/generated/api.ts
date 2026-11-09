@@ -176,6 +176,7 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  GetImmunotherapyExtractSettingsParams,
   GetInHouseStockReferencesParams,
   GetInventoryLedgerParams,
   GetInventoryReferencesParams,
@@ -8519,8 +8520,23 @@ export function useListImmunotherapyExtractCategories<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export const getGetImmunotherapyExtractSettingsUrl = (categoryId: string) => {
-  return `/api/v1/admin/immunotherapy-extract-settings/${categoryId}`;
+export const getGetImmunotherapyExtractSettingsUrl = (
+  categoryId: string,
+  params: GetImmunotherapyExtractSettingsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/immunotherapy-extract-settings/${categoryId}?${stringifiedParams}`
+    : `/api/v1/admin/immunotherapy-extract-settings/${categoryId}`;
 };
 
 /**
@@ -8528,10 +8544,11 @@ export const getGetImmunotherapyExtractSettingsUrl = (categoryId: string) => {
  */
 export const getImmunotherapyExtractSettings = async (
   categoryId: string,
+  params: GetImmunotherapyExtractSettingsParams,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<ImmExtractView> => {
   return customFetch<ImmExtractView>(
-    getGetImmunotherapyExtractSettingsUrl(categoryId),
+    getGetImmunotherapyExtractSettingsUrl(categoryId, params),
     {
       ...options,
       method: "GET",
@@ -8541,9 +8558,11 @@ export const getImmunotherapyExtractSettings = async (
 
 export const getGetImmunotherapyExtractSettingsQueryKey = (
   categoryId: string,
+  params?: GetImmunotherapyExtractSettingsParams,
 ) => {
   return [
     `/api/v1/admin/immunotherapy-extract-settings/${categoryId}`,
+    ...(params ? [params] : []),
   ] as const;
 };
 
@@ -8552,6 +8571,7 @@ export const getGetImmunotherapyExtractSettingsQueryOptions = <
   TError = ErrorType<ErrorEnvelope>,
 >(
   categoryId: string,
+  params: GetImmunotherapyExtractSettingsParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
@@ -8565,12 +8585,15 @@ export const getGetImmunotherapyExtractSettingsQueryOptions = <
 
   const queryKey =
     queryOptions?.queryKey ??
-    getGetImmunotherapyExtractSettingsQueryKey(categoryId);
+    getGetImmunotherapyExtractSettingsQueryKey(categoryId, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>
   > = ({ signal }) =>
-    getImmunotherapyExtractSettings(categoryId, { signal, ...requestOptions });
+    getImmunotherapyExtractSettings(categoryId, params, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -8599,6 +8622,7 @@ export function useGetImmunotherapyExtractSettings<
   TError = ErrorType<ErrorEnvelope>,
 >(
   categoryId: string,
+  params: GetImmunotherapyExtractSettingsParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getImmunotherapyExtractSettings>>,
@@ -8610,6 +8634,7 @@ export function useGetImmunotherapyExtractSettings<
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetImmunotherapyExtractSettingsQueryOptions(
     categoryId,
+    params,
     options,
   );
 

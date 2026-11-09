@@ -5,17 +5,20 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
-import type { ImmExtractPair } from "./immExtractPair";
+import type { ImmExtractRankedPair } from "./immExtractRankedPair";
+import type { ImmExtractWriteDosage } from "./immExtractWriteDosage";
 
 export interface ImmExtractWrite {
+  dosage: ImmExtractWriteDosage;
   /**
    * @minimum 0
    * @maximum 2147483646
    */
   expected_version: number;
+  policy: "category_dosage_count_rank_v2";
   /**
-   * @minItems 3
-   * @maxItems 3
+   * @minItems 6
+   * @maxItems 6
    */
-  rows: ImmExtractPair[];
+  rows: ImmExtractRankedPair[];
 }

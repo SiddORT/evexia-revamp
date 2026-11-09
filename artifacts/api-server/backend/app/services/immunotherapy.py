@@ -339,7 +339,7 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     issue(data, previous, row.number)
     if not previous and any(g.get("compositionPolicy") == "mr_category_mix_v1" for g in data["groups"]):
         from app.services.immunotherapy_extract import assign
-        assign(db, keys, data["groups"])
+        assign(db, keys, data["groups"], data["dosage"])
     from app.services.immunotherapy_batches import issue as issue_batch
     issue_batch(db, data, previous, order_date=row.date)
     row.patient_id, row.doctor_id, row.mr_id = body.patientId, body.doctorId, body.mrId

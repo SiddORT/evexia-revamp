@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
-import { extractCategories, loadExtractSettings, saveExtractSettings } from '../../services/serverImmunotherapyExtract.js';
-import { quantityError } from '../../services/serverImmunotherapy.js';
+import { EXTRACT_POLICY, EXTRACT_POSITIONS, extractCategories, loadExtractSettings, saveExtractSettings } from '../../services/serverImmunotherapyExtract.js';
+import { DOSES, quantityError } from '../../services/serverImmunotherapy.js';
 import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
 
 const editable = (rows) => rows.map((row) => ({ extract: row.extract ?? '', dilution: row.dilution ?? '' }));
 const equal = (saved, rows) => saved && JSON.stringify(editable(saved.rows)) === JSON.stringify(rows);
 const categoryLabel = (category) => `${category.name}${category.status !== 'active' ? ' (inactive)' : ''}`;
 const savedQuantity = (value) => value == null || value === '' ? 'Not recorded' : value;
+const groupLabel = (size) => ['', 'Single — 1 allergen', 'Double — 2 allergens', 'Triple — 3 allergens'][size];
+const rankLabel = (rank) => ['', '1st allergen', '2nd allergen', '3rd allergen'][rank];
 
 export default function ImmunotherapyExtractSettings({ onGuardChange }) {
   const session = useAdminSession();
@@ -21,6 +23,7 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
   const [listError, setListError] = useState('');
   const [listRevision, setListRevision] = useState(0);
   const [selected, setSelected] = useState(null);
+  const [dosage, setDosage] = useState('PD');
   const [saved, setSaved] = useState(null);
   const [rows, setRows] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -80,13 +83,13 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
     } catch (cause) { if (seq === listSequence.current) setListError(cause.message); }
     finally { if (seq === listSequence.current) { listPending.current = false; setListBusy(false); } }
   }
-  async function load(category = selected, keep = Boolean(rows)) {
+  async function load(category = selected, keep = Boolean(rows), dose = dosage) {
     if (!category || state.current.busy) return;
     const seq = ++sequence.current;
     state.current.busy = true;
     setBusy(true); setError(''); setNotice('');
     try {
-      const value = await loadExtractSettings(category.id);
+      const value = await loadExtractSettings(category.id, dose);
       if (seq !== sequence.current) return;
       setSaved(value);
       if (!keep) setRows(editable(value.rows));
@@ -96,21 +99,22 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
       if (seq === sequence.current) { setError(cause.message); setBlocked(true); }
     } finally { if (seq === sequence.current) { state.current.busy = false; setBusy(false); } }
   }
-  async function choose(id) {
-    if (state.current.busy || id === selected?.id) return;
+  async function choose(id, dose = dosage) {
+    if (state.current.busy || (id === selected?.id && dose === dosage)) return;
     // Capture the item before the shared picker resets its search/results.
-    const category = categories.items.find((item) => item.id === id);
+    const category = id === selected?.id ? selected : categories.items.find((item) => item.id === id);
     if (id && !category) return;
     const choice = ++choiceSequence.current;
     if (state.current.dirty) {
       // The menu search input unmounts on choice; give confirmation a stable
       // return target before it captures the currently focused element.
       document.getElementById('imm-extract-category')?.focus();
-      if (!(await confirm('Discard unsaved Extract & Dilution changes for this category?'))) return;
+      if (!(await confirm('Discard unsaved Extract & Dilution changes for this category and dosage?'))) return;
     }
     if (state.current.busy || choice !== choiceSequence.current) return;
-    setSelected(category || null); setSaved(null); setRows(null); setBlocked(false); setNotice(''); setError('');
-    if (category) await load(category, false);
+    sequence.current++;
+    setSelected(category || null); setDosage(dose); setSaved(null); setRows(null); setBlocked(false); setNotice(''); setError('');
+    if (category) await load(category, false, dose);
   }
   async function save(event) {
     event.preventDefault();
@@ -122,11 +126,12 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
     state.current.busy = true;
     setBusy(true); setError(''); setNotice('');
     try {
-      const value = await saveExtractSettings(selected.id, { expected_version: saved.version,
-        rows: rows.map((row) => ({ extract: row.extract === '' ? null : row.extract, dilution: row.dilution === '' ? null : row.dilution })) });
+      const value = await saveExtractSettings(selected.id, { policy: EXTRACT_POLICY, dosage, expected_version: saved.version,
+        rows: rows.map((row, index) => ({ compositionSize: EXTRACT_POSITIONS[index][0], rank: EXTRACT_POSITIONS[index][1],
+          extract: row.extract === '' ? null : row.extract, dilution: row.dilution === '' ? null : row.dilution })) });
       if (seq !== sequence.current) return;
       setSaved(value); setRows(editable(value.rows));
-      setNotice('Shared values saved for new applicable placements only. Saved orders are unchanged.');
+      setNotice('Saved for this category and dosage only. New applicable placements use these values; saved orders are unchanged.');
     } catch (cause) {
       if (seq !== sequence.current) return;
       setError(cause.message);
@@ -137,40 +142,54 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
   const options = categories.items.map((item) => ({ value: item.id, label: categoryLabel(item) }));
   return <section className="admin-panel admin-settings__section imm-extract-settings" aria-busy={busy}>
     <h2>Extract &amp; Dilution</h2>
-    <p className="imm-extract-settings__purpose">Set shared category quantities for new applicable placements only, leaving saved orders unchanged.</p>
+    <p className="imm-extract-settings__purpose">Set quantities by product category, dosage and allergens in each suborder. Saved orders stay unchanged.</p>
     <div className="imm-extract-settings__categories">
       <div className="imm-extract-settings__field">
-        <label htmlFor="imm-extract-category">Category</label>
-        <AllergenSearchableSelect id="imm-extract-category" label="Category" value={selected?.id || ''}
+        <label htmlFor="imm-extract-category">Product Category</label>
+        <AllergenSearchableSelect id="imm-extract-category" label="Product Category" value={selected?.id || ''}
           options={options} selectedLabel={selected ? categoryLabel(selected) : undefined}
           placeholder="Select a category" disabled={busy} onChange={choose} onSearch={search}
           loading={listBusy} error={listError} onRetry={() => search(query, true)}
           hasMore={categories.nextOffset !== null} moreLabel="Load more categories" onMore={more}
           empty={!categories.items.length} />
       </div>
+      <div className="imm-extract-settings__field">
+        <label htmlFor="imm-extract-dosage">Dosage</label>
+        <select id="imm-extract-dosage" value={dosage} disabled={busy} onChange={(event) => {
+          if (selected) choose(selected.id, event.target.value);
+          else setDosage(event.target.value);
+        }}>{DOSES.map((dose) => <option key={dose} value={dose}>{dose}</option>)}</select>
+      </div>
     </div>
+    {selected && <p className="imm-extract-settings__context"><strong>{selected.name} · {dosage}</strong></p>}
     {busy && <p className="admin-feedback" role="status">Loading or saving…</p>}
     {error && <p className="admin-feedback admin-feedback--error" role="alert">{error}</p>}
     {notice && <p className="admin-feedback" role="status">{notice}</p>}
     {rows && <form onSubmit={save}>
       <div className="imm-extract-settings__form-status">
-        <p id="imm-extract-help" className="imm-extract-settings__hint">Blank means not recorded, not zero.</p>
+        <p id="imm-extract-help" className="imm-extract-settings__hint">Ranked by Skin Test Result, highest first. Blank means not recorded, not zero.</p>
         <span className="imm-extract-settings__status" role="status">
           {saved?.version === 0 && <span>Not configured</span>}
           {dirty && <span>Unsaved changes</span>}
+          {!dirty && saved?.version > 0 && <span>Saved</span>}
         </span>
       </div>
       <fieldset disabled={busy}>
         <legend className="imm-extract-settings__sr-only">Edit ranked quantities</legend>
         <div className="imm-extract-settings__table-wrap" role="region" aria-label="Ranked quantities" tabIndex={0}><table className="imm-extract-settings__table">
-          <caption className="imm-extract-settings__sr-only">Ranked Extract &amp; Dilution quantities in ml for {selected.name}</caption>
-          <thead><tr><th scope="col">Rank</th><th scope="col">Extract (ml)</th><th scope="col">Dilution (ml)</th></tr></thead>
-          <tbody>{rows.map((row, index) => <tr key={index}><th scope="row">{index + 1}</th>
-            {['extract', 'dilution'].map((field) => <td key={field}><input inputMode="decimal" value={row[field]} placeholder="Not recorded" aria-label={`${field === 'extract' ? 'Extract' : 'Dilution'} in ml, rank ${index + 1}`}
+          <caption className="imm-extract-settings__sr-only">Ranked Extract &amp; Dilution quantities in ml for {selected.name}, {dosage}</caption>
+          <thead><tr><th scope="col">Allergens in suborder</th><th scope="col">Allergen rank</th><th scope="col">Extract (ml)</th><th scope="col">Dilution (ml)</th></tr></thead>
+          { [1, 2, 3].map((size) => <tbody key={size}>{rows.map((row, index) => {
+            const [count, rank] = EXTRACT_POSITIONS[index];
+            if (count !== size) return null;
+            return <tr key={index}>
+            {rank === 1 && <th scope="rowgroup" rowSpan={size}>{groupLabel(size)}</th>}
+            <th scope="row">{rankLabel(rank)}</th>
+            {['extract', 'dilution'].map((field) => <td key={field}><input inputMode="decimal" value={row[field]} placeholder="Not recorded" aria-label={`${field === 'extract' ? 'Extract' : 'Dilution'} in ml, ${groupLabel(size)}, ${rankLabel(rank)}, ${dosage}`}
               aria-describedby={`imm-extract-help imm-extract-precision imm-extract-saved-${index}-${field}`} aria-invalid={Boolean(quantityError(row[field]))} onChange={(event) => { const value = event.target.value; setRows((old) => old.map((item, rank) => rank === index ? { ...item, [field]: value } : item)); setNotice(''); }} />
               <small id={`imm-extract-saved-${index}-${field}`} className="imm-extract-settings__saved-value">Saved: <span>{savedQuantity(saved?.rows[index]?.[field])}</span></small>
             </td>)}
-          </tr>)}</tbody>
+          </tr>; })}</tbody>)}
         </table></div>
       </fieldset>
       {blocked && <p className="admin-feedback admin-feedback--error" role="alert">Your edits were retained. Choose “Reload saved” before saving again, then compare the saved values beneath each input.</p>}
@@ -179,12 +198,19 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
         <button type="button" className="admin-button admin-button--secondary" disabled={busy || !saved} onClick={() => { setRows(editable(saved.rows)); setNotice('Unsaved edits cancelled.'); setError(''); }}>Cancel edits</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => load()}>Reload saved</button>
       </div>
+      <p className="imm-extract-settings__hint">Saving affects {selected.name} · {dosage} only.</p>
     </form>}
     {selected && !rows && !busy && <button type="button" className="admin-button" onClick={() => load(selected, false)}>Reload saved</button>}
     <details className="imm-extract-settings__disclosure">
       <summary>Ranking &amp; entry guidance</summary>
       <p id="imm-extract-precision">Use up to six whole digits and three decimal places in ml. No quantities are prefilled or calculated. Incomplete rows are allowed; missing order quantities need Admin completion before approval.</p>
-      <p>New MR category/Mix bottles rank allergens by numeric Skin Test Result, highest first, within each existing bottle. Ties keep their order. One allergen uses rank 1; two use ranks 1–2; three use all ranks. Overflow bottles and No Mix restart at rank 1. Admin can edit saved quantities; order approval remains explicit.</p>
+      <p>Each already-formed bottle uses its own Single, Double or Triple group for the saved dosage and category. Ties keep their order. Four same-category Mix allergens use Triple for the three-item bottle and Single for the overflow singleton. No Mix uses Single. No values are shared between groups or dosages. Admin can edit saved quantities; approval remains explicit.</p>
     </details>
+    {saved?.legacyRows && <details className="imm-extract-settings__disclosure">
+      <summary>Legacy category-only values — read-only</summary>
+      <p>Legacy values are preserved for recovery, not applied to this dosage. Explicitly configure each dosage and group.</p>
+      <ul>{saved.legacyRows.map((row, index) => <li key={index}>{rankLabel(index + 1)}: Extract {savedQuantity(row.extract)} ml; Dilution {savedQuantity(row.dilution)} ml</li>)}</ul>
+    </details>}
+    {saved?.legacyRows && <p className="imm-extract-settings__hint">Legacy category-only settings exist; they are not approved dosage/count defaults.</p>}
   </section>;
 }

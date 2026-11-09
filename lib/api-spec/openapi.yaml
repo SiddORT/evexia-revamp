@@ -7522,6 +7522,53 @@
         "title": "ImmExtractPair",
         "type": "object"
       },
+      "ImmExtractRankedPair": {
+        "additionalProperties": false,
+        "properties": {
+          "compositionSize": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Compositionsize",
+            "type": "integer"
+          },
+          "dilution": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilution"
+          },
+          "extract": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extract"
+          },
+          "rank": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "compositionSize",
+          "rank"
+        ],
+        "title": "ImmExtractRankedPair",
+        "type": "object"
+      },
       "ImmExtractView": {
         "additionalProperties": false,
         "properties": {
@@ -7530,24 +7577,75 @@
             "title": "Categoryid",
             "type": "string"
           },
+          "dosage": {
+            "enum": [
+              "PD",
+              "DD",
+              "B1",
+              "B2",
+              "B3",
+              "B4",
+              "B5",
+              "B6",
+              "B7",
+              "B8"
+            ],
+            "title": "Dosage",
+            "type": "string"
+          },
+          "legacyRows": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImmExtractPair"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacyrows"
+          },
+          "legacyVersion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacyversion"
+          },
+          "policy": {
+            "const": "category_dosage_count_rank_v2",
+            "title": "Policy",
+            "type": "string"
+          },
           "rows": {
             "items": {
-              "$ref": "#/components/schemas/ImmExtractPair"
+              "$ref": "#/components/schemas/ImmExtractRankedPair"
             },
-            "maxItems": 3,
-            "minItems": 3,
+            "maxItems": 6,
+            "minItems": 6,
             "title": "Rows",
             "type": "array"
           },
           "version": {
+            "minimum": 0.0,
             "title": "Version",
             "type": "integer"
           }
         },
         "required": [
+          "rows",
           "categoryId",
-          "version",
-          "rows"
+          "policy",
+          "dosage",
+          "version"
         ],
         "title": "ImmExtractView",
         "type": "object"
@@ -7555,24 +7653,47 @@
       "ImmExtractWrite": {
         "additionalProperties": false,
         "properties": {
+          "dosage": {
+            "enum": [
+              "PD",
+              "DD",
+              "B1",
+              "B2",
+              "B3",
+              "B4",
+              "B5",
+              "B6",
+              "B7",
+              "B8"
+            ],
+            "title": "Dosage",
+            "type": "string"
+          },
           "expected_version": {
             "maximum": 2147483646.0,
             "minimum": 0.0,
             "title": "Expected Version",
             "type": "integer"
           },
+          "policy": {
+            "const": "category_dosage_count_rank_v2",
+            "title": "Policy",
+            "type": "string"
+          },
           "rows": {
             "items": {
-              "$ref": "#/components/schemas/ImmExtractPair"
+              "$ref": "#/components/schemas/ImmExtractRankedPair"
             },
-            "maxItems": 3,
-            "minItems": 3,
+            "maxItems": 6,
+            "minItems": 6,
             "title": "Rows",
             "type": "array"
           }
         },
         "required": [
           "rows",
+          "policy",
+          "dosage",
           "expected_version"
         ],
         "title": "ImmExtractWrite",
@@ -54687,6 +54808,27 @@
             "schema": {
               "format": "uuid",
               "title": "Category Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dosage",
+            "required": true,
+            "schema": {
+              "enum": [
+                "PD",
+                "DD",
+                "B1",
+                "B2",
+                "B3",
+                "B4",
+                "B5",
+                "B6",
+                "B7",
+                "B8"
+              ],
+              "title": "Dosage",
               "type": "string"
             }
           }
