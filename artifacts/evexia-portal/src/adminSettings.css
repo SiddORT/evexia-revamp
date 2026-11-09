@@ -78,6 +78,23 @@
 .batch-settings .admin-feedback { font-size: 12px; line-height: 1.5; }
 .batch-settings .batch-settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .batch-settings-actions .admin-button { min-width: 0; max-width: 100%; font-family: inherit; }
+.gst-settings { font-size: 13px; line-height: 1.5; }
+.gst-settings > h2 { margin: 0 0 6px; }
+.gst-settings__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; min-width: 0; max-width: 44rem; border: 0; padding: 0; margin: 16px 0 8px; }
+.gst-settings__fields legend { margin-bottom: 8px; padding: 0; font-weight: 700; }
+.gst-settings__field { display: grid; align-content: start; gap: 5px; min-width: 0; }
+.gst-settings__field label { font-weight: 700; }
+.gst-settings__field input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; }
+.gst-settings input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+.gst-settings input[aria-invalid="true"] { border-color: var(--admin-danger); }
+.gst-settings__saved { padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; max-width: 44rem; }
+.gst-settings__saved dl { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 8px 0 0; }
+.gst-settings__saved dd { margin: 0; font-variant-numeric: tabular-nums; }
+.gst-settings__saved p { margin: 6px 0 0; }
+.gst-settings__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.gst-settings .admin-button { min-width: 0; max-width: 100%; }
+.gst-settings .admin-feedback--error { color: var(--admin-danger); }
+.gst-settings__field span, .gst-settings #gst-rate-help { font-size: 12px; }
 .admin-settings-layout { min-width: 0; }
 /* The portal's global 320px minimum exceeds the available width when a
    non-overlay vertical scrollbar occupies part of a 320px viewport. */

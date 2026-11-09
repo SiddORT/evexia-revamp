@@ -397,6 +397,10 @@ export const editEmailTemplateResponseItemsItemTextMax = 20000;
 export const editEmailTemplateResponseItemsMax = 103;
 export const sendEmailTemplateTestBodyRecipientMax = 320;
 export const sendEmailTemplateTestBodyVersionMax = 2147483647;
+export const saveGSTSettingsBodyBeforeRateMax = 6;
+export const saveGSTSettingsBodyExpectedVersionMin = 0;
+export const saveGSTSettingsBodyExpectedVersionMax = 2147483646;
+export const saveGSTSettingsBodyOnAfterRateMax = 6;
 export const listHeadquartersQueryQueryMax = 200;
 export const listHeadquartersQueryLimitDefault = 10;
 export const listHeadquartersQueryLimitMax = 100;
@@ -9473,6 +9477,57 @@ export const SendEmailTemplateTestResponse = zod.object({
     "failed",
     "unknown",
   ]),
+});
+
+/**
+ * @summary Read
+ */
+export const GetGSTSettingsResponse = zod.object({
+  before_rate: zod.union([zod.string(), zod.null()]),
+  configured: zod.boolean(),
+  cutoff_date: zod.union([zod.string(), zod.null()]),
+  on_after_rate: zod.union([zod.string(), zod.null()]),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Write
+ */
+
+export const saveGSTSettingsBodyBeforeRateRegExp = new RegExp(
+  "^(?:(?:0|[1-9][0-9]?)(?:\\.[0-9]{1,2})?|100(?:\\.0{1,2})?)$",
+);
+export const saveGSTSettingsBodyCutoffDateRegExp = new RegExp(
+  "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+);
+
+export const saveGSTSettingsBodyOnAfterRateRegExp = new RegExp(
+  "^(?:(?:0|[1-9][0-9]?)(?:\\.[0-9]{1,2})?|100(?:\\.0{1,2})?)$",
+);
+
+export const SaveGSTSettingsBody = zod.object({
+  before_rate: zod
+    .string()
+    .max(saveGSTSettingsBodyBeforeRateMax)
+    .regex(saveGSTSettingsBodyBeforeRateRegExp),
+  cutoff_date: zod.string().regex(saveGSTSettingsBodyCutoffDateRegExp),
+  expected_version: zod
+    .number()
+    .int()
+    .min(saveGSTSettingsBodyExpectedVersionMin)
+    .max(saveGSTSettingsBodyExpectedVersionMax),
+  on_after_rate: zod
+    .string()
+    .max(saveGSTSettingsBodyOnAfterRateMax)
+    .regex(saveGSTSettingsBodyOnAfterRateRegExp),
+});
+
+export const SaveGSTSettingsResponse = zod.object({
+  before_rate: zod.union([zod.string(), zod.null()]),
+  configured: zod.boolean(),
+  cutoff_date: zod.union([zod.string(), zod.null()]),
+  on_after_rate: zod.union([zod.string(), zod.null()]),
+  version: zod.number().int(),
 });
 
 /**

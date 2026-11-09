@@ -1,5 +1,14 @@
 # Automatic migration policy
 
+GST Settings is protected Super Admin shared configuration only: one literal
+calendar cutoff and exact before/on-or-after percentages, with no invented
+initial values. The exact cutoff belongs to on/after. Do not apply it to orders,
+pricing, catalogue taxes, calculations, invoices or historical snapshots without
+a separate user request. This delivery is source-only: no regression/release
+checks, test/build/typecheck/validation wrappers, service restarts, migration
+execution, deployment or live writes. Runtime behavior remains unverified.
+See `docs/gst-settings.md`.
+
 All migrations are automatic in both Replit development and VPS deployments.
 This standing instruction replaces earlier per-revision `operator_only` and
 additive-only normal-runner approval policies. Do not ask the user to approve

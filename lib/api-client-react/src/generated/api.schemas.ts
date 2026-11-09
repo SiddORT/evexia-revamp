@@ -3075,6 +3075,34 @@ export interface FileResponse {
   version: number;
 }
 
+export interface GSTSettingsView {
+  before_rate: string | null;
+  configured: boolean;
+  cutoff_date: string | null;
+  on_after_rate: string | null;
+  version: number;
+}
+
+export interface GSTSettingsWrite {
+  /**
+   * @maxLength 6
+   * @pattern ^(?:(?:0|[1-9][0-9]?)(?:\.[0-9]{1,2})?|100(?:\.0{1,2})?)$
+   */
+  before_rate: string;
+  /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
+  cutoff_date: string;
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  /**
+   * @maxLength 6
+   * @pattern ^(?:(?:0|[1-9][0-9]?)(?:\.[0-9]{1,2})?|100(?:\.0{1,2})?)$
+   */
+  on_after_rate: string;
+}
+
 export interface HeadquarterAreaInput {
   code?: string | null;
   id?: string | null;

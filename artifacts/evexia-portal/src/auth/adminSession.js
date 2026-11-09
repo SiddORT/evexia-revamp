@@ -1045,6 +1045,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
     : resource === 'pricing-rules'
     ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    : resource === 'gst-settings'
+    ? /^$/
     : resource === 'immunotherapy-extract-settings'
     ? /^\/(?:categories|[0-9a-f-]{36})$/i
     : resource === 'settlements'
@@ -1106,6 +1108,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const readScope = contactReadScope();
   const owner = state.user?.id;
   const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
+  const gstSettingsOperation = resource === 'gst-settings';
   const extractSettingsOperation = resource === 'immunotherapy-extract-settings';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
@@ -1116,6 +1119,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     if (resource === 'pricing-rules' && !isSuperAdminIdentity(state.user)) {
       throw new SessionError('Pricing Rules require the protected Super Admin.', 403);
+    }
+    if (gstSettingsOperation && !isSuperAdminIdentity(state.user)) {
+      throw new SessionError('GST Settings require the protected Super Admin.', 403);
     }
     if (resource === 'settlements' && (writing ? state.user?.identity_kind !== 'mr'
       : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
@@ -1146,6 +1152,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : resource === 'settlements'
       ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
         : 'Settlements could not be loaded. Check your connection and retry.'
+      : gstSettingsOperation
+      ? 'Shared GST Settings could not be confirmed. Your edits are preserved; load saved settings before saving again.'
       : extractSettingsOperation
       ? 'Shared Extract & Dilution settings could not be confirmed. Your edits are preserved; load saved settings before saving again.'
       : batchOperation
@@ -1204,6 +1212,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : typeof data?.error?.message === 'string' && (response.status !== 422 || /^pricing_rule_/.test(data?.error?.code || '')) ? data.error.message
         : response.status === 422 ? 'Check the category, active matching allergens, real cutoff date, and both required nonnegative INR prices (up to 12 integer and 6 source decimal places).'
         : 'Pricing Rules request failed. Your editor is preserved.'
+      : gstSettingsOperation
+      ? response.status === 403 ? 'GST Settings require the protected Super Admin.'
+        : response.status === 422 ? 'Enter a real cutoff calendar date and both GST rates from 0 to 100, with up to two decimal places. Your edits are preserved.'
+        : response.status === 409 ? 'GST Settings changed. Load saved settings and compare them with your kept edits before saving.'
+        : [404, 405].includes(response.status) ? 'The running API does not provide GST Settings. The updated API and schema must be activated; your edits are preserved.'
+        : uncertain().message
       : resource === 'settlements' && response.status === 403
       ? 'Settlement access denied. Admin is read-only; MRs may record only against their own eligible saved orders.'
       : response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
@@ -1254,6 +1268,16 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     // serverPricingRules.savePricingRule strictly parses the rule and confirms
     // exact submitted categories, saved target membership, rates, date and version.
     if (!data?.id || !Number.isSafeInteger(data.version) || data.version < 1) throw uncertain('response');
+  } else if (mutation && gstSettingsOperation) {
+    // GST has no order identity, number or lines. Confirm the exact save.
+    const rate = (value) => {
+      if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]?|100)(?:\.[0-9]{1,2})?$/.test(value)) return null;
+      const [whole, fraction = ''] = value.split('.');
+      return `${whole}.${fraction.padEnd(2, '0')}`;
+    };
+    if (data?.configured !== true || data.version !== body.expected_version + 1
+      || data.cutoff_date !== body.cutoff_date || rate(data.before_rate) !== rate(body.before_rate)
+      || rate(data.on_after_rate) !== rate(body.on_after_rate)) throw uncertain();
   } else if (mutation && extractSettingsOperation) {
     if (data?.categoryId !== path.slice(1) || data.version !== body.expected_version + 1
         || JSON.stringify(data.rows) !== JSON.stringify(body.rows)) throw uncertain();

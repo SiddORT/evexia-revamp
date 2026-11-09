@@ -1,4 +1,6 @@
 export * from "./generated/api";
+export * from "./generated/types/gSTSettingsView";
+export * from "./generated/types/gSTSettingsWrite";
 export * from "./generated/types/immExtractCategories";
 export * from "./generated/types/immExtractCategory";
 export * from "./generated/types/immExtractPair";

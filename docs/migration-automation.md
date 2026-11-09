@@ -30,6 +30,13 @@ The project's standing policy is automatic migration execution in **both Replit
 development and VPS deployment**. No separate human approval or per-revision
 classification is required by the normal runners.
 
+The GST Settings source adds forward `0088_gst_settings`, a standalone empty
+shared configuration table. It changes no orders or calculations. Coordinated
+development source metadata is prepared offline; no migrations, service
+restarts, runtime checks or regression/release checks were run for this delivery.
+Production fresh-install catalog evidence remains at its reproduced target.
+See [gst-settings.md](gst-settings.md).
+
 ## What runs automatically
 
 - Policy version 2 defaults every new, valid Alembic revision to `automatic`.

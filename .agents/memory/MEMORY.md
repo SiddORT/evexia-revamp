@@ -94,6 +94,7 @@
 - [Release fixture reuse](release-fixture-reuse.md) — optimize setup before bootstrap, not account creation, credential budgets or assertions.
 - [Operator prepared plans](operator-schema-prepared-plans.md) — pooled queries can retain predecessor result shapes across schema retirement.
 - [Generated validator literal order](codegen-literal-order.md) — fix generator initialization order without weakening API validation or changing valid contracts.
+- [Scoped contract generation](scoped-contract-generation.md) — narrow API additions must preserve unrelated refined contracts and generated validators.
 - [Operator revision boundaries](operator-revision-boundaries.md) — head changes must preserve compatible paused maintenance without accepting arbitrary future schemas.
 - [Scoped operator approval](scoped-operator-approval.md) — recovery evidence never expands approval to a broader runner’s later migrations.
 - [Account encryption boundary](account-encryption-boundary.md) — ciphertext-only users/history are coupled; bulk identifier writes must fail explicitly and old account decryption keys remain needed.
