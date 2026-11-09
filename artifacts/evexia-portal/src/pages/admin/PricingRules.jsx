@@ -104,7 +104,6 @@ function PricingWorkspace() {
         <button type="button" className="admin-button" disabled={Boolean(editor)} onClick={() => open('new')} data-testid="button-add-pricing-rule"><Plus size={16} aria-hidden="true" /> Add rule</button>
       </div>
     </div>
-    <p className="pricing-rules-note" data-testid="text-pricing-rules-note">Configuration only — no order applies these prices. On/after includes the cutoff day. Selected allergens cannot overlap another rule.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-pricing-rule-feedback">{feedback}</div>}
     {editor && <RuleEditor key={editor.key} editor={editor} onClose={() => setEditor(null)} onSaved={saved} />}
     <section className="admin-panel pricing-rules-panel" aria-label="Pricing rule list" aria-busy={loading}>
