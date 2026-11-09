@@ -33,7 +33,7 @@ function rowsFor(po, receipt) {
   const expiryDate = receipt ? '' : expiryYearsFromToday(2);
   return po.lines.map((line) => {
     const saved = receipt?.lines.find((l) => l.lineId === line.id);
-    return { lineId: line.id, receivedQty: saved ? String(saved.receivedQty) : '', acceptedQty: saved ? String(saved.acceptedQty) : '', batchNo: saved?.batchNo || '', expiryDate: receipt ? saved?.expiryDate || '' : expiryDate, ...(receipt ? {} : { actualUnitCost: '', costProvenance: '' }) /* new lines only; sent as null when blank */ };
+    return { lineId: line.id, receivedQty: saved ? String(saved.receivedQty) : '', acceptedQty: saved ? String(saved.acceptedQty) : '', batchNo: saved?.batchNo || '', expiryDate: receipt ? saved?.expiryDate || '' : expiryDate };
   });
 }
 
@@ -232,7 +232,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
         {!isNew && <p className="mr-form__hint" role="note">If later receipts accepted previously rejected units, you can retain or reduce this receipt’s historical received quantity when correcting it. Accepted quantity still cannot exceed the balance after other active receipts; new or increased receiving remains limited by that balance.</p>}
         {missingRows.length > 0 && po && <button type="button" className="admin-button admin-button--secondary" style={{ marginBottom: 10 }} onClick={restoreRows} data-testid="button-restore-pr-rows">Restore removed rows ({missingRows.length})</button>}
         {!po ? <div className="admin-empty"><strong>Select a purchase order</strong><p>Its product rows will load here.</p></div> : values.rows.length === 0 ? <div className="admin-empty"><strong>No rows left</strong><p>Every row was removed. Use Restore removed rows to bring them back.</p></div> :
-          <div className="pr-grid" role="region" aria-label="Receipt rows" tabIndex={0}><table><thead><tr><th>Sr. No.</th><th>Product name</th><th>Ordered</th><th>Balance</th><th>Batch No.</th><th>Received</th><th>Accepted</th><th>Expiry date</th>{isNew && <th>Actual purchase cost (INR per unit, optional) and source</th>}<th>Rejected</th><th>Remove</th></tr></thead>
+          <div className="pr-grid" role="region" aria-label="Receipt rows" tabIndex={0}><table><thead><tr><th>Sr. No.</th><th>Product name</th><th>Ordered</th><th>Balance</th><th>Batch No.</th><th>Received</th><th>Accepted</th><th>Expiry date</th><th>Rejected</th><th>Remove</th></tr></thead>
             <tbody>{values.rows.map((r, i) => {
               const line = po.lines.find((l) => l.id === r.lineId); const avail = balances[r.lineId] ?? 0;
               const rej = num(r.receivedQty) - num(r.acceptedQty);
@@ -242,8 +242,6 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
                 <td><input className="mr-form__control" type="number" min="0" step="0.001" value={r.receivedQty} onChange={(e) => setRow(i, 'receivedQty', e.target.value)} aria-label={`Received quantity, row ${i + 1}`} aria-invalid={Boolean(err(i, 'receivedQty'))} data-testid={`input-pr-received-${i}`} />{err(i, 'receivedQty') && <p className="mr-form__error" role="alert">{err(i, 'receivedQty')}</p>}</td>
                 <td><input className="mr-form__control" type="number" min="0" step="0.001" value={r.acceptedQty} onChange={(e) => setRow(i, 'acceptedQty', e.target.value)} aria-label={`Accepted quantity, row ${i + 1}`} aria-invalid={Boolean(err(i, 'acceptedQty'))} data-testid={`input-pr-accepted-${i}`} />{err(i, 'acceptedQty') && <p className="mr-form__error" role="alert">{err(i, 'acceptedQty')}</p>}</td>
                 <td><input className="mr-form__control" type="date" value={r.expiryDate} min={values.receivedDate} onChange={(e) => setRow(i, 'expiryDate', e.target.value)} aria-label={`Expiry date, row ${i + 1}`} aria-invalid={Boolean(err(i, 'expiryDate'))} data-testid={`input-pr-expiry-${i}`} />{err(i, 'expiryDate') && <p className="mr-form__error" role="alert">{err(i, 'expiryDate')}</p>}</td>
-                {isNew && <td><input className="mr-form__control" inputMode="decimal" maxLength={16} value={r.actualUnitCost ?? ''} onChange={(e) => setRow(i, 'actualUnitCost', e.target.value)} aria-label={`Actual unit cost in INR, row ${i + 1}`} aria-invalid={Boolean(err(i, 'actualUnitCost'))} data-testid={`input-pr-cost-${i}`} />{err(i, 'actualUnitCost') && <p className="mr-form__error" role="alert">{err(i, 'actualUnitCost')}</p>}
-                  <input className="mr-form__control" maxLength={1000} value={r.costProvenance ?? ''} onChange={(e) => setRow(i, 'costProvenance', e.target.value)} placeholder="Invoice reference" aria-label={`Cost source (supplier invoice reference), row ${i + 1}`} aria-invalid={Boolean(err(i, 'costProvenance'))} data-testid={`input-pr-cost-source-${i}`} />{err(i, 'costProvenance') && <p className="mr-form__error" role="alert">{err(i, 'costProvenance')}</p>}</td>}
                 <td><strong>{q3(rej)}</strong><small>Stays outstanding</small></td>
                 <td><button type="button" className="po-action po-action--danger" onClick={() => { removedRows.current.set(r.lineId, { ...r }); setValues((c) => ({ ...c, rows: c.rows.filter((_, k) => k !== i) })); setErrors({}); }} aria-label={`Remove row ${i + 1}`} data-testid={`button-remove-pr-line-${i}`}><X size={14} /></button></td></tr>;
             })}</tbody></table></div>}

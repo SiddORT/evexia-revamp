@@ -67,12 +67,9 @@ export function inputPR(values) {
     staffId: values.receiverMode === 'staff' ? values.staff?.id || null : null,
     otherName: values.receiverMode === 'other' ? values.otherName.trim() : null,
     lines: values.rows.filter((r) => milli(r.receivedQty) !== 0n && String(r.receivedQty).trim() !== '')
-      .map((r) => {
-        const line = { ...r, receivedQty: String(r.receivedQty).trim(), acceptedQty: String(r.acceptedQty).trim() };
-        // Cost is only captured on new receipt lines; edited historical lines never carry it, so retained costs are untouched.
-        if ('actualUnitCost' in r) { const c = String(r.actualUnitCost ?? '').trim(); line.actualUnitCost = c || null; line.costProvenance = c ? String(r.costProvenance ?? '').trim() || null : null; }
-        return line;
-      }) };
+      // Receipt entry sends only its editable fields; historical cost evidence stays server-owned.
+      .map((r) => ({ lineId: r.lineId, receivedQty: String(r.receivedQty).trim(),
+        acceptedQty: String(r.acceptedQty).trim(), batchNo: r.batchNo, expiryDate: r.expiryDate })) };
 }
 export function validateDraftPR(values, po, receipt) {
   const errors = {};
@@ -94,10 +91,6 @@ export function validateDraftPR(values, po, receipt) {
     if (received !== null && available !== null && received > (old > available ? old : available)) key('receivedQty', 'Quantity exceeds current or retained historical allowance.');
     if (accepted !== null && available !== null && accepted > available) key('acceptedQty', 'Acceptance exceeds the balance after other active receipts.');
     if (!r.batchNo.trim() || r.batchNo.length > 120) key('batchNo', 'Enter a batch number up to 120 characters.');
-    if ('actualUnitCost' in r && String(r.actualUnitCost ?? '').trim()) {
-      if (!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,6})?$/.test(String(r.actualUnitCost).trim())) key('actualUnitCost', 'Up to 9 whole digits and 6 decimals.');
-      else { const pv = String(r.costProvenance ?? '').trim(); if (pv.length < 3 || pv.length > 1000) key('costProvenance', 'Describe the cost source (3 to 1000 characters).'); }
-    } else if ('costProvenance' in r && String(r.costProvenance ?? '').trim()) key('costProvenance', 'Enter a unit cost, or clear the cost source.');
     if (!validDate(r.expiryDate) || r.expiryDate < values.receivedDate) key('expiryDate', 'Enter an expiry on or after receiving.');
   });
   if (!positive) errors.lines = 'Enter at least one positive received quantity.';
