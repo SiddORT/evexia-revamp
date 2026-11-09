@@ -132,3 +132,14 @@ that version explicitly, label its evidence separately from local observations,
 and never rerun a reported committed migration to make the fork resemble main.
 Record inaccessible or non-JSON main-preview probes as unverified, not failed
 application readiness or evidence of rollback.
+
+Health and readiness alone do not prove the running API loaded a merged contract.
+
+**Why:** A stale development listener remained healthy while its managed
+replacement failed to bind the occupied port. The updated frontend rejected the
+older response format even though readiness passed.
+
+**How to apply:** Compare the running OpenAPI contract with the changed source
+before altering response validation. Diagnose listener ownership when the
+managed workflow fails with an occupied port; do not weaken client validation
+to accept a stale API.
