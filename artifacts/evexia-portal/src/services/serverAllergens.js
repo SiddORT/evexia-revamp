@@ -35,7 +35,7 @@ export function validatePriceBounds(min, max) {
   if (!errors.min && !errors.max && min && max && compareDecimal(catalogueRate(min), catalogueRate(max)) > 0) errors.max = 'Maximum price must not be below minimum price.';
   return errors;
 }
-export function validateAllergen(v, { dilutionSetup = false } = {}) {
+export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = false } = {}) {
   const e = {};
   const nameError = masterNameError(v.name, 'allergen name');
   if (nameError) e.name = nameError;
@@ -54,10 +54,9 @@ export function validateAllergen(v, { dilutionSetup = false } = {}) {
   if (typeof v.mix !== 'boolean') e.mix = 'Select Mix or No Mix.';
   if (dilutionSetup) {
     if (price) e.selling_price = 'Leave selling price blank for Dilution setup. Configure actual cutoff rates later in Pricing Rules.';
-    if (th) e.threshold_limit = 'Leave low stock alert blank for Dilution setup.';
     if (v.status !== 'active') e.status = 'Select Active for Dilution setup.';
-    if (v.mix !== false) e.mix = 'Select No Mix for Dilution setup.';
   }
+  if ((dilutionSetup || inventoryOnly) && v.mix !== true) e.mix = 'Dilution must remain Mix.';
   return e;
 }
 export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix });

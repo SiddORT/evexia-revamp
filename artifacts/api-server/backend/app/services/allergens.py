@@ -209,8 +209,10 @@ def setup_dilution(db, actor, body):
                 return result
             raise AllergenError("A Dilution material is already bound. Manage that saved material in Allergens and Pricing Rules; setup cannot replace it.",
                                 409, "allergen_dilution_bound")
-        if body.selling_price is not None or body.threshold_limit is not None or body.mix or body.status != "active":
-            raise AllergenError("Dilution setup requires Active, No Mix and blank selling price/threshold. Enter the required master descriptions and GST explicitly. No prices or stock are seeded.",
+        # Keep the original request digest/replay above fresh setup policy:
+        # older committed No Mix requests must still recover their saved identity.
+        if body.selling_price is not None or not body.mix or body.status != "active":
+            raise AllergenError("Dilution setup requires Active, Mix and blank selling price. An optional nonnegative low stock alert in ml, including zero, is allowed; blank disables alerts. Enter the required master description and GST explicitly. No prices or stock are seeded.",
                                 422, "allergen_dilution_setup")
         row = insert(db, current, body)
         db.add(ImmunotherapyDilutionMaterial(id=1, product_id=row.id, request_id=body.idempotencyKey,
@@ -251,6 +253,11 @@ def mutate(db, actor, record_id, body, operation):
         else:
             row.status = body.status
             if operation == "edit":
+                from app.db.allergen_models import ImmunotherapyDilutionMaterial
+                binding = db.get(ImmunotherapyDilutionMaterial, 1)
+                if binding and binding.product_id == row.id and not body.mix:
+                    raise AllergenError("The bound Dilution material must remain Mix. Your draft is not saved.",
+                                        422, "allergen_dilution_mix")
                 snapshots = validate_references(db, body, row)
                 for field, value in assignments(body).items():
                     setattr(row, field, value)

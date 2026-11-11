@@ -19,17 +19,26 @@ not executed it.
 
 Protected Super Admin opens Allergen Master → Add product and explicitly checks
 the dummy Dilution setup option. Supply the actual name, active category and
-storage reference, required master description and GST. Use Active, No Mix,
-blank selling price and blank alert threshold for this setup. Required unknowns
+storage reference, required master description and GST. Use Active, Mix and
+blank selling price for this setup. Dilution always uses Mix; the form selects
+and locks it for setup and explicit edits of the UUID-bound material. An optional
+low-stock alert in ml accepts the ordinary exact nonnegative quantity (up to
+12 integer and 6 fractional digits, without rounding), including zero. Blank
+disables alerts; zero alerts at zero usable stock, and an entered threshold
+uses the ordinary inventory at-or-below low-stock reporting. Required unknowns
 stay blank until supplied. The description is not an inferred clinical
 concentration. A similarly named record causes a conflict; setup never adopts
 or overwrites it. Unchanged actor/request retries return the same bound identity.
 The binding cannot be silently reassigned or replaced by rerunning setup.
+Original unchanged committed setup retries are recognized before the new Mix
+policy, including older No Mix requests. Replays and reads never backfill Mix,
+thresholds or request digests; a subsequent explicit material edit must save Mix.
 
 The list identifies the bound material as inventory/pricing only even after a
 rename. Clinical reference lists and submitted clinical references exclude its
 UUID; it is never an extra child, skin-test rank, bottle, dosage or prescription
-entry. Normal protected master/inventory management remains available.
+entry, regardless of its Mix flag. Mix is catalogue metadata, not authorization
+for a stock-mixing operation. Normal protected master/inventory management remains available.
 
 Save a Pricing Rule explicitly targeting that material in its actual category,
 and rules for every clinical allergen. Enter both cutoff branches, including
@@ -103,7 +112,7 @@ inventory/configuration access or location/lot allocations.
 
 ## Delivery limitation
 
-Source/diff inspection and API source generation only. No tests, regression or
+This Dilution setup correction used source/diff inspection only. No tests, regression or
 release checks, builds, typechecks, validation/completion command wrappers,
 runtime/browser probes, service restarts, migrations, production activation,
 emails or live order/stock/rate demonstrations were run. Runtime behavior and
