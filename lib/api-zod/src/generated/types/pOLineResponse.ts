@@ -9,8 +9,8 @@ import type { POTaxAmounts } from "./pOTaxAmounts";
 import type { POTaxRates } from "./pOTaxRates";
 
 export interface POLineResponse {
-  concentration?: string | null;
   componentRates?: POTaxRates | null;
+  concentration?: string | null;
   gst: string;
   gstAmount: number;
   id?: string | null;

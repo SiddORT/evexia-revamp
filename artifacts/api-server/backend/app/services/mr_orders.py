@@ -17,6 +17,9 @@ def authorize(db, actor, resource=None, action=None):
     # locks. Admin writes participate in serialization, not in MR restrictions.
     from app.services.order_eligibility import lock as financial_lock
     financial_lock(db)
+    if resource == "immunotherapy":
+        from app.services.immunotherapy_material_pricing import configuration_locks
+        configuration_locks(db)
     current = revalidate_identity(db, actor, lock=True)
     db.info["order_mr_id"] = None
     if current.role == "mr":
@@ -73,7 +76,10 @@ def check_retry_scope(db, saved):
 
 def reference_scope(db, kind):
     identity = scope_identity(db)
-    if not identity or kind == "allergens":
+    if kind == "allergens":
+        from app.db.allergen_models import AllergenProduct, ImmunotherapyDilutionMaterial
+        return [~AllergenProduct.id.in_(select(ImmunotherapyDilutionMaterial.product_id))]
+    if not identity:
         return []
     if kind == "mrs":
         return [MRDirectory.id == identity]

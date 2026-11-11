@@ -95,6 +95,16 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
     spec["paths"] = paths
 
     schemas = spec.get("components", {}).get("schemas", {})
+    # FastAPI/Pydantic can omit nullable defaults from the exported schema.
+    # Retain the existing procurement validator's null-default contract when
+    # regenerating an unrelated order feature; omission must not change its
+    # parsed payload shape.
+    for schema_name, fields in (
+        ("POLineInput", ("gst", "lineId", "unitPrice")),
+        ("POLineResponse", ("concentration",)),
+    ):
+        for field in fields:
+            schemas[schema_name]["properties"][field]["default"] = None
     missing_schemas = {"ErrorEnvelope", "HealthStatus"} - schemas.keys()
     if missing_schemas:
         missing = ", ".join(sorted(missing_schemas))

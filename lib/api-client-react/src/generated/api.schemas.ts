@@ -326,6 +326,7 @@ export interface AllergenResponse {
    */
   gst: string;
   id: string;
+  inventoryOnly?: boolean;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
   mix: boolean;
   /**
@@ -1066,6 +1067,42 @@ export interface DesignationStatus {
 export interface DesignationVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export type DilutionMaterialSetupStatus =
+  (typeof DilutionMaterialSetupStatus)[keyof typeof DilutionMaterialSetupStatus];
+
+export const DilutionMaterialSetupStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DilutionMaterialSetup {
+  category_id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  /**
+   * Original percentage 0–100, up to six source places; half-up rounded and returned with two places.
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  idempotencyKey: string;
+  /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
+  mix: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
+  selling_price?: string | null;
+  status: DilutionMaterialSetupStatus;
+  storage_location_id: string;
+  threshold_limit?: string | null;
 }
 
 export type DisposalCreateSourceKind =
@@ -2596,6 +2633,8 @@ export interface DraftWrite {
   payload: DraftWritePayload;
 }
 
+export type EligibilityPreviewPriceQuote = { [key: string]: unknown } | null;
+
 export interface EligibilityReason {
   ageDays?: number | null;
   balance: string;
@@ -2608,10 +2647,15 @@ export interface EligibilityReason {
 export interface EligibilityPreview {
   businessDate?: string | null;
   doctorDaysLimit?: number | null;
+  doctorPendingBalance?: string | null;
   eligible: boolean;
+  oldestDoctorUnpaidAgeDays?: number | null;
+  oldestDoctorUnpaidDate?: string | null;
   outstanding?: string | null;
   paymentLimit?: string | null;
+  priceQuote?: EligibilityPreviewPriceQuote;
   proposedBalance?: string | null;
+  quoteToken?: string | null;
   reasons: EligibilityReason[];
   replay?: boolean;
   resultingOutstanding?: string | null;
@@ -3381,6 +3425,8 @@ export interface ImmWrite {
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmWritePricingBasis;
+  quoteToken?: string | null;
+  refreshQuote?: boolean;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -3556,6 +3602,7 @@ export interface ImmInput {
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmInputPricingBasis;
+  refreshQuote?: boolean;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
@@ -3624,9 +3671,13 @@ export type ImmRecordGroupsItem = { [key: string]: unknown };
 
 export type ImmRecordHistoricalGroups = { [key: string]: unknown }[] | null;
 
+export type ImmRecordMaterialConsumption = { [key: string]: unknown } | null;
+
 export type ImmRecordMr = { [key: string]: unknown };
 
 export type ImmRecordPatient = { [key: string]: unknown };
+
+export type ImmRecordPricingEvidence = { [key: string]: unknown } | null;
 
 export type ImmRecordRecipient = { [key: string]: unknown };
 
@@ -3650,6 +3701,7 @@ export interface ImmRecord {
   historicalPricingBasis?: string | null;
   historicalTotalMinor?: number | null;
   id: string;
+  materialConsumption?: ImmRecordMaterialConsumption;
   mr: ImmRecordMr;
   mrEditable?: boolean;
   mrId: string;
@@ -3659,7 +3711,9 @@ export interface ImmRecord {
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmRecordPricingBasis;
+  pricingEvidence?: ImmRecordPricingEvidence;
   pricingNeedsReview?: boolean;
+  pricingPolicy?: string | null;
   recipient: ImmRecordRecipient;
   rejection?: ImmRecordRejection;
   remarks: string;
@@ -4131,11 +4185,170 @@ export interface InvitationResult {
   status: InvitationResultStatus;
 }
 
+export interface InvoiceActor {
+  id: string;
+  label: string;
+}
+
+export interface InvoiceChange {
+  after: string;
+  before: string;
+  field: string;
+}
+
+export interface InvoiceDetails {
+  /** @maxLength 200 */
+  account_holder?: string;
+  /** @maxLength 200 */
+  account_number?: string;
+  /** @maxLength 2000 */
+  address?: string;
+  /** @maxLength 200 */
+  bank_name?: string;
+  /** @maxLength 200 */
+  branch?: string;
+  /** @maxLength 200 */
+  company_name?: string;
+  /** @maxLength 200 */
+  customer_care?: string;
+  /** @maxLength 4000 */
+  declaration?: string;
+  /** @maxLength 1000 */
+  drug_licenses?: string;
+  /** @maxLength 200 */
+  email?: string;
+  /** @maxLength 200 */
+  gstin?: string;
+  /** @maxLength 200 */
+  ifsc?: string;
+  /** @maxLength 200 */
+  pan?: string;
+  /** @maxLength 200 */
+  payment_on?: string;
+  /** @maxLength 12000 */
+  terms?: string;
+  /** @maxLength 200 */
+  upi_id?: string;
+  /** @maxLength 200 */
+  website?: string;
+}
+
+export type InvoiceQRMetadataContentType =
+  (typeof InvoiceQRMetadataContentType)[keyof typeof InvoiceQRMetadataContentType];
+
+export const InvoiceQRMetadataContentType = {
+  "image/png": "image/png",
+  "image/jpeg": "image/jpeg",
+} as const;
+
+export interface InvoiceQRMetadata {
+  content_type: InvoiceQRMetadataContentType;
+  sha256: string;
+  size: number;
+  version: number;
+}
+
+export interface InvoiceRevisionView {
+  actor: InvoiceActor;
+  changed_at: string;
+  changes: InvoiceChange[];
+  qr_after: InvoiceQRMetadata | null;
+  qr_before: InvoiceQRMetadata | null;
+  version: number;
+}
+
+export interface InvoiceHistoryView {
+  items: InvoiceRevisionView[];
+  next_before_version: number | null;
+}
+
+export type InvoiceQRInputContentType =
+  (typeof InvoiceQRInputContentType)[keyof typeof InvoiceQRInputContentType];
+
+export const InvoiceQRInputContentType = {
+  "image/png": "image/png",
+  "image/jpeg": "image/jpeg",
+} as const;
+
+export interface InvoiceQRInput {
+  /**
+   * @minLength 1
+   * @maxLength 699052
+   */
+  base64: string;
+  content_type: InvoiceQRInputContentType;
+}
+
+export type InvoiceQRViewContentType =
+  (typeof InvoiceQRViewContentType)[keyof typeof InvoiceQRViewContentType];
+
+export const InvoiceQRViewContentType = {
+  "image/png": "image/png",
+  "image/jpeg": "image/jpeg",
+} as const;
+
+export interface InvoiceQRView {
+  /**
+   * @minLength 1
+   * @maxLength 699052
+   */
+  base64: string;
+  content_type: InvoiceQRViewContentType;
+  version: number;
+}
+
+export interface InvoiceReconcileInput {
+  [key: string]: unknown;
+}
+
+export type InvoiceReconcileViewOutcome =
+  (typeof InvoiceReconcileViewOutcome)[keyof typeof InvoiceReconcileViewOutcome];
+
+export const InvoiceReconcileViewOutcome = {
+  committed: "committed",
+  cancelled: "cancelled",
+} as const;
+
+export interface InvoiceSettingsView {
+  configured: boolean;
+  details: InvoiceDetails;
+  qr: InvoiceQRMetadata | null;
+  updated_at: string | null;
+  version: number;
+}
+
+export interface InvoiceReconcileView {
+  committed_version: number | null;
+  outcome: InvoiceReconcileViewOutcome;
+  saved: InvoiceSettingsView;
+}
+
+export type InvoiceSettingsWriteQrAction =
+  (typeof InvoiceSettingsWriteQrAction)[keyof typeof InvoiceSettingsWriteQrAction];
+
+export const InvoiceSettingsWriteQrAction = {
+  keep: "keep",
+  remove: "remove",
+  replace: "replace",
+} as const;
+
+export interface InvoiceSettingsWrite {
+  details: InvoiceDetails;
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  qr_action: InvoiceSettingsWriteQrAction;
+  qr_data?: InvoiceQRInput | null;
+  request_id: string;
+}
+
 export interface ItPricingAllergenReference {
   categoryId: string;
-  savedCategoryId?: string | null;
   id: string;
   name: string;
+  savedCategoryId?: string | null;
   status: string;
 }
 
@@ -4153,10 +4366,14 @@ export interface ItPricingReferencePage {
   total: number;
 }
 
+export type ItPricingRuleEditAllergenCategoryIds = {
+  [key: string]: string;
+} | null;
+
 export interface ItPricingRuleEdit {
-  allergenCategoryIds?: { [key: string]: string } | null;
   /** @maxLength 64 */
   afterRate: string;
+  allergenCategoryIds?: ItPricingRuleEditAllergenCategoryIds;
   /**
    * @minItems 1
    * @maxItems 100
@@ -4175,10 +4392,14 @@ export interface ItPricingRuleEdit {
   idempotencyKey: string;
 }
 
+export type ItPricingRuleInputAllergenCategoryIds = {
+  [key: string]: string;
+} | null;
+
 export interface ItPricingRuleInput {
-  allergenCategoryIds?: { [key: string]: string } | null;
   /** @maxLength 64 */
   afterRate: string;
+  allergenCategoryIds?: ItPricingRuleInputAllergenCategoryIds;
   /**
    * @minItems 1
    * @maxItems 100
@@ -4196,8 +4417,8 @@ export interface ItPricingRuleSaved {
   afterRate: string;
   allergens: ItPricingAllergenReference[];
   beforeRate: string;
-  category: ItPricingReference;
   categories: ItPricingReference[];
+  category: ItPricingReference;
   cutoff: string;
   id: string;
   version: number;
@@ -7951,8 +8172,8 @@ export interface POTaxAmounts {
 }
 
 export interface POLineResponse {
-  concentration?: string | null;
   componentRates?: POTaxRates | null;
+  concentration?: string | null;
   gst: string;
   gstAmount: number;
   id?: string | null;
@@ -14535,6 +14756,15 @@ export type GetInventoryLedgerParams = {
   limit?: number;
 };
 
+export type ListInvoiceSettingsHistoryParams = {
+  before_version?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 20
+   */
+  limit?: number;
+};
+
 export type ListKitsOrdersParams = {
   cursor?: string | null;
   /**
@@ -15375,8 +15605,6 @@ export const DownloadPatientSampleFormat = {
 } as const;
 
 export type ListItPricingRulesParams = {
-  /** @maxLength 100 */
-  query?: string;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -15387,6 +15615,10 @@ export type ListItPricingRulesParams = {
    * @maximum 100
    */
   limit?: number;
+  /**
+   * @maxLength 100
+   */
+  query?: string;
 };
 
 export type GetItPricingRuleReferencesParams = {
@@ -15395,7 +15627,6 @@ export type GetItPricingRuleReferencesParams = {
    */
   query?: string;
   categoryId?: string | null;
-  categoryIds?: string[] | null;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -15406,6 +15637,7 @@ export type GetItPricingRuleReferencesParams = {
    * @maximum 100
    */
   limit?: number;
+  categoryIds?: string[] | null;
 };
 
 export type ListProductCategoriesParams = {
@@ -17134,196 +17366,4 @@ export type ResolvePortalHostnameParams = {
    * @maxLength 253
    */
   hostname: string;
-};
-
-
-
-export interface InvoiceActor {
-  id: string;
-  label: string;
-}
-
-
-export interface InvoiceChange {
-  after: string;
-  before: string;
-  field: string;
-}
-
-
-export interface InvoiceDetails {
-  /** @maxLength 200 */
-  account_holder?: string;
-  /** @maxLength 200 */
-  account_number?: string;
-  /** @maxLength 2000 */
-  address?: string;
-  /** @maxLength 200 */
-  bank_name?: string;
-  /** @maxLength 200 */
-  branch?: string;
-  /** @maxLength 200 */
-  company_name?: string;
-  /** @maxLength 200 */
-  customer_care?: string;
-  /** @maxLength 4000 */
-  declaration?: string;
-  /** @maxLength 1000 */
-  drug_licenses?: string;
-  /** @maxLength 200 */
-  email?: string;
-  /** @maxLength 200 */
-  gstin?: string;
-  /** @maxLength 200 */
-  ifsc?: string;
-  /** @maxLength 200 */
-  pan?: string;
-  /** @maxLength 200 */
-  payment_on?: string;
-  /** @maxLength 12000 */
-  terms?: string;
-  /** @maxLength 200 */
-  upi_id?: string;
-  /** @maxLength 200 */
-  website?: string;
-}
-
-
-export type InvoiceQRMetadataContentType =
-  (typeof InvoiceQRMetadataContentType)[keyof typeof InvoiceQRMetadataContentType];
-
-
-export const InvoiceQRMetadataContentType = {
-  "image/png": "image/png",
-  "image/jpeg": "image/jpeg",
-} as const;
-
-
-export interface InvoiceQRMetadata {
-  content_type: InvoiceQRMetadataContentType;
-  sha256: string;
-  size: number;
-  version: number;
-}
-
-
-export interface InvoiceRevisionView {
-  actor: InvoiceActor;
-  changed_at: string;
-  changes: InvoiceChange[];
-  qr_after: InvoiceQRMetadata | null;
-  qr_before: InvoiceQRMetadata | null;
-  version: number;
-}
-
-
-export interface InvoiceHistoryView {
-  items: InvoiceRevisionView[];
-  next_before_version: number | null;
-}
-
-
-export type InvoiceQRInputContentType =
-  (typeof InvoiceQRInputContentType)[keyof typeof InvoiceQRInputContentType];
-
-
-export const InvoiceQRInputContentType = {
-  "image/png": "image/png",
-  "image/jpeg": "image/jpeg",
-} as const;
-
-
-export interface InvoiceQRInput {
-  /**
-   * @minLength 1
-   * @maxLength 699052
-   */
-  base64: string;
-  content_type: InvoiceQRInputContentType;
-}
-
-
-export type InvoiceQRViewContentType =
-  (typeof InvoiceQRViewContentType)[keyof typeof InvoiceQRViewContentType];
-
-
-export const InvoiceQRViewContentType = {
-  "image/png": "image/png",
-  "image/jpeg": "image/jpeg",
-} as const;
-
-
-export interface InvoiceQRView {
-  /**
-   * @minLength 1
-   * @maxLength 699052
-   */
-  base64: string;
-  content_type: InvoiceQRViewContentType;
-  version: number;
-}
-
-
-export interface InvoiceReconcileInput {
-  [key: string]: unknown;
-}
-
-
-export type InvoiceReconcileViewOutcome =
-  (typeof InvoiceReconcileViewOutcome)[keyof typeof InvoiceReconcileViewOutcome];
-
-
-export const InvoiceReconcileViewOutcome = {
-  committed: "committed",
-  cancelled: "cancelled",
-} as const;
-
-
-export interface InvoiceSettingsView {
-  configured: boolean;
-  details: InvoiceDetails;
-  qr: InvoiceQRMetadata | null;
-  updated_at: string | null;
-  version: number;
-}
-
-
-export interface InvoiceReconcileView {
-  committed_version: number | null;
-  outcome: InvoiceReconcileViewOutcome;
-  saved: InvoiceSettingsView;
-}
-
-
-export type InvoiceSettingsWriteQrAction =
-  (typeof InvoiceSettingsWriteQrAction)[keyof typeof InvoiceSettingsWriteQrAction];
-
-
-export const InvoiceSettingsWriteQrAction = {
-  keep: "keep",
-  remove: "remove",
-  replace: "replace",
-} as const;
-
-
-export interface InvoiceSettingsWrite {
-  details: InvoiceDetails;
-  /**
-   * @minimum 0
-   * @maximum 2147483646
-   */
-  expected_version: number;
-  qr_action: InvoiceSettingsWriteQrAction;
-  qr_data?: InvoiceQRInput | null;
-  request_id: string;
-}
-
-
-export type ListInvoiceSettingsHistoryParams = {
-  before_version?: number | null;
-  /**
-   * @minimum 1
-   * @maximum 20
-   */
-  limit?: number;
 };

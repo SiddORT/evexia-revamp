@@ -8,8 +8,8 @@
 
 export interface ItPricingAllergenReference {
   categoryId: string;
-  savedCategoryId?: string | null;
   id: string;
   name: string;
+  savedCategoryId?: string | null;
   status: string;
 }

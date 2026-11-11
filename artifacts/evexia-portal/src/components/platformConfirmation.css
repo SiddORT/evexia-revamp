@@ -7,3 +7,4 @@
 .platform-confirm button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--admin-border, #c7d5dd); background: var(--admin-surface, #fff); color: inherit; padding: 10px 16px; min-height: 44px; }
 .platform-confirm button.platform-confirm__danger { background: #b42332; border-color: #b42332; color: #fff; }
 .platform-confirm button:focus-visible { outline: 3px solid var(--admin-accent, #2685ba); outline-offset: 3px; }
+.platform-confirm button:disabled { opacity: .5; cursor: not-allowed; }

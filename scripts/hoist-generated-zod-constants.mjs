@@ -1,5 +1,6 @@
 // Orval can emit response-bound constants after schemas that reference them.
-// Move only side-effect-free literal declarations; never change validation.
+// Move only side-effect-free literal declarations. Preserve the API's UUID
+// dictionary-key validation where Orval drops OpenAPI propertyNames.
 import fs from 'node:fs'
 import path from 'node:path'
 import ts from 'typescript'
@@ -30,9 +31,35 @@ export function hoistLiteralConstants(source) {
   return source.slice(0, boundary) + '\n\n' + hoisted.join('\n') + '\n' + body
 }
 
+export function preservePricingUuidKeys(source) {
+  const tree = ts.createSourceFile('generated.ts', source, ts.ScriptTarget.Latest, true)
+  const edits = []
+  for (const statement of tree.statements) {
+    if (!ts.isVariableStatement(statement)) continue
+    for (const declaration of statement.declarationList.declarations) {
+      if (!['CreateItPricingRuleBody', 'EditItPricingRuleBody'].includes(declaration.name.getText(tree))) continue
+      const visit = node => {
+        if (ts.isPropertyAssignment(node) && node.name.getText(tree) === 'allergenCategoryIds') {
+          const record = child => {
+            if (ts.isCallExpression(child) && child.expression.getText(tree) === 'zod.record'
+                && child.arguments[0]?.getText(tree) === 'zod.string()') {
+              edits.push(child.arguments[0].end)
+            }
+            ts.forEachChild(child, record)
+          }
+          record(node.initializer)
+        } else ts.forEachChild(node, visit)
+      }
+      if (declaration.initializer) visit(declaration.initializer)
+    }
+  }
+  for (const end of edits.sort((a, b) => b - a)) source = source.slice(0, end) + '.uuid()' + source.slice(end)
+  return source
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.dirname, 'hoist-generated-zod-constants.mjs')) {
   const file = path.resolve(import.meta.dirname, '../lib/api-zod/src/generated/api.ts')
   const source = fs.readFileSync(file, 'utf8')
-  const result = hoistLiteralConstants(source)
+  const result = preservePricingUuidKeys(hoistLiteralConstants(source))
   if (result !== source) fs.writeFileSync(file, result)
 }

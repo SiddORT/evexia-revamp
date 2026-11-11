@@ -10,6 +10,16 @@ regression/release/completion-validation wrappers, runtime/browser probes,
 service starts/restarts, migrations, deployment or live writes were performed.
 See `docs/invoice-details-and-templates.md`.
 
+New governed MR Immunotherapy placement explicitly consumes Pricing Rules in
+INR/ml and actual configured Extract/Dilution ml before eligibility/confirmation.
+Dilution is a separately bound inventory/pricing master, never a clinical child.
+Only explicit Admin approval consumes saved quantities atomically from usable
+allocated lots; no placement reservation or historical deduction. Positive MR
+payment limit requires strict `<` exposure here only. See
+`docs/immunotherapy-material-pricing.md`. Forward `0089_it_material_pricing`
+is prepared; this delivery did not execute tests, release/validation wrappers,
+runtime probes, restarts, migrations, deployments or live writes. Runtime
+behavior remains unverified.
 GST Settings is protected Super Admin shared configuration only: one literal
 calendar cutoff and exact before/on-or-after percentages, with no invented
 initial values. The exact cutoff belongs to on/after. Do not apply it to orders,
@@ -38,8 +48,8 @@ deploy without authorization for that operation.
 
 Shared Immunotherapy Extract & Dilution settings are protected Super Admin
 configuration for new MR category/Mix final placements only. Use explicit
-category-ranked ml pairs; one/two-child bottles use the first one/two rows of the
-same table. Never infer clinical quantities, repack saved bottles or reapply
+category/dosage/count/rank ml pairs; Single, Double and Triple use independent
+configured rows. Never infer clinical quantities, repack saved bottles or reapply
 settings to history. Assignment and immutable provenance are saved atomically;
 manual Admin edits and approval requirements remain. Forward
 `0086_immunotherapy_extract`, readiness/maintenance compatibility, API/generated

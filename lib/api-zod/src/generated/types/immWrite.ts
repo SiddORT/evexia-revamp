@@ -32,6 +32,8 @@ export interface ImmWrite {
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmWritePricingBasis;
+  quoteToken?: string | null;
+  refreshQuote?: boolean;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

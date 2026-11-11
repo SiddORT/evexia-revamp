@@ -6,8 +6,9 @@ const CHANNEL = 'evexia-order-refresh';
 let confirmEligibility = null;
 // Body objects are retained by existing uncertain-outcome editors. Once sent,
 // retries must go straight to server idempotent replay, not a new eligibility
-// decision that could hide a successful placement. Weak references hold no PII.
-const attempted = new WeakSet();
+// decision that could hide a successful placement. Confirmed payloads remain
+// memory-only and are released with their editor/request body; never persisted.
+const attempted = new WeakMap();
 
 export function registerEligibilityConfirmation(confirm) {
   confirmEligibility = confirm;
@@ -24,8 +25,9 @@ function eligibilityError(message, code = 'mr_eligibility_cancelled') {
 
 async function beforePlacement(path, options, resource) {
   const body = options?.body;
-  if (!body || typeof body !== 'object' || attempted.has(body)
-      || getSession().user?.identity_kind !== 'mr'
+  if (body && attempted.has(body)) return { ...options, body: attempted.get(body) };
+  if (!body || typeof body !== 'object'
+      || (getSession().user?.identity_kind !== 'mr' && !(resource === 'immunotherapy-orders' && body.refreshQuote))
       || !['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource)
       || !(path === '' || /^\/[0-9a-f-]{36}\/(?:edit|resubmit)$/i.test(path))) return options;
   const guard = reportingIdentityGuard();
@@ -40,11 +42,43 @@ async function beforePlacement(path, options, resource) {
   if (typeof preview?.eligible !== 'boolean' || !Array.isArray(preview.reasons) || !Array.isArray(preview.stockAdvice)) {
     throw eligibilityError('Eligibility could not be confirmed. Your draft and uploads remain here.', 'mr_eligibility_unavailable');
   }
-  if (!preview.eligible) {
+  if (preview.priceQuote) {
+    if (!confirmEligibility || !preview.quoteToken) throw eligibilityError('Financial confirmation is unavailable. Keep this draft open and retry.');
+    const amount = (value) => value == null ? 'Unavailable' : `₹${value}`;
+    const days = preview.doctorDaysLimit == null ? 'Unavailable'
+      : `${preview.doctorDaysLimit} days${preview.doctorDaysLimit === 0 ? ' (restriction disabled)' : ''}`;
+    const total = preview.priceQuote.totalMinor;
+    if (!Number.isSafeInteger(total) || total < 0) throw eligibilityError('The quoted total is unreadable. Your draft is preserved.');
+    const orderAmount = `${Math.floor(total / 100)}.${String(total % 100).padStart(2, '0')}`;
+    const warnings = preview.stockAdvice.filter((advice) => advice.state !== 'healthy');
+    const description = [
+      `Effective order date: ${preview.priceQuote.orderDate}`,
+      `Doctor pending payment amount: ${amount(preview.doctorPendingBalance)}`,
+      `Configured MR Doctor Days Limit: ${days}`,
+      `Oldest relevant unpaid-order age: ${preview.oldestDoctorUnpaidAgeDays == null ? 'Unavailable — no relevant unpaid order established' : `${preview.oldestDoctorUnpaidAgeDays} days (saved order date ${preview.oldestDoctorUnpaidDate})`}`,
+      `MR unpaid balance: ${amount(preview.outstanding)}`,
+      `New order amount: ₹${orderAmount}`,
+      `Resulting exposure: ${amount(preview.resultingOutstanding)}`,
+      `MR Payment Limit: ${amount(preview.paymentLimit)}${preview.paymentLimit === '0.00' ? ' (restriction disabled)' : ' — exposure must be strictly below a positive limit'}`,
+      'A days setting alone is not evidence of overdue payment. Unpaid balances use saved orders and committed payments.',
+      ...preview.reasons.map((reason) => reason.message),
+      ...(warnings.length ? ['Stock advice only (no reservation or deduction at placement):', ...warnings.map((advice) => `${advice.name}: ${advice.message}`)] : []),
+      body.refreshQuote ? 'Confirming saves this refreshed quote for explicit Admin review.' : 'Placement awaits explicit Admin approval. Stock is consumed only on approval.',
+    ].join('\n\n');
+    const accepted = await confirmEligibility(description, {
+      title: 'Immunotherapy financial confirmation',
+      actionLabel: body.refreshQuote ? 'Confirm refreshed quote' : 'Confirm & place order',
+      cancelLabel: 'Return to order', destructive: false, preserveLines: true,
+      actionDisabled: !preview.eligible,
+    });
+    if (!preview.eligible) throw eligibilityError(preview.reasons.map((reason) => reason.message).join(' '), preview.reasons[0]?.code);
+    if (!accepted) throw eligibilityError('Placement cancelled. Your order details and verified uploads remain available.');
+    frozen.quoteToken = preview.quoteToken;
+  } else if (!preview.eligible) {
     throw eligibilityError(preview.reasons.map((reason) => reason.message).join(' '), preview.reasons[0]?.code || 'mr_eligibility_unavailable');
   }
   const warnings = preview.stockAdvice.filter((advice) => advice.state !== 'healthy');
-  if (warnings.length) {
+  if (warnings.length && !preview.priceQuote) {
     if (!confirmEligibility) throw eligibilityError('Stock advice is available, but confirmation is not ready. Keep this draft open and retry.');
     const accepted = await confirmEligibility(
       `${warnings.map((advice) => `${advice.name}: ${advice.message}`).join('\n\n')}\n\nThese are advisory warnings, not placement restrictions. Continue placing this unchanged order?`,
@@ -62,7 +96,7 @@ async function beforePlacement(path, options, resource) {
 // atomic endpoint. Retain attempted-body identity across uncertain retries.
 export async function prepareOrderPlacement(path, options, resource) {
   const checked = await beforePlacement(path, options, resource);
-  attempted.add(options.body);
+  attempted.set(options.body, checked.body);
   return checked;
 }
 
@@ -78,7 +112,7 @@ export function announceOrderChange(kind) {
 export async function orderRequest(path, options, resource) {
   const checked = await beforePlacement(path, options, resource);
   if (options?.body && typeof options.body === 'object'
-      && (path === '' || /\/(?:edit|resubmit)$/.test(path))) attempted.add(options.body);
+      && (path === '' || /\/(?:edit|resubmit)$/.test(path))) attempted.set(options.body, checked.body);
   const result = await purchaseOrderRequest(path, checked, resource);
   if (options?.body !== undefined && (path === '' || /\/(?:edit|approve|reject|resubmit)$/.test(path))) {
     try { announceOrderChange(resource); }

@@ -28,6 +28,7 @@ export interface AllergenResponse {
    */
   gst: string;
   id: string;
+  inventoryOnly?: boolean;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
   mix: boolean;
   /**

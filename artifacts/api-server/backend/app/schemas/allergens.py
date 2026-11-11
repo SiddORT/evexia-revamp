@@ -63,11 +63,16 @@ class AllergenEdit(AllergenFields, AllergenVersion):
     pass
 
 
+class DilutionMaterialSetup(AllergenFields):
+    idempotencyKey: uuid.UUID
+
+
 class AllergenStatus(AllergenVersion):
     status: Literal["active", "inactive"]
 
 
 class AllergenResponse(AllergenFields):
+    inventoryOnly: bool = False
     code: str
     master_read = True
     id: uuid.UUID

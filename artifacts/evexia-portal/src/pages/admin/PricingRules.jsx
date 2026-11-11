@@ -99,7 +99,7 @@ function PricingWorkspace() {
   ];
   return <AdminLayout title="Pricing Rules"><div className="pricing-rules-page">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Configuration / Pricing</p><h1>Pricing Rules</h1><p className="admin-page-head__description">Date-based selling prices for selected categories and allergens.</p></div>
+      <div><p className="admin-page-head__eyebrow">Configuration / Pricing</p><h1>Pricing Rules</h1><p className="admin-page-head__description">INR per ml for new MR Immunotherapy Extract and the separately bound Dilution material. Saved orders retain their applied rates; the exact cutoff date uses the on/after rate.</p></div>
       <div className="admin-target-head-actions">
         <button type="button" className="admin-button" disabled={Boolean(editor)} onClick={() => open('new')} data-testid="button-add-pricing-rule"><Plus size={16} aria-hidden="true" /> Add rule</button>
       </div>

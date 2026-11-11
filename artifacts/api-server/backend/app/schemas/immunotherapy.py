@@ -51,6 +51,7 @@ class ImmBottle(Strict):
 
 
 class ImmInput(Strict):
+    refreshQuote: bool = False
     pricingBasis: Literal["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"] | None = None
     orderDate: date | None = None
     patientId: uuid.UUID
@@ -85,6 +86,7 @@ class ImmInput(Strict):
 
 
 class ImmWrite(ImmInput):
+    quoteToken: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     decision: Literal["approve", "reject"] | None = None
     idempotencyKey: uuid.UUID
     expected_version: int | None = Field(default=None, ge=1, strict=True)
@@ -104,6 +106,9 @@ class ImmImport(Strict):
 
 
 class ImmRecord(BaseModel):
+    pricingPolicy: str | None = None
+    pricingEvidence: dict | None = None
+    materialConsumption: dict | None = None
     reviewHistory: list[dict] = Field(default_factory=list)
     correctionSaved: bool = False
     pricingNeedsReview: bool = False

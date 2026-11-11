@@ -75,8 +75,8 @@ export function usePersistentOrderDraft(kind, loaded) {
     if (!record.current) return normalCreate();
     // The editor retains this exact final payload on a lost response; the
     // server additionally binds the attempt to the saved draft version.
-    await prepareOrderPlacement('', { body }, `${kind}-orders`);
-    const result = await request(kind, `/${id.current}/submit`, { body: { expected_version: record.current.version, order: body } });
+    const checked = await prepareOrderPlacement('', { body }, `${kind}-orders`);
+    const result = await request(kind, `/${id.current}/submit`, { body: { expected_version: record.current.version, order: checked.body } });
     if (!result?.id || !Number.isSafeInteger(result.version)) {
       const cause = new Error('Submission response was not confirmed. Retry the unchanged submission.');
       cause.ambiguous = true; throw cause;

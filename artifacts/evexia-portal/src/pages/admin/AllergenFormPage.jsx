@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
-import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen } from '../../services/serverAllergens.js';
+import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen, setupDilutionMaterial } from '../../services/serverAllergens.js';
 import { catalogueRate } from '../../services/rates.js';
 import { ALLERGEN_CONCENTRATIONS } from '../../services/allergenConcentrations.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
@@ -19,6 +19,8 @@ const norm = (v) => v.trim().replace(/\s+/g, ' ').toLowerCase();
 const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; ${r.concentration}; low stock alert ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
 
 function AllergenForm({ record, onSave, onCancel, onRefresh }) {
+  const [dilutionSetup, setDilutionSetup] = useState(false);
+  const setupKey = useRef(crypto.randomUUID());
   const [values, setValues] = useState(() => record ? fromRecord(record) : empty());
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -48,7 +50,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
     if (Object.keys(next).length) return;
     const guard = reportingIdentityGuard();
     busy.current = true; setPending(true); setServerError('');
-    try { await onSave(allergenPayload(values)); }
+    try { await onSave(allergenPayload(values), dilutionSetup ? setupKey.current : null); }
     catch (cause) {
       try { guard(); } catch { return; }
       if (alive.current) {
@@ -86,6 +88,13 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
   return <form className="admin-allergen-form" onSubmit={submit} noValidate>
     <div className="admin-allergen-form__intro"><div><h2>Product details</h2><p>Fields marked * are required. Records are shared on the server.</p></div><FlaskConical size={21} aria-hidden="true" /></div>
     <div className="mr-form__body">
+      {!record && getSession().user?.identity_kind === 'super_admin' && <div className="mr-form__field">
+        <label><input type="checkbox" checked={dilutionSetup} disabled={pending || blocked} onChange={(event) => {
+          setDilutionSetup(event.target.checked);
+        }} /> Explicitly create and bind the dummy Dilution material</label>
+        {dilutionSetup && <p className="mr-form__hint">Creates a separate inventory/pricing material, not a clinical allergen. Enter its name, real category and storage location, required master description and GST explicitly. Use Active, No Mix and blank selling price/low stock alert. Nothing is inferred or seeded; configure actual cutoff rates later in Pricing Rules. An existing similarly named record will never be overwritten.</p>}
+      </div>}
+      {record?.inventoryOnly && <p className="mr-form__hint">Bound Dilution material — inventory and Pricing Rules only; excluded from clinical allergen selection.</p>}
       {serverError && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reconcile} data-testid="button-reconcile-allergen"><RefreshCw size={16} aria-hidden="true" /> Review current server details (keep draft)</button></div>}
       <fieldset className="mr-form__grid" disabled={pending} style={{ border: 0, margin: 0, padding: 0 }}>
         {text('name', 'Product name', { max: 200 })}
@@ -99,7 +108,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
           {err('storage_location_id')}</div>
         {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint })}
         {text('gst', 'GST (%)', { numeric: true, info: 'Original value must be 0 to 100, up to 6 source fractional digits. Rounded half-up to two places on save.' })}
-        <div className="mr-form__field">
+        {dilutionSetup ? text('concentration', 'Required master description', { max: 200, hint: 'Enter the supplied description. This material is not a clinical formulation; no concentration or ratio is assumed.' }) : <div className="mr-form__field">
           <label className="mr-form__label" htmlFor="allergen-concentration">Concentration <span className="mr-form__required">*</span></label>
           <AllergenSearchableSelect id="allergen-concentration" label="Concentration" value={values.concentration} disabled={pending} placeholder="Select concentration"
             invalid={Boolean(errors.concentration)} describedBy={errors.concentration ? 'allergen-concentration-error' : undefined} testId="select-allergen-concentration"
@@ -108,7 +117,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
               ...ALLERGEN_CONCENTRATIONS.map((value) => ({ value, label: value })),
             ]} onChange={(value) => update('concentration', value)} />
           {err('concentration')}
-        </div>
+        </div>}
          {text('threshold_limit', 'Low stock alert (ml)', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: 'In ml. Blank disables alerts; 0 alerts only at zero stock. Stock alert includes quantities at or below this value.' })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><AllergenSearchableSelect id="allergen-status" label="Status" value={values.status} disabled={pending} placeholder="Select status" invalid={Boolean(errors.status)} describedBy={errors.status ? 'allergen-status-error' : undefined} testId="select-allergen-status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => update('status', value)} />{err('status')}</div>
         <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
@@ -158,9 +167,10 @@ export default function AllergenFormPage({ id }) {
     snapshot.current = current;
     return current;
   }
-  async function save(values) {
+  async function save(values, dilutionSetupKey) {
     const guard = reportingIdentityGuard();
-    await (id ? editAllergen(snapshot.current, values) : createAllergen(values));
+    await (id ? editAllergen(snapshot.current, values) : dilutionSetupKey
+      ? setupDilutionMaterial(values, dilutionSetupKey) : createAllergen(values));
     guard();
     if (alive.current) navigate(`${LIST}?saved=${id ? 'updated' : 'added'}`);
   }

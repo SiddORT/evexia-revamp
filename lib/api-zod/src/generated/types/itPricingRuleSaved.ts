@@ -12,8 +12,8 @@ export interface ItPricingRuleSaved {
   afterRate: string;
   allergens: ItPricingAllergenReference[];
   beforeRate: string;
-  category: ItPricingReference;
   categories: ItPricingReference[];
+  category: ItPricingReference;
   cutoff: Date;
   id: string;
   version: number;

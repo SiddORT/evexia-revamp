@@ -32,7 +32,8 @@ COVERAGE = ("Stock originates in server accepted receipts and reviewed pre-syste
             "Reviewed assemblies consume those components and create separate whole-combo lots in this same ledger. "
             "Reasoned manual adjustments add distinct adjustment-origin stock or reduce an existing lot/location. "
             "Opening finished products do not consume components. Unallocated stock needs explicit allocation. No pack conversions. Stock carries across financial years. "
-            "browser/demo data, sales, reservations and in-transit shipping are outside coverage.")
+            "Supported configured-price MR IT approval consumes saved Extract/Dilution ml with order-linked postings. "
+            "browser/demo data, unrelated sales, reservations and in-transit shipping are outside coverage.")
 
 
 class InventoryCrypto(ReceiptCrypto):
@@ -147,7 +148,7 @@ def balance_at(db, lot_id, location):
 
 
 def post(db, lot, location, delta, source, actor, movement=None):
-    if delta < 0 and not lot.combo_id and source.startswith(("assembly:", "adjustment:", "move:")):
+    if delta < 0 and not lot.combo_id and source.startswith(("assembly:", "adjustment:", "move:", "it-approval:")):
         require_usable(InventoryCrypto(get_settings()).open(lot.id, "lot", lot.payload_ciphertext))
     if location is None and not lot.opening_id:
         raise PRError("Only opening stock can be Unallocated.", 409, "inventory_unallocated")
@@ -206,9 +207,10 @@ def reconcile_receipt(db, actor, data, initializing=False):
                 raise PRError("A batch with recorded actual cost cannot change its identity or expiry. Record a separate genuine batch.", 409, "inventory_lot_retained")
             moved = db.scalar(select(Posting.id).where(Posting.lot_id == lot.id,
                 or_(Posting.movement_id.is_not(None), Posting.source_key.startswith("assembly:"),
-                    Posting.source_key.startswith("adjustment:"), Posting.source_key.startswith("disposal:"))).limit(1))
+                    Posting.source_key.startswith("adjustment:"), Posting.source_key.startswith("disposal:"),
+                    Posting.source_key.startswith("it-approval:"))).limit(1))
             if changed and moved:
-                raise PRError("This receipt lot has committed transfers or assembly consumption; its product, batch and expiry cannot change.", 409, "inventory_lot_retained")
+                raise PRError("This receipt lot has committed transfers or consumption; its product, batch and expiry cannot change.", 409, "inventory_lot_retained")
             if metadata:
                 lot.payload_ciphertext = crypto.seal(lot.id, "lot", metadata)
         # A committed separation or disposal permanently retains identity.
@@ -459,7 +461,7 @@ def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0,
              delta=q(r.delta), before=q(r.before), after=q(r.after), actor=label(db, r.actor_id),
              source=r.source_key) for r in rows[offset:offset + limit]],
              filtered=len(rows), offset=offset, limit=limit,
-             scope="Recorded receipt, opening, assembly and transfer/allocation posting times, not inferred historical activity. Period changes history only, never on-hand.")
+             scope="Recorded receipt, opening, assembly, IT approval consumption and transfer/allocation posting times, not inferred historical activity. Period changes history only, never on-hand.")
     return transaction(db, actor, work, capability=("stock_status", "history"))
 
 

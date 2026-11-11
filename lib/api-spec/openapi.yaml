@@ -1097,6 +1097,11 @@
             "title": "Id",
             "type": "string"
           },
+          "inventoryOnly": {
+            "default": false,
+            "title": "Inventoryonly",
+            "type": "boolean"
+          },
           "mix": {
             "description": "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
             "title": "Mix",
@@ -2991,6 +2996,95 @@
           "expected_version"
         ],
         "title": "DesignationVersion",
+        "type": "object"
+      },
+      "DilutionMaterialSetup": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "format": "uuid",
+            "title": "Category Id",
+            "type": "string"
+          },
+          "concentration": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Concentration",
+            "type": "string"
+          },
+          "gst": {
+            "description": "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Gst",
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "format": "uuid",
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "mix": {
+            "description": "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+            "title": "Mix",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "selling_price": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+            "title": "Selling Price"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "storage_location_id": {
+            "format": "uuid",
+            "title": "Storage Location Id",
+            "type": "string"
+          },
+          "threshold_limit": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold Limit"
+          }
+        },
+        "required": [
+          "name",
+          "category_id",
+          "storage_location_id",
+          "gst",
+          "concentration",
+          "status",
+          "mix",
+          "idempotencyKey"
+        ],
+        "title": "DilutionMaterialSetup",
         "type": "object"
       },
       "DisposalCreate": {
@@ -5664,9 +5758,42 @@
             ],
             "title": "Doctordayslimit"
           },
+          "doctorPendingBalance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doctorpendingbalance"
+          },
           "eligible": {
             "title": "Eligible",
             "type": "boolean"
+          },
+          "oldestDoctorUnpaidAgeDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldestdoctorunpaidagedays"
+          },
+          "oldestDoctorUnpaidDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldestdoctorunpaiddate"
           },
           "outstanding": {
             "anyOf": [
@@ -5690,6 +5817,18 @@
             ],
             "title": "Paymentlimit"
           },
+          "priceQuote": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricequote"
+          },
           "proposedBalance": {
             "anyOf": [
               {
@@ -5700,6 +5839,17 @@
               }
             ],
             "title": "Proposedbalance"
+          },
+          "quoteToken": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quotetoken"
           },
           "reasons": {
             "items": {
@@ -8032,6 +8182,11 @@
             ],
             "title": "Pricingbasis"
           },
+          "refreshQuote": {
+            "default": false,
+            "title": "Refreshquote",
+            "type": "boolean"
+          },
           "remarks": {
             "default": "",
             "maxLength": 4000,
@@ -8438,6 +8593,18 @@
             "title": "Id",
             "type": "string"
           },
+          "materialConsumption": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materialconsumption"
+          },
           "mr": {
             "additionalProperties": true,
             "title": "Mr",
@@ -8499,10 +8666,33 @@
             "title": "Pricingbasis",
             "type": "string"
           },
+          "pricingEvidence": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricingevidence"
+          },
           "pricingNeedsReview": {
             "default": false,
             "title": "Pricingneedsreview",
             "type": "boolean"
+          },
+          "pricingPolicy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricingpolicy"
           },
           "recipient": {
             "additionalProperties": true,
@@ -8876,6 +9066,23 @@
               }
             ],
             "title": "Pricingbasis"
+          },
+          "quoteToken": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quotetoken"
+          },
+          "refreshQuote": {
+            "default": false,
+            "title": "Refreshquote",
+            "type": "boolean"
           },
           "remarks": {
             "default": "",
@@ -11267,8 +11474,8 @@
             "$ref": "#/components/schemas/InvoiceDetails"
           },
           "expected_version": {
-            "maximum": 2147483646,
-            "minimum": 0,
+            "maximum": 2147483646.0,
+            "minimum": 0.0,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -11308,11 +11515,6 @@
       },
       "ItPricingAllergenReference": {
         "properties": {
-          "savedCategoryId": {
-            "anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}],
-            "default": null,
-            "title": "Savedcategoryid"
-          },
           "categoryId": {
             "format": "uuid",
             "title": "Categoryid",
@@ -11326,6 +11528,18 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "savedCategoryId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Savedcategoryid"
           },
           "status": {
             "title": "Status",
@@ -11368,8 +11582,8 @@
       "ItPricingReferencePage": {
         "properties": {
           "catalogueVersion": {
-            "type": "string",
-            "title": "Catalogueversion"
+            "title": "Catalogueversion",
+            "type": "string"
           },
           "items": {
             "items": {
@@ -11399,11 +11613,11 @@
           }
         },
         "required": [
-          "catalogueVersion",
           "items",
           "total",
           "offset",
-          "limit"
+          "limit",
+          "catalogueVersion"
         ],
         "title": "ItPricingReferencePage",
         "type": "object"
@@ -11411,15 +11625,29 @@
       "ItPricingRuleEdit": {
         "additionalProperties": false,
         "properties": {
-          "allergenCategoryIds": {
-            "anyOf": [{"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}, "maxProperties": 100}, {"type": "null"}],
-            "default": null,
-            "title": "Allergencategoryids"
-          },
           "afterRate": {
             "maxLength": 64,
             "title": "Afterrate",
             "type": "string"
+          },
+          "allergenCategoryIds": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxProperties": 100,
+                "propertyNames": {
+                  "format": "uuid"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allergencategoryids"
           },
           "allergenIds": {
             "items": {
@@ -11437,13 +11665,32 @@
             "type": "string"
           },
           "categoryId": {
-            "anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}],
-            "default": null,
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Categoryid"
           },
           "categoryIds": {
-            "anyOf": [{"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1, "maxItems": 100}, {"type": "null"}],
-            "default": null,
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Categoryids"
           },
           "cutoff": {
@@ -11477,15 +11724,29 @@
       "ItPricingRuleInput": {
         "additionalProperties": false,
         "properties": {
-          "allergenCategoryIds": {
-            "anyOf": [{"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}, "maxProperties": 100}, {"type": "null"}],
-            "default": null,
-            "title": "Allergencategoryids"
-          },
           "afterRate": {
             "maxLength": 64,
             "title": "Afterrate",
             "type": "string"
+          },
+          "allergenCategoryIds": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxProperties": 100,
+                "propertyNames": {
+                  "format": "uuid"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allergencategoryids"
           },
           "allergenIds": {
             "items": {
@@ -11503,13 +11764,32 @@
             "type": "string"
           },
           "categoryId": {
-            "anyOf": [{"type": "string", "format": "uuid"}, {"type": "null"}],
-            "default": null,
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Categoryid"
           },
           "categoryIds": {
-            "anyOf": [{"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1, "maxItems": 100}, {"type": "null"}],
-            "default": null,
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Categoryids"
           },
           "cutoff": {
@@ -11566,11 +11846,6 @@
       },
       "ItPricingRuleSaved": {
         "properties": {
-          "categories": {
-            "type": "array",
-            "items": {"$ref": "#/components/schemas/ItPricingReference"},
-            "title": "Categories"
-          },
           "afterRate": {
             "title": "Afterrate",
             "type": "string"
@@ -11585,6 +11860,13 @@
           "beforeRate": {
             "title": "Beforerate",
             "type": "string"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/ItPricingReference"
+            },
+            "title": "Categories",
+            "type": "array"
           },
           "category": {
             "$ref": "#/components/schemas/ItPricingReference"
@@ -21287,6 +21569,16 @@
       },
       "POLineResponse": {
         "properties": {
+          "componentRates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxRates"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "concentration": {
             "anyOf": [
               {
@@ -21298,16 +21590,6 @@
             ],
             "default": null,
             "title": "Concentration"
-          },
-          "componentRates": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/POTaxRates"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "gst": {
             "title": "Gst",
@@ -36457,6 +36739,279 @@
           }
         ],
         "summary": "Sample",
+        "tags": [
+          "Allergen Master"
+        ]
+      }
+    },
+    "/v1/admin/allergens/setup-dilution": {
+      "post": {
+        "operationId": "setupDilutionMaterial",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DilutionMaterialSetup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllergenResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Setup Dilution",
         "tags": [
           "Allergen Master"
         ]
@@ -102415,12 +102970,6 @@
         "parameters": [
           {
             "in": "query",
-            "name": "query",
-            "required": false,
-            "schema": {"default": "", "maxLength": 100, "title": "Query", "type": "string"}
-          },
-          {
-            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -102441,6 +102990,17 @@
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Query",
+              "type": "string"
             }
           }
         ],
@@ -102980,14 +103540,6 @@
         "operationId": "getItPricingRuleReferences",
         "parameters": [
           {
-            "in": "query",
-            "name": "categoryIds",
-            "required": false,
-            "style": "form",
-            "explode": true,
-            "schema": {"anyOf": [{"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1, "maxItems": 100}, {"type": "null"}], "title": "Categoryids"}
-          },
-          {
             "in": "path",
             "name": "kind",
             "required": true,
@@ -103050,6 +103602,28 @@
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categoryIds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "maxItems": 100,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Categoryids"
             }
           }
         ],

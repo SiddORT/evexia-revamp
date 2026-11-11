@@ -7,6 +7,7 @@ export const DECIMAL_RE = /^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,6})?$/;
 export const listAllergens = (params, signal) => allergenRequest('', { params, signal });
 export const createAllergen = (body) => allergenRequest('', { body });
 export const getAllergen = (id) => allergenRequest(`/${id}`);
+export const setupDilutionMaterial = (values, idempotencyKey) => allergenRequest('/setup-dilution', { body: { ...values, idempotencyKey } });
 export const editAllergen = (record, values) => allergenRequest(`/${record.id}/edit`, { body: { ...values, expected_version: record.version } });
 export const statusAllergen = (record, status) => allergenRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
 export const deleteAllergen = (record) => allergenRequest(`/${record.id}/delete`, { body: { expected_version: record.version } });

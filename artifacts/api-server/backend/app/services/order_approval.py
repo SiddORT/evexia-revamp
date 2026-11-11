@@ -104,6 +104,9 @@ def saved_pricing(kind, previous):
     if previous.get("pricingNeedsReview"):
         raise ValueError("Changed pricing basis requires Admin review")
     if kind == "immunotherapy":
+        if previous.get("pricingPolicy") == "configured_material_ml_v1":
+            from app.services.immunotherapy_material_pricing import validate_saved
+            validate_saved(previous)
         from app.schemas.immunotherapy import ImmInput
         from app.services.immunotherapy_pricing import SUBORDER_BASIS
         if previous.get("pricingBasis") != SUBORDER_BASIS or any(
@@ -186,6 +189,9 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                 raise ImmError(available["approvalUnavailable"], 422, "order_pricing")
             # Validate the complete saved submission, not Admin-supplied replacements.
             if decision == "approve" and kind == "immunotherapy":
+                # Inventory writers take this lock before material/location rows.
+                from app.services import inventory
+                inventory.lock(db)
                 from app.schemas.immunotherapy import ImmInput
                 values = imm_values(previous)
                 db.info["imm_actor"] = current.user.id
@@ -207,6 +213,9 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                 # unverified file records cannot become new approval evidence.
                 service.resolved(db, current, keys, contract.model_validate(values), previous)
             snapshot = service.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+            if decision == "approve" and kind == "immunotherapy":
+                from app.services.immunotherapy_consumption import consume
+                consume(db, current, row, snapshot)
             if decision == "reject":
                 from app.schemas.order_approval import OrderRejection
                 body_reason = OrderRejection.model_validate(body.model_dump()).reason

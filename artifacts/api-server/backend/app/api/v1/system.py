@@ -53,6 +53,9 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0089_it_material_pricing"]:
+            db.execute(text("SELECT id,product_id,request_id,request_digest,created_by FROM immunotherapy_dilution_material LIMIT 0"))
+            revisions = ["0090_settlement_verification"]
         if revisions == ["0090_settlement_verification"]:
             # Retain verification and all invoice/predecessor readiness probes.
             if not db.scalar(text("""

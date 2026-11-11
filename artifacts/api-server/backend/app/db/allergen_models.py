@@ -47,3 +47,14 @@ Index("uq_allergen_live_name", normalized_name(AllergenProduct.name), unique=Tru
       postgresql_where=AllergenProduct.deleted_at.is_(None))
 Index("ix_allergen_live_order", AllergenProduct.created_at.desc(), AllergenProduct.id.desc(),
       postgresql_where=AllergenProduct.deleted_at.is_(None))
+
+
+class ImmunotherapyDilutionMaterial(Base):
+    """One explicitly created material; immutable binding, never a name lookup."""
+    __tablename__ = "immunotherapy_dilution_material"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_it_dilution_singleton"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("allergen_products.id"), unique=True)
+    request_id: Mapped[uuid.UUID] = mapped_column(unique=True)
+    request_digest: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))

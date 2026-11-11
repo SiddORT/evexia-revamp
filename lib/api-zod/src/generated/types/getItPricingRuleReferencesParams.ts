@@ -12,7 +12,6 @@ export type GetItPricingRuleReferencesParams = {
    */
   query?: string;
   categoryId?: string | null;
-  categoryIds?: string[] | null;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -23,4 +22,5 @@ export type GetItPricingRuleReferencesParams = {
    * @maximum 100
    */
   limit?: number;
+  categoryIds?: string[] | null;
 };

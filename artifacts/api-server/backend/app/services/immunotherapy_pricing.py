@@ -15,7 +15,8 @@ def retry_payload(value):
         return [retry_payload(item) for item in value]
     if isinstance(value, dict):
         return {key: retry_payload(child) for key, child in value.items()
-                if not (key in {"pricingBasis", "suborderId", "decision", "extract", "dilution"} and child is None)}
+                 if not (key in {"pricingBasis", "suborderId", "decision", "extract", "dilution", "quoteToken"} and child is None)
+                 and not (key == "refreshQuote" and child is False)}
     return value
 
 

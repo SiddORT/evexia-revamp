@@ -14,6 +14,7 @@ from app.schemas.immunotherapy_extract import (
 )
 from app.services.immunotherapy import ImmError, seal, unseal
 from app.services.directory_runtime import crypto_scope
+from app.services.directory_inventory import DirectoryCryptoError
 
 # Writers and final placements share this lock. A placement sees one coherent
 # committed configuration across all categories, including absent rows.
@@ -48,7 +49,7 @@ def configuration(db, keys, category_id):
             payload = dict(schemaVersion=2, dosages={dose: None for dose in DOSAGES},
                            legacyRows=[p.model_dump() for p in legacy], legacyVersion=row.version)
         return ImmExtractPayload.model_validate(payload).model_dump(mode="json")
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, DirectoryCryptoError):
         raise ImmError("Saved Extract & Dilution configuration is unreadable. No defaults have been assumed.",
                        503, "imm_extract_configuration") from None
 
@@ -67,6 +68,10 @@ def view(db, keys, category_id, dosage):
 
 def transaction(db, actor, work):
     try:
+        from app.services.zone_policy import lock_policy
+        from app.services.immunotherapy_material_pricing import configuration_locks
+        lock_policy(db)
+        configuration_locks(db)
         # Same protected operational-settings boundary as shared batch settings.
         from app.services.allergens import authorize
         current = authorize(db, actor)
@@ -128,7 +133,7 @@ def write(db, actor, category_id, body):
 
 
 def assign(db, keys, groups, dosage):
-    """No grouping, identities, pricing, formulas or approval changes here."""
+    """Resolve explicit quantities without allocating identities or writing rows."""
     require_schema(db)
     db.execute(text("SELECT pg_advisory_xact_lock_shared(:key)"), {"key": POLICY_LOCK})
     configurations = {}

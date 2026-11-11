@@ -1,4 +1,4 @@
-"""Standalone configuration, never an order-price resolver."""
+"""Protected configuration and immutable retry outcomes; orders snapshot applied rules."""
 import uuid
 from datetime import datetime
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Text, UniqueConstraint

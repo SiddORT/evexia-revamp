@@ -167,6 +167,9 @@ def eligible(db, kind, record_id):
         MODELS[kind].id == record_id, *reference_scope(db, kind)).with_for_update())
     if not row or row.deleted_at or row.status != "active":
         raise ImmError(f"Selected {kind} reference is inactive, deleted or unavailable. Choose a current reference.", 409, "imm_reference")
+    if kind == "allergens":
+        from app.services.immunotherapy_material_pricing import clinical_only
+        clinical_only(db, record_id)
     if kind == "patients":
         owner = db.scalar(select(Patient).where(Patient.id == row.id).with_for_update())
         if not owner or not owner.is_active:
@@ -203,6 +206,8 @@ def resolved(db, body, previous=None):
         raise ImmError("Attach at least one verified prescription for the selected patient before saving or importing this order.",
                        422, "imm_prescription_required")
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version"})
+    value.pop("quoteToken", None)
+    value.pop("refreshQuote", None)
     # Internal immutable business metadata is never accepted from a write body.
     # Import review must retain it too, without allocating or changing history.
     if previous and previous.get("orderBatch") is not None:
@@ -306,6 +311,12 @@ def resolved(db, body, previous=None):
             or (str(f.id) not in previous_files and f.uploader_id != db.info["imm_actor"])):
             raise ImmError("Prescription is not a verified private upload owned by this patient and uploader. Quarantined or incomplete files cannot be attached.", 409, "imm_attachment")
         value["attachments"].append(dict(id=str(f.id), name=f.display_name, size=f.size, type=f.content_type, state=f.state))
+    if not body.refreshQuote:
+        from app.services.immunotherapy_material_pricing import retain
+        retain(value, previous)
+    elif not previous or previous.get("pricingPolicy") != "configured_material_ml_v1":
+        raise ImmError("Quote refresh is only available for supported configured-price orders. Historical and unrestricted Admin orders retain their saved pricing path.",
+                       422, "imm_quote_refresh")
     return value
 
 
@@ -324,8 +335,13 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     data = resolved(db, body, previous)
     from app.services.order_approval import preserve
     preserve(actor, "immunotherapy", data, previous)
+    from app.services.immunotherapy_material_pricing import prepare_quote, require_confirmation
+    effective_date = row.date if row else body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    quoted = prepare_quote(db, keys, data, body, effective_date, previous)
     from app.services.order_eligibility import enforce
-    enforce(db, keys, "immunotherapy", data, row=row, order_date=body.orderDate, previous=previous)
+    financial = enforce(db, keys, "immunotherapy", data, row=row, order_date=effective_date, previous=previous)
+    if quoted:
+        require_confirmation(data, effective_date, actor.user.id, financial, getattr(body, "quoteToken", None))
     from app.services.immunotherapy_pricing import issue
     now = utcnow()
     if not row:
@@ -337,9 +353,6 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     else:
         row.version += 1
     issue(data, previous, row.number)
-    if not previous and any(g.get("compositionPolicy") == "mr_category_mix_v1" for g in data["groups"]):
-        from app.services.immunotherapy_extract import assign
-        assign(db, keys, data["groups"], data["dosage"])
     from app.services.immunotherapy_batches import issue as issue_batch
     issue_batch(db, data, previous, order_date=row.date)
     row.patient_id, row.doctor_id, row.mr_id = body.patientId, body.doctorId, body.mrId
@@ -520,6 +533,9 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None,
         items, last = [], None
         def choice(row):
             if kind == "allergens":
+                from app.services.immunotherapy_material_pricing import dilution_id
+                if row.id == dilution_id(db):
+                    return None
                 return dict(id=str(row.id), name=row.name, concentration=row.concentration,
                             categoryId=str(row.category_id), mix=row.mix)
             data = person(row, kind)

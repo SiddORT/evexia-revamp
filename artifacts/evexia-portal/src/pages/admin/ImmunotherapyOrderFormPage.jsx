@@ -17,6 +17,7 @@ import useImmunotherapyReferences from '../../hooks/useImmunotherapyReferences.j
 import usePreviousOrderDosage from '../../hooks/usePreviousOrderDosage.js';
 import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
+import MaterialPricingEvidence from '../../components/immunotherapy/MaterialPricingEvidence.jsx';
 import ImmunotherapyConflictDetails from '../../components/immunotherapy/ImmunotherapyConflictDetails.jsx';
 import SuborderCards from '../../components/immunotherapy/SuborderCards.jsx';
 import MRPlacementAllergens from '../../components/immunotherapy/MRPlacementAllergens.jsx';
@@ -410,6 +411,13 @@ function Editor({ order, mode, draft }) {
       {hasUnsavedDraftChanges && <p className="imm-editor-draft-notices__unsaved" role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
     </section>}
     <dl className="imm-facts"><div><dt>Order Batch No</dt><dd>{orderBatchLabel(order)}</dd></div></dl>
+    {order?.pricingPolicy === 'configured_material_ml_v1' && <>
+      <MaterialPricingEvidence order={order} mr={mrPortal} />
+      {!readOnly && <label className="imm-hint"><input type="checkbox" checked={Boolean(v.refreshQuote)} disabled={Boolean(pending) || uncertain}
+        onChange={(event) => setV((current) => ({ ...current, refreshQuote: event.target.checked }))} />
+        {' '}Refresh configured quote on this save and review the new price explicitly. Current quantity settings will be resolved again; historical orders are not repriced.
+      </label>}
+    </>}
     {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">
       <h2 id="imm-recovery-title">Save outcome is unconfirmed</h2>
       <p>{errors.form || 'The server response did not confirm the outcome.'}</p>

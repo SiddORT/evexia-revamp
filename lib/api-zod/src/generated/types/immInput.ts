@@ -28,6 +28,7 @@ export interface ImmInput {
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmInputPricingBasis;
+  refreshQuote?: boolean;
   /** @maxLength 4000 */
   remarks?: string;
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */

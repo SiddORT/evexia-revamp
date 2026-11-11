@@ -12,9 +12,11 @@ import type { ImmRecordDecisionEligibility } from "./immRecordDecisionEligibilit
 import type { ImmRecordDoctor } from "./immRecordDoctor";
 import type { ImmRecordGroupsItem } from "./immRecordGroupsItem";
 import type { ImmRecordHistoricalGroups } from "./immRecordHistoricalGroups";
+import type { ImmRecordMaterialConsumption } from "./immRecordMaterialConsumption";
 import type { ImmRecordMr } from "./immRecordMr";
 import type { ImmRecordPatient } from "./immRecordPatient";
 import type { ImmRecordPricingBasis } from "./immRecordPricingBasis";
+import type { ImmRecordPricingEvidence } from "./immRecordPricingEvidence";
 import type { ImmRecordRecipient } from "./immRecordRecipient";
 import type { ImmRecordRejection } from "./immRecordRejection";
 import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
@@ -37,6 +39,7 @@ export interface ImmRecord {
   historicalPricingBasis?: string | null;
   historicalTotalMinor?: number | null;
   id: string;
+  materialConsumption?: ImmRecordMaterialConsumption;
   mr: ImmRecordMr;
   mrEditable?: boolean;
   mrId: string;
@@ -46,7 +49,9 @@ export interface ImmRecord {
   patientId: string;
   poNumber?: string | null;
   pricingBasis?: ImmRecordPricingBasis;
+  pricingEvidence?: ImmRecordPricingEvidence;
   pricingNeedsReview?: boolean;
+  pricingPolicy?: string | null;
   recipient: ImmRecordRecipient;
   rejection?: ImmRecordRejection;
   remarks: string;

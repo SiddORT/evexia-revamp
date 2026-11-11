@@ -5,11 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ItPricingRuleInputAllergenCategoryIds } from "./itPricingRuleInputAllergenCategoryIds";
 
 export interface ItPricingRuleInput {
-  allergenCategoryIds?: { [key: string]: string } | null;
   /** @maxLength 64 */
   afterRate: string;
+  allergenCategoryIds?: ItPricingRuleInputAllergenCategoryIds;
   /**
    * @minItems 1
    * @maxItems 100

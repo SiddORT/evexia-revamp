@@ -7,8 +7,6 @@
  */
 
 export type ListItPricingRulesParams = {
-  /** @maxLength 100 */
-  query?: string;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -19,4 +17,8 @@ export type ListItPricingRulesParams = {
    * @maximum 100
    */
   limit?: number;
+  /**
+   * @maxLength 100
+   */
+  query?: string;
 };

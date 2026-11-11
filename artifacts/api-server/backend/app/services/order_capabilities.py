@@ -23,6 +23,18 @@ def public_result(actor, resource, value):
                     if key not in {"shipment", "shipmentHistory"}}
         return child
     value = without_fulfillment(value)
+    if resource == "immunotherapy" and actor.role == "mr":
+        def material_summary(child):
+            if isinstance(child, list):
+                return [material_summary(item) for item in child]
+            if isinstance(child, dict):
+                result = {key: material_summary(item) for key, item in child.items()}
+                if isinstance(result.get("materialConsumption"), dict):
+                    result["materialConsumption"] = {key: item for key, item in result["materialConsumption"].items()
+                                                     if key in {"status", "unit", "materials", "at"}}
+                return result
+            return child
+        value = material_summary(value)
     if resource == "kits":
         from app.services.capability_policy import is_super_admin
         if not is_super_admin(actor):

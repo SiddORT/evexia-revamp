@@ -8,7 +8,7 @@ from app.api.v1.product_categories import DOWNLOAD
 from app.db.session import get_db
 from app.schemas.allergens import (
     AllergenFields, AllergenEdit, AllergenVersion, AllergenStatus, AllergenResponse,
-    AllergenPage, AllergenReferencePage, AllergenReview, AllergenImportResult,
+    AllergenPage, AllergenReferencePage, AllergenReview, AllergenImportResult, DilutionMaterialSetup,
 )
 from app.services.auth import Identity
 from app.services import allergens, allergen_transfer
@@ -40,6 +40,11 @@ def references(kind: Literal["categories", "locations"], query: str = Query("", 
                limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
                include_unusable: bool = False, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return allergens.references(db, actor, kind, query, limit, offset, include_unusable)
+
+
+@router.post("/setup-dilution", response_model=AllergenResponse, operation_id="setupDilutionMaterial")
+def setup_dilution(body: DilutionMaterialSetup, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return allergens.setup_dilution(db, actor, body)
 
 
 def release(db, actor, initiation_id, format, operation, data):

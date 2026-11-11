@@ -6,6 +6,7 @@ _TOP = {
     "orderDate", "patientId", "doctorId", "mrId", "dosage", "histamine",
     "saline", "remarks", "shipping", "status", "idempotencyKey",
     "expected_version", "reviewToken", "confirmUpdates", "poNumber", "pricingBasis",
+    "refreshQuote", "quoteToken",
 }
 _CODES = {
     "missing", "uuid_parsing", "uuid_type", "string_type", "string_too_short",

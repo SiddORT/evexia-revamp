@@ -9,6 +9,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from sqlalchemy import select, text
 from app.services.immunotherapy import ImmError
+from app.services.directory_inventory import DirectoryCryptoError
 
 LOCK = 145580  # Same transaction lock as settlement posting.
 ACTIVE = frozenset({"Confirmed", "Saved", "Approved", "In process", "Shipped", "Delivered", "Returned"})
@@ -75,8 +76,10 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     from app.services.shipments import SOURCES
     identity = scope_identity(db)
     business_date = today()
+    governed_it = kind == "immunotherapy" and data.get("pricingPolicy") == "configured_material_ml_v1"
     result = dict(eligible=True, reasons=[], paymentLimit=None, doctorDaysLimit=None,
-                  outstanding=None, proposedBalance=None, resultingOutstanding=None, businessDate=business_date.isoformat())
+                  outstanding=None, proposedBalance=None, resultingOutstanding=None, businessDate=business_date.isoformat(),
+                  doctorPendingBalance=None, oldestDoctorUnpaidAgeDays=None, oldestDoctorUnpaidDate=None)
     if not identity or data["status"] in EXCLUDED:
         return result
     if data["status"] not in ACTIVE:
@@ -90,7 +93,7 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     if isinstance(days, bool) or not isinstance(days, int) or not 0 <= days <= 3650:
         unavailable("Your saved MR Doctor Days Limit is unreadable.")
     result.update(paymentLimit=settlements.fmt(limit), doctorDaysLimit=days)
-    if not limit and not days:
+    if not limit and not days and not governed_it:
         return result
 
     def incomplete(message):
@@ -102,7 +105,7 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     # omit old, pending, delivered or returned unpaid obligations.
     for label, source in SOURCES.items():
         clauses = [source.Order.mr_id == identity]
-        if not limit:
+        if not limit and not governed_it:
             clauses.append(source.Order.doctor_id == doctor_id)
         rows = list(db.scalars(select(source.Order).where(*clauses).order_by(source.Order.id)
                                .limit(settlements.SCAN_LIMIT + 1)))
@@ -121,14 +124,40 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
             scoped[label].append(saved_row.id)
     if row is not None and row.id not in scoped[LABELS[kind]]:
         scoped[LABELS[kind]].append(row.id)
-    receipts = settlements.history(db, keys, scoped)
+    exposure_complete, doctor_complete = True, True
+    if governed_it and not limit:
+        # Disabled amount restriction must not become a requirement to repair
+        # unrelated Doctors' financial history merely to place this IT order.
+        from sqlalchemy.exc import SQLAlchemyError
+        try:
+            with db.begin_nested():
+                receipts = settlements.history(db, keys, scoped)
+        except (ImmError, DirectoryCryptoError, SQLAlchemyError):
+            required_scope = defaultdict(list)
+            if days:
+                for label, _, saved_row in candidates:
+                    if str(saved_row.doctor_id) == str(doctor_id):
+                        required_scope[label].append(saved_row.id)
+                if row:
+                    required_scope[LABELS[kind]].append(row.id)
+            receipts = settlements.history(db, keys, required_scope) if days else defaultdict(list)
+            exposure_complete, doctor_complete = False, bool(days)
+    else:
+        receipts = settlements.history(db, keys, scoped)
     outstanding = settlements.ZERO
     overdue = []
+    doctor_pending, oldest_date = settlements.ZERO, None
 
     def remaining(label, saved, saved_row):
+        nonlocal exposure_complete, doctor_complete
         total = settlements.saved_total(label, saved)
         if total is None:
-            incomplete("An applicable order has no authoritative saved total.")
+            if not governed_it or limit or (days and str(saved_row.doctor_id) == str(doctor_id)):
+                incomplete("An applicable order has no authoritative saved total.")
+            exposure_complete = False
+            if str(saved_row.doctor_id) == str(doctor_id):
+                doctor_complete = False
+            return None
         paid = sum((settlements.exact(r["amount"]) for r in receipts[(label, saved_row.id)]), settlements.ZERO)
         if paid > total:
             incomplete("Committed payments exceed an applicable saved order total.")
@@ -143,10 +172,25 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     for label, source, saved_row in candidates:
         if row is not None and label == LABELS[kind] and saved_row.id == row.id:
             continue  # Replacement, never old plus new.
-        saved = source.unseal(keys, "orders", saved_row.id, saved_row.snapshot_ciphertext)
-        balance = remaining(label, saved, saved_row)
+        try:
+            saved = source.unseal(keys, "orders", saved_row.id, saved_row.snapshot_ciphertext)
+            balance = remaining(label, saved, saved_row)
+        except (ImmError, DirectoryCryptoError):
+            if not governed_it or limit or (days and str(saved_row.doctor_id) == str(doctor_id)):
+                raise
+            exposure_complete = False
+            if str(saved_row.doctor_id) == str(doctor_id):
+                doctor_complete = False
+            continue
+        if balance is None:
+            continue
         outstanding += balance
-        aged(balance, saved_row.date, str(saved_row.doctor_id) == str(doctor_id))
+        selected = str(saved_row.doctor_id) == str(doctor_id)
+        if selected:
+            doctor_pending += balance
+            if balance > 0:
+                oldest_date = min(oldest_date, saved_row.date) if oldest_date else saved_row.date
+        aged(balance, saved_row.date, selected)
 
     total = proposed_total(kind, data, previous)
     if total is None:
@@ -156,13 +200,17 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
         incomplete("The proposed replacement total is below committed payments.")
     proposed = total - paid
     aged(proposed, row.date if row else order_date or business_date, True)
-    result.update(outstanding=settlements.fmt(outstanding) if limit else None,
+    result.update(outstanding=settlements.fmt(outstanding) if (limit or governed_it) and exposure_complete else None,
                   proposedBalance=settlements.fmt(proposed),
-                  resultingOutstanding=settlements.fmt(outstanding + proposed) if limit else None)
-    if limit and outstanding + proposed > limit:
+                  resultingOutstanding=settlements.fmt(outstanding + proposed) if (limit or governed_it) and exposure_complete else None,
+                  doctorPendingBalance=settlements.fmt(doctor_pending) if doctor_complete else None,
+                  oldestDoctorUnpaidDate=oldest_date.isoformat() if oldest_date and doctor_complete else None,
+                  oldestDoctorUnpaidAgeDays=(business_date - oldest_date).days if oldest_date and doctor_complete else None)
+    if limit and (outstanding + proposed >= limit if governed_it else outstanding + proposed > limit):
         result["reasons"].append(dict(code="mr_payment_limit", limit=settlements.fmt(limit),
             balance=settlements.fmt(outstanding), proposed=settlements.fmt(proposed),
-            message=f"MR Payment Limit ₹{limit:.2f}: existing unpaid balance ₹{outstanding:.2f} plus proposed unpaid amount ₹{proposed:.2f} totals ₹{outstanding + proposed:.2f}, exceeding the limit."))
+            message=f"MR Payment Limit ₹{limit:.2f}: existing unpaid balance ₹{outstanding:.2f} plus proposed unpaid amount ₹{proposed:.2f} totals ₹{outstanding + proposed:.2f}. " +
+                    ("This Immunotherapy exposure must be strictly below the limit; equality is not permitted." if governed_it else "This exceeds the limit.")))
     if overdue:
         age, balance = max(overdue)
         result["reasons"].append(dict(code="mr_doctor_days_limit", limit=str(days), balance=settlements.fmt(balance),
@@ -203,6 +251,9 @@ def stock_advice(db, kind, data):
         return []
     from app.services import inventory
     identities = {item["allergenId"] for group in data["groups"] for item in group["items"]}
+    if data.get("pricingPolicy") == "configured_material_ml_v1":
+        identities.update(component["materialId"] for group in data["pricingEvidence"]["groups"]
+                          for component in group["components"] if component["kind"] == "dilution")
     return inventory.selected_allergen_advice(db, identities)
 
 
@@ -214,7 +265,7 @@ def preview(db, actor, kind, body):
     service = services[kind]
 
     def work(current, keys):
-        if not scope_identity(db):
+        if not scope_identity(db) and not (kind == "immunotherapy" and getattr(body.values, "refreshQuote", False)):
             raise ImmError("Eligibility advice is limited to the signed-in MR.", 403, "access_denied")
         # Do not retroactively reject or re-warn an already committed request.
         # The write endpoint alone verifies and replays its original payload.
@@ -243,7 +294,15 @@ def preview(db, actor, kind, body):
                 data = service.resolved(db, current, keys, values, previous)
             from app.services.order_approval import preserve
             preserve(current, kind, data, previous)
+        quoted = False
+        if kind == "immunotherapy" and not body.resubmit:
+            from app.services.immunotherapy_material_pricing import prepare_quote
+            quoted = prepare_quote(db, keys, data, values, row.date if row else values.orderDate or today(), previous)
         result = evaluate(db, keys, kind, data, row=row, order_date=getattr(values, "orderDate", None), previous=previous)
+        if quoted:
+            from app.services.immunotherapy_material_pricing import token
+            result["quoteToken"] = token(data, row.date if row else values.orderDate or today(), current.user.id, dict(result))
+            result["priceQuote"] = data["pricingEvidence"]
         result["stockAdvice"] = stock_advice(db, kind, data) if result["eligible"] and data["status"] in ACTIVE else []
         return result
     return service.transaction(db, actor, work)

@@ -57,7 +57,7 @@ function Choice({ choice }) {
         event.preventDefault(); event.stopImmediatePropagation(); settle(false);
       } else if (event.key === 'Tab') {
         event.preventDefault(); event.stopImmediatePropagation();
-        const buttons = [...node.querySelectorAll('button')];
+        const buttons = [...node.querySelectorAll('button:not(:disabled)')];
         const index = buttons.indexOf(document.activeElement);
         buttons[(index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length]?.focus();
       } else if (!node.contains(event.target)) {
@@ -86,7 +86,7 @@ function Choice({ choice }) {
       <p id={`${id}-description`} style={choice.preserveLines ? { whiteSpace: 'pre-line' } : undefined}>{choice.description}</p>
       <div className="platform-confirm__actions">
         <button ref={cancel} type="button" onClick={() => settle(false)}>{choice.cancelLabel || 'Cancel'}</button>
-        <button type="button" className={choice.destructive ? 'platform-confirm__danger' : ''} onClick={() => settle(true)}>{choice.actionLabel}</button>
+        <button type="button" disabled={Boolean(choice.actionDisabled)} className={choice.destructive ? 'platform-confirm__danger' : ''} onClick={() => { if (!choice.actionDisabled) settle(true); }}>{choice.actionLabel}</button>
       </div>
     </section>
   </div>, choice.target);

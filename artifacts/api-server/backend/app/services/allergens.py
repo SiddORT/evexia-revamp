@@ -57,12 +57,14 @@ def reference_status(row):
 
 
 def projection(db, row):
+    from app.db.allergen_models import ImmunotherapyDilutionMaterial
+    binding = db.get(ImmunotherapyDilutionMaterial, 1)
     category = db.get(ProductCategory, row.category_id)
     location = db.get(StorageLocation, row.storage_location_id)
     values = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     for field in ("selling_price", "gst", "threshold_limit"):
         values[field] = (format(values[field], ".6f") if field == "threshold_limit" else display_rate(values[field])) if values[field] is not None else None
-    return dict(id=row.id, code=row.code, **values, version=row.version,
+    return dict(id=row.id, code=row.code, inventoryOnly=bool(binding and binding.product_id == row.id), **values, version=row.version,
                 category_name=row.category_name, storage_location_name=row.storage_location_name,
                 category_status=reference_status(category), storage_location_status=reference_status(location),
                 createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
@@ -180,6 +182,41 @@ def create(db, actor, body):
     def work():
         current = authorize_catalogue(db, actor, "add")
         result = projection(db, insert(db, current, body))
+        db.commit()
+        return result
+    return transaction(db, work)
+
+
+def setup_dilution(db, actor, body):
+    """Explicit master setup; unchanged retry returns the original saved identity."""
+    import hashlib
+    from sqlalchemy import text
+    from app.db.allergen_models import ImmunotherapyDilutionMaterial
+    from app.services.immunotherapy import encode
+    from app.services.zone_policy import lock_policy
+    from app.services.pricing_rules import LOCK
+    def work():
+        lock_policy(db)
+        db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK})
+        current = authorize(db, actor)
+        digest = hashlib.sha256(encode(body.model_dump(mode="json")).encode()).hexdigest()
+        binding = db.get(ImmunotherapyDilutionMaterial, 1)
+        if binding:
+            if (binding.request_id == body.idempotencyKey and binding.created_by == current.user.id
+                    and binding.request_digest == digest):
+                result = projection(db, db.get(AllergenProduct, binding.product_id))
+                db.commit()
+                return result
+            raise AllergenError("A Dilution material is already bound. Manage that saved material in Allergens and Pricing Rules; setup cannot replace it.",
+                                409, "allergen_dilution_bound")
+        if body.selling_price is not None or body.threshold_limit is not None or body.mix or body.status != "active":
+            raise AllergenError("Dilution setup requires Active, No Mix and blank selling price/threshold. Enter the required master descriptions and GST explicitly. No prices or stock are seeded.",
+                                422, "allergen_dilution_setup")
+        row = insert(db, current, body)
+        db.add(ImmunotherapyDilutionMaterial(id=1, product_id=row.id, request_id=body.idempotencyKey,
+                                            request_digest=digest, created_by=current.user.id))
+        db.flush()
+        result = projection(db, row)
         db.commit()
         return result
     return transaction(db, work)

@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0090_settlement_verification",
-  "policy_sha256": "28093ff67fd82773b44e1104ee2660abf02bde030c86950d26b472a2a25750fa",
+  "target": "0089_it_material_pricing",
+  "policy_sha256": "5d5363767c9e1e050fcdfd874d8015674131fa9c3e91c3d927153c5539609b00",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -100,7 +100,8 @@
     "0087_pricing_rule_categories": "039380523742ee0e424496530c916526e94af17cb9666fe15b99c4ed125fe130",
     "0088_gst_settings": "a529297bbf3bf0bc6560a8814d6f6a39010586c550b0127ce1b2492a106659f6",
     "0089_invoice_settings": "9caea8147fd1005fec42d117c855f3aff60bd520060ff0e4bbc17dda28587274",
-    "0090_settlement_verification": "6bea6b350d4db636913c474de38422c32992209e34abd6424e7531916b7872fb"
+    "0090_settlement_verification": "6bea6b350d4db636913c474de38422c32992209e34abd6424e7531916b7872fb",
+    "0089_it_material_pricing": "3fdf35d06928943a97f4f7334b1c553398393ed37d0f1dc236ca7cd1c0a547ad"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

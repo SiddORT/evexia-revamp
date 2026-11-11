@@ -57,6 +57,11 @@ class AllergenStockAdvice(BaseModel):
 
 
 class EligibilityPreview(BaseModel):
+    doctorPendingBalance: str | None = None
+    oldestDoctorUnpaidAgeDays: int | None = None
+    oldestDoctorUnpaidDate: str | None = None
+    quoteToken: str | None = None
+    priceQuote: dict | None = None
     eligible: bool
     reasons: list[EligibilityReason]
     stockAdvice: list[AllergenStockAdvice]

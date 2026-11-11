@@ -1,4 +1,4 @@
-"""Protected, atomic configuration only. No imports by order services."""
+"""Protected atomic configuration; governed new MR IT quotes consume saved rules."""
 import logging
 import uuid
 from sqlalchemy import Text, cast, delete, func, literal, or_, select, text
@@ -28,6 +28,8 @@ class PricingRuleError(Exception):
 def transaction(db, actor, work):
     try:
         lock_policy(db)
+        from app.services.immunotherapy_material_pricing import configuration_locks
+        configuration_locks(db)
         current = revalidate_identity(db, actor, lock=True)
         if not is_super_admin(current):
             raise HTTPException(403, "Pricing Rules require the protected Super Admin.")

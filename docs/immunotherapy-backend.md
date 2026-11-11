@@ -1,3 +1,16 @@
+# Configured MR material pricing and approval consumption
+
+For new governed MR placements only, Pricing Rules now supply exact INR/ml
+Extract charges and a separate saved-ID Dilution material charge. Quoting
+resolves actual configured ml before eligibility, and explicit financial
+confirmation binds the final write. Positive MR payment limits require strict
+`<` exposure in this workflow; other order types retain their equality policy.
+Admin approval atomically consumes saved quantities from usable allocated lots;
+placement remains non-reserving. This supersedes earlier configuration-only
+pricing/advisory-only inventory statements for this narrowly supported path.
+Historical/unrestricted Admin orders remain unchanged and unconsumed.
+See `immunotherapy-material-pricing.md` for setup and source-only delivery limits.
+
 # Admin Immunotherapy orders
 
 ## Previous saved order dosage suggestion (source-only delivery)

@@ -9,6 +9,7 @@ import OrderApproval from '../orders/OrderApproval.jsx';
 import PrescriptionViewer from './PrescriptionViewer.jsx';
 import { MR_GROUPING_POLICY } from '../../services/immunotherapyGrouping.js';
 import ClinicalAssignment from './ClinicalAssignment.jsx';
+import MaterialPricingEvidence from './MaterialPricingEvidence.jsx';
 import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
 
@@ -56,6 +57,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
     <OrderApproval kind="immunotherapy" order={order} request={request} onApproved={setOrder} />
     <div className="kits-layout">
       <div className="kits-main">
+        <MaterialPricingEvidence order={order} mr={mrPortal} />
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-order"><h2 id="imm-s-order">Order details</h2>
           <Facts compact rows={[
             ['Order number', order.number], ['Date', order.date ? date(order.date) : null], ['Status', order.status],

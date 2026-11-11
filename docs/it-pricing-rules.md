@@ -1,4 +1,4 @@
-# IT Pricing Rules — configuration only
+# IT Pricing Rules — governed MR Immunotherapy pricing
 
 ## Scope and access
 
@@ -7,11 +7,12 @@ Orders navigation group. Both the page/transport and every server operation
 require the protected Super Admin identity. Staff master or order grants do not
 grant access; MRs have no access. No new assignable permission is introduced.
 
-These settings are reserved for eventual **Immunotherapy only** use. Automatic
-price lookup or application has not been authorized. No order screen or order
-service imports or fetches these settings. Existing IT SUB/header pricing,
-clinical defaults, extract/dilution, grouping, prescriptions, approvals, totals,
-historical orders, and catalogue prices are unchanged.
+New governed MR Immunotherapy placements now consume these explicit rates per ml.
+This narrowly supersedes the former configuration-only scope. SPT, Kits, Lupin,
+catalogue selling prices, historical/manual Admin orders and in-house concentrate
+dilution remain separate. No clinical quantity, rate or cutoff is inferred.
+See `docs/immunotherapy-material-pricing.md` for setup, confirmation and approval
+consumption. Clinical grouping and prescription requirements remain in force.
 
 ## Saved contract
 
@@ -27,7 +28,7 @@ successful list.
 
 The date is a real date-only `YYYY-MM-DD` **Order Date Cutoff**. The two prices are
 alternatives: before the date versus **on or after it, including the cutoff day**.
-No evaluation endpoint is provided. Both values are required nonnegative INR
+Both values are required nonnegative INR-per-ml
 decimal strings using the shared catalogue rate contract: up to twelve integer
 and six source fractional digits, exact half-up rounding to two decimals, maximum
 `999999999999.99` after rounding. Blank does not mean zero. Saved/listed prices
@@ -35,7 +36,7 @@ have two decimal places; date display follows Admin preferences.
 
 Only one rule may claim an allergen UUID at a time (an allergen has one current
 category). Any overlap is rejected, even if the cutoff or rates differ. This is
-configuration conflict rejection, not approval of a future lookup precedence.
+configuration conflict rejection; lookup never invents a precedence.
 Moving a master allergen does not move or rewrite its existing rule.
 
 Copy preloads the source cutoff/rates but clears the destination categories and
@@ -69,8 +70,9 @@ Saves reload the current result set automatically; load failures offer Retry.
 ## Persistence and concurrency
 
 The `/api/v1/admin/pricing-rules` API provides paged list/detail, bounded active
-category/allergen choices, create, and version-checked edit only. There is no
-resolver, delete, bulk import/export, or order consumer.
+category/allergen choices, create, and version-checked edit only. It has no
+delete or bulk import/export. The order eligibility preview and final placement
+share an internal resolver and save immutable applied-rule evidence.
 
 `0086_it_pricing_rules`, following `0085_placement_email_details`, adds:
 

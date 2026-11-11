@@ -72,6 +72,7 @@ export function shippingRecipient(order) { return order.recipient || order[order
 export function orderInput(v) {
   const mr = getSession().user?.identity_kind === 'mr';
   return Object.fromEntries(Object.entries({
+    ...(v.refreshQuote ? { refreshQuote: true } : {}),
     patientId: v.patientId, doctorId: v.doctorId, mrId: v.mrId, dosage: v.dosage, histamine: v.histamine, saline: v.saline,
     ...(v.pricingBasis === SUBORDER_BASIS || (!mr && v.pricingBasis) ? { pricingBasis: v.pricingBasis } : {}),
     groups: v.pricingBasis === SUBORDER_BASIS && mr ? v.groups.map((g) => ({ id: g.id, items: g.items.map(({ allergenId, result }) => ({ allergenId, result })) }))
