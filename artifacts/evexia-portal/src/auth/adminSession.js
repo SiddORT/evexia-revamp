@@ -1312,7 +1312,13 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw uncertain('response');
     return data;
   }
-  if (mutation && resource === 'pricing-rules') {
+  if (mutation && resource === 'settlements') {
+    // Posting returns a SettlementBatchResult; verification returns a
+    // SettlementRecord. Neither is a PurchaseOrder with number and lines.
+    // Callers must still use confirmBatch against the frozen submission, or
+    // verifyEntry's record/target-entry validation, before reporting success.
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw uncertain('response');
+  } else if (mutation && resource === 'pricing-rules') {
     // This is a PricingRule, not a PurchaseOrder (no number or lines).
     // serverPricingRules.savePricingRule strictly parses the rule and confirms
     // exact submitted categories, saved target membership, rates, date and version.

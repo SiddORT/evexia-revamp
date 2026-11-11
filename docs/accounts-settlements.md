@@ -126,6 +126,55 @@ Same-account session renewal keeps the mounted dialog; account/scope changes
 clear it and discard late responses. Drafts are tab-local, not saved to browser
 storage; browser close/reload warnings do not guarantee recovery after closing.
 
+### Payment response confirmation fix — source-only handoff
+
+Settlement mutations use the shared authenticated transport, but not its
+Purchase Order response contract. Previously, successful payment batches were
+rejected for lacking `number` and `lines`; verification records were rejected
+for lacking `lines`. This could show an uncertain outcome after a successful
+HTTP response, before settlement-specific confirmation ran. An HTTP 200 alone
+does not prove that a particular payment or balance was saved.
+
+The transport now handles settlement mutation responses separately, requiring
+a non-null, non-array object after the unchanged session/scope, route,
+permission and HTTP-error guards. Purchase Order response requirements and
+all other resource validators are unchanged.
+
+Source tracing confirms these existing callers remain the success authority:
+
+- Posting passes the reply to `confirmBatch`, which matches the frozen
+  idempotency key, date, mode, optional reference, every type-qualified order
+  allocation and exact aggregate using BigInt paise. Only then, with the
+  identity guard still satisfied, does the dialog close, show the recorded
+  notice and refresh the list.
+- Verification passes the reply through `validateRecord` for record/history
+  consistency, then checks the original order key and the requested entry's
+  Verified state. The history dialog checks identity before updating its
+  record and notice; closing refreshes the list even after a lost reply.
+- Malformed or mismatched posting replies still enter the uncertain state
+  without clearing the frozen body/key. Check status reads that same key;
+  committed results still need `confirmBatch`, absence never unlocks editing,
+  and only a durable rejection resolves an uncertain submission as rejected.
+  Retry same submission sends the unchanged frozen body/key. The server
+  rechecks actor/MR ownership and the exact normalized request before returning
+  an existing result rather than inserting another receipt. No automatic
+  retry or new request identity is introduced.
+- Transport failures and changed sessions/scopes retain their existing
+  error paths. Neither HTTP success nor the transport's object check is
+  settlement confirmation.
+
+This fix changes no ledger entries, balances, verification evidence, backend
+contracts or permissions. It does not establish whether the screenshot's
+specific payment committed. Existing mounted uncertain submissions retain
+their Check status and Retry same submission controls; no payment was posted,
+looked up or retried on the user's behalf.
+
+**Review was static source inspection only. No tests, regression/release
+checks, builds, typechecks, validation/completion-check wrappers, runtime or
+browser verification, service starts/restarts, preview restoration, migrations,
+production access or deployment were performed for this fix.** Runtime
+confirmation and persistence remain unverified.
+
 ## API
 
 All paths below are under `/api/v1/admin/settlements`; both authorized portals
