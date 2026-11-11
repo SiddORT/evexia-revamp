@@ -51,25 +51,26 @@ async function beforePlacement(path, options, resource) {
     if (!Number.isSafeInteger(total) || total < 0) throw eligibilityError('The quoted total is unreadable. Your draft is preserved.');
     const orderAmount = `${Math.floor(total / 100)}.${String(total % 100).padStart(2, '0')}`;
     const warnings = preview.stockAdvice.filter((advice) => advice.state !== 'healthy');
-    const description = [
-      `Effective order date: ${preview.priceQuote.orderDate}`,
-      `Doctor pending payment amount: ${amount(preview.doctorPendingBalance)}`,
-      `Configured MR Doctor Days Limit: ${days}`,
-      `Oldest relevant unpaid-order age: ${preview.oldestDoctorUnpaidAgeDays == null ? 'Unavailable — no relevant unpaid order established' : `${preview.oldestDoctorUnpaidAgeDays} days (saved order date ${preview.oldestDoctorUnpaidDate})`}`,
-      `MR unpaid balance: ${amount(preview.outstanding)}`,
-      `New order amount: ₹${orderAmount}`,
-      `Resulting exposure: ${amount(preview.resultingOutstanding)}`,
-      `MR Payment Limit: ${amount(preview.paymentLimit)}${preview.paymentLimit === '0.00' ? ' (restriction disabled)' : ' — exposure must be strictly below a positive limit'}`,
-      'A days setting alone is not evidence of overdue payment. Unpaid balances use saved orders and committed payments.',
-      ...preview.reasons.map((reason) => reason.message),
-      ...(warnings.length ? ['Stock advice only (no reservation or deduction at placement):', ...warnings.map((advice) => `${advice.name}: ${advice.message}`)] : []),
-      body.refreshQuote ? 'Confirming saves this refreshed quote for explicit Admin review.' : 'Placement awaits explicit Admin approval. Stock is consumed only on approval.',
-    ].join('\n\n');
-    const accepted = await confirmEligibility(description, {
+    const accepted = await confirmEligibility('Review the saved financial facts before confirming. Your draft remains available if you return to the order.', {
       title: 'Immunotherapy financial confirmation',
       actionLabel: body.refreshQuote ? 'Confirm refreshed quote' : 'Confirm & place order',
-      cancelLabel: 'Return to order', destructive: false, preserveLines: true,
+      cancelLabel: 'Return to order', destructive: false,
       actionDisabled: !preview.eligible,
+      financialReview: {
+        orderDate: preview.priceQuote.orderDate ?? 'Unavailable',
+        doctorPending: amount(preview.doctorPendingBalance),
+        doctorDaysLimit: days,
+        oldestAge: preview.oldestDoctorUnpaidAgeDays == null
+          ? 'Unavailable — no relevant unpaid order established' : `${preview.oldestDoctorUnpaidAgeDays} days`,
+        oldestDate: preview.oldestDoctorUnpaidDate ?? 'Unavailable — no relevant unpaid order established',
+        outstanding: amount(preview.outstanding),
+        orderAmount: `₹${orderAmount}`,
+        resultingExposure: amount(preview.resultingOutstanding),
+        paymentLimit: `${amount(preview.paymentLimit)}${preview.paymentLimit === '0.00' ? ' (restriction disabled)' : ''}`,
+        reasons: [...new Set(preview.reasons.map((reason) => reason.message))],
+        stockAdvice: [...new Set(warnings.map((advice) => `${advice.name}: ${advice.message}`))],
+        refreshQuote: Boolean(body.refreshQuote),
+      },
     });
     if (!preview.eligible) throw eligibilityError(preview.reasons.map((reason) => reason.message).join(' '), preview.reasons[0]?.code);
     if (!accepted) throw eligibilityError('Placement cancelled. Your order details and verified uploads remain available.');

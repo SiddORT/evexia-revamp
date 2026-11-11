@@ -21,3 +21,11 @@ start call.
 **How to apply:** Keep isolated CRUD/schema-generation evidence separate from
 managed startup observations. Do not bypass identity checks or claim an isolated
 fork's results establish post-merge runtime alignment.
+
+When release checks are prohibited, do not call the app-preview screenshot tool
+at all. Compile the actual changed components into an ignored static harness on
+a separate, unregistered loopback port and capture it directly with local
+Chromium. Never reuse a registered artifact port for this harness.
+
+**Why:** Even a screenshot requested after starting an isolated listener can
+restore the managed app, occupy its registered port, and start release checks.

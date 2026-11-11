@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './platformConfirmation.css';
 import { enterModal } from './modalLayers.js';
+import ImmunotherapyFinancialReview from './ImmunotherapyFinancialReview.jsx';
 
 let current = null;
 const listeners = new Set();
@@ -57,9 +58,9 @@ function Choice({ choice }) {
         event.preventDefault(); event.stopImmediatePropagation(); settle(false);
       } else if (event.key === 'Tab') {
         event.preventDefault(); event.stopImmediatePropagation();
-        const buttons = [...node.querySelectorAll('button:not(:disabled)')];
-        const index = buttons.indexOf(document.activeElement);
-        buttons[(index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length]?.focus();
+        const stops = [...node.querySelectorAll('button:not(:disabled), [tabindex="0"]')];
+        const index = stops.indexOf(document.activeElement);
+        stops[(index + (event.shiftKey ? stops.length - 1 : 1)) % stops.length]?.focus();
       } else if (!node.contains(event.target)) {
         event.preventDefault(); event.stopImmediatePropagation();
       }
@@ -80,13 +81,24 @@ function Choice({ choice }) {
   return createPortal(<div className="platform-confirm-backdrop" data-platform-confirmation onMouseDown={(e) => {
     if (e.target === e.currentTarget) settle(false);
   }}>
-    <section ref={ref} className="platform-confirm" role="alertdialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
-      <p className="platform-confirm__eyebrow">Please confirm</p>
-      <h2 id={`${id}-title`}>{choice.title}</h2>
-      <p id={`${id}-description`} style={choice.preserveLines ? { whiteSpace: 'pre-line' } : undefined}>{choice.description}</p>
+    <section ref={ref} className={`platform-confirm${choice.financialReview ? ' platform-confirm--financial' : ''}`} role="alertdialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
+      {choice.financialReview ? <>
+        <header className="platform-confirm__header">
+          <p className="platform-confirm__eyebrow">Please confirm</p>
+          <h2 id={`${id}-title`}>{choice.title}</h2>
+          <p id={`${id}-description`}>{choice.description}</p>
+        </header>
+        <div className="platform-confirm__review" role="region" aria-label="Financial review details" tabIndex={0} data-testid="financial-review-details">
+          <ImmunotherapyFinancialReview review={choice.financialReview} ineligible={Boolean(choice.actionDisabled)} />
+        </div>
+      </> : <>
+        <p className="platform-confirm__eyebrow">Please confirm</p>
+        <h2 id={`${id}-title`}>{choice.title}</h2>
+        <p id={`${id}-description`} style={choice.preserveLines ? { whiteSpace: 'pre-line' } : undefined}>{choice.description}</p>
+      </>}
       <div className="platform-confirm__actions">
-        <button ref={cancel} type="button" onClick={() => settle(false)}>{choice.cancelLabel || 'Cancel'}</button>
-        <button type="button" disabled={Boolean(choice.actionDisabled)} className={choice.destructive ? 'platform-confirm__danger' : ''} onClick={() => { if (!choice.actionDisabled) settle(true); }}>{choice.actionLabel}</button>
+        <button ref={cancel} data-testid="confirmation-cancel" type="button" onClick={() => settle(false)}>{choice.cancelLabel || 'Cancel'}</button>
+        <button data-testid="confirmation-accept" type="button" disabled={Boolean(choice.actionDisabled)} className={choice.destructive ? 'platform-confirm__danger' : choice.financialReview ? 'platform-confirm__primary' : ''} onClick={() => { if (!choice.actionDisabled) settle(true); }}>{choice.actionLabel}</button>
       </div>
     </section>
   </div>, choice.target);

@@ -84,3 +84,17 @@ mtime_ms = 1794359858729
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/1ca49f62-7cff-4b3f-8423-468d23292483/3fa0d4f0-0d03-4644-9912-fdd9a9758ca6"
 storage_version_token = "1794359924057408"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "JEv7lKw7RDd_X98YmTnPE"
+uri = "file://generated-artifacts/financial-modal-inspection/mobile.png"
+type = "image"
+title = "Financial review on mobile"
+description = "Isolated dark-theme presentation with synthetic values and a disabled confirmation action."
+logical_id = "489e9e0f-ba5a-445c-962f-0b6116de952d"
+content_hash = "sha256:2ba645731b1bcf803a5ae67dfdf5c57aa3ed83f1b9c12b639656f27548f485cc"
+size = 45814
+mtime_ms = 1794381183382
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/489e9e0f-ba5a-445c-962f-0b6116de952d/ab7b1c19-0a7b-457f-b88e-f3428cf8f25b"
+storage_version_token = "1794381261107557"
+content_type = "image/png"

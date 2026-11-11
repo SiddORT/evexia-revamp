@@ -8,3 +8,42 @@
 .platform-confirm button.platform-confirm__danger { background: #b42332; border-color: #b42332; color: #fff; }
 .platform-confirm button:focus-visible { outline: 3px solid var(--admin-accent, #2685ba); outline-offset: 3px; }
 .platform-confirm button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Only the financial review uses the wider, independently scrolling layout. */
+.platform-confirm--financial { width: min(100%, 800px); padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.platform-confirm--financial .platform-confirm__header { padding: 20px 24px 16px; flex: none; border-bottom: 1px solid var(--admin-border, #d8e2e7); }
+.platform-confirm--financial .platform-confirm__header p { margin: 0; }
+.platform-confirm--financial h2 { margin: 6px 0 8px; line-height: 1.3; }
+.platform-confirm--financial .platform-confirm__header > p:last-child { font-size: .8125rem; line-height: 1.5; color: var(--admin-text-soft, #526775); }
+.platform-confirm__review { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px; scrollbar-gutter: stable; }
+.platform-confirm__review:focus-visible { outline: 3px solid var(--admin-accent, #2685ba); outline-offset: -4px; }
+.platform-confirm--financial .platform-confirm__actions { flex: none; margin: 0; padding: 14px 24px; border-top: 1px solid var(--admin-border, #d8e2e7); }
+.platform-confirm--financial button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.platform-confirm--financial button.platform-confirm__primary { background: var(--admin-primary, #176b73); border-color: var(--admin-primary, #176b73); color: var(--admin-primary-ink, #fff); font-weight: 600; }
+.platform-confirm--financial button.platform-confirm__primary:disabled { opacity: 1; background: var(--admin-state-hover, #eef3f5); border-color: var(--admin-border, #c7d5dd); color: var(--admin-text-soft, #526775); }
+.financial-review { display: grid; gap: 16px; font-size: .875rem; line-height: 1.5; }
+.financial-review h3 { margin: 0 0 10px; font-size: .9375rem; font-weight: 700; color: inherit; }
+.financial-review p { margin: 8px 0 0; line-height: 1.5; }
+.financial-review dl { margin: 0; display: grid; gap: 12px; }
+.financial-review dt { color: var(--admin-text-soft, #526775); font-size: .8125rem; }
+.financial-review dd { margin: 3px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.financial-review__totals { grid-template-columns: repeat(2, minmax(0, 1fr)); background: var(--admin-state-soft, #eaf4f3); border: 1px solid var(--admin-border, #d8e2e7); border-radius: 10px; padding: 16px; }
+.financial-review__totals dd { font-size: 1.5rem; line-height: 1.25; }
+.financial-review__groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.financial-review__groups > section { border: 1px solid var(--admin-border, #d8e2e7); border-radius: 10px; padding: 16px; min-width: 0; }
+.financial-review p.financial-review__note { color: var(--admin-text-soft, #526775); font-size: .8125rem; margin-top: 14px; }
+.financial-review__notice { padding: 14px 16px; border: 1px solid var(--admin-border, #d8e2e7); border-left: 4px solid var(--admin-accent, #176b73); border-radius: 8px; }
+.financial-review__notice--blocked { border-left-color: var(--admin-danger, #b42332); background: var(--admin-highlight-soft, #fff0f1); }
+.financial-review__notice--blocked h3 { color: var(--admin-danger, #b42332); }
+.financial-review__notice--stock { border-left-color: var(--admin-warning, #a56b0a); background: var(--admin-state-warm, #fff7e5); }
+.financial-review__notice ul { padding-left: 20px; margin: 8px 0 0; }
+.financial-review__notice li + li { margin-top: 8px; }
+.financial-review__approval { padding: 0 2px; font-size: .8125rem; }
+.financial-review__approval h3 { margin-bottom: 6px; }
+@media (max-width: 560px) {
+  .platform-confirm--financial .platform-confirm__header { padding: 16px; }
+  .platform-confirm__review { padding: 16px; }
+  .platform-confirm--financial .platform-confirm__actions { padding: 12px 16px; gap: 8px; }
+  .platform-confirm--financial .platform-confirm__actions button { flex: 1 1 100%; }
+  .financial-review__groups, .financial-review__totals { grid-template-columns: minmax(0, 1fr); }
+}
