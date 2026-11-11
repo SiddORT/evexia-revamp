@@ -7,6 +7,7 @@ import ComboProvenance from './ComboProvenance.jsx';
 import { dayEndExclusiveISO, dayStartISO, formatPrice, stockHistory } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import { useResourceActions } from '../../auth/useMasterActions.js';
+import { groupStockLots } from '../../services/stockLotPresentation.js';
 
 export default function StockStatusDetail({ row, asOf, onClose }) {
   const can = useResourceActions('stock_status');
@@ -30,42 +31,34 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
     return () => { current = false; controller.abort(); };
   }, [row.productId, from, to, page, pageSize, tick, badRange, can.history]);
 
-  const lotById = useMemo(() => Object.fromEntries(row.lots.map((l) => [l.lotId, l])), [row]);
+  const lots = useMemo(() => groupStockLots(row.lots), [row.lots]);
+  const lotById = useMemo(() => new Map(lots.filter((g) => g.lot.lotId).map((g) => [g.lot.lotId, g.lot])), [lots]);
+  const locationById = useMemo(() => new Map((row.lots || []).filter((l) => l.locationId && l.locationName).map((l) => [l.locationId, l.locationName])), [row.lots]);
   const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
-  const lotColumns = [
-    { key: 'o', label: 'Origin', render: (l) => l.source === 'in_house_dilution' ? lotOriginLabel(l) : l.source === 'adjustment' ? <>Manual adjustment<span className="stock-sub">{l.adjustmentId}</span></> : l.source === 'opening' ? <>Opening stock<span className="stock-sub">{l.unitRate != null ? `Rate ${l.unitRate}` : 'Rate unavailable'}{l.openingValue != null ? ` · value ${l.openingValue}` : ''}</span></> : l.itemKind === 'combo' ? 'Assembly' : 'Receipt' },
-    { key: 'b', label: 'Batch', render: (l) => <>{l.batchNo || 'Unavailable'}{l.reserveId && <span className="stock-sub">In-house dilution from reserve {l.reserveId}</span>}</> },
-    { key: 'conc', label: 'Batch concentration', render: (l) => concentrationLabel(l.resultingConcentration ?? l.concentration) },
-    { key: 'r', label: 'Receipt', render: (l) => l.receiptNumber || 'Unavailable' },
-    { key: 'e', label: 'Expiry', render: (l) => l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable' },
-    { key: 'l', label: 'Location', render: (l) => l.locationId ? l.locationName : 'Unallocated' },
-    { key: 'q', label: row.itemKind === 'combo' ? 'On hand (units)' : 'On hand (ml)', render: (l) => <span className="inv-mono">{l.quantity}</span> },
-  ];
   const columns = [
     { key: 'd', label: 'Posted', render: (r) => timestamp(r.at) },
-    { key: 'lot', label: 'Lot', render: (r) => lotById[r.lotId] ? (lotById[r.lotId].source === 'opening' ? 'Opening stock lot' : `${lotById[r.lotId].batchNo || 'Batch unavailable'} · ${lotOriginLabel(lotById[r.lotId])}`) : r.lotId.slice(0, 8) },
-    { key: 'loc', label: 'Location', render: (r) => !r.locationId ? 'Unallocated' : lotById[r.lotId]?.locationId === r.locationId ? lotById[r.lotId].locationName : r.locationId.slice(0, 8) },
+    { key: 'lot', label: 'Lot', render: (r) => lotById.has(r.lotId) ? (lotById.get(r.lotId).source === 'opening' ? 'Opening stock lot' : `${lotById.get(r.lotId).batchNo || 'Batch unavailable'} · ${lotOriginLabel(lotById.get(r.lotId))}`) : <span title={r.lotId}>{r.lotId?.slice(0, 8) || 'Unavailable'}</span> },
+    { key: 'loc', label: 'Location', render: (r) => !r.locationId ? 'Unallocated' : locationById.get(r.locationId) || <span title={r.locationId}>Name unavailable · {r.locationId.slice(0, 8)}</span> },
     { key: 'dl', label: 'Change', render: (r) => <span className="inv-mono">{r.delta}</span> },
     { key: 'ba', label: 'Before / After', render: (r) => <span className="inv-mono">{r.before} to {r.after}</span> },
     { key: 'a', label: 'Actor', render: (r) => r.actor },
     { key: 's', label: 'Source', render: (r) => <span className="stock-status">{r.source?.startsWith('adjustment:') ? 'Manual adjustment' : r.source?.startsWith('opening:') ? 'Opening stock' : r.movementId ? 'Transfer / allocation' : r.source?.startsWith('assembly:') ? (r.delta.startsWith('-') ? 'Assembly consumption' : 'Assembly output') : 'Receipt'}</span> },
   ];
   return <Dialog className="stock-detail" eyebrow={row.itemKind === 'combo' ? 'Assembled combo stock' : 'Individual allergen stock'} title={row.name} onClose={onClose}
-    description={`ID ${row.productId} · ${row.concentration} · ${row.category} · ${formatPrice(row.sellingPrice)}. On hand ${row.quantity} ${row.unit}${asOf ? ` as of ${timestamp(asOf)}` : ''}.`}>
-    <div className="admin-feedback" role="note">No sales backend is connected. History shows recorded opening, receipt, assembly, manual adjustment and transfer/allocation postings, including saved before/after balances. Opening quantities are explicitly entered, never inferred.</div>
-    {row.itemKind === 'combo' && <ComboLots lots={row.lots} />}
+    description={[row.concentration, row.category].filter(Boolean).join(' · ')}>
+    <div className="stock-detail__summary"><div><span>Current on hand</span><strong className="inv-mono">{row.quantity} <small>{row.unit || 'Unit unavailable'}</small></strong></div>{asOf && <span>As of {timestamp(asOf)}</span>}</div>
+    <details className="stock-detail__evidence"><summary>Product reference &amp; catalogue details</summary><dl className="stock-detail__meta"><div><dt>Product reference</dt><dd>{row.productId}</dd></div><div><dt>Catalogue selling price</dt><dd>{formatPrice(row.sellingPrice)}</dd></div></dl></details>
     <h3 className="stock-section-title">Lots on hand</h3>
-    <div className="stock-history-table stock-lot-table">
-      {row.lots.length ? <DataTable columns={lotColumns} rows={row.lots} rowKey={(l) => `${l.lotId}-${l.locationId}`} label="Lots on hand" testIdPrefix="stock-lot" />
+    <div className="stock-lots">
+      {lots.length ? <ul className="stock-lots__list" aria-label="Lots on hand">{lots.map((group) => <LotRow key={group.key} group={group} fallbackUnit={row.unit} itemKind={row.itemKind} displayDate={displayDate} />)}</ul>
         : <div className="admin-empty"><strong>No lots on hand</strong><p>{row.itemKind === 'combo' ? 'No combo quantity remains on hand.' : 'This allergen has no receipt or opening quantity on hand.'}</p></div>}
     </div>
     {can.history ? <><h3 className="stock-section-title">Posting history</h3>
     <div className="inv-period">
-      <label className="stock-field stock-field--inline">From <input type="date" className="admin-input" value={from} max={to || undefined} onChange={(e) => { setFrom(e.target.value); setPage(1); }} data-testid="input-stock-history-from" /></label>
-      <label className="stock-field stock-field--inline">To <input type="date" className="admin-input" value={to} min={from || undefined} onChange={(e) => { setTo(e.target.value); setPage(1); }} data-testid="input-stock-history-to" /></label>
+      <label className="stock-field stock-field--inline">From (UTC) <input type="date" className="admin-input" value={from} max={to || undefined} onChange={(e) => { setFrom(e.target.value); setPage(1); }} data-testid="input-stock-history-from" /></label>
+      <label className="stock-field stock-field--inline">To (UTC) <input type="date" className="admin-input" value={to} min={from || undefined} onChange={(e) => { setTo(e.target.value); setPage(1); }} data-testid="input-stock-history-to" /></label>
       {(from || to) && <button type="button" className="admin-button admin-button--secondary" onClick={() => { setFrom(''); setTo(''); setPage(1); }}>All periods</button>}
     </div>
-    <p className="mr-form__hint">The period filters this history only (UTC days). It never changes current stock.</p>
     {badRange && <div className="admin-feedback admin-feedback--error" role="alert">The start date must not be after the end date.</div>}
     {state.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{state.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((t) => t + 1)}>Retry</button></div>}
     <div className="stock-history-table" aria-busy={state.loading}>
@@ -75,14 +68,38 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
         : <div className="admin-empty"><strong>No postings in this period</strong><p>Choose All periods to see every recorded posting.</p></div>}
       {!state.error && !badRange && <TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} pageSize={pageSize} filtered={state.filtered} total={state.filtered} label="postings" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-stock-history-count" />}
     </div>
-    {state.scope && <p className="mr-form__hint">{state.scope}</p>}</>
+    {state.scope && <details className="stock-detail__evidence"><summary>History coverage</summary><p className="mr-form__hint">{state.scope}</p></details>}</>
       : <p className="mr-form__hint">View Stock History permission is required to read historical postings.</p>}
   </Dialog>;
 }
 
-function ComboLots({ lots }) {
-  const combos = (lots || []).filter((l) => l.recipe || l.sourceComponents || l.assemblyId);
-  return <section data-testid="section-combo-provenance"><h3 className="stock-section-title">Combo provenance</h3>
-    {combos.length ? combos.map((l) => <div className="admin-feedback" key={`${l.lotId}-${l.locationId}`}>
-      <strong>{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} at {l.locationName}</strong><ComboProvenance item={l} /></div>) : <p>No retained assembly details.</p>}</section>;
+function LotRow({ group, fallbackUnit, itemKind, displayDate }) {
+  const { lot: l, allocations } = group;
+  const unit = l.unit || fallbackUnit || 'Unit unavailable';
+  return <li className="stock-lot" data-testid={`row-stock-lot-${group.key}`}>
+    <dl className="stock-lot__row">
+      <div><dt>Batch</dt><dd><strong>{l.batchNo || 'Batch unavailable'}</strong></dd></div>
+      <div><dt>Concentration</dt><dd>{concentrationLabel(l.resultingConcentration ?? l.concentration)}</dd></div>
+      <div><dt>Expiry</dt><dd>{l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable'}</dd></div>
+      <div><dt>On hand</dt><dd className="inv-mono"><strong>{group.quantity}</strong><small>{unit}</small></dd></div>
+      <div><dt>Location</dt><dd>{allocations.length === 1 ? (l.locationId ? l.locationName || 'Name unavailable' : 'Unallocated') : `${allocations.length} locations`}</dd></div>
+    </dl>
+    {(!group.complete || !l.lotId) && <p className="stock-lot__warning" role="note">{!group.complete ? 'Total unavailable; review saved allocation quantities.' : 'Lot identity unavailable; allocations shown separately.'}</p>}
+    <div className="stock-lot__disclosures">
+      <details className="stock-detail__evidence"><summary>Locations &amp; quantities</summary>
+        <ul className="stock-lot__allocations">{allocations.map((a, i) => <li key={`${a.locationId}-${i}`}><span>{a.locationId ? a.locationName || 'Location name unavailable' : 'Unallocated'}</span><strong className="inv-mono">{a.quantity ?? 'Unavailable'} <small>{a.unit || unit}</small></strong></li>)}</ul>
+      </details>
+      <details className="stock-detail__evidence"><summary>Lot source &amp; provenance</summary>
+        <dl className="stock-detail__meta">
+          <div><dt>Lot reference</dt><dd>{l.lotId || 'Unavailable'}</dd></div>
+          <div><dt>Origin</dt><dd>{lotOriginLabel(l)}</dd></div>
+          <div><dt>Receipt</dt><dd>{l.receiptNumber || 'Unavailable'}</dd></div>
+          {l.receiptId && <div><dt>Receipt reference</dt><dd>{l.receiptId}</dd></div>}
+          {l.originLocationName && <div><dt>Original location</dt><dd>{l.originLocationName}</dd></div>}
+          {l.source === 'opening' && <><div><dt>Opening rate</dt><dd>{l.unitRate ?? 'Unavailable'}</dd></div><div><dt>Opening value</dt><dd>{l.openingValue ?? 'Unavailable'}</dd></div></>}
+        </dl>
+        {(l.recipe || l.sourceComponents || l.assemblyId) ? <ComboProvenance item={l} /> : itemKind === 'combo' ? <p>No retained assembly details.</p> : null}
+      </details>
+    </div>
+  </li>;
 }

@@ -83,13 +83,42 @@
 .stock-history-table .admin-table td:nth-child(2), .stock-history-table .admin-table td:nth-child(3) { overflow-wrap: anywhere; }
 .stock-status { text-transform: capitalize; font-weight: 700; color: var(--admin-text-soft); }
 .stock-detail { width: min(100%, 860px); }
-.stock-detail .stock-lot-table .admin-table { min-width: 1100px; }
-.stock-detail .stock-lot-table .admin-table :is(th, td):nth-child(n) {
-  white-space: normal; overflow-wrap: anywhere; text-align: left; width: 12%;
-}
-.stock-detail .stock-lot-table .admin-table :is(th, td):first-child { width: 22%; }
-.stock-detail .stock-lot-table .admin-table :is(th, td):nth-child(2) { width: 18%; }
-.stock-detail .stock-lot-table .admin-table :is(th, td):last-child { width: 12%; text-align: right; }
+.stock-detail { overflow-wrap: anywhere; }
+.stock-detail .admin-dialog__top { position: sticky; top: -27px; z-index: 2; background: var(--admin-surface); padding: 8px 0; }
+.stock-detail h2 { font-size: 23px; }
+.stock-detail .admin-dialog__top > div { min-width: 0; }
+.stock-detail .admin-dialog__top > button { flex: none; }
+.stock-detail__summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--admin-border); }
+.stock-detail__summary span { font-size: 11px; color: var(--admin-text-soft); }
+.stock-detail__summary strong { display: block; font-size: 20px; margin-top: 4px; }
+.stock-detail__summary small { font-size: 12px; font-weight: 400; }
+.stock-detail__evidence { min-width: 0; font-size: 12px; }
+.stock-detail__evidence summary { cursor: pointer; padding: 8px 0; color: var(--admin-accent); font-size: 12px; font-weight: 600; }
+.stock-detail__evidence summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.stock-detail__meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 4px 0 12px; }
+.stock-detail__meta :is(dt, dd) { margin: 0; }
+.stock-detail__meta dt, .stock-lot dt { color: var(--admin-text-soft); font-size: 10px; }
+.stock-detail__meta dd { margin-top: 3px; }
+.stock-lots__list { list-style: none; margin: 0; padding: 0; }
+.stock-lot { border-block-start: 1px solid var(--admin-border); padding: 10px 0 4px; min-width: 0; }
+.stock-lot__row { display: grid; grid-template-columns: 1.2fr 1fr .8fr 1.1fr 1fr; gap: 12px; margin: 0; }
+.stock-lot__row > div { min-width: 0; }
+.stock-lot__row dd { margin: 4px 0 0; font-size: 12px; }
+.stock-lot__row small { display: block; font-size: 10px; color: var(--admin-text-soft); }
+.stock-lot__disclosures { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stock-lot__allocations { list-style: none; padding: 0; margin: 0 0 8px; }
+.stock-lot__allocations li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--admin-border); }
+.stock-lot__allocations li > * { min-width: 0; }
+.stock-lot__allocations strong { text-align: right; font-weight: 600; }
+.stock-lot__allocations small { font-weight: 400; }
+.stock-lot__warning { font-size: 12px; color: var(--admin-danger); }
+.stock-detail .stock-history-table, .stock-detail .admin-table-scroll { min-width: 0; max-width: 100%; }
+.stock-detail .admin-pagination__controls { width: 100%; justify-content: flex-start; }
+.stock-detail .admin-pagination__pages { flex-wrap: wrap; }
+.stock-detail .admin-pagination__total { white-space: normal; }
+.stock-detail .inv-period { flex-wrap: wrap; }
+.stock-detail .stock-field { min-width: 0; }
+.stock-detail .stock-field input { min-width: 0; max-width: 100%; }
 .stock-detail, .stock-report-dialog { min-width: 0; }
 .stock-detail [role="tabpanel"] { min-width: 0; }
 .stock-detail__bar { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin: 14px 0; border-bottom: 1px solid var(--admin-border); }
@@ -116,6 +145,10 @@
   .stock-actions { width: 100%; padding-top: 0; }
   .stock-actions .admin-button { flex: 1 1 auto; justify-content: center; }
   .stock-detail, .stock-report-dialog { padding: 16px; }
+  .stock-detail .admin-dialog__top { top: -16px; }
+  .stock-lot__row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stock-lot__row > div:first-child { grid-column: 1 / -1; }
+  .stock-lot__disclosures, .stock-detail__meta { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .stock-detail__bar { align-items: stretch; }
   .stock-field--inline { width: 100%; }
   .stock-page .admin-pagination__controls { width: 100%; justify-content: flex-start; }

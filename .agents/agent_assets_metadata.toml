@@ -70,3 +70,17 @@ mtime_ms = 1792388860014
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/099bb9d2-8c82-4808-8e7c-d84334a49d85/ecbf0c67-25d6-44fb-aa16-8fcf08253b59"
 storage_version_token = "1792388946649855"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "VyWWmTNxD4zpYZbvLwjVD"
+uri = "file://generated-artifacts/stock-layout/contact-sheet.jpg"
+type = "image"
+title = "Stock details and ledger responsive review"
+description = "Synthetic Chromium presentation captures at 390, 768, 1024, 1440 pixels and short landscape. No live API access in this review."
+logical_id = "1ca49f62-7cff-4b3f-8423-468d23292483"
+content_hash = "sha256:1787f7e0fe113d106d64aee91cefd94c3a9fc292b3a11aecc810b499ea1e53f6"
+size = 195504
+mtime_ms = 1794359858729
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/1ca49f62-7cff-4b3f-8423-468d23292483/3fa0d4f0-0d03-4644-9912-fdd9a9758ca6"
+storage_version_token = "1794359924057408"
+content_type = "image/jpeg"
