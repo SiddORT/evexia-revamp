@@ -1,5 +1,40 @@
 # MR live order workflows
 
+## MR listing entry actions (source-only correction)
+
+The four listings now render their headers through `OrderListingHeader`.
+Its MR branch renders the complete existing header directly, outside
+`OrderTransfers`; the latter returns no MR transfer UI. The Admin/staff branch
+delegates to the existing transfer implementation with unchanged props,
+capability checks and header markup.
+
+Source tracing confirms each header's Add Order link is independent of list
+rows, counts, loading and empty-state branches:
+
+| Listing | Existing new-order destination |
+| --- | --- |
+| Immunotherapy | `/mr/orders/immunotherapy/new` |
+| Kits & Consumables | `/mr/orders/kits-consumables/new` |
+| SPT | `/mr/orders/spt/new` |
+| Lupin | `/mr/orders/lupin/new` |
+
+`LiveOrders` continues to mount each listing and form within `MROrderBoundary`,
+which resolves only the logged-in account's saved MR assignment before
+rendering. Existing form initialization/read-only MR selection, service
+authorization, draft privacy, approval and final-submission rules are untouched.
+No staff grants or Admin navigation were changed.
+
+The reported absence was **not reproduced or conclusively explained**:
+the preceding source already declared all four links, allowed MR Add actions,
+and attempted to preserve headers through the transfer wrapper. This correction
+makes header ownership explicitly separate from transfer suppression; it is not
+proof of the runtime cause or a verified visual restoration.
+Only source and diff inspection were performed. No tests, builds, typechecks,
+regression/release/completion validation commands, browser/runtime probes,
+service starts/restarts, migrations, deployment or live writes were performed.
+Button visibility at actual viewport sizes and successful runtime navigation
+remain unverified.
+
 ## Immunotherapy Order Batch No
 
 Final placement, including explicit submission of a saved incomplete draft,

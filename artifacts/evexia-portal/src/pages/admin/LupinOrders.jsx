@@ -9,7 +9,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
-import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderListingHeader from '../../components/orders/OrderListingHeader.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import PersistentDrafts from '../../components/orders/PersistentOrderDraft.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
@@ -60,7 +60,7 @@ export default function LupinOrders() {
   const columns = withAuditColumns(baseColumns, audit);
 
   return <AdminLayout title="LUPIN"><div className="lupin lupin-listing">
-    <OrderTransfers kind="lupin" rows={result.items} adapter={createLupinTransferAdapter(applied, refresh)} total={loading || error ? undefined : result.filtered ?? result.total}
+    <OrderListingHeader kind="lupin" rows={result.items} adapter={createLupinTransferAdapter(applied, refresh)} total={loading || error ? undefined : result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Order Management – Lupin</h1><p className="admin-page-head__description">Review saved Lupin orders by Doctor, MR and status.</p></div>
         <div className="lupin-actions">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>

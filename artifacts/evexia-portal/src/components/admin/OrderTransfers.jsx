@@ -12,8 +12,8 @@ import './orderTransfers.css';
 
 export default function OrderTransfers(props) {
   const { portal } = useOrderPortal();
-  // Presentation only: retain the listing header and Add Order, not transfers.
-  if (portal === 'mr') return props.renderActions ? props.renderActions(null) : null;
+  // Headers belong to OrderListingHeader; MR never mounts transfer controls.
+  if (portal === 'mr') return null;
   return <AdminOrderTransfers {...props} />;
 }
 

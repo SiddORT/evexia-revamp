@@ -9,7 +9,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
-import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderListingHeader from '../../components/orders/OrderListingHeader.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import PersistentDrafts from '../../components/orders/PersistentOrderDraft.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
@@ -86,7 +86,7 @@ export default function KitsOrders() {
   const columns = withAuditColumns(baseColumns, audit);
 
   return <AdminLayout title="KITS & CONSUMABLES"><div className="kits kits-listing">
-    <OrderTransfers kind="kits" rows={result.items} adapter={createKitsTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
+    <OrderListingHeader kind="kits" rows={result.items} adapter={createKitsTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Kits &amp; Consumables</h1><p className="admin-page-head__description">Skin prick kits, lancets, applicators and trays ordered for doctors and MRs.</p></div>
         <div className="kits-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>

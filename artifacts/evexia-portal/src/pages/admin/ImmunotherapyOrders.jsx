@@ -10,7 +10,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
-import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderListingHeader from '../../components/orders/OrderListingHeader.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
 import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
@@ -113,7 +113,7 @@ export default function ImmunotherapyOrders() {
 
 
   return <AdminLayout title="IMMUNOTHERAPY"><div className="imm">
-    <OrderTransfers kind="immunotherapy" rows={rows} snapshot={snap} adapter={transferAdapter} total={result.filtered ?? result.total} renderActions={(actions) => <div className="admin-page-head imm-list-head">
+    <OrderListingHeader kind="immunotherapy" rows={rows} snapshot={snap} adapter={transferAdapter} total={result.filtered ?? result.total} renderActions={(actions) => <div className="admin-page-head imm-list-head">
       <div><p className="admin-page-head__eyebrow">Orders</p><h1>Immunotherapy</h1>
         <p className="admin-page-head__description">Review patient dosage, allergen suborders and saved pricing.</p></div>
       <div className="imm-list-head__actions">

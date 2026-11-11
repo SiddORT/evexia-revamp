@@ -8,7 +8,7 @@ import AdminLayout, { useOrderBase, useOrderPortal, useOrderActions } from '../.
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
-import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
+import OrderListingHeader from '../../components/orders/OrderListingHeader.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
@@ -72,7 +72,7 @@ export default function SptOrders() {
   return (
     <AdminLayout title="SPT">
       <div className="spt spt-listing">
-        <OrderTransfers kind="spt" rows={result.items} adapter={createSptTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
+        <OrderListingHeader kind="spt" rows={result.items} adapter={createSptTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
           renderActions={(actions) => <div className="admin-page-head">
           <div>
             <p className="admin-page-head__eyebrow">Orders</p>
