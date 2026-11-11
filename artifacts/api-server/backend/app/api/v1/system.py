@@ -53,6 +53,18 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0090_settlement_verification"]:
+            # Retain verification and all invoice/predecessor readiness probes.
+            if not db.scalar(text("""
+                SELECT EXISTS (
+                  SELECT 1 FROM pg_trigger t JOIN pg_proc p ON p.oid=t.tgfoid
+                  WHERE t.tgrelid='settlement_entries'::regclass
+                    AND t.tgname='settlement_entries_immutable'
+                    AND t.tgenabled='O'
+                    AND p.proname='guard_settlement_entry_verification')
+            """)):
+                raise RuntimeError("Settlement verification guard required")
+            revisions = ["0089_invoice_settings"]
         if revisions == ["0089_invoice_settings"]:
             from app.services.invoice_settings import ready as invoice_settings_ready
             invoice_settings_ready(db)

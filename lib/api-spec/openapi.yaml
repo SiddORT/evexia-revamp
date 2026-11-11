@@ -28953,6 +28953,10 @@
       },
       "SettlementBatchResult": {
         "properties": {
+          "reference": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Reference"
+          },
           "date": {
             "title": "Date",
             "type": "string"
@@ -28998,6 +29002,10 @@
       "SettlementInput": {
         "additionalProperties": false,
         "properties": {
+          "reference": {
+            "anyOf": [{"type": "string", "maxLength": 100}, {"type": "null"}],
+            "title": "Reference"
+          },
           "date": {
             "format": "date",
             "title": "Date",
@@ -29217,6 +29225,13 @@
       },
       "SettlementRecord": {
         "properties": {
+          "status": {"title": "Status", "type": "string"},
+          "payable": {"title": "Payable", "type": "boolean"},
+          "paymentStatus": {
+            "enum": ["Unpaid", "Part paid", "Paid", "Unavailable"],
+            "title": "Paymentstatus",
+            "type": "string"
+          },
           "balance": {
             "anyOf": [
               {
@@ -29324,6 +29339,9 @@
           "number",
           "date",
           "version",
+          "status",
+          "payable",
+          "paymentStatus",
           "doctor",
           "mr",
           "patients",
@@ -29405,6 +29423,18 @@
       },
       "SettlementTransaction": {
         "properties": {
+          "reference": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Reference"
+          },
+          "verifiedAt": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Verifiedat"
+          },
+          "verifiedBy": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Verifiedby"
+          },
           "actorId": {
             "title": "Actorid",
             "type": "string"
@@ -133578,6 +133608,14 @@
       "get": {
         "operationId": "listSettlements",
         "parameters": [
+          {"in": "query", "name": "search", "required": false,
+           "schema": {"default": "", "maxLength": 100, "title": "Search", "type": "string"}},
+          {"in": "query", "name": "order_status", "required": false,
+           "schema": {"default": "All", "enum": ["All", "Confirmed", "Saved", "Approved", "In process", "Shipped", "Delivered", "Returned", "Rejected", "Cancelled"], "title": "Order Status", "type": "string"}},
+          {"in": "query", "name": "payment_status", "required": false,
+           "schema": {"default": "All", "enum": ["All", "Unpaid", "Part paid", "Paid", "Unavailable"], "title": "Payment Status", "type": "string"}},
+          {"in": "query", "name": "payable_only", "required": false,
+           "schema": {"default": false, "title": "Payable Only", "type": "boolean"}},
           {
             "in": "query",
             "name": "kind",
@@ -135165,6 +135203,37 @@
         "tags": [
           "settlements"
         ]
+      }
+    },
+    "/v1/admin/settlements/transactions/{entry_id}/verify": {
+      "post": {
+        "operationId": "verifySettlementTransaction",
+        "parameters": [
+          {"in": "path", "name": "entry_id", "required": true,
+           "schema": {"format": "uuid", "title": "Entry Id", "type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SettlementRecord"}}},
+            "description": "Successful Response",
+            "headers": {"X-Request-ID": {"description": "Server-generated request correlation ID.", "schema": {"format": "uuid", "type": "string"}}}
+          },
+          "403": {
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}},
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}},
+            "description": "Not Found"
+          },
+          "503": {
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}},
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [{"HTTPBearer": []}],
+        "summary": "Verify",
+        "tags": ["settlements"]
       }
     },
     "/v1/admin/shipments": {

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { Search, X } from 'lucide-react';
 import Dialog from '../admin/Dialog.jsx';
+import SearchableSelect from '../admin/SearchableSelect.jsx';
+import TablePagination from '../admin/TablePagination.jsx';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
-import { KIND_LABEL, MODES, fromPaise, inr, lookupRequest, postTransaction, toPaise, confirmBatch } from '../../services/serverSettlements.js';
+import { BATCH_LIMIT, EMPTY_FILTERS, KIND_LABEL, MODES, REFERENCE, confirmBatch, fromPaise, inr, listSettlements, lookupRequest, postTransaction, rowKey, toPaise } from '../../services/serverSettlements.js';
 import { todayISO as today } from '../../services/serverShipments.js';
 
 const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -10,15 +13,26 @@ const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4
 }));
 // Definite rejections: the server answered and did not commit.
 const definite = (e) => [400, 403, 404, 409, 422].includes(e?.status);
+const MODE_OPTIONS = MODES.map((m) => ({ value: m, label: m }));
+const names = (r) => (r.patients || []).map((p) => p?.name).filter(Boolean).join(', ') || 'Patient not recorded';
 
-export default function TransactionDialog({ rows, onClose, onCommitted }) {
+export default function TransactionDialog({ onClose, onCommitted, formatDate }) {
   const [date, setDate] = useState(today());
   const [mode, setMode] = useState('');
-  const [amounts, setAmounts] = useState(() => Object.fromEntries(rows.map((r) => [r.key, ''])));
+  const [reference, setReference] = useState('');
+  const [selected, setSelected] = useState(() => new Map());
+  const [amounts, setAmounts] = useState({});
   const [errors, setErrors] = useState({});
   const [confirming, setConfirming] = useState(false);
   const [phase, setPhase] = useState('edit'); // edit | posting | uncertain | checking
   const [message, setMessage] = useState('');
+  // Independent pending-order picker (server search + pagination).
+  const [searchDraft, setSearchDraft] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1), [pageSize, setPageSize] = useState(10);
+  const [revision, setRevision] = useState(0);
+  const [result, setResult] = useState(null);
+  const [listError, setListError] = useState('');
   const frozen = useRef(null);
   const uncertainEver = useRef(false);
   const busy = useRef(false);
@@ -37,14 +51,59 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
     return () => window.removeEventListener('beforeunload', warn);
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    const guard = reportingIdentityGuard();
+    setResult(null); setListError('');
+    listSettlements({ ...EMPTY_FILTERS, search, payable_only: true }, { offset: (page - 1) * pageSize, limit: pageSize, signal: controller.signal })
+      .then((data) => {
+        guard();
+        if (controller.signal.aborted) return;
+        const items = data.items.map((r) => ({ ...r, key: rowKey(r) }));
+        setResult({ items, total: data.total });
+        // Refresh snapshots of selected orders seen again; never while a payload is frozen.
+        if (!lockedRef.current && !frozen.current) setSelected((old) => { let m = old; for (const r of items) if (old.has(r.key)) { if (m === old) m = new Map(old); m.set(r.key, r); } return m; });
+      })
+      .catch((e) => { if (controller.signal.aborted) return; try { guard(); } catch { return; } setListError(e.message || 'Pending orders could not be loaded.'); });
+    return () => controller.abort();
+  }, [search, page, pageSize, revision]);
+
+  const rows = [...selected.values()];
   const parsed = rows.map((r) => ({ row: r, p: toPaise(amounts[r.key] || '') }));
   const totalPaise = parsed.reduce((s, x) => s + (x.p ?? 0n), 0n);
+  const editable = !locked && !confirming;
+  const full = selected.size >= BATCH_LIMIT;
+
+  function toggle(r) {
+    if (!editable) return;
+    setSelected((old) => {
+      const m = new Map(old);
+      if (m.has(r.key)) m.delete(r.key); else if (m.size < BATCH_LIMIT) m.set(r.key, r);
+      return m;
+    });
+    setErrors((e) => ({ ...e, selection: undefined }));
+  }
+  const pageItems = result?.items || [];
+  const pageAllOn = pageItems.length > 0 && pageItems.every((r) => selected.has(r.key));
+  function togglePage() {
+    if (!editable) return;
+    setSelected((old) => {
+      const m = new Map(old);
+      if (pageAllOn) pageItems.forEach((r) => m.delete(r.key));
+      else for (const r of pageItems) { if (m.size >= BATCH_LIMIT) break; m.set(r.key, r); }
+      return m;
+    });
+  }
 
   function validate() {
     const next = {};
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) next.date = 'Enter the transaction date.';
-    else if (date > today()) next.date = 'The transaction date cannot be in the future.';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) next.date = 'Enter the payment date.';
+    else if (date > today()) next.date = 'The payment date cannot be in the future.';
     if (!MODES.includes(mode)) next.mode = 'Choose a payment mode.';
+    const ref = reference.trim();
+    if (ref && !REFERENCE.test(ref)) next.reference = 'Use up to 100 plain-text characters without control characters.';
+    if (!rows.length) next.selection = 'Select at least one pending order.';
+    else if (rows.length > BATCH_LIMIT) next.selection = `A payment can cover at most ${BATCH_LIMIT} orders.`;
     for (const { row, p } of parsed) {
       const raw = (amounts[row.key] || '').trim();
       if (!raw) next[row.key] = 'Enter an amount.';
@@ -60,7 +119,14 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
     e.preventDefault();
     if (locked) return;
     setMessage('');
-    if (validate()) setConfirming(true);
+    if (validate()) {
+      frozen.current = Object.freeze({
+        idempotency_key: newKey(), date, mode, reference: reference.trim() || null,
+        entries: Object.freeze(rows.map((r) => Object.freeze({ kind: r.kind, id: r.id, expected_version: r.version,
+          expected_paid: r.paid, amount: fromPaise(toPaise(amounts[r.key])) }))),
+      });
+      setConfirming(true);
+    }
   }
 
   async function send() {
@@ -80,7 +146,8 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
         frozen.current = null;
         uncertainEver.current = false;
         setConfirming(false); setPhase('edit');
-        setMessage(`${err.message || 'The payment was rejected.'} Nothing was recorded. Refresh the list if balances changed, then review your entries.`);
+        setMessage(`${err.message || 'The payment was rejected.'} Nothing was recorded. Refreshing pending orders; remove and reselect any changed order to load its current balance before reviewing again.`);
+        setRevision((n) => n + 1);
         return;
       }
       uncertainEver.current = true;
@@ -103,6 +170,7 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
         frozen.current = null; uncertainEver.current = false;
         setConfirming(false); setPhase('edit');
         setMessage(`${res.rejection.message} The server confirmed nothing was recorded for this submission. You can review your entries.`);
+        setRevision((n) => n + 1);
         return;
       }
       setPhase('uncertain');
@@ -114,13 +182,7 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
   }
 
   function confirm() {
-    if (busy.current) return;
-    if (!frozen.current) {
-      frozen.current = Object.freeze({
-        idempotency_key: newKey(), date, mode,
-        entries: rows.map((r) => ({ kind: r.kind, id: r.id, expected_version: r.version, expected_paid: r.paid, amount: fromPaise(toPaise(amounts[r.key])) })),
-      });
-    }
+    if (busy.current || !frozen.current) return;
     send();
   }
 
@@ -132,7 +194,7 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
     </>
     : confirming
       ? <>
-        <button type="button" className="admin-button admin-button--secondary" disabled={phase === 'posting'} onClick={() => setConfirming(false)} data-testid="button-back-transaction">Back to edit</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={phase === 'posting'} onClick={() => { frozen.current = null; setConfirming(false); }} data-testid="button-back-transaction">Back to edit</button>
         <button type="button" className="admin-button" disabled={phase === 'posting'} aria-disabled={phase === 'posting'} onClick={confirm} data-testid="button-confirm-transaction">{phase === 'posting' ? 'Recording…' : `Record ${inr(totalPaise)}`}</button>
       </>
       : <>
@@ -140,41 +202,87 @@ export default function TransactionDialog({ rows, onClose, onCommitted }) {
         <button type="submit" form="settle-form" className="admin-button" data-testid="button-review-transaction">Review payment</button>
       </>;
 
-  return <Dialog eyebrow="Accounts" title="Add transaction" className="settle-dialog" onClose={close}
-    description="Record one payment across the selected orders. Each order receives its own amount. Recorded payments are immutable and start as Not verified."
+  const pageCount = Math.max(1, Math.ceil((result?.total || 0) / pageSize));
+  return <Dialog eyebrow="Accounts" title="Add payment" className="settle-dialog settle-dialog--wide" onClose={close} dismissDisabled={locked || confirming}
+    description="Record one payment across your pending orders. Each order receives its own amount. Recorded payments are immutable and start as Unverified. No money is transferred by this form."
     footer={footer}>
     <form id="settle-form" noValidate onSubmit={review} className="settle-form">
-      <fieldset disabled={locked || confirming} className="settle-form__common">
-        <label className="kits-field">Transaction date
+      <fieldset disabled={!editable} className="settle-form__common">
+        <label className="kits-field">Payment date
           <input type="date" value={date} max={today()} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'settle-date-err' : undefined}
             onChange={(e) => setDate(e.target.value)} data-testid="input-transaction-date" />
           {errors.date && <span id="settle-date-err" className="settle-err">{errors.date}</span>}
         </label>
-        <label className="kits-field">Payment mode
-          <select value={mode} aria-invalid={Boolean(errors.mode)} aria-describedby={errors.mode ? 'settle-mode-err' : undefined}
-            onChange={(e) => setMode(e.target.value)} data-testid="select-transaction-mode">
-            <option value="">Choose mode</option>{MODES.map((m) => <option key={m}>{m}</option>)}
-          </select>
+        <div className="kits-field"><span id="settle-mode-label">Payment mode</span>
+          <SearchableSelect id="settle-mode" label="Payment mode" value={mode} options={MODE_OPTIONS} onChange={setMode} placeholder="Choose mode"
+            invalid={Boolean(errors.mode)} describedBy={errors.mode ? 'settle-mode-err' : undefined} disabled={!editable} viewportMenu />
           {errors.mode && <span id="settle-mode-err" className="settle-err">{errors.mode}</span>}
+        </div>
+        <label className="kits-field">Transaction ID / UTR <span className="kits-hint">Optional</span>
+          <input value={reference} maxLength={100} onChange={(e) => setReference(e.target.value)} aria-invalid={Boolean(errors.reference)}
+            aria-describedby={errors.reference ? 'settle-ref-err' : undefined} placeholder="e.g. UTR 4021 8876 1190" data-testid="input-transaction-reference" />
+          {errors.reference && <span id="settle-ref-err" className="settle-err">{errors.reference}</span>}
         </label>
       </fieldset>
-      <table className="settle-entries">
-        <caption className="sr-only">Amount per selected order</caption>
-        <thead><tr><th scope="col">Order</th><th scope="col">Balance</th><th scope="col">Amount (INR)</th></tr></thead>
-        <tbody>{rows.map((r) => <tr key={r.key}>
-          <th scope="row"><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{KIND_LABEL[r.kind] || r.kind}</span></th>
-          <td className="settle-mono">{inr(r.balance)}</td>
-          <td>
-            <input inputMode="decimal" className="settle-amount" aria-label={`Amount for ${r.number}`} value={amounts[r.key]} disabled={locked || confirming}
-              aria-invalid={Boolean(errors[r.key])} aria-describedby={errors[r.key] ? `settle-err-${r.key}` : undefined}
-               maxLength={15} onChange={(e) => setAmounts((a) => ({ ...a, [r.key]: e.target.value }))}
-              placeholder="0.00" data-testid={`input-amount-${r.key}`} />
-            {errors[r.key] && <span id={`settle-err-${r.key}`} className="settle-err">{errors[r.key]}</span>}
-          </td>
-        </tr>)}</tbody>
-      </table>
+
+      {!confirming && !locked && <section className="settle-picker" aria-label="Pending orders">
+        <div className="settle-picker__head">
+          <div className="settle-search">
+            <Search size={15} aria-hidden="true" />
+            <input type="search" value={searchDraft} maxLength={100} placeholder="Search order, doctor or patient" aria-label="Search pending orders"
+              onChange={(e) => setSearchDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setSearch(searchDraft.trim()); setPage(1); } }} data-testid="input-search-pending" />
+          </div>
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(searchDraft.trim()); setPage(1); }} data-testid="button-search-pending">Search</button>
+          <span className="settle-sub" role="status" aria-live="polite" data-testid="text-selected-count">{selected.size} of {BATCH_LIMIT} orders selected{full ? ' · limit reached' : ''}</span>
+        </div>
+        {listError ? <div className="settle-state settle-state--error" role="alert"><strong>Pending orders unavailable</strong><p>{listError}</p>
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => setRevision((n) => n + 1)} data-testid="button-retry-pending">Retry</button></div>
+          : !result ? <div className="settle-skeleton" aria-busy="true" aria-label="Loading pending orders">{[0, 1, 2].map((i) => <div key={i}><span /><span /><span /><span /></div>)}</div>
+            : !result.items.length ? <div className="settle-state"><strong>{search ? 'No matching pending orders' : 'Nothing pending'}</strong><p>{search ? 'Try another search.' : 'All your payable orders are fully paid.'}</p></div>
+              : <div className="settle-table-wrap" tabIndex={0} role="region" aria-label="Pending orders, scrolls horizontally">
+                <table className="settle-table settle-table--compact">
+                  <thead><tr>
+                    <th scope="col"><input type="checkbox" className="settle-check" checked={pageAllOn} onChange={togglePage} aria-label="Select all orders on this page only" data-testid="checkbox-select-pending-page" /></th>
+                    <th scope="col">Order</th><th scope="col">Doctor</th><th scope="col">Patients</th><th scope="col">Total</th><th scope="col">Balance</th>
+                  </tr></thead>
+                  <tbody>{result.items.map((r) => <tr key={r.key} data-selected={selected.has(r.key) || undefined}>
+                    <td><input type="checkbox" className="settle-check" checked={selected.has(r.key)} disabled={!selected.has(r.key) && full} onChange={() => toggle(r)}
+                      aria-label={`Select ${r.number}`} data-testid={`checkbox-pending-${r.key}`} /></td>
+                    <td><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{formatDate(r.date)} · {KIND_LABEL[r.kind]}</span></td>
+                    <td>{r.doctor?.name || 'Not recorded'}</td><td>{names(r)}</td>
+                    <td className="settle-mono">{inr(r.total)}</td><td className="settle-mono settle-due">{inr(r.balance)}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>}
+        <TablePagination page={page} pageCount={pageCount} pageSize={pageSize} filtered={result?.total || 0} total={result?.total || 0} label="pending orders" testId="pending-count"
+          onPageChange={(n) => { if (n >= 1 && n <= pageCount) setPage(n); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+      </section>}
+
+      <section aria-label="Allocations">
+        <h3 className="settle-h3">Allocations</h3>
+        {errors.selection && <p className="settle-err" role="alert">{errors.selection}</p>}
+        {!rows.length ? <p className="settle-sub">Select orders above, then enter the amount received against each.</p>
+          : <table className="settle-entries">
+            <caption className="sr-only">Amount per selected order</caption>
+            <thead><tr><th scope="col">Order</th><th scope="col">Balance</th><th scope="col">Amount (INR)</th><th scope="col"><span className="sr-only">Remove</span></th></tr></thead>
+            <tbody>{rows.map((r) => <tr key={r.key}>
+              <th scope="row"><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{KIND_LABEL[r.kind] || r.kind} · {r.doctor?.name || 'Doctor not recorded'}</span><span className="settle-sub">{names(r)}</span></th>
+              <td className="settle-mono">{inr(r.balance)}</td>
+              <td>
+                <input inputMode="decimal" className="settle-amount" aria-label={`Amount for ${r.number}`} value={amounts[r.key] || ''} disabled={!editable}
+                  aria-invalid={Boolean(errors[r.key])} aria-describedby={errors[r.key] ? `settle-err-${r.key}` : undefined}
+                  maxLength={15} onChange={(e) => setAmounts((a) => ({ ...a, [r.key]: e.target.value }))}
+                  placeholder="0.00" data-testid={`input-amount-${r.key}`} />
+                {editable && <button type="button" className="kits-link" onClick={() => setAmounts((a) => ({ ...a, [r.key]: r.balance }))} data-testid={`button-full-${r.key}`}>Full balance</button>}
+                {errors[r.key] && <span id={`settle-err-${r.key}`} className="settle-err">{errors[r.key]}</span>}
+              </td>
+              <td>{editable && <button type="button" className="admin-icon-button" aria-label={`Remove ${r.number}`} onClick={() => toggle(r)} data-testid={`button-remove-${r.key}`}><X size={15} aria-hidden="true" /></button>}</td>
+            </tr>)}</tbody>
+          </table>}
+      </section>
       <div className={`settle-total${confirming ? ' settle-total--confirm' : ''}`} aria-live="polite" data-testid="text-transaction-total">
-        <span>{confirming ? `Confirm ${mode} payment dated ${date} across ${rows.length} order${rows.length > 1 ? 's' : ''}` : 'Aggregate total'}</span>
+        <span>{confirming ? `Confirm ${mode} payment dated ${formatDate(date)}${reference.trim() ? `, reference ${reference.trim()}` : ''}, across ${rows.length} order${rows.length > 1 ? 's' : ''}` : 'Aggregate total'}</span>
         <strong>{inr(totalPaise)}</strong>
       </div>
       {message && <p className={`settle-msg${phase === 'uncertain' || phase === 'checking' ? ' settle-msg--warn' : ''}`} role="alert" data-testid="status-transaction">{message}</p>}

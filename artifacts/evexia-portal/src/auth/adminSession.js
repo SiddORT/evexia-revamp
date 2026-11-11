@@ -1053,7 +1053,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'immunotherapy-extract-settings'
     ? /^\/(?:categories|[0-9a-f-]{36})$/i
     : resource === 'settlements'
-    ? /^(?:|\/transactions|\/references\/(?:doctors|mrs|patients)|\/requests\/[0-9a-f-]{36}|\/history\/(?:IT|Kit|SPT|Lupin)\/[0-9a-f-]{36})$/
+    ? /^(?:|\/transactions(?:\/[0-9a-f-]{36}\/verify)?|\/references\/(?:doctors|mrs|patients)|\/requests\/[0-9a-f-]{36}|\/history\/(?:IT|Kit|SPT|Lupin)\/[0-9a-f-]{36})$/
     : resource === 'in-house-stock'
     ? /^(?:|\/preview|\/export|\/references\/(?:allergens|locations)|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36})$/i
     : resource === 'shipments'
@@ -1094,13 +1094,14 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     || (!writing && path.endsWith('/reconcile')))) {
     throw new SessionError('Unsupported Invoice Details operation.');
   }
+  const settlementVerification = resource === 'settlements' && /^\/transactions\/[0-9a-f-]{36}\/verify$/.test(path);
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
     || (writing && path !== '' && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
     || (!writing && path.endsWith('/edit')))) {
     throw new SessionError('Unsupported Pricing Rules configuration operation.');
   }
-  if (resource === 'settlements' && writing !== (path === '/transactions')) {
-    throw new SessionError('Settlement history is read-only. Use Add Transaction to record a payment.');
+  if (resource === 'settlements' && writing !== (path === '/transactions' || settlementVerification)) {
+    throw new SessionError('Unsupported settlement operation. Use Add payment or explicit transaction verification.');
   }
   if (resource === 'in-house-stock' && writing && path !== '' && path !== '/preview') {
     throw new SessionError('Concentrate reserves are append-only.');
@@ -1135,9 +1136,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     if (invoiceSettingsOperation && !isSuperAdminIdentity(state.user)) {
       throw new SessionError('Invoice Details require the protected Super Admin.', 403);
     }
-    if (resource === 'settlements' && (writing ? state.user?.identity_kind !== 'mr'
+    if (resource === 'settlements' && (writing ? settlementVerification
+      ? !isSuperAdminIdentity(state.user) : state.user?.identity_kind !== 'mr'
       : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
-      throw new SessionError('Settlements are restricted to MRs and read-only Super Admin access.', 403);
+      throw new SessionError('Only owning MRs may record payments; only the protected Super Admin may verify recorded entries.', 403);
     }
     if (!mrOrder && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {
       throw new SessionError('Workspace operation access denied.', 403);
@@ -1246,7 +1248,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : [404, 405].includes(response.status) ? 'The running API does not provide GST Settings. The updated API and schema must be activated; your edits are preserved.'
         : uncertain().message
       : resource === 'settlements' && response.status === 403
-      ? 'Settlement access denied. Admin is read-only; MRs may record only against their own eligible saved orders.'
+      ? 'Settlement access denied. Only owning MRs may record payments; only the protected Super Admin may verify entries.'
       : response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
       : /^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(data?.error?.code || '') && typeof data?.error?.message === 'string' ? data.error.message
       : response.status >= 500 && !(batchOperation && typeof data?.error?.message === 'string') ? uncertain().message

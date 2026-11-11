@@ -3,6 +3,7 @@
   "default": "automatic",
   "revisions": {
     "0089_invoice_settings": "automatic",
+    "0090_settlement_verification": "automatic",
     "0088_gst_settings": "automatic",
     "0087_pricing_rule_categories": "automatic",
     "0086_immunotherapy_extract": "automatic",

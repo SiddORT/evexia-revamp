@@ -10967,6 +10967,7 @@ export interface SettlementPostedAllocation {
 }
 
 export interface SettlementBatchResult {
+  reference?: string | null;
   date: string;
   entries: SettlementPostedAllocation[];
   id: string;
@@ -10987,6 +10988,7 @@ export const SettlementInputMode = {
 } as const;
 
 export interface SettlementInput {
+  reference?: string | null;
   date: string;
   /**
    * @minItems 1
@@ -10996,6 +10998,16 @@ export interface SettlementInput {
   idempotency_key: string;
   mode: SettlementInputMode;
 }
+
+export type SettlementRecordPaymentStatus =
+  (typeof SettlementRecordPaymentStatus)[keyof typeof SettlementRecordPaymentStatus];
+
+export const SettlementRecordPaymentStatus = {
+  Unpaid: "Unpaid",
+  Part_paid: "Part paid",
+  Paid: "Paid",
+  Unavailable: "Unavailable",
+} as const;
 
 export interface SettlementPerson {
   code?: string | null;
@@ -11039,6 +11051,9 @@ export const SettlementTransactionVerification = {
 } as const;
 
 export interface SettlementTransaction {
+  reference?: string | null;
+  verifiedAt?: string | null;
+  verifiedBy?: string | null;
   actorId: string;
   amount: string;
   batchId: string;
@@ -11059,6 +11074,9 @@ export const SettlementRecordVerification = {
 } as const;
 
 export interface SettlementRecord {
+  status: string;
+  payable: boolean;
+  paymentStatus: SettlementRecordPaymentStatus;
   balance: string | null;
   date: string;
   doctor: SettlementPerson | null;
@@ -16403,6 +16421,13 @@ export const DownloadSalesTargetSampleFormat = {
 } as const;
 
 export type ListSettlementsParams = {
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  order_status?: ListSettlementsOrderStatus;
+  payment_status?: ListSettlementsPaymentStatus;
+  payable_only?: boolean;
   kind?: ListSettlementsKind;
   order_from?: string | null;
   order_to?: string | null;
@@ -16423,6 +16448,33 @@ export type ListSettlementsParams = {
    */
   limit?: number;
 };
+
+export type ListSettlementsOrderStatus =
+  (typeof ListSettlementsOrderStatus)[keyof typeof ListSettlementsOrderStatus];
+
+export const ListSettlementsOrderStatus = {
+  All: "All",
+  Confirmed: "Confirmed",
+  Saved: "Saved",
+  Approved: "Approved",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Returned: "Returned",
+  Rejected: "Rejected",
+  Cancelled: "Cancelled",
+} as const;
+
+export type ListSettlementsPaymentStatus =
+  (typeof ListSettlementsPaymentStatus)[keyof typeof ListSettlementsPaymentStatus];
+
+export const ListSettlementsPaymentStatus = {
+  All: "All",
+  Unpaid: "Unpaid",
+  Part_paid: "Part paid",
+  Paid: "Paid",
+  Unavailable: "Unavailable",
+} as const;
 
 export type ListSettlementsKind =
   (typeof ListSettlementsKind)[keyof typeof ListSettlementsKind];

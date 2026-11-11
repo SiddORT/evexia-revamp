@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0089_invoice_settings",
-  "policy_sha256": "fffa4658f387356b44c2846ac557c8158b180347e0addbc47823de7b30aebf99",
+  "target": "0090_settlement_verification",
+  "policy_sha256": "28093ff67fd82773b44e1104ee2660abf02bde030c86950d26b472a2a25750fa",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -99,7 +99,8 @@
     "0086_it_pricing_rules": "3961e4274d460d49ad130954f28f6805fdd8a4e2efd708c22fc4079d581bcba5",
     "0087_pricing_rule_categories": "039380523742ee0e424496530c916526e94af17cb9666fe15b99c4ed125fe130",
     "0088_gst_settings": "a529297bbf3bf0bc6560a8814d6f6a39010586c550b0127ce1b2492a106659f6",
-    "0089_invoice_settings": "9caea8147fd1005fec42d117c855f3aff60bd520060ff0e4bbc17dda28587274"
+    "0089_invoice_settings": "9caea8147fd1005fec42d117c855f3aff60bd520060ff0e4bbc17dda28587274",
+    "0090_settlement_verification": "6bea6b350d4db636913c474de38422c32992209e34abd6424e7531916b7872fb"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

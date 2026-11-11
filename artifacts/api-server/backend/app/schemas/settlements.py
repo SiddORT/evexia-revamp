@@ -1,6 +1,7 @@
 """Exact INR lexemes are validated before any decimal coercion."""
 import re
 import uuid
+import unicodedata
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -44,7 +45,17 @@ class SettlementInput(BaseModel):
     idempotency_key: uuid.UUID
     date: date
     mode: SettlementMode
+    reference: str | None = Field(default=None, max_length=100)
     entries: list[SettlementAllocation] = Field(min_length=1, max_length=100)
+
+    @field_validator("reference", mode="before")
+    @classmethod
+    def safe_reference(cls, value):
+        if value is None:
+            return None
+        if not isinstance(value, str) or any(unicodedata.category(c).startswith("C") for c in value):
+            raise ValueError("Transaction reference must be plain text without control characters.")
+        return value.strip() or None
 
     @field_validator("date", mode="before")
     @classmethod
@@ -79,6 +90,9 @@ class SettlementTransaction(BaseModel):
     verification: SettlementVerification
     createdAt: str
     actorId: str
+    reference: str | None = None
+    verifiedAt: str | None = None
+    verifiedBy: str | None = None
 
 
 class SettlementRecord(BaseModel):
@@ -88,6 +102,9 @@ class SettlementRecord(BaseModel):
     number: str
     date: str
     version: int
+    status: str
+    payable: bool
+    paymentStatus: Literal["Unpaid", "Part paid", "Paid", "Unavailable"]
     doctor: SettlementPerson | None
     mr: SettlementPerson | None
     patients: list[SettlementPerson]
@@ -127,6 +144,7 @@ class SettlementBatchResult(BaseModel):
     id: str
     date: str
     mode: SettlementMode
+    reference: str | None = None
     entries: list[SettlementPostedAllocation]
     total: str
 

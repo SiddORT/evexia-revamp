@@ -1,17 +1,22 @@
-# Accounts > Settlements
+# MR Accounts and Super Admin Settlements
 
 ## Access and starting point
 
-- Admin: `/admin/accounts/settlements`, protected **Super Admin read-only**.
-  Ordinary staff and Doctor identities receive no settlement access.
-- MR: `/mr/accounts/settlements`, protected authenticated MR, with transactions
-  against only that MR's own saved orders. The unrelated MR Payments demo remains
-  unchanged and is not a source of money, identities or opening history.
+- Admin: `/admin/accounts/settlements`, protected **Super Admin review and
+  one-way verification only**. No posting, allocation editing, deletion or
+  verification reversal. Ordinary staff and Doctors have no settlement access.
+- MR: `/mr/accounts`, one direct Accounts navigation entry, with transactions
+  against only the authenticated MR's own saved orders. Legacy `/mr/payments`
+  list/new/detail paths and `/mr/accounts/settlements` redirect to Accounts,
+  discarding demo IDs rather than resolving them as live transactions.
+  Demo Payments components/data are not imported or migrated into Accounts.
 - The ledger starts empty. Paid/Partial/Unpaid flags are **not receipts** and
   never seed a previous paid amount. Existing payment flags are not changed.
-- All default results are saved In process orders (including the legacy
-  persisted `Approved` spelling of that stage). Shipment status scopes elsewhere
-  are unchanged.
+- MR results include all owned saved non-draft orders across the four supported
+  order types. The Admin screen retains an In process default filter; choosing
+  All includes other saved stages. `Approved` displays as In process.
+  Private incomplete entry drafts and historical SPT Draft rows are excluded.
+  Shipment status scopes elsewhere are unchanged.
 
 ## Financial facts
 
@@ -32,23 +37,38 @@ estimated, rounded or truncated balances.
 
 Each new entry is **Not verified**. No transactions is distinct. Verified
 requires non-null persisted verifier identity and time for every entry; no
-legacy payment flag is verification evidence. This change exposes no approval,
-edit, delete, refund, export, receipt or gateway operation. The migration rejects
-verification-at-insert and makes all receipts and terminal outcomes immutable.
-A future verification workflow requires separate approval/schema design.
+legacy payment flag is verification evidence. The UI calls Not verified
+**Unverified**. Derived payment status is Unpaid, Part paid, Paid (including a
+known zero total), or Unavailable. Only approved/In process orders and subsequent
+Shipped, Delivered or Returned stages with a positive known balance are payable.
+Confirmed/Saved, rejected and cancelled records are read-only. Fulfillment
+transitions neither forgive debt nor create credits.
+
+Protected Super Admin may explicitly verify an individual recorded allocation.
+Verifier identity and time persist on that entry with an audit event. Repeating
+verification returns current history without replacing the original attribution.
+Mixed verified/unverified entries leave the order Unverified; only every entry
+verified yields Verified. Verification never posts money again and never changes
+Paid/Balance: committed payments reduce balances before verification.
+The forward guard permits only the first paired verifier/time update, blocks
+all other entry changes/deletion, and still rejects verification at insertion.
+No invoice, document, refund, export or gateway operation is included.
 
 ## Filters and bounded reads
 
 Order and payment From/To dates include both ends and combine with Doctor, MR,
-Patient, verification and order type. A payment-date range requires an actual
+Patient, verification, order type, saved order status, derived payment status and
+text search. Search uses authorized business numbers, dates and saved person
+names/business codes, never hidden contact details or UUIDs. Counts and filtering
+cover the authorized server dataset before paging. A payment-date range requires an actual
 transaction in that range: unpaid orders do not match it. All committed payments
 still contribute to Paid/Balance and full row history even when the filter
 matches just one transaction. Verification filters are order-level: No
 transactions, all entries verified, or at least one unverified entry.
 
 The MR identity is fixed, derived from the revalidated session/profile. A
-different MR filter is denied server-side. Person selectors scan only saved In
-process order associations within the caller's authorized scope, not unrestricted
+different MR filter is denied server-side. Person selectors scan only saved
+non-draft order associations within the caller's authorized scope, not unrestricted
 master directories. Selected saved labels are retained while searching or paging.
 The browser requests one section at a time.
 
@@ -60,9 +80,18 @@ finite one-minute refresh interval, paused while a transaction draft is open.
 
 ## Posting, concurrency and retry safety
 
-The authenticated MR selects payable rows on the **current page** only. Selection
-clears on Apply/Reset, page and page-size changes. A common calendar date and
-payment mode accompany a separate positive INR amount for each selected order.
+Add Payment opens immediately without selecting main-list rows. Its independently
+paginated server search uses `payable_only=true`, unaffected by Accounts filters.
+Selections and explicit allocation amounts survive modal search and paging;
+select-all names **the current page only**. The 100-order batch cap is displayed
+and enforced in both client and server. Removing a row removes it from the total.
+A common calendar date, searchable payment mode and optional Transaction ID/UTR
+accompany a separate positive INR amount for each selected order.
+Reference is trimmed plain text, at most 100 characters, without Unicode control
+characters. It lives in the existing encrypted batch payload, not a new ledger
+or plaintext column. Old batches without reference read as null.
+The review freezes the exact payload, versions, amounts, reference and key;
+late picker responses cannot alter the reviewed allocation snapshots.
 The confirmation shows the exact aggregate. Inputs remain raw until validation;
 negative signs or other invalid characters are never silently stripped into a
 different amount.
@@ -71,7 +100,7 @@ The API revalidates identity, active saved MR and its existing assignment policy
 derives creator/MR itself; and denies Admin writes independently of the UI.
 Policy/identity/assignment locks precede a separate settlement advisory lock.
 Order rows are locked in a consistent type/ID order. Every selected order must
-still belong to the MR, be In process, have the expected version and recorded
+still belong to the MR, be in a payable approved/fulfillment stage, have the expected version and recorded
 paid sum, have an authoritative saved total, and have enough balance. Duplicate
 type-qualified orders, excess decimal precision, zero/negative amounts,
 overpayment and stale facts reject the entire batch. Nothing changes the source
@@ -82,7 +111,9 @@ Financial documents use directory encryption keys with a dedicated settlements
 AAD namespace. Operational references, payment dates, creation time and actor/MR
 IDs remain queryable; amount, mode and submitted request data are encrypted.
 The idempotency UUID is the immutable batch/outcome identity. Replays require
-the same actor, saved MR assignment and exact normalized body. Committed replies
+the same actor, saved MR assignment and exact normalized body. Missing legacy
+reference and explicit null are equivalent for old committed/rejected replays.
+Original posting results remain unchanged when entries are verified. Committed replies
 also recheck current ownership of every referenced order.
 
 After a lost/unreadable response, the client freezes both body and key, blocks
@@ -102,28 +133,42 @@ use the same independently protected service:
 
 - `GET ""`: combined filters and one bounded page with exact financial history.
 - `GET /references/{doctors|mrs|patients}`: bounded saved-order selector choices.
-- `POST /transactions`: common date/mode and explicit per-order allocations,
+- `POST /transactions`: common date/mode/optional reference and explicit per-order allocations,
   expected source versions/paid amounts and one immutable idempotency key.
 - `GET /requests/{key}`: owner/MR-bound committed, durably rejected or absent
   outcome. No unrestricted batch lookup.
 - `GET /history/{kind}/{identity}`: protected order history independent of its
   later lifecycle. History remains stored even after it leaves the default
   In process listing. MR access always checks current order ownership.
+- `POST /transactions/{entry_id}/verify`: protected Super Admin-only one-way
+  verification. Revalidates the server identity under policy/financial locks,
+  takes the source-order lock before entry locking, and returns the current
+  order projection. MR and ordinary staff cannot use this operation. The browser
+  request guard permits exactly this Admin mutation, not generic settlement POSTs.
+
+Every row's accessible View transactions action opens a separate history dialog
+with real persisted amounts, dates, modes, supplied references and verification.
+No transactions has its own empty state. History load and verification failures
+have explicit retry/reload paths; a lost verification response is resolved by
+reloading or repeating the same entry verification. Closing after a verification
+attempt refreshes the listing even if its response was lost.
 
 The FastAPI schemas and exported OpenAPI/generated clients include these
 contracts. Monetary values are strings and browser aggregates use BigInt paise.
 
 ## Schema and operational handoff
 
-Additive `0077_settlements` follows the actual `0076_in_house_stock` head. It
-creates empty `settlement_batches`, `settlement_entries` and
-`settlement_rejections`, indexes, immutable triggers and a type-qualified source
-reference guard. The development declaration, automatic migration classification,
-generated source-integrity manifest, ORM registration, account compatibility and
-readiness probes have been updated. Readiness inherits every predecessor probe.
+The original empty ledger is `0077_settlements`. Forward
+`0090_settlement_verification` follows the merged `0089_invoice_settings` head and
+replaces only the settlement-entry update/delete guard. No receipt reconstruction,
+new ledger, financial column rewrite or data backfill is needed.
+The coordinated development declaration, automatic migration classification and
+source-integrity metadata name this successor. Account/directory compatibility
+inherits the predecessor contracts and readiness inherits every preceding probe,
+also requiring the enabled verification guard.
 
 **No migration was executed during this work.** Development still needs the
-normal explicitly authorized schema synchronization/API restart before these
+normal development schema synchronization/API restart before these
 endpoints are usable. Running the pre-existing merge/startup automation later
 can apply automatic development migrations; it was not invoked here.
 
@@ -132,18 +177,16 @@ evidence remains pinned to the previously observed head; no passing catalog
 fingerprint, release evidence or production approval has been invented.
 Production preparation requires separate authorization and genuine evidence.
 
-Retain the directory decryption keys used by settlement documents. Existing
-directory rotation tooling intentionally fails closed on the new schema rather
-than claiming to rotate or retire keys for immutable settlement documents.
-Ledger-aware key rotation/retirement needs separately reviewed maintenance
-support; do not bypass append-only triggers or drop old keys.
+Retain the directory decryption keys used by settlement documents. Successor
+compatibility does not authorize bypassing append-only triggers or dropping
+old keys. Verification changes neither encryption inventories nor key custody.
 
 ## Verification performed and explicitly not performed
 
-Performed only offline contract/metadata generation, generated-library TypeScript
-compilation, Python source parsing, JavaScript/JSX syntax transformation and
-static contract/caller inspection. Existing API paths and schema components were
-compared structurally during generation; only settlement contracts were added.
+This Accounts completion was **source-review only**: source/contract/caller
+inspection plus offline contract/client generation and formatting. No compilation
+or typecheck was run. Unrelated refined Pricing Rules validators and repeated
+query serialization were retained rather than replaced by generator drift.
 
 **Not run:** regression suites, release checks, release workflows, API/database
 integration tests, browser transaction tests, schema activation, service/workflow
@@ -151,10 +194,10 @@ restarts or production activation. Static evidence does not establish runtime
 authorization, concurrent-post, migration or browser correctness. These checks
 must not be run without later user approval.
 
-An unauthenticated screenshot attempt could not load the existing preview
-ingress. No workflow was started/restarted to repair it, because that could
-implicitly activate schema changes or release workflows. The protected
-settlement screens therefore have not been visually verified in this workspace.
+No browser/screenshot or runtime probe was attempted for this completion.
+Authenticated navigation, modal keyboard/responsive behavior, persistence,
+idempotency under lost responses, role denials, notification compatibility and
+actual PostgreSQL trigger/migration behavior remain unverified at runtime.
 
 ## MR order eligibility
 

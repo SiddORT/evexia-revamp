@@ -1,21 +1,28 @@
 ---
 name: Settlement policy
-description: User-approved MR posting, read-only Admin and zero-history financial scope.
+description: MR-owned payment posting, narrowly protected verification and zero-history financial scope.
 ---
 Only authenticated MRs record settlements against their own saved orders.
-Admin retains the Super Admin read-only boundary: no creating, editing,
-deleting or verifying payments. MR's older Payments demo remains separate.
+Protected Super Admin may explicitly verify individual recorded allocations,
+but cannot create payments, edit allocations, delete receipts, reverse
+verification or automatically verify. Ordinary staff and Doctors have no
+settlement finance access. MR Accounts replaces the old Payments demo; never
+migrate fictional payment data or interpret demo IDs as ledger identities.
 
 **Why:** The user's latest explicit instruction superseded the original
-Admin-entry design without granting staff or Doctor finance access.
+Admin-entry design, and later explicitly superseded only the prohibition on
+verification while consolidating MR navigation into live Accounts.
 
 **How to apply:** Keep the server boundary as strict as the UI and do not
-interpret Super Admin authority elsewhere as settlement posting permission.
+interpret verification authority as settlement posting permission. Fulfillment
+changes do not forgive debt or create credits; approved orders remain payable
+through subsequent fulfillment stages when a known positive balance remains.
 
 Previous payments start at zero, regardless of existing Paid/Partial/Unpaid
 flags. Each selected order receives an explicit entered amount. Unknown saved
-prices remain unavailable, not zero. New payments are Not verified; verification
-approval, opening receipts and reconstructed history are not authorized.
+prices remain unavailable, not zero. New payments are Not verified (displayed
+as Unverified). Verification is per allocation and never posts money again.
+Opening receipts and reconstructed history are not authorized.
 
 **Why:** The user explicitly confirmed zero previous payments and explicit
 per-order allocation; older status flags are not transaction evidence.

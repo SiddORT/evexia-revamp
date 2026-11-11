@@ -9,7 +9,7 @@ export default function MRAccountsSettlements() {
   const date = useDate();
   // MRBoundary hides/inerts this already-mounted subtree during renewal.
   // Keep the same editor alive while that boundary checks this same account.
-  if (session.user?.identity_kind !== 'mr') return <section className="mrw-card"><h1>Settlements</h1><p role="status">Sign in to load your settlements.</p></section>;
+  if (session.user?.identity_kind !== 'mr') return <section className="mrw-card"><h1>Accounts</h1><p role="status">Sign in to load your accounts.</p></section>;
   // Keyed remount on account/scope change so late responses and drafts never cross accounts.
   const owner = `${session.user?.id}:${contactReadScope(session.user)}`;
   const identity = mrDisplayIdentity(session.user);

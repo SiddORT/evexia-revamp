@@ -23,7 +23,7 @@ export function Dashboard() {
     <section className="mrw-hero" aria-labelledby="mrw-greet">
       <p className="mrw-eyebrow">{report.data ? `Financial year ${report.data.startYear}–${report.data.startYear + 1}` : 'Current financial year'} · Saved sales achievement</p>
       <h1 id="mrw-greet" tabIndex={-1} data-testid="heading-mr-page">Welcome back, {who}</h1>
-      <p>Your current saved target and approved orders, separate from demo Payments and activity.</p>
+      <p>Your current saved target and approved orders. Recorded payments are available in Accounts; demo activity remains separate.</p>
       <div className="mrw-actions"><Link href="/mr/targets" className="admin-button">View targets and order contributions</Link>
         <button className="admin-button admin-button--secondary" onClick={report.refresh}>Refresh sales</button></div>
     </section>
@@ -32,7 +32,7 @@ export function Dashboard() {
     <div className="mrw-actions">
       <Link href="/mr/doctors/new" className="admin-button" data-testid="link-shortcut-onboard"><UserPlus size={16} aria-hidden="true" /> Add live Doctor</Link>
       <Link href="/mr/orders" className="admin-button" data-testid="link-shortcut-order"><FilePlus2 size={16} aria-hidden="true" /> Live orders</Link>
-      <Link href="/mr/payments/new" className="admin-button" data-testid="link-shortcut-payment"><Wallet size={16} aria-hidden="true" /> Add demo payment</Link>
+      <Link href="/mr/accounts" className="admin-button" data-testid="link-shortcut-payment"><Wallet size={16} aria-hidden="true" /> Accounts and payments</Link>
     </div>
     <div className="mrw-card"><h2>Recent demo activity</h2><p className="mrw-notice">These fictional events do not track live Doctors or saved orders.</p>{state.activity.length === 0 ? <Empty title="No demo activity yet" text="Live Doctors and orders are managed separately and do not update these demo figures." /> :
       <ul className="mrw-list">{state.activity.slice(0, 6).map((a) => <li key={a.id}>{a.href.startsWith('/mr/payments/') ? <Link href={a.href}><span>{a.label}</span><small>{date(a.date)}</small></Link> : <div className="mrw-line"><span>{a.label}</span><small>{date(a.date)}</small></div>}</li>)}</ul>}</div>

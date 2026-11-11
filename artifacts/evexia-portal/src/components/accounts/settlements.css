@@ -87,3 +87,28 @@
   .settle-filters { grid-template-columns: minmax(0, 1fr); }
   .settle-total { flex-wrap: wrap; }
 }
+/* Accounts listing toolbar, actions, payment picker and history */
+.settle-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px 16px 0; }
+.settle-toolbar__select { flex: 1 1 190px; min-width: 0; }
+.settle-primary-filters { flex: 1 0 100%; padding: 0; width: 100%; }
+.settle-toolbar__err { margin: 8px 16px 0; }
+.settle-search { flex: 2 1 260px; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--settle-soft); }
+.settle-search input { flex: 1; min-width: 0; min-height: 42px; border: 0; background: transparent; color: var(--admin-text); font: inherit; }
+.settle-search:focus-within { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.settle-search input:focus-visible { outline: none; }
+.settle-action { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.settle-pill--due { background: color-mix(in srgb, var(--admin-danger) 12%, transparent); color: var(--admin-danger); }
+.settle-dialog--wide { width: min(980px, calc(100vw - 24px)); max-width: 980px; }
+.settle-picker .settle-table-wrap { display: block; }
+.settle-table--compact { min-width: 680px; }
+.settle-picker { display: grid; gap: 10px; margin: 12px 0; padding: 12px; border: 1px solid var(--settle-line); border-radius: 10px; }
+.settle-picker__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.settle-table--compact td, .settle-table--compact th { padding: 8px 10px; }
+.settle-h3 { margin: 12px 0 6px; font-size: .95rem; }
+.settle-txlist { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.settle-txlist li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--settle-line); border-radius: 10px; }
+.settle-txlist__main { display: grid; gap: 2px; min-width: 0; }
+.settle-txlist__side { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.settle-txlist__side .admin-button { display: inline-flex; align-items: center; gap: 6px; }
+.settle-confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .85rem; }
+.settle-history-sum { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }

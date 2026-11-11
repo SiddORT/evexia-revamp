@@ -2259,6 +2259,8 @@ export const editSalesTargetResponseStartYearMax = 9998;
 export const setSalesTargetStatusResponseEndYearMin = 2;
 export const setSalesTargetStatusResponseEndYearMax = 9999;
 export const setSalesTargetStatusResponseStartYearMax = 9998;
+export const listSettlementsQuerySearchMax = 100;
+export const listSettlementsQueryPayableOnlyDefault = false;
 export const listSettlementsQueryOffsetDefault = 0;
 export const listSettlementsQueryOffsetMin = 0;
 export const listSettlementsQueryOffsetMax = 20000;
@@ -2276,7 +2278,11 @@ export const settlementReferencesQueryOffsetMin = 0;
 export const settlementReferencesQueryOffsetMax = 20000;
 export const settlementReferencesQueryLimitDefault = 25;
 export const settlementReferencesQueryLimitMax = 100;
+export const recordSettlementBodyReferenceOneMax = 100;
 export const recordSettlementBodyEntriesMax = 100;
+export const verifySettlementTransactionResponseDoctorOneContactsMaskedDefault = false;
+export const verifySettlementTransactionResponseMrOneContactsMaskedDefault = false;
+export const verifySettlementTransactionResponsePatientsItemContactsMaskedDefault = false;
 export const listShipmentsQueryOffsetDefault = 0;
 export const listShipmentsQueryOffsetMin = 0;
 export const listShipmentsQueryOffsetMax = 20000;
@@ -38087,10 +38093,39 @@ export const SetSalesTargetStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listSettlementsQuerySearchDefault = ``;
+
+export const listSettlementsQueryOrderStatusDefault = `All`;
+export const listSettlementsQueryPaymentStatusDefault = `All`;
+
 export const listSettlementsQueryKindDefault = `All`;
 export const listSettlementsQueryVerificationDefault = `All`;
 
 export const ListSettlementsQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(listSettlementsQuerySearchMax)
+    .default(listSettlementsQuerySearchDefault),
+  order_status: zod
+    .enum([
+      "All",
+      "Confirmed",
+      "Saved",
+      "Approved",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Returned",
+      "Rejected",
+      "Cancelled",
+    ])
+    .default(listSettlementsQueryOrderStatusDefault),
+  payment_status: zod
+    .enum(["All", "Unpaid", "Part paid", "Paid", "Unavailable"])
+    .default(listSettlementsQueryPaymentStatusDefault),
+  payable_only: zod.coerce
+    .boolean()
+    .default(listSettlementsQueryPayableOnlyDefault),
   kind: zod
     .enum(["All", "IT", "Kit", "SPT", "Lupin"])
     .default(listSettlementsQueryKindDefault),
@@ -38121,6 +38156,9 @@ export const ListSettlementsQueryParams = zod.object({
 export const ListSettlementsResponse = zod.object({
   items: zod.array(
     zod.object({
+      status: zod.string(),
+      payable: zod.boolean(),
+      paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
       balance: zod.union([zod.string(), zod.null()]),
       date: zod.string(),
       doctor: zod.union([
@@ -38178,6 +38216,9 @@ export const ListSettlementsResponse = zod.object({
       total: zod.union([zod.string(), zod.null()]),
       transactions: zod.array(
         zod.object({
+          reference: zod.union([zod.string(), zod.null()]).optional(),
+          verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
+          verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
           actorId: zod.string(),
           amount: zod.string(),
           batchId: zod.string(),
@@ -38217,6 +38258,9 @@ export const SettlementOrderHistoryParams = zod.object({
 });
 
 export const SettlementOrderHistoryResponse = zod.object({
+  status: zod.string(),
+  payable: zod.boolean(),
+  paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
   balance: zod.union([zod.string(), zod.null()]),
   date: zod.string(),
   doctor: zod.union([
@@ -38270,6 +38314,9 @@ export const SettlementOrderHistoryResponse = zod.object({
   total: zod.union([zod.string(), zod.null()]),
   transactions: zod.array(
     zod.object({
+      reference: zod.union([zod.string(), zod.null()]).optional(),
+      verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
+      verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
       actorId: zod.string(),
       amount: zod.string(),
       batchId: zod.string(),
@@ -38341,6 +38388,7 @@ export const ReconcileSettlementParams = zod.object({
 export const ReconcileSettlementResponse = zod.object({
   batch: zod.union([
     zod.object({
+      reference: zod.union([zod.string(), zod.null()]).optional(),
       date: zod.string(),
       entries: zod.array(
         zod.object({
@@ -38377,6 +38425,7 @@ export const ReconcileSettlementResponse = zod.object({
 /**
  * @summary Post
  */
+
 export const recordSettlementBodyEntriesItemAmountRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,2})?$",
 );
@@ -38385,6 +38434,9 @@ export const recordSettlementBodyEntriesItemExpectedPaidRegExp = new RegExp(
 );
 
 export const RecordSettlementBody = zod.object({
+  reference: zod
+    .union([zod.string().max(recordSettlementBodyReferenceOneMax), zod.null()])
+    .optional(),
   date: zod.coerce.date(),
   entries: zod
     .array(
@@ -38405,6 +38457,7 @@ export const RecordSettlementBody = zod.object({
 });
 
 export const RecordSettlementResponse = zod.object({
+  reference: zod.union([zod.string(), zod.null()]).optional(),
   date: zod.string(),
   entries: zod.array(
     zod.object({
@@ -38416,6 +38469,96 @@ export const RecordSettlementResponse = zod.object({
   id: zod.string(),
   mode: zod.enum(["Cash", "UPI", "Bank transfer", "Cheque", "Card", "Other"]),
   total: zod.string(),
+});
+
+/**
+ * @summary Verify
+ */
+export const VerifySettlementTransactionParams = zod.object({
+  entry_id: zod.coerce.string().uuid(),
+});
+
+export const VerifySettlementTransactionResponse = zod.object({
+  status: zod.string(),
+  payable: zod.boolean(),
+  paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
+  balance: zod.union([zod.string(), zod.null()]),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          verifySettlementTransactionResponseDoctorOneContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  key: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(verifySettlementTransactionResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  paid: zod.string(),
+  patients: zod.array(
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          verifySettlementTransactionResponsePatientsItemContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  total: zod.union([zod.string(), zod.null()]),
+  transactions: zod.array(
+    zod.object({
+      reference: zod.union([zod.string(), zod.null()]).optional(),
+      verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
+      verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
+      actorId: zod.string(),
+      amount: zod.string(),
+      batchId: zod.string(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      id: zod.string(),
+      mode: zod.enum([
+        "Cash",
+        "UPI",
+        "Bank transfer",
+        "Cheque",
+        "Card",
+        "Other",
+      ]),
+      verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+    }),
+  ),
+  verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+  version: zod.number().int(),
 });
 
 /**

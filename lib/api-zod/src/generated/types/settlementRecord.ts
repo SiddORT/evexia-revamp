@@ -7,10 +7,14 @@
  */
 import type { SettlementPerson } from "./settlementPerson";
 import type { SettlementRecordKind } from "./settlementRecordKind";
+import type { SettlementRecordPaymentStatus } from "./settlementRecordPaymentStatus";
 import type { SettlementRecordVerification } from "./settlementRecordVerification";
 import type { SettlementTransaction } from "./settlementTransaction";
 
 export interface SettlementRecord {
+  status: string;
+  payable: boolean;
+  paymentStatus: SettlementRecordPaymentStatus;
   balance: string | null;
   date: string;
   doctor: SettlementPerson | null;

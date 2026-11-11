@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { CreditCard, LayoutDashboard, LogOut, Stethoscope, Target, Settings as Cog, User } from 'lucide-react';
+import { Link, Redirect, useLocation } from 'wouter';
+import { LayoutDashboard, LogOut, Stethoscope, Target, Settings as Cog, User } from 'lucide-react';
 import { useAdminSession } from '../auth/AdminBoundary.jsx';
 import { interceptNavigation } from '../auth/navigationGuard.js';
 import { logoutAdmin, sessionEpoch } from '../auth/adminSession.js';
@@ -18,9 +18,8 @@ import LiveOrders from './LiveOrders.jsx';
 import OrdersNavigation from './OrdersNavigation.jsx';
 import AccountsNavigation from './AccountsNavigation.jsx';
 import MRAccountsSettlements from './AccountsSettlements.jsx';
-import { PaymentDetail, PaymentForm, PaymentList } from './Payments.jsx';
 
-const NAV = [['Dashboard', '/mr/home', 'home', LayoutDashboard], ['Doctors', '/mr/doctors', 'doctors', Stethoscope], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets', Target], ['Payments', '/mr/payments', 'payments', CreditCard], ['Accounts', '/mr/accounts', 'accounts']];
+const NAV = [['Dashboard', '/mr/home', 'home', LayoutDashboard], ['Doctors', '/mr/doctors', 'doctors', Stethoscope], ['Orders', '/mr/orders', 'orders'], ['Targets', '/mr/targets', 'targets', Target], ['Accounts', '/mr/accounts', 'accounts']];
 const dec = (s) => { try { return decodeURIComponent(s); } catch { return ''; } };
 
 function Provider({ owner, children }) {
@@ -49,8 +48,9 @@ function Routes() {
   if (a === 'doctors') { if (!b) return <DoctorList />; if (b === 'new' && !c) return <DoctorForm />; if (b === 'import' && !c) return <DoctorImport />; if (!c) return <DoctorDetail key={b} id={b} />; }
   if (a === 'orders') return <LiveOrders />;
   if (a === 'targets' && !b) return <Targets />;
-  if (a === 'payments') { if (!b) return <PaymentList />; if (b === 'new' && !c) return <PaymentForm />; if (!c) return <PaymentDetail id={b} />; }
-  if (a === 'accounts' && b === 'settlements' && !c) return <MRAccountsSettlements />;
+  // Legacy demo Payments URLs (list, new, detail ids) never resolve to fictional receipts.
+  if (a === 'payments') return <Redirect to="/mr/accounts" replace />;
+  if (a === 'accounts') return b ? <Redirect to="/mr/accounts" replace /> : <MRAccountsSettlements />;
   if (a === 'settings' && !b) return <Settings />;
   return <div className="mrw-card"><Empty title="Page not found" text="That MR page does not exist." to="/mr/home" action="Go to dashboard" /></div>;
 }

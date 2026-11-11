@@ -21,6 +21,7 @@ from app.services.order_eligibility import LOCK
 SCAN_LIMIT = 20000
 HISTORY_LIMIT = 50000
 ZERO = Decimal("0.00")
+PAYABLE_STAGES = ("In process", "Approved", "Shipped", "Delivered", "Returned")
 
 
 class RejectedSettlement:
@@ -133,7 +134,10 @@ def history(db, keys, candidates):
                 id=str(entry.id), batchId=str(batch.id), date=batch.date.isoformat(),
                 mode=data["result"]["mode"], amount=fmt(amount),
                 verification="Verified" if entry.verified_at and entry.verified_by else "Not verified",
-                createdAt=batch.created_at.isoformat(), actorId=str(batch.actor_id)))
+                createdAt=batch.created_at.isoformat(), actorId=str(batch.actor_id),
+                reference=data["result"].get("reference"),
+                verifiedAt=entry.verified_at.isoformat() if entry.verified_at else None,
+                verifiedBy=str(entry.verified_by) if entry.verified_by else None))
     return output
 
 
@@ -147,6 +151,10 @@ def projection(kind, row, saved, receipts, *, mr_scope=False):
                     "Verified" if all(t["verification"] == "Verified" for t in receipts) else "Not verified")
     return dict(key=f"{kind}:{row.id}", kind=kind, id=str(row.id), number=row.number,
                 date=row.date.isoformat(), version=row.version,
+                status="In process" if row.status == "Approved" else row.status,
+                payable=row.status in PAYABLE_STAGES and total is not None and total > paid,
+                paymentStatus=("Unavailable" if total is None else "Paid" if paid == total
+                               else "Part paid" if paid > ZERO else "Unpaid"),
                 doctor=person(saved.get("doctor"), mask_contacts=mr_scope),
                 mr=person(saved.get("mr")), patients=people(saved, mask_contacts=mr_scope),
                 total=fmt(total) if total is not None else None, paid=fmt(paid),
@@ -154,14 +162,22 @@ def projection(kind, row, saved, receipts, *, mr_scope=False):
                 verification=verification, transactions=receipts)
 
 
-def candidate_orders(db, *, kind="All", order_from=None, order_to=None):
+def candidate_orders(db, *, kind="All", order_from=None, order_to=None, all_saved=False,
+                     payable_only=False, order_status="All"):
     candidates, scanned = [], 0
     for label, source in SOURCES.items():
         if kind != "All" and label != kind:
             continue
         model = source.Order
         # Approved is the legacy persisted spelling of the same approved stage.
-        clauses = [model.status.in_(["In process", "Approved"]), *mr_orders.scope(db, model)]
+        clauses = [model.status != "Draft", *mr_orders.scope(db, model)]
+        if payable_only:
+            clauses.append(model.status.in_(PAYABLE_STAGES))
+        elif not all_saved and order_status == "All":
+            clauses.append(model.status.in_(["In process", "Approved"]))
+        if order_status != "All":
+            clauses.append(model.status.in_(["In process", "Approved"]) if order_status in ("In process", "Approved")
+                           else model.status == order_status)
         if order_from:
             clauses.append(model.date >= order_from)
         if order_to:
@@ -181,7 +197,8 @@ def candidate_orders(db, *, kind="All", order_from=None, order_to=None):
 
 def listing(db, actor, *, kind="All", order_from=None, order_to=None,
             payment_from=None, payment_to=None, doctor_id=None, mr_id=None, patient_id=None,
-            verification="All", offset=0, limit=25):
+            verification="All", search="", order_status="All", payment_status="All",
+            payable_only=False, offset=0, limit=25):
     for label, start, end in (("Order", order_from, order_to), ("Payment", payment_from, payment_to)):
         if start and end and start > end:
             fail(f"{label}-date From must be on or before To.", 422, "settlement_dates")
@@ -189,7 +206,9 @@ def listing(db, actor, *, kind="All", order_from=None, order_to=None,
     def work(current, keys):
         if current.role == "mr" and mr_id and mr_id != current.mr.id:
             fail("The MR filter is fixed to your signed-in identity.", 403, "access_denied")
-        candidates = candidate_orders(db, kind=kind, order_from=order_from, order_to=order_to)
+        candidates = candidate_orders(db, kind=kind, order_from=order_from, order_to=order_to,
+                                      all_saved=True, payable_only=payable_only,
+                                      order_status=order_status)
         scoped = defaultdict(list)
         for label, _, row in candidates:
             scoped[label].append(row.id)
@@ -200,6 +219,19 @@ def listing(db, actor, *, kind="All", order_from=None, order_to=None,
                 continue
             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
             record = projection(label, row, saved, receipts[(label, row.id)], mr_scope=current.role == "mr")
+            if payable_only and not record["payable"]:
+                continue
+            if payment_status != "All" and record["paymentStatus"] != payment_status:
+                continue
+            # Search only authorized, projected facts; never hidden contacts,
+            # encrypted operational identifiers or internal UUIDs.
+            searchable = [record["number"], record["date"], record["status"], record["kind"]]
+            for value in [record["doctor"], record["mr"], *record["patients"]]:
+                if value:
+                    searchable.extend(str(value.get(field) or "") for field in
+                                      ("name", "code", "qualification"))
+            if search.strip().casefold() not in " ".join(searchable).casefold():
+                continue
             if patient_id and not any(p["id"] == str(patient_id) for p in record["patients"]):
                 continue
             if verification != "All" and record["verification"] != verification:
@@ -218,9 +250,9 @@ def listing(db, actor, *, kind="All", order_from=None, order_to=None,
 def references(db, actor, kind, *, search="", offset=0, limit=25):
     def work(current, keys):
         # No independent directory traversal: selectors are saved associations
-        # of In process orders in precisely the caller's authorized scope.
+        # of non-draft orders in precisely the caller's authorized scope.
         found = {}
-        for label, source, row in candidate_orders(db):
+        for label, source, row in candidate_orders(db, all_saved=True):
             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
             values = people(saved) if kind == "patients" else [person(saved.get("doctor" if kind == "doctors" else "mr"))]
             for value in values:
@@ -229,7 +261,7 @@ def references(db, actor, kind, *, search="", offset=0, limit=25):
                 if kind == "mrs" and current.role == "mr" and value["id"] != str(current.mr.id):
                     continue
                 name = value["name"] or "Saved name unavailable"
-                if search.casefold().strip() not in f"{name} {value['id']}".casefold():
+                if search.casefold().strip() not in f"{name} {value.get('code') or ''}".casefold():
                     continue
                 found.setdefault(value["id"], dict(id=value["id"], name=name))
         values = sorted(found.values(), key=lambda p: (p["name"].casefold(), p["id"]))
@@ -287,13 +319,45 @@ def rejected_data(current, keys, rejected):
     return unseal(keys, "rejections", rejected.id, rejected.payload_ciphertext)
 
 
+def normalized_request(request):
+    """Old frozen requests omitted the optional reference; keep those replays valid."""
+    return {**request, "reference": request.get("reference") or None}
+
+
+def verify(db, actor, identity):
+    """One-way entry verification, never a second financial posting."""
+    def work(current, keys):
+        from app.services.capability_policy import is_super_admin
+        if not is_super_admin(current):
+            fail("Only the protected Super Admin may verify transactions.", 403, "access_denied")
+        # Financial lock is already held; source rows precede receipt row locks,
+        # matching posting's ordering. Revalidation happened before either lock.
+        entry = db.get(Entry, identity)
+        if entry is None:
+            fail("This recorded transaction is unavailable.", 404, "settlement_not_found")
+        source, row = owned_order(db, entry.kind, entry.order_id, lock=True)
+        entry = db.scalar(select(Entry).where(Entry.id == identity).with_for_update())
+        if entry.verified_at is None and entry.verified_by is None:
+            now = utcnow()
+            entry.verified_at, entry.verified_by = now, current.user.id
+            db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
+                             action="settlement_verified", resource_type="settlement_entry",
+                             resource_id=entry.id, outcome="success",
+                             request_id=db.info.get("request_id"), created_at=now))
+            db.flush()
+        saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+        receipts = history(db, keys, {entry.kind: [row.id]})
+        return projection(entry.kind, row, saved, receipts[(entry.kind, row.id)])
+    return transaction(db, actor, work)
+
+
 def post(db, actor, body):
     def attempt(current, keys):
         request = body.model_dump(mode="json")
         prior = db.get(Batch, body.idempotency_key)
         if prior:
             data = replay(db, current, keys, prior)
-            if encode(data["request"]) != encode(request):
+            if encode(normalized_request(data["request"])) != encode(normalized_request(request)):
                 fail("Retry the exact unchanged transaction with its original key.", 409, "settlement_retry")
             return data["result"]
         today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
@@ -302,8 +366,9 @@ def post(db, actor, body):
         chosen = []
         for item in sorted(body.entries, key=lambda v: (v.kind, str(v.id))):
             source, row = owned_order(db, item.kind, item.id, lock=True)
-            if row.status not in ("In process", "Approved"):
-                fail("Only In process orders may receive settlement payments.", 409, "settlement_status")
+            if row.status not in PAYABLE_STAGES:
+                fail("Only approved orders and their fulfillment stages may receive payments.",
+                     409, "settlement_status")
             if row.version != item.expected_version:
                 fail("An order changed. Refresh the listing before preparing a new transaction.", 409, "settlement_stale")
             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
@@ -324,6 +389,7 @@ def post(db, actor, body):
                      422, "settlement_overpayment")
         now = utcnow()
         result = dict(id=str(body.idempotency_key), date=body.date.isoformat(), mode=body.mode,
+                      reference=body.reference,
                       entries=[dict(kind=i.kind, id=str(i.id), amount=i.amount) for i in body.entries],
                       total=fmt(sum((Decimal(i.amount) for i in body.entries), ZERO)))
         db.add(Batch(id=body.idempotency_key, actor_id=current.user.id, mr_id=current.mr.id,
@@ -351,7 +417,7 @@ def post(db, actor, body):
         rejected = db.get(Rejection, body.idempotency_key)
         if rejected:
             data = rejected_data(current, keys, rejected)
-            if encode(data["request"]) != encode(request):
+            if encode(normalized_request(data["request"])) != encode(normalized_request(request)):
                 fail("Retry the exact unchanged transaction with its original key.", 409, "settlement_retry")
             return RejectedSettlement(data["failure"])
         try:

@@ -6,9 +6,18 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ListSettlementsKind } from "./listSettlementsKind";
+import type { ListSettlementsOrderStatus } from "./listSettlementsOrderStatus";
+import type { ListSettlementsPaymentStatus } from "./listSettlementsPaymentStatus";
 import type { ListSettlementsVerification } from "./listSettlementsVerification";
 
 export type ListSettlementsParams = {
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  order_status?: ListSettlementsOrderStatus;
+  payment_status?: ListSettlementsPaymentStatus;
+  payable_only?: boolean;
   kind?: ListSettlementsKind;
   order_from?: Date | null;
   order_to?: Date | null;

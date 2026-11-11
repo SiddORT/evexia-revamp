@@ -36568,6 +36568,97 @@ export const useRecordSettlement = <
   return useMutation(getRecordSettlementMutationOptions(options));
 };
 
+export const getVerifySettlementTransactionUrl = (entryId: string) => {
+  return `/api/v1/admin/settlements/transactions/${entryId}/verify`;
+};
+
+/**
+ * @summary Verify
+ */
+export const verifySettlementTransaction = async (
+  entryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SettlementRecord> => {
+  return customFetch<SettlementRecord>(
+    getVerifySettlementTransactionUrl(entryId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getVerifySettlementTransactionMutationKey = () =>
+  ["verifySettlementTransaction"] as const;
+
+export const getVerifySettlementTransactionMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifySettlementTransaction>>,
+    TError,
+    VerifySettlementTransactionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifySettlementTransaction>>,
+  TError,
+  VerifySettlementTransactionMutationVariables,
+  TContext
+> => {
+  const mutationKey = getVerifySettlementTransactionMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifySettlementTransaction>>,
+    VerifySettlementTransactionMutationVariables
+  > = (props) => {
+    const { entryId } = props ?? {};
+
+    return verifySettlementTransaction(entryId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifySettlementTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifySettlementTransaction>>
+>;
+
+export type VerifySettlementTransactionMutationError = ErrorType<ErrorEnvelope>;
+export type VerifySettlementTransactionMutationVariables = { entryId: string };
+
+/**
+ * @summary Verify
+ */
+export const useVerifySettlementTransaction = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifySettlementTransaction>>,
+    TError,
+    VerifySettlementTransactionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifySettlementTransaction>>,
+  TError,
+  VerifySettlementTransactionMutationVariables,
+  TContext
+> => {
+  return useMutation(getVerifySettlementTransactionMutationOptions(options));
+};
+
 export const getListShipmentsUrl = (params?: ListShipmentsParams) => {
   const normalizedParams = new URLSearchParams();
 

@@ -105,8 +105,13 @@ MR Dashboard and Targets report only the authenticated MR's saved financial-year
 target and approved-order sales across Immunotherapy, SPT, Kits and Lupin.
 Approved/In process, Shipped and Delivered contribute by saved order date;
 pending submissions, drafts and returned orders do not. Unknown saved prices
-make aggregates explicitly incomplete, not zero. Admin target CRUD, settlements
-and demo Payments remain separate. This delivery is source-only and untested:
+make aggregates explicitly incomplete, not zero. Admin target CRUD and Accounts
+remain separate. MR Accounts now replaces demo Payments and uses the existing
+settlement ledger; old Payments/Settlements URLs redirect without resolving demo
+IDs. Only owning MRs post, while protected Super Admin may explicitly verify
+individual recorded allocations without posting or changing balances. No other
+settlement mutation is authorized. See `docs/accounts-settlements.md`.
+This delivery is source-only and untested:
 no tests, builds, checks, validation/release wrappers, runtime/browser probes,
 service activation, migrations, live business mutations or deployments were run.
 Only offline API/client generation and formatting were used. See
@@ -529,8 +534,9 @@ Necessary contract generation/formatting is not runtime verification.
 
 - MR Immunotherapy, Kits & Consumables, SPT and Lupin reuse the live Admin order services
   with mandatory authenticated MR ownership and MR-shell navigation. Generic
-  Patient/Allergen administration is not granted. Dashboard, Targets and Payments
-  remain separate demos. Delivery is source-reviewed
+  Patient/Allergen administration is not granted. Dashboard and Targets use the
+  saved financial-year projection; Accounts uses the live settlement ledger,
+  never demo payments. Delivery is source-reviewed
   only and untested at the user's request: no tests, builds, runtime checks,
   service restarts, migrations or live writes. See `docs/mr-order-workflows.md`.
 

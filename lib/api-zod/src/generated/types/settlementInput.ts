@@ -9,6 +9,7 @@ import type { SettlementAllocation } from "./settlementAllocation";
 import type { SettlementInputMode } from "./settlementInputMode";
 
 export interface SettlementInput {
+  reference?: string | null;
   date: Date;
   /**
    * @minItems 1

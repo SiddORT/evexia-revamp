@@ -9,6 +9,9 @@ import type { SettlementTransactionMode } from "./settlementTransactionMode";
 import type { SettlementTransactionVerification } from "./settlementTransactionVerification";
 
 export interface SettlementTransaction {
+  reference?: string | null;
+  verifiedAt?: string | null;
+  verifiedBy?: string | null;
   actorId: string;
   amount: string;
   batchId: string;
