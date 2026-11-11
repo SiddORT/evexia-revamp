@@ -177,6 +177,9 @@ export const staffPathAllowed = (path, user) => {
       immunotherapy: 'immunotherapy', spt: 'spt', 'kits-consumables': 'kits', lupin: 'lupin',
     })[workflow[2]];
     if (!resource) return false;
+    // Stock details are read-only and use the same grants as the listing.
+    // Let the page explain malformed identities without granting a write path.
+    if (workflow[2] === 'stock-status') return !workflow[4] && canReadResource(user, 'stock_status');
     if (!workflow[3]) return canReadResource(user, resource);
     if (workflow[2] === 'immunotherapy' && workflow[3] === 'drafts' && !workflow[4]) return hasCapability(user, resource, 'add');
     if (workflow[3] === 'new') return hasCapability(user, resource, resource === 'stock_movement' ? 'create' : 'add');

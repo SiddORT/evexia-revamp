@@ -89,7 +89,7 @@ function ProcurementTable({ items, displayDate }) {
   </div>;
 }
 
-export default function StockLedger({ row, onClose }) {
+export default function StockLedger({ row, onClose, returnFocusRef }) {
   const { date: displayDate, timestamp } = useAdminDateFormatters();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -121,7 +121,7 @@ export default function StockLedger({ row, onClose }) {
   const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
   const reset = (fn) => (e) => { fn(e.target.value); setPage(1); };
   const proc = state.loading || state.error || badRange ? [] : data?.procurement?.items || [];
-  return <Dialog className="stock-ledger" eyebrow="Individual allergen stock" title="Stock ledger" onClose={onClose}
+  return <Dialog className="stock-ledger" eyebrow="Individual allergen stock" title="Stock ledger" onClose={onClose} returnFocusRef={returnFocusRef}
     description={<><strong>{[row.name, row.concentration].filter(Boolean).join(' · ')}</strong><span>Unit: {unit}{data ? ` · As of ${timestamp(data.asOf)}` : ''}</span></>}>
     <div className="stock-ledger__body" role="region" aria-label="Stock ledger content" tabIndex={0}>
     <details className="stock-ledger__more stock-ledger__reference"><summary>Product reference</summary><p>{row.productId}</p></details>

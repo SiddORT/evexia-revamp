@@ -1,6 +1,5 @@
 import { concentrationLabel, lotOriginLabel } from '../../services/serverInventory.js';
 import { useEffect, useMemo, useState } from 'react';
-import Dialog from './Dialog.jsx';
 import DataTable from './DataTable.jsx';
 import TablePagination from './TablePagination.jsx';
 import ComboProvenance from './ComboProvenance.jsx';
@@ -9,7 +8,7 @@ import { useAdminDateFormatters } from './adminPreferences.js';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import { groupStockLots } from '../../services/stockLotPresentation.js';
 
-export default function StockStatusDetail({ row, asOf, onClose }) {
+export default function StockStatusDetail({ row, asOf, coverage }) {
   const can = useResourceActions('stock_status');
   const { date: displayDate, timestamp } = useAdminDateFormatters();
   const [from, setFrom] = useState('');
@@ -37,23 +36,23 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
   const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
   const columns = [
     { key: 'd', label: 'Posted', render: (r) => timestamp(r.at) },
-    { key: 'lot', label: 'Lot', render: (r) => lotById.has(r.lotId) ? (lotById.get(r.lotId).source === 'opening' ? 'Opening stock lot' : `${lotById.get(r.lotId).batchNo || 'Batch unavailable'} · ${lotOriginLabel(lotById.get(r.lotId))}`) : <span title={r.lotId}>{r.lotId?.slice(0, 8) || 'Unavailable'}</span> },
-    { key: 'loc', label: 'Location', render: (r) => !r.locationId ? 'Unallocated' : locationById.get(r.locationId) || <span title={r.locationId}>Name unavailable · {r.locationId.slice(0, 8)}</span> },
+    { key: 'lot', label: 'Lot', render: (r) => <>{lotById.has(r.lotId) ? (lotById.get(r.lotId).source === 'opening' ? 'Opening stock lot' : lotById.get(r.lotId).batchNo || 'Batch unavailable') : 'Lot name unavailable'}{r.lotId && <details className="stock-detail__evidence"><summary>Lot reference &amp; origin</summary><p>{r.lotId}</p>{lotById.has(r.lotId) && <p>{lotOriginLabel(lotById.get(r.lotId))}</p>}</details>}</> },
+    { key: 'loc', label: 'Location', render: (r) => !r.locationId ? 'Unallocated' : <>{locationById.get(r.locationId) || 'Name unavailable'}<details className="stock-detail__evidence"><summary>Location reference</summary><p>{r.locationId}</p></details></> },
     { key: 'dl', label: 'Change', render: (r) => <span className="inv-mono">{r.delta}</span> },
     { key: 'ba', label: 'Before / After', render: (r) => <span className="inv-mono">{r.before} to {r.after}</span> },
     { key: 'a', label: 'Actor', render: (r) => r.actor },
     { key: 's', label: 'Source', render: (r) => <span className="stock-status">{r.source?.startsWith('adjustment:') ? 'Manual adjustment' : r.source?.startsWith('opening:') ? 'Opening stock' : r.movementId ? 'Transfer / allocation' : r.source?.startsWith('assembly:') ? (r.delta.startsWith('-') ? 'Assembly consumption' : 'Assembly output') : 'Receipt'}</span> },
   ];
-  return <Dialog className="stock-detail" eyebrow={row.itemKind === 'combo' ? 'Assembled combo stock' : 'Individual allergen stock'} title={row.name} onClose={onClose}
-    description={[row.concentration, row.category].filter(Boolean).join(' · ')}>
+  return <section className="admin-panel stock-detail" aria-label="Product stock details">
     <div className="stock-detail__summary"><div><span>Current on hand</span><strong className="inv-mono">{row.quantity} <small>{row.unit || 'Unit unavailable'}</small></strong></div>{asOf && <span>As of {timestamp(asOf)}</span>}</div>
     <details className="stock-detail__evidence"><summary>Product reference &amp; catalogue details</summary><dl className="stock-detail__meta"><div><dt>Product reference</dt><dd>{row.productId}</dd></div><div><dt>Catalogue selling price</dt><dd>{formatPrice(row.sellingPrice)}</dd></div></dl></details>
-    <h3 className="stock-section-title">Lots on hand</h3>
+    {coverage && <details className="stock-detail__evidence"><summary>Stock snapshot coverage</summary><p>{coverage.contract}</p><p>Openings: {coverage.openings || 'Coverage unavailable'}</p><p>Sales: {coverage.sales || 'Coverage unavailable'}</p><p>History date filters do not change the current on-hand quantity above.</p></details>}
+    <h2 className="stock-section-title">Lots on hand</h2>
     <div className="stock-lots">
       {lots.length ? <ul className="stock-lots__list" aria-label="Lots on hand">{lots.map((group) => <LotRow key={group.key} group={group} fallbackUnit={row.unit} itemKind={row.itemKind} displayDate={displayDate} />)}</ul>
         : <div className="admin-empty"><strong>No lots on hand</strong><p>{row.itemKind === 'combo' ? 'No combo quantity remains on hand.' : 'This allergen has no receipt or opening quantity on hand.'}</p></div>}
     </div>
-    {can.history ? <><h3 className="stock-section-title">Posting history</h3>
+    {can.history ? <><h2 className="stock-section-title">Posting history</h2>
     <div className="inv-period">
       <label className="stock-field stock-field--inline">From (UTC) <input type="date" className="admin-input" value={from} max={to || undefined} onChange={(e) => { setFrom(e.target.value); setPage(1); }} data-testid="input-stock-history-from" /></label>
       <label className="stock-field stock-field--inline">To (UTC) <input type="date" className="admin-input" value={to} min={from || undefined} onChange={(e) => { setTo(e.target.value); setPage(1); }} data-testid="input-stock-history-to" /></label>
@@ -66,11 +65,11 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
         : state.error || badRange ? null
         : state.items.length ? <DataTable columns={columns} rows={state.items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Posting history" testIdPrefix="stock-history" />
         : <div className="admin-empty"><strong>No postings in this period</strong><p>Choose All periods to see every recorded posting.</p></div>}
-      {!state.error && !badRange && <TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} pageSize={pageSize} filtered={state.filtered} total={state.filtered} label="postings" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-stock-history-count" />}
+      {!state.loading && !state.error && !badRange && <TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} pageSize={pageSize} filtered={state.filtered} total={state.filtered} label="postings" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-stock-history-count" />}
     </div>
     {state.scope && <details className="stock-detail__evidence"><summary>History coverage</summary><p className="mr-form__hint">{state.scope}</p></details>}</>
       : <p className="mr-form__hint">View Stock History permission is required to read historical postings.</p>}
-  </Dialog>;
+  </section>;
 }
 
 function LotRow({ group, fallbackUnit, itemKind, displayDate }) {
@@ -87,7 +86,7 @@ function LotRow({ group, fallbackUnit, itemKind, displayDate }) {
     {(!group.complete || !l.lotId) && <p className="stock-lot__warning" role="note">{!group.complete ? 'Total unavailable; review saved allocation quantities.' : 'Lot identity unavailable; allocations shown separately.'}</p>}
     <div className="stock-lot__disclosures">
       <details className="stock-detail__evidence"><summary>Locations &amp; quantities</summary>
-        <ul className="stock-lot__allocations">{allocations.map((a, i) => <li key={`${a.locationId}-${i}`}><span>{a.locationId ? a.locationName || 'Location name unavailable' : 'Unallocated'}</span><strong className="inv-mono">{a.quantity ?? 'Unavailable'} <small>{a.unit || unit}</small></strong></li>)}</ul>
+        <ul className="stock-lot__allocations">{allocations.map((a, i) => <li key={`${a.locationId}-${i}`}><span>{a.locationId ? a.locationName || 'Location name unavailable' : 'Unallocated'}{a.locationId && <span className="stock-sub">Reference: {a.locationId}</span>}</span><strong className="inv-mono">{a.quantity ?? 'Unavailable'} <small>{a.unit || unit}</small></strong></li>)}</ul>
       </details>
       <details className="stock-detail__evidence"><summary>Lot source &amp; provenance</summary>
         <dl className="stock-detail__meta">

@@ -6,16 +6,16 @@ import { Link } from 'wouter';
 import { AlertTriangle, CalendarClock, BookOpen, SlidersHorizontal, ChevronDown, Eye, FileDown, FileText, Filter, RefreshCw, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useResourceActions } from '../../auth/useMasterActions.js';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import StockAllergenSelect from '../../components/admin/StockAllergenSelect.jsx';
-import StockStatusDetail from '../../components/admin/StockStatusDetail.jsx';
 import StockLedger from '../../components/admin/StockLedger.jsx';
 import StockAdjustment from '../../components/admin/StockAdjustment.jsx';
 import StockStatusReport from '../../components/admin/StockStatusReport.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
-import useTablePagination from '../../hooks/useTablePagination.js';
 import { exportStockCSV, formatPrice, isSuperAdmin, listStock, STOCK_STATUSES } from '../../services/serverInventory.js';
+import { STOCK_STATUS_PATH, stockListContext } from '../../services/stockStatusNavigation.js';
 import '../../stockStatus.css';
 import '../../inventoryServer.css';
 
@@ -23,18 +23,21 @@ const POLL_MS = 60000;
 
 export default function StockStatus() {
   const can = useResourceActions('stock_status');
+  const { user } = useAdminSession();
+  const [initial] = useState(() => stockListContext(window.history.state, user?.id));
   const { timestamp } = useAdminDateFormatters();
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [stockStatus, setStockStatus] = useState('all');
-  const [productIds, setProductIds] = useState([]);
-  const [appliedSearch, setAppliedSearch] = useState('');
+  const [search, setSearch] = useState(initial?.search || '');
+  const [category, setCategory] = useState(initial?.category || '');
+  const [stockStatus, setStockStatus] = useState(initial?.stockStatus || 'all');
+  const [productIds, setProductIds] = useState(initial?.productIds || []);
+  const [appliedSearch, setAppliedSearch] = useState(initial?.search?.trim() || '');
+  const [requestedPage, setPage] = useState(initial?.page || 1);
+  const [pageSize, setPageSize] = useState(initial?.pageSize || 5);
   const [snap, setSnap] = useState(null);
   const [base, setBase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [silent, setSilent] = useState(false);
   const [loadError, setLoadError] = useState('');
-  const [detail, setDetail] = useState(null);
   const [ledger, setLedger] = useState(null);
   const [adjust, setAdjust] = useState(null);
   const [report, setReport] = useState(null);
@@ -89,7 +92,18 @@ export default function StockStatus() {
   }, [base]);
   const rows = useMemo(() => snap?.rows || [], [snap]);
   const unavailable = snap && snap.coverage && !snap.coverage.complete;
-  const pg = useTablePagination(rows);
+  // Keep the requested page while the fresh response is loading after Back.
+  // No stock snapshot is retained across navigation.
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const page = Math.min(requestedPage, pageCount);
+  const startIndex = (page - 1) * pageSize;
+  const pg = { page, pageSize, pageCount, startIndex, pageRows: rows.slice(startIndex, startIndex + pageSize),
+    setPage, resetPage: () => setPage(1), setPageSize: (size) => { setPageSize(size); setPage(1); } };
+  const listContext = useMemo(() => ({ owner: user?.id, search, category, stockStatus, productIds, page: requestedPage, pageSize }),
+    [user?.id, search, category, stockStatus, productIds, requestedPage, pageSize]);
+  useEffect(() => {
+    window.history.replaceState({ ...window.history.state, stockStatusList: listContext }, '');
+  }, [listContext]);
   function changeFilter(setter, value) { setter(value); pg.resetPage(); setNotice(''); setError(''); }
   function resetFilters() {
     setSearch(''); setAppliedSearch(''); setStockStatus('all'); setCategory(''); setProductIds([]);
@@ -120,7 +134,7 @@ export default function StockStatus() {
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
     { key: 'q', label: 'Quantity (ml)', render: (r) => <><strong className="inv-mono stock-quantity"><span className="stock-quantity__number">{r.quantity}</span> {r.unit}</strong>{r.state === 'catalogue_zero' && <span className="stock-sub">No stock on hand</span>}{Number(r.unallocatedQuantity) > 0 && <span className="stock-sub">Unallocated: {r.unallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
-    { key: 'v', label: 'Actions', render: (r) => <div className="stock-row-actions"><button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setDetail({ row: r, asOf: snap.asOf })} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</button>
+    { key: 'v', label: 'Actions', render: (r) => <div className="stock-row-actions"><Link className="admin-button admin-button--secondary stock-view" href={`${STOCK_STATUS_PATH}/${encodeURIComponent(r.productId)}`} state={{ stockStatusList: listContext }} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</Link>
       {can.protected && r.itemKind !== 'combo' && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setLedger(r)} aria-label={`Ledger for ${r.name} ${r.concentration}`} data-testid={`button-ledger-stock-${r.productId}`}><BookOpen size={14} /> Ledger</button>}
       {r.itemKind !== 'combo' && isSuperAdmin() && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setAdjust(r)} aria-label={`Manual adjustment for ${r.name} ${r.concentration}`} data-testid={`button-adjust-stock-${r.productId}`}><SlidersHorizontal size={14} /> Manual adjustment</button>}</div> },
   ];
@@ -174,9 +188,8 @@ export default function StockStatus() {
           <button type="button" className="admin-button admin-button--secondary" onClick={resetFilters}>Reset filters</button></div>}
       {!unavailable && !loadError && snap && <TablePagination {...pg} filtered={rows.length} total={snap.total ?? rows.length} label={rows.length === 1 ? 'product' : 'products'} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} testId="text-stock-count" />}
     </section>
-    {detail && <StockStatusDetail row={detail.row} asOf={detail.asOf} onClose={() => setDetail(null)} />}
     {ledger && <StockLedger row={ledger} onClose={() => setLedger(null)} />}
-    {adjust && <StockAdjustment row={adjust} onClose={() => setAdjust(null)} onCommitted={() => { setDetail(null); setLedger(null); setNotice('Adjustment recorded. Reloading current stock.'); load(); }} />}
+    {adjust && <StockAdjustment row={adjust} onClose={() => setAdjust(null)} onCommitted={() => { setLedger(null); setNotice('Adjustment recorded. Reloading current stock.'); load(); }} />}
     {report && <StockStatusReport {...report} onClose={() => setReport(null)} />}
   </div></AdminLayout>;
 }
