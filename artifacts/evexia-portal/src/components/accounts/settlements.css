@@ -114,9 +114,27 @@
 .settle-history-sum { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
 .settle-filter-disclosure--mr { flex: 1 0 100%; margin: 0 0 14px; }
 .settle-filter-disclosure--mr[open] > summary { border-bottom: 1px solid var(--settle-line); background: var(--admin-state-hover); }
-.settle-payment-toolbar { grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr)); align-items: start; }
-.settle-payment-search { display: flex; gap: 6px; min-width: 0; }
-.settle-payment-search .settle-search { padding: 0 8px; }
+/* Size this form by the dialog's content width, not the surrounding page. */
+.settle-dialog--payment { box-sizing: border-box; width: min(980px, 100%); min-width: 0; }
+.settle-dialog--payment .settle-form { min-width: 0; container-type: inline-size; container-name: settle-payment; }
+.settle-dialog--payment .settle-payment-toolbar { position: relative; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 8px 16px; align-items: stretch; }
+/* Shared label/control/error tracks keep wrapped labels and errors from offsetting controls. */
+.settle-dialog--payment .settle-payment-toolbar > .kits-field { grid-row: span 3; grid-template-rows: subgrid; align-items: start; overflow-wrap: anywhere; }
+.settle-dialog--payment .settle-payment-toolbar > .kits-field > :first-child { grid-row: 1; align-self: end; }
+.settle-dialog--payment .settle-payment-toolbar > .kits-field > :nth-child(2) { grid-row: 2; }
+.settle-dialog--payment .settle-payment-toolbar .settle-err { grid-row: 3; margin: 0; }
+.settle-dialog--payment .settle-payment-toolbar input,
+.settle-dialog--payment .settle-payment-toolbar .settle-fixed,
+.settle-dialog--payment .settle-payment-toolbar .searchable-select__control { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; }
+.settle-dialog--payment .settle-payment-toolbar .searchable-select { min-width: 0; }
+.settle-dialog--payment .settle-payment-toolbar .searchable-select__control input { height: 42px; }
+.settle-dialog--payment .settle-fixed { overflow-wrap: anywhere; height: auto; min-height: 44px; }
+.settle-dialog--payment .settle-payment-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.settle-dialog--payment .settle-payment-search .settle-search { padding: 0 8px; min-height: 44px; box-sizing: border-box; }
+.settle-dialog--payment .settle-payment-search .settle-search svg { flex: none; }
+.settle-dialog--payment .settle-payment-search input { width: 100%; padding: 9px 0; border: 0; background: transparent; }
+.settle-dialog--payment .settle-payment-search .admin-button { min-height: 44px; }
+.settle-dialog--payment .settle-table-wrap { min-width: 0; max-width: 100%; }
 .settle-picker--payment { padding: 0; margin: 0; border: 0; border-radius: 0; min-width: 0; }
 .settle-picker--payment .settle-picker__head { justify-content: space-between; }
 .settle-payment-table { min-width: 880px; }
@@ -125,10 +143,10 @@
 .settle-confirmation-scroll { overflow: auto; max-height: 40vh; }
 .settle-confirmation-scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .settle-confirmation-scroll .settle-entries { min-width: 360px; }
-@media (max-width: 1000px) {
-  .settle-payment-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .settle-payment-toolbar > :first-child { grid-column: 1 / -1; }
+@container settle-payment (min-width: 480px) {
+  .settle-dialog--payment .settle-payment-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settle-dialog--payment .settle-payment-search { grid-template-columns: minmax(0, 1fr) auto; }
 }
-@media (max-width: 540px) {
-  .settle-payment-toolbar { grid-template-columns: minmax(0, 1fr); }
+@container settle-payment (min-width: 800px) {
+  .settle-dialog--payment .settle-payment-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

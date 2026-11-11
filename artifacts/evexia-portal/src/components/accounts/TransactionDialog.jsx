@@ -222,11 +222,10 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
       </>;
 
   const pageCount = Math.max(1, Math.ceil((result?.total || 0) / pageSize));
-  return <Dialog eyebrow="Accounts" title="Add payment" className="settle-dialog settle-dialog--wide" onClose={close} dismissDisabled={locked || confirming}
+  return <Dialog eyebrow="Accounts" title="Add payment" className="settle-dialog settle-dialog--wide settle-dialog--payment" onClose={close} dismissDisabled={locked || confirming}
     footer={footer}>
     <form id="settle-form" noValidate onSubmit={review} className="settle-form">
-      {editable && <fieldset className="settle-form__common settle-payment-toolbar">
-        <legend className="sr-only">Payment details and pending-order search</legend>
+      {editable && <>
         <div className="kits-field"><label htmlFor="settle-pending-search">Search</label>
           <div className="settle-payment-search">
             <div className="settle-search">
@@ -238,23 +237,26 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
             <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(searchDraft.trim()); setPage(1); setSelectedOnly(false); }} data-testid="button-search-pending">Search</button>
           </div>
         </div>
-        <div className="kits-field"><span id="settle-mode-label">Payment mode</span>
+        <fieldset className="settle-form__common settle-payment-toolbar">
+        <legend className="sr-only">Payment details</legend>
+        <div className="kits-field"><label htmlFor="settle-mode" id="settle-mode-label">Payment mode</label>
           <SearchableSelect id="settle-mode" label="Payment mode" value={mode} options={MODE_OPTIONS} onChange={setMode} placeholder="Choose mode"
             invalid={Boolean(errors.mode)} describedBy={errors.mode ? 'settle-mode-err' : undefined} disabled={!editable} viewportMenu />
           {errors.mode && <span id="settle-mode-err" className="settle-err">{errors.mode}</span>}
         </div>
         <div className="kits-field"><span id="settle-derived-total-label">Amount (INR)</span><output aria-labelledby="settle-derived-total-label" className="settle-fixed settle-mono">{inr(totalPaise)}</output></div>
-        <label className="kits-field">Transaction ID / UTR (optional)
+        <label className="kits-field"><span>Transaction ID / UTR (optional)</span>
           <input value={reference} maxLength={100} onChange={(e) => setReference(e.target.value)} aria-invalid={Boolean(errors.reference)}
             aria-describedby={errors.reference ? 'settle-ref-err' : undefined} placeholder="e.g. UTR 4021 8876 1190" data-testid="input-transaction-reference" />
           {errors.reference && <span id="settle-ref-err" className="settle-err">{errors.reference}</span>}
         </label>
-        <label className="kits-field">Payment date
+        <label className="kits-field"><span>Payment date</span>
           <input type="date" value={date} max={today()} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'settle-date-err' : undefined}
             onChange={(e) => setDate(e.target.value)} data-testid="input-transaction-date" />
           {errors.date && <span id="settle-date-err" className="settle-err">{errors.date}</span>}
         </label>
-      </fieldset>}
+        </fieldset>
+      </>}
 
       {editable && <section className="settle-picker settle-picker--payment" aria-label="Pending orders">
         <div className="settle-picker__head">
