@@ -13,16 +13,18 @@ import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
 
 const saved = (value) => value === null || value === undefined || value === '' ? 'Not recorded' : value;
-function Facts({ rows }) {
-  return <dl className="kits-facts">{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{saved(value)}</dd></div>)}</dl>;
+function Facts({ rows, compact = false }) {
+  return <dl className={`kits-facts${compact ? ' imm-saved-order__facts-grid' : ''}`}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{saved(value)}</dd></div>)}</dl>;
 }
 function Person({ person, patient = false }) {
   if (!person) return <p className="kits-unavailable">Historical details not recorded.</p>;
   const a = person.address || {};
+  const address = [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country]
+    .filter((part) => part !== null && part !== undefined && String(part).trim() !== '')
+    .join(', ');
   return <Facts rows={[
     ['Name', person.name], ...(patient ? [['Age', person.age], ['Gender', person.gender]] : []),
-    ['Phone no.', person.phone], ['Address line 1', a.line1], ['Address line 2', a.line2],
-    ['Landmark', a.landmark], ['Country', a.country], ['State', a.state], ['City', a.city], ['Pincode', a.pincode],
+    ['Phone no.', person.phone], ['Address', address],
   ]} />;
 }
 
@@ -55,7 +57,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
     <div className="kits-layout">
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="imm-s-order"><h2 id="imm-s-order">Order details</h2>
-          <Facts rows={[
+          <Facts compact rows={[
             ['Order number', order.number], ['Date', order.date ? date(order.date) : null], ['Status', order.status],
             ['Order Batch No', orderBatchLabel(order)],
             ['Patient', order.patient?.name], ['Doctor', order.doctor?.name], ['MR', order.mr?.name],
@@ -77,7 +79,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
             {!mrPortal && group.compositionPolicy === MR_GROUPING_POLICY && <p className="kits-hint">Saved MR category/Mix grouping. This membership and SUB identity do not change when masters change.</p>}
             {!mrPortal && <Facts rows={[['Internal group', group.id], ...(legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : canonical ? [['MRP', money(parseAmount(group.mrp))]] : [])]} />}
             {group.items?.length ? <ul className="imm-saved-order__allergens">{group.items.map((item, itemIndex) => <li key={`${item.allergenId}-${itemIndex}`}>
-              <Facts rows={[
+              <Facts compact rows={[
                 ...(!mrPortal && !canonical ? [['Suborder ID', item.suborderId || 'Not assigned']] : []), ['Allergen', item.allergen?.name],
                 ...(!mrPortal ? [['Allergen identity', item.allergenId]] : []),
                 ['Concentration', item.allergen?.concentration], ['Skin test result (mm)', item.result],
