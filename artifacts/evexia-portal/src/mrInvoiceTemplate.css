@@ -1,0 +1,104 @@
+/* MR invoice samples: white A4 canvas in light and dark UI. Isolated mri- prefix. */
+.mri-frame { --mri-teal: #0f6e6a; --mri-teal-soft: #e6f2f1; --mri-slate: #2c3a47; --mri-muted: #5f6d78; --mri-rule: #cfd8dd; max-width: 100%; overflow: auto; }
+.mri-zoom { width: max-content; }
+.mri { box-sizing: border-box; width: 794px; min-height: 1123px; padding: 40px 44px 32px; background: #fff; color: var(--mri-slate);
+  font: 11px/1.5 "DM Sans", "Segoe UI", system-ui, sans-serif; color-scheme: light; position: relative; }
+.mri *, .mri *::before, .mri *::after { box-sizing: border-box; }
+.mri h3, .mri h4, .mri p, .mri dl, .mri ol { margin: 0; }
+.mri-banner { position: absolute; top: 12px; right: 44px; padding: 2px 10px; border: 1px dashed #b4552d; color: #8f3f1d; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.mri-head { display: grid; grid-template-columns: 120px 1fr auto; gap: 20px; align-items: start; padding-bottom: 16px; border-bottom: 2px solid var(--mri-teal); }
+.mri-logo { width: 120px; height: auto; object-fit: contain; }
+.mri-company { display: block; font-size: 15px; color: var(--mri-slate); }
+.mri-contact { color: var(--mri-muted); }
+.mri-pre { white-space: pre-line; overflow-wrap: anywhere; }
+.mri-value { overflow-wrap: anywhere; }
+.mri-empty { color: #66737e; font-style: italic; }
+.mri-prompt { padding: 6px 8px; background: #f3f5f6; border-left: 3px solid #b8c3ca; color: var(--mri-muted); font-style: italic; }
+.mri-title { text-align: right; }
+.mri-title span { display: block; font-size: 24px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--mri-teal); }
+.mri-title small { color: var(--mri-muted); }
+.mri-panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; }
+.mri-panel { padding: 10px 12px; border-top: 1px solid var(--mri-rule); }
+.mri h4 { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--mri-teal); margin: 0 0 6px; }
+.mri-panel h4:not(:first-child) { margin-top: 10px; }
+.mri-row { display: grid; grid-template-columns: 92px 1fr; gap: 6px; }
+.mri-row dt { color: var(--mri-muted); }
+.mri-row dd { margin: 0; }
+.mri-section-title { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--mri-slate); margin: 6px 0 8px !important; }
+.mri-table { width: 100%; border-collapse: collapse; }
+.mri-table th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: #fdfdfc; background: var(--mri-slate); padding: 6px 8px; }
+.mri-table td { padding: 7px 8px; border-bottom: 1px solid var(--mri-rule); }
+.mri-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.mri-summary { display: grid; grid-template-columns: 1fr 270px; gap: 24px; margin: 16px 0; }
+.mri-words span { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--mri-teal); }
+.mri-words small { display: block; margin-top: 6px; color: var(--mri-muted); }
+.mri-totals .mri-row { grid-template-columns: 1fr auto; padding: 3px 0; font-variant-numeric: tabular-nums; }
+.mri-total { margin-top: 4px; padding: 8px 10px !important; background: var(--mri-teal); color: #fdfdfc; font-size: 14px; font-weight: 700; }
+.mri-total dt { color: inherit !important; }
+.mri-pay { display: grid; grid-template-columns: 1fr 140px 170px; gap: 18px; align-items: start; padding: 14px 0; border-top: 1px solid var(--mri-rule); border-bottom: 1px solid var(--mri-rule); }
+.mri-qr { width: 140px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; padding: 8px;
+  border: 1.5px dashed #8a96a0; background: repeating-linear-gradient(45deg, #f1f4f5 0 6px, #e4e9ec 6px 12px); color: var(--mri-muted); }
+.mri-qr span { font-weight: 700; color: var(--mri-slate); }
+.mri-qr small { font-size: 8.5px; background: #fdfdfcd9; padding: 0 3px; }
+.mri-sign { text-align: center; color: var(--mri-muted); }
+.mri-sign__space { height: 64px; margin: 6px 0; border-bottom: 1px solid var(--mri-slate); }
+.mri-sign small { font-style: italic; }
+.mri-legal { padding-top: 12px; }
+.mri-legal h4:not(:first-child) { margin-top: 12px; }
+.mri-legal ol { padding-left: 18px; }
+.mri-legal li { margin-bottom: 3px; overflow-wrap: anywhere; }
+.mri-foot { margin-top: 20px; padding-top: 8px; border-top: 1px solid var(--mri-rule); font-size: 9px; text-align: center; color: var(--mri-muted); text-transform: uppercase; letter-spacing: .08em; }
+
+/* Reference Classic: bordered organization from the supplied reference. */
+.mri--classic { font-family: "Source Serif 4", Georgia, serif; --mri-teal: #2c3a47; }
+.mri--classic .mri-head { border: 1px solid var(--mri-slate); padding: 12px; border-bottom-width: 1px; }
+.mri--classic .mri-title span { font-size: 18px; letter-spacing: .2em; }
+.mri--classic .mri-panels { gap: 0; border: 1px solid var(--mri-slate); border-top: 0; margin-top: 0; }
+.mri--classic .mri-panel { border-top: 0; }
+.mri--classic .mri-panels .mri-panel + .mri-panel { border-left: 1px solid var(--mri-slate); }
+.mri--classic .mri-section-title { text-align: center; border: 1px solid var(--mri-slate); padding: 4px; margin: 0 !important; }
+.mri--classic .mri-table { border: 1px solid var(--mri-slate); border-top: 0; }
+.mri--classic .mri-table th { background: #eceff1; color: var(--mri-slate); border: 1px solid var(--mri-slate); }
+.mri--classic .mri-table td { border: 1px solid var(--mri-slate); }
+.mri--classic .mri-summary { border: 1px solid var(--mri-slate); border-top: 0; margin: 0; padding: 10px 12px; }
+.mri--classic .mri-total { background: transparent; color: var(--mri-slate); border-top: 2px solid var(--mri-slate); }
+.mri--classic .mri-pay { border: 1px solid var(--mri-slate); border-top: 0; padding: 12px; }
+.mri--classic .mri-legal { border: 1px solid var(--mri-slate); border-top: 0; padding: 12px; }
+
+.mri-frame--compact { height: 452px; overflow: hidden; pointer-events: none; }
+.mri-frame--compact .mri { transform: scale(.4); transform-origin: top left; }
+
+/* Invoice Details editor and history */
+.invd { display: grid; gap: 18px; }
+.invd-saved { padding: 12px 14px; border: 1px solid var(--admin-border, #cfd8dd); border-left: 4px solid #0f6e6a; border-radius: 8px; }
+.invd-groups { display: grid; gap: 16px; }
+.invd-group { border: 1px solid var(--admin-border, #cfd8dd); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.invd-group legend { font-weight: 700; padding: 0 6px; }
+.invd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 16px; }
+.invd-field { display: grid; gap: 4px; min-width: 0; }
+.invd-field--wide { grid-column: 1 / -1; }
+.invd-field input, .invd-field textarea { width: 100%; min-width: 0; font: inherit; }
+.invd-field textarea { resize: vertical; min-height: 72px; }
+.invd-count { font-size: 12px; opacity: .75; }
+.invd-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.invd-qr { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.invd-qr img { width: 160px; height: 160px; object-fit: contain; background: #fdfdfc; border: 1px solid #cfd8dd; border-radius: 6px; }
+.invd-compare { width: 100%; border-collapse: collapse; font-size: 13px; }
+.invd-compare th, .invd-compare td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--admin-border, #cfd8dd); white-space: pre-line; overflow-wrap: anywhere; }
+.invd-scroll { overflow-x: auto; }
+.invd-history ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.invd-history li.invd-rev { border: 1px solid var(--admin-border, #cfd8dd); border-radius: 10px; padding: 12px 14px; }
+.invd-rev__head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; margin-bottom: 8px; }
+.invd-blank { font-style: italic; opacity: .7; }
+.invd-skeleton { height: 64px; border-radius: 10px; background: linear-gradient(90deg, #8a96a022, #8a96a044, #8a96a022); }
+.invd-qr-view { display: grid; justify-items: center; gap: 10px; }
+.invd-qr-view img { max-width: min(100%, 360px); background: #fdfdfc; border: 1px solid #cfd8dd; }
+.invd-file-choice:focus-within { outline: 2px solid var(--admin-accent, #0f6e6a); outline-offset: 3px; }
+.invd, .invd-history, .invd-saved, .mri-access { min-width: 0; overflow-wrap: anywhere; }
+.invd-scroll:focus-visible { outline: 2px solid var(--admin-accent, #0f6e6a); outline-offset: 2px; }
+.mri-access { margin-bottom: 12px; }
+
+@media (max-width: 767px) {
+  .invd-grid { grid-template-columns: 1fr; }
+  .invd-actions > * { flex: 1 1 100%; }
+}

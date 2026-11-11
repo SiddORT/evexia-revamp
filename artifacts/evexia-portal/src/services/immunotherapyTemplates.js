@@ -18,7 +18,7 @@ export const IMMUNOTHERAPY_INVOICE_TEMPLATES = catalog('evexia-immunotherapy-inv
   'EVEXIA Immunotherapy order invoice · Supplied reference',
   'Portrait sample invoice with illustrative totals, fictional payment details, nonfunctional QR placeholder and unsigned authorization. Separate from supplier PO invoices.');
 
-function createSamplePreference({ type, label, templates }) {
+export function createSamplePreference({ type, label, templates }) {
   const key = `evexia.admin.${type}-template.v1`;
   const field = 'defaultTemplate';
   const defaultId = templates[0].id;

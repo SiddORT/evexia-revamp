@@ -346,6 +346,21 @@ symlink/traversal races, adapter/commit failures, interrupted cleanup, denied
 adapter-call assertions, grant expiry and response/log secrecy. PostgreSQL tests
 use isolated schemas, and concurrency tests independent committed connections.
 
+# Protected Invoice Details addition
+
+Invoice Details and append-only revisions are protected Super Admin-only,
+encrypted shared Settings content. They do not issue invoices or enforce legal
+or financial policy. QR images are bounded normalized PNG/JPEG pixels encrypted
+in the configured private local/S3-compatible adapter, with durable request
+reservations before publication, version-linked retained evidence and explicit
+serialized reconciliation. The database stores no QR bytes. The dedicated
+`invoice-settings/.../documents/....enc` namespace does not widen existing
+patient/MR/order file keys or grant access through general file endpoints.
+No public URL, presigned QR link or actual QR enters an invoice sample.
+Pending staging cleanup cannot remove committed historical evidence.
+See `docs/invoice-details-and-templates.md` for storage, retention, encryption
+and source-only delivery limits. Forward schema is prepared, not executed.
+
 # Stock-enabled product extension
 
 The Product Master successor extends the authoritative inventory lot identity.

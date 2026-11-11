@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
+import { MR_INVOICE_TEMPLATES, mrInvoiceTemplatePreference, makeSampleMRInvoiceDocument } from '../../services/mrInvoiceTemplates.js';
+import { loadInvoiceSettings } from '../../services/serverInvoiceSettings.js';
+import MRInvoiceTemplateDocument from './MRInvoiceTemplateDocument.jsx';
+import MRInvoiceTemplatePreviewDialog from './MRInvoiceTemplatePreviewDialog.jsx';
 import { useAdminPreferences } from './adminPreferences.js';
 import '../../poTemplateSettings.css';
 import { PO_TEMPLATES, loadPOTemplatePreference, setDefaultPOTemplate, resetPOTemplatePreference, subscribePOTemplatePreference, makeSampleInvoiceDocument } from '../../services/poInvoiceTemplates.js';
@@ -56,6 +61,12 @@ const DOCUMENT_TYPES = {
     'Supplied Shipping address panel with fictional recipient and checking details. Inspect the enlarged panel or full reference sheet framing; no live order shipping document or download.'),
   'immunotherapy-invoice': sampleDocumentType('immunotherapy-invoice', 'Immunotherapy order invoice', IMMUNOTHERAPY_INVOICE_TEMPLATES, immunotherapyInvoiceTemplatePreference,
     'Supplied Immunotherapy order invoice layout, distinct from supplier PO invoices. Fictional data and illustrative totals only; no production tax rules, live payment QR, bank details, issued invoice or download.'),
+  'mr-invoice': {
+    ...mrInvoiceTemplatePreference, label: 'MR invoice', templates: MR_INVOICE_TEMPLATES, isSampleDocument: true, isMRInvoice: true,
+    sample: (id, _preferences, context) => makeSampleMRInvoiceDocument(id, context?.snapshot ?? null, context?.access ?? 'restricted'),
+    Renderer: MRInvoiceTemplateDocument,
+    description: 'MR invoice A4 samples. Doctor, patient, order, product and amount values are fictional; issuer, license, bank and legal sections come from one saved Invoice Details version. The QR area is a non-scannable placeholder. Not an issued invoice; no printing, payment or download.',
+  },
 };
 
 function documentType(type) {
@@ -68,16 +79,16 @@ function readDefault(type) {
   catch (e) { return { id: null, error: e?.message || 'Saved template preference could not be loaded.' }; }
 }
 
-function Preview({ id, type }) {
+function Preview({ id, type, context }) {
   const preferences = useAdminPreferences();
   const config = documentType(type);
   const Renderer = config.Renderer;
   const doc = useMemo(() => {
     try {
-      const d = config.sample(id, preferences);
+      const d = config.sample(id, preferences, context);
       return config.isLabel || config.isSampleDocument ? d : { ...d, pages: d.pages.slice(0, 1) };
     } catch { return null; }
-  }, [id, type, preferences]);
+  }, [id, type, preferences, context]);
   if (!doc) return <p role="alert">Preview unavailable.</p>;
   return <Renderer document={doc} compact />;
 }
@@ -86,7 +97,7 @@ export default function POTemplateSettings() {
   const [docType, setDocType] = useState('po');
   return <section className="admin-panel admin-settings__section" aria-labelledby="templates-heading">
     <h2 id="templates-heading">Templates</h2>
-    <p>Choose PO invoice, PR receipt, Box labels, Bottle labels, Instructions, Abroad letter, Shipping address and Immunotherapy order invoice templates. All eight defaults are saved independently in this browser only. PO and PR retain their existing previews and on-device PDFs. Labels and the four Immunotherapy documents are Settings samples only, not connected to live order actions, printing, payments or downloads.</p>
+    <p>Choose PO invoice, PR receipt, Box labels, Bottle labels, Instructions, Abroad letter, Shipping address, Immunotherapy order invoice and MR invoice templates. All nine style defaults are saved independently in this browser only. PO and PR retain their existing previews and on-device PDFs. Labels, the four Immunotherapy documents and MR invoice are Settings samples only, not connected to live order actions, printing, payments or downloads.</p>
     <div className="admin-settings__field">
       <label htmlFor="document-type">Document type</label>
       <select id="document-type" className="admin-select" value={docType} onChange={(event) => setDocType(event.target.value)}>
@@ -98,13 +109,60 @@ export default function POTemplateSettings() {
         <option value="abroad-letter">Abroad letter</option>
         <option value="shipping-address">Shipping address</option>
         <option value="immunotherapy-invoice">Immunotherapy order invoice</option>
+        <option value="mr-invoice">MR invoice</option>
       </select>
     </div>
-    <TemplateGallery key={docType} docType={docType} />
+    {docType === 'mr-invoice' ? <MRInvoiceGallery key={docType} /> : <TemplateGallery key={docType} docType={docType} />}
   </section>;
 }
 
-function TemplateGallery({ docType }) {
+// Loads one immutable saved Invoice Details version for protected Super Admin only.
+// Other identities never request shared details, bank data, history or QR bytes.
+function MRInvoiceGallery() {
+  const session = useAdminSession();
+  const allowed = session?.user?.identity_kind === 'super_admin';
+  const owner = session?.user?.id;
+  const [snapshot, setSnapshot] = useState(null);
+  const [snapshotOwner, setSnapshotOwner] = useState(null);
+  const [status, setStatus] = useState(allowed ? 'loading' : 'restricted');
+  const sequence = useRef(0);
+  async function load() {
+    if (!allowed) return;
+    const seq = ++sequence.current;
+    setStatus('loading');
+    try {
+      const next = await loadInvoiceSettings();
+      if (seq !== sequence.current) return;
+      setSnapshot(next); setSnapshotOwner(owner); setStatus('protected');
+    } catch {
+      if (seq === sequence.current) { setSnapshot(null); setSnapshotOwner(null); setStatus('unavailable'); }
+    }
+  }
+  useEffect(() => {
+    setSnapshot(null); setSnapshotOwner(null); setStatus(allowed ? 'loading' : 'restricted');
+    load();
+    return () => { sequence.current++; };
+  }, [allowed, owner]);
+  // Do not wait for an effect to remove a previous identity's protected data.
+  const visibleSnapshot = allowed && snapshotOwner === owner ? snapshot : null;
+  const access = !allowed ? 'restricted' : snapshotOwner && snapshotOwner !== owner ? 'loading' : status;
+  const context = useMemo(() => Object.freeze({ snapshot: visibleSnapshot, access }), [visibleSnapshot, access]);
+  return <div>
+    <div className={`admin-feedback mri-access${access === 'unavailable' ? ' admin-feedback--error' : ''}`} role={access === 'unavailable' ? 'alert' : 'status'} data-testid="status-mr-invoice-details">
+      {access === 'restricted' && 'Style previews only. Issuer, license, bank and legal details come from protected Invoice Details configuration managed by the protected Super Admin, so they are not shown here.'}
+      {access === 'loading' && 'Loading saved Invoice Details for the samples…'}
+      {access === 'unavailable' && 'Saved Invoice Details could not be loaded. Samples show no issuer, bank or legal details until you retry.'}
+      {access === 'protected' && (visibleSnapshot?.configured
+        ? `Samples use saved Invoice Details version ${visibleSnapshot.version}. Unsaved edits in Invoice Details are never used here.`
+        : 'Invoice Details are not configured yet. Add them in Settings → Invoice Details; no fallback company or payment information is shown.')}
+      {allowed && access !== 'loading' && <button type="button" className="admin-button admin-button--secondary" style={{ marginLeft: 12 }} data-testid="button-reload-mr-invoice-details" onClick={load}>
+        {access === 'unavailable' ? 'Retry loading details' : 'Reload saved details'}</button>}
+    </div>
+    <TemplateGallery key={`${owner}:${allowed}`} docType="mr-invoice" context={context} />
+  </div>;
+}
+
+function TemplateGallery({ docType, context }) {
   const [state, setState] = useState(() => readDefault(docType));
   const [status, setStatus] = useState('');
   const [saveError, setSaveError] = useState('');
@@ -157,7 +215,7 @@ function TemplateGallery({ docType }) {
       {templates.map((t) => {
         const isDefault = t.id === defaultId;
         return <li key={t.id} className={`po-tpl__card${isDefault ? ' po-tpl__card--default' : ''}`}>
-          <div className={`po-tpl__preview${config.isLabel || config.isSampleDocument ? ' po-tpl__preview--label' : ''}`}><Preview id={t.id} type={docType} /></div>
+          <div className={`po-tpl__preview${config.isLabel || config.isSampleDocument ? ' po-tpl__preview--label' : ''}`}><Preview id={t.id} type={docType} context={context} /></div>
           <span className="po-tpl__sample">Sample · Preview only</span>
           <div className="po-tpl__head"><strong>{t.name}</strong>{isDefault && <span className="admin-badge">Default</span>}</div>
           <p>{t.description}</p>
@@ -170,7 +228,9 @@ function TemplateGallery({ docType }) {
     </ul>
     {!state.error && <button type="button" className="admin-button admin-button--secondary" style={{ marginTop: 18 }} onClick={() => { setResetError(''); setResetting(true); }}>Reset {label} preference</button>}
     {resetting && <ConfirmationDialog title={`Reset the ${label} template preference?`} description={`Only this browser’s ${label} template choice will be reset to ${resetName}. Other template choices and saved orders and receipts will not be changed.`} actionLabel={`Reset ${label} preference`} onConfirm={resetDefault} onClose={() => setResetting(false)} error={resetError} />}
-    {enlarged && (config.isSampleDocument
+    {enlarged && (config.isMRInvoice
+      ? <MRInvoiceTemplatePreviewDialog template={enlarged} document={config.sample(enlarged.id, null, context)} onClose={() => setEnlarged(null)} />
+      : config.isSampleDocument
       ? <ImmunotherapyTemplatePreviewDialog template={enlarged} document={config.sample(enlarged.id)} onClose={() => setEnlarged(null)} />
       : <LabelTemplatePreviewDialog template={enlarged} document={config.sample(enlarged.id)} onClose={() => setEnlarged(null)} />)}
   </div>;

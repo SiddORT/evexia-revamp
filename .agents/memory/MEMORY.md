@@ -124,3 +124,4 @@
 - [Allergen expiry cost authority](allergen-expiry-cost-policy.md) — Kolkata expiry-day exclusion, actual cost only, immutable past loss and no automatic digest replay.
 - [Immunotherapy extract policy](immunotherapy-extract-policy.md) — smaller bottles use the same ranked table; configured values never authorize clinical inference or historical reapplication.
 - [Previous order dosage policy](previous-order-dosage-policy.md) — editable entry assistance uses authorized saved orders, not administration evidence; PD/DD stay optional and B8 has no successor.
+- [MR invoice approval boundary](mr-invoice-approval-boundary.md) — the new Settings-only MR invoice does not authorize retrofitting the older Immunotherapy order invoice.

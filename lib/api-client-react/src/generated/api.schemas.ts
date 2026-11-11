@@ -17083,3 +17083,195 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
+
+
+
+export interface InvoiceActor {
+  id: string;
+  label: string;
+}
+
+
+export interface InvoiceChange {
+  after: string;
+  before: string;
+  field: string;
+}
+
+
+export interface InvoiceDetails {
+  /** @maxLength 200 */
+  account_holder?: string;
+  /** @maxLength 200 */
+  account_number?: string;
+  /** @maxLength 2000 */
+  address?: string;
+  /** @maxLength 200 */
+  bank_name?: string;
+  /** @maxLength 200 */
+  branch?: string;
+  /** @maxLength 200 */
+  company_name?: string;
+  /** @maxLength 200 */
+  customer_care?: string;
+  /** @maxLength 4000 */
+  declaration?: string;
+  /** @maxLength 1000 */
+  drug_licenses?: string;
+  /** @maxLength 200 */
+  email?: string;
+  /** @maxLength 200 */
+  gstin?: string;
+  /** @maxLength 200 */
+  ifsc?: string;
+  /** @maxLength 200 */
+  pan?: string;
+  /** @maxLength 200 */
+  payment_on?: string;
+  /** @maxLength 12000 */
+  terms?: string;
+  /** @maxLength 200 */
+  upi_id?: string;
+  /** @maxLength 200 */
+  website?: string;
+}
+
+
+export type InvoiceQRMetadataContentType =
+  (typeof InvoiceQRMetadataContentType)[keyof typeof InvoiceQRMetadataContentType];
+
+
+export const InvoiceQRMetadataContentType = {
+  "image/png": "image/png",
+  "image/jpeg": "image/jpeg",
+} as const;
+
+
+export interface InvoiceQRMetadata {
+  content_type: InvoiceQRMetadataContentType;
+  sha256: string;
+  size: number;
+  version: number;
+}
+
+
+export interface InvoiceRevisionView {
+  actor: InvoiceActor;
+  changed_at: string;
+  changes: InvoiceChange[];
+  qr_after: InvoiceQRMetadata | null;
+  qr_before: InvoiceQRMetadata | null;
+  version: number;
+}
+
+
+export interface InvoiceHistoryView {
+  items: InvoiceRevisionView[];
+  next_before_version: number | null;
+}
+
+
+export type InvoiceQRInputContentType =
+  (typeof InvoiceQRInputContentType)[keyof typeof InvoiceQRInputContentType];
+
+
+export const InvoiceQRInputContentType = {
+  "image/png": "image/png",
+  "image/jpeg": "image/jpeg",
+} as const;
+
+
+export interface InvoiceQRInput {
+  /**
+   * @minLength 1
+   * @maxLength 699052
+   */
+  base64: string;
+  content_type: InvoiceQRInputContentType;
+}
+
+
+export type InvoiceQRViewContentType =
+  (typeof InvoiceQRViewContentType)[keyof typeof InvoiceQRViewContentType];
+
+
+export const InvoiceQRViewContentType = {
+  "image/png": "image/png",
+  "image/jpeg": "image/jpeg",
+} as const;
+
+
+export interface InvoiceQRView {
+  /**
+   * @minLength 1
+   * @maxLength 699052
+   */
+  base64: string;
+  content_type: InvoiceQRViewContentType;
+  version: number;
+}
+
+
+export interface InvoiceReconcileInput {
+  [key: string]: unknown;
+}
+
+
+export type InvoiceReconcileViewOutcome =
+  (typeof InvoiceReconcileViewOutcome)[keyof typeof InvoiceReconcileViewOutcome];
+
+
+export const InvoiceReconcileViewOutcome = {
+  committed: "committed",
+  cancelled: "cancelled",
+} as const;
+
+
+export interface InvoiceSettingsView {
+  configured: boolean;
+  details: InvoiceDetails;
+  qr: InvoiceQRMetadata | null;
+  updated_at: string | null;
+  version: number;
+}
+
+
+export interface InvoiceReconcileView {
+  committed_version: number | null;
+  outcome: InvoiceReconcileViewOutcome;
+  saved: InvoiceSettingsView;
+}
+
+
+export type InvoiceSettingsWriteQrAction =
+  (typeof InvoiceSettingsWriteQrAction)[keyof typeof InvoiceSettingsWriteQrAction];
+
+
+export const InvoiceSettingsWriteQrAction = {
+  keep: "keep",
+  remove: "remove",
+  replace: "replace",
+} as const;
+
+
+export interface InvoiceSettingsWrite {
+  details: InvoiceDetails;
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  qr_action: InvoiceSettingsWriteQrAction;
+  qr_data?: InvoiceQRInput | null;
+  request_id: string;
+}
+
+
+export type ListInvoiceSettingsHistoryParams = {
+  before_version?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 20
+   */
+  limit?: number;
+};

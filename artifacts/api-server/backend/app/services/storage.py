@@ -16,9 +16,10 @@ from app.core.config import Settings
 
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 _KEY = re.compile(
-    rf"^(patients|mrs|kits|lupin)/({_UUID})/(profile|documents)/({_UUID})\.(jpg|jpeg|png|pdf|webp)$"
+    rf"^(patients|mrs|kits|lupin|invoice-settings)/({_UUID})/(profile|documents)/({_UUID})\.(jpg|jpeg|png|pdf|webp|enc)$"
 )
 _CONTENT_TYPES = {
+    "enc": "application/octet-stream",
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
     "png": "image/png",
@@ -53,12 +54,16 @@ def object_key(
     extension: str,
 ) -> str:
     """Create a canonical, backend-independent key from trusted identifiers."""
-    if owner_type not in ("patients", "mrs", "kits", "lupin"):
+    if owner_type not in ("patients", "mrs", "kits", "lupin", "invoice-settings"):
         raise ValueError("Unsupported private owner type")
     if category not in ("profile", "documents"):
         raise ValueError("Category must be profile or documents")
     if extension not in _CONTENT_TYPES:
         raise ValueError("Unsupported file extension")
+    if (owner_type == "invoice-settings") != (extension == "enc"):
+        raise ValueError("Invalid encrypted object namespace")
+    if owner_type == "invoice-settings" and category != "documents":
+        raise ValueError("Invalid invoice configuration object category")
     return (
         f"{owner_type}/{_canonical_uuid(owner_uuid)}/{category}/"
         f"{_canonical_uuid(file_uuid)}.{extension}"
@@ -70,6 +75,11 @@ def _validate_key(key: str) -> tuple[str, str]:
         raise ValueError("Invalid logical object key")
     match = _KEY.fullmatch(key)
     assert match is not None
+    # The new encrypted namespace must not widen existing file contracts.
+    if (match.group(1) == "invoice-settings") != (match.group(5) == "enc"):
+        raise ValueError("Invalid encrypted object namespace")
+    if match.group(1) == "invoice-settings" and match.group(3) != "documents":
+        raise ValueError("Invalid invoice configuration object category")
     return match.group(5), match.group(4)
 
 

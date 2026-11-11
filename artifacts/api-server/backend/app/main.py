@@ -74,6 +74,7 @@ from app.services.purchase_orders import POError
 from app.api.v1.immunotherapy import router as immunotherapy_router
 from app.api.v1.immunotherapy_extract import router as immunotherapy_extract_router
 from app.api.v1.gst_settings import router as gst_settings_router
+from app.api.v1.invoice_settings import router as invoice_settings_router
 from app.api.v1.kits import router as kits_router
 from app.api.v1.spt import router as spt_router
 from app.api.v1.lupin import router as lupin_router
@@ -211,6 +212,16 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
+        if request.url.path.startswith("/api/v1/admin/invoice-settings"):
+            # Neither arbitrary property names nor supplied invoice values may
+            # enter error envelopes, generic audit metadata or logs.
+            from app.schemas.invoice_settings import InvoiceDetails
+            allowed = {f"body.details.{key}" for key in InvoiceDetails.model_fields}
+            allowed |= {"body.expected_version", "body.request_id", "body.qr_action", "body.qr_data",
+                        "body.qr_data.content_type", "body.qr_data.base64",
+                        "query.before_version", "query.limit", "path.version", "path.request_id"}
+            fields = [{"field": item["field"] if item["field"] in allowed else "body",
+                       "code": item["code"]} for item in fields]
         if request.url.path.startswith("/api/v1/admin/pricing-rules"):
             # Return known locations only, never authored prices or arbitrary keys.
             allowed = {"categoryId", "allergenIds", "cutoff", "beforeRate", "afterRate",
@@ -423,6 +434,7 @@ def create_app() -> FastAPI:
     app.include_router(immunotherapy_router, prefix="/api/v1")
     app.include_router(immunotherapy_extract_router, prefix="/api/v1")
     app.include_router(gst_settings_router, prefix="/api/v1")
+    app.include_router(invoice_settings_router, prefix="/api/v1")
     app.include_router(kits_router, prefix="/api/v1")
     app.include_router(spt_router, prefix="/api/v1")
     app.include_router(lupin_router, prefix="/api/v1")

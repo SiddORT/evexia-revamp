@@ -53,6 +53,12 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0089_invoice_settings"]:
+            from app.services.invoice_settings import ready as invoice_settings_ready
+            invoice_settings_ready(db)
+            from app.services.purchase_received_crypto import ReceiptCrypto
+            ReceiptCrypto(get_settings())
+            revisions = ["0088_gst_settings"]
         if revisions == ["0088_gst_settings"]:
             db.execute(text("SELECT id,version,cutoff_date,before_rate,on_after_rate FROM gst_settings LIMIT 0"))
             revisions = ["0087_pricing_rule_categories"]

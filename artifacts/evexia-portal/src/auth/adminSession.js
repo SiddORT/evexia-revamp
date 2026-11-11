@@ -1048,6 +1048,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'gst-settings'
     ? /^$/
+    : resource === 'invoice-settings'
+    ? /^(?:|\/history|\/qr\/[1-9][0-9]{0,9}|\/requests\/[0-9a-f-]{36}\/reconcile)$/i
     : resource === 'immunotherapy-extract-settings'
     ? /^\/(?:categories|[0-9a-f-]{36})$/i
     : resource === 'settlements'
@@ -1087,6 +1089,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (resource === 'invoice-settings' && (file !== undefined || download || method !== undefined
+    || (writing && path !== '' && !/^\/requests\/[0-9a-f-]{36}\/reconcile$/i.test(path))
+    || (!writing && path.endsWith('/reconcile')))) {
+    throw new SessionError('Unsupported Invoice Details operation.');
+  }
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
     || (writing && path !== '' && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
     || (!writing && path.endsWith('/edit')))) {
@@ -1110,6 +1117,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const owner = state.user?.id;
   const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
   const gstSettingsOperation = resource === 'gst-settings';
+  const invoiceSettingsOperation = resource === 'invoice-settings';
   const extractSettingsOperation = resource === 'immunotherapy-extract-settings';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
@@ -1123,6 +1131,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     if (gstSettingsOperation && !isSuperAdminIdentity(state.user)) {
       throw new SessionError('GST Settings require the protected Super Admin.', 403);
+    }
+    if (invoiceSettingsOperation && !isSuperAdminIdentity(state.user)) {
+      throw new SessionError('Invoice Details require the protected Super Admin.', 403);
     }
     if (resource === 'settlements' && (writing ? state.user?.identity_kind !== 'mr'
       : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
@@ -1149,7 +1160,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       mutation, reason, status: response?.status || 0, code: data?.error?.code,
       requestId: response?.headers.get('X-Request-ID') || data?.error?.request_id,
     });
-    const error = new SessionError(resource === 'pricing-rules'
+    const error = new SessionError(invoiceSettingsOperation
+      ? mutation ? 'Invoice Details save outcome is unconfirmed. Your edits are preserved. Reconcile this save before trying again.'
+        : 'Invoice Details could not be loaded. Your edits are preserved; retry loading.'
+      : resource === 'pricing-rules'
       ? mutation ? 'Pricing Rule save outcome is unconfirmed. Your editor is preserved. Retry only the unchanged submission to confirm or finish it safely.'
         : reason === 'response' ? `${pricingReadLabel} could not be loaded because the service returned an invalid response. ${pricingReadAction}`
         : reason === 'service' ? `${pricingReadLabel} are unavailable from the service. ${pricingReadAction}`
@@ -1210,7 +1224,13 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       error.ambiguous = mutation;
       throw error;
     }
-    const error = new SessionError(resource === 'pricing-rules'
+    const error = new SessionError(invoiceSettingsOperation
+      ? response.status === 403 ? 'Invoice Details require the protected Super Admin.'
+        : response.status === 409 ? 'Invoice Details changed or this save identity was closed. Load saved values and compare your kept edits.'
+        : response.status === 422 ? 'Check the highlighted Invoice Details fields and QR image limits. Your edits are preserved.'
+        : [404, 405].includes(response.status) ? 'Invoice Details are unavailable. The prepared API and schema need approved activation.'
+        : uncertain('service').message
+      : resource === 'pricing-rules'
       ? response.status === 403 ? 'Pricing Rules require the protected Super Admin.'
         : response.status >= 500 ? uncertain('service').message
         : pricingChoices ? data?.error?.code === 'pricing_rule_category'
@@ -1257,6 +1277,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : error.code === 'imm_admin_review' ? 'Use Approve order or Reject order on a pending saved order. Approval moves it directly to In process; ordinary status edits and imports cannot make that decision. Your draft is preserved.'
         : 'Some Immunotherapy order fields are invalid. Check required results in mm, bottle allergens, Admin rates, optional PO length, patient assignments and prescriptions. Your draft is preserved.';
     }
+    if (invoiceSettingsOperation) {
+      error.ambiguous = mutation && response.status >= 500;
+      error.fields = Array.isArray(data?.error?.fields) ? data.error.fields : [];
+    }
     if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');
     if (resource === 'in-house-stock' && response.status === 422) attachMasterValidation(error, data, 'In-house stock');
     if (batchOperation && path === '/batch-settings') {
@@ -1269,6 +1293,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       }
     }
     throw error;
+  }
+  if (invoiceSettingsOperation) {
+    // The focused Invoice Details adapter validates its own settings/history/QR
+    // contracts. These are never PurchaseOrder records or generic local actions.
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw uncertain('response');
+    return data;
   }
   if (mutation && resource === 'pricing-rules') {
     // This is a PricingRule, not a PurchaseOrder (no number or lines).

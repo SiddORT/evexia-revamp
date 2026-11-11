@@ -1,5 +1,15 @@
 # Automatic migration policy
 
+Invoice Details and the distinct MR invoice template category are Settings-only.
+Protected shared issuer/payment/legal configuration has encrypted append-only
+history; template style defaults remain browser-local. MR Accounts, live
+invoice issuance, order actions and payment collection are not connected.
+The prepared `0089_invoice_settings` schema is unapplied by this work. This
+delivery is source-reviewed only: no tests, checks, builds, typechecks,
+regression/release/completion-validation wrappers, runtime/browser probes,
+service starts/restarts, migrations, deployment or live writes were performed.
+See `docs/invoice-details-and-templates.md`.
+
 GST Settings is protected Super Admin shared configuration only: one literal
 calendar cutoff and exact before/on-or-after percentages, with no invented
 initial values. The exact cutoff belongs to on/after. Do not apply it to orders,

@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { InvoiceHistoryView, InvoiceQRView, InvoiceReconcileInput, InvoiceReconcileView, InvoiceSettingsView, InvoiceSettingsWrite, ListInvoiceSettingsHistoryParams } from "./api.schemas";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   MutationFunction,
@@ -46698,3 +46699,563 @@ export function useGetVersion<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+export const getGetInvoiceSettingsUrl = () => {
+  return `/api/v1/admin/invoice-settings`;
+};
+
+
+/**
+ * @summary Read
+ */
+export const getInvoiceSettings = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvoiceSettingsView> => {
+  return customFetch<InvoiceSettingsView>(getGetInvoiceSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+
+export const getGetInvoiceSettingsQueryKey = () => {
+  return [`/api/v1/admin/invoice-settings`] as const;
+};
+
+
+export const getGetInvoiceSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInvoiceSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getInvoiceSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetInvoiceSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInvoiceSettings>>
+  > = ({ signal }) => getInvoiceSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInvoiceSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+
+export type GetInvoiceSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInvoiceSettings>>
+>;
+
+
+export type GetInvoiceSettingsQueryError = ErrorType<ErrorEnvelope>;
+
+
+/**
+ * @summary Read
+ */
+
+export function useGetInvoiceSettings<
+  TData = Awaited<ReturnType<typeof getInvoiceSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getInvoiceSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInvoiceSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+export const getSaveInvoiceSettingsUrl = () => {
+  return `/api/v1/admin/invoice-settings`;
+};
+
+
+/**
+ * @summary Write
+ */
+export const saveInvoiceSettings = async (
+  invoiceSettingsWrite: InvoiceSettingsWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvoiceSettingsView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<InvoiceSettingsView>(getSaveInvoiceSettingsUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(invoiceSettingsWrite),
+  });
+};
+
+
+export const getSaveInvoiceSettingsMutationKey = () =>
+  ["saveInvoiceSettings"] as const;
+
+
+export const getSaveInvoiceSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveInvoiceSettings>>,
+    TError,
+    SaveInvoiceSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveInvoiceSettings>>,
+  TError,
+  SaveInvoiceSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSaveInvoiceSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveInvoiceSettings>>,
+    SaveInvoiceSettingsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return saveInvoiceSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+
+export type SaveInvoiceSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveInvoiceSettings>>
+>;
+
+
+export type SaveInvoiceSettingsMutationBody = BodyType<InvoiceSettingsWrite>;
+
+
+export type SaveInvoiceSettingsMutationError = ErrorType<ErrorEnvelope>;
+
+
+export type SaveInvoiceSettingsMutationVariables = {
+  data: BodyType<InvoiceSettingsWrite>;
+};
+
+
+/**
+ * @summary Write
+ */
+export const useSaveInvoiceSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveInvoiceSettings>>,
+    TError,
+    SaveInvoiceSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveInvoiceSettings>>,
+  TError,
+  SaveInvoiceSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getSaveInvoiceSettingsMutationOptions(options));
+};
+
+
+export const getListInvoiceSettingsHistoryUrl = (
+  params?: ListInvoiceSettingsHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/invoice-settings/history?${stringifiedParams}`
+    : `/api/v1/admin/invoice-settings/history`;
+};
+
+
+/**
+ * @summary History
+ */
+export const listInvoiceSettingsHistory = async (
+  params?: ListInvoiceSettingsHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvoiceHistoryView> => {
+  return customFetch<InvoiceHistoryView>(
+    getListInvoiceSettingsHistoryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+
+export const getListInvoiceSettingsHistoryQueryKey = (
+  params?: ListInvoiceSettingsHistoryParams,
+) => {
+  return [
+    `/api/v1/admin/invoice-settings/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+
+export const getListInvoiceSettingsHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInvoiceSettingsHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInvoiceSettingsHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInvoiceSettingsHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInvoiceSettingsHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInvoiceSettingsHistory>>
+  > = ({ signal }) =>
+    listInvoiceSettingsHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInvoiceSettingsHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+
+export type ListInvoiceSettingsHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInvoiceSettingsHistory>>
+>;
+
+
+export type ListInvoiceSettingsHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+
+/**
+ * @summary History
+ */
+
+export function useListInvoiceSettingsHistory<
+  TData = Awaited<ReturnType<typeof listInvoiceSettingsHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInvoiceSettingsHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInvoiceSettingsHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInvoiceSettingsHistoryQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+export const getGetInvoiceSettingsQRUrl = (version: number) => {
+  return `/api/v1/admin/invoice-settings/qr/${version}`;
+};
+
+
+/**
+ * @summary Qr
+ */
+export const getInvoiceSettingsQR = async (
+  version: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvoiceQRView> => {
+  return customFetch<InvoiceQRView>(getGetInvoiceSettingsQRUrl(version), {
+    ...options,
+    method: "GET",
+  });
+};
+
+
+export const getGetInvoiceSettingsQRQueryKey = (version: number) => {
+  return [`/api/v1/admin/invoice-settings/qr/${version}`] as const;
+};
+
+
+export const getGetInvoiceSettingsQRQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInvoiceSettingsQR>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  version: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInvoiceSettingsQR>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInvoiceSettingsQRQueryKey(version);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInvoiceSettingsQR>>
+  > = ({ signal }) =>
+    getInvoiceSettingsQR(version, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: version !== null && version !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInvoiceSettingsQR>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+
+export type GetInvoiceSettingsQRQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInvoiceSettingsQR>>
+>;
+
+
+export type GetInvoiceSettingsQRQueryError = ErrorType<ErrorEnvelope>;
+
+
+/**
+ * @summary Qr
+ */
+
+export function useGetInvoiceSettingsQR<
+  TData = Awaited<ReturnType<typeof getInvoiceSettingsQR>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  version: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInvoiceSettingsQR>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInvoiceSettingsQRQueryOptions(version, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+export const getReconcileInvoiceSettingsUrl = (requestId: string) => {
+  return `/api/v1/admin/invoice-settings/requests/${requestId}/reconcile`;
+};
+
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileInvoiceSettings = async (
+  requestId: string,
+  invoiceReconcileInput: InvoiceReconcileInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvoiceReconcileView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<InvoiceReconcileView>(
+    getReconcileInvoiceSettingsUrl(requestId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(invoiceReconcileInput),
+    },
+  );
+};
+
+
+export const getReconcileInvoiceSettingsMutationKey = () =>
+  ["reconcileInvoiceSettings"] as const;
+
+
+export const getReconcileInvoiceSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reconcileInvoiceSettings>>,
+    TError,
+    ReconcileInvoiceSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reconcileInvoiceSettings>>,
+  TError,
+  ReconcileInvoiceSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReconcileInvoiceSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reconcileInvoiceSettings>>,
+    ReconcileInvoiceSettingsMutationVariables
+  > = (props) => {
+    const { requestId, data } = props ?? {};
+
+    return reconcileInvoiceSettings(requestId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+
+export type ReconcileInvoiceSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileInvoiceSettings>>
+>;
+
+
+export type ReconcileInvoiceSettingsMutationBody =
+  BodyType<InvoiceReconcileInput>;
+
+
+export type ReconcileInvoiceSettingsMutationError = ErrorType<ErrorEnvelope>;
+
+
+export type ReconcileInvoiceSettingsMutationVariables = {
+  requestId: string;
+  data: BodyType<InvoiceReconcileInput>;
+};
+
+
+/**
+ * @summary Reconcile
+ */
+export const useReconcileInvoiceSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reconcileInvoiceSettings>>,
+    TError,
+    ReconcileInvoiceSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reconcileInvoiceSettings>>,
+  TError,
+  ReconcileInvoiceSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getReconcileInvoiceSettingsMutationOptions(options));
+};

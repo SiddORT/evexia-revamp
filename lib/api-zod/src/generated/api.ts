@@ -46774,3 +46774,904 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+
+
+export const getInvoiceSettingsResponseDetailsAccountHolderMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsAccountNumberMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsAddressMax = 2000;
+
+
+export const getInvoiceSettingsResponseDetailsBankNameMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsBranchMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsCompanyNameMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsCustomerCareMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsDeclarationMax = 4000;
+
+
+export const getInvoiceSettingsResponseDetailsDrugLicensesMax = 1000;
+
+
+export const getInvoiceSettingsResponseDetailsEmailMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsGstinMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsIfscMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsPanMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsPaymentOnMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsTermsMax = 12000;
+
+
+export const getInvoiceSettingsResponseDetailsUpiIdMax = 200;
+
+
+export const getInvoiceSettingsResponseDetailsWebsiteMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsAccountHolderMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsAccountNumberMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsAddressMax = 2000;
+
+
+export const saveInvoiceSettingsBodyDetailsBankNameMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsBranchMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsCompanyNameMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsCustomerCareMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsDeclarationMax = 4000;
+
+
+export const saveInvoiceSettingsBodyDetailsDrugLicensesMax = 1000;
+
+
+export const saveInvoiceSettingsBodyDetailsEmailMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsGstinMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsIfscMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsPanMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsPaymentOnMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsTermsMax = 12000;
+
+
+export const saveInvoiceSettingsBodyDetailsUpiIdMax = 200;
+
+
+export const saveInvoiceSettingsBodyDetailsWebsiteMax = 200;
+
+
+export const saveInvoiceSettingsBodyExpectedVersionMin = 0;
+
+
+export const saveInvoiceSettingsBodyExpectedVersionMax = 2147483646;
+
+
+export const saveInvoiceSettingsBodyQrDataOneBase64Max = 699052;
+
+
+export const saveInvoiceSettingsResponseDetailsAccountHolderMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsAccountNumberMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsAddressMax = 2000;
+
+
+export const saveInvoiceSettingsResponseDetailsBankNameMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsBranchMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsCompanyNameMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsCustomerCareMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsDeclarationMax = 4000;
+
+
+export const saveInvoiceSettingsResponseDetailsDrugLicensesMax = 1000;
+
+
+export const saveInvoiceSettingsResponseDetailsEmailMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsGstinMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsIfscMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsPanMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsPaymentOnMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsTermsMax = 12000;
+
+
+export const saveInvoiceSettingsResponseDetailsUpiIdMax = 200;
+
+
+export const saveInvoiceSettingsResponseDetailsWebsiteMax = 200;
+
+
+export const listInvoiceSettingsHistoryQueryBeforeVersionOneMax = 2147483647;
+
+
+export const listInvoiceSettingsHistoryQueryLimitDefault = 10;
+
+
+export const listInvoiceSettingsHistoryQueryLimitMax = 20;
+
+
+export const getInvoiceSettingsQRPathVersionMax = 2147483647;
+
+
+export const getInvoiceSettingsQRResponseBase64Max = 699052;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsAccountHolderMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsAccountNumberMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsAddressMax = 2000;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsBankNameMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsBranchMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsCompanyNameMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsCustomerCareMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsDeclarationMax = 4000;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsDrugLicensesMax = 1000;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsEmailMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsGstinMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsIfscMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsPanMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsPaymentOnMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsTermsMax = 12000;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsUpiIdMax = 200;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsWebsiteMax = 200;
+
+
+/**
+ * @summary Read
+ */
+export const getInvoiceSettingsResponseDetailsAccountHolderDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsAccountNumberDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsAddressDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsBankNameDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsBranchDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsCompanyNameDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsCustomerCareDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsDeclarationDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsDrugLicensesDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsEmailDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsGstinDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsIfscDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsPanDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsPaymentOnDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsTermsDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsUpiIdDefault = ``;
+
+
+export const getInvoiceSettingsResponseDetailsWebsiteDefault = ``;
+
+
+export const GetInvoiceSettingsResponse = zod.object({
+  configured: zod.boolean(),
+  details: zod.object({
+    account_holder: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsAccountHolderMax)
+      .default(getInvoiceSettingsResponseDetailsAccountHolderDefault),
+    account_number: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsAccountNumberMax)
+      .default(getInvoiceSettingsResponseDetailsAccountNumberDefault),
+    address: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsAddressMax)
+      .default(getInvoiceSettingsResponseDetailsAddressDefault),
+    bank_name: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsBankNameMax)
+      .default(getInvoiceSettingsResponseDetailsBankNameDefault),
+    branch: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsBranchMax)
+      .default(getInvoiceSettingsResponseDetailsBranchDefault),
+    company_name: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsCompanyNameMax)
+      .default(getInvoiceSettingsResponseDetailsCompanyNameDefault),
+    customer_care: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsCustomerCareMax)
+      .default(getInvoiceSettingsResponseDetailsCustomerCareDefault),
+    declaration: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsDeclarationMax)
+      .default(getInvoiceSettingsResponseDetailsDeclarationDefault),
+    drug_licenses: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsDrugLicensesMax)
+      .default(getInvoiceSettingsResponseDetailsDrugLicensesDefault),
+    email: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsEmailMax)
+      .default(getInvoiceSettingsResponseDetailsEmailDefault),
+    gstin: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsGstinMax)
+      .default(getInvoiceSettingsResponseDetailsGstinDefault),
+    ifsc: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsIfscMax)
+      .default(getInvoiceSettingsResponseDetailsIfscDefault),
+    pan: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsPanMax)
+      .default(getInvoiceSettingsResponseDetailsPanDefault),
+    payment_on: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsPaymentOnMax)
+      .default(getInvoiceSettingsResponseDetailsPaymentOnDefault),
+    terms: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsTermsMax)
+      .default(getInvoiceSettingsResponseDetailsTermsDefault),
+    upi_id: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsUpiIdMax)
+      .default(getInvoiceSettingsResponseDetailsUpiIdDefault),
+    website: zod
+      .string()
+      .max(getInvoiceSettingsResponseDetailsWebsiteMax)
+      .default(getInvoiceSettingsResponseDetailsWebsiteDefault),
+  }),
+  qr: zod.union([
+    zod.object({
+      content_type: zod.enum(["image/png", "image/jpeg"]),
+      sha256: zod.string(),
+      size: zod.number().int(),
+      version: zod.number().int(),
+    }),
+    zod.null(),
+  ]),
+  updated_at: zod.union([zod.coerce.date(), zod.null()]),
+  version: zod.number().int(),
+});
+
+
+/**
+ * @summary Write
+ */
+export const saveInvoiceSettingsBodyDetailsAccountHolderDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsAccountNumberDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsAddressDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsBankNameDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsBranchDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsCompanyNameDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsCustomerCareDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsDeclarationDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsDrugLicensesDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsEmailDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsGstinDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsIfscDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsPanDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsPaymentOnDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsTermsDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsUpiIdDefault = ``;
+
+
+export const saveInvoiceSettingsBodyDetailsWebsiteDefault = ``;
+
+
+export const SaveInvoiceSettingsBody = zod.object({
+  details: zod.object({
+    account_holder: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsAccountHolderMax)
+      .default(saveInvoiceSettingsBodyDetailsAccountHolderDefault),
+    account_number: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsAccountNumberMax)
+      .default(saveInvoiceSettingsBodyDetailsAccountNumberDefault),
+    address: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsAddressMax)
+      .default(saveInvoiceSettingsBodyDetailsAddressDefault),
+    bank_name: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsBankNameMax)
+      .default(saveInvoiceSettingsBodyDetailsBankNameDefault),
+    branch: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsBranchMax)
+      .default(saveInvoiceSettingsBodyDetailsBranchDefault),
+    company_name: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsCompanyNameMax)
+      .default(saveInvoiceSettingsBodyDetailsCompanyNameDefault),
+    customer_care: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsCustomerCareMax)
+      .default(saveInvoiceSettingsBodyDetailsCustomerCareDefault),
+    declaration: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsDeclarationMax)
+      .default(saveInvoiceSettingsBodyDetailsDeclarationDefault),
+    drug_licenses: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsDrugLicensesMax)
+      .default(saveInvoiceSettingsBodyDetailsDrugLicensesDefault),
+    email: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsEmailMax)
+      .default(saveInvoiceSettingsBodyDetailsEmailDefault),
+    gstin: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsGstinMax)
+      .default(saveInvoiceSettingsBodyDetailsGstinDefault),
+    ifsc: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsIfscMax)
+      .default(saveInvoiceSettingsBodyDetailsIfscDefault),
+    pan: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsPanMax)
+      .default(saveInvoiceSettingsBodyDetailsPanDefault),
+    payment_on: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsPaymentOnMax)
+      .default(saveInvoiceSettingsBodyDetailsPaymentOnDefault),
+    terms: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsTermsMax)
+      .default(saveInvoiceSettingsBodyDetailsTermsDefault),
+    upi_id: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsUpiIdMax)
+      .default(saveInvoiceSettingsBodyDetailsUpiIdDefault),
+    website: zod
+      .string()
+      .max(saveInvoiceSettingsBodyDetailsWebsiteMax)
+      .default(saveInvoiceSettingsBodyDetailsWebsiteDefault),
+  }),
+  expected_version: zod
+    .number()
+    .int()
+    .min(saveInvoiceSettingsBodyExpectedVersionMin)
+    .max(saveInvoiceSettingsBodyExpectedVersionMax),
+  qr_action: zod.enum(["keep", "remove", "replace"]),
+  qr_data: zod
+    .union([
+      zod.object({
+        base64: zod
+          .string()
+          .min(1)
+          .max(saveInvoiceSettingsBodyQrDataOneBase64Max),
+        content_type: zod.enum(["image/png", "image/jpeg"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  request_id: zod.string().uuid(),
+});
+
+
+export const saveInvoiceSettingsResponseDetailsAccountHolderDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsAccountNumberDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsAddressDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsBankNameDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsBranchDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsCompanyNameDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsCustomerCareDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsDeclarationDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsDrugLicensesDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsEmailDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsGstinDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsIfscDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsPanDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsPaymentOnDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsTermsDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsUpiIdDefault = ``;
+
+
+export const saveInvoiceSettingsResponseDetailsWebsiteDefault = ``;
+
+
+export const SaveInvoiceSettingsResponse = zod.object({
+  configured: zod.boolean(),
+  details: zod.object({
+    account_holder: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsAccountHolderMax)
+      .default(saveInvoiceSettingsResponseDetailsAccountHolderDefault),
+    account_number: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsAccountNumberMax)
+      .default(saveInvoiceSettingsResponseDetailsAccountNumberDefault),
+    address: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsAddressMax)
+      .default(saveInvoiceSettingsResponseDetailsAddressDefault),
+    bank_name: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsBankNameMax)
+      .default(saveInvoiceSettingsResponseDetailsBankNameDefault),
+    branch: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsBranchMax)
+      .default(saveInvoiceSettingsResponseDetailsBranchDefault),
+    company_name: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsCompanyNameMax)
+      .default(saveInvoiceSettingsResponseDetailsCompanyNameDefault),
+    customer_care: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsCustomerCareMax)
+      .default(saveInvoiceSettingsResponseDetailsCustomerCareDefault),
+    declaration: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsDeclarationMax)
+      .default(saveInvoiceSettingsResponseDetailsDeclarationDefault),
+    drug_licenses: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsDrugLicensesMax)
+      .default(saveInvoiceSettingsResponseDetailsDrugLicensesDefault),
+    email: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsEmailMax)
+      .default(saveInvoiceSettingsResponseDetailsEmailDefault),
+    gstin: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsGstinMax)
+      .default(saveInvoiceSettingsResponseDetailsGstinDefault),
+    ifsc: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsIfscMax)
+      .default(saveInvoiceSettingsResponseDetailsIfscDefault),
+    pan: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsPanMax)
+      .default(saveInvoiceSettingsResponseDetailsPanDefault),
+    payment_on: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsPaymentOnMax)
+      .default(saveInvoiceSettingsResponseDetailsPaymentOnDefault),
+    terms: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsTermsMax)
+      .default(saveInvoiceSettingsResponseDetailsTermsDefault),
+    upi_id: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsUpiIdMax)
+      .default(saveInvoiceSettingsResponseDetailsUpiIdDefault),
+    website: zod
+      .string()
+      .max(saveInvoiceSettingsResponseDetailsWebsiteMax)
+      .default(saveInvoiceSettingsResponseDetailsWebsiteDefault),
+  }),
+  qr: zod.union([
+    zod.object({
+      content_type: zod.enum(["image/png", "image/jpeg"]),
+      sha256: zod.string(),
+      size: zod.number().int(),
+      version: zod.number().int(),
+    }),
+    zod.null(),
+  ]),
+  updated_at: zod.union([zod.coerce.date(), zod.null()]),
+  version: zod.number().int(),
+});
+
+
+/**
+ * @summary History
+ */
+
+export const ListInvoiceSettingsHistoryQueryParams = zod.object({
+  before_version: zod
+    .union([
+      zod.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(listInvoiceSettingsHistoryQueryBeforeVersionOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listInvoiceSettingsHistoryQueryLimitMax)
+    .default(listInvoiceSettingsHistoryQueryLimitDefault),
+});
+
+
+export const ListInvoiceSettingsHistoryResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      actor: zod.object({
+        id: zod.string().uuid(),
+        label: zod.string(),
+      }),
+      changed_at: zod.coerce.date(),
+      changes: zod.array(
+        zod.object({
+          after: zod.string(),
+          before: zod.string(),
+          field: zod.string(),
+        }),
+      ),
+      qr_after: zod.union([
+        zod.object({
+          content_type: zod.enum(["image/png", "image/jpeg"]),
+          sha256: zod.string(),
+          size: zod.number().int(),
+          version: zod.number().int(),
+        }),
+        zod.null(),
+      ]),
+      qr_before: zod.union([
+        zod.object({
+          content_type: zod.enum(["image/png", "image/jpeg"]),
+          sha256: zod.string(),
+          size: zod.number().int(),
+          version: zod.number().int(),
+        }),
+        zod.null(),
+      ]),
+      version: zod.number().int(),
+    }),
+  ),
+  next_before_version: zod.union([zod.number().int(), zod.null()]),
+});
+
+
+/**
+ * @summary Qr
+ */
+
+export const GetInvoiceSettingsQRParams = zod.object({
+  version: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getInvoiceSettingsQRPathVersionMax),
+});
+
+
+export const GetInvoiceSettingsQRResponse = zod.object({
+  base64: zod.string().min(1).max(getInvoiceSettingsQRResponseBase64Max),
+  content_type: zod.enum(["image/png", "image/jpeg"]),
+  version: zod.number().int(),
+});
+
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileInvoiceSettingsParams = zod.object({
+  request_id: zod.coerce.string().uuid(),
+});
+
+
+export const ReconcileInvoiceSettingsBody = zod.object({});
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsAccountHolderDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsAccountNumberDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsAddressDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsBankNameDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsBranchDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsCompanyNameDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsCustomerCareDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsDeclarationDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsDrugLicensesDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsEmailDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsGstinDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsIfscDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsPanDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsPaymentOnDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsTermsDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsUpiIdDefault = ``;
+
+
+export const reconcileInvoiceSettingsResponseSavedDetailsWebsiteDefault = ``;
+
+
+export const ReconcileInvoiceSettingsResponse = zod.object({
+  committed_version: zod.union([zod.number().int(), zod.null()]),
+  outcome: zod.enum(["committed", "cancelled"]),
+  saved: zod.object({
+    configured: zod.boolean(),
+    details: zod.object({
+      account_holder: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsAccountHolderMax)
+        .default(
+          reconcileInvoiceSettingsResponseSavedDetailsAccountHolderDefault,
+        ),
+      account_number: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsAccountNumberMax)
+        .default(
+          reconcileInvoiceSettingsResponseSavedDetailsAccountNumberDefault,
+        ),
+      address: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsAddressMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsAddressDefault),
+      bank_name: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsBankNameMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsBankNameDefault),
+      branch: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsBranchMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsBranchDefault),
+      company_name: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsCompanyNameMax)
+        .default(
+          reconcileInvoiceSettingsResponseSavedDetailsCompanyNameDefault,
+        ),
+      customer_care: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsCustomerCareMax)
+        .default(
+          reconcileInvoiceSettingsResponseSavedDetailsCustomerCareDefault,
+        ),
+      declaration: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsDeclarationMax)
+        .default(
+          reconcileInvoiceSettingsResponseSavedDetailsDeclarationDefault,
+        ),
+      drug_licenses: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsDrugLicensesMax)
+        .default(
+          reconcileInvoiceSettingsResponseSavedDetailsDrugLicensesDefault,
+        ),
+      email: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsEmailMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsEmailDefault),
+      gstin: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsGstinMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsGstinDefault),
+      ifsc: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsIfscMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsIfscDefault),
+      pan: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsPanMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsPanDefault),
+      payment_on: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsPaymentOnMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsPaymentOnDefault),
+      terms: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsTermsMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsTermsDefault),
+      upi_id: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsUpiIdMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsUpiIdDefault),
+      website: zod
+        .string()
+        .max(reconcileInvoiceSettingsResponseSavedDetailsWebsiteMax)
+        .default(reconcileInvoiceSettingsResponseSavedDetailsWebsiteDefault),
+    }),
+    qr: zod.union([
+      zod.object({
+        content_type: zod.enum(["image/png", "image/jpeg"]),
+        sha256: zod.string(),
+        size: zod.number().int(),
+        version: zod.number().int(),
+      }),
+      zod.null(),
+    ]),
+    updated_at: zod.union([zod.coerce.date(), zod.null()]),
+    version: zod.number().int(),
+  }),
+});
