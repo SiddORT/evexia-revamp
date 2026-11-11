@@ -45,7 +45,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
   async function submit(event) {
     event.preventDefault();
     if (busy.current || blocked) return;
-    const next = validateAllergen(values);
+    const next = validateAllergen(values, { dilutionSetup });
     setErrors(next);
     if (Object.keys(next).length) return;
     const guard = reportingIdentityGuard();
@@ -91,6 +91,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
       {!record && getSession().user?.identity_kind === 'super_admin' && <div className="mr-form__field">
         <label><input type="checkbox" checked={dilutionSetup} disabled={pending || blocked} onChange={(event) => {
           setDilutionSetup(event.target.checked);
+          setErrors({});
         }} /> Explicitly create and bind the dummy Dilution material</label>
         {dilutionSetup && <p className="mr-form__hint">Creates a separate inventory/pricing material, not a clinical allergen. Enter its name, real category and storage location, required master description and GST explicitly. Use Active, No Mix and blank selling price/low stock alert. Nothing is inferred or seeded; configure actual cutoff rates later in Pricing Rules. An existing similarly named record will never be overwritten.</p>}
       </div>}
@@ -106,7 +107,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
           <AllergenRefPicker id="allergen-location" kind="locations" label="Storage location" value={values.storage_location_id} disabled={pending} describedBy={errors.storage_location_id ? 'allergen-storage_location_id-error' : undefined} invalid={Boolean(errors.storage_location_id)} testId="select-allergen-location"
             retained={record ? { id: record.storage_location_id, name: record.storage_location_name, status: record.storage_location_status } : null} onChange={(id) => update('storage_location_id', id)} />
           {err('storage_location_id')}</div>
-        {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint })}
+        {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint, hint: dilutionSetup ? 'Must be blank for Dilution setup. Configure actual cutoff rates later in Pricing Rules.' : undefined })}
         {text('gst', 'GST (%)', { numeric: true, info: 'Original value must be 0 to 100, up to 6 source fractional digits. Rounded half-up to two places on save.' })}
         {dilutionSetup ? text('concentration', 'Required master description', { max: 200, hint: 'Enter the supplied description. This material is not a clinical formulation; no concentration or ratio is assumed.' }) : <div className="mr-form__field">
           <label className="mr-form__label" htmlFor="allergen-concentration">Concentration <span className="mr-form__required">*</span></label>
@@ -118,14 +119,14 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
             ]} onChange={(value) => update('concentration', value)} />
           {err('concentration')}
         </div>}
-         {text('threshold_limit', 'Low stock alert (ml)', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: 'In ml. Blank disables alerts; 0 alerts only at zero stock. Stock alert includes quantities at or below this value.' })}
+         {text('threshold_limit', 'Low stock alert (ml)', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: dilutionSetup ? 'Must be blank for Dilution setup.' : 'In ml. Blank disables alerts; 0 alerts only at zero stock. Stock alert includes quantities at or below this value.' })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><AllergenSearchableSelect id="allergen-status" label="Status" value={values.status} disabled={pending} placeholder="Select status" invalid={Boolean(errors.status)} describedBy={errors.status ? 'allergen-status-error' : undefined} testId="select-allergen-status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => update('status', value)} />{err('status')}</div>
         <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
-          <button type="button" role="switch" aria-checked={values.mix} aria-labelledby="allergen-mix-label allergen-mix-state" className="admin-allergen-switch" onClick={() => update('mix', !values.mix)} data-testid="switch-allergen-mix">
+          <button type="button" role="switch" aria-checked={values.mix} aria-labelledby="allergen-mix-label allergen-mix-state" aria-invalid={Boolean(errors.mix)} aria-describedby={errors.mix ? 'allergen-mix-error' : undefined} className="admin-allergen-switch" onClick={() => update('mix', !values.mix)} data-testid="switch-allergen-mix">
             <span className="admin-allergen-switch__track" aria-hidden="true"><span className="admin-allergen-switch__thumb" /></span>
             <strong id="allergen-mix-state" data-testid="text-allergen-mix-state">{values.mix ? 'Mix' : 'No Mix'}</strong>
           </button>
-          <p className="mr-form__hint">Catalogue metadata only. Not a stock mixing operation.</p></div>
+          <p className="mr-form__hint">Catalogue metadata only. Not a stock mixing operation.</p>{err('mix')}</div>
       </fieldset>
     </div>
     <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-allergen">Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-allergen">{pending ? 'Saving…' : record ? 'Save changes' : 'Save product'}</button></div></div>

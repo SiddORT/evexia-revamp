@@ -35,7 +35,7 @@ export function validatePriceBounds(min, max) {
   if (!errors.min && !errors.max && min && max && compareDecimal(catalogueRate(min), catalogueRate(max)) > 0) errors.max = 'Maximum price must not be below minimum price.';
   return errors;
 }
-export function validateAllergen(v) {
+export function validateAllergen(v, { dilutionSetup = false } = {}) {
   const e = {};
   const nameError = masterNameError(v.name, 'allergen name');
   if (nameError) e.name = nameError;
@@ -46,11 +46,18 @@ export function validateAllergen(v) {
   const gst = v.gst.trim();
   if (!gst) e.gst = 'GST is required.'; else if (!/^(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?$/.test(gst) || compareDecimal(gst, '100') > 0) e.gst = 'GST must be between 0 and 100 with up to 6 decimals.';
   const conc = v.concentration.trim();
-  if (!conc) e.concentration = 'Concentration is required.'; else if (textLength(conc) > 200) e.concentration = 'Concentration must be 200 characters or fewer.';
+  const descriptionLabel = dilutionSetup ? 'Master description' : 'Concentration';
+  if (!conc) e.concentration = `${descriptionLabel} is required.`; else if (textLength(conc) > 200) e.concentration = `${descriptionLabel} must be 200 characters or fewer.`;
   const th = v.threshold_limit.trim();
   if (th && !DECIMAL_RE.test(th)) e.threshold_limit = 'Enter a plain nonnegative decimal (12 integer, 6 fractional digits max).';
   if (!['active', 'inactive'].includes(v.status)) e.status = 'Select a status.';
   if (typeof v.mix !== 'boolean') e.mix = 'Select Mix or No Mix.';
+  if (dilutionSetup) {
+    if (price) e.selling_price = 'Leave selling price blank for Dilution setup. Configure actual cutoff rates later in Pricing Rules.';
+    if (th) e.threshold_limit = 'Leave low stock alert blank for Dilution setup.';
+    if (v.status !== 'active') e.status = 'Select Active for Dilution setup.';
+    if (v.mix !== false) e.mix = 'Select No Mix for Dilution setup.';
+  }
   return e;
 }
 export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix });

@@ -807,7 +807,10 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   const route = resource === 'languages' ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|delete|history))?)$/ : resource === 'sales-targets' ? /^(?:|\/choices|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'allergens' ? /^(?:|\/references\/(?:categories|locations)|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
-  if (!route.test(path) && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+  const dilutionSetup = resource === 'allergens' && path === '/setup-dilution'
+    && body !== null && typeof body === 'object' && !Array.isArray(body)
+    && file === undefined && !download && Object.keys(params).length === 0;
+  if (!route.test(path) && !dilutionSetup && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
       && !(resource === 'doctors' && /^\/[0-9a-f-]{36}\/orders$/.test(path) && body === undefined && file === undefined && !download)
       && !(resource === 'headquarters' && path === '/zone-choices' && body === undefined && file === undefined)
       && !(resource === 'storage-locations' && /^\/postal\/[1-9][0-9]{5}$/.test(path))
