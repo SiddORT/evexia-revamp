@@ -18,6 +18,16 @@ interpret verification authority as settlement posting permission. Fulfillment
 changes do not forgive debt or create credits; approved orders remain payable
 through subsequent fulfillment stages when a known positive balance remains.
 
+Admin approval is still required before payments; do not allow pre-approval
+receipts to reconcile unpaid Accounts rows with an empty payment picker.
+
+**Why:** The user explicitly chose to retain Admin approval and clarify the
+interface rather than change payment eligibility.
+
+**How to apply:** Treat unpaid obligations and eligibility to receive payment as
+different concepts; an empty eligible-order picker is not proof that all
+balances are settled.
+
 Previous payments start at zero, regardless of existing Paid/Partial/Unpaid
 flags. Each selected order receives an explicit entered amount. Unknown saved
 prices remain unavailable, not zero. New payments are Not verified (displayed

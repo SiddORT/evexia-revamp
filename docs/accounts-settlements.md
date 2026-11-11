@@ -80,6 +80,37 @@ finite one-minute refresh interval, paused while a transaction draft is open.
 
 ## Posting, concurrency and retry safety
 
+### Payment eligibility clarification — source-only handoff
+
+Admin approval remains required before an MR can record a payment. Add payment
+explains that selection requires an Admin-approved order with a known positive
+outstanding balance, including In process, Shipped, Delivered and Returned
+orders. Its unfiltered empty state says **No orders eligible for payment** and
+explains that unpaid orders awaiting approval will appear after approval once
+a known outstanding balance exists; it does not claim all balances are settled.
+Search-empty and selected-only-empty messages remain separate from that state,
+and loading and load failures retain their existing distinct paths.
+
+In MR Accounts, nonpayable positive-balance rows in the saved Confirmed or Saved
+stages explicitly say **Admin approval required before payment**. Other excluded
+statuses retain the generic restriction instead of being described as awaiting
+approval. Missing totals/balances remain Unavailable, never zero. The same row
+explanation is used in the desktop table and mobile cards; Admin copy is unchanged.
+
+This is presentation only: the independent `payable_only=true` server picker,
+projection and posting checks remain unchanged. No dataset scans, requests,
+financial rules, lifecycle changes, API contracts or receipt/retry behavior were
+added or changed. Static source review traced the picker to the existing payable
+projection and posting guards: unapproved, rejected/cancelled, fully paid and
+unpriced orders remain excluded under that policy.
+
+**Verification for this clarification was static source review only. No tests,
+regression/release checks, builds, typechecks, validation wrappers, runtime or
+browser probes, service/workflow starts or restarts, migrations, production
+access or deployments were performed. Runtime behavior remains unverified.**
+
+### Existing payment flow
+
 Add Payment opens immediately without selecting main-list rows. Its independently
 paginated server search uses `payable_only=true`, unaffected by Accounts filters.
 Selections and explicit allocation amounts survive modal search and paging;

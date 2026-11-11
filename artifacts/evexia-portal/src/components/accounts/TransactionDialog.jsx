@@ -259,6 +259,7 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
       </>}
 
       {editable && <section className="settle-picker settle-picker--payment" aria-label="Pending orders">
+        <p className="settle-sub">Only Admin-approved orders with a known outstanding balance can be selected, including In process, Shipped, Delivered and Returned orders.</p>
         <div className="settle-picker__head">
           <span className="settle-sub" role="status" aria-live="polite" data-testid="text-selected-count">{selected.size} of {BATCH_LIMIT} orders selected{full ? ' · limit reached' : ''}</span>
           <button ref={selectedToggle} type="button" className="admin-button admin-button--secondary" aria-pressed={selectedOnly} onClick={() => setSelectedOnly((v) => !v)} data-testid="button-selected-pending">{selectedOnly ? 'Show pending orders' : `Show selected (${selected.size})`}</button>
@@ -267,7 +268,7 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
         {!selectedOnly && listError ? <div className="settle-state settle-state--error" role="alert"><strong>Pending orders unavailable</strong><p>{listError}</p>
           <button type="button" className="admin-button admin-button--secondary" onClick={() => setRevision((n) => n + 1)} data-testid="button-retry-pending">Retry</button></div>
           : !selectedOnly && !result ? <div className="settle-skeleton" aria-busy="true" aria-label="Loading pending orders">{[0, 1, 2].map((i) => <div key={i}><span /><span /><span /><span /></div>)}</div>
-            : !pageItems.length ? <div className="settle-state"><strong>{selectedOnly ? 'No selected orders' : search ? 'No matching pending orders' : 'Nothing pending'}</strong><p>{selectedOnly ? 'Show pending orders to select an order.' : search ? 'Try another search.' : 'All your payable orders are fully paid.'}</p></div>
+            : !pageItems.length ? <div className="settle-state"><strong>{selectedOnly ? 'No selected orders' : search ? 'No matching eligible orders' : 'No orders eligible for payment'}</strong><p>{selectedOnly ? 'Show pending orders to select an order.' : search ? 'Try another search or clear the search to see eligible orders.' : 'Unpaid orders awaiting Admin approval will appear here after approval, once they have a known outstanding balance.'}</p></div>
               : <div className="settle-table-wrap" tabIndex={0} role="region" aria-label={`${selectedOnly ? 'Selected' : 'Pending'} orders, scrolls horizontally`}>
                 <table className="settle-table settle-table--compact settle-payment-table">
                   <caption className="sr-only">{selectedOnly ? 'Selected orders' : 'Pending orders'} with payment amounts in INR</caption>
