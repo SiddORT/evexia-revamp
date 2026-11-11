@@ -126,3 +126,4 @@
 - [Previous order dosage policy](previous-order-dosage-policy.md) — editable entry assistance uses authorized saved orders, not administration evidence; PD/DD stay optional and B8 has no successor.
 - [MR invoice approval boundary](mr-invoice-approval-boundary.md) — the new Settings-only MR invoice does not authorize retrofitting the older Immunotherapy order invoice.
 - [Dilution master policy](dilution-master-policy.md) — always Mix with an optional exact ml alert; supersedes earlier No Mix/blank-threshold setup restrictions.
+- [Weekly low stock policy](weekly-low-stock-policy.md) — independent zero-stock union, purchasable materials, Monday 10 AM Kolkata and private non-replayed weekly deliveries.

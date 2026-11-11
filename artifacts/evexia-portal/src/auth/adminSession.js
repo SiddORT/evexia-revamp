@@ -1051,6 +1051,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'gst-settings'
     ? /^$/
+    : resource === 'low-stock-settings'
+    ? /^(?:|\/requests\/[0-9a-f-]{36}\/reconcile)$/i
     : resource === 'invoice-settings'
     ? /^(?:|\/history|\/qr\/[1-9][0-9]{0,9}|\/requests\/[0-9a-f-]{36}\/reconcile)$/i
     : resource === 'immunotherapy-extract-settings'
@@ -1072,7 +1074,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
-    ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/(?:history|ledger|adjustment-choices))?|adjustments(?:\/preview|\/[0-9a-f-]{36})?|adjustment-requests\/[0-9a-f-]{36}|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|expiry(?:\/(?:reconcile|review|disposals|costs)|\/requests\/[0-9a-f-]{36})?|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
+    ? /^\/(?:low-stock-alerts|stock(?:\/[0-9a-f-]{36}\/(?:history|ledger|adjustment-choices))?|adjustments(?:\/preview|\/[0-9a-f-]{36})?|adjustment-requests\/[0-9a-f-]{36}|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|expiry(?:\/(?:reconcile|review|disposals|costs)|\/requests\/[0-9a-f-]{36})?|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
     ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i
     : /^(?:|\/(?:export|overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
@@ -1092,6 +1094,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
+  if (resource === 'low-stock-settings' && (file !== undefined || download || method !== undefined
+      || (path !== '' && !writing))) throw new SessionError('Unsupported low-stock Settings operation.');
   if (resource === 'invoice-settings' && (file !== undefined || download || method !== undefined
     || (writing && path !== '' && !/^\/requests\/[0-9a-f-]{36}\/reconcile$/i.test(path))
     || (!writing && path.endsWith('/reconcile')))) {
@@ -1121,7 +1125,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const owner = state.user?.id;
   const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
   const gstSettingsOperation = resource === 'gst-settings';
-  const invoiceSettingsOperation = resource === 'invoice-settings';
+  const invoiceSettingsOperation = ['invoice-settings', 'low-stock-settings'].includes(resource);
+  const sharedSettingsLabel = resource === 'low-stock-settings' ? 'Low-stock Settings' : 'Invoice Details';
   const extractSettingsOperation = resource === 'immunotherapy-extract-settings';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
@@ -1137,7 +1142,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       throw new SessionError('GST Settings require the protected Super Admin.', 403);
     }
     if (invoiceSettingsOperation && !isSuperAdminIdentity(state.user)) {
-      throw new SessionError('Invoice Details require the protected Super Admin.', 403);
+      throw new SessionError(`${sharedSettingsLabel} require the protected Super Admin.`, 403);
     }
     if (resource === 'settlements' && (writing ? settlementVerification
       ? !isSuperAdminIdentity(state.user) : state.user?.identity_kind !== 'mr'
@@ -1166,8 +1171,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       requestId: response?.headers.get('X-Request-ID') || data?.error?.request_id,
     });
     const error = new SessionError(invoiceSettingsOperation
-      ? mutation ? 'Invoice Details save outcome is unconfirmed. Your edits are preserved. Reconcile this save before trying again.'
-        : 'Invoice Details could not be loaded. Your edits are preserved; retry loading.'
+      ? mutation ? `${sharedSettingsLabel} save outcome is unconfirmed. Your edits are preserved. Reconcile this save before trying again.`
+        : `${sharedSettingsLabel} could not be loaded. Your edits are preserved; retry loading.`
       : resource === 'pricing-rules'
       ? mutation ? 'Pricing Rule save outcome is unconfirmed. Your editor is preserved. Retry only the unchanged submission to confirm or finish it safely.'
         : reason === 'response' ? `${pricingReadLabel} could not be loaded because the service returned an invalid response. ${pricingReadAction}`
@@ -1230,10 +1235,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       throw error;
     }
     const error = new SessionError(invoiceSettingsOperation
-      ? response.status === 403 ? 'Invoice Details require the protected Super Admin.'
-        : response.status === 409 ? 'Invoice Details changed or this save identity was closed. Load saved values and compare your kept edits.'
-        : response.status === 422 ? 'Check the highlighted Invoice Details fields and QR image limits. Your edits are preserved.'
-        : [404, 405].includes(response.status) ? 'Invoice Details are unavailable. The prepared API and schema need approved activation.'
+      ? response.status === 403 ? `${sharedSettingsLabel} require the protected Super Admin.`
+        : response.status === 409 ? `${sharedSettingsLabel} changed or this save identity was closed. Load saved values and compare your kept edits.`
+        : response.status === 422 ? resource === 'low-stock-settings'
+          ? 'Enter a valid additional email or leave it blank. Your edit is preserved.'
+          : 'Check the highlighted Invoice Details fields and QR image limits. Your edits are preserved.'
+        : [404, 405].includes(response.status) ? `${sharedSettingsLabel} are unavailable. The prepared API and schema need approved activation.`
         : uncertain('service').message
       : resource === 'pricing-rules'
       ? response.status === 403 ? 'Pricing Rules require the protected Super Admin.'

@@ -177,6 +177,7 @@ def ready(db):
         ["0089_invoice_settings"],
         ["0090_settlement_verification"],
         ["0089_it_material_pricing"],
+        ["0091_low_stock_alerts"],
     ):
         raise AccountCryptoError()
     current = crypto()
@@ -187,7 +188,7 @@ def ready(db):
             or not hmac.compare_digest(row.protected_email_index,
                                       current.lookup_index(
                                           "reena.ai20206@gmail.com"
-                                          if revisions in (["0080_admin_email"], ["0081_immunotherapy_alerts"], ["0082_order_drafts"], ["0083_immunotherapy_batches"], ["0084_allergen_expiry"], ["0085_placement_email_details"], ["0086_it_pricing_rules"], ["0086_immunotherapy_extract"], ["0087_pricing_rule_categories"], ["0088_gst_settings"], ["0089_invoice_settings"], ["0090_settlement_verification"], ["0089_it_material_pricing"])
+                                          if revisions in (["0080_admin_email"], ["0081_immunotherapy_alerts"], ["0082_order_drafts"], ["0083_immunotherapy_batches"], ["0084_allergen_expiry"], ["0085_placement_email_details"], ["0086_it_pricing_rules"], ["0086_immunotherapy_extract"], ["0087_pricing_rule_categories"], ["0088_gst_settings"], ["0089_invoice_settings"], ["0090_settlement_verification"], ["0089_it_material_pricing"], ["0091_low_stock_alerts"])
                                           else "crm-admin@allergyevexia.in"))):
         raise AccountCryptoError()
     return current

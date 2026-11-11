@@ -75,6 +75,7 @@ from app.api.v1.immunotherapy import router as immunotherapy_router
 from app.api.v1.immunotherapy_extract import router as immunotherapy_extract_router
 from app.api.v1.gst_settings import router as gst_settings_router
 from app.api.v1.invoice_settings import router as invoice_settings_router
+from app.api.v1.low_stock_settings import router as low_stock_settings_router
 from app.api.v1.kits import router as kits_router
 from app.api.v1.spt import router as spt_router
 from app.api.v1.lupin import router as lupin_router
@@ -127,6 +128,8 @@ def create_app() -> FastAPI:
         worker = asyncio.create_task(run(stop), name="order-notification-worker")
         from app.services.expiry_worker import run as expiry_run
         expiry_worker = asyncio.create_task(expiry_run(stop), name="allergen-expiry-worker")
+        from app.services.low_stock_worker import run as low_stock_run
+        low_stock_worker = asyncio.create_task(low_stock_run(stop), name="low-stock-worker")
         try:
             yield
         finally:
@@ -136,6 +139,7 @@ def create_app() -> FastAPI:
             stop.set()
             await worker
             await expiry_worker
+            await low_stock_worker
 
     app = FastAPI(
         title="EVEXIA API", version="1.0.0", lifespan=lifespan,
@@ -220,6 +224,10 @@ def create_app() -> FastAPI:
             allowed |= {"body.expected_version", "body.request_id", "body.qr_action", "body.qr_data",
                         "body.qr_data.content_type", "body.qr_data.base64",
                         "query.before_version", "query.limit", "path.version", "path.request_id"}
+            fields = [{"field": item["field"] if item["field"] in allowed else "body",
+                       "code": item["code"]} for item in fields]
+        if request.url.path.startswith("/api/v1/admin/low-stock-settings"):
+            allowed = {"body.expected_version", "body.request_id", "body.additional_email", "path.key"}
             fields = [{"field": item["field"] if item["field"] in allowed else "body",
                        "code": item["code"]} for item in fields]
         if request.url.path.startswith("/api/v1/admin/pricing-rules"):
@@ -435,6 +443,7 @@ def create_app() -> FastAPI:
     app.include_router(immunotherapy_extract_router, prefix="/api/v1")
     app.include_router(gst_settings_router, prefix="/api/v1")
     app.include_router(invoice_settings_router, prefix="/api/v1")
+    app.include_router(low_stock_settings_router, prefix="/api/v1")
     app.include_router(kits_router, prefix="/api/v1")
     app.include_router(spt_router, prefix="/api/v1")
     app.include_router(lupin_router, prefix="/api/v1")

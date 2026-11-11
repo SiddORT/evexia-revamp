@@ -137,6 +137,46 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const figures = computeDraftTotals(values.lines, tax.treatment);
   const draft = values.lines.map((line) => computeDraftLine(line, tax.treatment));
   const [legacyTaxStatus, setLegacyTaxStatus] = useState('');
+  // Capture identity once on mount. Query changes cannot rewrite an already
+  // mounted draft, pending review or its exact retry body.
+  const [alertMaterial] = useState(() => editing ? null : new URLSearchParams(window.location.search).get('material'));
+  const [alertSelection, setAlertSelection] = useState(null);
+  const [alertError, setAlertError] = useState('');
+  const [alertLoading, setAlertLoading] = useState(false);
+  const [alertRetry, setAlertRetry] = useState(0);
+  useEffect(() => {
+    if (alertMaterial === null || editing || !can.add) return undefined;
+    if (loaded.status !== 'none') {
+      setAlertError('Your earlier PO save/recovery state was preserved. The alert material was not applied. Resolve the pending save before starting a different order.');
+      return undefined;
+    }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alertMaterial)) {
+      setAlertError('The alert material identity is invalid. Choose a current product below or return to Low Stock Alerts.');
+      return undefined;
+    }
+    const controller = new AbortController();
+    setAlertLoading(true); setAlertError('');
+    listPurchaseOrderReferences('products', { selected_id: alertMaterial }, controller.signal).then((result) => {
+      if (controller.signal.aborted) return;
+      const product = result.items.find((item) => item.id === alertMaterial);
+      if (!product) throw new Error('This material is no longer purchasable. Choose a current product below or return to Low Stock Alerts.');
+      setAlertSelection(product); setAlertLoading(false);
+    }).catch((cause) => {
+      if (!controller.signal.aborted) { setAlertLoading(false); setAlertError(cause.message || 'The current material reference is unavailable. Retry or select a current product below.'); }
+    });
+    return () => controller.abort();
+  }, [alertMaterial, alertRetry, editing, can.add, loaded.status]);
+
+  function applyAlertMaterial() {
+    if (locked || !alertSelection || review || values.lines.length >= MAX_LINES) return;
+    // Explicit insertion never replaces an entered line. Only an untouched
+    // blank starter line may be replaced; no quantity/price is suggested.
+    const line = { ...blankLine(), product: alertSelection, quantity: '', unitPrice: '', gst: '' };
+    const pristine = JSON.stringify(values) === baseline.current;
+    edit({ lines: pristine ? [line] : [...values.lines, line] });
+    setAlertSelection(null);
+    setNotice('Material added from current authorized references. Enter and review quantity, agreed rates, supplier, destination and dates. Nothing has been saved.');
+  }
   async function loadLegacyTax() {
     if (locked || !editing || order.taxBasis) return;
     setLegacyTaxStatus('Loading current vendor tax basis…');
@@ -268,6 +308,20 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   return <section className="admin-panel po-new" aria-label={editing ? 'Edit purchase order' : 'New purchase order'}>
     <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Order details'}</h2><p>{review ? 'Nothing has been saved yet. Amounts below are calculated by the server.' : 'Required fields are marked *. Catalogue prices and GST are starting defaults. Enter the agreed rates for this PO.'}</p></div><ClipboardList size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {notice && <div className="admin-feedback" role="status" style={{ margin: 18 }}>{notice}</div>}
+    {alertLoading && <p role="status" style={{ margin: 18 }}>Resolving current purchasable material…</p>}
+    {alertError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}><p>{alertError}</p>
+      {loaded.status === 'none' && <button type="button" className="admin-button admin-button--secondary" disabled={alertLoading || locked} onClick={() => setAlertRetry((n) => n + 1)}>Retry material lookup</button>}
+      <button type="button" className="admin-button admin-button--secondary" onClick={async () => {
+        if (busyRef.current) return;
+        if (await confirm('Return to Low Stock Alerts? Unsaved PO changes will be discarded; any unconfirmed save stays available for recovery.')) {
+          if (busyRef.current) return;
+          navigation.current = {};
+          window.history.pushState(null, '', '/admin/inventory/low-stock-alerts');
+        }
+      }}>Return to Low Stock Alerts</button></div>}
+    {alertSelection && <div className="admin-feedback" role="status" style={{ margin: 18 }}><p>Selected alert material: <strong>{alertSelection.name}</strong>. Your current PO draft has not been replaced.</p>
+      <button type="button" className="admin-button" disabled={locked || Boolean(review) || values.lines.length >= MAX_LINES} onClick={applyAlertMaterial}>Use selected material</button>
+      <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => setAlertSelection(null)}>Continue without this material</button></div>}
     {blocked && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{blocked}</div>}
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError}</div>}
     {documentPreferenceError && <DocumentPreferenceRecovery kind="po" message={documentPreferenceError} onRecovered={() => { setDocumentPreferenceError(''); setSaveError(''); }} />}

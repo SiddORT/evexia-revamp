@@ -98,8 +98,9 @@ export default function AdminLayout({ title, children }) {
   const showPR = canReadResource(user, 'purchase_received') && (!searching || 'inventory purchase received pr receipts'.includes(query));
   const showMoveStocks = canReadResource(user, 'stock_movement') && (!searching || 'inventory move stocks transfer'.includes(query));
   const showStockStatus = canReadResource(user, 'stock_status') && (!searching || 'inventory stock status allergens'.includes(query));
+  const showLowStock = canReadResource(user, 'stock_status') && (!searching || 'inventory low stock alerts'.includes(query));
   const showInHouse = !staff && isSuperAdminIdentity(user) && (!searching || 'inventory in-house stock reserve allergens'.includes(query));
-  const showInventory = showPO || showPR || showMoveStocks || showStockStatus || showInHouse;
+  const showInventory = showPO || showPR || showMoveStocks || showStockStatus || showLowStock || showInHouse;
   const visibleOrders = ORDER_DESTINATIONS.filter((destination) =>
     (!staff || canReadResource(user, ({ 'kits-consumables': 'kits', immunotherapy: 'immunotherapy', spt: 'spt', lupin: 'lupin' })[destination.slug]))
     && (!searching || 'orders'.includes(query) || `${destination.label} ${destination.keywords || ''}`.toLocaleLowerCase().includes(query)));
@@ -267,6 +268,7 @@ export default function AdminLayout({ title, children }) {
             <Boxes size={17} aria-hidden="true" /><span className="admin-nav__label">Inventory</span><ChevronDown size={15} className={`admin-nav__chevron${showInventorySubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
           <div id="admin-inventory-subnav" className="admin-nav__sub" hidden={!showInventorySubnav}>
+            {showLowStock && <Link href="/admin/inventory/low-stock-alerts" className={`admin-nav__item${location === '/admin/inventory/low-stock-alerts' ? ' admin-nav__item--active' : ''}`} aria-label="Low Stock Alerts" aria-current={location === '/admin/inventory/low-stock-alerts' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-low-stock-alerts"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Low Stock Alerts</span></Link>}
             {showPO && <Link href="/admin/inventory/purchase-orders" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-orders') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Orders" aria-current={location === '/admin/inventory/purchase-orders' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-orders"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Orders</span></Link>}
             {showPR && <Link href="/admin/inventory/purchase-received" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-received') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Received" aria-current={location === '/admin/inventory/purchase-received' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-received"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Received</span></Link>}
             {showMoveStocks && <Link href="/admin/inventory/move-stocks" className={`admin-nav__item${location.startsWith('/admin/inventory/move-stocks') ? ' admin-nav__item--active' : ''}`} aria-label="Move stocks" aria-current={location.startsWith('/admin/inventory/move-stocks') ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-move-stocks"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Move stocks</span></Link>}

@@ -115,6 +115,7 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
       || /^\/filter-references\/(?:categories|allergens)$/.test(path)) && grant(null);
   }
   if (resource === 'inventory') {
+    if (path === '/low-stock-alerts') return !writing && canReadResource(user, 'stock_status');
     if (/^\/expiry(?:\/|$)/.test(path)) return isSuperAdminIdentity(user);
     if (!writing && path === '/references/locations' && params.purpose === 'opening_stock') return canReadResource(user, 'opening_stock');
     if (!writing && ['/references/staff', '/references/lots'].includes(path)) return hasCapability(user, 'stock_movement', 'create');
@@ -173,7 +174,7 @@ export const staffPathAllowed = (path, user) => {
   if (workflow) {
     const resource = ({
       'purchase-orders': 'purchase_order', 'purchase-received': 'purchase_received',
-      'stock-status': 'stock_status', 'move-stocks': 'stock_movement',
+      'stock-status': 'stock_status', 'low-stock-alerts': 'stock_status', 'move-stocks': 'stock_movement',
       immunotherapy: 'immunotherapy', spt: 'spt', 'kits-consumables': 'kits', lupin: 'lupin',
     })[workflow[2]];
     if (!resource) return false;

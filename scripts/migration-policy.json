@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0091_low_stock_alerts": "automatic",
     "0089_invoice_settings": "automatic",
     "0089_it_material_pricing": "automatic",
     "0090_settlement_verification": "automatic",

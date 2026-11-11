@@ -354,7 +354,8 @@ def receipt_evidence(db, row, data):
     return evidence
 
 
-def stock(db, actor, params):
+def stock_snapshot(db, crypto, params):
+    """Read under the caller's inventory lock; never commits or authorizes."""
     def work(_, crypto):
         context = coverage(db)
         if not context["complete"]:
@@ -444,7 +445,12 @@ def stock(db, actor, params):
                     snapshot=rows if params.get("snapshot") else None,
                     filterOptions=choices, filtered=len(rows), total=total, limit=params["limit"], offset=params["offset"],
                     asOf=utcnow().isoformat(), coverage=context)
-    return transaction(db, actor, work, capability=("stock_status", "export" if params.get("snapshot") else None))
+    return work(None, crypto)
+
+
+def stock(db, actor, params):
+    return transaction(db, actor, lambda _, crypto: stock_snapshot(db, crypto, params),
+                       capability=("stock_status", "export" if params.get("snapshot") else None))
 
 
 def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0, limit=25):

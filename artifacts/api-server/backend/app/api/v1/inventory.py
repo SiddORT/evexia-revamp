@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Literal
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 from app.api.deps import require_permissions, operation_router, current_identity
 from app.db.session import get_db
@@ -13,6 +13,7 @@ from app.schemas.inventory import (
 from app.services.auth import Identity
 from app.services import inventory as service
 from app.services import inventory_ledger, inventory_adjustments
+from app.schemas.low_stock import LowStockAlertPage
 from app.schemas.inventory_ledger import (
     AdjustmentInput, AdjustmentCreate, AdjustmentReview, AdjustmentSaved,
     AdjustmentChoices, AdjustmentReconciliation, LedgerPage,
@@ -25,6 +26,15 @@ movement_reader = operation_router("stock_movement", {
     "listing": None, "detail": None, "references": None, "preview": "create", "create": "create",
     "reconcile": "create", "activity": "activity", "analytics": "analytics",
 })
+
+
+@router.get("/low-stock-alerts", response_model=LowStockAlertPage, operation_id="listLowStockAlerts")
+def low_stock_alerts(response: Response, query: str = Query("", max_length=200),
+                     offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
+                     actor: Identity = Depends(current_identity), db: Session = Depends(get_db)):
+    from app.services.low_stock import listing
+    response.headers["Cache-Control"] = "no-store, private"
+    return listing(db, actor, query, offset, limit)
 
 
 @router.get("/stock/{product_id}/ledger", response_model=LedgerPage, operation_id="getInventoryLedger")

@@ -70,6 +70,7 @@ const PurchaseOrderFormPage = lazyRoute(() => import('./pages/admin/PurchaseOrde
 const PurchaseOrderDetail = lazyRoute(() => import('./components/admin/PurchaseOrderDetail.jsx'));
 const PurchaseReceived = lazyRoute(() => import('./pages/admin/PurchaseReceived.jsx'));
 const StockStatus = lazyRoute(() => import('./pages/admin/StockStatus.jsx'));
+const LowStockAlerts = lazyRoute(() => import('./pages/admin/LowStockAlerts.jsx'));
 const StockStatusDetailPage = lazyRoute(() => import('./pages/admin/StockStatusDetailPage.jsx'));
 const PurchaseReceivedFormPage = lazyRoute(() => import('./pages/admin/PurchaseReceivedFormPage.jsx'));
 const MoveStocks = lazyRoute(() => import('./pages/admin/MoveStocks.jsx'));
@@ -102,6 +103,7 @@ function App() {
       <Route path="/admin/inventory/purchase-orders/:id">{(params) => <PurchaseOrderDetail key={params.id} id={params.id} />}</Route>
       <Route path="/admin/inventory/purchase-received" component={PurchaseReceived} />
       <Route path="/admin/inventory/stock-status" component={StockStatus} />
+      <Route path="/admin/inventory/low-stock-alerts" component={LowStockAlerts} />
       <Route path="/admin/inventory/stock-status/:id">{(params) => <StockStatusDetailPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/inventory/expiring">{() => <ExpiryInventory kind="expiring" />}</Route>
       <Route path="/admin/inventory/expired">{() => <ExpiryInventory kind="expired" />}</Route>
