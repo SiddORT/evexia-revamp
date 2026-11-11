@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { ArrowLeft, ClipboardCheck, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
+import { Activity, ArrowLeft, ClipboardCheck, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
@@ -391,11 +391,11 @@ export default function PurchaseReceivedFormPage({ id }) {
     : <>
        <div className="po-summary"><div className="po-summary__item po-summary__item--accent"><span>PR number</span><strong>{record.number}</strong>{sampleReceipt && <span className="pr-sample-badge">Sample</span>}<small>{record.status === 'deleted' ? 'Deleted, retained for reference' : 'Active receipt'}</small></div><div className="po-summary__item"><span>PO status</span><strong style={{ fontSize: 17 }}><span className={fclass(fulfil)}>{fulfil || '—'}</span></strong><small>Derived from active receipts</small></div><div className="po-summary__item"><span>Lines received</span><strong>{record.lines.length}</strong><small>{record.lines.filter((l) => Number(l.rejectedQty) > 0).length} with rejections</small></div><div className="po-summary__item"><span>Received</span><strong style={{ fontSize: 20 }}>{displayDate(record.receivedDate)}</strong><small>By {record.receivedBy} (recorded name)</small></div></div>
       <section className="admin-panel">
-        <div className="po-form-intro"><div><h2>Receipt overview</h2><p>Created {stamp(record.createdAt)} · Last changed {stamp(record.updatedAt)}{record.deletedAt ? ` · Deleted ${stamp(record.deletedAt)}` : ''}</p></div>
-          <div className="po-actions">
-             <button type="button" className="admin-button admin-button--secondary" onClick={() => setShowActivity((v) => !v)} aria-expanded={showActivity} data-testid="button-pr-activity"><History size={15} /> Activity ({snapshot.record.eventTotal})</button>
-            <ProcurementDocumentActions key={record.id} kind="pr" record={record} />
-            {record.status === 'active' && <><button type="button" disabled={!can.edit} className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-pr"><Pencil size={15} /> Edit</button><button type="button" disabled={!can.delete} className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-pr"><Trash2 size={15} /> Delete</button></>}
+        <div className="po-form-intro pr-overview"><div><h2>Receipt overview</h2><p>Created {stamp(record.createdAt)} · Last changed {stamp(record.updatedAt)}{record.deletedAt ? ` · Deleted ${stamp(record.deletedAt)}` : ''}</p></div>
+          <div className="po-actions pr-overview__actions">
+             <button type="button" className="po-icon-action" title={`Activity (${snapshot.record.eventTotal}) for ${record.number}`} aria-label={`Activity (${snapshot.record.eventTotal}) for ${record.number}`} onClick={() => setShowActivity((v) => !v)} aria-expanded={showActivity} data-testid="button-pr-activity"><Activity size={17} aria-hidden="true" /></button>
+            <ProcurementDocumentActions key={record.id} kind="pr" record={record} iconOnly />
+            {record.status === 'active' && <><button type="button" disabled={!can.edit} className="po-icon-action" title={`Edit ${record.number}`} aria-label={`Edit ${record.number}`} onClick={() => setEditing(true)} data-testid="button-edit-pr"><Pencil size={17} aria-hidden="true" /></button><button type="button" disabled={!can.delete} className="po-icon-action po-action--danger" title={`Delete ${record.number}`} aria-label={`Delete ${record.number}`} onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-pr"><Trash2 size={17} aria-hidden="true" /></button></>}
           </div></div>
         <div className="po-review pr-lines-content">
           {record.status === 'deleted' && <p className="pr-note pr-warn">This receipt is deleted. Its accepted quantities no longer count toward the PO balance.</p>}

@@ -30,4 +30,12 @@
 .pr-page--detail .admin-page-head h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.25; overflow-wrap: anywhere; }
 .pr-page--detail .admin-page-head__eyebrow { overflow-wrap: anywhere; }
 .pr-page--detail .po-summary__item--accent > strong { font-size: 16px; line-height: 1.4; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.pr-overview { flex-wrap: wrap; }
+.pr-overview > :first-child { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.pr-overview__actions { min-width: 0; max-width: 100%; align-items: flex-start; }
+.pr-overview__actions > .po-icon-action { box-sizing: border-box; width: 36px; height: 36px; flex: none; }
+.pr-overview__actions > .po-icon-action:hover:not(:disabled) { background: var(--admin-state-soft); color: var(--admin-accent); }
+.pr-overview__actions > .po-action--danger,
+.pr-overview__actions > .po-action--danger:hover:not(:disabled) { color: var(--admin-danger); border-color: var(--admin-danger); }
+.pr-overview__actions > .po-icon-action:disabled { opacity: .5; cursor: not-allowed; }
 @media (max-width:760px){ .pr-ctx{grid-template-columns:1fr;} }
