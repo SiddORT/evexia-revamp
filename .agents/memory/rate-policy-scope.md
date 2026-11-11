@@ -25,3 +25,15 @@ and allergen backup compatibility when introducing Low stock alert filtering.
 Two-place money fields with a rejection contract still reject extra precision;
 display formatting does not expand those input contracts. Split tax rates may
 need more internal digits than their two-place presentation.
+
+Purchase Order unit prices and GST are PO-specific agreements, with catalogue
+rates only as initial suggestions. A missing catalogue price does not prohibit
+an authorized user from entering an agreed purchase price.
+
+**Why:** The user requires historical purchases to retain their agreed rates
+despite inflation or later Allergen Master changes, using existing PO snapshots
+and archived revisions rather than another rate store.
+
+**How to apply:** Keep saved rates authoritative on reopen; apply half-up
+normalization only to newly entered or deliberately changed rates, without
+rewriting unchanged historical rates, other POs or master prices.

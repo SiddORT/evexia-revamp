@@ -1952,7 +1952,9 @@ export const createPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZo
 export const createPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const createPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const createPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
+export const createPurchaseOrderBodyLinesItemGstOneMax = 64;
 export const createPurchaseOrderBodyLinesItemQuantityMax = 11;
+export const createPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
 export const createPurchaseOrderBodyLinesMax = 100;
 export const createPurchaseOrderResponseActiveReceiptCountDefault = 0;
 export const listPurchaseOrderActivityQueryQueryMax = 200;
@@ -1973,7 +1975,9 @@ export const previewPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZ
 export const previewPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const previewPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
+export const previewPurchaseOrderBodyLinesItemGstOneMax = 64;
 export const previewPurchaseOrderBodyLinesItemQuantityMax = 11;
+export const previewPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
 export const previewPurchaseOrderBodyLinesMax = 100;
 export const listPurchaseOrderReferencesQueryQueryMax = 200;
 export const listPurchaseOrderReferencesQueryLimitDefault = 25;
@@ -1991,7 +1995,9 @@ export const editPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZone
 export const editPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const editPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const editPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
+export const editPurchaseOrderBodyLinesItemGstOneMax = 64;
 export const editPurchaseOrderBodyLinesItemQuantityMax = 11;
+export const editPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
 export const editPurchaseOrderBodyLinesMax = 100;
 export const editPurchaseOrderResponseActiveReceiptCountDefault = 0;
 export const getPurchaseOrderChangesQueryLimitDefault = 10;
@@ -2003,7 +2009,9 @@ export const previewPurchaseOrderEditBodyDocumentContextOnePresentationResolvedT
 export const previewPurchaseOrderEditBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const previewPurchaseOrderEditBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseOrderEditBodyDocumentContextOneSchemaVersionDefault = 1;
+export const previewPurchaseOrderEditBodyLinesItemGstOneMax = 64;
 export const previewPurchaseOrderEditBodyLinesItemQuantityMax = 11;
+export const previewPurchaseOrderEditBodyLinesItemUnitPriceOneMax = 64;
 export const previewPurchaseOrderEditBodyLinesMax = 100;
 export const listPurchaseReceivedQueryQueryMax = 200;
 export const listPurchaseReceivedQueryReceiverMax = 50;
@@ -32497,9 +32505,20 @@ export const ListPurchaseOrdersResponse = zod.object({
  * @summary Create
  */
 
+export const createPurchaseOrderBodyLinesItemGstOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const createPurchaseOrderBodyLinesItemGstDefault = null;
+export const createPurchaseOrderBodyLinesItemLineIdDefault = null;
+
 export const createPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
+
+export const createPurchaseOrderBodyLinesItemUnitPriceOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const createPurchaseOrderBodyLinesItemUnitPriceDefault = null;
 
 export const createPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
   "^\\d{2}$",
@@ -32553,11 +32572,32 @@ export const CreatePurchaseOrderBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        gst: zod
+          .union([
+            zod
+              .string()
+              .max(createPurchaseOrderBodyLinesItemGstOneMax)
+              .regex(createPurchaseOrderBodyLinesItemGstOneRegExp),
+            zod.null(),
+          ])
+          .default(createPurchaseOrderBodyLinesItemGstDefault),
+        lineId: zod
+          .union([zod.string().uuid(), zod.null()])
+          .default(createPurchaseOrderBodyLinesItemLineIdDefault),
         productId: zod.string().uuid(),
         quantity: zod
           .string()
           .max(createPurchaseOrderBodyLinesItemQuantityMax)
           .regex(createPurchaseOrderBodyLinesItemQuantityRegExp),
+        unitPrice: zod
+          .union([
+            zod
+              .string()
+              .max(createPurchaseOrderBodyLinesItemUnitPriceOneMax)
+              .regex(createPurchaseOrderBodyLinesItemUnitPriceOneRegExp),
+            zod.null(),
+          ])
+          .default(createPurchaseOrderBodyLinesItemUnitPriceDefault),
       }),
     )
     .min(1)
@@ -32904,9 +32944,20 @@ export const GetPurchaseOrderOverviewResponse = zod.object({
  * @summary Preview
  */
 
+export const previewPurchaseOrderBodyLinesItemGstOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const previewPurchaseOrderBodyLinesItemGstDefault = null;
+export const previewPurchaseOrderBodyLinesItemLineIdDefault = null;
+
 export const previewPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
+
+export const previewPurchaseOrderBodyLinesItemUnitPriceOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const previewPurchaseOrderBodyLinesItemUnitPriceDefault = null;
 
 export const previewPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
   "^\\d{2}$",
@@ -32956,11 +33007,32 @@ export const PreviewPurchaseOrderBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        gst: zod
+          .union([
+            zod
+              .string()
+              .max(previewPurchaseOrderBodyLinesItemGstOneMax)
+              .regex(previewPurchaseOrderBodyLinesItemGstOneRegExp),
+            zod.null(),
+          ])
+          .default(previewPurchaseOrderBodyLinesItemGstDefault),
+        lineId: zod
+          .union([zod.string().uuid(), zod.null()])
+          .default(previewPurchaseOrderBodyLinesItemLineIdDefault),
         productId: zod.string().uuid(),
         quantity: zod
           .string()
           .max(previewPurchaseOrderBodyLinesItemQuantityMax)
           .regex(previewPurchaseOrderBodyLinesItemQuantityRegExp),
+        unitPrice: zod
+          .union([
+            zod
+              .string()
+              .max(previewPurchaseOrderBodyLinesItemUnitPriceOneMax)
+              .regex(previewPurchaseOrderBodyLinesItemUnitPriceOneRegExp),
+            zod.null(),
+          ])
+          .default(previewPurchaseOrderBodyLinesItemUnitPriceDefault),
       }),
     )
     .min(1)
@@ -33342,9 +33414,20 @@ export const EditPurchaseOrderParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
 
+export const editPurchaseOrderBodyLinesItemGstOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const editPurchaseOrderBodyLinesItemGstDefault = null;
+export const editPurchaseOrderBodyLinesItemLineIdDefault = null;
+
 export const editPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
+
+export const editPurchaseOrderBodyLinesItemUnitPriceOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const editPurchaseOrderBodyLinesItemUnitPriceDefault = null;
 
 export const editPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
   "^\\d{2}$",
@@ -33397,11 +33480,32 @@ export const EditPurchaseOrderBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        gst: zod
+          .union([
+            zod
+              .string()
+              .max(editPurchaseOrderBodyLinesItemGstOneMax)
+              .regex(editPurchaseOrderBodyLinesItemGstOneRegExp),
+            zod.null(),
+          ])
+          .default(editPurchaseOrderBodyLinesItemGstDefault),
+        lineId: zod
+          .union([zod.string().uuid(), zod.null()])
+          .default(editPurchaseOrderBodyLinesItemLineIdDefault),
         productId: zod.string().uuid(),
         quantity: zod
           .string()
           .max(editPurchaseOrderBodyLinesItemQuantityMax)
           .regex(editPurchaseOrderBodyLinesItemQuantityRegExp),
+        unitPrice: zod
+          .union([
+            zod
+              .string()
+              .max(editPurchaseOrderBodyLinesItemUnitPriceOneMax)
+              .regex(editPurchaseOrderBodyLinesItemUnitPriceOneRegExp),
+            zod.null(),
+          ])
+          .default(editPurchaseOrderBodyLinesItemUnitPriceDefault),
       }),
     )
     .min(1)
@@ -33549,9 +33653,19 @@ export const PreviewPurchaseOrderEditParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
 
+export const previewPurchaseOrderEditBodyLinesItemGstOneRegExp = new RegExp(
+  "^[0-9]+(?:\\.[0-9]{1,6})?$",
+);
+export const previewPurchaseOrderEditBodyLinesItemGstDefault = null;
+export const previewPurchaseOrderEditBodyLinesItemLineIdDefault = null;
+
 export const previewPurchaseOrderEditBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
+
+export const previewPurchaseOrderEditBodyLinesItemUnitPriceOneRegExp =
+  new RegExp("^[0-9]+(?:\\.[0-9]{1,6})?$");
+export const previewPurchaseOrderEditBodyLinesItemUnitPriceDefault = null;
 
 export const previewPurchaseOrderEditBodyPlaceOfSupplyCodeOneRegExp =
   new RegExp("^\\d{2}$");
@@ -33600,11 +33714,32 @@ export const PreviewPurchaseOrderEditBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        gst: zod
+          .union([
+            zod
+              .string()
+              .max(previewPurchaseOrderEditBodyLinesItemGstOneMax)
+              .regex(previewPurchaseOrderEditBodyLinesItemGstOneRegExp),
+            zod.null(),
+          ])
+          .default(previewPurchaseOrderEditBodyLinesItemGstDefault),
+        lineId: zod
+          .union([zod.string().uuid(), zod.null()])
+          .default(previewPurchaseOrderEditBodyLinesItemLineIdDefault),
         productId: zod.string().uuid(),
         quantity: zod
           .string()
           .max(previewPurchaseOrderEditBodyLinesItemQuantityMax)
           .regex(previewPurchaseOrderEditBodyLinesItemQuantityRegExp),
+        unitPrice: zod
+          .union([
+            zod
+              .string()
+              .max(previewPurchaseOrderEditBodyLinesItemUnitPriceOneMax)
+              .regex(previewPurchaseOrderEditBodyLinesItemUnitPriceOneRegExp),
+            zod.null(),
+          ])
+          .default(previewPurchaseOrderEditBodyLinesItemUnitPriceDefault),
       }),
     )
     .min(1)

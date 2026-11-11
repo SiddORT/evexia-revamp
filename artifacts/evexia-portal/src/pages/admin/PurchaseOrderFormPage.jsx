@@ -14,10 +14,10 @@ import { locationSuggestion } from '../../services/locationGeography.js';
 import { TaxAmounts, TaxBasis, LineTax } from '../../components/admin/PurchaseOrderTaxSummary.jsx';
 import { interceptNavigation } from '../../auth/navigationGuard.js';
 import {
-  MAX_LINES, MAX_TOTAL_PAISE, clearPending, computeLine, computeTotals, createPurchaseOrder, describeError, formatPaise, isStaleReview,
+  MAX_LINES, MAX_TOTAL_PAISE, clearPending, computeDraftLine, computeDraftTotals, createPurchaseOrder, describeError, formatPaise, isStaleReview,
   isUncertain, loadPending, markSaved, newKey, parseQuantity, previewPurchaseOrder, savePending, trimDecimal, validDate,
   clearOrderMutation, isStaleOrder, loadOrderMutation, previewPurchaseOrderEdit, saveOrderMutation, updatePurchaseOrder,
-  GST_STATES, taxContext, listPurchaseOrderReferences,
+  GST_STATES, taxContext, listPurchaseOrderReferences, parsePORate, pendingInput,
 } from '../../services/serverPurchaseOrders.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -26,11 +26,15 @@ import DocumentPreferenceRecovery from '../../components/admin/DocumentPreferenc
 
 const BASE = '/admin/inventory/purchase-orders';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const blankLine = () => ({ key: Math.random().toString(36).slice(2), product: null, quantity: '1' });
+const blankLine = () => ({ key: Math.random().toString(36).slice(2), product: null, quantity: '1', unitPrice: '', gst: '' });
 const toInput = (values) => ({
   poDate: values.poDate, expectedDate: values.expectedDate, vendorId: values.vendor?.id || '', locationId: values.location?.id || '',
   ...(values.placeOfSupplyCode ? { placeOfSupplyCode: values.placeOfSupplyCode } : {}),
-  lines: values.lines.map((line) => ({ productId: line.product?.id || '', quantity: String(line.quantity).trim() })),
+  lines: values.lines.map((line) => ({
+    productId: line.product?.id || '', quantity: String(line.quantity).trim(),
+    unitPrice: line.unitPrice.trim(), gst: line.gst.trim(),
+    ...(line.lineId ? { lineId: line.lineId } : {}),
+  })),
 });
 
 function validate(values) {
@@ -45,13 +49,13 @@ function validate(values) {
   else if (validDate(values.poDate) && values.expectedDate < values.poDate) errors.expectedDate = 'Expected delivery cannot be before the PO date.';
   values.lines.forEach((line, index) => {
     if (!line.product) errors[`lines.${index}.productId`] = 'Select a product.';
-    else if (line.product.unitPrice == null) errors[`lines.${index}.productId`] = 'This product has no catalogue price. Add one in the Allergen master before ordering it.';
     if (parseQuantity(line.quantity) === null) errors[`lines.${index}.quantity`] = 'Enter a quantity above 0, up to 1,000,000 with at most 3 decimals.';
-    const figures = computeLine(line.quantity, line.product, tax.treatment);
-    if (line.product && !figures && parseQuantity(line.quantity) !== null && line.product.unitPrice != null) errors[`lines.${index}.productId`] = 'Catalogue price or GST is invalid. Correct the product before reviewing.';
+    if (parsePORate(line.unitPrice, false, line.savedRates?.unitPrice) === null) errors[`lines.${index}.unitPrice`] = 'Enter a unit price from 0 to 999,999,999,999.99, with at most 6 decimals.';
+    if (parsePORate(line.gst, true, line.savedRates?.gst) === null) errors[`lines.${index}.gst`] = 'Enter GST from 0 to 100, with at most 6 decimals.';
+    const figures = computeDraftLine(line, tax.treatment);
     if (figures?.overflow) errors[`lines.${index}.total`] = 'This line exceeds the maximum order total.';
   });
-  const sum = computeTotals(values.lines, tax.treatment);
+  const sum = computeDraftTotals(values.lines, tax.treatment);
   if (sum?.overflow && !errors.lines) errors.lines = `The order total cannot exceed ${formatPaise(MAX_TOTAL_PAISE)}.`;
   return errors;
 }
@@ -83,8 +87,26 @@ const fromSaved = (order) => ({
   poDate: order.poDate, expectedDate: order.expectedDate,
   placeOfSupplyCode: order.taxBasis?.placeOfSupplyCode || '',
   vendor: { id: order.vendorId, name: order.vendorName, gstin: order.taxBasis?.supplierGstin }, location: { id: order.locationId, name: order.locationName },
-  lines: order.lines.map((line) => ({ key: line.id || newKey(), quantity: line.quantity, product: { id: line.productId, name: line.productName, unitPrice: line.unitPrice, gst: line.gst } })),
+  lines: order.lines.map((line) => ({
+    key: line.id || newKey(), lineId: line.id, quantity: line.quantity, unitPrice: line.unitPrice, gst: line.gst,
+    savedRates: { unitPrice: line.unitPrice, gst: line.gst },
+    product: { id: line.productId, name: line.productName, unitPrice: line.unitPrice, gst: line.gst },
+  })),
 });
+
+// Display an old pending review's own rates, without changing its retry body.
+// If definitively uncommitted, these become the explicit draft for a new review.
+function fromPending(pending, order) {
+  return { ...pending.values, lines: pending.values.lines.map((line, index) => {
+    if (typeof line.unitPrice === 'string' && typeof line.gst === 'string') return line;
+    const reviewed = pending.order.lines[index];
+    const saved = order?.lines[index];
+    const retained = saved && saved.productId === line.product.id &&
+      saved.unitPrice === reviewed.unitPrice && saved.gst === reviewed.gst;
+    return { ...line, unitPrice: reviewed.unitPrice, gst: reviewed.gst,
+      ...(retained ? { lineId: saved.id, savedRates: { unitPrice: saved.unitPrice, gst: saved.gst } } : {}) };
+  }) };
+}
 
 export function Editor({ order, onCancel, onSaved, onReload }) {
   const can = useResourceActions('purchase_order');
@@ -95,13 +117,13 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const restored = loaded.status === 'found' ? loaded.pending : null;
   const blocked = loaded.status === 'blocked' ? loaded.message : '';
   const pendingRef = useRef(restored || null);
-  const [values, setValues] = useState(() => restored?.values || (editing ? fromSaved(order) : { poDate: today(), expectedDate: '', vendor: null, location: null, lines: [blankLine()] }));
+  const [values, setValues] = useState(() => restored ? fromPending(restored, order) : (editing ? fromSaved(order) : { poDate: today(), expectedDate: '', vendor: null, location: null, lines: [blankLine()] }));
   const baseline = useRef(JSON.stringify(values));
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState(restored ? 'A previous save attempt did not return a confirmed result. Retry it to confirm whether it was saved; nothing is duplicated.' : '');
   const [saveError, setSaveError] = useState('');
   const [documentPreferenceError, setDocumentPreferenceError] = useState('');
-  const [review, setReview] = useState(restored ? { order: restored.order, token: restored.reviewToken, input: restored.input || toInput(restored.values) } : null);
+  const [review, setReview] = useState(restored ? { order: restored.order, token: restored.reviewToken, input: pendingInput(restored) } : null);
   const [uncertain, setUncertain] = useState(Boolean(restored));
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -109,8 +131,8 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const [locationChoice, setLocationChoice] = useState(null);
   const locked = uncertain || busy || Boolean(blocked) || !(editing ? can.edit : can.add);
   const tax = taxContext(values.vendor, values.placeOfSupplyCode);
-  const figures = computeTotals(values.lines, tax.treatment);
-  const draft = values.lines.map((line) => computeLine(line.quantity, line.product, tax.treatment));
+  const figures = computeDraftTotals(values.lines, tax.treatment);
+  const draft = values.lines.map((line) => computeDraftLine(line, tax.treatment));
   const [legacyTaxStatus, setLegacyTaxStatus] = useState('');
   async function loadLegacyTax() {
     if (locked || !editing || order.taxBasis) return;
@@ -144,6 +166,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     setValues((current) => ({ ...current, ...patch }));
     setErrors((current) => ({ ...current, ...Object.fromEntries(clear.map((key) => [key, undefined])), lines: undefined }));
     setSaveError('');
+    setReview(null);
   };
   function selectLocation(item) {
     if (locked || item?.id === values.location?.id) return;
@@ -158,7 +181,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   }
   const supplyHelp = <div id="po-supply-help" className="po-tax-context">
     <p>Supplier GSTIN: <strong>{values.vendor?.gstin || 'Not captured'}</strong> · Registration state: <strong>{tax.supplier ? `${tax.supplier.name} (${tax.supplier.code})` : 'Unavailable'}</strong></p>
-    <p>{tax.error || (tax.treatment === 'igst' ? 'Different state codes: full catalogue GST rate applies as IGST.' : `Matching state codes: equal CGST and ${tax.treatment === 'cgst_utgst' ? 'UTGST' : 'SGST'} rates apply.`)}</p>
+    <p>{tax.error || (tax.treatment === 'igst' ? 'Different state codes: the entered GST rate applies as IGST.' : `Matching state codes: equal CGST and ${tax.treatment === 'cgst_utgst' ? 'UTGST' : 'SGST'} rates apply.`)}</p>
     <p>Storage location State/UT fills Place of supply for Indian addresses. You may override it for an exceptional delivery destination. Changing location asks before replacing a manual or saved destination.</p>
     <p>{values.supplySource === 'location' ? (values.placeOfSupplyCode ? 'Destination suggested by the selected storage location.' : 'This location has missing or non-Indian geography. Select the applicable Indian destination explicitly; no previous suggestion is retained.') : values.placeOfSupplyCode ? (values.supplySource === 'manual' ? 'Manually selected destination.' : 'Saved destination retained; current master address changes are not applied.') : 'Select a storage location or choose Place of supply explicitly.'}</p>
     <p>Ordinary domestic goods only. This calculator does not determine special supply, reverse-charge, composition, SEZ or import/export rules. A foreign storage address does not establish Indian tax treatment.</p>
@@ -169,6 +192,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     setValues((current) => ({ ...current, lines: current.lines.map((line, i) => i === index ? { ...line, ...patch } : line) }));
     setErrors((current) => ({ ...current, ...Object.fromEntries(clear.map((key) => [`lines.${index}.${key}`, undefined])), [`lines.${index}.total`]: undefined, lines: undefined }));
     setSaveError('');
+    setReview(null);
   };
 
   async function runReview(event) {
@@ -195,7 +219,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     if (!(editing ? can.edit : can.add) || busyRef.current || !review) return;
     busyRef.current = true; setBusy(true);
     setSaveError('');
-    const input = uncertain && restored ? (restored.input || toInput(restored.values)) : review.input;
+    const input = uncertain && restored ? pendingInput(restored) : review.input;
     const fingerprint = uncertain && restored ? restored.fingerprint : JSON.stringify({ input, token: review.token });
     if (pendingRef.current?.fingerprint !== fingerprint) pendingRef.current = { fingerprint, key: newKey() };
     const { key } = pendingRef.current;
@@ -220,7 +244,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
         setSaveError('Another session changed or deleted this order. Your draft is kept, but cannot overwrite it. Reload the latest saved order before making a new edit.');
       } else if (isStaleReview(cause)) {
         await clearAttempt(); pendingRef.current = null; setUncertain(false); setReview(null);
-        setSaveError('Catalogue prices, vendor tax basis or references changed since your review. Your draft is kept; review the order again to see current amounts.');
+        setSaveError('The review is no longer valid or predates editable rates. Your draft rates are kept; review the order again before saving.');
       } else if (isUncertain(cause)) {
         setUncertain(true);
         setSaveError('The server did not confirm whether this order was saved. Retry to confirm; the same request identity is reused so no duplicate is created.');
@@ -234,17 +258,17 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const productHint = (line, index) => {
     if (!line.product) return null;
     return line.product.unitPrice == null
-      ? <p className="mr-form__error" role="alert" id={`po-product-${index}-price`}>Catalogue price unavailable. This line cannot be created.</p>
+      ? <p id={`po-product-${index}-price`}>No catalogue price is available. Enter the agreed unit price below.</p>
       : null;
   };
 
   return <section className="admin-panel po-new" aria-label={editing ? 'Edit purchase order' : 'New purchase order'}>
-    <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Order details'}</h2><p>{review ? 'Nothing has been saved yet. Amounts below are calculated by the server.' : 'Required fields are marked *. Prices and GST come from the product catalogue.'}</p></div><ClipboardList size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
+    <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Order details'}</h2><p>{review ? 'Nothing has been saved yet. Amounts below are calculated by the server.' : 'Required fields are marked *. Catalogue prices and GST are starting defaults. Enter the agreed rates for this PO.'}</p></div><ClipboardList size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {notice && <div className="admin-feedback" role="status" style={{ margin: 18 }}>{notice}</div>}
     {blocked && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{blocked}</div>}
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError}</div>}
     {documentPreferenceError && <DocumentPreferenceRecovery kind="po" message={documentPreferenceError} onRecovered={() => { setDocumentPreferenceError(''); setSaveError(''); }} />}
-    {editing && <p className="po-review__note" style={{ margin: 18 }}>Retained products keep their saved names, prices and GST, even if their master records are no longer available. Newly selected products use the current catalogue.</p>}
+    {editing && <p className="po-review__note" style={{ margin: 18 }}>Retained products start with their saved names, prices and GST, even if their master records are no longer available. You may change rates for this PO only; earlier history and document revisions remain unchanged.</p>}
     {conflict && <button type="button" className="admin-button" onClick={async () => { if (await confirm('Discard this draft and reload the latest saved order?', { actionLabel: 'Discard and reload' }) && !busyRef.current) { navigation.current = {}; onReload(); } }}>Reload latest order</button>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">Confirming saves this order and its document on the server. It does not send an order to a supplier. Captured template: {review.input?.documentContext?.templateId || restored?.input?.documentContext?.templateId || 'Legacy retry; original request retained'}.</p>
@@ -288,6 +312,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
             </div>
           </fieldset>
           <fieldset className="po-group" disabled={locked}><legend>Products <span>{values.lines.length} {values.lines.length === 1 ? 'line' : 'lines'}</span></legend>
+            <p id="po-rate-help">Enter non-negative plain decimals with up to 6 decimal places. New or changed rates round half-up to 2 decimals at review and save. GST cannot exceed 100%. Unchanged historical rates retain their saved precision. Changing rates does not update the product master or other POs.</p>
             <div className="po-new-lines">{values.lines.map((line, index) => {
               const product = line.product;
               return <div className="po-new-line" key={line.key}>
@@ -296,13 +321,14 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
                 <div className="po-new-line__fields">
                   <div className="po-new-line__product"><Field id={`po-product-${index}`} label="Product" error={errors[`lines.${index}.productId`]}>
                     <PurchaseOrderReferenceSelect id={`po-product-${index}`} kind="products" label="Product" selected={product} placeholder="Select product" invalid={errors[`lines.${index}.productId`]} describedBy={errors[`lines.${index}.productId`] ? `po-product-${index}-error` : undefined} onChange={(item) => {
-                      const retained = editing && order.lines.find((saved) => saved.productId === item?.id);
-                      editLine(index, { product: retained ? { id: retained.productId, name: retained.productName, unitPrice: retained.unitPrice, gst: retained.gst } : item }, ['productId']);
+                      if (item?.id === product?.id) return;
+                      editLine(index, { product: item, lineId: undefined, savedRates: undefined,
+                        unitPrice: item?.unitPrice ?? '', gst: item?.gst ?? '' }, ['productId', 'unitPrice', 'gst']);
                     }} />
                   </Field>{productHint(line, index) && !errors[`lines.${index}.productId`] ? productHint(line, index) : null}</div>
                   <Field id={`po-quantity-${index}`} label="Quantity" error={errors[`lines.${index}.quantity`]}><input id={`po-quantity-${index}`} className="mr-form__control" type="text" inputMode="decimal" placeholder="1" value={line.quantity} onChange={(e) => editLine(index, { quantity: e.target.value }, ['quantity'])} aria-invalid={Boolean(errors[`lines.${index}.quantity`])} aria-describedby={errors[`lines.${index}.quantity`] ? `po-quantity-${index}-error` : undefined} data-testid={`input-po-quantity-${index}`} /></Field>
-                  <div className="po-field"><label htmlFor={`po-price-${index}`}>Unit price (₹)</label><input id={`po-price-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={!product ? '' : product.unitPrice == null ? 'Unavailable' : formatRate(product.unitPrice)} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-price-${index}`} /></div>
-                  <div className="po-field"><label htmlFor={`po-gst-${index}`}>GST (%)</label><input id={`po-gst-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={product ? formatRate(product.gst) : ''} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-gst-${index}`} /></div>
+                  <Field id={`po-price-${index}`} label="Unit price (₹)" error={errors[`lines.${index}.unitPrice`]}><input id={`po-price-${index}`} className="mr-form__control" type="text" inputMode="decimal" maxLength={64} value={line.unitPrice} onChange={(e) => editLine(index, { unitPrice: e.target.value }, ['unitPrice'])} placeholder="Enter agreed price" aria-invalid={Boolean(errors[`lines.${index}.unitPrice`])} aria-describedby={`po-rate-help${errors[`lines.${index}.unitPrice`] ? ` po-price-${index}-error` : ''}`} data-testid={`input-po-price-${index}`} /></Field>
+                  <Field id={`po-gst-${index}`} label="GST (%)" error={errors[`lines.${index}.gst`]}><input id={`po-gst-${index}`} className="mr-form__control" type="text" inputMode="decimal" maxLength={64} value={line.gst} onChange={(e) => editLine(index, { gst: e.target.value }, ['gst'])} placeholder="Enter GST %" aria-invalid={Boolean(errors[`lines.${index}.gst`])} aria-describedby={`po-rate-help${errors[`lines.${index}.gst`] ? ` po-gst-${index}-error` : ''}`} data-testid={`input-po-gst-${index}`} /></Field>
                 </div>
                 <div className="po-new-line__totals"><span>Taxable <b>{draft[index] && !draft[index].overflow ? formatPaise(draft[index].subtotal) : '—'}</b></span><LineTax line={draft[index]} /><span>GST <b>{draft[index]?.taxPending ? 'Tax pending' : draft[index] && !draft[index].overflow ? formatPaise(draft[index].gstAmount) : '—'}</b></span><span className="po-new-line__final">Line total <b>{draft[index]?.taxPending ? 'Tax pending' : draft[index] && !draft[index].overflow ? formatPaise(draft[index].total) : '—'}</b></span></div>
                 {errors[`lines.${index}.total`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.total`]}</p>}

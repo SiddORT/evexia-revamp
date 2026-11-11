@@ -9,6 +9,11 @@ class POLineInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     productId: uuid.UUID
     quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    # Optional only for exact reconciliation of pre-rate retry payloads.
+    # New reviews and uncommitted saves require both explicit decimal strings.
+    unitPrice: str | None = Field(default=None, max_length=64, pattern=r"^[0-9]+(?:\.[0-9]{1,6})?$")
+    gst: str | None = Field(default=None, max_length=64, pattern=r"^[0-9]+(?:\.[0-9]{1,6})?$")
+    lineId: uuid.UUID | None = None
 
 
 class POInput(BaseModel):

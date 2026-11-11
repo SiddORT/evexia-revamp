@@ -35,7 +35,7 @@ def calculate_components(quantity, price, gst, treatment):
         if not q.is_finite() or q < Decimal(".001") or q > 1000000 or q != q.quantize(Decimal(".001")):
             raise POError("Quantity must be from 0.001 to 1,000,000 with at most three decimals.", 422, "po_quantity")
         if not price.is_finite() or price < 0 or price > Decimal("999999999999.999999") or not gst.is_finite() or not 0 <= gst <= 100:
-            raise POError("Catalogue price or GST rate is invalid. Correct the product before reviewing.", 422, "po_catalogue")
+            raise POError("PO unit price or GST rate is invalid. Correct the line before reviewing.", 422, "po_rate")
         subtotal = int((q * price * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
         rates = {k: Decimal(0) for k in COMPONENTS}
         if treatment == "igst":

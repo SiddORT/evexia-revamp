@@ -31,13 +31,16 @@ retain master references, while names/prices/taxes are saved snapshots.
 
 ## Arithmetic and review
 
-Allergen `selling_price` and `gst` are read-only source values. Newly selected
-catalogue snapshots use exact half-up two-place decimal strings.
-Missing price is unavailable, not zero. Explicit zero is supported.
+Allergen `selling_price` and `gst` remain read-only to the PO flow. Newly selected
+catalogue defaults use exact half-up two-place decimal strings.
+Catalogue rates are suggestions only. Each PO line has independent editable
+`unitPrice` (INR) and `gst` (percentage) decimal-string inputs. A product with no
+catalogue selling price can be ordered by entering a price; missing entry is
+unavailable, not zero. Explicit zero is supported.
 Quantities are positive plain decimals with up to three decimal places and
 maximum 1,000,000. There are 1–100 lines and a ₹10 crore per-order limit.
 
-For each line, multiply quantity by catalogue price, round to paise using
+For each line, multiply quantity by the agreed PO unit price, round to paise using
 **round half up**, then independently round each applicable GST component half
 up on that rounded subtotal. Sum rounded components for line GST, then rounded
 lines for order totals. Equal component **rates** can differ from the former
@@ -47,16 +50,29 @@ to reconcile this. Halved historical six-decimal rates retain seven internal
 decimal places; halving a new two-place rate can require three. Component
 arithmetic retains those digits. Rate displays round half-up to two places
 without changing saved snapshots, paise amounts or arithmetic.
-Retained old lines keep their original precise rate strings on edit; only newly
-selected catalogue rates normalize. See [rate rollout](rate-rounding-rollout.md).
+New and changed entries accept non-negative plain decimal strings of at most
+64 characters, 12 significant integer digits and 6 fractional digits. Check the
+original value against 999999999999.99 for price and 100 for GST **before**
+two-place half-up rounding, then check line/order limits after calculation.
+Neither scientific notation nor incomplete draft text can pass review.
+Retained old lines keep an unchanged rate's original precise string on edit;
+each deliberately changed rate normalizes independently. The optional input
+`lineId` identifies a retained server line and must belong to that PO and
+product, at most once. This distinguishes repeated products with different saved
+rates and preserves their identities in before/after history. A new or
+reselected product starts with catalogue defaults; it has no retained line ID.
+See [rate rollout](rate-rounding-rollout.md).
 The draft uses scaled BigInt; preview/create use Python Decimal with explicit
 precision. Unfinished/invalid rows are excluded from the **draft estimate**,
 not allowed through review. The dynamic partial-line-count notice is intentionally
 absent; estimates are not presented as final totals. Empty drafts show zero. Missing tax basis
 shows **Tax pending**, distinct from valid zero-rated GST or unavailable prices.
 Server preview binds the exact input, current reference versions, names,
-prices and GST into a review token. Changed catalogue/reference details
-between preview and submission return `409 po_review_stale`, requiring review.
+submitted rate strings and accepted prices/GST into a review token. Changing
+either submitted rate, even to another value that rounds identically, invalidates
+the review. Changed catalogue/reference details between preview and submission
+also return `409 po_review_stale`, requiring review; re-review never replaces
+entered rates with new catalogue prices.
 
 Create persists only after confirmation. Its owner-scoped durable retry key
 is written before submission, and the server atomically stores the successful
@@ -65,7 +81,40 @@ A reused key for different data is refused. Uncertain attempts lock editing
 until the same request is reconciled. Corrupt/unavailable retry storage blocks
 new sends explicitly. This is retry metadata, not a local PO dataset.
 
+`unitPrice` and `gst` are optional/nullable in the wire schema solely to read
+pre-change durable retry requests. New previews and uncommitted saves require
+explicit valid strings on every line. For an old retry, omitted rate/line-ID
+fields remain omitted when computing the original request digest; a committed
+response is recovered before any current rate validation. If no committed
+response exists, a missing-rate request is rejected with `po_review_stale` and
+must be reviewed again. It can never acquire today's catalogue rates or save
+later under its old review. Browser journals keep their exact body, key, token
+and expected version, including old journals that reconstruct their original
+rate-less shape. The old review's own rate values can populate the recovered
+draft only; they are not added to the outstanding request.
+
+Accepted rates use the existing line JSON snapshots, aggregate totals,
+encrypted before/after audit and immutable document revisions in one transaction.
+No new rate store, schema migration or rate-history navigation is introduced.
+Detail, review, Changes history and saved-document/PDF paths read those snapshots,
+never current master prices. Editing rates changes only this PO and creates the
+usual next version/document revision; previous revisions and other POs remain
+unchanged. Active receipts still prevent edits/deletion; permissions, receipt
+valuation, destination-driven component splitting and retry locks are unchanged.
+
 ## Ordinary domestic tax contract
+
+### Editable-rate validation limitation
+
+The editable PO rate update was inspected at source/diff level only, including
+form initialization/validation, entered-rate arithmetic, review binding,
+line-identity persistence, history/document snapshot propagation and pre-change
+retry digest compatibility. OpenAPI helpers were regenerated directly, excluding
+the check-running wrapper, and unrelated generated changes were removed.
+At the user's explicit request, no regression/release checks, smoke runners,
+browser tests, runtime activation, managed workflow restarts, database activation
+or deployment were performed. Create/edit/reload, keyboard behavior, retry races
+and archived PDF behavior therefore remain unverified at runtime for this update.
 
 Each new/reviewed edit requires a supported **Place of supply (State/UT)**.
 A newly selected shared Storage Location suggests its structured Indian State/UT;
@@ -78,7 +127,7 @@ explicit destination selection. It does not establish import/export treatment.
 This means the applicable place of supply for **ordinary domestic
 goods**, not necessarily the storage-location address. Supplier state comes from
 the server vendor GSTIN, never client assertions. Different state codes apply the
-full catalogue rate as IGST. Matching codes apply equal CGST and SGST, except
+full entered GST rate as IGST. Matching codes apply equal CGST and SGST, except
 Chandigarh (04), merged Dadra and Nagar Haveli and Daman and Diu (26),
 Lakshadweep (31), Andaman and Nicobar Islands (35), and Ladakh (38), which use
 CGST + UTGST. Delhi (07), Puducherry (34), and Jammu and Kashmir (01) use SGST.
@@ -106,7 +155,8 @@ Orders without a basis retain original aggregate amounts and display
 For an explicit legacy edit, select a destination and load/select an available
 vendor with valid GSTIN, then obtain a new review. Retained nonlegacy vendors
 use saved GST identity on edits; changed vendors use current server data.
-Retained products continue using saved names/prices/rates.
+Retained products keep saved names and initially saved prices/rates; only
+deliberate edits to this PO's rate fields change its current agreed rates.
 
 Opening a saved PO never hydrates its destination from the current location
 master. Its saved State/UT and tax snapshots remain authoritative. Only deliberate

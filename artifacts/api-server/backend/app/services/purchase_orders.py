@@ -3,7 +3,7 @@ import hashlib
 import json
 import uuid
 from decimal import Decimal
-from app.schemas.rates import rate, display_rate
+from app.schemas.rates import rate, display_rate, source_decimal
 from sqlalchemy import select, func, or_, delete, text
 from sqlalchemy.exc import SQLAlchemyError
 from app.core.security import utcnow
@@ -74,7 +74,26 @@ def projection(db, row):
                 lines=[dict(**line.snapshot, id=str(line.id)) for line in lines])
 
 
+def accepted_rate(line, field, maximum, saved):
+    value = getattr(line, field)
+    # Exact retained source strings are not a new rate decision. Preserve
+    # historical precision independently for each rate on each saved line.
+    if saved and value == saved[field]:
+        return Decimal(value)
+    try:
+        if source_decimal(value) > maximum:
+            raise ValueError("Original rate exceeds its supported maximum")
+        return Decimal(rate(value, maximum))
+    except ValueError:
+        name = "Unit price" if field == "unitPrice" else "GST percentage"
+        raise POError(f"{name} must be a non-negative plain decimal with up to six fractional digits, not above {maximum}.",
+                      422, "po_rate") from None
+
+
 def preview_data(db, body, existing=None):
+    if any("unitPrice" not in line.model_fields_set or "gst" not in line.model_fields_set for line in body.lines):
+        raise POError("This request was reviewed before editable PO rates were introduced. No new save was made. Review again with explicit unit price and GST for every line.",
+                      409, "po_review_stale")
     generation = documents.context(body)
     previous = projection(db, existing) if existing else None
     vendor = None if previous and previous["vendorId"] == str(body.vendorId) else locked_reference(db, "vendors", body.vendorId)
@@ -87,20 +106,28 @@ def preview_data(db, body, existing=None):
     location = None if previous and previous["locationId"] == str(body.locationId) else locked_reference(db, "locations", body.locationId)
     products = {}
     retained = {line["productId"]: line for line in previous["lines"]} if previous else {}
+    saved_lines = {line["id"]: line for line in previous["lines"]} if previous else {}
+    used_lines = set()
+    for line in body.lines:
+        if line.lineId is not None:
+            saved = saved_lines.get(str(line.lineId))
+            if not saved or saved["productId"] != str(line.productId) or line.lineId in used_lines:
+                raise POError("A retained product line no longer matches this order. Reload the saved order before editing.", 409, "po_stale")
+            used_lines.add(line.lineId)
     for product_id in sorted({line.productId for line in body.lines}):
         if str(product_id) not in retained:
             products[product_id] = locked_reference(db, "products", product_id)
     lines = []
     revisions = []
     for line in body.lines:
-        old = retained.get(str(line.productId))
+        saved = saved_lines.get(str(line.lineId)) if line.lineId else None
+        old = saved or retained.get(str(line.productId))
         product = products.get(line.productId)
-        price = Decimal(old["unitPrice"]) if old else (Decimal(rate(str(product.selling_price))) if product.selling_price is not None else None)
-        gst = Decimal(old["gst"]) if old else Decimal(rate(str(product.gst), Decimal("100")))
-        if price is None:
-            raise POError("The selected product has no catalogue selling price. Set it in Allergen Master before reviewing.", 422, "po_price_missing")
+        price = accepted_rate(line, "unitPrice", Decimal("999999999999.99"), saved)
+        gst = accepted_rate(line, "gst", Decimal("100"), saved)
         lines.append(dict(productId=str(line.productId), productName=old["productName"] if old else product.name,
                           quantity=line.quantity, unitPrice=str(price), gst=str(gst),
+                          **({"id": str(line.lineId)} if line.lineId else {}),
                           **calculate_components(line.quantity, price, gst, basis["treatment"])))
         revisions.append(product.version if product else None)
     figures = {field: sum(line[field] for line in lines) for field in ("subtotal", "gstAmount", "total")}
@@ -114,7 +141,9 @@ def preview_data(db, body, existing=None):
     crypto = documents.crypto_for(db)
     historical = documents.previous_model(db, "po", existing.id, crypto) if existing else None
     document_model = documents.po_supplement(db, order, historical)
-    token = digest([order, generation, document_model, vendor.version if vendor else None, location.version if location else None, revisions,
+    # Bind the exact submitted rate lexemes too: even an edit that rounds to the
+    # same amount must be reviewed again. Never add these fields to old retries.
+    token = digest([body.model_dump(mode="json", include=set(POInput.model_fields)), order, generation, document_model, vendor.version if vendor else None, location.version if location else None, revisions,
                     str(existing.id) if existing else None, existing.version if existing else None])
     return dict(order=order, reviewToken=token, documentModel=document_model)
 
@@ -146,14 +175,20 @@ def audit(db, actor, row, action, summary, before=None, after=None):
 
 def persist_lines(db, row, lines):
     old = list(db.scalars(select(Line).where(Line.order_id == row.id, Line.position >= 0).order_by(Line.position)))
+    retained_ids = {item["id"] for item in lines if item.get("id")}
     # Reuse matching server identities, including repeated products, once each.
     for position, data in enumerate(lines):
-        match = next((line for line in old if str(line.product_id) == data["productId"]), None)
+        if data.get("id"):
+            match = next((line for line in old if str(line.id) == data["id"]), None)
+        else:
+            match = next((line for line in old if str(line.product_id) == data["productId"]
+                          and str(line.id) not in retained_ids), None)
+        snapshot = {key: value for key, value in data.items() if key != "id"}
         if match:
             old.remove(match)
-            match.position, match.snapshot = position, data
+            match.position, match.snapshot = position, snapshot
         else:
-            db.add(Line(order_id=row.id, product_id=uuid.UUID(data["productId"]), position=position, snapshot=data))
+            db.add(Line(order_id=row.id, product_id=uuid.UUID(data["productId"]), position=position, snapshot=snapshot))
     for line in old:
         # Retain source identities for deleted receipt history; negative positions
         # are archived and never appear in the current PO or financial snapshot.
@@ -169,6 +204,11 @@ def mutation(db, actor, body, record_id=None, operation="created"):
             payload.pop("placeOfSupplyCode", None)
         if "documentContext" not in body.model_fields_set:
             payload.pop("documentContext", None)
+        if operation != "deleted":
+            for source, target in zip(body.lines, payload["lines"]):
+                for field in ("unitPrice", "gst", "lineId"):
+                    if field not in source.model_fields_set:
+                        target.pop(field, None)
         payload_digest = digest([operation, record_id, payload])
         # Serialize retry key before existence check, including across requests.
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": int(body.idempotencyKey.int % (2**63 - 1))})
@@ -194,7 +234,7 @@ def mutation(db, actor, body, record_id=None, operation="created"):
         else:
             review = preview_data(db, body, row)
             if review["reviewToken"] != body.reviewToken:
-                raise POError("Catalogue or reference details changed since review. Your draft is preserved; review current amounts again.",
+                raise POError("Order rates, catalogue or reference details changed since review. Your draft is preserved; review the order again.",
                               409, "po_review_stale")
             data = review["order"]
             if not row:
@@ -212,7 +252,8 @@ def mutation(db, actor, body, record_id=None, operation="created"):
             if before:
                 changed = [name for key, name in (("poDate", "PO date"), ("expectedDate", "expected delivery"),
                            ("vendorId", "vendor"), ("locationId", "storage location"), ("taxBasis", "tax basis / place of supply"), ("lines", "product lines"))
-                           if (before[key] if key != "lines" else [{k: v for k, v in l.items() if k != "id"} for l in before[key]]) != data[key]]
+                           if (before[key] if key != "lines" else [{k: v for k, v in l.items() if k != "id"} for l in before[key]]) !=
+                           (data[key] if key != "lines" else [{k: v for k, v in l.items() if k != "id"} for l in data[key]])]
                 if not changed:
                     raise POError("No changes to save.", 422, "po_no_change")
                 summary = f"Updated {', '.join(changed)}; total INR {Decimal(before['total']) / 100:.2f} → {Decimal(row.total) / 100:.2f}"

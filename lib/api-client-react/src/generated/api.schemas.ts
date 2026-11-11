@@ -7792,12 +7792,15 @@ export interface POAnalytics {
 }
 
 export interface POLineInput {
+  gst?: string | null;
+  lineId?: string | null;
   productId: string;
   /**
    * @maxLength 11
    * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
    */
   quantity: string;
+  unitPrice?: string | null;
 }
 
 export interface POCreate {

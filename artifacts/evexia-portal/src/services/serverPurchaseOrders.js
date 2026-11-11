@@ -1,6 +1,6 @@
 import { getSession, purchaseOrderRequest } from '../auth/adminSession.js';
 import states from '../../../api-server/backend/app/services/gst_states.json' with { type: 'json' };
-import { catalogueRate } from './rates.js';
+import { catalogueRate, compareRate } from './rates.js';
 
 export const GST_STATES = states;
 export const TAX_COMPONENTS = ['cgst', 'sgst', 'utgst', 'igst'];
@@ -154,12 +154,49 @@ export function parseQuantity(text) {
   return value === null || value <= 0n || value > MAX_QTY ? null : value;
 }
 
+/** Validate original bounds before rounding; untouched saved rates stay exact. */
+export function parsePORate(text, percentage = false, savedValue) {
+  if (savedValue != null && text === savedValue) return text;
+  try {
+    const maximum = percentage ? '100' : '999999999999.99';
+    const result = catalogueRate(text, percentage);
+    return compareRate(text, maximum) > 0 ? null : result;
+  } catch { return null; }
+}
+
+function draftRates(line) {
+  if (!line.product) return null;
+  const unitPrice = parsePORate(line.unitPrice, false, line.savedRates?.unitPrice);
+  const gst = parsePORate(line.gst, true, line.savedRates?.gst);
+  if (unitPrice === null || gst === null) return null;
+  return { unitPrice, gst };
+}
+export function computeDraftLine(line, treatment) {
+  return computeLine(line.quantity, draftRates(line), treatment);
+}
+export function computeDraftTotals(lines, treatment) {
+  return computeTotals(lines.map((line) => ({ quantity: line.quantity, product: draftRates(line) })), treatment);
+}
+
+// Old journals without an explicit input predate rate entry. Reconstruct only
+// their original shape, never inject today's defaults or new rate fields.
+export function pendingInput(pending) {
+  if (pending.input) return pending.input;
+  const values = pending.values;
+  return {
+    poDate: values.poDate, expectedDate: values.expectedDate,
+    vendorId: values.vendor.id, locationId: values.location.id,
+    ...(values.placeOfSupplyCode ? { placeOfSupplyCode: values.placeOfSupplyCode } : {}),
+    lines: values.lines.map((line) => ({ productId: line.product.id, quantity: String(line.quantity).trim() })),
+  };
+}
+
 /** Returns { subtotal, gstAmount, total } in integer paise, or null when inputs are not computable. */
 export function computeLine(quantityText, product, treatment) {
   const qty = parseQuantity(quantityText);
   if (qty === null || !product || product.unitPrice == null) return null;
   // Retained lines carry historical rates and MUST keep their exact arithmetic.
-  // New choices are canonicalized at the catalogue/selection boundary.
+  // New/changed draft rates are canonicalized before reaching this calculator.
   const price = parseScaled(product.unitPrice, 6);
   const gst = parseScaled(product.gst, 6);
   if (price === null || price > MAX_PRICE || gst === null || gst > MAX_GST) return null;
@@ -215,8 +252,22 @@ function validPending(p) {
   return Boolean(p && typeof p === 'object' && typeof p.fingerprint === 'string' && UUID.test(p.key || '') && typeof p.reviewToken === 'string'
     && p.owner === ownerId() && p.values && typeof p.values.poDate === 'string' && typeof p.values.expectedDate === 'string'
     && isRef(p.values.vendor) && isRef(p.values.location) && Array.isArray(p.values.lines) && p.values.lines.length > 0 && p.values.lines.length <= MAX_LINES
-    && p.values.lines.every((line) => typeof line.key === 'string' && typeof line.quantity === 'string' && isRef(line.product))
-    && p.order && Array.isArray(p.order.lines) && ['subtotal', 'gstAmount', 'total'].every((k) => Number.isFinite(Number(p.order[k])))
+    && p.values.lines.every((line) => typeof line.key === 'string' && typeof line.quantity === 'string' && isRef(line.product)
+      && ((!('unitPrice' in line) && !('gst' in line)) || (typeof line.unitPrice === 'string' && typeof line.gst === 'string')))
+    // New journals must retain the exact serialized input. Only pre-rate
+    // journals may use the historical reconstruction in pendingInput().
+    && (!p.values.lines.some((line) => 'unitPrice' in line || 'gst' in line) ||
+      (p.input && Array.isArray(p.input.lines) && p.input.lines.length === p.values.lines.length &&
+        p.input.lines.every((line, index) => line &&
+          line.productId === p.values.lines[index].product.id &&
+          line.quantity === p.values.lines[index].quantity.trim() &&
+          line.unitPrice === p.values.lines[index].unitPrice.trim() &&
+          line.gst === p.values.lines[index].gst.trim() &&
+          (line.lineId || null) === (p.values.lines[index].lineId || null))))
+    && p.order && Array.isArray(p.order.lines) && p.order.lines.length === p.values.lines.length
+    && p.order.lines.every((line, index) => line && line.productId === p.values.lines[index].product.id
+      && typeof line.unitPrice === 'string' && typeof line.gst === 'string')
+    && ['subtotal', 'gstAmount', 'total'].every((k) => Number.isFinite(Number(p.order[k])))
     && typeof p.order.vendorName === 'string' && typeof p.order.locationName === 'string');
 }
 /** Returns { status: 'none' | 'found' | 'blocked', pending?, message? }. Anything unreadable blocks creation. */

@@ -20655,6 +20655,33 @@
       "POLineInput": {
         "additionalProperties": false,
         "properties": {
+          "gst": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gst"
+          },
+          "lineId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lineid"
+          },
           "productId": {
             "format": "uuid",
             "title": "Productid",
@@ -20665,6 +20692,20 @@
             "pattern": "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
             "title": "Quantity",
             "type": "string"
+          },
+          "unitPrice": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Unitprice"
           }
         },
         "required": [
