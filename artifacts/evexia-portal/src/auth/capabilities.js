@@ -88,6 +88,11 @@ const RESOURCE_NAMES = Object.freeze({
   'spt-orders': 'spt', 'kits-orders': 'kits', 'lupin-orders': 'lupin',
 });
 export const workflowAllowed = (user, resource, path = '', { body, method, file, params = {} } = {}) => {
+  // This exact existing decision path does not grant general Lupin editing.
+  if (resource === 'lupin-orders' && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path)) {
+    return isSuperAdminIdentity(user) && body !== undefined && file === undefined
+      && (method === undefined || method === 'POST');
+  }
   if (isSuperAdminIdentity(user)) return true;
   if (!isStaffIdentity(user)) return false;
   const draft = /^order-drafts\/(immunotherapy|kits|lupin)$/.exec(resource);

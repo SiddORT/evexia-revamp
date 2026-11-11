@@ -108,15 +108,20 @@ def require_role_read(identity: Identity = Depends(current_identity)) -> Identit
     return identity
 
 
-def operation_router(resource, operations, *, allow_mr=False) -> Callable:
+def operation_router(resource, operations, *, allow_mr=False, protected_operations=()) -> Callable:
     """An explicit endpoint catalogue; unlisted siblings remain protected."""
     from app.services.capability_policy import allowed, readable, is_super_admin
     def check(request: Request, identity: Identity = Depends(current_identity)) -> Identity:
+        name = request.scope["endpoint"].__name__
+        # Explicit protected decisions precede even the MR service delegation.
+        if name in protected_operations:
+            if not is_super_admin(identity):
+                raise HTTPException(403, "Access denied")
+            return identity
         # This only admits an MR to the existing workflow-specific service;
         # the service still enforces saved MR ownership/relationships.
         if allow_mr and identity.role == "mr" and identity.mr is not None:
             return identity
-        name = request.scope["endpoint"].__name__
         if name not in operations:
             if not is_super_admin(identity):
                 raise HTTPException(403, "Access denied")

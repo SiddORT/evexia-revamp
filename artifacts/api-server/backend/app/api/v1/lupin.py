@@ -24,10 +24,10 @@ from app.services.order_approval import approve as approve_order, resubmit as re
 router = APIRouter(prefix="/admin/lupin-orders", tags=["lupin"],
     dependencies=[Depends(operation_router("lupin", {
         "listing": None, "detail": None, "references": None, "export": "export",
-        "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
+        "review": "import", "commit": "import", "create": "add", "edit": "edit",
         "resubmit": "edit",
         "policy": "upload_attachment", "upload": "upload_attachment", "cancel_upload": "upload_attachment",
-    }, allow_mr=True))])
+    }, allow_mr=True, protected_operations=("approve", "reject")))])
 
 
 def filters(search: str = Query("", max_length=200), status: LupinStatus | None = None,

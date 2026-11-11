@@ -21,6 +21,43 @@ detach staff, provision generic identities, enable login or change protected
 principals. Change Role Permissions, Assign Role and Enable/Disable Login are
 Super Admin-only.
 
+## Protected Lupin review decisions
+
+Saved Lupin approval/rejection is a protected Super Admin operation, not a
+Lupin Edit grant. The shared decision panel previously required `can.edit`,
+while the API mapped these decisions to the unsupported `lupin.edit`
+capability. Lupin intentionally has no assignable Edit or Approve permission.
+
+The saved review panel now uses protected authority independently of editing.
+Only the exact existing `/{id}/approve` and `/{id}/reject` browser operations
+admit a protected Super Admin, with a request body. MR requests cannot use the
+ownership-scoped transport bypass for these decisions. The API explicitly
+protects those two endpoint names before MR delegation. Under the existing
+transaction locks, identity is revalidated and the decision service again
+requires the protected Super Admin, before order access or idempotent replay.
+Lupin resubmission remains owning-MR-only; general editing and other workflows'
+permissions are unchanged. No permission catalogue or role migration is added.
+
+Existing server eligibility still drives disabled buttons and visible
+`approvalUnavailable` explanations. Saved pricing, verified/clean attachments,
+stale versions, already-decided restrictions, financial-policy locking,
+dirty-draft protection, reasoned rejection and uncertain-outcome retries are
+retained. Approval reuses the encrypted decision/history, actor/time attribution,
+audit event, notification and idempotent operation. Its returned saved record
+updates the review view, including status `In process` and approval attribution.
+No new financial policy or separate decision system is introduced.
+
+Static tracing of `settlements.projection` and the Add payment selection
+confirms that an owned order in `In process` with a known positive remaining
+balance is payable under the existing rules. Confirmed orders remain ineligible;
+historical payment flags do not create receipts. Neither settlement logic nor
+actual orders/payments were changed.
+
+**Verification boundary:** this repair was reviewed statically only. No tests,
+regression/release suites, builds, typechecks, completion-validation wrappers,
+runtime/browser checks, workflow starts/restarts, migrations, live order
+decisions, payments or deployments were run. Runtime behavior is unverified.
+
 ## Explicit assignable catalogue
 
 | Module | Resource | Supported actions | Count |

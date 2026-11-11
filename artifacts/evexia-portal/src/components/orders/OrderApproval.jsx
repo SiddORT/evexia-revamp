@@ -18,7 +18,8 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
   const [conflict, setConflict] = useState('');
   const submission = useRef(null), sending = useRef(false);
   const decisionFocus = useRef(null);
-  const permitted = portal !== 'mr' && (kind === 'kits' ? can.protected : can.edit);
+  // Kits/Lupin decisions are protected operations, not assignable Edit grants.
+  const permitted = portal !== 'mr' && (['kits', 'lupin'].includes(kind) ? can.protected : can.edit);
   const eligibility = order.decisionEligibility;
   const eligible = Boolean(eligibility?.canReject);
   const owner = useRef(getSession().user?.id).current;

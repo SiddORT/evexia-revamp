@@ -175,7 +175,7 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
     from app.db.models import AuditEvent
     service = {"kits": kits, "spt": spt, "lupin": lupin, "immunotherapy": immunotherapy}[kind]
     def work(current, keys):
-        if current.role == "mr" or (kind == "kits" and not is_super_admin(current)):
+        if current.role == "mr" or (kind in {"kits", "lupin"} and not is_super_admin(current)):
             raise ImmError("Admin approval access is required.", 403, "access_denied")
         def write():
             row = service.find(db, identity)
@@ -236,7 +236,10 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
             return service.project(keys, row)
         return service.idempotent(db, current, keys, body.idempotencyKey,
             {"operation": decision, "id": str(identity), "body": body.model_dump(mode="json")}, write)
-    return service.transaction(db, actor, work, action="edit")
+    # Lupin has no assignable Edit action. Its transaction still locks policy,
+    # financial eligibility and identity; work requires the revalidated protected
+    # Super Admin before reading an order or recovering a prior decision.
+    return service.transaction(db, actor, work, action=None if kind == "lupin" else "edit")
 
 
 def resubmit(db, actor, identity, body, kind):

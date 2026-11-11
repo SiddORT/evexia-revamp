@@ -1080,8 +1080,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : /^(?:|\/(?:export|overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete|documents|history))?)$/i;
   const immunotherapyDecision = resource === 'immunotherapy-orders'
     && /^\/[0-9a-f-]{36}\/(?:approve|reject|resubmit)$/i.test(path);
+  const lupinDecision = resource === 'lupin-orders'
+    && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path);
   const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
-  if ((!allowed.test(path) && !eligibilityPreview) || ((immunotherapyDecision || eligibilityPreview) && body === undefined)) {
+  if ((!allowed.test(path) && !eligibilityPreview) || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
   if ((file !== undefined && (resource !== 'products' || !['/import/review', '/import/commit'].includes(path)))
@@ -1149,7 +1151,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
       throw new SessionError('Only owning MRs may record payments; only the protected Super Admin may verify recorded entries.', 403);
     }
-    if (!mrOrder && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {
+    // MR transport bypass applies only to ownership-scoped operations, never
+    // Lupin Admin decisions. Recheck on every send/recovery attempt.
+    if ((!mrOrder || lupinDecision) && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {
       throw new SessionError('Workspace operation access denied.', 403);
     }
   };

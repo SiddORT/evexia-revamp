@@ -39,3 +39,11 @@ per-order allocation; older status flags are not transaction evidence.
 
 **How to apply:** Use only saved authoritative totals and recorded settlements.
 Never seed receipts from flags, demo data, current prices or Business Parking.
+
+Lupin approval remains required before payment posting.
+
+**Why:** The user confirmed this policy when requesting restoration of the
+missing Super Admin decision controls.
+
+**How to apply:** Repair the protected review path rather than making pending
+orders payable or fabricating approval evidence.
