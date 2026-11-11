@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
-import '../../mrInvoiceTemplate.css';
+import '../../invoiceDetailsSettings.css';
 import {
   INVOICE_FIELDS, FIELD_LABELS, MULTILINE_FIELDS, fieldLimit, blankDetails, sameDetails, validateDetails, fieldErrorsFrom,
   isUncertain, loadInvoiceSettings, saveInvoiceSettings, reconcileInvoiceSave, readQRFile, describeQR,
@@ -240,7 +240,7 @@ export default function InvoiceDetailsSettings({ onGuardChange }) {
 
     <form onSubmit={save} noValidate className="admin-panel admin-settings__section">
       {!draft && !busy && <p>No saved details have been loaded. Retry loading to enable editing.</p>}
-      <fieldset disabled={busy || qrLoading || !draft || locked} className="invd-groups" style={{ border: 0, padding: 0, margin: 0 }}>
+      <fieldset disabled={busy || qrLoading || !draft || locked} className="invd-groups">
         {GROUPS.map(([title, help, keys]) => <fieldset key={title} className="invd-group">
           <legend>{title}</legend>
           <p>{help}</p>
@@ -270,13 +270,13 @@ export default function InvoiceDetailsSettings({ onGuardChange }) {
               <p>Saved: {describeQR(saved?.qr)}</p>
               {saved?.qr && <button type="button" className="admin-button admin-button--secondary" data-testid="button-inspect-saved-qr" onClick={() => setInspect(saved.qr.version)}>Inspect saved QR</button>}
             </div>
-            {qr.action === 'replace' && <figure style={{ margin: 0 }}>
+            {qr.action === 'replace' && <figure>
               <img src={qr.file.dataUrl} alt="Selected replacement QR image" data-testid="img-selected-qr" />
               <figcaption>{qr.file.width} × {qr.file.height} px · {(qr.file.size / 1024).toFixed(1)} KiB · not saved yet</figcaption>
             </figure>}
             {qr.action === 'remove' && <p data-testid="text-qr-remove">The saved QR will be removed when you save. History keeps the old image as evidence.</p>}
           </div>
-          <div className="invd-actions" style={{ marginTop: 10 }}>
+          <div className="invd-actions">
             <label className="admin-button admin-button--secondary invd-file-choice">
               {saved?.qr || qr.action === 'replace' ? 'Choose replacement image' : 'Choose QR image'}
               <input type="file" accept="image/png,image/jpeg" className="sr-only" aria-describedby="invd-qr-help" data-testid="input-invoice-qr" onChange={chooseFile} />
@@ -288,7 +288,7 @@ export default function InvoiceDetailsSettings({ onGuardChange }) {
         </fieldset>
       </fieldset>
 
-      <div className="invd-actions" style={{ marginTop: 16 }}>
+      <div className="invd-actions invd-actions--save">
         <button type="button" className="admin-button admin-button--secondary" data-testid="button-reload-invoice-details"
           disabled={busy || qrLoading || phase === 'uncertain'} onClick={() => load(dirty)}>{dirty ? 'Load saved details to compare' : 'Reload saved details'}</button>
         <button type="button" className="admin-button admin-button--secondary" data-testid="button-cancel-invoice-details"

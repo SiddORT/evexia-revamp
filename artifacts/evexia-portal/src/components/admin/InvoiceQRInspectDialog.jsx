@@ -23,11 +23,11 @@ export default function InvoiceQRInspectDialog({ version, label, onClose }) {
   }
   useEffect(() => { load(); return () => { sequence.current++; }; }, [version]);
 
-  return <Dialog title={`Saved QR · version ${version}`} eyebrow="Protected configuration" onClose={onClose}
+  return <Dialog className="invd-qr-dialog" title={`Saved QR · version ${version}`} eyebrow="Protected configuration" onClose={onClose}
     description={label || 'Stored payment QR evidence for this configuration version. Not shown in template samples.'}
     footer={<button type="button" className="admin-button admin-button--secondary" data-testid="button-close-qr-inspect" onClick={onClose}>Close</button>}>
     <div className="invd-qr-view" aria-busy={busy}>
-      {busy && <div className="invd-skeleton" style={{ width: 240, height: 240 }} aria-label="Loading QR image" />}
+      {busy && <div className="invd-skeleton invd-skeleton--qr" aria-label="Loading QR image" />}
       {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}
         <button type="button" className="admin-button admin-button--secondary" data-testid="button-retry-qr-inspect" onClick={load}>Retry</button></div>}
       {image && <><img src={image.dataUrl} alt={`Saved payment QR, version ${version}`} data-testid={`img-qr-version-${version}`} />

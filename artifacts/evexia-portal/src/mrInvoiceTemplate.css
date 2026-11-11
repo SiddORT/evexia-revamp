@@ -68,37 +68,4 @@
 .mri-frame--compact { height: 452px; overflow: hidden; pointer-events: none; }
 .mri-frame--compact .mri { transform: scale(.4); transform-origin: top left; }
 
-/* Invoice Details editor and history */
-.invd { display: grid; gap: 18px; }
-.invd-saved { padding: 12px 14px; border: 1px solid var(--admin-border, #cfd8dd); border-left: 4px solid #0f6e6a; border-radius: 8px; }
-.invd-groups { display: grid; gap: 16px; }
-.invd-group { border: 1px solid var(--admin-border, #cfd8dd); border-radius: 10px; padding: 14px 16px; min-width: 0; }
-.invd-group legend { font-weight: 700; padding: 0 6px; }
-.invd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 16px; }
-.invd-field { display: grid; gap: 4px; min-width: 0; }
-.invd-field--wide { grid-column: 1 / -1; }
-.invd-field input, .invd-field textarea { width: 100%; min-width: 0; font: inherit; }
-.invd-field textarea { resize: vertical; min-height: 72px; }
-.invd-count { font-size: 12px; opacity: .75; }
-.invd-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.invd-qr { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
-.invd-qr img { width: 160px; height: 160px; object-fit: contain; background: #fdfdfc; border: 1px solid #cfd8dd; border-radius: 6px; }
-.invd-compare { width: 100%; border-collapse: collapse; font-size: 13px; }
-.invd-compare th, .invd-compare td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--admin-border, #cfd8dd); white-space: pre-line; overflow-wrap: anywhere; }
-.invd-scroll { overflow-x: auto; }
-.invd-history ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.invd-history li.invd-rev { border: 1px solid var(--admin-border, #cfd8dd); border-radius: 10px; padding: 12px 14px; }
-.invd-rev__head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; margin-bottom: 8px; }
-.invd-blank { font-style: italic; opacity: .7; }
-.invd-skeleton { height: 64px; border-radius: 10px; background: linear-gradient(90deg, #8a96a022, #8a96a044, #8a96a022); }
-.invd-qr-view { display: grid; justify-items: center; gap: 10px; }
-.invd-qr-view img { max-width: min(100%, 360px); background: #fdfdfc; border: 1px solid #cfd8dd; }
-.invd-file-choice:focus-within { outline: 2px solid var(--admin-accent, #0f6e6a); outline-offset: 3px; }
-.invd, .invd-history, .invd-saved, .mri-access { min-width: 0; overflow-wrap: anywhere; }
-.invd-scroll:focus-visible { outline: 2px solid var(--admin-accent, #0f6e6a); outline-offset: 2px; }
-.mri-access { margin-bottom: 12px; }
-
-@media (max-width: 767px) {
-  .invd-grid { grid-template-columns: 1fr; }
-  .invd-actions > * { flex: 1 1 100%; }
-}
+.mri-access { min-width: 0; overflow-wrap: anywhere; margin-bottom: 12px; }

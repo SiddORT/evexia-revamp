@@ -43,7 +43,7 @@ export default function InvoiceDetailsHistory({ refreshKey, owner }) {
 
   useEffect(() => { setItems([]); setNext(null); setCursors([null]); setPageIndex(0); setLoaded(false); setInspect(null); load(); return () => { sequence.current++; }; }, [refreshKey, owner]);
 
-  return <section className="admin-panel invd-history" aria-labelledby="invd-history-heading" aria-busy={busy}>
+  return <section className="admin-panel admin-settings__section invd-history" aria-labelledby="invd-history-heading" aria-busy={busy}>
     <h3 id="invd-history-heading">Change history</h3>
     <p>Read-only. Each saved version records who changed which fields, with before and after values. Restricted to the protected Super Admin.</p>
     {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}
@@ -58,7 +58,7 @@ export default function InvoiceDetailsHistory({ refreshKey, owner }) {
           <th scope="row">{FIELD_LABELS[change.field] || change.field}</th><td><Text value={change.before} /></td><td><Text value={change.after} /></td>
         </tr>)}</tbody>
       </table></div>}
-      {(item.qr_before || item.qr_after) && <div className="invd-actions" style={{ marginTop: 8 }}>
+      {(item.qr_before || item.qr_after) && <div className="invd-actions">
         {item.qr_before && <button type="button" className="admin-button admin-button--secondary" data-testid={`button-inspect-qr-before-${item.version}`}
           onClick={() => setInspect({ version: item.qr_before.version, label: `QR before version ${item.version}` })}>Inspect QR before (v{item.qr_before.version})</button>}
         {item.qr_after && <button type="button" className="admin-button admin-button--secondary" data-testid={`button-inspect-qr-after-${item.version}`}
@@ -66,7 +66,7 @@ export default function InvoiceDetailsHistory({ refreshKey, owner }) {
       </div>}
     </li>)}</ol>
     {busy && <div className="invd-skeleton" aria-label="Loading history" />}
-    <div className="invd-actions" style={{ marginTop: 12 }}>
+    <div className="invd-actions">
       <button type="button" className="admin-button admin-button--secondary" disabled={busy} data-testid="button-refresh-history" onClick={() => load()}>Refresh history</button>
       {pageIndex > 0 && <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => load(cursors[pageIndex - 1], pageIndex - 1)}>Newer versions</button>}
       {next && <button type="button" className="admin-button admin-button--secondary" disabled={busy} data-testid="button-older-history" onClick={() => load(next, pageIndex + 1)}>Older versions</button>}

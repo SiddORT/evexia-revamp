@@ -17,6 +17,33 @@ The package codegen wrapper was not used because it chains a typecheck.
 Persistence, authorization, concurrency, failure recovery, filesystem behavior,
 schema activation and rendered accessibility/layout remain unverified at runtime.
 
+## Invoice Details styling handoff
+
+The editor now has a separate, locally scoped stylesheet,
+`artifacts/evexia-portal/src/invoiceDetailsSettings.css`. It follows GST Settings:
+13px text, 40px minimum single-line controls, 8px radii, 8px/10px control padding
+and existing Admin surface, text, border, focus and error tokens. Fieldset,
+paragraph, figure, saved-version and history spacing is explicit. Document
+renderer styles and sample layouts are unchanged.
+
+Responsive containment was reviewed in source: field grids shrink to their
+available Settings column, narrow action rows stack by container width, QR
+previews and file choices are bounded, and comparison/history tables scroll
+inside their existing labelled, keyboard-focusable regions. Event handlers,
+permissions, fields, validation, save/reconciliation, draft guards, private QR
+loading and history paging were not changed.
+
+Verification was source/diff review only for the changed page. One screenshot
+of the already-running preview at `/admin/settings?tab=invoice-details`, at
+390px width, reached the Admin sign-in screen, not an authorized editor.
+No sign-in or settings write was attempted. Therefore the actual editor at
+320/390, 768, 1024 and 1440px, Classic/Modern light/dark appearances, loaded
+history, comparison states and QR dialogs remain **visually unverified**.
+No automated tests, regression/release checks, completion-validation commands,
+builds, typechecks, migrations, deployments, service starts/restarts or live
+business writes were run for this styling work. A release-check process was
+already present when inspected; it was not launched or used by this work.
+
 ## Scope and access
 
 Settings → Invoice Details is shared durable configuration, restricted on every
