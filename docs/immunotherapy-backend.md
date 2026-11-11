@@ -111,6 +111,58 @@ retain their previous policy and quantities.
 
 ### Source trace and verification limits
 
+#### Save acknowledgement repair (source-only)
+
+The shared authenticated request layer previously compared `JSON.stringify`
+of the response rows with the submitted rows. The editor constructs each row as
+`compositionSize, rank, extract, dilution`; the server's Pydantic ranked-pair
+schema inherits `extract, dilution` before declaring `compositionSize, rank`.
+Those JSON objects represent identical values but have different property
+insertion order. Consequently a valid committed response could be rejected as
+unconfirmed on both first and subsequent saves. This is a confirmed source
+defect, **not proof that the screenshot's transaction committed**.
+
+Acknowledgement now compares each named field, preserving row order, exact
+string decimals, null versus zero, category UUID, policy, dosage and the exact
+next dosage version. The service additionally validates all six canonical
+positions, quantity types and legacy evidence before the editor reports success.
+No persistence, encryption, authorization, placement or historical-order
+policy was changed. SQLAlchemy failures now carry the scoped
+`imm_extract_storage` code after the existing rollback attempt; a lost commit
+acknowledgement is still not evidence that nothing committed.
+
+Extract-specific fixed feedback distinguishes no received HTTP response,
+received HTTP service/storage/encryption/schema errors, conflicts/category
+unavailability, input rejection, unavailable routes and malformed or incompatible
+success replies. Where available, it includes only the HTTP status and a
+UUID-shaped request reference for correlation with existing structured logs.
+It never displays raw response/error text, submitted quantities, tokens, URLs,
+or encryption material. Local response-contract rejection is identified as a
+received invalid response, not misreported as a transport failure. A 422 may
+reflect invalid input **or an older running contract**; the message does not
+claim to have distinguished them without runtime evidence.
+
+Source tracing retained the editor's blocked-save rule for conflicts,
+service failures and unknown/incompatible acknowledgements. Successful
+`Reload saved` validates the authoritative selected-category/dosage snapshot,
+retains input strings for comparison beneath each input and only then clears
+the block. A failed reload retains the old snapshot and edits and keeps saves
+blocked. Neither canceling edits nor receiving an invalid/blank response clears
+that block.
+
+No matching Extract save request evidence was found in the available retained
+local log files. The previously reported occupied-port duplicate-start failures
+do not diagnose the existing listener or this save. The running revisions,
+database contents and screenshot transaction outcome remain unknown.
+No tests, release/regression checks, builds, typechecks, automated verification,
+browser/smoke requests, service starts/restarts, migrations, deployments or
+configuration/clinical writes were performed for this repair. Review was limited
+to source, diff and retained local logs. Runtime saving was **not verified**.
+Operational prerequisites remain an API/frontend pair implementing
+`category_dosage_count_rank_v2`, the existing Extract settings table and validated
+directory encryption readiness/keyring; no missing prerequisite was established
+or activated during this task.
+
 Source/diff inspection traced three/two/one-child bottles, distinct categories,
 overflow, No Mix, numeric versus lexical order, stable ties, absent/partial
 configuration, all ten dosage choices, legacy recovery, distinct count blocks,

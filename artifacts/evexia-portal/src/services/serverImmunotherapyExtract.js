@@ -1,4 +1,5 @@
 import { purchaseOrderRequest } from '../auth/adminSession.js';
+import { extractSettingsFailure } from '../auth/extractSettingsErrors.js';
 import { DOSES, QTY } from './serverImmunotherapy.js';
 
 export const EXTRACT_POLICY = 'category_dosage_count_rank_v2';
@@ -10,11 +11,11 @@ export const extractCategories = async (params, signal) => {
   if (!Array.isArray(value?.items) || value.items.some((row) =>
     typeof row?.id !== 'string' || typeof row.name !== 'string' || !['active', 'inactive'].includes(row.status))
       || (value.nextOffset !== null && (!Number.isInteger(value.nextOffset) || value.nextOffset < 1))) {
-    throw new Error('The server did not return valid saved categories. Retry loading categories.');
+    throw extractSettingsFailure({ reason: 'response' });
   }
   return value;
 };
-function checked(value, categoryId, dosage) {
+function checked(value, categoryId, dosage, mutation = false) {
   if (value?.categoryId !== categoryId || !Number.isInteger(value.version) || value.version < 0
       || value.policy !== EXTRACT_POLICY || value.dosage !== dosage || !DOSES.includes(dosage)
       || !Array.isArray(value.rows) || value.rows.length !== 6
@@ -24,7 +25,7 @@ function checked(value, categoryId, dosage) {
         || value.legacyRows.some((row) => !validPair(row))))
       || (value.legacyRows === null ? value.legacyVersion !== null
         : !Number.isInteger(value.legacyVersion) || value.legacyVersion < 1)) {
-    throw new Error('The server did not confirm valid Extract & Dilution settings. Your edits are preserved; load saved settings before trying again.');
+    throw extractSettingsFailure({ mutation, reason: 'response' });
   }
   return value;
 }
@@ -32,10 +33,10 @@ const validPair = (row) => row && ['extract', 'dilution'].every((f) =>
   row[f] === null || (typeof row[f] === 'string' && QTY.test(row[f])));
 export const loadExtractSettings = async (id, dosage) => checked(await request(`/${id}`, { params: { dosage } }), id, dosage);
 export const saveExtractSettings = async (id, body) => {
-  const value = checked(await request(`/${id}`, { body }), id, body.dosage);
+  const value = checked(await request(`/${id}`, { body }), id, body.dosage, true);
   if (value.version !== body.expected_version + 1 || value.rows.some((row, index) =>
     ['extract', 'dilution'].some((field) => row[field] !== body.rows[index][field]))) {
-    throw new Error('The server did not confirm these saved values. Your edits are preserved; reload saved settings before trying again.');
+    throw extractSettingsFailure({ mutation: true, reason: 'response' });
   }
   return value;
 };

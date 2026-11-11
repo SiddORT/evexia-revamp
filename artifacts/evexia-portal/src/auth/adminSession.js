@@ -3,6 +3,7 @@ import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPe
 import { captureExportPreferences, exportPreferenceHeader } from '../services/exportPreferences.js';
 import { privateUploadMessage, privateRequestReference, privateFileId } from './privateFileErrors.js';
 import { validOrderDraft } from './orderDraftResponse.js';
+import { extractSettingsFailure } from './extractSettingsErrors.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -1144,6 +1145,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const pricingReadLabel = pricingChoices ? path.endsWith('/allergens') ? 'Allergen choices' : 'Category choices' : 'Pricing Rules';
   const pricingReadAction = pricingChoices ? 'Retry choices; your selections are retained.' : 'Retry loading Pricing Rules.';
   const uncertain = (reason = 'delivery') => {
+    if (extractSettingsOperation) return extractSettingsFailure({
+      mutation, reason, status: response?.status || 0, code: data?.error?.code,
+      requestId: response?.headers.get('X-Request-ID') || data?.error?.request_id,
+    });
     const error = new SessionError(resource === 'pricing-rules'
       ? mutation ? 'Pricing Rule save outcome is unconfirmed. Your editor is preserved. Retry only the unchanged submission to confirm or finish it safely.'
         : reason === 'response' ? `${pricingReadLabel} could not be loaded because the service returned an invalid response. ${pricingReadAction}`
@@ -1154,8 +1159,6 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : 'Settlements could not be loaded. Check your connection and retry.'
       : gstSettingsOperation
       ? 'Shared GST Settings could not be confirmed. Your edits are preserved; load saved settings before saving again.'
-      : extractSettingsOperation
-      ? 'Shared Extract & Dilution settings could not be confirmed. Your edits are preserved; load saved settings before saving again.'
       : batchOperation
       ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
       : resource === 'in-house-stock'
@@ -1196,6 +1199,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   if (pending) await pending;
   try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
   if (!response.ok) {
+    if (extractSettingsOperation) {
+      if (response.status === 401) await verifySession(true, 'admin');
+      throw uncertain('service');
+    }
     if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) {
       await verifySession(true, mrOrder ? 'mr' : 'admin');
@@ -1279,8 +1286,13 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       || data.cutoff_date !== body.cutoff_date || rate(data.before_rate) !== rate(body.before_rate)
       || rate(data.on_after_rate) !== rate(body.on_after_rate)) throw uncertain();
   } else if (mutation && extractSettingsOperation) {
+    // Object property order is not part of the JSON contract. Pydantic emits
+    // inherited extract/dilution fields before compositionSize/rank.
     if (data?.categoryId !== path.slice(1) || data.version !== body.expected_version + 1
-        || JSON.stringify(data.rows) !== JSON.stringify(body.rows)) throw uncertain();
+        || data.policy !== body.policy || data.dosage !== body.dosage
+        || !Array.isArray(data.rows) || data.rows.length !== body.rows.length
+        || data.rows.some((row, index) => !row || ['compositionSize', 'rank', 'extract', 'dilution']
+          .some((field) => row[field] !== body.rows[index][field]))) throw uncertain('response');
   } else if (mutation && draftResource && !draftSubmission) {
     if (!validOrderDraft(data, draftKind, path.slice(1))) throw uncertain();
   } else if (batchOperation) {

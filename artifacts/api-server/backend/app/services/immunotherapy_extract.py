@@ -77,7 +77,8 @@ def transaction(db, actor, work):
         return result
     except SQLAlchemyError:
         db.rollback()
-        raise ImmError("Extract & Dilution settings storage is unavailable. Your changes have not been confirmed.") from None
+        raise ImmError("Extract & Dilution settings storage is unavailable. Your changes have not been confirmed.",
+                       503, "imm_extract_storage") from None
     except Exception:
         db.rollback()
         raise
