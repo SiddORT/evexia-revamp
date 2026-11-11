@@ -14,7 +14,6 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
   const [lotKey, setLotKey] = useState('');
   const [batchNo, setBatchNo] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
-  const [correctionReference, setCorrectionReference] = useState(correctionOf || '');
   const [errors, setErrors] = useState({});
   const [review, setReview] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -45,12 +44,11 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
     if (!reason.trim()) er.reason = 'A reason is required.';
     if (direction === 'add' && !locationId) er.location = 'Choose an active location.';
     if (direction === 'reduce' && !lot) er.lot = 'Choose the exact lot and location to reduce.';
-    if (correctionReference && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(correctionReference.trim())) er.correction = 'Enter a valid adjustment reference UUID or leave blank.';
     setErrors(er); return Object.keys(er).length === 0;
   }
   const body = () => direction === 'add'
-    ? { productId: row.productId, direction, quantity: quantity.trim(), reason: reason.trim(), locationId, lotId: null, batchNo: batchNo.trim() || null, expiryDate: expiryDate || null, correctionOf: correctionReference.trim() || null }
-    : { productId: row.productId, direction, quantity: quantity.trim(), reason: reason.trim(), locationId: lot.locationId || null, lotId: lot.lotId, batchNo: null, expiryDate: null, correctionOf: correctionReference.trim() || null };
+    ? { productId: row.productId, direction, quantity: quantity.trim(), reason: reason.trim(), locationId, lotId: null, batchNo: batchNo.trim() || null, expiryDate: expiryDate || null, correctionOf: correctionOf?.trim() || null }
+    : { productId: row.productId, direction, quantity: quantity.trim(), reason: reason.trim(), locationId: lot.locationId || null, lotId: lot.lotId, batchNo: null, expiryDate: null, correctionOf: correctionOf?.trim() || null };
   async function doPreview() {
     if (busyRef.current || !validate()) return;
     busyRef.current = true;
@@ -100,7 +98,7 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
     {message && <div className="admin-feedback" role="status" data-testid="status-adjust-message">{message}</div>}
     {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-adjust-error">{error}</div>}
     {pending && !done && !review && <div className="admin-feedback" role="alert" data-testid="status-adjust-pending"><p>A previous adjustment save has an unconfirmed outcome. Check it before making another.</p></div>}
-    {done ? <div className="admin-feedback" role="status" data-testid="status-adjust-done">Adjustment recorded: {a?.id}. {a?.direction === 'add' ? 'Added' : 'Reduced'} {a?.quantity} {a?.unit || row.unit}. Affected lot/location balance now {a?.after}. Corrections require a new compensating adjustment with this reference and a reason.</div>
+    {done ? <div className="admin-feedback" role="status" data-testid="status-adjust-done">Adjustment recorded: {a?.id}. {a?.direction === 'add' ? 'Added' : 'Reduced'} {a?.quantity} {a?.unit || row.unit}. Affected lot/location balance now {a?.after}.</div>
     : !choices && !loadError ? <div className="admin-empty" role="status"><strong>Loading adjustment choices…</strong></div>
     : choices && <div className="adjust-form">
       <fieldset className="adjust-field sa-direction" disabled={busy || Boolean(pending)}><legend>Direction <em>(required)</em></legend>
@@ -123,11 +121,6 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
       <label className="adjust-field"><span className="sa-label">Reason <em>(required)</em></span>
         <textarea className="admin-input" rows={3} maxLength={2000} value={reason} onChange={edit(setReason)} disabled={busy || Boolean(pending)} data-testid="input-adjust-reason" />
         {errors.reason && <small className="adjust-error" role="alert">{errors.reason}</small>}</label>
-      <label className="adjust-field"><span className="sa-label">Correction of adjustment <em>(optional UUID)</em></span>
-        <input className="admin-input sa-mono" placeholder="Leave blank unless correcting an earlier adjustment" value={correctionReference} onChange={edit(setCorrectionReference)} disabled={busy || Boolean(pending)} data-testid="input-adjust-correction" />
-        <small className="sa-hint">Use an earlier adjustment reference only for a compensating correction.</small>
-        {correctionReference && <small className="sa-reference">Correction reference: {correctionReference}</small>}
-        {errors.correction && <small className="adjust-error" role="alert">{errors.correction}</small>}</label>
       {review && <div className="adjust-review" data-testid="section-adjust-review">
         <div><span>Before</span><strong className="inv-mono">{review.adjustment.before}</strong></div>
         <div><span>Change</span><strong className="inv-mono">{review.adjustment.delta}</strong></div>

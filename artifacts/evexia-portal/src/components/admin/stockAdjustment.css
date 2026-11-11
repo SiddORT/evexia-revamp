@@ -27,8 +27,6 @@
 .stock-adjust .sa-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 2px 12px; }
 .stock-adjust .sa-body:focus-visible { outline: 2px solid var(--sa-focus); outline-offset: -2px; }
 .stock-adjust :is(input, select, textarea, fieldset) { min-width: 0; max-width: 100%; }
-.stock-adjust .sa-hint, .stock-adjust .sa-reference { color: var(--sa-ink-soft); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-.stock-adjust .sa-reference { white-space: pre-wrap; }
 .stock-adjust .adjust-form { display: grid; gap: 16px; }
 .stock-adjust .adjust-field { display: grid; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .stock-adjust .sa-label, .stock-adjust legend { color: var(--sa-ink); font-size: 13px; font-weight: 700; padding: 0; }
@@ -42,8 +40,6 @@
 .stock-adjust .admin-select { padding-right: 32px; }
 .stock-adjust .admin-input:focus, .stock-adjust .admin-select:focus { outline: none; border-color: var(--sa-focus); box-shadow: 0 0 0 3px var(--sa-focus-ring); }
 .stock-adjust .admin-input:disabled, .stock-adjust .admin-select:disabled { background: var(--sa-soft); border-color: var(--sa-border); opacity: .85; }
-.stock-adjust .sa-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-.stock-adjust .sa-mono::placeholder { font-family: inherit; color: var(--sa-ink-soft); opacity: 1; }
 .stock-adjust .sa-direction { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .stock-adjust .sa-direction legend { grid-column: 1 / -1; margin-bottom: 6px; }
 .stock-adjust .sa-radio { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 6px 12px; border: 1px solid var(--sa-border-strong); border-radius: 8px; background: var(--sa-surface); color: var(--sa-ink); font-size: 13px; font-weight: 600; cursor: pointer; }
