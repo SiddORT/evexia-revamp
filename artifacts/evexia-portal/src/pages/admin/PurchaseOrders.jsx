@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Activity, BarChart3, ChevronDown, ClipboardCheck, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Activity, BarChart3, ChevronDown, ClipboardCheck, ClipboardList, ClipboardPlus, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import { exportPurchaseOrders } from '../../services/serverPurchaseOrders.js';
+import { referencePR } from '../../services/serverPurchaseReceived.js';
 import { downloadCSV } from '../../services/downloads.js';
 import { csvCell } from '../../services/reportingCSV.js';
 import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
@@ -131,6 +132,13 @@ export default function PurchaseOrders() {
   useEffect(() => { if (tab !== 'orders' && !can[tab]) setTab('orders'); }, [tab, can.activity, can.analytics]);
 
   const orderData = orders.data;
+  const [receivingEligibility, reloadReceivingEligibility] = useServerData(async (signal) => {
+    // The PO listing has no fulfillment field. Reuse the form's server-filtered
+    // choices, bounded to visible open POs, rather than loading receipt histories.
+    const choices = await Promise.all(orderData.items.filter((order) => order.status === 'open').map((order) =>
+      referencePR('orders', { selected_id: order.id, limit: 1 }, signal)));
+    return new Set(choices.flatMap((choice) => choice.items.map((item) => item.id)));
+  }, [orderData, receivingAccess.add], receivingAccess.add && tab === 'orders' && orders.status === 'ready');
   const ordersFor = orderData ? Math.max(1, Math.ceil(orderData.filtered / pageSize)) : 1;
   useEffect(() => { if (orderData && page > ordersFor) setPage(ordersFor); }, [orderData, page, ordersFor]);
   const activityData = activity.data;
@@ -151,6 +159,9 @@ export default function PurchaseOrders() {
   const actions = (order) => <div className="po-actions po-listing-actions">
     <ProcurementDocumentActions key={order.id} kind="po" record={order} iconOnly />
     <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View record for ${order.number}`} title={`View record for ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
+    {receivingAccess.add && order.status === 'open' && receivingEligibility.status === 'ready' && receivingEligibility.data.has(order.id) &&
+      <Link className="po-icon-action" href={`/admin/inventory/purchase-received/new?poId=${encodeURIComponent(order.id)}`}
+        aria-label={`Create PR for ${order.number}`} title={`Create PR for ${order.number}`}><ClipboardPlus size={17} aria-hidden="true" /></Link>}
     {order.status === 'open' && !order.activeReceiptCount && <>
       {can.edit && <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>}
       {can.delete && <button type="button" className="po-icon-action po-action--danger" aria-label={`Delete ${order.number}`} title={`Delete ${order.number}`} onClick={(event) => { deleteFocus.current = event.currentTarget; setDeleting(order); setDeleteNotice(''); }}><Trash2 size={17} aria-hidden="true" /></button>}
@@ -220,6 +231,9 @@ export default function PurchaseOrders() {
           <div className="admin-filter"><label htmlFor="po-sort">Sort</label><select id="po-sort" className="admin-select" value={filters.sort} onChange={(event) => changeFilter({ sort: event.target.value })} data-testid="select-po-sort"><option value="recent">Newest PO date</option><option value="oldest">Oldest PO date</option></select></div>
         </div>
         {rangeError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: '0 18px 12px' }}>{rangeError}</div>}
+        {receivingAccess.add && receivingEligibility.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">
+          Create PR availability could not be checked. {receivingEligibility.error} <button type="button" className="po-link" onClick={reloadReceivingEligibility}>Retry Create PR availability</button>
+        </div>}
         {rangeError ? null : orders.status === 'error' && !orderData ? <Recovery title="Purchase orders are unavailable" state={orders} onRetry={reloadOrders} />
           : !orderData ? <Skeleton label="Loading purchase orders" /> : <>
             {orders.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{orders.error} <button type="button" className="po-link" onClick={reloadOrders}>Retry</button></div>}
