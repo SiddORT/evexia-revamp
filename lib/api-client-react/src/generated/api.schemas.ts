@@ -3690,6 +3690,78 @@ export interface ImmImportReview {
   valid: boolean;
 }
 
+export type ImmNextDosageState =
+  (typeof ImmNextDosageState)[keyof typeof ImmNextDosageState];
+
+export const ImmNextDosageState = {
+  no_history: "no_history",
+  suggested: "suggested",
+  end_of_series: "end_of_series",
+  unsupported_dosage: "unsupported_dosage",
+} as const;
+
+export type ImmNextDosageSuggestedDosage =
+  | (typeof ImmNextDosageSuggestedDosage)[keyof typeof ImmNextDosageSuggestedDosage]
+  | null;
+
+export const ImmNextDosageSuggestedDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export type ImmPreviousOrderSourceDosage =
+  | (typeof ImmPreviousOrderSourceDosage)[keyof typeof ImmPreviousOrderSourceDosage]
+  | null;
+
+export const ImmPreviousOrderSourceDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export type ImmPreviousOrderSourceStatus =
+  (typeof ImmPreviousOrderSourceStatus)[keyof typeof ImmPreviousOrderSourceStatus];
+
+export const ImmPreviousOrderSourceStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface ImmPreviousOrderSource {
+  date: string;
+  dosage: ImmPreviousOrderSourceDosage;
+  status: ImmPreviousOrderSourceStatus;
+}
+
+/**
+ * Minimal authorized order metadata, not administration/clinical history.
+ */
+export interface ImmNextDosage {
+  patientId: string;
+  source: ImmPreviousOrderSource | null;
+  state: ImmNextDosageState;
+  suggestedDosage: ImmNextDosageSuggestedDosage;
+}
+
 export type ImmPageCounts = { [key: string]: number };
 
 export interface ImmPage {

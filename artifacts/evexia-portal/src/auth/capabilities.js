@@ -138,6 +138,7 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
     if (/^\/[0-9a-f-]{36}\/edit$/i.test(path)) return resource === 'kits-orders' ? isSuperAdminIdentity(user) : grant('edit');
     // Match existing server decision permissions; resubmission remains MR-only.
     if (resource === 'immunotherapy-orders' && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path)) return writing && grant('edit');
+    if (resource === 'immunotherapy-orders' && /^\/patients\/[0-9a-f-]{36}\/next-dosage$/i.test(path)) return !writing && grant(null);
     return !writing && (path === '' || uuid.test(path) || /^\/references\/(?:patients|doctors|mrs|allergens)$/.test(path)) && grant(null);
   }
   if (['purchase-orders', 'purchase-received'].includes(resource)) {

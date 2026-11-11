@@ -8,10 +8,25 @@ Result = Annotated[str, Field(pattern=r"^\d{1,6}(?:\.\d{1,2})?$")]
 Amount = Annotated[str, Field(pattern=r"^\d{1,10}(?:\.\d{1,2})?$")]
 Volume = Annotated[str, Field(pattern=r"^[0-9]{1,6}(?:\.[0-9]{1,3})?$")]
 Status = Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
+Dosage = Literal["PD", "DD", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"]
 
 
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class ImmPreviousOrderSource(Strict):
+    date: date
+    dosage: Dosage | None
+    status: Status
+
+
+class ImmNextDosage(Strict):
+    """Minimal authorized order metadata, not administration/clinical history."""
+    patientId: uuid.UUID
+    state: Literal["no_history", "suggested", "end_of_series", "unsupported_dosage"]
+    source: ImmPreviousOrderSource | None
+    suggestedDosage: Dosage | None
 
 
 class ImmItem(Strict):
@@ -41,7 +56,7 @@ class ImmInput(Strict):
     patientId: uuid.UUID
     doctorId: uuid.UUID
     mrId: uuid.UUID
-    dosage: Literal["PD", "DD", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"]
+    dosage: Dosage
     histamine: Result
     saline: Result
     groups: list[ImmBottle] = Field(min_length=1, max_length=1000)

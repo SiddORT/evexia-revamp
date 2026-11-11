@@ -11859,6 +11859,60 @@ export const RegisterMrOrderPatientResponse = zod
   );
 
 /**
+ * @summary Next Dosage
+ */
+export const GetImmunotherapyNextDosageParams = zod.object({
+  patient_id: zod.coerce.string().uuid(),
+});
+
+export const GetImmunotherapyNextDosageResponse = zod
+  .object({
+    patientId: zod.string().uuid(),
+    source: zod.union([
+      zod.object({
+        date: zod.coerce.date(),
+        dosage: zod.union([
+          zod.enum([
+            "PD",
+            "DD",
+            "B1",
+            "B2",
+            "B3",
+            "B4",
+            "B5",
+            "B6",
+            "B7",
+            "B8",
+          ]),
+          zod.null(),
+        ]),
+        status: zod.enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ]),
+      }),
+      zod.null(),
+    ]),
+    state: zod.enum([
+      "no_history",
+      "suggested",
+      "end_of_series",
+      "unsupported_dosage",
+    ]),
+    suggestedDosage: zod.union([
+      zod.enum(["PD", "DD", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"]),
+      zod.null(),
+    ]),
+  })
+  .describe(
+    "Minimal authorized order metadata, not administration/clinical history.",
+  );
+
+/**
  * @summary Policy
  */
 export const ImmunotherapyUploadPolicyResponse = zod.object({

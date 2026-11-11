@@ -216,6 +216,7 @@ import type {
   ImmImport,
   ImmImportResult,
   ImmImportReview,
+  ImmNextDosage,
   ImmPage,
   ImmRecord,
   ImmReferencePage,
@@ -9863,6 +9864,103 @@ export const useRegisterMrOrderPatient = <
 > => {
   return useMutation(getRegisterMrOrderPatientMutationOptions(options));
 };
+
+export const getGetImmunotherapyNextDosageUrl = (patientId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/patients/${patientId}/next-dosage`;
+};
+
+/**
+ * @summary Next Dosage
+ */
+export const getImmunotherapyNextDosage = async (
+  patientId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmNextDosage> => {
+  return customFetch<ImmNextDosage>(
+    getGetImmunotherapyNextDosageUrl(patientId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetImmunotherapyNextDosageQueryKey = (patientId: string) => {
+  return [
+    `/api/v1/admin/immunotherapy-orders/patients/${patientId}/next-dosage`,
+  ] as const;
+};
+
+export const getGetImmunotherapyNextDosageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImmunotherapyNextDosage>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  patientId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImmunotherapyNextDosage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetImmunotherapyNextDosageQueryKey(patientId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImmunotherapyNextDosage>>
+  > = ({ signal }) =>
+    getImmunotherapyNextDosage(patientId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: patientId !== null && patientId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImmunotherapyNextDosage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImmunotherapyNextDosageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImmunotherapyNextDosage>>
+>;
+export type GetImmunotherapyNextDosageQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Next Dosage
+ */
+
+export function useGetImmunotherapyNextDosage<
+  TData = Awaited<ReturnType<typeof getImmunotherapyNextDosage>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  patientId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImmunotherapyNextDosage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImmunotherapyNextDosageQueryOptions(
+    patientId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getImmunotherapyUploadPolicyUrl = () => {
   return `/api/v1/admin/immunotherapy-orders/policy`;

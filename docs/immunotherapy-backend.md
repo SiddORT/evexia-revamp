@@ -1,5 +1,44 @@
 # Admin Immunotherapy orders
 
+## Previous saved order dosage suggestion (source-only delivery)
+
+New MR and Admin entries use
+`GET /api/v1/admin/immunotherapy-orders/patients/{patient_id}/next-dosage`.
+The existing order read permission and current eligible patient reference are
+required. MR row ownership is applied before selecting/decrypting history;
+even a currently reassigned patient cannot expose a former MR's orders.
+Only the latest visible placed order is read: saved order date descending,
+then creation time descending (missing legacy creation times last), then ID
+descending. No status filter or dosage maximum is used. Creator-private
+incomplete drafts are stored separately and never participate.
+
+The response contains the requested patient ID, a state, source date/dosage/status
+and an optional suggested dosage only; no source identity, contacts, files,
+allergens or complete order history is returned. PD and DD suggest B1, B1–B7
+suggest their next B-series choice, and B8 has no automatic successor.
+Unsupported/missing source dosage has an explicit state with null dosage.
+Decryption, database, reference and authorization failures remain errors, not
+`no_history`; an unreadable newest order never falls back to an older order.
+The interface identifies the source as a saved order, not administered treatment
+or a clinical recommendation. PD/DD remain optional and PP is not a new value.
+
+Only an empty, untouched new-order dosage can be automatically filled. Manual
+choices, restored nonempty draft values and saved editor dosage are preserved.
+Changing patients clears new-entry dosage/context, invalidates the old response
+and starts a new lookup. A manual choice can be made during loading or after
+any error; explicit Retry never replaces it. Reference refreshes do not trigger
+lookup or overwrite the form. Account/assignment changes invalidate the lookup.
+Pending/uncertain saves and draft writes cannot be altered by late suggestions.
+The existing write payload, validation, ownership, locks, verified-prescription
+requirements, batches and historical snapshots are unchanged.
+
+Validation restriction: this change received source/diff inspection only.
+No regression/release checks, completion validation commands, builds,
+typechecks, runtime/API/browser checks or preview/release workflows were run.
+Offline contract export, direct Orval generation, constant hoisting and generated
+file formatting were performed without the codegen wrapper (which runs a
+typecheck). Unrelated generated contract refinements were retained.
+
 ## Dose- and count-specific Extract & Dilution (source-only delivery)
 
 Super Admin configures **Settings → Immunotherapy → Extract & Dilution**.

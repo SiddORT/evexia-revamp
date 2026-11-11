@@ -50,7 +50,24 @@ export function newGroup(issuedIds = []) {
 }
 export const bottleLabel = (group, index) => /^BOT-\d{3,6}$/.test(group.id) ? group.id : `Saved bottle ${index + 1}`;
 export const groupingError = (items) => new Set(items.map((i) => i.allergenId)).size === items.length ? '' : 'Duplicate allergens within the same SUB or saved group are not allowed.';
-export const nextDose = () => ({ dosage: '', explanation: 'No administration history is recorded by this order workflow. Choose a dosage explicitly; order status is not evidence of a given dose.' });
+// Order-entry sequence only: neither treatment evidence nor clinical advice.
+export const nextDose = (dose) => PRELIMINARY_DOSES.includes(dose) ? 'B1'
+  : /^B[1-7]$/.test(dose) ? `B${Number(dose.slice(1)) + 1}` : null;
+export async function previousOrderDosage(patientId, signal) {
+  const data = await request(`/patients/${encodeURIComponent(patientId)}/next-dosage`, { signal });
+  const source = data?.source;
+  const validSource = source && /^\d{4}-\d{2}-\d{2}$/.test(source.date)
+    && STATUSES.includes(source.status) && (source.dosage === null || DOSES.includes(source.dosage));
+  const valid = data?.patientId === patientId && (
+    (data.state === 'no_history' && source === null && data.suggestedDosage === null)
+    || (validSource && (
+      (data.state === 'suggested' && nextDose(source.dosage) !== null && data.suggestedDosage === nextDose(source.dosage))
+      || (data.state === 'end_of_series' && source.dosage === 'B8' && data.suggestedDosage === null)
+      || (data.state === 'unsupported_dosage' && source.dosage === null && data.suggestedDosage === null)
+    )));
+  if (!valid) throw new Error('Previous-order lookup returned unreadable information. Choose a dosage manually or retry.');
+  return data;
+}
 export function shippingRecipient(order) { return order.recipient || order[order.shipping] || null; }
 export function orderInput(v) {
   const mr = getSession().user?.identity_kind === 'mr';

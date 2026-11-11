@@ -123,3 +123,4 @@
 - [MR Immunotherapy grouping](mr-immunotherapy-grouping-policy.md) — new MR placement only: category/Mix batches of three; saved membership and unrelated historical policy remain intact.
 - [Allergen expiry cost authority](allergen-expiry-cost-policy.md) — Kolkata expiry-day exclusion, actual cost only, immutable past loss and no automatic digest replay.
 - [Immunotherapy extract policy](immunotherapy-extract-policy.md) — smaller bottles use the same ranked table; configured values never authorize clinical inference or historical reapplication.
+- [Previous order dosage policy](previous-order-dosage-policy.md) — editable entry assistance uses authorized saved orders, not administration evidence; PD/DD stay optional and B8 has no successor.

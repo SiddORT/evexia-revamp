@@ -14,7 +14,7 @@ from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
-from app.schemas.immunotherapy import ImmWrite, ImmImport, ImmRecord, ImmPage, Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview, ImmImportResult, ImmRegisteredPatient
+from app.schemas.immunotherapy import ImmWrite, ImmImport, ImmRecord, ImmPage, Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview, ImmImportResult, ImmRegisteredPatient, ImmNextDosage
 from app.services import immunotherapy as service
 from app.core.config import get_settings
 from app.schemas.files import UploadRequest, FileResponse
@@ -29,7 +29,7 @@ from app.services.order_approval import approve as approve_order, resubmit as re
 
 router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"],
     dependencies=[Depends(operation_router("immunotherapy", {
-        "listing": None, "detail": None, "references": None, "export": "export",
+        "listing": None, "detail": None, "references": None, "next_dosage": None, "export": "export",
         "review": "import", "commit": "import", "create": "add", "edit": "edit",
         "approve": "edit", "reject": "edit", "resubmit": "edit",
         "policy": "upload_attachment", "prescription": "upload_attachment",
@@ -155,6 +155,11 @@ def references(kind: Literal["patients", "doctors", "mrs", "allergens"], search:
                selected: uuid.UUID | None = None,
                actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.references(db, actor, kind, search, cursor, limit, selected)
+
+
+@router.get("/patients/{patient_id}/next-dosage", response_model=ImmNextDosage, operation_id="getImmunotherapyNextDosage")
+def next_dosage(patient_id: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return service.next_dosage(db, actor, patient_id)
 
 
 @router.post("/import/review", response_model=ImmImportReview, operation_id="reviewImmunotherapyImport")

@@ -9,11 +9,12 @@ import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
 import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
-import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, nextDose, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, orderBatchLabel, prescriptionBlob, skinResultError, mrEditable, orderLocked, convertToSuborders, SUBORDER_BASIS } from '../../services/serverImmunotherapy.js';
+import { DOSES, GENDERS, PRELIMINARY_DOSES, STATUSES, request, prepareOrderSave, submitOrderSave, downloadPrescription, groupingError, money, newGroup, orderErrors, saveErrors, parseAmount, totalMinor, orderTotalMinor, orderBatchLabel, prescriptionBlob, skinResultError, mrEditable, orderLocked, convertToSuborders, SUBORDER_BASIS } from '../../services/serverImmunotherapy.js';
 import { createPatient, patientLanguageChoices } from '../../services/serverPatients.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import usePrescriptionSelections from '../../hooks/usePrescriptionSelections.js';
 import useImmunotherapyReferences from '../../hooks/useImmunotherapyReferences.js';
+import usePreviousOrderDosage from '../../hooks/usePreviousOrderDosage.js';
 import ReferenceState from '../../components/immunotherapy/ReferenceState.jsx';
 import ImmunotherapyOrderSummary from '../../components/immunotherapy/ImmunotherapyOrderSummary.jsx';
 import ImmunotherapyConflictDetails from '../../components/immunotherapy/ImmunotherapyConflictDetails.jsx';
@@ -92,7 +93,6 @@ function Editor({ order, mode, draft }) {
   const [allergenEntries, setAllergenEntries] = useState(draft?.payload.allergenEntries || {});
   const initialEntries = useRef(draft?.payload.allergenEntries || {});
   const navigationBlocked = useRef(false);
-  const [explain, setExplain] = useState('');
   const [reg, setReg] = useState(null);
   const [regErrors, setRegErrors] = useState({});
   const [leave, setLeave] = useState(null);
@@ -114,6 +114,11 @@ function Editor({ order, mode, draft }) {
   const busy = useRef(false);
   const owner = useRef(getSession().user?.id);
   const alive = useRef(true);
+  const dosageSuggestion = usePreviousOrderDosage({
+    patientId: v.patientId, enabled: isNew && !readOnly,
+    blocked: Boolean(pending) || uncertain || reviewBusy || persistent.locked,
+    busy, setValues: setV, initialDosage: initial.current.dosage,
+  });
   const { uploads, addFiles, removeUpload, retryUpload, clearUploads } = usePrescriptionSelections({
     patientId: v.patientId, attachments: v.attachments, policy, allowed: can.upload_attachment,
     busy, alive, setPending, attachVerified, setFileMsg,
@@ -222,12 +227,13 @@ function Editor({ order, mode, draft }) {
     if (pid !== v.patientId) {
       if (uploads.length || v.attachments.length) setFileMsg('Prescription selections were cleared because the patient changed. Choose prescriptions for the selected patient.');
       clearUploads();
+      dosageSuggestion.changePatient();
     }
     const p = (mrPortal && patients.liveItems.find((x) => x.id === pid)) || snap.patients.find((x) => x.id === pid);
     const patch = { patientId: pid, shipping: 'patient', doctorId: p?.doctorId || '', mrId: authenticatedMR?.id || p?.mrId || '', attachments: pid === v.patientId ? v.attachments : [] };
-    if (p && order && pid === order.patientId) { patch.dosage = initial.current.dosage; setExplain('Saved dosage for this order restored. You may change it.'); }
-    else if (p) { const n = nextDose(p); patch.dosage = n.dosage; setExplain(n.explanation); }
-    else { patch.dosage = ''; setExplain(''); }
+    // Selecting a different patient starts a fresh new-order dose choice.
+    // Saved editors retain their current dosage, including manual edits.
+    if (isNew && pid !== v.patientId) patch.dosage = '';
     set(patch);
   }
   const updGroup = (gid, fn) => set({ groups: v.groups.map((g) => g.id === gid ? fn(g) : g) });
@@ -271,9 +277,9 @@ function Editor({ order, mode, draft }) {
       if (!alive.current) return;
       patients.remember(mrPortal ? created : { ...created, address: { ...reg.address } });
       clearUploads();
+      dosageSuggestion.changePatient();
       setReg(null); setRegErrors({});
       set({ patientId: created.id, doctorId: created.doctorId, mrId: created.mrId || '', dosage: '', shipping: 'patient', attachments: [] });
-      setExplain('Patient Master record created. No administration history inferred; choose a dosage explicitly.');
       requestAnimationFrame(() => document.getElementById('imm-patientId')?.focus());
     } catch (cause) {
       if (alive.current) setRegErrors({ form: `${cause.message} Registration was not confirmed; search ${mrPortal ? 'the patient choices in this order' : 'Patient Master'} before retrying an uncertain registration.` });
@@ -466,9 +472,21 @@ function Editor({ order, mode, draft }) {
         <section className="admin-panel imm-section" aria-labelledby="imm-h-dose"><h2 id="imm-h-dose">Dosage and reactions</h2>
           <p className="imm-hint" id="imm-dosage-hint">Choose one dosage. PD and DD are optional preliminary choices; you can start at B1 without either. The ordered series is B1 → B2 → B3 → B4 → B5 → B6 → B7 → B8. Manually editable; not a clinical recommendation.</p>
           <fieldset className="imm-chips" id="imm-dosage" style={{ marginTop: 12 }} aria-describedby={`imm-dosage-hint${errors.dosage ? ' imm-dosage-err' : ''}`}><legend>Dosage (required)</legend>
-            {DOSES.map((d) => <label className="imm-chip" key={d}><input id={`imm-dose-${d}`} type="radio" name="dosage" value={d} checked={v.dosage === d} disabled={dis} onChange={() => set({ dosage: d })} data-testid={`radio-imm-dose-${d}`} /><span>{d}{PRELIMINARY_DOSES.includes(d) ? ' (optional preliminary)' : ''}</span></label>)}</fieldset>
+            {DOSES.map((d) => <label className="imm-chip" key={d}><input id={`imm-dose-${d}`} type="radio" name="dosage" value={d} checked={v.dosage === d} disabled={dis} onClick={() => dosageSuggestion.chooseDosage(d)} onChange={() => dosageSuggestion.chooseDosage(d)} data-testid={`radio-imm-dose-${d}`} /><span>{d}{PRELIMINARY_DOSES.includes(d) ? ' (optional preliminary)' : ''}</span></label>)}</fieldset>
           <Err id="imm-dosage-err" text={errors.dosage} />
-          {explain && <p className="imm-explain" role="status" data-testid="text-imm-dose-explain">{explain}</p>}
+          {dosageSuggestion.lookup && <div className="imm-explain" data-testid="text-imm-dose-explain">
+            <p role={dosageSuggestion.lookup.state === 'error' ? 'alert' : 'status'}>
+              {dosageSuggestion.lookup.state === 'loading' ? 'Looking up the latest previous saved order you can access… You may choose a dosage manually now.'
+                : dosageSuggestion.lookup.state === 'error' ? 'Previous-order lookup failed or access is unavailable. No dosage was inferred. Choose manually or retry.'
+                  : dosageSuggestion.lookup.state === 'no_history' ? 'No previous saved Immunotherapy order is available to your account for this patient. Choose a dosage manually.'
+                    : <>Previous saved order: {date(dosageSuggestion.lookup.source.date)} · dosage {dosageSuggestion.lookup.source.dosage || 'unavailable / unsupported'} · status {dosageSuggestion.lookup.source.status}.
+                      {' '}{dosageSuggestion.lookup.state === 'suggested' ? `Suggested next order dosage: ${dosageSuggestion.lookup.suggestedDosage}. Your current choice is retained; you may change it.`
+                        : dosageSuggestion.lookup.state === 'end_of_series' ? 'B8 has no automatic next dosage. Choose manually.'
+                          : 'The previous dosage cannot be used for a suggestion. Choose manually.'}
+                      {' '}Based on a saved order, not an administered dose or clinical recommendation.</>}
+            </p>
+            {dosageSuggestion.lookup.state === 'error' && <button type="button" className="imm-link-btn" disabled={dis} onClick={dosageSuggestion.retry}>Retry previous-order lookup</button>}
+          </div>}
           <div className="imm-grid" style={{ marginTop: 14 }}>
             {['histamine', 'saline'].map((k) => <div className="imm-field" key={k}><label htmlFor={`imm-${k}`}>{k === 'histamine' ? 'Histamine (mm)' : 'Saline (mm)'}</label>
               <input id={`imm-${k}`} inputMode="decimal" required value={v[k]} disabled={dis} onChange={(e) => set({ [k]: e.target.value })} aria-invalid={Boolean(errors[k])} aria-describedby={errors[k] ? `imm-${k}-err` : undefined} data-testid={`input-imm-${k}`} />

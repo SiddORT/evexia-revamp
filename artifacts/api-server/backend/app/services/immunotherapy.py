@@ -417,6 +417,41 @@ def detail(db, actor, record_id):
     return transaction(db, actor, lambda a, k: project(k, find(db, record_id)))
 
 
+def next_dosage(db, actor, patient_id):
+    from typing import get_args
+    from app.schemas.immunotherapy import Dosage, ImmNextDosage
+    from app.services.order_lifecycle import status
+
+    def work(a, keys):
+        # Check the current patient reference before looking for any orders.
+        # MR ownership is independently enforced on the history query: a patient
+        # reassignment must not disclose the former MR's orders, even existence.
+        eligible(db, "patients", patient_id)
+        # Only placed orders live in this table (no soft-delete state). Private
+        # incomplete drafts are separate; removed records cannot be candidates.
+        row = db.scalar(select(Order).where(Order.patient_id == patient_id, *scope(db, Order))
+            .order_by(Order.date.desc(), Order.created_at.desc().nulls_last(), Order.id.desc()).limit(1))
+        if row is None:
+            return dict(patientId=patient_id, state="no_history", source=None, suggestedDosage=None)
+        # Decrypt exactly one visible snapshot; a crypto failure must fail the
+        # lookup, never skip to an older order or masquerade as absent history.
+        saved = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+        if not isinstance(saved, dict):
+            raise ImmError("Previous order could not be read. Choose a dosage manually or retry.", code="imm_dosage_unavailable")
+        dose = saved.get("dosage")
+        known = isinstance(dose, str) and dose in get_args(Dosage)
+        successor = "B1" if dose in ("PD", "DD") else (
+            f"B{int(dose[1:]) + 1}" if known and dose.startswith("B") and dose != "B8" else None)
+        # Do not return arbitrary malformed encrypted values as source metadata.
+        return dict(patientId=patient_id,
+            state="suggested" if successor else "end_of_series" if dose == "B8" else "unsupported_dosage",
+            source=dict(date=row.date, dosage=dose if known else None,
+                        status="In process" if saved.get("approval") and row.status == "Confirmed" else status(row.status)),
+            suggestedDosage=successor)
+
+    return transaction(db, actor, work, response_model=ImmNextDosage)
+
+
 def listing(db, actor, *, search="", status="", from_date=None, to_date=None, cursor=None, limit=25, complete=False):
     def work(a, keys):
         started = time.monotonic()
