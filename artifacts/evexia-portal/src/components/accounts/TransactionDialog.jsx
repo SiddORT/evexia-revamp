@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import Dialog from '../admin/Dialog.jsx';
 import SearchableSelect from '../admin/SearchableSelect.jsx';
 import TablePagination from '../admin/TablePagination.jsx';
@@ -33,6 +33,12 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState(null);
   const [listError, setListError] = useState('');
+  const [selectedOnly, setSelectedOnly] = useState(false);
+  const [selectedPage, setSelectedPage] = useState(1);
+  const [selectedPageSize, setSelectedPageSize] = useState(10);
+  const selectedToggle = useRef(null);
+  const reviewHeading = useRef(null);
+  const saveButton = useRef(null);
   const frozen = useRef(null);
   const uncertainEver = useRef(false);
   const busy = useRef(false);
@@ -73,9 +79,15 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
   const totalPaise = parsed.reduce((s, x) => s + (x.p ?? 0n), 0n);
   const editable = !locked && !confirming;
   const full = selected.size >= BATCH_LIMIT;
+  const selectedPageCount = Math.max(1, Math.ceil(rows.length / selectedPageSize));
+  const visibleSelectedPage = Math.min(selectedPage, selectedPageCount);
+  const pageItems = selectedOnly
+    ? rows.slice((visibleSelectedPage - 1) * selectedPageSize, visibleSelectedPage * selectedPageSize)
+    : result?.items || [];
 
   function toggle(r) {
     if (!editable) return;
+    if (selectedOnly) requestAnimationFrame(() => selectedToggle.current?.focus());
     setSelected((old) => {
       const m = new Map(old);
       if (m.has(r.key)) m.delete(r.key); else if (m.size < BATCH_LIMIT) m.set(r.key, r);
@@ -83,10 +95,10 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
     });
     setErrors((e) => ({ ...e, selection: undefined }));
   }
-  const pageItems = result?.items || [];
   const pageAllOn = pageItems.length > 0 && pageItems.every((r) => selected.has(r.key));
   function togglePage() {
     if (!editable) return;
+    if (selectedOnly) requestAnimationFrame(() => selectedToggle.current?.focus());
     setSelected((old) => {
       const m = new Map(old);
       if (pageAllOn) pageItems.forEach((r) => m.delete(r.key));
@@ -112,12 +124,18 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
       else if (p > toPaise(row.balance)) next[row.key] = `Cannot exceed the balance of ${inr(row.balance)}.`;
     }
     setErrors(next);
+    const firstInvalid = rows.findIndex((r) => next[r.key]);
+    if (firstInvalid !== -1) {
+      setSelectedOnly(true);
+      setSelectedPage(Math.floor(firstInvalid / selectedPageSize) + 1);
+      requestAnimationFrame(() => document.getElementById(`settle-amount-${rows[firstInvalid].key}`)?.focus());
+    }
     return Object.keys(next).length === 0;
   }
 
   function review(e) {
     e.preventDefault();
-    if (locked) return;
+    if (locked || confirming) return;
     setMessage('');
     if (validate()) {
       frozen.current = Object.freeze({
@@ -126,6 +144,7 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
           expected_paid: r.paid, amount: fromPaise(toPaise(amounts[r.key])) }))),
       });
       setConfirming(true);
+      requestAnimationFrame(() => reviewHeading.current?.focus());
     }
   }
 
@@ -194,95 +213,106 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
     </>
     : confirming
       ? <>
-        <button type="button" className="admin-button admin-button--secondary" disabled={phase === 'posting'} onClick={() => { frozen.current = null; setConfirming(false); }} data-testid="button-back-transaction">Back to edit</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={phase === 'posting'} onClick={() => { frozen.current = null; setConfirming(false); requestAnimationFrame(() => saveButton.current?.focus()); }} data-testid="button-back-transaction">Back to edit</button>
         <button type="button" className="admin-button" disabled={phase === 'posting'} aria-disabled={phase === 'posting'} onClick={confirm} data-testid="button-confirm-transaction">{phase === 'posting' ? 'Recording…' : `Record ${inr(totalPaise)}`}</button>
       </>
       : <>
         <button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-transaction">Cancel</button>
-        <button type="submit" form="settle-form" className="admin-button" data-testid="button-review-transaction">Review payment</button>
+        <button ref={saveButton} type="submit" form="settle-form" className="admin-button" data-testid="button-review-transaction">Save</button>
       </>;
 
   const pageCount = Math.max(1, Math.ceil((result?.total || 0) / pageSize));
   return <Dialog eyebrow="Accounts" title="Add payment" className="settle-dialog settle-dialog--wide" onClose={close} dismissDisabled={locked || confirming}
-    description="Record one payment across your pending orders. Each order receives its own amount. Recorded payments are immutable and start as Unverified. No money is transferred by this form."
     footer={footer}>
     <form id="settle-form" noValidate onSubmit={review} className="settle-form">
-      <fieldset disabled={!editable} className="settle-form__common">
-        <label className="kits-field">Payment date
-          <input type="date" value={date} max={today()} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'settle-date-err' : undefined}
-            onChange={(e) => setDate(e.target.value)} data-testid="input-transaction-date" />
-          {errors.date && <span id="settle-date-err" className="settle-err">{errors.date}</span>}
-        </label>
+      {editable && <fieldset className="settle-form__common settle-payment-toolbar">
+        <legend className="sr-only">Payment details and pending-order search</legend>
+        <div className="kits-field"><label htmlFor="settle-pending-search">Search</label>
+          <div className="settle-payment-search">
+            <div className="settle-search">
+              <Search size={15} aria-hidden="true" />
+              <input id="settle-pending-search" type="search" value={searchDraft} maxLength={100} placeholder="Order, doctor or patient" aria-label="Search pending orders"
+                onChange={(e) => setSearchDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setSearch(searchDraft.trim()); setPage(1); setSelectedOnly(false); } }} data-testid="input-search-pending" />
+            </div>
+            <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(searchDraft.trim()); setPage(1); setSelectedOnly(false); }} data-testid="button-search-pending">Search</button>
+          </div>
+        </div>
         <div className="kits-field"><span id="settle-mode-label">Payment mode</span>
           <SearchableSelect id="settle-mode" label="Payment mode" value={mode} options={MODE_OPTIONS} onChange={setMode} placeholder="Choose mode"
             invalid={Boolean(errors.mode)} describedBy={errors.mode ? 'settle-mode-err' : undefined} disabled={!editable} viewportMenu />
           {errors.mode && <span id="settle-mode-err" className="settle-err">{errors.mode}</span>}
         </div>
-        <label className="kits-field">Transaction ID / UTR <span className="kits-hint">Optional</span>
+        <div className="kits-field"><span id="settle-derived-total-label">Amount (INR)</span><output aria-labelledby="settle-derived-total-label" className="settle-fixed settle-mono">{inr(totalPaise)}</output></div>
+        <label className="kits-field">Transaction ID / UTR (optional)
           <input value={reference} maxLength={100} onChange={(e) => setReference(e.target.value)} aria-invalid={Boolean(errors.reference)}
             aria-describedby={errors.reference ? 'settle-ref-err' : undefined} placeholder="e.g. UTR 4021 8876 1190" data-testid="input-transaction-reference" />
           {errors.reference && <span id="settle-ref-err" className="settle-err">{errors.reference}</span>}
         </label>
-      </fieldset>
+        <label className="kits-field">Payment date
+          <input type="date" value={date} max={today()} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'settle-date-err' : undefined}
+            onChange={(e) => setDate(e.target.value)} data-testid="input-transaction-date" />
+          {errors.date && <span id="settle-date-err" className="settle-err">{errors.date}</span>}
+        </label>
+      </fieldset>}
 
-      {!confirming && !locked && <section className="settle-picker" aria-label="Pending orders">
+      {editable && <section className="settle-picker settle-picker--payment" aria-label="Pending orders">
         <div className="settle-picker__head">
-          <div className="settle-search">
-            <Search size={15} aria-hidden="true" />
-            <input type="search" value={searchDraft} maxLength={100} placeholder="Search order, doctor or patient" aria-label="Search pending orders"
-              onChange={(e) => setSearchDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setSearch(searchDraft.trim()); setPage(1); } }} data-testid="input-search-pending" />
-          </div>
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(searchDraft.trim()); setPage(1); }} data-testid="button-search-pending">Search</button>
           <span className="settle-sub" role="status" aria-live="polite" data-testid="text-selected-count">{selected.size} of {BATCH_LIMIT} orders selected{full ? ' · limit reached' : ''}</span>
+          <button ref={selectedToggle} type="button" className="admin-button admin-button--secondary" aria-pressed={selectedOnly} onClick={() => setSelectedOnly((v) => !v)} data-testid="button-selected-pending">{selectedOnly ? 'Show pending orders' : `Show selected (${selected.size})`}</button>
         </div>
-        {listError ? <div className="settle-state settle-state--error" role="alert"><strong>Pending orders unavailable</strong><p>{listError}</p>
+        {errors.selection && <p className="settle-err" role="alert">{errors.selection}</p>}
+        {!selectedOnly && listError ? <div className="settle-state settle-state--error" role="alert"><strong>Pending orders unavailable</strong><p>{listError}</p>
           <button type="button" className="admin-button admin-button--secondary" onClick={() => setRevision((n) => n + 1)} data-testid="button-retry-pending">Retry</button></div>
-          : !result ? <div className="settle-skeleton" aria-busy="true" aria-label="Loading pending orders">{[0, 1, 2].map((i) => <div key={i}><span /><span /><span /><span /></div>)}</div>
-            : !result.items.length ? <div className="settle-state"><strong>{search ? 'No matching pending orders' : 'Nothing pending'}</strong><p>{search ? 'Try another search.' : 'All your payable orders are fully paid.'}</p></div>
-              : <div className="settle-table-wrap" tabIndex={0} role="region" aria-label="Pending orders, scrolls horizontally">
-                <table className="settle-table settle-table--compact">
+          : !selectedOnly && !result ? <div className="settle-skeleton" aria-busy="true" aria-label="Loading pending orders">{[0, 1, 2].map((i) => <div key={i}><span /><span /><span /><span /></div>)}</div>
+            : !pageItems.length ? <div className="settle-state"><strong>{selectedOnly ? 'No selected orders' : search ? 'No matching pending orders' : 'Nothing pending'}</strong><p>{selectedOnly ? 'Show pending orders to select an order.' : search ? 'Try another search.' : 'All your payable orders are fully paid.'}</p></div>
+              : <div className="settle-table-wrap" tabIndex={0} role="region" aria-label={`${selectedOnly ? 'Selected' : 'Pending'} orders, scrolls horizontally`}>
+                <table className="settle-table settle-table--compact settle-payment-table">
+                  <caption className="sr-only">{selectedOnly ? 'Selected orders' : 'Pending orders'} with payment amounts in INR</caption>
                   <thead><tr>
                     <th scope="col"><input type="checkbox" className="settle-check" checked={pageAllOn} onChange={togglePage} aria-label="Select all orders on this page only" data-testid="checkbox-select-pending-page" /></th>
-                    <th scope="col">Order</th><th scope="col">Doctor</th><th scope="col">Patients</th><th scope="col">Total</th><th scope="col">Balance</th>
+                    <th scope="col">Order / date</th><th scope="col">Doctor</th><th scope="col">Patients</th><th scope="col">Total</th><th scope="col">Outstanding</th><th scope="col">Payment (INR)</th>
                   </tr></thead>
-                  <tbody>{result.items.map((r) => <tr key={r.key} data-selected={selected.has(r.key) || undefined}>
+                  <tbody>{pageItems.map((r) => <tr key={r.key} data-selected={selected.has(r.key) || undefined}>
                     <td><input type="checkbox" className="settle-check" checked={selected.has(r.key)} disabled={!selected.has(r.key) && full} onChange={() => toggle(r)}
                       aria-label={`Select ${r.number}`} data-testid={`checkbox-pending-${r.key}`} /></td>
-                    <td><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{formatDate(r.date)} · {KIND_LABEL[r.kind]}</span></td>
+                    <td><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{r.date ? formatDate(r.date) : 'Date unavailable'} · {KIND_LABEL[r.kind]}</span></td>
                     <td>{r.doctor?.name || 'Not recorded'}</td><td>{names(r)}</td>
                     <td className="settle-mono">{inr(r.total)}</td><td className="settle-mono settle-due">{inr(r.balance)}</td>
+                    <td>
+                      <input id={`settle-amount-${r.key}`} inputMode="decimal" className="settle-amount" aria-label={`Amount for ${r.number}`} value={amounts[r.key] || ''} disabled={!selected.has(r.key)}
+                        aria-invalid={selected.has(r.key) && Boolean(errors[r.key])} aria-describedby={selected.has(r.key) && errors[r.key] ? `settle-err-${r.key}` : undefined}
+                        maxLength={15} onChange={(e) => setAmounts((a) => ({ ...a, [r.key]: e.target.value }))}
+                        placeholder="0.00" data-testid={`input-amount-${r.key}`} />
+                      {selected.has(r.key) && <button type="button" className="kits-link" onClick={() => setAmounts((a) => ({ ...a, [r.key]: r.balance }))} data-testid={`button-full-${r.key}`}>Full balance</button>}
+                      {selected.has(r.key) && errors[r.key] && <span id={`settle-err-${r.key}`} className="settle-err">{errors[r.key]}</span>}
+                    </td>
                   </tr>)}</tbody>
                 </table>
               </div>}
-        <TablePagination page={page} pageCount={pageCount} pageSize={pageSize} filtered={result?.total || 0} total={result?.total || 0} label="pending orders" testId="pending-count"
-          onPageChange={(n) => { if (n >= 1 && n <= pageCount) setPage(n); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+        {selectedOnly
+          ? <TablePagination page={visibleSelectedPage} pageCount={selectedPageCount} pageSize={selectedPageSize} filtered={rows.length} total={rows.length} label="selected orders" testId="selected-pending-count"
+            onPageChange={(n) => { if (n >= 1 && n <= selectedPageCount) setSelectedPage(n); }} onPageSizeChange={(s) => { setSelectedPageSize(s); setSelectedPage(1); }} />
+          : <TablePagination page={page} pageCount={pageCount} pageSize={pageSize} filtered={result?.total || 0} total={result?.total || 0} label="pending orders" testId="pending-count"
+            onPageChange={(n) => { if (n >= 1 && n <= pageCount) setPage(n); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
       </section>}
 
-      <section aria-label="Allocations">
-        <h3 className="settle-h3">Allocations</h3>
-        {errors.selection && <p className="settle-err" role="alert">{errors.selection}</p>}
-        {!rows.length ? <p className="settle-sub">Select orders above, then enter the amount received against each.</p>
-          : <table className="settle-entries">
+      {confirming && <section aria-label="Payment confirmation">
+        <h3 ref={reviewHeading} tabIndex={-1} className="settle-h3">Confirm payment</h3>
+        <p className="settle-sub">Payments cannot be edited or deleted. Recorded entries start as Unverified.</p>
+        <div className="settle-confirmation-scroll" tabIndex={0} role="region" aria-label="Allocation summary, scrolls horizontally">
+          <table className="settle-entries">
             <caption className="sr-only">Amount per selected order</caption>
-            <thead><tr><th scope="col">Order</th><th scope="col">Balance</th><th scope="col">Amount (INR)</th><th scope="col"><span className="sr-only">Remove</span></th></tr></thead>
+            <thead><tr><th scope="col">Order</th><th scope="col">Amount (INR)</th></tr></thead>
             <tbody>{rows.map((r) => <tr key={r.key}>
               <th scope="row"><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{KIND_LABEL[r.kind] || r.kind} · {r.doctor?.name || 'Doctor not recorded'}</span><span className="settle-sub">{names(r)}</span></th>
-              <td className="settle-mono">{inr(r.balance)}</td>
-              <td>
-                <input inputMode="decimal" className="settle-amount" aria-label={`Amount for ${r.number}`} value={amounts[r.key] || ''} disabled={!editable}
-                  aria-invalid={Boolean(errors[r.key])} aria-describedby={errors[r.key] ? `settle-err-${r.key}` : undefined}
-                  maxLength={15} onChange={(e) => setAmounts((a) => ({ ...a, [r.key]: e.target.value }))}
-                  placeholder="0.00" data-testid={`input-amount-${r.key}`} />
-                {editable && <button type="button" className="kits-link" onClick={() => setAmounts((a) => ({ ...a, [r.key]: r.balance }))} data-testid={`button-full-${r.key}`}>Full balance</button>}
-                {errors[r.key] && <span id={`settle-err-${r.key}`} className="settle-err">{errors[r.key]}</span>}
-              </td>
-              <td>{editable && <button type="button" className="admin-icon-button" aria-label={`Remove ${r.number}`} onClick={() => toggle(r)} data-testid={`button-remove-${r.key}`}><X size={15} aria-hidden="true" /></button>}</td>
+              <td className="settle-mono">{inr(toPaise(amounts[r.key]))}</td>
             </tr>)}</tbody>
-          </table>}
-      </section>
+          </table>
+        </div>
+      </section>}
       <div className={`settle-total${confirming ? ' settle-total--confirm' : ''}`} aria-live="polite" data-testid="text-transaction-total">
-        <span>{confirming ? `Confirm ${mode} payment dated ${formatDate(date)}${reference.trim() ? `, reference ${reference.trim()}` : ''}, across ${rows.length} order${rows.length > 1 ? 's' : ''}` : 'Aggregate total'}</span>
+        <span>{confirming ? `Confirm ${mode} payment dated ${formatDate(date)}${reference.trim() ? `, reference ${reference.trim()}` : ''}, across ${rows.length} order${rows.length > 1 ? 's' : ''}` : 'Selected payment total'}</span>
         <strong>{inr(totalPaise)}</strong>
       </div>
       {message && <p className={`settle-msg${phase === 'uncertain' || phase === 'checking' ? ' settle-msg--warn' : ''}`} role="alert" data-testid="status-transaction">{message}</p>}

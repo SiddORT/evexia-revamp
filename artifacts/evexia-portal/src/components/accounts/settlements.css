@@ -112,3 +112,23 @@
 .settle-txlist__side .admin-button { display: inline-flex; align-items: center; gap: 6px; }
 .settle-confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .85rem; }
 .settle-history-sum { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.settle-filter-disclosure--mr { flex: 1 0 100%; margin: 0 0 14px; }
+.settle-filter-disclosure--mr[open] > summary { border-bottom: 1px solid var(--settle-line); background: var(--admin-state-hover); }
+.settle-payment-toolbar { grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr)); align-items: start; }
+.settle-payment-search { display: flex; gap: 6px; min-width: 0; }
+.settle-payment-search .settle-search { padding: 0 8px; }
+.settle-picker--payment { padding: 0; margin: 0; border: 0; border-radius: 0; min-width: 0; }
+.settle-picker--payment .settle-picker__head { justify-content: space-between; }
+.settle-payment-table { min-width: 880px; }
+.settle-payment-table td:last-child { width: 160px; }
+.settle-payment-table .kits-link { display: block; margin-top: 4px; font-size: 12px; }
+.settle-confirmation-scroll { overflow: auto; max-height: 40vh; }
+.settle-confirmation-scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.settle-confirmation-scroll .settle-entries { min-width: 360px; }
+@media (max-width: 1000px) {
+  .settle-payment-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settle-payment-toolbar > :first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 540px) {
+  .settle-payment-toolbar { grid-template-columns: minmax(0, 1fr); }
+}
