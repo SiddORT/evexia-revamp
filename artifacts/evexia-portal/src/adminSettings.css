@@ -44,11 +44,6 @@
 .imm-extract-settings .searchable-select__option span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .imm-extract-settings .searchable-select__empty .admin-button { display: block; margin-top: 8px; }
 .imm-extract-settings__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.imm-extract-settings__disclosure { margin: 12px 0 0; padding: 0; color: var(--admin-text-soft); font-size: 12px; }
-.imm-extract-settings__disclosure summary { cursor: pointer; color: var(--admin-text); font-weight: 700; }
-.imm-extract-settings__disclosure p { margin: 10px 0 0; }
-.imm-extract-settings__disclosure ul { margin: 10px 0 0; padding-left: 20px; }
-.imm-extract-settings__disclosure li + li { margin-top: 6px; }
 .imm-extract-settings__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
 .imm-extract-settings .admin-button { min-width: 0; max-width: 100%; font-family: inherit; }
 .imm-extract-settings .admin-feedback { margin: 8px 0; color: var(--admin-text); font-size: 12px; }

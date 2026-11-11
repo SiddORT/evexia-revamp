@@ -186,7 +186,7 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
             {rank === 1 && <th scope="rowgroup" rowSpan={size}>{groupLabel(size)}</th>}
             <th scope="row">{rankLabel(rank)}</th>
             {['extract', 'dilution'].map((field) => <td key={field}><input inputMode="decimal" value={row[field]} placeholder="Not recorded" aria-label={`${field === 'extract' ? 'Extract' : 'Dilution'} in ml, ${groupLabel(size)}, ${rankLabel(rank)}, ${dosage}`}
-              aria-describedby={`imm-extract-help imm-extract-precision imm-extract-saved-${index}-${field}`} aria-invalid={Boolean(quantityError(row[field]))} onChange={(event) => { const value = event.target.value; setRows((old) => old.map((item, rank) => rank === index ? { ...item, [field]: value } : item)); setNotice(''); }} />
+              aria-describedby={`imm-extract-help imm-extract-saved-${index}-${field}`} aria-invalid={Boolean(quantityError(row[field]))} onChange={(event) => { const value = event.target.value; setRows((old) => old.map((item, rank) => rank === index ? { ...item, [field]: value } : item)); setNotice(''); }} />
               <small id={`imm-extract-saved-${index}-${field}`} className="imm-extract-settings__saved-value">Saved: <span>{savedQuantity(saved?.rows[index]?.[field])}</span></small>
             </td>)}
           </tr>; })}</tbody>)}
@@ -201,16 +201,5 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
       <p className="imm-extract-settings__hint">Saving affects {selected.name} · {dosage} only.</p>
     </form>}
     {selected && !rows && !busy && <button type="button" className="admin-button" onClick={() => load(selected, false)}>Reload saved</button>}
-    <details className="imm-extract-settings__disclosure">
-      <summary>Ranking &amp; entry guidance</summary>
-      <p id="imm-extract-precision">Use up to six whole digits and three decimal places in ml. No quantities are prefilled or calculated. Incomplete rows are allowed; missing order quantities need Admin completion before approval.</p>
-      <p>Each already-formed bottle uses its own Single, Double or Triple group for the saved dosage and category. Ties keep their order. Four same-category Mix allergens use Triple for the three-item bottle and Single for the overflow singleton. No Mix uses Single. No values are shared between groups or dosages. Admin can edit saved quantities; approval remains explicit.</p>
-    </details>
-    {saved?.legacyRows && <details className="imm-extract-settings__disclosure">
-      <summary>Legacy category-only values — read-only</summary>
-      <p>Legacy values are preserved for recovery, not applied to this dosage. Explicitly configure each dosage and group.</p>
-      <ul>{saved.legacyRows.map((row, index) => <li key={index}>{rankLabel(index + 1)}: Extract {savedQuantity(row.extract)} ml; Dilution {savedQuantity(row.dilution)} ml</li>)}</ul>
-    </details>}
-    {saved?.legacyRows && <p className="imm-extract-settings__hint">Legacy category-only settings exist; they are not approved dosage/count defaults.</p>}
   </section>;
 }
