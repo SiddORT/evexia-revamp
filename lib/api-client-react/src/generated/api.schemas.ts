@@ -7792,6 +7792,11 @@ export interface POAnalytics {
 }
 
 export interface POLineInput {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration?: string;
   gst?: string | null;
   lineId?: string | null;
   productId: string;
@@ -7874,6 +7879,7 @@ export interface POTaxAmounts {
 }
 
 export interface POLineResponse {
+  concentration?: string | null;
   componentRates?: POTaxRates | null;
   gst: string;
   gstAmount: number;

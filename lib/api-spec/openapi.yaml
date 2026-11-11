@@ -20655,6 +20655,12 @@
       "POLineInput": {
         "additionalProperties": false,
         "properties": {
+          "concentration": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Concentration",
+            "type": "string"
+          },
           "gst": {
             "anyOf": [
               {
@@ -20717,6 +20723,18 @@
       },
       "POLineResponse": {
         "properties": {
+          "concentration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Concentration"
+          },
           "componentRates": {
             "anyOf": [
               {

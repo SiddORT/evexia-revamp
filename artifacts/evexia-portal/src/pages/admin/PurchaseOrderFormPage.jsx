@@ -17,7 +17,7 @@ import {
   MAX_LINES, MAX_TOTAL_PAISE, clearPending, computeDraftLine, computeDraftTotals, createPurchaseOrder, describeError, formatPaise, isStaleReview,
   isUncertain, loadPending, markSaved, newKey, parseQuantity, previewPurchaseOrder, savePending, trimDecimal, validDate,
   clearOrderMutation, isStaleOrder, loadOrderMutation, previewPurchaseOrderEdit, saveOrderMutation, updatePurchaseOrder,
-  GST_STATES, taxContext, listPurchaseOrderReferences, parsePORate, pendingInput,
+  GST_STATES, taxContext, listPurchaseOrderReferences, parsePORate, pendingInput, validConcentration,
 } from '../../services/serverPurchaseOrders.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -26,13 +26,14 @@ import DocumentPreferenceRecovery from '../../components/admin/DocumentPreferenc
 
 const BASE = '/admin/inventory/purchase-orders';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const blankLine = () => ({ key: Math.random().toString(36).slice(2), product: null, quantity: '1', unitPrice: '', gst: '' });
+const blankLine = () => ({ key: Math.random().toString(36).slice(2), product: null, concentration: '1', quantity: '1', unitPrice: '', gst: '' });
 const toInput = (values) => ({
   poDate: values.poDate, expectedDate: values.expectedDate, vendorId: values.vendor?.id || '', locationId: values.location?.id || '',
   ...(values.placeOfSupplyCode ? { placeOfSupplyCode: values.placeOfSupplyCode } : {}),
   lines: values.lines.map((line) => ({
     productId: line.product?.id || '', quantity: String(line.quantity).trim(),
     unitPrice: line.unitPrice.trim(), gst: line.gst.trim(),
+    ...(line.concentration !== undefined ? { concentration: line.concentration.trim() } : {}),
     ...(line.lineId ? { lineId: line.lineId } : {}),
   })),
 });
@@ -49,6 +50,7 @@ function validate(values) {
   else if (validDate(values.poDate) && values.expectedDate < values.poDate) errors.expectedDate = 'Expected delivery cannot be before the PO date.';
   values.lines.forEach((line, index) => {
     if (!line.product) errors[`lines.${index}.productId`] = 'Select a product.';
+    if (line.concentration !== undefined && !validConcentration(line.concentration)) errors[`lines.${index}.concentration`] = 'Enter concentration as 1–200 characters of descriptive text without control characters.';
     if (parseQuantity(line.quantity) === null) errors[`lines.${index}.quantity`] = 'Enter a quantity above 0, up to 1,000,000 with at most 3 decimals.';
     if (parsePORate(line.unitPrice, false, line.savedRates?.unitPrice) === null) errors[`lines.${index}.unitPrice`] = 'Enter a unit price from 0 to 999,999,999,999.99, with at most 6 decimals.';
     if (parsePORate(line.gst, true, line.savedRates?.gst) === null) errors[`lines.${index}.gst`] = 'Enter GST from 0 to 100, with at most 6 decimals.';
@@ -60,24 +62,24 @@ function validate(values) {
   return errors;
 }
 
-function Field({ id, label, error, children }) {
-  return <div className="po-field"><label htmlFor={id}>{label} <span className="mr-form__required">*</span></label>{children}{error && <p id={`${id}-error`} className="mr-form__error" role="alert">{error}</p>}</div>;
+function Field({ id, label, error, children, required = true }) {
+  return <div className="po-field"><label htmlFor={id}>{label} {required && <span className="mr-form__required">*</span>}</label>{children}{error && <p id={`${id}-error`} className="mr-form__error" role="alert">{error}</p>}</div>;
 }
 
 export function LineTable({ lines, figures }) {
   return <div className="po-items-table" role="region" aria-label="Purchase order item summary" tabIndex={0}>
     <p className="po-items-table__scroll-hint">Swipe across to see prices and totals →</p>
     <table>
-      <thead><tr><th scope="col">Sr. no.</th><th scope="col">Product name</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Gross total</th><th scope="col">GST %</th><th scope="col">GST amount</th><th scope="col">Final total</th></tr></thead>
+      <thead><tr><th scope="col">Sr. no.</th><th scope="col">Product name</th><th scope="col">Concentration</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Gross total</th><th scope="col">GST %</th><th scope="col">GST amount</th><th scope="col">Final total</th></tr></thead>
       <tbody>{lines.map((line, index) => <tr key={line.id || index}>
-        <td>{index + 1}</td><td><strong>{line.productName}</strong></td><td>{trimDecimal(line.quantity, 0)}</td>
+        <td>{index + 1}</td><td><strong>{line.productName}</strong></td><td className="po-line-concentration">{line.concentration ?? 'Not captured'}</td><td>{trimDecimal(line.quantity, 0)}</td>
         <td>₹{formatRate(line.unitPrice)}</td><td>{formatPaise(line.subtotal)}</td><td>{formatRate(line.gst)}%</td><td>{formatPaise(line.gstAmount)}<LineTax line={line} /></td><td className="po-amount">{formatPaise(line.total)}</td>
       </tr>)}</tbody>
       <tfoot>
-        <tr><th colSpan="7" scope="row">Taxable subtotal</th><td>{formatPaise(figures.subtotal)}</td></tr>
-        {figures.taxComponents && Object.entries(figures.taxComponents).filter(([k, value]) => value || figures.taxBasis?.treatment.includes(k)).map(([k, value]) => <tr key={k}><th colSpan="7" scope="row">{k.toUpperCase()}</th><td>{formatPaise(value)}</td></tr>)}
-        <tr><th colSpan="7" scope="row">GST amount</th><td>{formatPaise(figures.gstAmount)}</td></tr>
-        <tr className="po-items-table__final"><th colSpan="7" scope="row">Final total</th><td data-testid="text-po-form-total">{formatPaise(figures.total)}</td></tr>
+        <tr><th colSpan="8" scope="row">Taxable subtotal</th><td>{formatPaise(figures.subtotal)}</td></tr>
+        {figures.taxComponents && Object.entries(figures.taxComponents).filter(([k, value]) => value || figures.taxBasis?.treatment.includes(k)).map(([k, value]) => <tr key={k}><th colSpan="8" scope="row">{k.toUpperCase()}</th><td>{formatPaise(value)}</td></tr>)}
+        <tr><th colSpan="8" scope="row">GST amount</th><td>{formatPaise(figures.gstAmount)}</td></tr>
+        <tr className="po-items-table__final"><th colSpan="8" scope="row">Final total</th><td data-testid="text-po-form-total">{formatPaise(figures.total)}</td></tr>
       </tfoot>
     </table>
   </div>;
@@ -89,6 +91,7 @@ const fromSaved = (order) => ({
   vendor: { id: order.vendorId, name: order.vendorName, gstin: order.taxBasis?.supplierGstin }, location: { id: order.locationId, name: order.locationName },
   lines: order.lines.map((line) => ({
     key: line.id || newKey(), lineId: line.id, quantity: line.quantity, unitPrice: line.unitPrice, gst: line.gst,
+    ...(line.concentration != null ? { concentration: line.concentration } : {}),
     savedRates: { unitPrice: line.unitPrice, gst: line.gst },
     product: { id: line.productId, name: line.productName, unitPrice: line.unitPrice, gst: line.gst },
   })),
@@ -313,6 +316,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
           </fieldset>
           <fieldset className="po-group" disabled={locked}><legend>Products <span>{values.lines.length} {values.lines.length === 1 ? 'line' : 'lines'}</span></legend>
             <p id="po-rate-help">Enter non-negative plain decimals with up to 6 decimal places. New or changed rates round half-up to 2 decimals at review and save. GST cannot exceed 100%. Unchanged historical rates retain their saved precision. Changing rates does not update the product master or other POs.</p>
+            <p id="po-concentration-help">Concentration is descriptive text, up to 200 characters. New lines start at 1, independently of catalogue values. Historical concentrations not captured remain blank unless explicitly entered.</p>
             <div className="po-new-lines">{values.lines.map((line, index) => {
               const product = line.product;
               return <div className="po-new-line" key={line.key}>
@@ -322,10 +326,11 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
                   <div className="po-new-line__product"><Field id={`po-product-${index}`} label="Product" error={errors[`lines.${index}.productId`]}>
                     <PurchaseOrderReferenceSelect id={`po-product-${index}`} kind="products" label="Product" selected={product} placeholder="Select product" invalid={errors[`lines.${index}.productId`]} describedBy={errors[`lines.${index}.productId`] ? `po-product-${index}-error` : undefined} onChange={(item) => {
                       if (item?.id === product?.id) return;
-                      editLine(index, { product: item, lineId: undefined, savedRates: undefined,
+                      editLine(index, { product: item, lineId: undefined, savedRates: undefined, concentration: line.concentration ?? '1',
                         unitPrice: item?.unitPrice ?? '', gst: item?.gst ?? '' }, ['productId', 'unitPrice', 'gst']);
                     }} />
                   </Field>{productHint(line, index) && !errors[`lines.${index}.productId`] ? productHint(line, index) : null}</div>
+                  <Field id={`po-concentration-${index}`} label="Concentration" required={line.concentration !== undefined} error={errors[`lines.${index}.concentration`]}><input id={`po-concentration-${index}`} className="mr-form__control" type="text" maxLength={200} value={line.concentration ?? ''} placeholder={line.concentration === undefined ? 'Not captured' : undefined} onChange={(e) => editLine(index, { concentration: e.target.value }, ['concentration'])} aria-invalid={Boolean(errors[`lines.${index}.concentration`])} aria-describedby={`po-concentration-help${errors[`lines.${index}.concentration`] ? ` po-concentration-${index}-error` : ''}`} data-testid={`input-po-concentration-${index}`} /></Field>
                   <Field id={`po-quantity-${index}`} label="Quantity" error={errors[`lines.${index}.quantity`]}><input id={`po-quantity-${index}`} className="mr-form__control" type="text" inputMode="decimal" placeholder="1" value={line.quantity} onChange={(e) => editLine(index, { quantity: e.target.value }, ['quantity'])} aria-invalid={Boolean(errors[`lines.${index}.quantity`])} aria-describedby={errors[`lines.${index}.quantity`] ? `po-quantity-${index}-error` : undefined} data-testid={`input-po-quantity-${index}`} /></Field>
                   <Field id={`po-price-${index}`} label="Unit price (₹)" error={errors[`lines.${index}.unitPrice`]}><input id={`po-price-${index}`} className="mr-form__control" type="text" inputMode="decimal" maxLength={64} value={line.unitPrice} onChange={(e) => editLine(index, { unitPrice: e.target.value }, ['unitPrice'])} placeholder="Enter agreed price" aria-invalid={Boolean(errors[`lines.${index}.unitPrice`])} aria-describedby={`po-rate-help${errors[`lines.${index}.unitPrice`] ? ` po-price-${index}-error` : ''}`} data-testid={`input-po-price-${index}`} /></Field>
                   <Field id={`po-gst-${index}`} label="GST (%)" error={errors[`lines.${index}.gst`]}><input id={`po-gst-${index}`} className="mr-form__control" type="text" inputMode="decimal" maxLength={64} value={line.gst} onChange={(e) => editLine(index, { gst: e.target.value }, ['gst'])} placeholder="Enter GST %" aria-invalid={Boolean(errors[`lines.${index}.gst`])} aria-describedby={`po-rate-help${errors[`lines.${index}.gst`] ? ` po-gst-${index}-error` : ''}`} data-testid={`input-po-gst-${index}`} /></Field>

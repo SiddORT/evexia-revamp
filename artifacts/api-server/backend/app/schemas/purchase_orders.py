@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.procurement_documents import DocumentContext
 
 
@@ -14,6 +14,19 @@ class POLineInput(BaseModel):
     unitPrice: str | None = Field(default=None, max_length=64, pattern=r"^[0-9]+(?:\.[0-9]{1,6})?$")
     gst: str | None = Field(default=None, max_length=64, pattern=r"^[0-9]+(?:\.[0-9]{1,6})?$")
     lineId: uuid.UUID | None = None
+    # Omission preserves legacy requests and missing historical metadata.
+    concentration: str = Field(default=None, min_length=1, max_length=200,
+                               json_schema_extra=lambda schema: schema.pop("default", None))
+
+    @field_validator("concentration", mode="before")
+    @classmethod
+    def concentration_text(cls, value):
+        if not isinstance(value, str):
+            raise ValueError("Concentration must be text.")
+        value = value.strip()
+        if any(ord(char) < 32 or 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" for char in value):
+            raise ValueError("Concentration contains unsupported characters.")
+        return value
 
 
 class POInput(BaseModel):
@@ -77,6 +90,7 @@ class POLineResponse(BaseModel):
     id: uuid.UUID | None = None
     productId: uuid.UUID
     productName: str
+    concentration: str | None = None
     quantity: str
     unitPrice: str
     gst: str

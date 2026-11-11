@@ -7,6 +7,11 @@
  */
 
 export interface POLineInput {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration?: string;
   gst?: string | null;
   lineId?: string | null;
   productId: string;

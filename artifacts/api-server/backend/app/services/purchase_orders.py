@@ -127,6 +127,8 @@ def preview_data(db, body, existing=None):
         gst = accepted_rate(line, "gst", Decimal("100"), saved)
         lines.append(dict(productId=str(line.productId), productName=old["productName"] if old else product.name,
                           quantity=line.quantity, unitPrice=str(price), gst=str(gst),
+                          **({"concentration": line.concentration} if "concentration" in line.model_fields_set
+                             else {"concentration": saved["concentration"]} if saved and saved.get("concentration") is not None else {}),
                           **({"id": str(line.lineId)} if line.lineId else {}),
                           **calculate_components(line.quantity, price, gst, basis["treatment"])))
         revisions.append(product.version if product else None)
@@ -206,7 +208,7 @@ def mutation(db, actor, body, record_id=None, operation="created"):
             payload.pop("documentContext", None)
         if operation != "deleted":
             for source, target in zip(body.lines, payload["lines"]):
-                for field in ("unitPrice", "gst", "lineId"):
+                for field in ("unitPrice", "gst", "lineId", "concentration"):
                     if field not in source.model_fields_set:
                         target.pop(field, None)
         payload_digest = digest([operation, record_id, payload])

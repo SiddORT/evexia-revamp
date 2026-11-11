@@ -144,6 +144,10 @@ function parseScaled(text, scale) {
 const roundDiv = (numerator, divisor) => (numerator * 2n + divisor) / (divisor * 2n);
 
 export const MAX_LINES = 100;
+export function validConcentration(value) {
+  return typeof value === 'string' && [...value.trim()].length >= 1 && [...value.trim()].length <= 200
+    && !/[\u0000-\u001f\ud800-\udfff\ufffe\uffff]/u.test(value.trim());
+}
 export const MAX_TOTAL_PAISE = 10000000000;
 const MAX_QTY = 1000000n * 1000n;
 const MAX_PRICE = 999999999999999999n; // 999999999999.999999 at scale 6
@@ -253,6 +257,7 @@ function validPending(p) {
     && p.owner === ownerId() && p.values && typeof p.values.poDate === 'string' && typeof p.values.expectedDate === 'string'
     && isRef(p.values.vendor) && isRef(p.values.location) && Array.isArray(p.values.lines) && p.values.lines.length > 0 && p.values.lines.length <= MAX_LINES
     && p.values.lines.every((line) => typeof line.key === 'string' && typeof line.quantity === 'string' && isRef(line.product)
+      && (!('concentration' in line) || validConcentration(line.concentration))
       && ((!('unitPrice' in line) && !('gst' in line)) || (typeof line.unitPrice === 'string' && typeof line.gst === 'string')))
     // New journals must retain the exact serialized input. Only pre-rate
     // journals may use the historical reconstruction in pendingInput().
@@ -263,9 +268,13 @@ function validPending(p) {
           line.quantity === p.values.lines[index].quantity.trim() &&
           line.unitPrice === p.values.lines[index].unitPrice.trim() &&
           line.gst === p.values.lines[index].gst.trim() &&
+          (('concentration' in p.values.lines[index])
+            ? line.concentration === p.values.lines[index].concentration.trim()
+            : !('concentration' in line)) &&
           (line.lineId || null) === (p.values.lines[index].lineId || null))))
     && p.order && Array.isArray(p.order.lines) && p.order.lines.length === p.values.lines.length
     && p.order.lines.every((line, index) => line && line.productId === p.values.lines[index].product.id
+      && (!('concentration' in p.values.lines[index]) || line.concentration === p.values.lines[index].concentration.trim())
       && typeof line.unitPrice === 'string' && typeof line.gst === 'string')
     && ['subtotal', 'gstAmount', 'total'].every((k) => Number.isFinite(Number(p.order[k])))
     && typeof p.order.vendorName === 'string' && typeof p.order.locationName === 'string');

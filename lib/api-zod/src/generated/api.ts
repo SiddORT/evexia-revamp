@@ -1952,6 +1952,7 @@ export const createPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZo
 export const createPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const createPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const createPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
+export const createPurchaseOrderBodyLinesItemConcentrationMax = 200;
 export const createPurchaseOrderBodyLinesItemGstOneMax = 64;
 export const createPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const createPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
@@ -1975,6 +1976,7 @@ export const previewPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZ
 export const previewPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const previewPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
+export const previewPurchaseOrderBodyLinesItemConcentrationMax = 200;
 export const previewPurchaseOrderBodyLinesItemGstOneMax = 64;
 export const previewPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const previewPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
@@ -1995,6 +1997,7 @@ export const editPurchaseOrderBodyDocumentContextOnePresentationResolvedTimeZone
 export const editPurchaseOrderBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const editPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const editPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
+export const editPurchaseOrderBodyLinesItemConcentrationMax = 200;
 export const editPurchaseOrderBodyLinesItemGstOneMax = 64;
 export const editPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const editPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
@@ -2009,6 +2012,7 @@ export const previewPurchaseOrderEditBodyDocumentContextOnePresentationResolvedT
 export const previewPurchaseOrderEditBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const previewPurchaseOrderEditBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseOrderEditBodyDocumentContextOneSchemaVersionDefault = 1;
+export const previewPurchaseOrderEditBodyLinesItemConcentrationMax = 200;
 export const previewPurchaseOrderEditBodyLinesItemGstOneMax = 64;
 export const previewPurchaseOrderEditBodyLinesItemQuantityMax = 11;
 export const previewPurchaseOrderEditBodyLinesItemUnitPriceOneMax = 64;
@@ -32410,6 +32414,9 @@ export const ListPurchaseOrdersQueryParams = zod.object({
     .default(listPurchaseOrdersQueryOffsetDefault),
 });
 
+export const listPurchaseOrdersResponseItemsItemLinesItemConcentrationDefault =
+  null;
+
 export const ListPurchaseOrdersResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
@@ -32426,6 +32433,11 @@ export const ListPurchaseOrdersResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
+          concentration: zod
+            .union([zod.string(), zod.null()])
+            .default(
+              listPurchaseOrdersResponseItemsItemLinesItemConcentrationDefault,
+            ),
           componentRates: zod
             .union([
               zod.object({
@@ -32572,6 +32584,11 @@ export const CreatePurchaseOrderBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        concentration: zod
+          .string()
+          .min(1)
+          .max(createPurchaseOrderBodyLinesItemConcentrationMax)
+          .optional(),
         gst: zod
           .union([
             zod
@@ -32614,6 +32631,8 @@ export const CreatePurchaseOrderBody = zod.object({
   vendorId: zod.string().uuid(),
 });
 
+export const createPurchaseOrderResponseLinesItemConcentrationDefault = null;
+
 export const CreatePurchaseOrderResponse = zod.object({
   activeReceiptCount: zod
     .number()
@@ -32627,6 +32646,9 @@ export const CreatePurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      concentration: zod
+        .union([zod.string(), zod.null()])
+        .default(createPurchaseOrderResponseLinesItemConcentrationDefault),
       componentRates: zod
         .union([
           zod.object({
@@ -32783,6 +32805,9 @@ export const ExportPurchaseOrdersQueryParams = zod.object({
     .default(exportPurchaseOrdersQuerySortDefault),
 });
 
+export const exportPurchaseOrdersResponseItemsItemLinesItemConcentrationDefault =
+  null;
+
 export const ExportPurchaseOrdersResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
@@ -32801,6 +32826,11 @@ export const ExportPurchaseOrdersResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
+          concentration: zod
+            .union([zod.string(), zod.null()])
+            .default(
+              exportPurchaseOrdersResponseItemsItemLinesItemConcentrationDefault,
+            ),
           componentRates: zod
             .union([
               zod.object({
@@ -33007,6 +33037,11 @@ export const PreviewPurchaseOrderBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        concentration: zod
+          .string()
+          .min(1)
+          .max(previewPurchaseOrderBodyLinesItemConcentrationMax)
+          .optional(),
         gst: zod
           .union([
             zod
@@ -33048,12 +33083,20 @@ export const PreviewPurchaseOrderBody = zod.object({
   vendorId: zod.string().uuid(),
 });
 
+export const previewPurchaseOrderResponseOrderLinesItemConcentrationDefault =
+  null;
+
 export const PreviewPurchaseOrderResponse = zod.object({
   order: zod.object({
     expectedDate: zod.coerce.date(),
     gstAmount: zod.number().int(),
     lines: zod.array(
       zod.object({
+        concentration: zod
+          .union([zod.string(), zod.null()])
+          .default(
+            previewPurchaseOrderResponseOrderLinesItemConcentrationDefault,
+          ),
         componentRates: zod
           .union([
             zod.object({
@@ -33182,6 +33225,8 @@ export const GetPurchaseOrderParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
 
+export const getPurchaseOrderResponseLinesItemConcentrationDefault = null;
+
 export const GetPurchaseOrderResponse = zod.object({
   activeReceiptCount: zod
     .number()
@@ -33195,6 +33240,9 @@ export const GetPurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      concentration: zod
+        .union([zod.string(), zod.null()])
+        .default(getPurchaseOrderResponseLinesItemConcentrationDefault),
       componentRates: zod
         .union([
           zod.object({
@@ -33277,6 +33325,8 @@ export const DeletePurchaseOrderBody = zod.object({
   idempotencyKey: zod.string().uuid(),
 });
 
+export const deletePurchaseOrderResponseLinesItemConcentrationDefault = null;
+
 export const DeletePurchaseOrderResponse = zod.object({
   activeReceiptCount: zod
     .number()
@@ -33290,6 +33340,9 @@ export const DeletePurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      concentration: zod
+        .union([zod.string(), zod.null()])
+        .default(deletePurchaseOrderResponseLinesItemConcentrationDefault),
       componentRates: zod
         .union([
           zod.object({
@@ -33480,6 +33533,11 @@ export const EditPurchaseOrderBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        concentration: zod
+          .string()
+          .min(1)
+          .max(editPurchaseOrderBodyLinesItemConcentrationMax)
+          .optional(),
         gst: zod
           .union([
             zod
@@ -33522,6 +33580,8 @@ export const EditPurchaseOrderBody = zod.object({
   vendorId: zod.string().uuid(),
 });
 
+export const editPurchaseOrderResponseLinesItemConcentrationDefault = null;
+
 export const EditPurchaseOrderResponse = zod.object({
   activeReceiptCount: zod
     .number()
@@ -33535,6 +33595,9 @@ export const EditPurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      concentration: zod
+        .union([zod.string(), zod.null()])
+        .default(editPurchaseOrderResponseLinesItemConcentrationDefault),
       componentRates: zod
         .union([
           zod.object({
@@ -33714,6 +33777,11 @@ export const PreviewPurchaseOrderEditBody = zod.object({
   lines: zod
     .array(
       zod.object({
+        concentration: zod
+          .string()
+          .min(1)
+          .max(previewPurchaseOrderEditBodyLinesItemConcentrationMax)
+          .optional(),
         gst: zod
           .union([
             zod
@@ -33757,12 +33825,20 @@ export const PreviewPurchaseOrderEditBody = zod.object({
   vendorId: zod.string().uuid(),
 });
 
+export const previewPurchaseOrderEditResponseOrderLinesItemConcentrationDefault =
+  null;
+
 export const PreviewPurchaseOrderEditResponse = zod.object({
   order: zod.object({
     expectedDate: zod.coerce.date(),
     gstAmount: zod.number().int(),
     lines: zod.array(
       zod.object({
+        concentration: zod
+          .union([zod.string(), zod.null()])
+          .default(
+            previewPurchaseOrderEditResponseOrderLinesItemConcentrationDefault,
+          ),
         componentRates: zod
           .union([
             zod.object({
@@ -34749,6 +34825,9 @@ export const GetPurchaseReceivedSourceQueryParams = zod.object({
   exclude_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
+export const getPurchaseReceivedSourceResponseLinesItemConcentrationDefault =
+  null;
+
 export const GetPurchaseReceivedSourceResponse = zod.object({
   activeReceiptCount: zod
     .number()
@@ -34764,6 +34843,11 @@ export const GetPurchaseReceivedSourceResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      concentration: zod
+        .union([zod.string(), zod.null()])
+        .default(
+          getPurchaseReceivedSourceResponseLinesItemConcentrationDefault,
+        ),
       componentRates: zod
         .union([
           zod.object({
