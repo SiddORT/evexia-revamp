@@ -274,7 +274,7 @@ def audit(db, actor, row, operation):
                       outcome="success", request_id=db.info.get("request_id")))
 
 
-def insert(db, actor, body, verification="unverified"):
+def insert(db, actor, body, verification="verified"):
     from app.services.master_numbers import allocate
     now = utcnow()
     row = Doctor(**body.model_dump(), doctorNumber=allocate(db, "doctor"), verification=verification, version=1,

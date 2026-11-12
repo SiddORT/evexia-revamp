@@ -266,7 +266,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         </section>
       </div>
       <div className="mr-form__footer">
-        <span className="mr-form__footer-note">Saved securely to the shared Patient directory.</span>
+        {patient && <span className="mr-form__footer-note">Saved securely to the shared Patient directory.</span>}
         <div className="mr-form__actions">
           <button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-patient">Cancel</button>
           <button type="submit" className="admin-button" disabled={saving || blocked} data-testid="button-save-patient">

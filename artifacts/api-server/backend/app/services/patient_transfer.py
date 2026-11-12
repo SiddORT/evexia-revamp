@@ -78,7 +78,7 @@ def parse(data, filename):
             values[key] = value
         values["dialCountry"] = values["dialCountry"].upper() or "IN"
         values["gender"] = values["gender"].lower()
-        values["status"] = values["status"].lower()
+        values["status"] = values["status"].lower() or "active"
         # Current exports contain the international prefix. Legacy national digits
         # default explicitly to India; never strip a different country's prefix.
         prefix = DIAL.get(values["dialCountry"], "")

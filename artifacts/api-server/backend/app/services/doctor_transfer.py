@@ -121,7 +121,7 @@ def parse(data, filename):
                 value = value[1:]
             values[key] = value
         values["contactRequirement"] = (values["contactRequirement"] or "optional").lower()
-        values["verification"] = (values["verification"] or "unverified").lower()
+        values["verification"] = (values["verification"] or "verified").lower()
         for key in ("status", "invoiceType"):
             values[key] = values[key].lower()
         values["dialCountry"] = values["dialCountry"].upper() or "IN"
@@ -153,7 +153,9 @@ def review_state(db, parsed, actor):
             supplied_dial = values.pop("dialCode")
             verification = values.pop("verification")
             if actor.role == "mr":
-                verification = "unverified"
+                # MR imports have no manual verification control; ignore the file's
+                # verification choice while using the new creation default.
+                verification = "verified"
             if verification not in ("verified", "unverified"):
                 errors.append("Verification must be verified or unverified.")
             if supplied_dial and supplied_dial != DIAL.get(values["dialCountry"]):
@@ -235,7 +237,7 @@ def sample(format):
     values.update(name="Example Doctor", phone="9876543210", dialCountry="IN", dialCode="+91", contactRequirement="optional",
                   registrationNumber="EXAMPLE-001", qualification="MBBS", mrId="user:replace.with.server.mr",
                   invoiceType="normal", orderDiscount="0.00", daysLimit="0", paymentLimit="0.00",
-                  status="active", verification="unverified", addressLine1="Example Clinic Road",
+                  status="active", verification="verified", addressLine1="Example Clinic Road",
                   landmark="Example landmark", pincode="110001", country="India", state="Delhi", city="Delhi")
     return encode([[values[key] for key, _ in COLUMNS]], format)
 
