@@ -1,5 +1,51 @@
 # Saved Opening Stock corrections
 
+## Current restoration status — 2026-11-12
+
+The activation evidence later in this document describes an earlier observation,
+not the current original preview. A subsequent read-only investigation from an
+isolated task workspace found:
+
+- The configured database connection matched the original development binding
+  (host, port, database, cluster identifier, database OID and non-recovery state).
+  A read-only transaction returned the actual applied revision
+  `0092_quantity_hundredths`. Both `hsn_mappings` and
+  `opening_stock_revisions` were absent. The loaded API release identity must
+  not be used as a substitute for this database observation.
+- Static inspection of the complete declared target ancestry found exactly
+  `0096_hsn_master` followed by `0098_opening_corrections` pending from that
+  revision. The version-2 policy explicitly classifies the former as automatic
+  and defaults the latter to automatic. This is source inspection, not an
+  executed synchronization plan or proof that migration guards will succeed.
+  The seven staged low-stock/designation/merge revisions remain outside the
+  declared target ancestry.
+- The task runtime hostname differed from the recorded original preview
+  hostname. No local API, Vite or scanner process was running; the direct
+  loopback API request failed to connect. Requests to the recorded original
+  HTTPS version and frontend-identity paths returned redirected HTML, not
+  release-identity JSON. They do not establish the original service's current
+  loaded revision, readiness, routing ownership or availability.
+
+**Restoration is blocked, not complete.** No migration, service launch/restart,
+workflow restoration, login, edit review or stock mutation was performed.
+No tests, builds, typechecks, browser automation, screenshots, release checks
+or completion-validation wrappers were run. No application guard, permission,
+stock rule or migration definition was changed.
+
+Continue in the original development workspace with its current HTTPS origin
+and service ownership available. Inspect that runtime before stopping any
+process; use only the inspected development launch paths, never Project Run
+or release workflows. The original-bound lifecycle must recheck the binding,
+actual revision, exact pending path and migration integrity, then synchronize
+only to `0098_opening_corrections` with the existing locks, transaction and
+readiness postcondition. Historical recovery requirements still apply if a
+guard blocks. Refresh only the affected API/scanner and frontend services.
+Do not reload mounted editors or replay pending saves. Obtain real HTTPS
+API/frontend identities and correction-specific readiness, then authorized
+saved-record loading and preview-only review evidence without edit-commit.
+Until that original-runtime work succeeds, neither this handoff nor the older
+activation evidence establishes that saved Opening Stock editing is restored.
+
 ## Scope and safeguards
 
 `opening_stock.edit` is a separate assignable permission. Existing view, add,
