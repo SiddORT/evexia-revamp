@@ -145,10 +145,87 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--scope", choices=["low-stock"], help="Merge only the low-stock contract, retaining unrelated refinements.")
+    parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
     contract = normalize_spec(app.openapi())
-    content = json.dumps(contract, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if args.scope == "low-stock":
+        original = (args.base_contract or args.output).read_text(encoding="utf-8")
+        existing = json.loads(original)
+        selected = {path: item for path, item in contract["paths"].items()
+                    if path.startswith("/v1/admin/low-stock-settings") or path.endswith("/low-stock-alerts")}
+        needed = set()
+
+        def collect(value):
+            if isinstance(value, dict):
+                ref = value.get("$ref", "")
+                if ref.startswith("#/components/schemas/"):
+                    name = ref.rsplit("/", 1)[1]
+                    if name not in needed:
+                        needed.add(name)
+                        collect(contract["components"]["schemas"][name])
+                for item in value.values():
+                    collect(item)
+            elif isinstance(value, list):
+                for item in value:
+                    collect(item)
+
+        collect(selected)
+        schema_updates = {}
+        for name in needed:
+            if name.startswith("LowStock") or name not in existing["components"]["schemas"]:
+                schema_updates[name] = contract["components"]["schemas"][name]
+        # Preserve handwritten contract formatting and unrelated refinements,
+        # not just their parsed values. Only scoped member values are replaced.
+        decoder = json.JSONDecoder()
+
+        def members(source, start):
+            pos = start + 1
+            result = {}
+            while True:
+                while source[pos].isspace() or source[pos] == ",":
+                    pos += 1
+                if source[pos] == "}":
+                    return result, pos
+                key, end = decoder.raw_decode(source, pos)
+                pos = end
+                while source[pos].isspace() or source[pos] == ":":
+                    pos += 1
+                _, end = decoder.raw_decode(source, pos)
+                result[key] = (pos, end)
+                pos = end
+
+        def merge(source, keys, updates):
+            start = source.index("{")
+            for key in keys:
+                entries, _ = members(source, start)
+                start = entries[key][0]
+            entries, closing = members(source, start)
+            edits, additions = [], []
+            indent = "  " * (len(keys) + 1)
+
+            def encoded(value):
+                return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True).replace("\n", "\n" + indent)
+
+            for name, value in sorted(updates.items()):
+                if name in entries:
+                    begin, end = entries[name]
+                    edits.append((begin, end, encoded(value)))
+                else:
+                    additions.append(indent + json.dumps(name) + ": " + encoded(value))
+            if additions:
+                # Insert after the final member, before the original whitespace.
+                at = max(end for _, end in entries.values()) if entries else start + 1
+                edits.append((at, at, ("," if entries else "") + "\n" + ",\n".join(additions)))
+            for begin, end, value in sorted(edits, reverse=True):
+                source = source[:begin] + value + source[end:]
+            return source
+
+        content = merge(original, ["components", "schemas"], schema_updates)
+        content = merge(content, ["paths"], selected)
+    else:
+        content = json.dumps(contract, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(content, encoding="utf-8")
 

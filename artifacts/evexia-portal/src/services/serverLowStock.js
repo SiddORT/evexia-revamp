@@ -1,9 +1,11 @@
 import { inventoryRequest, purchaseOrderRequest } from '../auth/adminSession.js';
+import { validConfiguration, sameConfiguration } from './lowStockSchedule.js';
 
-const email = (value) => value === null || (typeof value === 'string' && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
 const uncertain = () => Object.assign(new Error('The server response could not be confirmed. Your edit is kept; check the save outcome.'), { ambiguous: true });
 const savedView = (data) => {
-  if (!data || !Number.isSafeInteger(data.version) || data.version < 0 || !email(data.additional_email)) throw uncertain();
+  if (!validConfiguration(data) || !Number.isSafeInteger(data.version) || data.version < 0
+      || !Number.isFinite(Date.parse(data.next_run_at)) || !['blocked', 'eligible'].includes(data.runtime_status)
+      || typeof data.runtime_message !== 'string') throw uncertain();
   return data;
 };
 export async function listLowStock(params, signal) {
@@ -24,7 +26,7 @@ export async function saveLowStockSettings(body) {
   savedView(result?.saved);
   if (result.outcome !== 'committed' || result.committed_version !== body.expected_version + 1
       || result.saved.version !== result.committed_version
-      || (result.saved.additional_email || '').toLowerCase() !== (body.additional_email || '').trim().toLowerCase()) throw uncertain();
+      || !sameConfiguration(result.saved, body)) throw uncertain();
   return result;
 }
 export async function reconcileLowStockSettings(key) {

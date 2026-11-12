@@ -26,7 +26,8 @@ export default function AdminSettings() {
     searchRef.current?.focus();
   };
   useEffect(() => {
-    const requested = new URLSearchParams(search).get('tab');
+    const raw = new URLSearchParams(search).get('tab');
+    const requested = raw === 'low-stock' ? 'cron-jobs' : raw;
     if (requested !== null && !SETTINGS_SECTIONS.some((s) => s.id === requested)) {
       const url = settingsSectionUrl(window.location.href, 'basic', SETTINGS_SECTIONS);
       window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
@@ -40,7 +41,7 @@ export default function AdminSettings() {
   };
   const Active = active.Component;
   return <AdminLayout title="Settings">
-     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs, Communication, Batch Number Settings, GST Settings, Invoice Details and Immunotherapy Extract & Dilution are shared settings managed by Super Admin. Template style defaults stay in this browser; Invoice Details are shared. GST Settings are saved for future order processing; orders and calculations are currently unchanged.' : ''}</p></div></div>
+     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs, Communication, Cron Jobs, Batch Number Settings, GST Settings, Invoice Details and Immunotherapy Extract & Dilution are shared settings managed by Super Admin. Template style defaults stay in this browser; Invoice Details are shared. GST Settings are saved for future order processing; orders and calculations are currently unchanged.' : ''}</p></div></div>
     <div className="admin-settings-layout">
       <nav className="admin-settings-nav" aria-label="Settings categories">
         <div className="admin-settings-nav__search">

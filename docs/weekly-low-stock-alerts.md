@@ -1,8 +1,15 @@
-# Weekly Low Stock Alerts — source-only delivery
+# Low Stock Alerts — source-only delivery
+
+**Scheduling update:** Settings → Cron Jobs replaces Settings → Low Stock
+Alerts. The recurring implementation and activation handoff are described in
+[`low-stock-cron-jobs.md`](low-stock-cron-jobs.md). The inventory and purchasing
+rules below are unchanged. The former fixed-weekly scheduling and single
+optional-recipient descriptions below document the retained legacy contract,
+not the new scheduler.
 
 ## Verification and activation boundary
 
-This change was inspected as source only. **Runtime behavior and email delivery
+The original weekly change was inspected as source only. **Runtime behavior and email delivery
 were not verified.** No regression/release tests, browser probes, builds,
 typechecks, validation scripts, release workflows, service restarts, migrations,
 deployment, live email sends or business-data writes were executed.

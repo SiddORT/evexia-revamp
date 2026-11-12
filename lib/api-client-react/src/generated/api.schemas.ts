@@ -13778,6 +13778,107 @@ export interface ZoneVersion {
   expected_version: number;
 }
 
+export type LowStockSaveOutcomeOutcome =
+  (typeof LowStockSaveOutcomeOutcome)[keyof typeof LowStockSaveOutcomeOutcome];
+
+export const LowStockSaveOutcomeOutcome = {
+  committed: "committed",
+  cancelled: "cancelled",
+} as const;
+
+export type LowStockSettingsViewFrequency =
+  (typeof LowStockSettingsViewFrequency)[keyof typeof LowStockSettingsViewFrequency];
+
+export const LowStockSettingsViewFrequency = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+} as const;
+
+export type LowStockSettingsViewRuntimeStatus =
+  (typeof LowStockSettingsViewRuntimeStatus)[keyof typeof LowStockSettingsViewRuntimeStatus];
+
+export const LowStockSettingsViewRuntimeStatus = {
+  blocked: "blocked",
+  eligible: "eligible",
+} as const;
+
+export interface LowStockSettingsView {
+  event: "low_stock_alert";
+  frequency: LowStockSettingsViewFrequency;
+  weekday?: number | null;
+  month_day?: number | null;
+  start_date: string;
+  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
+  local_time: string;
+  timezone: "Asia/Kolkata";
+  /** @maxItems 20 */
+  additional_emails: string[];
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  version: number;
+  next_run_at: string;
+  runtime_status: LowStockSettingsViewRuntimeStatus;
+  runtime_message: string;
+}
+
+export interface LowStockSaveOutcome {
+  outcome: LowStockSaveOutcomeOutcome;
+  committed_version: number | null;
+  saved: LowStockSettingsView;
+}
+
+export type LowStockSettingsWriteFrequency =
+  (typeof LowStockSettingsWriteFrequency)[keyof typeof LowStockSettingsWriteFrequency];
+
+export const LowStockSettingsWriteFrequency = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+} as const;
+
+export interface LowStockSettingsWrite {
+  event: "low_stock_alert";
+  frequency: LowStockSettingsWriteFrequency;
+  weekday?: number | null;
+  month_day?: number | null;
+  start_date: string;
+  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
+  local_time: string;
+  timezone: "Asia/Kolkata";
+  /** @maxItems 20 */
+  additional_emails: string[];
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  request_id: string;
+}
+
+export interface LowStockAlertRow {
+  productId: string;
+  name: string;
+  category: string;
+  quantity: string;
+  unit: string;
+  thresholdLimit: string | null;
+  reason: string;
+}
+
+export interface LowStockAlertPage {
+  items: LowStockAlertRow[];
+  /** @minimum 0 */
+  total: number;
+  /** @minimum 0 */
+  filtered: number;
+  asOf: string;
+  offset: number;
+  limit: number;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -17366,4 +17467,21 @@ export type ResolvePortalHostnameParams = {
    * @maxLength 253
    */
   hostname: string;
+};
+
+export type ListLowStockAlertsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
 };

@@ -44,3 +44,31 @@ class LowStockDelivery(Base):
     payload_ciphertext: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str | None] = mapped_column(String(64))
     lease_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LowStockSchedule(Base):
+    __tablename__ = "low_stock_schedule"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_low_stock_schedule_singleton"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LowStockOccurrence(Base):
+    __tablename__ = "low_stock_occurrences"
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LowStockOccurrenceDelivery(Base):
+    __tablename__ = "low_stock_occurrence_deliveries"
+    __table_args__ = (CheckConstraint(
+        "status IN ('preparing','sending','accepted','unknown','failed','blocked','empty','duplicate')",
+        name="ck_low_stock_occurrence_delivery_status"),)
+    scheduled_at: Mapped[datetime] = mapped_column(ForeignKey("low_stock_occurrences.scheduled_at"), primary_key=True)
+    recipient: Mapped[str] = mapped_column(String(32), primary_key=True)
+    token: Mapped[UUID] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    destination_index: Mapped[str | None] = mapped_column(String(64))
+    payload_ciphertext: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(64))
+    lease_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

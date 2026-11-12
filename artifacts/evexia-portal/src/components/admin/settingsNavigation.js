@@ -1,5 +1,6 @@
 export function resolveSettingsSection(search, sections) {
-  const tab = new URLSearchParams(search || '').get('tab');
+  const requested = new URLSearchParams(search || '').get('tab');
+  const tab = requested === 'low-stock' ? 'cron-jobs' : requested;
   return sections.some((s) => s.id === tab) ? tab : 'basic';
 }
 export function searchSettingsSections(sections, query) {

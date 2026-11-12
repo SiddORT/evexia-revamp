@@ -43,7 +43,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements",
     "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details",
     "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings",
-    "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts"})
+    "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -69,7 +69,7 @@ def _fields(db):
                     "0074_business_numbers", "0075_shipments", "0076_in_house_stock", "0078_reserve_movements",
                     "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details",
                     "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings",
-                    "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts"):
+                    "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -93,6 +93,10 @@ def _lock(db, exclusive=False):
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
     # The status CHECK expansion changes no encryption inventory or lock scope.
+    if revisions == ["0092_low_stock_cron"]:
+        db.execute(text(f"LOCK TABLE low_stock_schedule,low_stock_occurrences,"
+                        f"low_stock_occurrence_deliveries IN {mode} MODE NOWAIT"))
+        revisions = ["0091_low_stock_alerts"]
     if revisions == ["0091_low_stock_alerts"]:
         db.execute(text(f"LOCK TABLE low_stock_settings,low_stock_settings_requests,"
                         f"low_stock_weeks,low_stock_deliveries IN {mode} MODE NOWAIT"))
@@ -302,7 +306,7 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron"):
         for name, (model, pk, field, domain) in _order_payloads(db).items():
             _, unseal = _order_crypto(name)
             cursor, count = None, 0
@@ -338,11 +342,11 @@ def _order_payloads(db):
         "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
     }
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    if revision in ("0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts"):
+    if revision in ("0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron"):
         from app.db.immunotherapy_extract_models import ImmunotherapyExtractSettings
         table = ImmunotherapyExtractSettings.__table__
         result["immunotherapy_extract_settings"] = (table, table.c.category_id, "payload_ciphertext", "extract-settings")
-    if revision in ("0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts"):
+    if revision in ("0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron"):
         from app.db.order_draft_models import OrderDraft, OrderDraftRequest
         from app.db.settlement_models import SettlementBatch, SettlementEntry, SettlementRejection
         from app.db.order_notification_models import OrderNotificationOrigin, OrderEvent

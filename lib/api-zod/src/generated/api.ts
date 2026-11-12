@@ -2731,6 +2731,38 @@ export const mrSalesYearsQueryOffsetMax = 10000;
 export const mrSalesYearsQueryLimitDefault = 50;
 export const mrSalesYearsQueryLimitMax = 100;
 export const resolvePortalHostnameQueryHostnameMax = 253;
+export const getLowStockSettingsResponseWeekdayOneMin = 0;
+export const getLowStockSettingsResponseWeekdayOneMax = 6;
+export const getLowStockSettingsResponseMonthDayOneMax = 31;
+export const getLowStockSettingsResponseAdditionalEmailsMax = 20;
+export const getLowStockSettingsResponseVersionMin = 0;
+export const getLowStockSettingsResponseVersionMax = 2147483647;
+export const saveLowStockSettingsBodyWeekdayOneMin = 0;
+export const saveLowStockSettingsBodyWeekdayOneMax = 6;
+export const saveLowStockSettingsBodyMonthDayOneMax = 31;
+export const saveLowStockSettingsBodyAdditionalEmailsMax = 20;
+export const saveLowStockSettingsBodyExpectedVersionMin = 0;
+export const saveLowStockSettingsBodyExpectedVersionMax = 2147483646;
+export const saveLowStockSettingsResponseSavedWeekdayOneMin = 0;
+export const saveLowStockSettingsResponseSavedWeekdayOneMax = 6;
+export const saveLowStockSettingsResponseSavedMonthDayOneMax = 31;
+export const saveLowStockSettingsResponseSavedAdditionalEmailsMax = 20;
+export const saveLowStockSettingsResponseSavedVersionMin = 0;
+export const saveLowStockSettingsResponseSavedVersionMax = 2147483647;
+export const reconcileLowStockSettingsResponseSavedWeekdayOneMin = 0;
+export const reconcileLowStockSettingsResponseSavedWeekdayOneMax = 6;
+export const reconcileLowStockSettingsResponseSavedMonthDayOneMax = 31;
+export const reconcileLowStockSettingsResponseSavedAdditionalEmailsMax = 20;
+export const reconcileLowStockSettingsResponseSavedVersionMin = 0;
+export const reconcileLowStockSettingsResponseSavedVersionMax = 2147483647;
+export const listLowStockAlertsQueryQueryMax = 200;
+export const listLowStockAlertsQueryOffsetDefault = 0;
+export const listLowStockAlertsQueryOffsetMin = 0;
+export const listLowStockAlertsQueryOffsetMax = 1000000;
+export const listLowStockAlertsQueryLimitDefault = 25;
+export const listLowStockAlertsQueryLimitMax = 100;
+export const listLowStockAlertsResponseTotalMin = 0;
+export const listLowStockAlertsResponseFilteredMin = 0;
 
 /**
  * @summary <Lambda>
@@ -47945,3 +47977,235 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+/**
+ * @summary Read
+ */
+
+export const getLowStockSettingsResponseLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const GetLowStockSettingsResponse = zod.object({
+  event: zod.literal("low_stock_alert"),
+  frequency: zod.enum(["daily", "weekly", "monthly"]),
+  weekday: zod
+    .union([
+      zod
+        .number()
+        .int()
+        .min(getLowStockSettingsResponseWeekdayOneMin)
+        .max(getLowStockSettingsResponseWeekdayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  month_day: zod
+    .union([
+      zod.number().int().min(1).max(getLowStockSettingsResponseMonthDayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  start_date: zod.coerce.date(),
+  local_time: zod.string().regex(getLowStockSettingsResponseLocalTimeRegExp),
+  timezone: zod.literal("Asia/Kolkata"),
+  additional_emails: zod
+    .array(zod.string().email())
+    .max(getLowStockSettingsResponseAdditionalEmailsMax),
+  version: zod
+    .number()
+    .int()
+    .min(getLowStockSettingsResponseVersionMin)
+    .max(getLowStockSettingsResponseVersionMax),
+  next_run_at: zod.coerce.date(),
+  runtime_status: zod.enum(["blocked", "eligible"]),
+  runtime_message: zod.string(),
+});
+
+/**
+ * @summary Write
+ */
+
+export const saveLowStockSettingsBodyLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const SaveLowStockSettingsBody = zod.object({
+  event: zod.literal("low_stock_alert"),
+  frequency: zod.enum(["daily", "weekly", "monthly"]),
+  weekday: zod
+    .union([
+      zod
+        .number()
+        .int()
+        .min(saveLowStockSettingsBodyWeekdayOneMin)
+        .max(saveLowStockSettingsBodyWeekdayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  month_day: zod
+    .union([
+      zod.number().int().min(1).max(saveLowStockSettingsBodyMonthDayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  start_date: zod.coerce.date(),
+  local_time: zod.string().regex(saveLowStockSettingsBodyLocalTimeRegExp),
+  timezone: zod.literal("Asia/Kolkata"),
+  additional_emails: zod
+    .array(zod.string().email())
+    .max(saveLowStockSettingsBodyAdditionalEmailsMax),
+  expected_version: zod
+    .number()
+    .int()
+    .min(saveLowStockSettingsBodyExpectedVersionMin)
+    .max(saveLowStockSettingsBodyExpectedVersionMax),
+  request_id: zod.string().uuid(),
+});
+
+export const saveLowStockSettingsResponseSavedLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const SaveLowStockSettingsResponse = zod.object({
+  outcome: zod.enum(["committed", "cancelled"]),
+  committed_version: zod.union([zod.number().int(), zod.null()]),
+  saved: zod.object({
+    event: zod.literal("low_stock_alert"),
+    frequency: zod.enum(["daily", "weekly", "monthly"]),
+    weekday: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(saveLowStockSettingsResponseSavedWeekdayOneMin)
+          .max(saveLowStockSettingsResponseSavedWeekdayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    month_day: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(1)
+          .max(saveLowStockSettingsResponseSavedMonthDayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    start_date: zod.coerce.date(),
+    local_time: zod
+      .string()
+      .regex(saveLowStockSettingsResponseSavedLocalTimeRegExp),
+    timezone: zod.literal("Asia/Kolkata"),
+    additional_emails: zod
+      .array(zod.string().email())
+      .max(saveLowStockSettingsResponseSavedAdditionalEmailsMax),
+    version: zod
+      .number()
+      .int()
+      .min(saveLowStockSettingsResponseSavedVersionMin)
+      .max(saveLowStockSettingsResponseSavedVersionMax),
+    next_run_at: zod.coerce.date(),
+    runtime_status: zod.enum(["blocked", "eligible"]),
+    runtime_message: zod.string(),
+  }),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileLowStockSettingsParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const reconcileLowStockSettingsResponseSavedLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const ReconcileLowStockSettingsResponse = zod.object({
+  outcome: zod.enum(["committed", "cancelled"]),
+  committed_version: zod.union([zod.number().int(), zod.null()]),
+  saved: zod.object({
+    event: zod.literal("low_stock_alert"),
+    frequency: zod.enum(["daily", "weekly", "monthly"]),
+    weekday: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(reconcileLowStockSettingsResponseSavedWeekdayOneMin)
+          .max(reconcileLowStockSettingsResponseSavedWeekdayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    month_day: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(1)
+          .max(reconcileLowStockSettingsResponseSavedMonthDayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    start_date: zod.coerce.date(),
+    local_time: zod
+      .string()
+      .regex(reconcileLowStockSettingsResponseSavedLocalTimeRegExp),
+    timezone: zod.literal("Asia/Kolkata"),
+    additional_emails: zod
+      .array(zod.string().email())
+      .max(reconcileLowStockSettingsResponseSavedAdditionalEmailsMax),
+    version: zod
+      .number()
+      .int()
+      .min(reconcileLowStockSettingsResponseSavedVersionMin)
+      .max(reconcileLowStockSettingsResponseSavedVersionMax),
+    next_run_at: zod.coerce.date(),
+    runtime_status: zod.enum(["blocked", "eligible"]),
+    runtime_message: zod.string(),
+  }),
+});
+
+/**
+ * @summary Low Stock Alerts
+ */
+export const listLowStockAlertsQueryQueryDefault = ``;
+
+export const ListLowStockAlertsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listLowStockAlertsQueryQueryMax)
+    .default(listLowStockAlertsQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listLowStockAlertsQueryOffsetMin)
+    .max(listLowStockAlertsQueryOffsetMax)
+    .default(listLowStockAlertsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listLowStockAlertsQueryLimitMax)
+    .default(listLowStockAlertsQueryLimitDefault),
+});
+
+export const ListLowStockAlertsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      productId: zod.string().uuid(),
+      name: zod.string(),
+      category: zod.string(),
+      quantity: zod.string(),
+      unit: zod.string(),
+      thresholdLimit: zod.union([zod.string(), zod.null()]),
+      reason: zod.string(),
+    }),
+  ),
+  total: zod.number().int().min(listLowStockAlertsResponseTotalMin),
+  filtered: zod.number().int().min(listLowStockAlertsResponseFilteredMin),
+  asOf: zod.coerce.date(),
+  offset: zod.number().int(),
+  limit: zod.number().int(),
+});

@@ -282,6 +282,7 @@ import type {
   ListItPricingRulesParams,
   ListKitsOrdersParams,
   ListLanguagesParams,
+  ListLowStockAlertsParams,
   ListLupinOrdersParams,
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
@@ -331,6 +332,10 @@ import type {
   LookupMRPincodeParams,
   LookupPatientPincodeParams,
   LookupStorageLocationPincodeParams,
+  LowStockAlertPage,
+  LowStockSaveOutcome,
+  LowStockSettingsView,
+  LowStockSettingsWrite,
   LupinEligibilityInput,
   LupinImport,
   LupinImportResult,
@@ -47422,6 +47427,388 @@ export function useGetVersion<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetVersionQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetLowStockSettingsUrl = () => {
+  return `/api/v1/admin/low-stock-settings`;
+};
+
+/**
+ * @summary Read
+ */
+export const getLowStockSettings = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LowStockSettingsView> => {
+  return customFetch<LowStockSettingsView>(getGetLowStockSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLowStockSettingsQueryKey = () => {
+  return [`/api/v1/admin/low-stock-settings`] as const;
+};
+
+export const getGetLowStockSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLowStockSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLowStockSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLowStockSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLowStockSettings>>
+  > = ({ signal }) => getLowStockSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLowStockSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLowStockSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLowStockSettings>>
+>;
+export type GetLowStockSettingsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Read
+ */
+
+export function useGetLowStockSettings<
+  TData = Awaited<ReturnType<typeof getLowStockSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLowStockSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLowStockSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSaveLowStockSettingsUrl = () => {
+  return `/api/v1/admin/low-stock-settings`;
+};
+
+/**
+ * @summary Write
+ */
+export const saveLowStockSettings = async (
+  lowStockSettingsWrite: LowStockSettingsWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LowStockSaveOutcome> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LowStockSaveOutcome>(getSaveLowStockSettingsUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(lowStockSettingsWrite),
+  });
+};
+
+export const getSaveLowStockSettingsMutationKey = () =>
+  ["saveLowStockSettings"] as const;
+
+export const getSaveLowStockSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveLowStockSettings>>,
+    TError,
+    SaveLowStockSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveLowStockSettings>>,
+  TError,
+  SaveLowStockSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSaveLowStockSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveLowStockSettings>>,
+    SaveLowStockSettingsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return saveLowStockSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveLowStockSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveLowStockSettings>>
+>;
+export type SaveLowStockSettingsMutationBody = BodyType<LowStockSettingsWrite>;
+export type SaveLowStockSettingsMutationError = ErrorType<ErrorEnvelope>;
+export type SaveLowStockSettingsMutationVariables = {
+  data: BodyType<LowStockSettingsWrite>;
+};
+
+/**
+ * @summary Write
+ */
+export const useSaveLowStockSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveLowStockSettings>>,
+    TError,
+    SaveLowStockSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveLowStockSettings>>,
+  TError,
+  SaveLowStockSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getSaveLowStockSettingsMutationOptions(options));
+};
+
+export const getReconcileLowStockSettingsUrl = (key: string) => {
+  return `/api/v1/admin/low-stock-settings/requests/${key}/reconcile`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileLowStockSettings = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LowStockSaveOutcome> => {
+  return customFetch<LowStockSaveOutcome>(
+    getReconcileLowStockSettingsUrl(key),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getReconcileLowStockSettingsMutationKey = () =>
+  ["reconcileLowStockSettings"] as const;
+
+export const getReconcileLowStockSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reconcileLowStockSettings>>,
+    TError,
+    ReconcileLowStockSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reconcileLowStockSettings>>,
+  TError,
+  ReconcileLowStockSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReconcileLowStockSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reconcileLowStockSettings>>,
+    ReconcileLowStockSettingsMutationVariables
+  > = (props) => {
+    const { key } = props ?? {};
+
+    return reconcileLowStockSettings(key, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReconcileLowStockSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileLowStockSettings>>
+>;
+
+export type ReconcileLowStockSettingsMutationError = ErrorType<ErrorEnvelope>;
+export type ReconcileLowStockSettingsMutationVariables = { key: string };
+
+/**
+ * @summary Reconcile
+ */
+export const useReconcileLowStockSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reconcileLowStockSettings>>,
+    TError,
+    ReconcileLowStockSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reconcileLowStockSettings>>,
+  TError,
+  ReconcileLowStockSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getReconcileLowStockSettingsMutationOptions(options));
+};
+
+export const getListLowStockAlertsUrl = (params?: ListLowStockAlertsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/low-stock-alerts?${stringifiedParams}`
+    : `/api/v1/admin/inventory/low-stock-alerts`;
+};
+
+/**
+ * @summary Low Stock Alerts
+ */
+export const listLowStockAlerts = async (
+  params?: ListLowStockAlertsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LowStockAlertPage> => {
+  return customFetch<LowStockAlertPage>(getListLowStockAlertsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLowStockAlertsQueryKey = (
+  params?: ListLowStockAlertsParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/low-stock-alerts`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListLowStockAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLowStockAlerts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListLowStockAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLowStockAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLowStockAlertsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLowStockAlerts>>
+  > = ({ signal }) => listLowStockAlerts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLowStockAlerts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLowStockAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLowStockAlerts>>
+>;
+export type ListLowStockAlertsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Low Stock Alerts
+ */
+
+export function useListLowStockAlerts<
+  TData = Awaited<ReturnType<typeof listLowStockAlerts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListLowStockAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLowStockAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLowStockAlertsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

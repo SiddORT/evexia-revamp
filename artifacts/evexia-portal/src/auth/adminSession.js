@@ -1128,7 +1128,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const mutation = writing && !eligibilityPreview && !path.endsWith('/preview') && path !== '/import/review';
   const gstSettingsOperation = resource === 'gst-settings';
   const invoiceSettingsOperation = ['invoice-settings', 'low-stock-settings'].includes(resource);
-  const sharedSettingsLabel = resource === 'low-stock-settings' ? 'Low-stock Settings' : 'Invoice Details';
+  const sharedSettingsLabel = resource === 'low-stock-settings' ? 'Cron Jobs' : 'Invoice Details';
   const extractSettingsOperation = resource === 'immunotherapy-extract-settings';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
@@ -1242,10 +1242,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       ? response.status === 403 ? `${sharedSettingsLabel} require the protected Super Admin.`
         : response.status === 409 ? `${sharedSettingsLabel} changed or this save identity was closed. Load saved values and compare your kept edits.`
         : response.status === 422 ? resource === 'low-stock-settings'
-          ? 'Enter a valid additional email or leave it blank. Your edit is preserved.'
+          ? 'Check the recurrence, start date, time and additional email rows. Your edits are preserved.'
           : 'Check the highlighted Invoice Details fields and QR image limits. Your edits are preserved.'
         : [404, 405].includes(response.status) ? `${sharedSettingsLabel} are unavailable. The prepared API and schema need approved activation.`
-        : uncertain('service').message
+        : resource === 'low-stock-settings' && response.status === 503
+          ? 'Cron Jobs storage is unavailable. Retry loading, or ask an operator to review approved schema activation. Your edits are preserved; no empty configuration is assumed.'
+          : uncertain('service').message
       : resource === 'pricing-rules'
       ? response.status === 403 ? 'Pricing Rules require the protected Super Admin.'
         : response.status >= 500 ? uncertain('service').message

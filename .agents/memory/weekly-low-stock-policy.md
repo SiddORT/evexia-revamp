@@ -19,6 +19,10 @@ Admin's saved email and one optional shared Settings email, in private separate
 deliveries with equal-address deduplication. Consuming a week cannot be undone
 by configuration changes, and accepted/uncertain handoffs never auto-resend.
 
+The fixed schedule and single additional recipient above are now legacy
+defaults only; [Cron Jobs policy](low-stock-cron-policy.md) supersedes them for
+explicitly edited recurring configuration.
+
 **Why:** The user fixed the schedule, recipient scope and no-backlog policy.
 
 **How to apply:** Preserve recipient-scoped durable outcomes and current-week

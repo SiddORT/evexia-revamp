@@ -53,9 +53,13 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
-        if revisions == ["0091_low_stock_alerts"]:
+        if revisions == ["0092_low_stock_cron"]:
             from app.services.low_stock_settings import ready as low_stock_ready
             low_stock_ready(db)
+            revisions = ["0091_low_stock_alerts"]
+        if revisions == ["0091_low_stock_alerts"]:
+            from app.services.low_stock_settings import ready as low_stock_ready
+            low_stock_ready(db, recurring=False)
             from app.services.purchase_received_crypto import ReceiptCrypto
             ReceiptCrypto(get_settings())
             revisions = ["0089_it_material_pricing"]

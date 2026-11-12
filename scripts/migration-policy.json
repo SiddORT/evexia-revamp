@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0092_low_stock_cron": "automatic",
     "0091_low_stock_alerts": "automatic",
     "0089_invoice_settings": "automatic",
     "0089_it_material_pricing": "automatic",
