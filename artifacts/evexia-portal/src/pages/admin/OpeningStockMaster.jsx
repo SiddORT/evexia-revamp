@@ -77,7 +77,7 @@ export default function OpeningStockMaster() {
     { key: 'loc', label: 'Location', render: (r) => locationLabel(r.location) },
     { key: 'date', label: 'Recorded', render: (r) => <>{date(r.recordedDate)}<span className="stock-sub">{r.actor}</span></> },
     { key: 'act', label: 'Actions', render: (r) => <div className="admin-table__actions">
-      <button id={`opening-view-${r.id}`} type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Details, activity and totals" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button></div> },
+      <button id={`opening-view-${r.id}`} type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Opening stock details" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button></div> },
   ];
   return <AdminLayout title="Opening Stock"><div className="opening-stock-master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Opening Stock</h1><p className="admin-page-head__description">Pre-system physical stock for allergens and products. Records are append-only stock initialization; a blank location means Unallocated, not zero stock.</p></div>
