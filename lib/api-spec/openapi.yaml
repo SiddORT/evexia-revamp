@@ -2718,8 +2718,8 @@
             "type": "string"
           },
           "shortName": {
+            "default": "",
             "maxLength": 50,
-            "minLength": 1,
             "title": "Shortname",
             "type": "string"
           },
@@ -2734,7 +2734,6 @@
         },
         "required": [
           "name",
-          "shortName",
           "status",
           "expected_version"
         ],
@@ -2751,8 +2750,8 @@
             "type": "string"
           },
           "shortName": {
+            "default": "",
             "maxLength": 50,
-            "minLength": 1,
             "title": "Shortname",
             "type": "string"
           },
@@ -2767,7 +2766,6 @@
         },
         "required": [
           "name",
-          "shortName",
           "status"
         ],
         "title": "DesignationFields",
@@ -2883,7 +2881,6 @@
           },
           "shortName": {
             "maxLength": 50,
-            "minLength": 1,
             "title": "Shortname",
             "type": "string"
           },

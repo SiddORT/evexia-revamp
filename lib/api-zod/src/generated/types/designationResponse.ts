@@ -16,10 +16,7 @@ export interface DesignationResponse {
    * @maxLength 200
    */
   name: string;
-  /**
-   * @minLength 1
-   * @maxLength 50
-   */
+  /** @maxLength 50 */
   shortName: string;
   status: DesignationResponseStatus;
   updatedAt: Date;

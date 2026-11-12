@@ -44,7 +44,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details",
     "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings",
     "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron",
-    "0093_language_status", "0094_language_low_stock_merge"})
+    "0093_language_status", "0094_language_low_stock_merge", "0093_designation_short_name"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -59,6 +59,8 @@ def _fields(db):
     # Reviewed predecessors retain their exact old inventory so paused
     # maintenance can finish before the separately approved phone migration.
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    if revision == "0093_designation_short_name":
+        revision = "0094_language_low_stock_merge"
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
     if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code",
@@ -94,6 +96,9 @@ def _lock(db, exclusive=False):
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
+    # Optional designation labels change no encryption inventory or lock scope.
+    if revisions == ["0093_designation_short_name"]:
+        revisions = ["0094_language_low_stock_merge"]
     # The status CHECK expansion changes no encryption inventory or lock scope.
     if revisions in (["0093_language_status"], ["0094_language_low_stock_merge"]):
         db.execute(text(f"LOCK TABLE languages,language_changes IN {mode} MODE NOWAIT"))
@@ -312,7 +317,7 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron", "0093_language_status", "0094_language_low_stock_merge"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron", "0093_language_status", "0094_language_low_stock_merge", "0093_designation_short_name"):
         for name, (model, pk, field, domain) in _order_payloads(db).items():
             _, unseal = _order_crypto(name)
             cursor, count = None, 0
@@ -348,6 +353,8 @@ def _order_payloads(db):
         "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
     }
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    if revision == "0093_designation_short_name":
+        revision = "0094_language_low_stock_merge"
     if revision in ("0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron", "0093_language_status", "0094_language_low_stock_merge"):
         from app.db.immunotherapy_extract_models import ImmunotherapyExtractSettings
         table = ImmunotherapyExtractSettings.__table__

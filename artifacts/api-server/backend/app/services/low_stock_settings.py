@@ -9,7 +9,7 @@ from app.services.allergens import authorize, AllergenError
 from app.services.purchase_received_crypto import ReceiptCrypto
 from app.db.low_stock_models import LowStockSchedule, LowStockWeek
 from app.schemas.low_stock import LowStockConfiguration
-from app.services.low_stock_schedule import LEGACY, REVISION, ZONE, next_run
+from app.services.low_stock_schedule import LEGACY, COMPATIBLE_REVISIONS, ZONE, next_run
 from app.core.security import utcnow
 
 LOCK = 5310057
@@ -44,7 +44,7 @@ def current(db, crypto):
 def view(db, saved):
     from app.core.schema import SCHEMA_REVISION
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
-    eligible = SCHEMA_REVISION == REVISION and revisions == [REVISION]
+    eligible = SCHEMA_REVISION in COMPATIBLE_REVISIONS and revisions == [SCHEMA_REVISION]
     if eligible:
         ready(db)
     candidate = next_run(saved, utcnow())

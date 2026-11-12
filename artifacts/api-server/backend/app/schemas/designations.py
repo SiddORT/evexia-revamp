@@ -10,9 +10,10 @@ BUSINESS_FIELDS = ("name", "shortName", "status")
 
 class DesignationFields(MasterWriteFields):
     master_names = {"name": ("designation name", False), "shortName": ("designation short name", False)}
+    master_optional_names = frozenset({"shortName"})
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
-    shortName: str = Field(min_length=1, max_length=50)
+    shortName: str = Field(default="", max_length=50)
     status: Literal["active", "inactive"]
 
     @field_validator("name", "shortName", mode="before")
@@ -42,6 +43,8 @@ class DesignationStatus(DesignationVersion):
 
 class DesignationResponse(DesignationFields):
     master_read = True
+    # Responses always include the persisted string, including an empty string.
+    shortName: str = Field(max_length=50)
     id: uuid.UUID
     version: int
     createdBy: str

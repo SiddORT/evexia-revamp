@@ -7,6 +7,9 @@
  */
 import * as zod from "zod";
 
+export const createDesignationBodyShortNameDefault = ``;
+export const editDesignationBodyShortNameDefault = ``;
+
 export const listAllergensQueryQueryMax = 200;
 export const listAllergensQueryMinPriceOneMax = 64;
 export const listAllergensQueryMaxPriceOneMax = 64;
@@ -3972,7 +3975,6 @@ export const ListDesignationsResponse = zod.object({
       name: zod.string().min(1).max(listDesignationsResponseItemsItemNameMax),
       shortName: zod
         .string()
-        .min(1)
         .max(listDesignationsResponseItemsItemShortNameMax),
       status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
@@ -3991,7 +3993,10 @@ export const ListDesignationsResponse = zod.object({
 
 export const CreateDesignationBody = zod.object({
   name: zod.string().min(1).max(createDesignationBodyNameMax),
-  shortName: zod.string().min(1).max(createDesignationBodyShortNameMax),
+  shortName: zod
+    .string()
+    .max(createDesignationBodyShortNameMax)
+    .default(createDesignationBodyShortNameDefault),
   status: zod.enum(["active", "inactive"]),
 });
 
@@ -4000,7 +4005,7 @@ export const CreateDesignationResponse = zod.object({
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(createDesignationResponseNameMax),
-  shortName: zod.string().min(1).max(createDesignationResponseShortNameMax),
+  shortName: zod.string().max(createDesignationResponseShortNameMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -4124,7 +4129,7 @@ export const GetDesignationResponse = zod.object({
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(getDesignationResponseNameMax),
-  shortName: zod.string().min(1).max(getDesignationResponseShortNameMax),
+  shortName: zod.string().max(getDesignationResponseShortNameMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -4147,7 +4152,7 @@ export const DeleteDesignationResponse = zod.object({
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(deleteDesignationResponseNameMax),
-  shortName: zod.string().min(1).max(deleteDesignationResponseShortNameMax),
+  shortName: zod.string().max(deleteDesignationResponseShortNameMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -4164,7 +4169,10 @@ export const EditDesignationParams = zod.object({
 export const EditDesignationBody = zod.object({
   expected_version: zod.number().int().min(1),
   name: zod.string().min(1).max(editDesignationBodyNameMax),
-  shortName: zod.string().min(1).max(editDesignationBodyShortNameMax),
+  shortName: zod
+    .string()
+    .max(editDesignationBodyShortNameMax)
+    .default(editDesignationBodyShortNameDefault),
   status: zod.enum(["active", "inactive"]),
 });
 
@@ -4173,7 +4181,7 @@ export const EditDesignationResponse = zod.object({
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editDesignationResponseNameMax),
-  shortName: zod.string().min(1).max(editDesignationResponseShortNameMax),
+  shortName: zod.string().max(editDesignationResponseShortNameMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -4197,7 +4205,7 @@ export const SetDesignationStatusResponse = zod.object({
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(setDesignationStatusResponseNameMax),
-  shortName: zod.string().min(1).max(setDesignationStatusResponseShortNameMax),
+  shortName: zod.string().max(setDesignationStatusResponseShortNameMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),

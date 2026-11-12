@@ -13,7 +13,7 @@ class Designation(Timestamps, Base):
         CheckConstraint("version >= 1", name="ck_designation_version"),
         CheckConstraint("status IN ('active', 'inactive')", name="ck_designation_status"),
         CheckConstraint("length(name) BETWEEN 1 AND 200 AND name = btrim(name)", name="ck_designation_name"),
-        CheckConstraint('length("shortName") BETWEEN 1 AND 50 AND "shortName" = btrim("shortName")', name="ck_designation_short_name"),
+        CheckConstraint('length("shortName") BETWEEN 0 AND 50 AND "shortName" = btrim("shortName")', name="ck_designation_short_name"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_designation_deletion"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

@@ -20,7 +20,7 @@ from app.services import inventory as inv
 from app.services.low_stock import snapshot
 from app.services.low_stock_settings import current, ready
 from app.services.low_stock_settings import LOCK as SETTINGS_LOCK
-from app.services.low_stock_schedule import REVISION, next_run
+from app.services.low_stock_schedule import COMPATIBLE_REVISIONS, next_run
 from app.services.account_crypto import AccountCrypto
 from app.services.order_notification_transport import configuration, destination, Blocked
 from app.services.email_rendering import RenderedEmail
@@ -56,7 +56,7 @@ def claim(db, started_at):
     now = utcnow()
     from app.core.schema import SCHEMA_REVISION
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
-    if SCHEMA_REVISION != REVISION or revisions != [REVISION]:
+    if SCHEMA_REVISION not in COMPATIBLE_REVISIONS or revisions != [SCHEMA_REVISION]:
         return None
     ready(db)
     db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": SETTINGS_LOCK})

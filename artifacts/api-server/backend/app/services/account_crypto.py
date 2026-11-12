@@ -181,8 +181,13 @@ def ready(db):
         ["0092_low_stock_cron"],
         ["0093_language_status"],
         ["0094_language_low_stock_merge"],
+        ["0093_designation_short_name"],
     ):
         raise AccountCryptoError()
+    # This exact catalogue-only successor retains the predecessor account
+    # anchors and protected identity; it introduces no encryption inventory.
+    if revisions == ["0093_designation_short_name"]:
+        revisions = ["0094_language_low_stock_merge"]
     current = crypto()
     row = db.execute(text(
         "SELECT configuration_digest, protected_email_index FROM account_crypto_state WHERE id=1"

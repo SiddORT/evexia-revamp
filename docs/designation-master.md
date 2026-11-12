@@ -38,11 +38,50 @@ invented values; downgrade cannot restore discarded values. Use a reviewed forwa
 verified coordinated restore, not a destructive downgrade. Retain backups and
 audit evidence pending operator-approved retention.
 
+## Optional short-name change (source-only handoff)
+
+Forward `0093_designation_short_name` follows the incoming merged ancestry
+`0094_language_low_stock_merge` (which includes `0092_low_stock_cron`) and
+replaces only `ck_designation_short_name` to permit lengths 0–50. The column
+stays NOT NULL. No rows, IDs, links, uniqueness rules or audit history are
+rewritten. Downgrade locks the table and refuses if any row, including deleted
+history, has a blank short name; it never invents replacements.
+
+The migration is staged, not executed. The coordinated development target is
+not advanced by this change. Schema metadata records the new source migration;
+that is not evidence of activation. Existing startup/migration policy remains
+in force, and a later coordinated activation must include this constraint
+before blank writes can succeed. Exact successor compatibility retains prior
+account/directory inventories, readiness probes and stock schedule activation
+gates without accepting arbitrary future schemas.
+
+Only source and diffs were reviewed. No tests, builds, typechecks,
+regression/release/completion wrappers, runtime/browser probes, service
+starts/restarts, migration execution, deployments or live writes were run.
+Runtime behavior, blank save/reopen, transfer execution and migration behavior
+remain unverified. Generated helpers were synchronized offline with direct
+Orval, constant hoisting and formatting, without the codegen wrapper that
+chains typechecks. `scripts/retain-designation-codegen.mjs <clean-baseline>`
+retains designation declarations from generated output while preserving all
+unrelated pre-generation source refinements; use only a known clean baseline.
+
 ## Current business fields
 
-- Name: required, 1–200 characters; short name: required, 1–50 characters.
+- Name: required, 1–200 characters; short name: optional, 0–50 characters.
   Both are trimmed and whitespace-collapsed; unsupported control/surrogate
-  characters are rejected.
+  characters are rejected. Nonblank values must contain letters or numbers;
+  symbols alone remain invalid. Omitted or whitespace-only write values become
+  `""`; null is not a supported string value. Responses always include a string.
+- Add suggests uppercase Unicode-aware initials from meaningful name words,
+  capped at 50 characters (Area Sales Manager → ASM). It follows name changes
+  only until any manual short-name edit, including an explicit clearing. Edit
+  never regenerates saved values, including blanks; failed/uncertain saves
+  and server-detail review retain the draft and its suggestion ownership.
+- Imports keep their exact current/legacy headers and accept blank Short Name
+  cells without generating abbreviations. Review and confirmation share the
+  same write schema; valid supplied values retain existing normalization.
+  Exports retain saved blanks. Guidance lives in existing info-icon disclosures;
+  errors, outcomes, review details and confirmation wording stay visible.
 - Name matching uses PostgreSQL `lower(btrim(regexp_replace(name, '\s+', ' ', 'g')))`
   for both import conflict checking and the database partial unique index.
   All non-deleted rows, including inactive rows, reserve their name.

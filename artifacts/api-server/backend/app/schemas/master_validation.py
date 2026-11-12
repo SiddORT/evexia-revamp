@@ -35,6 +35,7 @@ def meaningful_name(value, label, personal=False):
 
 class MasterWriteFields(BaseModel):
     master_names: ClassVar[dict[str, tuple[str, bool]]] = {}
+    master_optional_names: ClassVar[frozenset[str]] = frozenset()
     master_read: ClassVar[bool] = False
 
     @field_validator("*", mode="before")
@@ -42,6 +43,8 @@ class MasterWriteFields(BaseModel):
     def semantic_master_name(cls, value, info):
         spec = cls.master_names.get(info.field_name)
         if not cls.master_read and spec and isinstance(value, str):
+            if info.field_name in cls.master_optional_names and not name_text(value):
+                return ""
             return meaningful_name(value, *spec)
         return value
 

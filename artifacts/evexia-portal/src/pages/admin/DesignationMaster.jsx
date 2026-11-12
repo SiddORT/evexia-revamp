@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, BriefcaseBusiness, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -106,7 +107,7 @@ export default function DesignationMaster() {
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Designation Master">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters</p><h1>Designation Master</h1><p className="admin-page-head__description">Designation labels do not grant staff permissions or change payroll.</p></div>
+      <div><p className="admin-page-head__eyebrow">Masters</p><InfoDisclosure id="designation-master-info" title="Designation Master" text="Designation labels do not grant staff permissions or change payroll. Short Name is optional; Add suggests editable uppercase initials until you edit or clear the field. Existing saved values are not regenerated."><h1>Designation Master</h1></InfoDisclosure></div>
       <div className="admin-mr-head-actions">
         <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/designation')} data-testid="button-import-designations"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>

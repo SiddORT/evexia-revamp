@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { reviewDesignations, importDesignations, sampleDesignations, downloadDesignationFile } from '../../services/serverDesignations.js';
@@ -130,8 +131,7 @@ export default function DesignationImportPage() {
     <div className="excel-import excel-import--designation">
       <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/designations')}><ArrowLeft size={16} aria-hidden="true" /> Back to Designation Master</button>
       <div className="admin-page-head">
-        <div><p className="admin-page-head__eyebrow">Masters / Data import</p><h1>Import Designation data</h1>
-          <p className="admin-page-head__description">Download a sample, choose CSV or Excel and review each row. Review saves nothing; explicit confirmation creates shared server records only, all-or-nothing.</p>
+        <div><p className="admin-page-head__eyebrow">Masters / Data import</p><InfoDisclosure id="designation-import-info" title="Designation import" text="Download a sample, choose CSV or Excel and review each row. Review saves nothing; explicit confirmation creates shared server records only, all-or-nothing. Short Name may be blank; supplied valid values are retained, and imports never generate initials."><h1>Import Designation data</h1></InfoDisclosure>
         </div>
         <span className="excel-import__mock">Shared server records</span>
       </div>
@@ -140,12 +140,7 @@ export default function DesignationImportPage() {
         <section className="excel-import__card" aria-labelledby="excel-sample-title" aria-busy={Boolean(samplePending)}>
           <span className="excel-import__number">01</span>
           <div className="excel-import__icon"><FileSpreadsheet size={23} aria-hidden="true" /></div>
-          <h2 id="excel-sample-title">Download sample Excel</h2>
-          <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
-          <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{DESIGNATION_COLUMNS.map(([, label]) => label).join(' · ')}</span>
-            <strong>Current backup schema (CSV or Excel)</strong><span>The same three columns, followed by Created By · Created At · Updated By · Updated At</span>
-          </div>
-          <p>Exact legacy ten-business/fourteen-audit column files are also accepted. Retired level and allowance/tax values and incoming audit attribution are ignored. Unknown or reordered headers are rejected.</p>
+          <InfoDisclosure id="designation-import-sample-info" title="designation sample formats" text={`Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported. Expected columns (exact order): ${DESIGNATION_COLUMNS.map(([, label]) => label).join(' · ')}. Current backup schema: the same three columns, followed by Created By · Created At · Updated By · Updated At. Exact legacy ten-business/fourteen-audit column files are also accepted. Retired level and allowance/tax values and incoming audit attribution are ignored. Unknown or reordered headers are rejected. Keep the Short Name column even when its cells are blank.`}><h2 id="excel-sample-title">Download sample Excel</h2></InfoDisclosure>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>
@@ -155,9 +150,7 @@ export default function DesignationImportPage() {
         <section className="excel-import__card" aria-labelledby="excel-upload-title" aria-busy={Boolean(pending)}>
           <span className="excel-import__number">02</span>
           <div className="excel-import__icon"><Upload size={23} aria-hidden="true" /></div>
-          <h2 id="excel-upload-title">Upload &amp; review</h2>
-          <p>Choose CSV or .xlsx, up to 2 MiB and 1,000 records. All rows must be valid. Non-deleted names, including active and inactive designations, must be unique regardless of case or normalized whitespace. Create-only: no upserts or partial imports.</p>
-          <p>No ID, version or deletion columns, .xls, .xlsm, formulas, macros, external links or encrypted archives.</p>
+          <InfoDisclosure id="designation-import-upload-info" title="designation upload rules" text="Choose CSV or .xlsx, up to 2 MiB and 1,000 records. All rows must be valid. Name and Status are required; Short Name is optional, with at most 50 characters and letters or numbers in nonblank values. Non-deleted names, including active and inactive designations, must be unique regardless of case or normalized whitespace. Create-only: no upserts or partial imports. No ID, version or deletion columns, .xls, .xlsm, formulas, macros, external links or encrypted archives."><h2 id="excel-upload-title">Upload &amp; review</h2></InfoDisclosure>
           <label className="excel-import__picker">
             <FileSpreadsheet size={19} aria-hidden="true" /><span>{file ? file.name : 'Choose CSV or Excel file'}</span>
             <input ref={picker} aria-label="Designation CSV or Excel file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -166,7 +159,7 @@ export default function DesignationImportPage() {
           <button type="button" className="admin-button" disabled={Boolean(pending) || !file || uncertain} onClick={() => run(false)}>{pending === 'review' ? 'Reviewing…' : pending === 'commit' ? 'Importing…' : 'Upload & review'}</button>
         </section>
       </div>
-      <p className="admin-page-head__description">Old exact ten/fourteen-column backups remain compatible; no browser records are automatically migrated or mirrored. Staff labels remain business metadata, not authorization or payroll relationships. Exports allow 5,000 name/short name/status matches; files above 1,000 rows must be split before import. A new login requires fresh review.</p>
+      <InfoDisclosure id="designation-import-compatibility-info" title="designation backup compatibility" text="Old exact ten/fourteen-column backups remain compatible; no browser records are automatically migrated or mirrored. Staff labels remain business metadata, not authorization or payroll relationships. Exports allow 5,000 name/short name/status matches; files above 1,000 rows must be split before import. A new login requires fresh review." />
       {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
       {uncertain && <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(pending)} onClick={() => run(false, true)}>Check current server conflicts (no writes)</button>}
       {message && <div className="admin-feedback" role="status">{message}</div>}

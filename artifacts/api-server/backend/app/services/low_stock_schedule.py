@@ -4,6 +4,8 @@ from zoneinfo import ZoneInfo
 
 ZONE = ZoneInfo("Asia/Kolkata")
 REVISION = "0092_low_stock_cron"
+# Exact reviewed successor changes only designation short-name optionality.
+COMPATIBLE_REVISIONS = frozenset({REVISION, "0094_language_low_stock_merge", "0093_designation_short_name"})
 LEGACY = dict(event="low_stock_alert", frequency="weekly", weekday=0,
               month_day=None, start_date="1970-01-01", local_time="10:00",
               timezone="Asia/Kolkata")

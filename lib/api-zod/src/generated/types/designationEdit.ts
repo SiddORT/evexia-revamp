@@ -15,10 +15,7 @@ export interface DesignationEdit {
    * @maxLength 200
    */
   name: string;
-  /**
-   * @minLength 1
-   * @maxLength 50
-   */
-  shortName: string;
+  /** @maxLength 50 */
+  shortName?: string;
   status: DesignationEditStatus;
 }
