@@ -69,14 +69,14 @@ export default function OpeningStockFormPage() {
       const m = [];
       if (!r.item) m.push('Select an allergen or product.');
       else if (!validQuantity(r.quantity, r.item.itemKind)) m.push(r.item.itemKind === 'combo' ? 'Quantity must be a whole number from 1 to 1000000.' : 'Enter a positive quantity up to 1000000; up to six source decimals round half-up to two places, at least 0.01.');
-      if (!validRate(r.unitRate)) m.push('Unit rate must be a number up to 999999999999.99 with at most 6 decimals (rounded half-up to 2).');
+      if (r.unitRate.trim() && !validRate(r.unitRate)) m.push('Unit rate must be a number up to 999999999999.99 with at most 6 decimals (rounded half-up to 2).');
       if (m.length) e[i] = m.join(' ');
     });
     return e;
   }
   const body = () => ({ mode: 'manual', recordedDate: draft.recordedDate, rows: draft.rows.map((r) => ({
     sourceId: draft.sourceId, rowId: r.rowId, itemKind: r.item.itemKind, itemId: r.item.itemId,
-    quantity: r.quantity.trim(), unitRate: r.unitRate.trim(), locationId: r.location.value === 'unallocated' ? null : r.location.value })) });
+    quantity: r.quantity.trim(), unitRate: r.unitRate.trim() || '0.00', locationId: r.location.value === 'unallocated' ? null : r.location.value })) });
 
   function showFieldErrors(error) {
     const next = {};
@@ -131,10 +131,8 @@ export default function OpeningStockFormPage() {
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
     <section className="admin-panel opening-stock-form__panel" aria-label="New opening stock"><form onSubmit={submitReview} noValidate>
       <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
-        <div className="ms-fields"><div className="ms-field"><label htmlFor="os-date">Recorded date <span className="mr-form__required">*</span></label>
+        <div className="ms-fields"><div className="ms-field opening-stock-form__date"><label htmlFor="os-date">Recorded date <span className="mr-form__required">*</span></label>
           <input id="os-date" type="date" className="mr-form__control" value={draft.recordedDate} onChange={(e) => { reset(); setDraft((d) => ({ ...d, recordedDate: e.target.value })); setErrors((x) => ({ ...x, date: undefined })); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'os-date-error' : undefined} data-testid="input-opening-date" />{err('date')}</div></div>
-        <div><button type="button" className="admin-button admin-button--secondary" onClick={() => setLocationRevision((r) => r + 1)}>Refresh storage locations</button>
-          <p className="mr-form__hint">Choices come from active Storage Location Master records. Search by name or address, or load more below each location field. Refresh keeps your entered rows and selected locations; the server rechecks them before saving.</p></div>
         {err('rows')}
         {draft.rows.map((r, i) => <div key={r.rowId} className="opening-stock-form__row" data-testid={`row-opening-${i}`}>
           <div className={`opening-stock-form__controls${draft.rows.length > 1 ? ' opening-stock-form__controls--removable' : ''}`}>
@@ -142,7 +140,7 @@ export default function OpeningStockFormPage() {
             <ReferenceSelect id={`os-item-${i}`} label="Item" kind="items" fetchPage={listItemReferences} value={r.item ? r.item.value : ''} selected={r.item} placeholder="Select item" invalid={Boolean(errors[i])} showResultHint={false} conciseItemLabels
               onChange={(_v, o) => patchRow(i, { item: o ? { value: o.value, label: o.label, itemKind: o.itemKind, itemId: o.itemId, unit: o.unit } : null })} /></div>
           <div className="ms-field"><label htmlFor={`os-qty-${i}`}>Quantity ({r.item?.itemKind === 'combo' ? 'units' : 'ml'}) <span className="mr-form__required">*</span></label><input id={`os-qty-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(i, { quantity: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-qty-${i}`} /></div>
-          <div className="ms-field"><InfoDisclosure id={`os-rate-${r.rowId}-help`} title="Unit rate" text="Entered cost per unit, not MRP or selling price. This can also be a weighted-average cost per unit." testId={`button-opening-rate-info-${i}`}><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label></InfoDisclosure><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /></div>
+           <div className="ms-field"><InfoDisclosure id={`os-rate-${r.rowId}-help`} title="Unit rate" text="Entered cost per unit, not MRP or selling price. This can also be a weighted-average cost per unit." testId={`button-opening-rate-info-${i}`}><label htmlFor={`os-rate-${i}`}>Unit rate</label></InfoDisclosure><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /></div>
           <div className="ms-field"><label htmlFor={`os-loc-${i}`}>Storage location</label>
             <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={openingLocationReferences} refreshKey={locationRevision} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
               onChange={(_v, o) => patchRow(i, { location: o ? { value: o.value, label: o.label } : UNALLOCATED })} /></div>

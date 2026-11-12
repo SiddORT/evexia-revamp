@@ -20,6 +20,12 @@
 
 /* Let inline menus escape only this entry card; retain its border and radius. */
 .opening-stock-form .admin-panel.opening-stock-form__panel { overflow: visible; }
+.opening-stock-form .opening-stock-form__date {
+  width: 200px;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: start;
+}
 /* Raise the container-query row as well as its open selector above subsequent
    rows and the footer, while staying below header (20) and dialog (80) layers. */
 .opening-stock-form .opening-stock-form__row:has(.searchable-select--open) {

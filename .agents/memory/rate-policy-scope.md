@@ -43,3 +43,11 @@ and archived revisions rather than another rate store.
 **How to apply:** Keep saved rates authoritative on reopen; apply half-up
 normalization only to newly entered or deliberately changed rates, without
 rewriting unchanged historical rates, other POs or master prices.
+
+Manual Add opening stock treats a blank or whitespace-only Unit rate as zero
+cost, not an unknown cost or an inferred catalogue price.
+
+**Why:** The user explicitly selected zero cost for a blank manual opening rate.
+
+**How to apply:** Keep this choice scoped to manual opening entry; do not extend
+it to imports, other cost forms or historical records.
