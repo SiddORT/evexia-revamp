@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Download, Eye, FileUp, Plus, Search } from 'lucide-react';
+import { Download, Eye, FileUp, Plus, Search, Pencil } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -76,12 +76,13 @@ export default function OpeningStockMaster() {
     { key: 'val', label: 'Opening value', render: (r) => <span className="inv-mono">{valueMoney(r.openingValue)}</span> },
     { key: 'loc', label: 'Location', render: (r) => locationLabel(r.location) },
     { key: 'expiry', label: 'Expiry', render: (r) => r.expiryDate ? date(r.expiryDate) : 'Unknown / unavailable' },
-    { key: 'date', label: 'Recorded', render: (r) => <>{date(r.recordedDate)}<span className="stock-sub">{r.actor}</span></> },
+    { key: 'date', label: 'Recorded', render: (r) => <>{date(r.recordedDate)}<span className="stock-sub">{r.updatedBy || r.actor}{r.version > 1 ? ` · revision ${r.version}` : ''}</span></> },
     { key: 'act', label: 'Actions', render: (r) => <div className="admin-table__actions">
-      <button id={`opening-view-${r.id}`} type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Opening stock details" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button></div> },
+      <button id={`opening-view-${r.id}`} type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Opening stock details" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button>
+      {can.edit && <button type="button" className="admin-icon-button" aria-label={`Edit opening stock, ${r.productName}`} title="Edit opening stock" onClick={() => navigate(`${BASE}/${r.id}/edit`)} data-testid={`button-edit-opening-${r.id}`}><Pencil size={16} /></button>}</div> },
   ];
   return <AdminLayout title="Opening Stock"><div className="opening-stock-master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Opening Stock</h1><p className="admin-page-head__description">Pre-system physical stock for allergens and products. Records are append-only stock initialization; a blank location means Unallocated, not zero stock.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Opening Stock</h1><p className="admin-page-head__description">Pre-system physical stock for allergens and products. Corrections retain original history and are blocked after downstream activity. A blank location means Unallocated, not zero stock.</p></div>
       <div className="admin-mr-head-actions">
         <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/import`)} data-testid="button-import-opening"><FileUp size={16} /> Import</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>

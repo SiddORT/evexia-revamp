@@ -1,7 +1,7 @@
 """Append-only physical stock initialization, not financial opening balances."""
 import uuid
 from datetime import datetime
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -23,4 +23,17 @@ class OpeningStockRequest(Base):
     key: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     digest: Mapped[str] = mapped_column(String(64))
+    payload_ciphertext: Mapped[str] = mapped_column(Text)
+
+
+class OpeningStockRevision(Base):
+    """Immutable corrections; original opening payload and lots are never rewritten."""
+    __tablename__ = "opening_stock_revisions"
+    __table_args__ = (UniqueConstraint("opening_id", "version", name="uq_opening_revision"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    opening_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("opening_stock.id"), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("audit_events.id"), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     payload_ciphertext: Mapped[str] = mapped_column(Text)

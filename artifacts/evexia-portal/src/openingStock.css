@@ -35,6 +35,11 @@
 .opening-stock-detail__fields > div:first-child { grid-column: 1 / -1; }
 .opening-stock-detail__fields dt { margin-bottom: 4px; color: var(--admin-text-soft); font-size: 12px; }
 .opening-stock-detail__fields dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.opening-stock-history { margin-top: 24px; overflow-wrap: anywhere; }
+.opening-stock-history details { border-top: 1px solid var(--admin-border); padding-block: 12px; }
+.opening-stock-history summary { cursor: pointer; padding-block: 8px; }
+.opening-stock-history summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.opening-stock-form .ms-form-body, .opening-stock-form .inv-scroll { min-width: 0; }
 @media (max-width: 400px) {
   .opening-stock-detail__header, .opening-stock-detail__body { padding: 16px; }
   .opening-stock-detail__fields { grid-template-columns: minmax(0, 1fr); gap: 12px; }

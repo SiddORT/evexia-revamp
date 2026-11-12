@@ -10,6 +10,8 @@ export const openingActivity = (id, params, signal) => request(`/${id}/activity`
 export const openingAnalytics = (id, signal) => request(`/${id}/analytics`, { signal });
 export const previewOpening = (body) => request('/preview', { body });
 export const commitOpening = (body) => request('', { body });
+export const previewOpeningEdit = (id, body) => request(`/${id}/edit/preview`, { body });
+export const commitOpeningEdit = (id, body) => request(`/${id}/edit`, { body });
 export const reviewImport = (file, signal) => request('/import/review', { file, params: { filename: file.name }, signal });
 export const downloadSample = (format) => request('/sample', { params: { format }, download: true });
 export const downloadExport = (query, format) => request('/export', { params: clean({ query, format }), download: true });
@@ -28,16 +30,18 @@ export function pendingOpening() {
     if (raw === null) return null;
     const item = JSON.parse(raw);
     if (item.owner !== owner() || !uuid.test(item.key)) throw new Error();
+    if (item.intent != null && !['create', 'import', 'edit'].includes(item.intent)) throw new Error();
+    if (item.intent === 'edit' && !uuid.test(item.recordId || '')) throw new Error();
     return item;
   } catch { throw new Error('Opening stock retry identity is unavailable. Restore browser storage/session access; do not start a replacement save until the previous outcome is checked.'); }
 }
-export async function rememberOpening(key) {
+export async function rememberOpening(key, intent = {}) {
   const o = owner();
   if (!o || !navigator.locks) throw new Error('A safe save needs browser storage and Web Locks. Nothing was sent.');
   await navigator.locks.request(`evexia-opening-stock:${o}`, () => {
     const previous = pendingOpening();
     if (owner() !== o || (previous && previous.key !== key)) throw new Error('Another opening stock save is unresolved. Check its outcome before saving again.');
-    localStorage.setItem(journalKey(), JSON.stringify({ owner: o, key }));
+    localStorage.setItem(journalKey(), JSON.stringify({ owner: o, key, ...intent }));
     notify();
   });
 }
@@ -50,18 +54,20 @@ export async function forgetOpening(key) {
     notify();
   });
 }
-export async function journaled(key, send) {
-  await rememberOpening(key);
+export async function journaled(key, send, intent = { intent: 'create' }) {
+  await rememberOpening(key, intent);
   let result;
   try { result = await send(); } catch (e) { e.uncertain = true; throw e; }
   try { await forgetOpening(key); } catch (e) { e.uncertain = true; e.saved = result; throw e; }
   return result;
 }
 export async function reconcileKey(key) {
+  const pending = pendingOpening();
+  if (!pending || pending.key !== key) throw new Error('Retry identity changed. Check the current pending save.');
   const r = await reconcileOpeningRequest(key);
   if (!r || !['committed', 'not_committed'].includes(r.state)) throw new Error('The server returned an unclear outcome. Retry the check.');
   await forgetOpening(key);
-  return r;
+  return { ...r, key, intent: pending.intent || 'legacy', recordId: pending.recordId };
 }
 
 const RATE_RE = /^\d{1,12}(?:\.\d{1,6})?$/;

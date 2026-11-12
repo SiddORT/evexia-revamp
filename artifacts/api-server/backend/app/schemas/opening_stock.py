@@ -129,6 +129,10 @@ class OpeningSaved(OpeningReviewedRow):
     after: str
     historicalData: str
     activity: list[MovementActivity]
+    version: int = 1
+    updatedAt: datetime | None = None
+    updatedBy: str | None = None
+    revisions: list[dict] = Field(default_factory=list)
 
 
 class OpeningResult(BaseModel):
@@ -189,3 +193,43 @@ class OpeningImportReview(BaseModel):
     reviewToken: str | None
     summary: OpeningSummary
     command: OpeningInput | None
+
+
+class OpeningEditInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expectedVersion: int = Field(ge=1)
+    itemKind: Literal["allergen", "combo"]
+    itemId: uuid.UUID
+    quantity: str
+    unitRate: str
+    locationId: uuid.UUID | None = None
+    recordedDate: date
+    expiryDate: date | None = None
+
+    _recorded = field_validator("recordedDate", mode="before")(OpeningInput.recorded_date.__func__)
+    _expiry = field_validator("expiryDate", mode="before")(OpeningRow.expiry_date.__func__)
+
+    @model_validator(mode="after")
+    def valid_business_fields(self):
+        # Reuse exactly the create decimal contract, without accepting editable IDs.
+        fields = self.model_dump(include={"itemKind", "itemId", "quantity", "unitRate", "locationId", "expiryDate"})
+        fields["unitRate"] = self.unitRate.strip() or "0"
+        row = OpeningRow(sourceId=uuid.UUID(int=0), rowId=uuid.UUID(int=0), **fields)
+        if Decimal(row.quantity) <= 0:
+            raise ValueError("Opening corrections require a positive quantity.")
+        self.quantity, self.unitRate = row.quantity, row.unitRate
+        return self
+
+
+class OpeningEditCreate(OpeningEditInput):
+    idempotencyKey: uuid.UUID
+    reviewToken: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class OpeningEditReview(BaseModel):
+    before: OpeningSaved
+    after: OpeningReviewedRow
+    recordedDate: date
+    expectedVersion: int
+    reviewToken: str
+    inventoryEffect: str

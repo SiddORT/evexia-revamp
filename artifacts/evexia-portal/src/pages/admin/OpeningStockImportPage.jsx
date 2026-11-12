@@ -111,7 +111,7 @@ export default function OpeningStockImportPage() {
     lock.current = true; setBusy('commit'); setMessage('');
     const key = keyRef.current || (keyRef.current = newId());
     try {
-      const done = await journaled(key, () => commitOpening({ ...review.command, idempotencyKey: key, reviewToken: review.reviewToken }));
+      const done = await journaled(key, () => commitOpening({ ...review.command, idempotencyKey: key, reviewToken: review.reviewToken }), { intent: 'import' });
       keyRef.current = null; setResult({ posted: done.postedCount, already: done.alreadyImportedCount, records: done.records?.length ?? 0 });
       if (done.postedCount > 0) recordLocalAction('opening_stock', 'imported');
       setFile(null); setReview(null); if (input.current) input.current.value = '';
@@ -124,7 +124,7 @@ export default function OpeningStockImportPage() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Import</p><h1>Import opening stock</h1><p className="admin-page-head__description">Download the sample catalogue, fill quantity, unit rate, optional location and optional expiry date for the rows you need, then review before committing.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => leaveGuard(BASE)}><ArrowLeft size={16} /> All opening stock</button></div></div>
     <MasterImportTabs kind="opening-stock" />
-    <OpeningPendingBanner refreshSignal={tick} onResolved={(r) => { keyRef.current = null; setBlocked(false); if (r.state === 'committed') { recordLocalAction('opening_stock', 'imported'); setFile(null); setReview(null); setResult({ posted: r.result?.postedCount ?? 0, already: r.result?.alreadyImportedCount ?? 0, records: r.result?.records?.length ?? 0 }); return; } setMessage('The earlier import was not committed. Your file and review are kept.'); setTick((t) => t + 1); }} />
+    <OpeningPendingBanner refreshSignal={tick} onResolved={(r) => { const own = r.key === keyRef.current || r.intent === 'import'; keyRef.current = null; setBlocked(false); if (!own) { setReview(null); setTick((t) => t + 1); return; } if (r.state === 'committed') { recordLocalAction('opening_stock', 'imported'); setFile(null); setReview(null); setResult({ posted: r.result?.postedCount ?? 0, already: r.result?.alreadyImportedCount ?? 0, records: r.result?.records?.length ?? 0 }); return; } setMessage('The earlier import was not committed. Your file and review are kept.'); setTick((t) => t + 1); }} />
     {message && <div className="admin-feedback" role="status" data-testid="text-opening-import-message">{message}</div>}
     <section className="admin-panel" aria-label="Opening stock import"><div className="ms-form-body">
       <div className="ms-head-actions">

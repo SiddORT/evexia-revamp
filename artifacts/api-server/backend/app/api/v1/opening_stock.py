@@ -9,9 +9,10 @@ from app.services.auth import Identity
 from app.schemas.opening_stock import (
     OpeningInput, OpeningCreate, OpeningReview, OpeningResult, OpeningPage,
     OpeningSaved, OpeningSummary, OpeningActivityPage, OpeningReferencePage,
-    OpeningReconciliation, OpeningImportReview,
+    OpeningReconciliation, OpeningImportReview, OpeningEditInput, OpeningEditCreate, OpeningEditReview,
 )
 from app.services import opening_stock as service, opening_stock_transfer as transfer
+from app.services import opening_stock_corrections as corrections
 from app.services.downloads import server_record
 from app.services.purchase_received_crypto import PRError
 # Same inert bounded raw/multipart reader used by the existing master transfers.
@@ -21,8 +22,9 @@ from app.services.languages import LanguageError
 router = APIRouter(prefix="/admin/opening-stock", tags=["Opening Stock"])
 manager = operation_router("opening_stock", {
     "sample": "import", "export": "export", "import_review": "import", "listing": None,
-    "detail": None, "references": None, "reconcile": ("add", "import"),
+    "detail": None, "references": None, "reconcile": ("add", "import", "edit"),
     "preview": ("add", "import"), "create": ("add", "import"),
+    "edit_preview": "edit", "edit_commit": "edit",
 })
 
 
@@ -87,6 +89,16 @@ def listing(query: str = Query("", max_length=200), offset: int = Query(0, ge=0,
 @router.get("/{record_id}", response_model=OpeningSaved, operation_id="getOpeningStock")
 def detail(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return service.detail(db, actor, record_id)
+
+
+@router.post("/{record_id}/edit/preview", response_model=OpeningEditReview, operation_id="previewOpeningStockEdit")
+def edit_preview(record_id: uuid.UUID, body: OpeningEditInput, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return corrections.preview(db, actor, record_id, body)
+
+
+@router.post("/{record_id}/edit", response_model=OpeningResult, operation_id="editOpeningStock")
+def edit_commit(record_id: uuid.UUID, body: OpeningEditCreate, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return corrections.commit(db, actor, record_id, body)
 
 
 @router.get("/{record_id}/activity", response_model=OpeningActivityPage, operation_id="getOpeningStockActivity")

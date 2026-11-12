@@ -110,7 +110,8 @@
     "0094_language_low_stock_merge": "ab5796b9c78edab4f8a8633dae47d11cb9c7066868d4f9ce42bd92a8d974e4cf",
     "0095_quantity_staged_merge": "c1cf56d1252dc2c7bf75607d7284158e7faed2eb9823dd28b3be1843c1e9625a",
     "0096_hsn_master": "c4121c76ad5c8acd1c7c65a4ba235252c96230452c1f66993e470f8c59018053",
-    "0097_hsn_staged_merge": "a885e527fb30c91330d0691fbecb33e91e3804789393ba0bde7ad7d15fd8dc28"
+    "0097_hsn_staged_merge": "a885e527fb30c91330d0691fbecb33e91e3804789393ba0bde7ad7d15fd8dc28",
+    "0098_opening_corrections": "6d4cd35d6608216aaa9d8fb367e8040bcf67fdf5397aa88dc85fb8a773a6dfce"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

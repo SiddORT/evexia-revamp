@@ -12,7 +12,7 @@ const browserActions = {
   product_create: 'Product combo created', product_edit: 'Product combo recipe or prices updated',
   product_status: 'Product combo status changed', product_delete: 'Product combo deleted',
   product_assembled: 'Product combo assembled', inventory_moved: 'Stock transferred',
-  opening_stock_created: 'Opening stock recorded', opening_stock_imported: 'Opening stock imported',
+  opening_stock_created: 'Opening stock recorded', opening_stock_imported: 'Opening stock imported', opening_stock_corrected: 'Opening stock corrected',
   inventory_allocated: 'Unallocated opening stock allocated',
   opening_balance_create: 'Opening balance created', opening_balance_edit: 'Opening balance updated',
   opening_balance_status: 'Opening balance status changed', opening_balance_delete: 'Opening balance deleted',

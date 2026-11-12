@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from app.core.security import utcnow
 from app.db.models import AuditEvent
-from app.db.opening_stock_models import OpeningStock as Opening, OpeningStockRequest as Retry
+from app.db.opening_stock_models import OpeningStock as Opening, OpeningStockRequest as Retry, OpeningStockRevision as Revision
 from app.db.inventory_models import InventoryLot as Lot
 from app.db.allergen_models import AllergenProduct
 from app.db.product_models import ComboProduct
@@ -17,7 +17,7 @@ HISTORY = "Pre-system batch, expiry, receipt and assembly history unavailable; n
 DATED_HISTORY = "Expiry explicitly entered at opening; pre-system batch, receipt and assembly history unavailable; no historical values inferred."
 SCOPE = ("All matching committed opening records, not current stock or sales revenue. Opening value is exact "
          "canonical quantity × retained two-place unit rate, rounded half-up to hundredths, not an accounting valuation. "
-         "Quantities/values grouped by item, established unit and original location; movements never rewrite openings.")
+         "Current reviewed revisions grouped by item, established unit and corrected opening location; original evidence is retained.")
 
 
 def value(quantity, rate):
@@ -74,11 +74,33 @@ def same_input(saved, row):
         saved.get("expiryDate") == (row.expiryDate.isoformat() if row.expiryDate else None)
 
 
-def review_row(db, crypto, row, recorded_date):
+def retained_versions(db, crypto, opening):
+    original = crypto.open(opening.id, "opening", opening.payload_ciphertext)
+    revisions = inv.bounded(db, select(Revision).where(Revision.opening_id == opening.id).order_by(Revision.version))
+    history = [crypto.open(r.id, "opening_revision", r.payload_ciphertext) for r in revisions]
+    if any(row.version != index or snapshot.get("version") != index
+           or snapshot["after"].get("id") != str(opening.id)
+           or snapshot["after"].get("sourceId") != str(opening.source_id)
+           or snapshot["after"].get("rowId") != str(opening.row_id)
+           for index, (row, snapshot) in enumerate(zip(revisions, history), 2)):
+        raise PRError("Opening revision history is incomplete or inconsistent.", 409, "opening_history")
+    return original, history
+
+
+def projection(db, crypto, opening):
+    original, history = retained_versions(db, crypto, opening)
+    current = dict(history[-1]["after"] if history else original)
+    current.update(version=len(history) + 1, revisions=history,
+        activity=original["activity"] + [h["activity"] for h in history])
+    return current
+
+
+def review_row(db, crypto, row, recorded_date, *, correction=False):
     old = existing(db, row)
-    if old:
-        saved = crypto.open(old.id, "opening", old.payload_ciphertext)
-        if not same_input(saved, row):
+    if old and not correction:
+        original, history = retained_versions(db, crypto, old)
+        saved = next((r for r in [original] + [h["after"] for h in history] if same_input(r, row)), None)
+        if not saved:
             raise PRError("This source/row identity is already posted with different values. It cannot be reused.", 409, "opening_source_conflict")
         # Backups retain their recorded date; re-upload cannot relabel it.
         fields = {k: saved[k] for k in ("productName", "unit", "location", "itemVersion", "openingValue")}
@@ -141,7 +163,7 @@ def create(db, actor, body):
                 continue
             if reviewed["state"] == "already_imported":
                 old = existing(db, row)
-                records.append(crypto.open(old.id, "opening", old.payload_ciphertext))
+                records.append({**projection(db, crypto, old), "state": "already_imported"})
                 already += 1
                 continue
             now, oid, lid = utcnow(), uuid.uuid4(), uuid.uuid4()
@@ -197,12 +219,12 @@ def reconcile(db, actor, key):
                 payload_ciphertext=crypto.seal(key, "opening_retry", None)))
         return dict(state="committed" if row and row.digest != "cancelled" else "not_committed",
                     result=result(current, "opening_stock", crypto.open(key, "opening_retry", row.payload_ciphertext)) if row else None)
-    return inv.transaction(db, actor, work, capability=("opening_stock", ("add", "import")))
+    return inv.transaction(db, actor, work, capability=("opening_stock", ("add", "import", "edit")))
 
 
 def matching(db, crypto, query=""):
     rows = inv.bounded(db, select(Opening).order_by(Opening.created_at.desc(), Opening.id))
-    data = [crypto.open(r.id, "opening", r.payload_ciphertext) for r in rows]
+    data = [projection(db, crypto, r) for r in rows]
     term = query.strip().casefold()
     return [r for r in data if term in " ".join((r["productName"], r["itemKind"], r["itemId"],
             r["location"]["name"], r["actor"], r["recordedDate"], r["id"])).casefold()], len(data)
@@ -221,7 +243,7 @@ def detail(db, actor, record_id, section=None):
         row = db.get(Opening, record_id)
         if not row:
             raise PRError("Opening stock record not found.", 404, "opening_not_found")
-        data = crypto.open(row.id, "opening", row.payload_ciphertext)
+        data = projection(db, crypto, row)
         if section == "analytics":
             return summary([data])
         if section == "activity":

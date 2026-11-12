@@ -10,6 +10,7 @@ from app.db.base import Base
 class InventoryLot(Base):
     __tablename__ = "inventory_lots"
     __table_args__ = (UniqueConstraint("receipt_id", "line_id", name="uq_inventory_receipt_line"),
+                      UniqueConstraint("opening_id", "opening_revision", name="uq_inventory_opening_revision"),
                       CheckConstraint("accepted >= 0 AND accepted <= 1000000 AND accepted = round(accepted,3)", name="ck_inventory_accepted"))
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     receipt_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("purchase_receipts.id"), index=True)
@@ -17,7 +18,8 @@ class InventoryLot(Base):
     product_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("allergen_products.id"), index=True)
     combo_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("combo_products.id"), index=True)
     assembly_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("product_assemblies.id"), unique=True)
-    opening_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("opening_stock.id"), unique=True)
+    opening_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("opening_stock.id"))
+    opening_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     adjustment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_adjustments.id"), unique=True)
     reserve_movement_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_movements.id"), index=True)
     origin_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))

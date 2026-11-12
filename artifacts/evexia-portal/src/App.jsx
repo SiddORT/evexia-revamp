@@ -166,6 +166,7 @@ function App() {
       <Route path="/admin/masters/opening-stock" component={OpeningStockMaster} />
       <Route path="/admin/masters/opening-stock/new" component={OpeningStockFormPage} />
       <Route path="/admin/masters/opening-stock/import" component={OpeningStockImportPage} />
+      <Route path="/admin/masters/opening-stock/:id/edit" component={OpeningStockFormPage} />
       <Route path="/admin/masters/products" component={ProductMaster} />
       <Route path="/admin/masters/products/new">{() => <ProductFormPage />}</Route>
       <Route path="/admin/masters/products/assemble" component={ProductAssemblyPage} />

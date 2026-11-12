@@ -21,7 +21,7 @@ MASTER_RESOURCES = {
     "vendor": CRUD_TRANSFER,
     "sales_target": CRUD_TRANSFER,
     "opening_balance": CRUD_TRANSFER,
-    "opening_stock": ("view", "add", "import", "export"),
+    "opening_stock": ("view", "add", "edit", "import", "export"),
 }
 PROCUREMENT_ACTIONS = (
     "view", "add", "edit", "delete", "export", "print",

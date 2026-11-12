@@ -2,6 +2,7 @@
 BROWSER_ACTIONS = {
     "opening_stock_created": "Opening stock recorded",
     "opening_stock_imported": "Opening stock imported",
+    "opening_stock_corrected": "Opening stock corrected",
     "inventory_allocated": "Unallocated opening stock allocated",
     "product_create": "Product combo created", "product_edit": "Product combo recipe or prices updated",
     "product_status": "Product combo status changed", "product_delete": "Product combo deleted",

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { containDialogTab } from './dialogKeyboard.js';
+import OpeningRevisionHistory from './OpeningRevisionHistory.jsx';
 import { getOpening, money, valueMoney, locationLabel } from '../../services/openingStock.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import '../../inventoryServer.css';
@@ -53,6 +54,7 @@ export default function OpeningDrawer({ id, onClose, returnFocusTo }) {
           <div><dt>Recorded date</dt><dd>{date(o.recordedDate)}</dd></div>
           <div><dt>Expiry date</dt><dd>{o.expiryDate ? date(o.expiryDate) : 'Unknown / unavailable'}</dd></div>
         </dl>}
+      {o && <OpeningRevisionHistory opening={o} />}
     </div>
   </dialog>;
 }

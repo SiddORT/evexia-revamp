@@ -972,10 +972,10 @@ export const inHouseStockRequest = (path, options) => purchaseOrderRequest(path,
 export async function openingStockRequest(path = '', { body, params = {}, signal, method, file, download } = {}) {
   const exportDisplay = download && path === '/export' ? exportPreferenceHeader(captureExportPreferences()) : null;
   const uid = '[0-9a-f-]{36}';
-  const ok = new RegExp(`^(?:|/references/items|/preview|/sample|/export|/import/review|/requests/${uid}|/${uid}(?:/(?:activity|analytics))?)$`, 'i');
+  const ok = new RegExp(`^(?:|/references/items|/preview|/sample|/export|/import/review|/requests/${uid}|/${uid}(?:/(?:activity|analytics|edit(?:/preview)?))?)$`, 'i');
   if (!ok.test(path)) throw new SessionError('Unsupported opening stock operation.');
   const writing = body !== undefined || file !== undefined;
-  const mutation = writing && path !== '/preview' && path !== '/import/review';
+  const mutation = writing && !path.endsWith('/preview') && path !== '/import/review';
   const epoch = generation; const owner = state.user?.id;
   const check = () => {
     signal?.throwIfAborted();
@@ -1023,6 +1023,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
   }
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (mutation) {
+    const editing = /^\/[0-9a-f-]{36}\/edit$/i.test(path);
     const expected = new Set((body?.rows || []).map((r) => `${r.sourceId}:${r.rowId}`));
     const expectedExpiry = new Map((body?.rows || []).map((r) => [`${r.sourceId}:${r.rowId}`, r.expiryDate ?? null]));
     const returned = new Set((data?.records || []).map((r) => `${r.sourceId}:${r.rowId}`));
@@ -1034,8 +1035,11 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
         || data.postedCount + data.alreadyImportedCount !== data.records.length
         || returned.size !== data.records.length
         || data.records.some((r) => !uuidPattern.test(r.id) || !uuidPattern.test(r.lotId)
-          || !expected.has(`${r.sourceId}:${r.rowId}`) || r.source !== 'opening'
-          || (r.expiryDate ?? null) !== expectedExpiry.get(`${r.sourceId}:${r.rowId}`)
+          || (!editing && !expected.has(`${r.sourceId}:${r.rowId}`)) || r.source !== 'opening'
+          || (editing ? r.id !== path.split('/')[1] || r.version !== body.expectedVersion + 1
+            || r.itemId !== body.itemId || r.itemKind !== body.itemKind || r.locationId !== body.locationId
+            || r.recordedDate !== body.recordedDate || (r.expiryDate ?? null) !== (body.expiryDate ?? null)
+            : r.state !== 'already_imported' && (r.expiryDate ?? null) !== expectedExpiry.get(`${r.sourceId}:${r.rowId}`))
           || !savedQuantity(r.quantity) || !/^\d+\.\d{2}$/.test(r.unitRate))) {
       const e = new SessionError('The server save response is incomplete. Keep this draft and check the save outcome before another save.');
       e.ambiguous = true; throw e;

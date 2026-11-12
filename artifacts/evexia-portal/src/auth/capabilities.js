@@ -26,7 +26,7 @@ export const MASTER_CATALOGUE = Object.freeze([
   { key: 'vendor', label: 'Vendor', path: 'vendors', import: 'vendor' },
   { key: 'sales_target', label: 'Sales Target', path: 'sales-targets', import: 'sales-target' },
   { key: 'opening_balance', label: 'Opening Balance', path: 'opening-balances', import: 'opening-balance' },
-  { key: 'opening_stock', label: 'Opening Stock', path: 'opening-stock', import: 'opening-stock', actions: ['view', 'add', 'import', 'export'] },
+  { key: 'opening_stock', label: 'Opening Stock', path: 'opening-stock', import: 'opening-stock', actions: ['view', 'add', 'edit', 'import', 'export'] },
 ]);
 export const MASTER_PERMISSIONS = Object.freeze(MASTER_CATALOGUE.flatMap((master) =>
   ZONE_PERMISSIONS.filter(({ key }) => !master.actions || master.actions.includes(key.split('.')[1])).map(({ key, label, hint }) => ({
@@ -104,11 +104,12 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
     : action === null ? canReadResource(user, key) : hasCapability(user, key, action);
   const uuid = /^\/[0-9a-f-]{36}$/i;
   if (resource === 'opening-stock') {
+    if (/^\/[0-9a-f-]{36}\/edit(?:\/preview)?$/i.test(path)) return writing && grant('edit');
     if (['/sample', '/import/review'].includes(path)) return grant('import');
     if (path === '/export') return grant('export');
     if ((path === '' && writing) || path === '/preview') return grant(body?.mode === 'import' ? 'import' : 'add');
-    if (/^\/requests\/[0-9a-f-]{36}$/i.test(path)) return grant(['add', 'import']);
-    return !writing && (path === '' || path === '/references/items' || uuid.test(path)) && grant(null);
+    if (/^\/requests\/[0-9a-f-]{36}$/i.test(path)) return grant(['add', 'import', 'edit']);
+    return !writing && (path === '' || path === '/references/items' || uuid.test(path) || /^\/[0-9a-f-]{36}\/(?:activity|analytics)$/i.test(path)) && grant(null);
   }
   if (resource === 'products') {
     if (['/sample', '/import/review', '/import/commit'].includes(path)) return grant('import');
@@ -198,6 +199,7 @@ export const staffPathAllowed = (path, user) => {
     const master = MASTER_CATALOGUE.find((item) => item.import === imported[1]);
     return Boolean(master && hasMasterPermission(user, master.key, 'import'));
   }
+  if (/^\/admin\/masters\/opening-stock\/[0-9a-f-]{36}\/edit$/i.test(path)) return hasCapability(user, 'opening_stock', 'edit');
   const match = /^\/admin\/masters\/([^/]+)(?:\/([^/]+))?$/.exec(path);
   if (!match) return false;
   const master = MASTER_CATALOGUE.find((item) => item.path === match[1]);

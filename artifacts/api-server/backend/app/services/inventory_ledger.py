@@ -116,7 +116,7 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
                 continue
             origin = (f"dilution:{lot.reserve_movement_id}" if lot.reserve_movement_id else
                       f"adjustment:{lot.adjustment_id}" if lot.adjustment_id else
-                      f"opening:{lot.opening_id}" if lot.opening_id else None)
+                      (f"opening:{lot.opening_id}" + (f":{lot.opening_revision}" if lot.opening_revision > 1 else "")) if lot.opening_id else None)
             credits = [p for p in raw if p.lot_id == lot.id and
                        (p.source_key == origin if origin else p.source_key.startswith(f"receipt:{lot.receipt_id}:"))]
             if sum((p.delta for p in credits), Decimal(0)) + source_residual(db, lot.id) != rounded_quantity(lot.accepted):
@@ -202,13 +202,27 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
                 tx, kind, available = "adjustment", "adjustment", True
                 actor_name, reason = data["actor"], data["reason"]
                 reference = f"Adjustment {sid[:8]}" + (f" · correction of {data['correctionOf']}" if data.get("correctionOf") else "")
-            elif first.source_key.startswith("opening:"):
+            elif first.source_key.startswith(("opening:", "opening-reversal:")):
                 record = db.get(OpeningStock, lot.opening_id) if lot.opening_id else None
                 data = crypto.open(record.id, "opening", record.payload_ciphertext) if record else {}
+                reversal = first.source_key.startswith("opening-reversal:")
+                version = int(first.source_key.split(":")[2]) if len(first.source_key.split(":")) == 3 else 1
+                correction = None
+                if version > 1 and record:
+                    from app.db.opening_stock_models import OpeningStockRevision
+                    revision = db.scalar(select(OpeningStockRevision).where(
+                        OpeningStockRevision.opening_id == record.id, OpeningStockRevision.version == version))
+                    if not revision:
+                        fail("An opening correction has missing revision evidence.")
+                    correction = crypto.open(revision.id, "opening_revision", revision.payload_ciphertext)
+                    data = correction["after"]
                 tx, kind, sid, available = "opening", "opening", str(lot.opening_id) if lot.opening_id else None, bool(record)
-                business, actor_name = data.get("recordedDate"), data.get("actor", actor_name)
-                reason = data.get("remarks") or data.get("reason") or reason
+                business = data.get("recordedDate")
+                actor_name = correction["activity"]["actor"] if correction else data.get("actor", actor_name)
+                reason = ("Audited correction: reversal of prior revision" if reversal else
+                          "Audited correction: replacement opening" if correction else "Original opening stock initialization")
                 reference = f"Opening stock {sid[:8]}" if sid else "Opening stock · source unavailable"
+                reference += f" · revision {version}" + (" · reversal" if reversal else "")
             elif first.source_key.startswith("disposal:"):
                 from app.db.expiry_models import ExpiryDisposal
                 sid = first.source_key.split(":")[1]
