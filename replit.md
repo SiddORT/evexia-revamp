@@ -1,5 +1,16 @@
 # Automatic migration policy
 
+Language Master status actions use Zone badges/power confirmations, with
+Activate/Deactivate wording and no row/card History action. Retain the protected
+history API and post-deletion history link; transfers remain name-only and
+Patient/order choices remain unchanged. The declared `0093_language_status`
+branches from `0089_it_material_pricing`; the DDL-free staged
+`0094_language_low_stock_merge` preserves one source head without activating the
+unrelated low-stock branch. See `docs/language-status-actions.md`.
+This delivery used source/diff review and generation only: no tests, checks,
+builds/typechecks, runtime/browser probes, service starts/restarts, migrations,
+deployments or live writes. Runtime behavior remains unverified.
+
 Invoice Details and the distinct MR invoice template category are Settings-only.
 Protected shared issuer/payment/legal configuration has encrypted append-only
 history; template style defaults remain browser-local. MR Accounts, live

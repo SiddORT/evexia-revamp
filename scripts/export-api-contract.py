@@ -145,16 +145,19 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock"], help="Merge only the low-stock contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
     contract = normalize_spec(app.openapi())
-    if args.scope == "low-stock":
+    if args.scope:
         original = (args.base_contract or args.output).read_text(encoding="utf-8")
         existing = json.loads(original)
         selected = {path: item for path, item in contract["paths"].items()
-                    if path.startswith("/v1/admin/low-stock-settings") or path.endswith("/low-stock-alerts")}
+                    if (args.scope == "low-stock" and
+                        (path.startswith("/v1/admin/low-stock-settings") or path.endswith("/low-stock-alerts")))
+                    or (args.scope == "languages" and
+                        (path == "/v1/admin/languages" or path.startswith("/v1/admin/languages/")))}
         needed = set()
 
         def collect(value):
@@ -174,7 +177,8 @@ def main() -> None:
         collect(selected)
         schema_updates = {}
         for name in needed:
-            if name.startswith("LowStock") or name not in existing["components"]["schemas"]:
+            prefix = "Language" if args.scope == "languages" else "LowStock"
+            if name.startswith(prefix) or name not in existing["components"]["schemas"]:
                 schema_updates[name] = contract["components"]["schemas"][name]
         # Preserve handwritten contract formatting and unrelated refinements,
         # not just their parsed values. Only scoped member values are replaced.

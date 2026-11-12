@@ -20,9 +20,12 @@ permission to access or deploy to production.
 Staged migrations can be merged ahead of the application's declared schema.
 Such staged source must not implicitly advance the coordinated contract
 or prevent restarting the already-compatible application.
+When advancing the contract for a scoped feature, keep unrelated staged work
+outside its declared ancestry rather than blindly pinning the latest source head.
 
 **Why:** A staged operator migration made the production source-head invariant
 block development setup even though the approved database needed no upgrade.
+Advancing a scoped feature must not incidentally activate unrelated staged workers.
 
 **How to apply:** Validate the complete source graph, classifications and hashes
 before planning only the declared development ancestry. Reject unknown, tampered,

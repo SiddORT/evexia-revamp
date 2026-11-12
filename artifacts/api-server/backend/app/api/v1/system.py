@@ -53,6 +53,11 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0093_language_status"], ["0094_language_low_stock_merge"]):
+            db.execute(text("SELECT status FROM languages LIMIT 0"))
+            db.execute(text("SELECT before_status,after_status FROM language_changes LIMIT 0"))
+            revisions = (["0092_low_stock_cron"] if revisions == ["0094_language_low_stock_merge"]
+                         else ["0089_it_material_pricing"])
         if revisions == ["0092_low_stock_cron"]:
             from app.services.low_stock_settings import ready as low_stock_ready
             low_stock_ready(db)

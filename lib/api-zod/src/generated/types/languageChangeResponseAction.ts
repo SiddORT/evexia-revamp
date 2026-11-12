@@ -13,4 +13,5 @@ export const LanguageChangeResponseAction = {
   create: "create",
   edit: "edit",
   delete: "delete",
+  status: "status",
 } as const;

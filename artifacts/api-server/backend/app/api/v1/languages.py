@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import master_router
 from app.db.session import get_db
-from app.schemas.languages import LanguageFields, LanguageEdit, LanguageVersion, LanguageResponse, LanguagePage, LanguageHistory
+from app.schemas.languages import LanguageFields, LanguageEdit, LanguageStatus, LanguageVersion, LanguageResponse, LanguagePage, LanguageHistory
 from app.schemas.languages import LanguageReview, LanguageImportResult
 from app.services.auth import Identity
 from app.services import languages, language_transfer
@@ -134,6 +134,11 @@ def edit(language_id: uuid.UUID, body: LanguageEdit, actor: Identity = Depends(m
 @router.post("/{language_id}/delete", response_model=LanguageResponse, operation_id="deleteLanguage")
 def delete(language_id: uuid.UUID, body: LanguageVersion, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return languages.mutate(db, actor, language_id, body, "delete")
+
+
+@router.post("/{language_id}/status", response_model=LanguageResponse, operation_id="statusLanguage")
+def status(language_id: uuid.UUID, body: LanguageStatus, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return languages.mutate(db, actor, language_id, body, "status")
 
 
 @router.get("/{language_id}/history", response_model=LanguageHistory, operation_id="getLanguageHistory")

@@ -2,6 +2,8 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0093_language_status": "automatic",
+    "0094_language_low_stock_merge": "automatic",
     "0092_low_stock_cron": "automatic",
     "0091_low_stock_alerts": "automatic",
     "0089_invoice_settings": "automatic",

@@ -33,9 +33,14 @@ class LanguageEdit(LanguageFields, LanguageVersion):
     pass
 
 
+class LanguageStatus(LanguageVersion):
+    status: Literal["active", "inactive"]
+
+
 class LanguageResponse(LanguageFields):
     master_read = True
     id: uuid.UUID
+    status: Literal["active", "inactive"]
     version: int
     createdBy: str
     updatedBy: str
@@ -55,12 +60,14 @@ class LanguagePage(BaseModel):
 
 class LanguageChangeResponse(BaseModel):
     id: uuid.UUID
-    action: Literal["create", "edit", "delete"]
+    action: Literal["create", "edit", "delete", "status"]
     version: int
     actor: str
     at: datetime
     beforeName: str | None
     afterName: str
+    beforeStatus: Literal["active", "inactive"] | None
+    afterStatus: Literal["active", "inactive"] | None
 
 
 class LanguageSummary(BaseModel):
@@ -68,6 +75,7 @@ class LanguageSummary(BaseModel):
     creates: int
     edits: int
     deletes: int
+    statusChanges: int
     total: int
     latestChange: datetime | None
 

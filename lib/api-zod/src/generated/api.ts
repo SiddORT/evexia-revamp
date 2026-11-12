@@ -2763,6 +2763,7 @@ export const listLowStockAlertsQueryLimitDefault = 25;
 export const listLowStockAlertsQueryLimitMax = 100;
 export const listLowStockAlertsResponseTotalMin = 0;
 export const listLowStockAlertsResponseFilteredMin = 0;
+export const statusLanguageResponseNameMax = 200;
 
 /**
  * @summary <Lambda>
@@ -20692,6 +20693,7 @@ export const ListLanguagesResponse = zod.object({
       deletedBy: zod.union([zod.string(), zod.null()]),
       id: zod.string().uuid(),
       name: zod.string().min(1).max(listLanguagesResponseItemsItemNameMax),
+      status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
       version: zod.number().int(),
@@ -20717,6 +20719,7 @@ export const CreateLanguageResponse = zod.object({
   deletedBy: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(createLanguageResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
@@ -20834,6 +20837,7 @@ export const GetLanguageResponse = zod.object({
   deletedBy: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(getLanguageResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
@@ -20857,6 +20861,7 @@ export const DeleteLanguageResponse = zod.object({
   deletedBy: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(deleteLanguageResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
@@ -20881,6 +20886,7 @@ export const EditLanguageResponse = zod.object({
   deletedBy: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editLanguageResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
@@ -20911,11 +20917,13 @@ export const GetLanguageHistoryQueryParams = zod.object({
 export const GetLanguageHistoryResponse = zod.object({
   items: zod.array(
     zod.object({
-      action: zod.enum(["create", "edit", "delete"]),
+      action: zod.enum(["create", "edit", "delete", "status"]),
       actor: zod.string(),
       afterName: zod.string(),
+      afterStatus: zod.union([zod.enum(["active", "inactive"]), zod.null()]),
       at: zod.coerce.date(),
       beforeName: zod.union([zod.string(), zod.null()]),
+      beforeStatus: zod.union([zod.enum(["active", "inactive"]), zod.null()]),
       id: zod.string().uuid(),
       version: zod.number().int(),
     }),
@@ -20929,6 +20937,7 @@ export const GetLanguageHistoryResponse = zod.object({
     deletedBy: zod.union([zod.string(), zod.null()]),
     id: zod.string().uuid(),
     name: zod.string().min(1).max(getLanguageHistoryResponseRecordNameMax),
+    status: zod.enum(["active", "inactive"]),
     updatedAt: zod.coerce.date(),
     updatedBy: zod.string(),
     version: zod.number().int(),
@@ -20939,6 +20948,7 @@ export const GetLanguageHistoryResponse = zod.object({
     edits: zod.number().int(),
     latestChange: zod.union([zod.coerce.date(), zod.null()]),
     scope: zod.string(),
+    statusChanges: zod.number().int(),
     total: zod.number().int(),
   }),
   total: zod.number().int(),
@@ -48208,4 +48218,29 @@ export const ListLowStockAlertsResponse = zod.object({
   asOf: zod.coerce.date(),
   offset: zod.number().int(),
   limit: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const StatusLanguageParams = zod.object({
+  language_id: zod.coerce.string().uuid(),
+});
+
+export const StatusLanguageBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const StatusLanguageResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  deletedBy: zod.union([zod.string(), zod.null()]),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(statusLanguageResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
 });

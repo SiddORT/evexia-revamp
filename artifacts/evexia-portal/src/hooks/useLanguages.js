@@ -44,6 +44,8 @@ export default function useLanguages(query, page, pageSize) {
     clearFeedback: () => setFeedback(''),
     add: (values) => apply(() => service.createLanguage(values), 'Language added to shared records.'),
     edit: (record, values) => apply(() => service.editLanguage(record, values), 'Language updated.'),
+    changeStatus: (record, status) => apply(() => service.statusLanguage(record, status),
+      status === 'active' ? 'Language activated.' : 'Language deactivated.'),
     remove: (record) => apply(() => service.deleteLanguage(record), 'Language deleted. Server history retained.'),
   };
 }

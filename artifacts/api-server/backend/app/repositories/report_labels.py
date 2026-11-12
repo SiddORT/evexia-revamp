@@ -7,7 +7,7 @@ BROWSER_ACTIONS = {
     "product_status": "Product combo status changed", "product_delete": "Product combo deleted",
     "product_assembled": "Product combo assembled", "inventory_moved": "Stock transferred",
     "language_create": "Language created", "language_edit": "Language updated",
-    "language_delete": "Language deleted",
+    "language_delete": "Language deleted", "language_status": "Language status changed",
     "allergen_create": "Allergen product created", "allergen_edit": "Allergen product updated",
     "allergen_status": "Allergen product status changed", "allergen_delete": "Allergen product deleted",
     "opening_balance_create": "Opening balance created", "opening_balance_edit": "Opening balance updated",

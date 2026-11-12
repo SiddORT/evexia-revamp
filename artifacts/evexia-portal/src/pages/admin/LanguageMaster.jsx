@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { Download, Languages, Pencil, Plus, ScrollText, Search, Trash2, Upload } from 'lucide-react';
+import { CirclePower, Download, Languages, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { useAdminDateFormatters, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
+import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import LanguageForm from '../../components/admin/LanguageForm.jsx';
 import LanguageDrawer from '../../components/admin/LanguageDrawer.jsx';
@@ -47,7 +48,7 @@ function LanguageWorkspace() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const { languages, total, filtered, loading, pending, error, feedback, clearFeedback: clearHookFeedback, retry, add, edit, remove } = useLanguages(search, page, pageSize);
+  const { languages, total, filtered, loading, pending, error, feedback, clearFeedback: clearHookFeedback, retry, add, edit, remove, changeStatus } = useLanguages(search, page, pageSize);
   const clearFeedback = () => { clearHookFeedback(); setDeleted(null); };
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
@@ -72,16 +73,21 @@ function LanguageWorkspace() {
     if (result.success) setEditing(null);
     return result;
   }
-  async function confirmDelete() {
-    const result = await remove(confirming);
-    if (result.success) { setDeleted({ id: confirming.id, name: confirming.name }); setConfirming(null); setActionError(''); }
+  async function confirmAction() {
+    const { language, type } = confirming;
+    if (blocked || pending || !(type === 'delete' ? can.delete : can.edit)) return;
+    const result = await (type === 'delete' ? remove(language) : changeStatus(language, type === 'activate' ? 'active' : 'inactive'));
+    if (result.success) {
+      if (type === 'delete') setDeleted({ id: language.id, name: language.name });
+      setConfirming(null); setActionError('');
+    }
     else {
       const stale = result.status === 409 || /stale/.test(result.code || '');
       setActionError(result.error + (stale || result.ambiguous ? ' Cancel and refresh the table before confirming again.' : ''));
       setBlocked(stale || Boolean(result.ambiguous));
     }
   }
-  function requestDelete(language) { clearFeedback(); setActionError(''); setBlocked(false); setConfirming(language); }
+  function requestAction(language, type) { clearFeedback(); setActionError(''); setBlocked(false); setConfirming({ language, type }); }
 
   async function exportMatching(format) {
     if (error || loading || exportBusy.current) return;
@@ -107,20 +113,24 @@ function LanguageWorkspace() {
   function renderActions(language, mobile = false) {
     const cls = mobile ? 'admin-zone-card__action' : 'admin-icon-button';
     const size = mobile ? 14 : 16;
+    const toggleLabel = language.status === 'active' ? 'Deactivate' : 'Activate';
     return <fieldset disabled={loading || pending} style={{ border: 0, padding: 0, margin: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" disabled={!can.protected} className={cls} aria-label={`View details and history for ${language.name}`} title="History is Super Admin-only" onClick={() => setDrawer(language)} data-testid={`button-details-language-${language.id}`}><ScrollText size={size} aria-hidden="true" />{mobile && <span>History</span>}</button>
       <button type="button" disabled={!can.edit} className={cls} aria-label={`Edit ${language.name}`} title="Edit" onClick={() => { clearFeedback(); setEditing(language); }} data-testid={`button-edit-language-${language.id}`}><Pencil size={size} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" disabled={!can.delete} className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${language.name}`} title="Delete" onClick={() => requestDelete(language)} data-testid={`button-delete-language-${language.id}`}><Trash2 size={size} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      <button type="button" disabled={!can.edit} className={cls} aria-label={`${toggleLabel} ${language.name}`} title={toggleLabel} onClick={() => requestAction(language, toggleLabel.toLowerCase())} data-testid={`button-toggle-language-${language.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggleLabel}</span>}</button>
+      <button type="button" disabled={!can.delete} className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${language.name}`} title="Delete" onClick={() => requestAction(language, 'delete')} data-testid={`button-delete-language-${language.id}`}><Trash2 size={size} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
     </fieldset>;
   }
 
   const columns = [
     { key: 'serial', label: 'Sr No', render: (_l, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Language name', render: (l) => <span className="admin-table__name" data-testid={`text-language-name-${l.id}`}>{l.name}</span> },
+    { key: 'status', label: 'Status', render: (l) => <StatusBadge status={l.status} id={l.id} kind="language" /> },
     { key: 'created', label: 'Created details', render: (l) => details(l.createdBy, l.createdAt, timestamp) },
     { key: 'updated', label: 'Updated details', render: (l) => details(l.updatedBy, l.updatedAt, timestamp) },
     { key: 'actions', label: 'Actions', render: (l) => renderActions(l) },
   ];
+
+  const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Deactivate';
 
   return (
     <AdminLayout title="Language Master">
@@ -165,6 +175,7 @@ function LanguageWorkspace() {
                   <article className="admin-zone-card" role="listitem" key={language.id} data-testid={`card-language-${language.id}`}>
                     <div className="admin-zone-card__heading">
                       <div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{startIndex + index + 1}</span><h2 data-testid={`text-language-name-${language.id}`}>{language.name}</h2></div>
+                      <StatusBadge status={language.status} id={language.id} kind="language" />
                     </div>
                     <dl className="admin-zone-card__meta">
                       <div><dt>Created</dt><dd>{details(language.createdBy, language.createdAt, timestamp)}</dd></div>
@@ -185,8 +196,8 @@ function LanguageWorkspace() {
           </>
         )}
       </section>
-      {editing && <LanguageForm language={editing === 'new' ? null : editing} onSave={save} onClose={() => setEditing(null)} />}
-      {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title="Delete language?" description={`Are you sure you want to delete “${confirming.name}”? It will disappear from normal lists. Server history is retained.`} actionLabel="Delete language" destructive onConfirm={confirmDelete} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
+      {editing && <LanguageForm language={editing === 'new' ? null : editing} canSave={editing === 'new' ? can.add : can.edit} onSave={save} onClose={() => setEditing(null)} />}
+      {confirming && <ConfirmationDialog pending={pending} blocked={blocked || !(confirming.type === 'delete' ? can.delete : can.edit)} title={`${actionName} language?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.language.name}”?${confirming.type === 'delete' ? ' It will disappear from normal lists. Server history is retained.' : ''}`} actionLabel={`${actionName} language`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
       {drawer && <LanguageDrawer key={drawer.id} id={drawer.id} name={drawer.name} onClose={() => setDrawer(null)} />}
     </AdminLayout>
   );

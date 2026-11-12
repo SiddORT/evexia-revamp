@@ -259,6 +259,7 @@ import type {
   LanguagePage,
   LanguageResponse,
   LanguageReview,
+  LanguageStatus,
   LanguageVersion,
   LedgerPage,
   ListAllergenReferencesParams,
@@ -47816,3 +47817,120 @@ export function useListLowStockAlerts<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getStatusLanguageUrl = (languageId: string) => {
+  return `/api/v1/admin/languages/${languageId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const statusLanguage = async (
+  languageId: string,
+  languageStatus: LanguageStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LanguageResponse>(getStatusLanguageUrl(languageId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(languageStatus),
+  });
+};
+
+export const getStatusLanguageMutationKey = () => ["statusLanguage"] as const;
+
+export const getStatusLanguageMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof statusLanguage>>,
+    TError,
+    StatusLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof statusLanguage>>,
+  TError,
+  StatusLanguageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getStatusLanguageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof statusLanguage>>,
+    StatusLanguageMutationVariables
+  > = (props) => {
+    const { languageId, data } = props ?? {};
+
+    return statusLanguage(languageId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StatusLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof statusLanguage>>
+>;
+export type StatusLanguageMutationBody = BodyType<LanguageStatus>;
+export type StatusLanguageMutationError = ErrorType<ErrorEnvelope>;
+export type StatusLanguageMutationVariables = {
+  languageId: string;
+  data: BodyType<LanguageStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useStatusLanguage = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof statusLanguage>>,
+    TError,
+    StatusLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof statusLanguage>>,
+  TError,
+  StatusLanguageMutationVariables,
+  TContext
+> => {
+  return useMutation(getStatusLanguageMutationOptions(options));
+};

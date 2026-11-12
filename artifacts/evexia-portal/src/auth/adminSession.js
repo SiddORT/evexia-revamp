@@ -804,7 +804,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   const label = resource === 'languages' ? 'Language' : resource === 'opening-balances' ? 'Opening balance' : resource === 'sales-targets' ? 'Sales target' : resource === 'allergens' ? 'Allergen' : resource === 'vendors' ? 'Vendor' : resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
   const unavailable = resource === 'languages' ? 'language_unavailable' : resource === 'opening-balances' ? 'opening_balance_unavailable' : resource === 'sales-targets' ? 'sales_target_unavailable' : resource === 'allergens' ? 'allergen_unavailable' : resource === 'vendors' ? 'vendor_unavailable' : resource === 'patients' ? 'patient_unavailable' : resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset|doctors))?)$/;
-  const route = resource === 'languages' ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|delete|history))?)$/ : resource === 'sales-targets' ? /^(?:|\/choices|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'allergens' ? /^(?:|\/references\/(?:categories|locations)|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
+  const route = resource === 'languages' ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|history))?)$/ : resource === 'sales-targets' ? /^(?:|\/choices|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'allergens' ? /^(?:|\/references\/(?:categories|locations)|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   const dilutionSetup = resource === 'allergens' && path === '/setup-dilution'
@@ -824,18 +824,18 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   const epoch = generation;
   const readScope = contactReadScope();
   const owner = state.user?.id;
-  let languageCommitDispatched = false;
-  let languageCommitRejected = false;
+  let languageWriteDispatched = false;
+  let languageWriteRejected = false;
   const check = () => {
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
       const error = new SessionError('Your session changed. Sign in again before retrying.', 401);
-      error.ambiguous = languageCommitDispatched && !languageCommitRejected;
+      error.ambiguous = languageWriteDispatched && !languageWriteRejected;
       throw error;
     }
     if (!masterAllowed(state.user, resource, path, body !== undefined || file !== undefined, params)) {
       const error = new SessionError(`${label} access denied.`, 403);
-      error.ambiguous = languageCommitDispatched && !languageCommitRejected;
+      error.ambiguous = languageWriteDispatched && !languageWriteRejected;
       throw error;
     }
   };
@@ -856,9 +856,9 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   });
   let response;
   try {
-    languageCommitDispatched = resource === 'languages' && path === '/import/commit';
+    languageWriteDispatched = resource === 'languages' && writing && path !== '/import/review';
     response = await load();
-    languageCommitRejected = response.status >= 400 && response.status < 500;
+    languageWriteRejected = response.status >= 400 && response.status < 500;
     if (response.status === 401) {
       // A rejected request cannot have mutated data. Renew, but ask the user
       // to explicitly retry writes; reads can safely be repeated once.

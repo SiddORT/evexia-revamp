@@ -6,7 +6,8 @@ import '../../poActivityDrawer.css';
 import '../../inventoryServer.css';
 
 const LIMIT = 10;
-const LABEL = { create: 'Created', edit: 'Edited', delete: 'Deleted' };
+const LABEL = { create: 'Created', edit: 'Edited', delete: 'Deleted', status: 'Status changed' };
+const statusLabel = (status) => status === 'active' ? 'Active' : 'Inactive';
 
 export default function LanguageDrawer({ id, name, onClose }) {
   const { timestamp } = useAdminDateFormatters();
@@ -52,6 +53,7 @@ export default function LanguageDrawer({ id, name, onClose }) {
         {r.deletedAt && <div className="admin-feedback" role="status" data-testid="status-language-deleted">Deleted by {r.deletedBy} on {timestamp(r.deletedAt)}. History is retained as evidence.</div>}
         <dl className="stock-report__meta">
           <div><dt>Language name</dt><dd>{r.name}</dd></div>
+          <div><dt>Status</dt><dd>{statusLabel(r.status)}</dd></div>
           <div><dt>Version</dt><dd>{r.version}</dd></div>
           <div><dt>Created</dt><dd>{r.createdBy}<span className="stock-sub">{timestamp(r.createdAt)}</span></dd></div>
           <div><dt>Last updated</dt><dd>{r.updatedBy}<span className="stock-sub">{timestamp(r.updatedAt)}</span></dd></div>
@@ -62,6 +64,7 @@ export default function LanguageDrawer({ id, name, onClose }) {
             <p>{timestamp(a.at)} · {a.actor}</p>
             {a.action === 'edit' && <p>{a.beforeName} to {a.afterName}</p>}
             {a.action !== 'edit' && <p>{a.afterName}</p>}
+            {a.action === 'status' && <p>{statusLabel(a.beforeStatus)} to {statusLabel(a.afterStatus)}</p>}
           </div></article>)}</div> : <p>No history recorded.</p>}
           {d.total > LIMIT && <div className="inv-banner">
             <button type="button" className="admin-button admin-button--secondary" disabled={state.loading || offset === 0} onClick={() => setOffset(Math.max(0, offset - LIMIT))} data-testid="button-language-history-prev">Previous</button>
@@ -70,7 +73,7 @@ export default function LanguageDrawer({ id, name, onClose }) {
           </div>}
         </section>
         {sum && <section className="inv-drawer-section"><h3>Scope</h3>
-          <p data-testid="text-language-summary">{sum.total} committed change{sum.total === 1 ? '' : 's'}: {sum.creates} create, {sum.edits} edit{sum.edits === 1 ? '' : 's'}, {sum.deletes} delete. Latest change: {sum.latestChange ? timestamp(sum.latestChange) : 'none'}. {sum.scope}</p></section>}
+          <p data-testid="text-language-summary">{sum.total} committed change{sum.total === 1 ? '' : 's'}: {sum.creates} create, {sum.edits} edit{sum.edits === 1 ? '' : 's'}, {sum.deletes} delete, {sum.statusChanges} status change{sum.statusChanges === 1 ? '' : 's'}. Latest change: {sum.latestChange ? timestamp(sum.latestChange) : 'none'}. {sum.scope}</p></section>}
       </>}
     </div>
   </dialog>;

@@ -1,5 +1,14 @@
 # Automatic migration policy
 
+Language status prepares `0093_language_status` as a branch of the previously
+declared `0089_it_material_pricing` target, now the declared development schema.
+The DDL-free `0094_language_low_stock_merge` keeps a single source head while
+leaving the previously staged low-stock ancestry outside this declared target.
+This preserves automatic migration policy without including unrelated schema
+activation. Source metadata was generated offline; no migrations, service starts,
+checks or runtime probes were executed. Production catalog evidence remains
+unchanged. See [language-status-actions.md](language-status-actions.md).
+
 Placement-email enrichment prepares content-only successor
 `0085_placement_email_details` and its coordinated development source metadata.
 The assigned email receives missing saved-allergen and order-link sections

@@ -4,8 +4,10 @@ import { downloadServerBlob } from './downloads.js';
 const uuid = (value) => typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value);
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
 const date = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value));
+const statusOK = (value) => ['active', 'inactive'].includes(value);
 const recordOK = (r) => r && uuid(r.id) && typeof r.name === 'string' && r.name.trim() === r.name
   && [...r.name].length >= 1 && [...r.name].length <= 200 && count(r.version) && r.version > 0
+  && statusOK(r.status)
   && typeof r.createdBy === 'string' && typeof r.updatedBy === 'string' && date(r.createdAt) && date(r.updatedAt)
   && ((r.deletedAt === null && r.deletedBy === null) || (date(r.deletedAt) && typeof r.deletedBy === 'string'));
 const pageOK = (p) => p && Array.isArray(p.items) && count(p.total) && count(p.limit)
@@ -29,14 +31,24 @@ export const editLanguage = (record, values) => request(`/${record.id}/edit`, { 
   (r) => recordOK(r) && r.id === record.id && r.version === record.version + 1 && r.deletedAt === null);
 export const deleteLanguage = (record) => request(`/${record.id}/delete`, { body: { expected_version: record.version } },
   (r) => recordOK(r) && r.id === record.id && r.version === record.version + 1 && date(r.deletedAt));
+export const statusLanguage = (record, status) => {
+  if (!statusOK(status) || status === record.status) throw new Error('Refresh records before choosing a new Language status.');
+  return request(`/${record.id}/status`, { body: { status, expected_version: record.version } },
+    (r) => recordOK(r) && r.id === record.id && r.name === record.name && r.status === status
+      && r.version === record.version + 1 && r.deletedAt === null
+      && r.createdBy === record.createdBy && r.createdAt === record.createdAt);
+};
 export const getLanguageHistory = (id, { limit = 10, offset = 0 } = {}, signal) => request(`/${id}/history`, { params: { limit, offset }, signal },
   (p) => pageOK(p) && recordOK(p.record) && p.record.id === id
-    && p.items.every((h) => uuid(h.id) && ['create', 'edit', 'delete'].includes(h.action)
+    && p.items.every((h) => uuid(h.id) && ['create', 'edit', 'delete', 'status'].includes(h.action)
       && count(h.version) && h.version > 0 && typeof h.actor === 'string' && date(h.at)
-      && (h.beforeName === null || typeof h.beforeName === 'string') && typeof h.afterName === 'string')
+      && (h.beforeName === null || typeof h.beforeName === 'string') && typeof h.afterName === 'string'
+      && (h.action === 'status'
+        ? statusOK(h.beforeStatus) && statusOK(h.afterStatus) && h.beforeStatus !== h.afterStatus && h.beforeName === h.afterName
+        : h.beforeStatus === null && h.afterStatus === null))
     && p.summary && typeof p.summary.scope === 'string'
-    && ['creates', 'edits', 'deletes', 'total'].every((key) => count(p.summary[key]))
-    && p.summary.total === p.total && p.summary.creates + p.summary.edits + p.summary.deletes === p.total
+    && ['creates', 'edits', 'deletes', 'statusChanges', 'total'].every((key) => count(p.summary[key]))
+    && p.summary.total === p.total && p.summary.creates + p.summary.edits + p.summary.deletes + p.summary.statusChanges === p.total
     && (p.summary.latestChange === null || date(p.summary.latestChange)));
 
 export const reviewLanguages = (file) => request('/import/review', { file, params: { filename: file.name } },

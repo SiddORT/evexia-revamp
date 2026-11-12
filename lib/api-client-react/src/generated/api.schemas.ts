@@ -4879,14 +4879,35 @@ export const LanguageChangeResponseAction = {
   create: "create",
   edit: "edit",
   delete: "delete",
+  status: "status",
+} as const;
+
+export type LanguageChangeResponseAfterStatus =
+  | (typeof LanguageChangeResponseAfterStatus)[keyof typeof LanguageChangeResponseAfterStatus]
+  | null;
+
+export const LanguageChangeResponseAfterStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type LanguageChangeResponseBeforeStatus =
+  | (typeof LanguageChangeResponseBeforeStatus)[keyof typeof LanguageChangeResponseBeforeStatus]
+  | null;
+
+export const LanguageChangeResponseBeforeStatus = {
+  active: "active",
+  inactive: "inactive",
 } as const;
 
 export interface LanguageChangeResponse {
   action: LanguageChangeResponseAction;
   actor: string;
   afterName: string;
+  afterStatus: LanguageChangeResponseAfterStatus;
   at: string;
   beforeName: string | null;
+  beforeStatus: LanguageChangeResponseBeforeStatus;
   id: string;
   version: number;
 }
@@ -4909,6 +4930,14 @@ export interface LanguageFields {
   name: string;
 }
 
+export type LanguageResponseStatus =
+  (typeof LanguageResponseStatus)[keyof typeof LanguageResponseStatus];
+
+export const LanguageResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
 export interface LanguageResponse {
   createdAt: string;
   createdBy: string;
@@ -4920,6 +4949,7 @@ export interface LanguageResponse {
    * @maxLength 200
    */
   name: string;
+  status: LanguageResponseStatus;
   updatedAt: string;
   updatedBy: string;
   version: number;
@@ -4931,6 +4961,7 @@ export interface LanguageSummary {
   edits: number;
   latestChange: string | null;
   scope: string;
+  statusChanges: number;
   total: number;
 }
 
@@ -13877,6 +13908,20 @@ export interface LowStockAlertPage {
   asOf: string;
   offset: number;
   limit: number;
+}
+
+export type LanguageStatusStatus =
+  (typeof LanguageStatusStatus)[keyof typeof LanguageStatusStatus];
+
+export const LanguageStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface LanguageStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: LanguageStatusStatus;
 }
 
 export type ListAllergensParams = {

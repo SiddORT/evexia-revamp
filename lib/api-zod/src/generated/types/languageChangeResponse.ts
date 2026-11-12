@@ -6,13 +6,17 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { LanguageChangeResponseAction } from "./languageChangeResponseAction";
+import type { LanguageChangeResponseAfterStatus } from "./languageChangeResponseAfterStatus";
+import type { LanguageChangeResponseBeforeStatus } from "./languageChangeResponseBeforeStatus";
 
 export interface LanguageChangeResponse {
   action: LanguageChangeResponseAction;
   actor: string;
   afterName: string;
+  afterStatus: LanguageChangeResponseAfterStatus;
   at: Date;
   beforeName: string | null;
+  beforeStatus: LanguageChangeResponseBeforeStatus;
   id: string;
   version: number;
 }

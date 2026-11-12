@@ -1,4 +1,4 @@
-"""Singleton-only catalogue. History and metadata-only audit commit with each write."""
+"""Authorized catalogue. History and metadata-only audit commit with each write."""
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -38,7 +38,7 @@ def authorize(db, actor, action=None, *, protected=False):
 
 
 def projection(db, row):
-    return dict(id=row.id, name=row.name, version=row.version,
+    return dict(id=row.id, name=row.name, status=row.status, version=row.version,
                 createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at,
                 deletedBy=label(db, row.deleted_by) if row.deleted_by else None, deletedAt=row.deleted_at)
@@ -81,14 +81,16 @@ def detail(db, actor, record_id):
     return transaction(db, work)
 
 
-def record_change(db, actor, row, action, before):
+def record_change(db, actor, row, action, before, before_status=None):
     event = AuditEvent(actor_id=actor.user.id, session_id=actor.session_id,
                        action="language_" + action, resource_type="language", resource_id=row.id,
                        outcome="success", request_id=db.info.get("request_id"), created_at=row.updated_at)
     db.add(event)
     db.flush()
     db.add(LanguageChange(language_id=row.id, version=row.version, action=action, actor_id=actor.user.id,
-                          at=row.updated_at, before_name=before, after_name=row.name, event_id=event.id))
+                          at=row.updated_at, before_name=before, after_name=row.name,
+                          before_status=before_status, after_status=row.status if action == "status" else None,
+                          event_id=event.id))
     db.flush()
 
 
@@ -105,7 +107,7 @@ def create(db, actor, body):
 def insert(db, actor, body):
     """Caller owns authorization and the encompassing atomic transaction."""
     now = utcnow()
-    row = Language(name=body.name, created_by=actor.user.id, updated_by=actor.user.id,
+    row = Language(name=body.name, status="active", created_by=actor.user.id, updated_by=actor.user.id,
                    created_at=now, updated_at=now)
     db.add(row)
     db.flush()
@@ -114,6 +116,8 @@ def insert(db, actor, body):
 
 
 def mutate(db, actor, record_id, body, operation):
+    if operation not in ("edit", "delete", "status"):
+        raise ValueError("Unsupported language mutation")
     def work():
         current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         row = find(db, record_id)
@@ -121,15 +125,21 @@ def mutate(db, actor, record_id, body, operation):
             raise LanguageError("Language changed. Your draft is preserved. Review current details before retrying.",
                                 409, "language_stale")
         before = row.name
+        before_status = row.status if operation == "status" else None
         now = utcnow()
         if operation == "delete":
             row.deleted_at, row.deleted_by = now, current.user.id
+        elif operation == "status":
+            if row.status == body.status:
+                raise LanguageError("Language already has this status. Refresh records before confirming again.",
+                                    409, "language_status_unchanged")
+            row.status = body.status
         else:
             row.name = body.name
         row.version += 1
         row.updated_at, row.updated_by = now, current.user.id
         db.flush()
-        record_change(db, current, row, operation, before)
+        record_change(db, current, row, operation, before, before_status)
         result = projection(db, row)
         db.commit()
         return result
@@ -148,11 +158,13 @@ def history(db, actor, record_id, limit, offset):
         rows = db.scalars(select(LanguageChange).where(*filters).order_by(LanguageChange.version.asc())
                           .limit(limit).offset(offset))
         result = dict(record=record, items=[dict(id=row.id, action=row.action, version=row.version,
-                      actor=label(db, row.actor_id), at=row.at, beforeName=row.before_name, afterName=row.after_name)
+                      actor=label(db, row.actor_id), at=row.at, beforeName=row.before_name, afterName=row.after_name,
+                      beforeStatus=row.before_status, afterStatus=row.after_status)
                       for row in rows], total=total, limit=limit, offset=offset,
                       summary=dict(scope="All committed changes for this language, including deletion",
                                    creates=counts.get("create", 0), edits=counts.get("edit", 0),
-                                   deletes=counts.get("delete", 0), total=total, latestChange=latest))
+                                   deletes=counts.get("delete", 0), statusChanges=counts.get("status", 0),
+                                   total=total, latestChange=latest))
         db.commit()
         return result
     return transaction(db, work)

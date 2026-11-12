@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { LanguageResponseStatus } from "./languageResponseStatus";
 
 export interface LanguageResponse {
   createdAt: Date;
@@ -17,6 +18,7 @@ export interface LanguageResponse {
    * @maxLength 200
    */
   name: string;
+  status: LanguageResponseStatus;
   updatedAt: Date;
   updatedBy: string;
   version: number;

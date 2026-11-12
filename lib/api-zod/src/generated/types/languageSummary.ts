@@ -12,5 +12,6 @@ export interface LanguageSummary {
   edits: number;
   latestChange: Date | null;
   scope: string;
+  statusChanges: number;
   total: number;
 }
