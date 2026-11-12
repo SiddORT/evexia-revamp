@@ -19,6 +19,13 @@ import '../../allergen.css';
 
 const audit = (name, value) => <span className="admin-allergen-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
 const isBlocking = (cause) => /stale|conflict|version/.test(cause?.code || '') || cause?.status === 409 || Boolean(cause?.ambiguous) || cause?.code === 'not_found';
+function explainListFailure(cause) {
+  if (cause?.status === 401) return 'Your session could not be verified. Sign in again before loading HSN mappings.';
+  if (cause?.status === 403) return 'HSN Master access denied. Your saved role must allow reading HSN mappings.';
+  // A collection failure says nothing about any one mapping or editor draft.
+  // Do not append transport text that may contain mutation-specific guidance.
+  return 'HSN mappings could not be loaded because the HSN service is unavailable or the list request failed. Try again; if this continues, ask an administrator to check the development API.';
+}
 function explain(cause) {
   const msg = cause?.message || 'The request failed.';
   if (cause?.ambiguous) return `${msg} The save outcome is unknown and was not retried. Refresh the list and check before trying again.`;
@@ -60,7 +67,7 @@ function HsnWorkspace() {
     const timer = setTimeout(() => {
       listHsn({ query: search.trim(), status, limit: pageSize, offset: (page - 1) * pageSize }, controller.signal)
         .then((r) => { guard(); setData(r); setError(''); })
-        .catch((cause) => { if (controller.signal.aborted) return; try { guard(); } catch { return; } setError(explain(cause)); })
+        .catch((cause) => { if (controller.signal.aborted) return; try { guard(); } catch { return; } setError(explainListFailure(cause)); })
         .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
