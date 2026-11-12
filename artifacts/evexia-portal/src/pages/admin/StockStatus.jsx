@@ -16,6 +16,7 @@ import StockStatusReport from '../../components/admin/StockStatusReport.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { exportStockCSV, formatPrice, isSuperAdmin, listStock, STOCK_STATUSES, STOCK_QUANTITY_SCOPE } from '../../services/serverInventory.js';
 import { STOCK_STATUS_PATH, stockListContext } from '../../services/stockStatusNavigation.js';
+import { hasRemainingQuantity, stockExpiryPresentation } from '../../services/stockLotPresentation.js';
 import '../../stockStatus.css';
 import '../../inventoryServer.css';
 
@@ -25,7 +26,7 @@ export default function StockStatus() {
   const can = useResourceActions('stock_status');
   const { user } = useAdminSession();
   const [initial] = useState(() => stockListContext(window.history.state, user?.id));
-  const { timestamp } = useAdminDateFormatters();
+  const { date: displayDate, timestamp } = useAdminDateFormatters();
   const [search, setSearch] = useState(initial?.search || '');
   const [category, setCategory] = useState(initial?.category || '');
   const [stockStatus, setStockStatus] = useState(initial?.stockStatus || 'all');
@@ -133,7 +134,11 @@ export default function StockStatus() {
     { key: 'c', label: 'Concentration', render: (r) => r.concentration },
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
-    { key: 'q', label: 'Displayed physical quantity', render: (r) => <><strong className="inv-mono stock-quantity"><span className="stock-quantity__number">{r.physicalQuantity}</span> {r.unit}</strong><span className="stock-sub">Usable: {r.quantity} {r.unit}</span><span className="stock-sub">Unknown-expiry opening (not usable): {r.unknownExpiryOpeningQuantity} {r.unit}</span>{r.state === 'catalogue_zero' && <span className="stock-sub">No displayed physical stock</span>}{Number(r.physicalUnallocatedQuantity) > 0 && <span className="stock-sub">Unallocated (included above): {r.physicalUnallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
+    { key: 'q', label: 'Displayed physical quantity', render: (r) => <><strong className="inv-mono stock-quantity"><span className="stock-quantity__number">{r.physicalQuantity}</span> {r.unit}</strong><span className="stock-sub">Usable: {r.quantity} {r.unit}</span>{hasRemainingQuantity(r.unknownExpiryOpeningQuantity) && <span className="stock-sub">Unknown-expiry opening (not usable): {r.unknownExpiryOpeningQuantity} {r.unit}</span>}{r.state === 'catalogue_zero' && <span className="stock-sub">No displayed physical stock</span>}{Number(r.physicalUnallocatedQuantity) > 0 && <span className="stock-sub">Unallocated (included above): {r.physicalUnallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
+    { key: 'expiry', label: 'Expiry', render: (r) => {
+      const { dates, hasUndated } = stockExpiryPresentation(r.physicalLots);
+      return <>{dates.length ? <ul className="stock-expiry-dates" aria-label="Saved lot expiry dates">{dates.map((date) => <li key={date}>{displayDate(date)}</li>)}</ul> : '—'}{dates.length > 0 && hasUndated && <span className="stock-sub">Some lots have no saved expiry</span>}</>;
+    } },
     { key: 'v', label: 'Actions', render: (r) => <div className="stock-row-actions"><Link className="admin-button admin-button--secondary stock-view" href={`${STOCK_STATUS_PATH}/${encodeURIComponent(r.productId)}`} state={{ stockStatusList: listContext }} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</Link>
       {can.protected && r.itemKind !== 'combo' && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setLedger(r)} aria-label={`Ledger for ${r.name} ${r.concentration}`} data-testid={`button-ledger-stock-${r.productId}`}><BookOpen size={14} /> Ledger</button>}
       {r.itemKind !== 'combo' && isSuperAdmin() && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setAdjust(r)} aria-label={`Manual adjustment for ${r.name} ${r.concentration}`} data-testid={`button-adjust-stock-${r.productId}`}><SlidersHorizontal size={14} /> Manual adjustment</button>}</div> },

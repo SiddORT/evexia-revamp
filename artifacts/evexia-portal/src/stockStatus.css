@@ -55,15 +55,18 @@
 .stock-list-table .admin-table-scroll { min-width: 0; max-width: 100%; }
 /* One 100% allocation: compact category/price, with room for quantity and
    the full action group. Narrow screens scroll in DataTable's labelled region. */
-.stock-list-table .admin-table { min-width: 940px; }
+.stock-list-table .admin-table { min-width: 1080px; }
 .stock-list-table .admin-table :is(th, td) { white-space: normal; overflow-wrap: anywhere; }
-.stock-list-table .admin-table :is(th, td):nth-child(1) { width: 6%; text-align: center; }
-.stock-list-table .admin-table :is(th, td):nth-child(2) { width: 23%; }
-.stock-list-table .admin-table :is(th, td):nth-child(3) { width: 14%; }
-.stock-list-table .admin-table :is(th, td):nth-child(4) { width: 9%; }
-.stock-list-table .admin-table :is(th, td):nth-child(5) { width: 10%; text-align: right; font-variant-numeric: tabular-nums; }
-.stock-list-table .admin-table :is(th, td):nth-child(6) { width: 19%; text-align: right; }
-.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 19%; text-align: center; }
+.stock-list-table .admin-table :is(th, td):nth-child(1) { width: 5%; text-align: center; }
+.stock-list-table .admin-table :is(th, td):nth-child(2) { width: 20%; }
+.stock-list-table .admin-table :is(th, td):nth-child(3) { width: 12%; }
+.stock-list-table .admin-table :is(th, td):nth-child(4) { width: 8%; }
+.stock-list-table .admin-table :is(th, td):nth-child(5) { width: 9%; text-align: right; font-variant-numeric: tabular-nums; }
+.stock-list-table .admin-table :is(th, td):nth-child(6) { width: 17%; text-align: right; }
+.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 12%; }
+.stock-list-table .admin-table :is(th, td):nth-child(8) { width: 17%; text-align: center; }
+.stock-list-table .stock-expiry-dates { list-style: none; margin: 0; padding: 0; }
+.stock-list-table .stock-expiry-dates li + li { margin-top: 4px; }
 .stock-list-table .admin-table__name { display: block; }
 .stock-list-table .stock-sub { overflow-wrap: anywhere; }
 .stock-list-table .stock-quantity { display: block; }

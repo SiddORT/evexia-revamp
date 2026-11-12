@@ -6,7 +6,7 @@ import ComboProvenance from './ComboProvenance.jsx';
 import { dayEndExclusiveISO, dayStartISO, formatPrice, stockHistory } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import { useResourceActions } from '../../auth/useMasterActions.js';
-import { groupStockLots } from '../../services/stockLotPresentation.js';
+import { groupStockLots, hasRemainingQuantity } from '../../services/stockLotPresentation.js';
 
 export default function StockStatusDetail({ row, asOf, coverage }) {
   const can = useResourceActions('stock_status');
@@ -47,7 +47,7 @@ export default function StockStatusDetail({ row, asOf, coverage }) {
     <div className="stock-detail__summary"><div><span>Displayed physical quantity</span><strong className="inv-mono">{row.physicalQuantity} <small>{row.unit || 'Unit unavailable'}</small></strong></div>{asOf && <span>As of {timestamp(asOf)}</span>}</div>
     <dl className="stock-detail__meta">
       <div><dt>Usable quantity</dt><dd>{row.quantity} {row.unit}</dd></div>
-      <div><dt>Unknown-expiry opening (not usable)</dt><dd>{row.unknownExpiryOpeningQuantity} {row.unit}</dd></div>
+      {hasRemainingQuantity(row.unknownExpiryOpeningQuantity) && <div><dt>Unknown-expiry opening (not usable)</dt><dd>{row.unknownExpiryOpeningQuantity} {row.unit}</dd></div>}
       <div><dt>Unallocated (included in displayed physical quantity)</dt><dd>{row.physicalUnallocatedQuantity} {row.unit}</dd></div>
     </dl>
     <p className="mr-form__hint">{STOCK_QUANTITY_SCOPE}</p>
