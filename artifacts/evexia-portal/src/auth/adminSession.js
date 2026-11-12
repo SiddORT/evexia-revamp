@@ -4,6 +4,7 @@ import { captureExportPreferences, exportPreferenceHeader } from '../services/ex
 import { privateUploadMessage, privateRequestReference, privateFileId } from './privateFileErrors.js';
 import { validOrderDraft } from './orderDraftResponse.js';
 import { extractSettingsFailure } from './extractSettingsErrors.js';
+import { EXTRACT_POLICY, expectedExtractSaveRows } from '../services/extractSettingsContract.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -1216,6 +1217,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (value !== '' && value != null) search.set(key, String(value));
   });
   let response, data;
+  const expectedExtractRows = mutation && extractSettingsOperation ? expectedExtractSaveRows(body.rows) : null;
   try {
     response = await fetch(`/api/v1/admin/${resource}${path}${search.size ? `?${search}` : ''}`, {
       method: httpMethod, credentials: 'same-origin', cache: 'no-store',
@@ -1347,12 +1349,15 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       || rate(data.on_after_rate) !== rate(body.on_after_rate)) throw uncertain();
   } else if (mutation && extractSettingsOperation) {
     // Object property order is not part of the JSON contract. Pydantic emits
-    // inherited extract/dilution fields before compositionSize/rank.
+    // inherited extract/dilution fields before compositionSize/rank. Compare
+    // replies strictly with the canonical expectation, never rounded replies.
     if (data?.categoryId !== path.slice(1) || data.version !== body.expected_version + 1
-        || data.policy !== body.policy || data.dosage !== body.dosage
-        || !Array.isArray(data.rows) || data.rows.length !== body.rows.length
+        || !Number.isInteger(body.expected_version) || body.expected_version < 0 || body.expected_version > 2147483646
+        || data.policy !== EXTRACT_POLICY || data.policy !== body.policy || data.dosage !== body.dosage
+        || !/^(?:PD|DD|B[1-8])$/.test(data.dosage)
+        || !Array.isArray(data.rows) || data.rows.length !== expectedExtractRows.length
         || data.rows.some((row, index) => !row || ['compositionSize', 'rank', 'extract', 'dilution']
-          .some((field) => row[field] !== body.rows[index][field]))) throw uncertain('response');
+          .some((field) => row[field] !== expectedExtractRows[index][field]))) throw uncertain('response');
   } else if (mutation && draftResource && !draftSubmission) {
     if (!validOrderDraft(data, draftKind, path.slice(1))) throw uncertain();
   } else if (batchOperation) {

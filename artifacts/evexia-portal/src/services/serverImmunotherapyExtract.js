@@ -1,9 +1,8 @@
 import { purchaseOrderRequest } from '../auth/adminSession.js';
 import { extractSettingsFailure } from '../auth/extractSettingsErrors.js';
 import { DOSES, QTY } from './serverImmunotherapy.js';
-
-export const EXTRACT_POLICY = 'category_dosage_count_rank_v2';
-export const EXTRACT_POSITIONS = [[1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3]];
+import { EXTRACT_POLICY, EXTRACT_POSITIONS, expectedExtractSaveRows } from './extractSettingsContract.js';
+export { EXTRACT_POLICY, EXTRACT_POSITIONS } from './extractSettingsContract.js';
 
 const request = (path, options) => purchaseOrderRequest(path, options, 'immunotherapy-extract-settings');
 export const extractCategories = async (params, signal) => {
@@ -33,9 +32,11 @@ const validPair = (row) => row && ['extract', 'dilution'].every((f) =>
   row[f] === null || (typeof row[f] === 'string' && QTY.test(row[f])));
 export const loadExtractSettings = async (id, dosage) => checked(await request(`/${id}`, { params: { dosage } }), id, dosage);
 export const saveExtractSettings = async (id, body) => {
+  const expectedRows = expectedExtractSaveRows(body.rows);
   const value = checked(await request(`/${id}`, { body }), id, body.dosage, true);
-  if (value.version !== body.expected_version + 1 || value.rows.some((row, index) =>
-    ['extract', 'dilution'].some((field) => row[field] !== body.rows[index][field]))) {
+  if (!Number.isInteger(body.expected_version) || body.expected_version < 0 || body.expected_version > 2147483646
+      || body.policy !== EXTRACT_POLICY || value.version !== body.expected_version + 1 || value.rows.some((row, index) =>
+    ['compositionSize', 'rank', 'extract', 'dilution'].some((field) => row[field] !== expectedRows[index][field]))) {
     throw extractSettingsFailure({ mutation: true, reason: 'response' });
   }
   return value;

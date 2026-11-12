@@ -24,7 +24,7 @@ export function extractSettingsFailure({ mutation = false, reason, status = 0, c
     : [404, 405].includes(status)
       ? 'The running API does not provide this Extract & Dilution operation. The operator must align the API with the six-pair dosage-aware contract.'
     : status === 422 ? mutation
-      ? 'Extract & Dilution input was rejected. Check the dosage, six ordered Single/Double/Triple pairs and nonnegative ml strings with up to six whole digits and three decimals. If these are valid, ask the operator to check API contract compatibility.'
+      ? 'Extract & Dilution input was rejected. Check the dosage, six ordered Single/Double/Triple pairs and nonnegative ml strings with up to six whole digits and six source decimals. Saves round half-up to two decimal places; positive values must round to at least 0.01 and rounded values must remain within range. Blank stays not recorded, distinct from zero. If these are valid, ask the operator to check API contract compatibility.'
       : 'The API rejected the Extract & Dilution read. Ask the operator to check the running dosage-aware API contract.'
     : status === 429 ? 'Extract & Dilution received too many requests. Wait before reloading.'
     : status >= 500 ? knownCode === 'imm_extract_storage'
