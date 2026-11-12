@@ -6,7 +6,7 @@ import '../../inventoryServer.css';
 const PAGE = 50;
 
 /** Server-searched, server-paged choices. "Load more" keeps later choices reachable. */
-export default function ReferenceSelect({ id, label, kind, extra, value, selected, onChange, exclude, pinned = [], placeholder, invalid, describedBy, fetchPage, disabled = false, showResultHint = true, multiple = false, selections = [], maxSelections = 100, refreshKey = 0 }) {
+export default function ReferenceSelect({ id, label, kind, extra, value, selected, onChange, exclude, pinned = [], placeholder, invalid, describedBy, fetchPage, disabled = false, showResultHint = true, multiple = false, selections = [], maxSelections = 100, refreshKey = 0, conciseItemLabels = false }) {
   const [query, setQuery] = useState('');
   const [state, setState] = useState({ items: [], filtered: 0, loading: true, error: '' });
   const [tick, setTick] = useState(0);
@@ -30,10 +30,10 @@ export default function ReferenceSelect({ id, label, kind, extra, value, selecte
     pinned.forEach((o) => map.set(o.value, o));
     if (selected) map.set(selected.value, { ...selected });
     if (multiple) selections.forEach((o) => map.set(o.value, o));
-    state.items.forEach((i) => { const typedItem = kind === 'items' && i.itemKind; const k = typedItem ? `${i.itemKind}:${i.id}` : i.id; if (!map.has(k)) map.set(k, typedItem ? { value: k, itemId: i.id, label: `${i.name} (${i.itemKind === 'combo' ? 'Product' : 'Allergen'}, ${i.unit}; ${i.id})`, itemKind: i.itemKind, unit: i.unit } : { value: i.id, label: i.name }); });
+    state.items.forEach((i) => { const typedItem = kind === 'items' && i.itemKind; const k = typedItem ? `${i.itemKind}:${i.id}` : i.id; if (!map.has(k)) map.set(k, typedItem ? { value: k, itemId: i.id, label: conciseItemLabels ? i.name : `${i.name} (${i.itemKind === 'combo' ? 'Product' : 'Allergen'}, ${i.unit}; ${i.id})`, itemKind: i.itemKind, unit: i.unit } : { value: i.id, label: i.name }); });
     if (exclude) map.delete(exclude);
     return [...map.values()];
-  }, [state.items, selected, exclude, pinned, kind, multiple, selections]);
+  }, [state.items, selected, exclude, pinned, kind, multiple, selections, conciseItemLabels]);
   const hasMore = state.items.length < state.filtered;
   return <div>
     <SearchableSelect id={id} label={label} value={value} options={options} searchOptions={() => options} onSearch={setQuery} multiple={multiple} values={selections.map((o) => o.value)} onChange={(v) => {
