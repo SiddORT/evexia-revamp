@@ -24,7 +24,7 @@ from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 from app.services.staff_crypto import StaffCrypto
 from app.services.zones import label
 from app.services import purchase_received as receipts
-from app.services.expiry_policy import usable, require_usable
+from app.services.expiry_policy import usable, require_usable, state as expiry_state
 from app.schemas.quantities import quantity_string, display_quantity, rounded_quantity
 
 LIMIT = 2000
@@ -399,18 +399,27 @@ def stock_snapshot(db, crypto, params):
                     thresholdLimit=str(product.threshold_limit) if product and product.threshold_limit is not None else None,
                     quantity="0.00", unit=meta["unit"], lots=[], history=[], state="retained_product")
             item = result[pid]
-            if not lot.combo_id and not usable(meta):
-                # Physical balances/history are retained; only usable quantity
-                # and usable-lot selection exclude expired/unknown-expiry stock.
+            eligible = bool(lot.combo_id) or usable(meta)
+            unknown_opening = bool(not lot.combo_id and lot.opening_id
+                                   and expiry_state(meta.get("expiryDate")) == "unknown")
+            if not eligible and not unknown_opening:
+                # Only unknown-expiry openings gain presentation visibility.
+                # Other excluded stock remains in the dedicated expiry views.
                 continue
+            item.setdefault("physicalLots", [])
             for balance in (b for b in balances if b.lot_id == lot.id and b.quantity):
                 lid = str(balance.location_id) if balance.location_id else None
                 if lid not in locations:
                     location = db.get(StorageLocation, balance.location_id) if balance.location_id else None
                     locations[lid] = location.name if location else "Unallocated"
-                item["lots"].append(dict(**meta, lotId=str(lot.id), locationId=lid,
-                                         locationName=locations[lid], quantity=q(balance.quantity)))
-                item["quantity"] = q(Decimal(item["quantity"]) + balance.quantity)
+                detail = dict(**meta, lotId=str(lot.id), locationId=lid,
+                              locationName=locations[lid], quantity=q(balance.quantity))
+                item["physicalLots"].append(detail)
+                if eligible:
+                    # Keep operational consumers (including low-stock alerts)
+                    # on the existing usable quantity/lot contract.
+                    item["lots"].append(detail)
+                    item["quantity"] = q(Decimal(item["quantity"]) + balance.quantity)
                 item["state"] = "in_house_dilution" if lot.reserve_movement_id else ("adjustment_backed" if lot.adjustment_id else ("opening_backed" if lot.opening_id else ("assembled" if lot.combo_id else "receipt_backed")))
         # Catalogue concentration is not a label for mixed-concentration batches.
         for item in result.values():
@@ -418,6 +427,11 @@ def stock_snapshot(db, crypto, params):
                 item["concentration"] = "Batch-specific — see lots"
                 item["unit"] = "Batch-specific — see lots"
         for item in result.values():
+            physical = item.setdefault("physicalLots", [])
+            # Sum each live lot/location balance once, never original openings.
+            item["physicalQuantity"] = q(sum((Decimal(l["quantity"]) for l in physical), Decimal(0)))
+            item["unknownExpiryOpeningQuantity"] = q(Decimal(item["physicalQuantity"]) - Decimal(item["quantity"]))
+            item["physicalUnallocatedQuantity"] = q(sum((Decimal(l["quantity"]) for l in physical if l["locationId"] is None), Decimal(0)))
             item["unallocatedQuantity"] = q(sum((Decimal(l["quantity"]) for l in item["lots"] if l["locationId"] is None), Decimal(0)))
         rows = list(result.values())
         total = len(rows)
@@ -428,7 +442,9 @@ def stock_snapshot(db, crypto, params):
             raise PRError("Choose a valid stock status.", 422, "inventory_filter")
 
         def matches_status(row):
-            amount = Decimal(row["quantity"])
+            # Stock Status filters follow its presentation quantity, not the
+            # separate operational low-stock policy.
+            amount = Decimal(row["physicalQuantity"])
             if status == "in_stock":
                 return amount > 0
             if status == "out_of_stock":

@@ -10978,6 +10978,29 @@
       },
       "InventoryStockRow": {
         "properties": {
+          "physicalQuantity": {
+            "description": "Stock Status quantity: usable stock plus remaining unknown-expiry openings; excludes other unusable stock.",
+            "title": "Physicalquantity",
+            "type": "string"
+          },
+          "unknownExpiryOpeningQuantity": {
+            "description": "Remaining physical allergen openings with unknown expiry; not usable.",
+            "title": "Unknownexpiryopeningquantity",
+            "type": "string"
+          },
+          "physicalUnallocatedQuantity": {
+            "description": "Unallocated portion of the Stock Status physical quantity.",
+            "title": "Physicalunallocatedquantity",
+            "type": "string"
+          },
+          "physicalLots": {
+            "description": "Live lot/location balances underlying physicalQuantity; not a usable-lot selector.",
+            "items": {
+              "$ref": "#/components/schemas/InventoryLotView"
+            },
+            "title": "Physicallots",
+            "type": "array"
+          },
           "category": {
             "title": "Category",
             "type": "string"
@@ -11073,7 +11096,11 @@
           "quantity",
           "unit",
           "lots",
-          "state"
+          "state",
+          "physicalQuantity",
+          "unknownExpiryOpeningQuantity",
+          "physicalUnallocatedQuantity",
+          "physicalLots"
         ],
         "title": "InventoryStockRow",
         "type": "object"

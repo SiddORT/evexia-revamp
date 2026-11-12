@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Printer } from 'lucide-react';
 import Dialog from './Dialog.jsx';
-import { formatPrice, STOCK_STATUSES } from '../../services/serverInventory.js';
+import { formatPrice, STOCK_STATUSES, STOCK_QUANTITY_SCOPE } from '../../services/serverInventory.js';
 import { useAdminPreferences } from './adminPreferences.js';
 import { exportDisplayPreferences, formatTimestamp, effectiveTimeZone } from '../../services/datePresentation.js';
 
@@ -32,10 +32,11 @@ export default function StockStatusReport({ rows, asOf, coverage, search, stockS
       </dl>
       {!rows.length ? <div className="admin-empty" role="status"><strong>Nothing to report</strong><p>No products match the filters saved with this snapshot.</p></div> :
       <div className="stock-report-scroll" role="region" aria-label="Inventory report table" tabIndex={0}>
-        <table><thead><tr><th>Sr.</th><th>Product</th><th>Concentration</th><th>Category</th><th>Selling price</th><th>Quantity on hand</th></tr></thead>
-          <tbody>{rows.map((r, i) => <tr key={r.productId}><td>{i + 1}</td><td>{r.name}<span className="stock-sub">{r.productId}</span></td><td>{r.concentration}</td><td>{r.category}</td><td>{formatPrice(r.sellingPrice)}</td><td className="inv-mono">{r.quantity} {r.unit}</td></tr>)}</tbody></table>
+        <table><thead><tr><th>Sr.</th><th>Product</th><th>Concentration</th><th>Category</th><th>Selling price</th><th>Displayed physical quantity</th></tr></thead>
+          <tbody>{rows.map((r, i) => <tr key={r.productId}><td>{i + 1}</td><td>{r.name}<span className="stock-sub">{r.productId}</span></td><td>{r.concentration}</td><td>{r.category}</td><td>{formatPrice(r.sellingPrice)}</td><td className="inv-mono">{r.physicalQuantity} {r.unit}<span className="stock-sub">Usable: {r.quantity} {r.unit}</span><span className="stock-sub">Unknown-expiry opening (not usable): {r.unknownExpiryOpeningQuantity} {r.unit}</span><span className="stock-sub">Unallocated (included above): {r.physicalUnallocatedQuantity} {r.unit}</span></td></tr>)}</tbody></table>
       </div>}
       <p className="stock-report__note">{coverage?.contract}</p>
+      <p className="stock-report__note">{STOCK_QUANTITY_SCOPE}</p>
     </article>
   </Dialog>;
 }

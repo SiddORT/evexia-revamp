@@ -5,10 +5,11 @@ import { getSession, inventoryRequest as request } from '../auth/adminSession.js
 export const UNIT = 'procurement quantity units';
 export const STOCK_STATUSES = [
   { value: 'all', label: 'All statuses' },
-  { value: 'in_stock', label: 'In stock' },
-  { value: 'out_of_stock', label: 'Out of stock' },
-  { value: 'stock_alert', label: 'Stock alert' },
+  { value: 'in_stock', label: 'Physical stock present' },
+  { value: 'out_of_stock', label: 'No displayed physical stock' },
+  { value: 'stock_alert', label: 'Physical stock at/below threshold' },
 ];
+export const STOCK_QUANTITY_SCOPE = 'Displayed physical stock includes usable stock and remaining unknown-expiry opening stock, including Unallocated balances. Other unusable stock is excluded. Unknown-expiry allergen openings cannot be issued or consumed. Usable quantity does not authorize use of Unallocated stock. Filters compare displayed physical quantity; operational low-stock alerts remain based on usable stock. Allergen stock becomes unusable at 00:00 Asia/Kolkata on its expiry date.';
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v !== '' && v != null && !(Array.isArray(v) && !v.length)));
 
 export const listStock = (params, signal) => request('/stock', { params: clean({ ...params, product_ids: params?.product_ids?.join?.(',') ?? params?.product_ids }), signal });
@@ -106,9 +107,9 @@ const cell = (value) => {
   return `"${safe.replaceAll('"', '""')}"`;
 };
 export function exportStockCSV(rows, { asOf, coverage }, preferences) {
-  const header = ['Product ID', 'Item type', 'Product', 'Concentration', 'Category', 'Catalogue selling price (INR)', 'Quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings'];
-  const records = rows.map((r) => [r.productId, r.itemKind === 'combo' ? 'Assembled combo' : 'Individual allergen', r.name, r.concentration, r.category, r.sellingPrice ?? '', r.quantity, r.unit, r.state, asOf,
-    coverage?.sales || 'unavailable', coverage?.openings || 'outside coverage']);
+  const header = ['Product ID', 'Item type', 'Product', 'Concentration', 'Category', 'Catalogue selling price (INR)', 'Displayed physical quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings', 'Usable quantity', 'Unknown-expiry opening quantity (not usable)', 'Displayed physical Unallocated quantity', 'Quantity scope'];
+  const records = rows.map((r) => [r.productId, r.itemKind === 'combo' ? 'Assembled combo' : 'Individual allergen', r.name, r.concentration, r.category, r.sellingPrice ?? '', r.physicalQuantity, r.unit, r.state, asOf,
+    coverage?.sales || 'unavailable', coverage?.openings || 'outside coverage', r.quantity, r.unknownExpiryOpeningQuantity, r.physicalUnallocatedQuantity, STOCK_QUANTITY_SCOPE]);
   return '\uFEFF' + presentExportTable(header, records, { timestampColumns: [9] }, preferences)
     .map((c) => c.map(cell).join(',')).join('\r\n') + '\r\n';
 }

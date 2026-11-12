@@ -14,7 +14,7 @@ import StockLedger from '../../components/admin/StockLedger.jsx';
 import StockAdjustment from '../../components/admin/StockAdjustment.jsx';
 import StockStatusReport from '../../components/admin/StockStatusReport.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
-import { exportStockCSV, formatPrice, isSuperAdmin, listStock, STOCK_STATUSES } from '../../services/serverInventory.js';
+import { exportStockCSV, formatPrice, isSuperAdmin, listStock, STOCK_STATUSES, STOCK_QUANTITY_SCOPE } from '../../services/serverInventory.js';
 import { STOCK_STATUS_PATH, stockListContext } from '../../services/stockStatusNavigation.js';
 import '../../stockStatus.css';
 import '../../inventoryServer.css';
@@ -133,7 +133,7 @@ export default function StockStatus() {
     { key: 'c', label: 'Concentration', render: (r) => r.concentration },
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
-    { key: 'q', label: 'Quantity (ml)', render: (r) => <><strong className="inv-mono stock-quantity"><span className="stock-quantity__number">{r.quantity}</span> {r.unit}</strong>{r.state === 'catalogue_zero' && <span className="stock-sub">No stock on hand</span>}{Number(r.unallocatedQuantity) > 0 && <span className="stock-sub">Unallocated: {r.unallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
+    { key: 'q', label: 'Displayed physical quantity', render: (r) => <><strong className="inv-mono stock-quantity"><span className="stock-quantity__number">{r.physicalQuantity}</span> {r.unit}</strong><span className="stock-sub">Usable: {r.quantity} {r.unit}</span><span className="stock-sub">Unknown-expiry opening (not usable): {r.unknownExpiryOpeningQuantity} {r.unit}</span>{r.state === 'catalogue_zero' && <span className="stock-sub">No displayed physical stock</span>}{Number(r.physicalUnallocatedQuantity) > 0 && <span className="stock-sub">Unallocated (included above): {r.physicalUnallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
     { key: 'v', label: 'Actions', render: (r) => <div className="stock-row-actions"><Link className="admin-button admin-button--secondary stock-view" href={`${STOCK_STATUS_PATH}/${encodeURIComponent(r.productId)}`} state={{ stockStatusList: listContext }} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</Link>
       {can.protected && r.itemKind !== 'combo' && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setLedger(r)} aria-label={`Ledger for ${r.name} ${r.concentration}`} data-testid={`button-ledger-stock-${r.productId}`}><BookOpen size={14} /> Ledger</button>}
       {r.itemKind !== 'combo' && isSuperAdmin() && <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setAdjust(r)} aria-label={`Manual adjustment for ${r.name} ${r.concentration}`} data-testid={`button-adjust-stock-${r.productId}`}><SlidersHorizontal size={14} /> Manual adjustment</button>}</div> },
@@ -180,6 +180,7 @@ export default function StockStatus() {
       {snap && !unavailable && <div className="stock-scope" id="stock-snapshot-context" data-testid="text-stock-scope">
         <p><strong>Server snapshot</strong> · As of {timestamp(snap.asOf)}</p>
         <p>Current lifetime stock. Filters and the history period never change on-hand quantity; exports and reports use this same snapshot.</p>
+        <p>{STOCK_QUANTITY_SCOPE}</p>
       </div>}
       {loading ? <div role="status" aria-live="polite" className="admin-empty"><strong>Loading stock snapshot…</strong></div>
         : unavailable || loadError ? null

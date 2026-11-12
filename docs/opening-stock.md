@@ -39,10 +39,12 @@ This permits safely updating the real NULL bucket without an ORM NULL primary
 key. Original source location and posting location are nullable only for this
 meaning; receipt and assembly source checks still require a real location.
 
-Stock Status totals include Unallocated, with `unallocatedQuantity` and distinct
-lot/location rows. Move Stocks explicitly selects Unallocated, reviews current
-available lots and allocates to an active real location with paired postings.
-Located opening lots transfer normally; original source/rate snapshots remain.
+Stock Status displays remaining opening balances, including Unallocated, through
+the presentation snapshot described below. Move Stocks still selects only
+operationally eligible lots: visibility of an unknown-expiry allergen opening
+does not permit allocation, transfer or consumption. Eligible finished-product
+openings retain their existing movement behavior; original source/rate snapshots
+remain.
 All stock writers still take the User/session locks then the shared inventory
 advisory lock. Opening records, retries and opening lots are immutable; postings
 and movement history retain existing database guards.
@@ -51,6 +53,54 @@ Location-specific assembly cannot select Unallocated quantities. Opening lots
 also have unavailable expiry, so the existing assembly expiry guard refuses them
 as components even after allocation. No new expiry-assignment or clinical policy
 is introduced here.
+
+### Stock Status physical and usable quantities
+
+The existing snapshot `quantity`, `lots` and `unallocatedQuantity` remain the
+usable-stock contract. Low-stock alerts/digests continue to read those fields.
+Stock Status uses separate required presentation fields:
+
+- `physicalQuantity`: usable quantity plus current unknown-expiry allergen
+  opening balances. This is explicitly **displayed physical stock**, not a
+  complete inventory of all unusable stock.
+- `unknownExpiryOpeningQuantity`: the included opening portion that cannot be
+  issued or consumed.
+- `physicalUnallocatedQuantity`: the included NULL-location portion, not an
+  additional quantity to add to the total.
+- `physicalLots`: corresponding current lot/location balances, retaining saved
+  opening provenance and unavailable historical batch/expiry dates.
+
+Other expired, expiry-today or unknown-expiry non-opening allergen lots remain
+excluded here. Allergen eligibility still ends at 00:00 Asia/Kolkata on the
+saved expiry date. Finished-product openings/assemblies keep their existing
+eligibility; no component history is invented.
+
+Listing, View details, lot/location breakdowns, CSV and Inventory Report consume
+these presentation fields. Stock Status's presence/absence/threshold filters
+compare `physicalQuantity`; their labels distinguish this from operational
+low-stock alerts. Exports retain the snapshot's usable, unknown-opening and
+Unallocated breakdowns and explanatory scope. Refresh and detail navigation read
+the server again; there is no original-opening addition or stock-data rewrite.
+
+Source-only reasoning (not executed scenarios):
+
+- Opening-only allergen: each positive live balance is displayed once; usable
+  quantity remains zero and its physical lot is labeled not usable.
+- Mixed receipt/opening: eligible receipts enter both views once; unknown
+  openings enter only the physical view. Other unusable receipts stay excluded.
+- Partial depletion: totals use current balances, never original acceptance or
+  original opening quantity/value.
+- Multiple locations: each lot/location balance enters once; NULL location is
+  included once and separately labeled Unallocated. View groups by lot identity.
+- Zero balances: omitted from lot details; zero totals remain explicit.
+- Combos: existing lots remain usable and physical with no unknown-expiry
+  allergen deduction; original assembly provenance is retained.
+
+This correction was inspected in source/diffs only. API source generation and
+formatting were performed, but no tests, builds, typechecks, regression/release
+checks or gates, runtime/browser probes, workflows, startup hooks, migrations,
+stock writes, deployment or production activation were performed. Runtime
+behavior remains unverified.
 
 ## Review, commit, retries and history
 

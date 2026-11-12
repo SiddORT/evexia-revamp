@@ -46,7 +46,9 @@ export default function StockStatusDetailPage({ id }) {
   const items = Array.isArray(data?.items) ? data.items : null;
   const row = complete && items?.length === 1 && typeof items[0]?.productId === 'string' && items[0].productId.toLowerCase() === id.toLowerCase() ? items[0] : null;
   const missing = complete && items?.length === 0 && data.filtered === 0;
-  const detailsAvailable = row && data.asOf && row.quantity != null && row.quantity !== '' && Array.isArray(row.lots);
+  const detailsAvailable = row && data.asOf && row.quantity != null && row.quantity !== ''
+    && row.physicalQuantity != null && row.unknownExpiryOpeningQuantity != null
+    && row.physicalUnallocatedQuantity != null && Array.isArray(row.physicalLots);
   const canLedger = can.read && can.protected && detailsAvailable && row.itemKind === 'allergen';
   const retry = <button type="button" className="admin-button admin-button--secondary" onClick={() => setAttempt((value) => value + 1)}>Retry</button>;
   return <AdminLayout title="Stock details"><div className="stock-page stock-detail-page">

@@ -739,7 +739,9 @@ export const listInventoryStockQueryOffsetMin = 0;
 export const listInventoryStockQueryOffsetMax = 1000000;
 export const listInventoryStockQueryLimitDefault = 25;
 export const listInventoryStockQueryLimitMax = 100;
+export const listInventoryStockResponseItemsItemPhysicalLotsItemReserveOnlyDefault = false;
 export const listInventoryStockResponseItemsItemLotsItemReserveOnlyDefault = false;
+export const listInventoryStockResponseSnapshotOneItemPhysicalLotsItemReserveOnlyDefault = false;
 export const listInventoryStockResponseSnapshotOneItemLotsItemReserveOnlyDefault = false;
 export const getInventoryStockHistoryQueryOffsetDefault = 0;
 export const getInventoryStockHistoryQueryOffsetMin = 0;
@@ -15743,11 +15745,17 @@ export const ListInventoryStockQueryParams = zod.object({
     .default(listInventoryStockQueryLimitDefault),
 });
 
+export const listInventoryStockResponseItemsItemPhysicalLotsItemItemKindDefault = `allergen`;
+
+export const listInventoryStockResponseItemsItemPhysicalLotsItemSourceKindDefault = `inventory`;
 export const listInventoryStockResponseItemsItemItemKindDefault = `allergen`;
 export const listInventoryStockResponseItemsItemLotsItemItemKindDefault = `allergen`;
 
 export const listInventoryStockResponseItemsItemLotsItemSourceKindDefault = `inventory`;
 export const listInventoryStockResponseItemsItemUnallocatedQuantityDefault = `0.00`;
+export const listInventoryStockResponseSnapshotOneItemPhysicalLotsItemItemKindDefault = `allergen`;
+
+export const listInventoryStockResponseSnapshotOneItemPhysicalLotsItemSourceKindDefault = `inventory`;
 export const listInventoryStockResponseSnapshotOneItemItemKindDefault = `allergen`;
 export const listInventoryStockResponseSnapshotOneItemLotsItemItemKindDefault = `allergen`;
 
@@ -15777,6 +15785,141 @@ export const ListInventoryStockResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      physicalQuantity: zod
+        .string()
+        .describe(
+          "Stock Status quantity: usable stock plus remaining unknown-expiry openings; excludes other unusable stock.",
+        ),
+      unknownExpiryOpeningQuantity: zod
+        .string()
+        .describe(
+          "Remaining physical allergen openings with unknown expiry; not usable.",
+        ),
+      physicalUnallocatedQuantity: zod
+        .string()
+        .describe("Unallocated portion of the Stock Status physical quantity."),
+      physicalLots: zod
+        .array(
+          zod.object({
+            adjustmentId: zod
+              .union([zod.string().uuid(), zod.null()])
+              .optional(),
+            assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+            assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+            batchNo: zod.union([zod.string(), zod.null()]),
+            comboProductId: zod
+              .union([zod.string().uuid(), zod.null()])
+              .optional(),
+            concentration: zod.union([zod.string(), zod.null()]).optional(),
+            destinationLotId: zod
+              .union([zod.string().uuid(), zod.null()])
+              .optional(),
+            dilutionFactor: zod
+              .union([
+                zod.union([zod.literal(2), zod.literal(5), zod.literal(10)]),
+                zod.null(),
+              ])
+              .optional(),
+            expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+            historicalData: zod.union([zod.string(), zod.null()]).optional(),
+            itemKind: zod
+              .enum(["allergen", "combo"])
+              .default(
+                listInventoryStockResponseItemsItemPhysicalLotsItemItemKindDefault,
+              ),
+            lineId: zod.union([zod.string().uuid(), zod.null()]),
+            locationId: zod.union([zod.string().uuid(), zod.null()]),
+            locationName: zod.string(),
+            lotId: zod.string().uuid(),
+            mrp: zod.union([zod.string(), zod.null()]).optional(),
+            openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+            openingLocation: zod
+              .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+              .optional(),
+            openingValue: zod.union([zod.string(), zod.null()]).optional(),
+            originalCreatedAt: zod.string(),
+            productId: zod.string().uuid(),
+            productName: zod.string(),
+            quantity: zod.string(),
+            receiptId: zod.union([zod.string().uuid(), zod.null()]),
+            receiptNumber: zod.union([zod.string(), zod.null()]),
+            receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+            recipe: zod
+              .union([
+                zod.object({
+                  members: zod.array(
+                    zod.object({
+                      allergenId: zod.string().uuid(),
+                      available: zod.boolean(),
+                      name: zod.string(),
+                      quantity: zod.string(),
+                      unit: zod.string(),
+                    }),
+                  ),
+                  version: zod.number().int(),
+                }),
+                zod.null(),
+              ])
+              .optional(),
+            recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+            reserveId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+            reserveOnly: zod
+              .boolean()
+              .default(
+                listInventoryStockResponseItemsItemPhysicalLotsItemReserveOnlyDefault,
+              ),
+            resultingConcentration: zod
+              .union([zod.string(), zod.null()])
+              .optional(),
+            resultingExpiryDate: zod
+              .union([zod.coerce.date(), zod.null()])
+              .optional(),
+            resultingQuantity: zod.union([zod.string(), zod.null()]).optional(),
+            sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+            source: zod.union([zod.string(), zod.null()]).optional(),
+            sourceComponents: zod
+              .union([
+                zod.array(
+                  zod.object({
+                    adjustmentId: zod
+                      .union([zod.string().uuid(), zod.null()])
+                      .optional(),
+                    after: zod.string(),
+                    batchNo: zod.union([zod.string(), zod.null()]),
+                    before: zod.string(),
+                    expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                    lineId: zod.union([zod.string().uuid(), zod.null()]),
+                    lotId: zod.string().uuid(),
+                    openingId: zod
+                      .union([zod.string().uuid(), zod.null()])
+                      .optional(),
+                    productId: zod.string().uuid(),
+                    productName: zod.string(),
+                    quantity: zod.string(),
+                    receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                    receiptNumber: zod.union([zod.string(), zod.null()]),
+                    source: zod.union([zod.string(), zod.null()]).optional(),
+                    unit: zod.string(),
+                  }),
+                ),
+                zod.null(),
+              ])
+              .optional(),
+            sourceKind: zod
+              .enum(["inventory", "reserve"])
+              .default(
+                listInventoryStockResponseItemsItemPhysicalLotsItemSourceKindDefault,
+              ),
+            sourceMovementId: zod
+              .union([zod.string().uuid(), zod.null()])
+              .optional(),
+            unit: zod.string(),
+            unitRate: zod.union([zod.string(), zod.null()]).optional(),
+          }),
+        )
+        .describe(
+          "Live lot/location balances underlying physicalQuantity; not a usable-lot selector.",
+        ),
       category: zod.string(),
       categoryId: zod.union([zod.string().uuid(), zod.null()]),
       concentration: zod.string(),
@@ -15917,6 +16060,163 @@ export const ListInventoryStockResponse = zod.object({
     .union([
       zod.array(
         zod.object({
+          physicalQuantity: zod
+            .string()
+            .describe(
+              "Stock Status quantity: usable stock plus remaining unknown-expiry openings; excludes other unusable stock.",
+            ),
+          unknownExpiryOpeningQuantity: zod
+            .string()
+            .describe(
+              "Remaining physical allergen openings with unknown expiry; not usable.",
+            ),
+          physicalUnallocatedQuantity: zod
+            .string()
+            .describe(
+              "Unallocated portion of the Stock Status physical quantity.",
+            ),
+          physicalLots: zod
+            .array(
+              zod.object({
+                adjustmentId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                assembledQuantity: zod
+                  .union([zod.string(), zod.null()])
+                  .optional(),
+                assemblyId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                batchNo: zod.union([zod.string(), zod.null()]),
+                comboProductId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                concentration: zod.union([zod.string(), zod.null()]).optional(),
+                destinationLotId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                dilutionFactor: zod
+                  .union([
+                    zod.union([
+                      zod.literal(2),
+                      zod.literal(5),
+                      zod.literal(10),
+                    ]),
+                    zod.null(),
+                  ])
+                  .optional(),
+                expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                historicalData: zod
+                  .union([zod.string(), zod.null()])
+                  .optional(),
+                itemKind: zod
+                  .enum(["allergen", "combo"])
+                  .default(
+                    listInventoryStockResponseSnapshotOneItemPhysicalLotsItemItemKindDefault,
+                  ),
+                lineId: zod.union([zod.string().uuid(), zod.null()]),
+                locationId: zod.union([zod.string().uuid(), zod.null()]),
+                locationName: zod.string(),
+                lotId: zod.string().uuid(),
+                mrp: zod.union([zod.string(), zod.null()]).optional(),
+                openingId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                openingLocation: zod
+                  .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+                  .optional(),
+                openingValue: zod.union([zod.string(), zod.null()]).optional(),
+                originalCreatedAt: zod.string(),
+                productId: zod.string().uuid(),
+                productName: zod.string(),
+                quantity: zod.string(),
+                receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                receiptNumber: zod.union([zod.string(), zod.null()]),
+                receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+                recipe: zod
+                  .union([
+                    zod.object({
+                      members: zod.array(
+                        zod.object({
+                          allergenId: zod.string().uuid(),
+                          available: zod.boolean(),
+                          name: zod.string(),
+                          quantity: zod.string(),
+                          unit: zod.string(),
+                        }),
+                      ),
+                      version: zod.number().int(),
+                    }),
+                    zod.null(),
+                  ])
+                  .optional(),
+                recordedDate: zod
+                  .union([zod.coerce.date(), zod.null()])
+                  .optional(),
+                reserveId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                reserveOnly: zod
+                  .boolean()
+                  .default(
+                    listInventoryStockResponseSnapshotOneItemPhysicalLotsItemReserveOnlyDefault,
+                  ),
+                resultingConcentration: zod
+                  .union([zod.string(), zod.null()])
+                  .optional(),
+                resultingExpiryDate: zod
+                  .union([zod.coerce.date(), zod.null()])
+                  .optional(),
+                resultingQuantity: zod
+                  .union([zod.string(), zod.null()])
+                  .optional(),
+                sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+                source: zod.union([zod.string(), zod.null()]).optional(),
+                sourceComponents: zod
+                  .union([
+                    zod.array(
+                      zod.object({
+                        adjustmentId: zod
+                          .union([zod.string().uuid(), zod.null()])
+                          .optional(),
+                        after: zod.string(),
+                        batchNo: zod.union([zod.string(), zod.null()]),
+                        before: zod.string(),
+                        expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                        lineId: zod.union([zod.string().uuid(), zod.null()]),
+                        lotId: zod.string().uuid(),
+                        openingId: zod
+                          .union([zod.string().uuid(), zod.null()])
+                          .optional(),
+                        productId: zod.string().uuid(),
+                        productName: zod.string(),
+                        quantity: zod.string(),
+                        receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                        receiptNumber: zod.union([zod.string(), zod.null()]),
+                        source: zod
+                          .union([zod.string(), zod.null()])
+                          .optional(),
+                        unit: zod.string(),
+                      }),
+                    ),
+                    zod.null(),
+                  ])
+                  .optional(),
+                sourceKind: zod
+                  .enum(["inventory", "reserve"])
+                  .default(
+                    listInventoryStockResponseSnapshotOneItemPhysicalLotsItemSourceKindDefault,
+                  ),
+                sourceMovementId: zod
+                  .union([zod.string().uuid(), zod.null()])
+                  .optional(),
+                unit: zod.string(),
+                unitRate: zod.union([zod.string(), zod.null()]).optional(),
+              }),
+            )
+            .describe(
+              "Live lot/location balances underlying physicalQuantity; not a usable-lot selector.",
+            ),
           category: zod.string(),
           categoryId: zod.union([zod.string().uuid(), zod.null()]),
           concentration: zod.string(),

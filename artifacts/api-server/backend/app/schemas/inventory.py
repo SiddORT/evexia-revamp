@@ -156,7 +156,8 @@ class InventoryLotView(InventoryProvenance):
 
 
 class InventoryStockRow(BaseModel):
-    @field_validator("thresholdLimit", "sellingPrice", "quantity", "unallocatedQuantity")
+    @field_validator("thresholdLimit", "sellingPrice", "quantity", "unallocatedQuantity",
+                     "physicalQuantity", "unknownExpiryOpeningQuantity", "physicalUnallocatedQuantity")
     @classmethod
     def present_business_value(cls, value):
         return None if value is None else display_quantity(value)
@@ -170,6 +171,10 @@ class InventoryStockRow(BaseModel):
     concentration: str
     sellingPrice: str | None
     quantity: str
+    physicalQuantity: str = Field(description="Stock Status quantity: usable stock plus remaining unknown-expiry openings; excludes other unusable stock.")
+    unknownExpiryOpeningQuantity: str = Field(description="Remaining physical allergen openings with unknown expiry; not usable.")
+    physicalUnallocatedQuantity: str = Field(description="Unallocated portion of the Stock Status physical quantity.")
+    physicalLots: list[InventoryLotView] = Field(description="Live lot/location balances underlying physicalQuantity; not a usable-lot selector.")
     unit: str
     lots: list[InventoryLotView]
     state: str

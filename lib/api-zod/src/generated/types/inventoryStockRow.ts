@@ -9,6 +9,14 @@ import type { InventoryLotView } from "./inventoryLotView";
 import type { InventoryStockRowItemKind } from "./inventoryStockRowItemKind";
 
 export interface InventoryStockRow {
+  /** Stock Status quantity: usable stock plus remaining unknown-expiry openings; excludes other unusable stock. */
+  physicalQuantity: string;
+  /** Remaining physical allergen openings with unknown expiry; not usable. */
+  unknownExpiryOpeningQuantity: string;
+  /** Unallocated portion of the Stock Status physical quantity. */
+  physicalUnallocatedQuantity: string;
+  /** Live lot/location balances underlying physicalQuantity; not a usable-lot selector. */
+  physicalLots: InventoryLotView[];
   category: string;
   categoryId: string | null;
   concentration: string;

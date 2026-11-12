@@ -1,4 +1,4 @@
-import { concentrationLabel, lotOriginLabel } from '../../services/serverInventory.js';
+import { concentrationLabel, lotOriginLabel, STOCK_QUANTITY_SCOPE } from '../../services/serverInventory.js';
 import { useEffect, useMemo, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import TablePagination from './TablePagination.jsx';
@@ -30,9 +30,9 @@ export default function StockStatusDetail({ row, asOf, coverage }) {
     return () => { current = false; controller.abort(); };
   }, [row.productId, from, to, page, pageSize, tick, badRange, can.history]);
 
-  const lots = useMemo(() => groupStockLots(row.lots), [row.lots]);
+  const lots = useMemo(() => groupStockLots(row.physicalLots), [row.physicalLots]);
   const lotById = useMemo(() => new Map(lots.filter((g) => g.lot.lotId).map((g) => [g.lot.lotId, g.lot])), [lots]);
-  const locationById = useMemo(() => new Map((row.lots || []).filter((l) => l.locationId && l.locationName).map((l) => [l.locationId, l.locationName])), [row.lots]);
+  const locationById = useMemo(() => new Map((row.physicalLots || []).filter((l) => l.locationId && l.locationName).map((l) => [l.locationId, l.locationName])), [row.physicalLots]);
   const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
   const columns = [
     { key: 'd', label: 'Posted', render: (r) => timestamp(r.at) },
@@ -44,13 +44,19 @@ export default function StockStatusDetail({ row, asOf, coverage }) {
     { key: 's', label: 'Source', render: (r) => <span className="stock-status">{r.source?.startsWith('adjustment:') ? 'Manual adjustment' : r.source?.startsWith('opening:') ? 'Opening stock' : r.movementId ? 'Transfer / allocation' : r.source?.startsWith('assembly:') ? (r.delta.startsWith('-') ? 'Assembly consumption' : 'Assembly output') : 'Receipt'}</span> },
   ];
   return <section className="admin-panel stock-detail" aria-label="Product stock details">
-    <div className="stock-detail__summary"><div><span>Current on hand</span><strong className="inv-mono">{row.quantity} <small>{row.unit || 'Unit unavailable'}</small></strong></div>{asOf && <span>As of {timestamp(asOf)}</span>}</div>
+    <div className="stock-detail__summary"><div><span>Displayed physical quantity</span><strong className="inv-mono">{row.physicalQuantity} <small>{row.unit || 'Unit unavailable'}</small></strong></div>{asOf && <span>As of {timestamp(asOf)}</span>}</div>
+    <dl className="stock-detail__meta">
+      <div><dt>Usable quantity</dt><dd>{row.quantity} {row.unit}</dd></div>
+      <div><dt>Unknown-expiry opening (not usable)</dt><dd>{row.unknownExpiryOpeningQuantity} {row.unit}</dd></div>
+      <div><dt>Unallocated (included in displayed physical quantity)</dt><dd>{row.physicalUnallocatedQuantity} {row.unit}</dd></div>
+    </dl>
+    <p className="mr-form__hint">{STOCK_QUANTITY_SCOPE}</p>
     <details className="stock-detail__evidence"><summary>Product reference &amp; catalogue details</summary><dl className="stock-detail__meta"><div><dt>Product reference</dt><dd>{row.productId}</dd></div><div><dt>Catalogue selling price</dt><dd>{formatPrice(row.sellingPrice)}</dd></div></dl></details>
     {coverage && <details className="stock-detail__evidence"><summary>Stock snapshot coverage</summary><p>{coverage.contract}</p><p>Openings: {coverage.openings || 'Coverage unavailable'}</p><p>Sales: {coverage.sales || 'Coverage unavailable'}</p><p>History date filters do not change the current on-hand quantity above.</p></details>}
     <h2 className="stock-section-title">Lots on hand</h2>
     <div className="stock-lots">
       {lots.length ? <ul className="stock-lots__list" aria-label="Lots on hand">{lots.map((group) => <LotRow key={group.key} group={group} fallbackUnit={row.unit} itemKind={row.itemKind} displayDate={displayDate} />)}</ul>
-        : <div className="admin-empty"><strong>No lots on hand</strong><p>{row.itemKind === 'combo' ? 'No combo quantity remains on hand.' : 'This allergen has no receipt or opening quantity on hand.'}</p></div>}
+        : <div className="admin-empty"><strong>No displayed physical lots</strong><p>No usable stock or unknown-expiry opening balance is included in this snapshot. Other unusable allergen stock is excluded.</p></div>}
     </div>
     {can.history ? <><h2 className="stock-section-title">Posting history</h2>
     <div className="inv-period">
@@ -80,9 +86,10 @@ function LotRow({ group, fallbackUnit, itemKind, displayDate }) {
       <div><dt>Batch</dt><dd><strong>{l.batchNo || 'Batch unavailable'}</strong></dd></div>
       <div><dt>Concentration</dt><dd>{concentrationLabel(l.resultingConcentration ?? l.concentration)}</dd></div>
       <div><dt>Expiry</dt><dd>{l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable'}</dd></div>
-      <div><dt>On hand</dt><dd className="inv-mono"><strong>{group.quantity}</strong><small>{unit}</small></dd></div>
+      <div><dt>Displayed physical quantity</dt><dd className="inv-mono"><strong>{group.quantity}</strong><small>{unit}</small></dd></div>
       <div><dt>Location</dt><dd>{allocations.length === 1 ? (l.locationId ? l.locationName || 'Name unavailable' : 'Unallocated') : `${allocations.length} locations`}</dd></div>
     </dl>
+    {itemKind !== 'combo' && l.openingId && !l.expiryDate && <p className="stock-lot__warning" role="note">Opening stock — expiry unknown; physical balance only, not usable. Historical batch and expiry dates have not been inferred.</p>}
     {(!group.complete || !l.lotId) && <p className="stock-lot__warning" role="note">{!group.complete ? 'Total unavailable; review saved allocation quantities.' : 'Lot identity unavailable; allocations shown separately.'}</p>}
     <div className="stock-lot__disclosures">
       <details className="stock-detail__evidence"><summary>Locations &amp; quantities</summary>
