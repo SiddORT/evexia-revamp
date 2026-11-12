@@ -170,7 +170,7 @@ export default function MRZoneMultiSelect({ id, values, onChange, primary, saved
         {!error && offset < total && <button type="button" className="mr-zone-multi__action" disabled={loading} onClick={more}>Load more</button>}
       </div>}
     </div>
-    <div id={`${id}-summary`} className="mr-zone-multi__summary" aria-live="polite">{summary}</div>
+    <div id={`${id}-summary`} className={`mr-zone-multi__summary${filter ? ' mr-zone-multi__summary--filter' : ''}`} aria-live="polite">{summary}</div>
     {values.length > 0 && <div className="mr-zone-multi__selected">
       {values.map((key) => <button type="button" key={key} className="mr-zone-multi__chip" disabled={disabled || allBusy}
         aria-label={`Remove ${known[key]?.name || key}`} onClick={() => toggle(known[key] || { id: key })}>
