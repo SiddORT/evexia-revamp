@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { reviewAllergens, importAllergens, sampleAllergens, downloadAllergenFile } from '../../services/serverAllergens.js';
-const ALLERGEN_COLUMNS = [['name', 'Product Name'], ['category_name', 'Category'], ['selling_price', 'Selling Price'], ['gst', 'GST'], ['storage_location_name', 'Storage Location'], ['concentration', 'Concentration'], ['threshold_limit', 'Threshold limit'], ['status', 'Status'], ['mix', 'Mix / No Mix']];
+const ALLERGEN_COLUMNS = [['name', 'Product Name'], ['category_name', 'Category'], ['selling_price', 'Selling Price'], ['gst', 'GST'], ['storage_location_name', 'Storage Location'], ['concentration', 'Concentration'], ['threshold_limit', 'Threshold limit'], ['status', 'Status'], ['mix', 'Mix / No Mix'], ['hsn_code', 'HSN code']];
 import '../../excel-import.css';
 
 export default function AllergenImportPage() {
@@ -143,9 +143,10 @@ export default function AllergenImportPage() {
           <h2 id="excel-sample-title">Download sample Excel</h2>
           <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{ALLERGEN_COLUMNS.map(([, label]) => label).join(' · ')}</span>
-            <strong>Current backup schema (CSV or Excel)</strong><span>The same nine columns, followed by Created By · Created At · Updated By · Updated At</span>
+            <strong>Current backup schema (CSV or Excel)</strong><span>The same ten columns, followed by Created By · Created At · Updated By · Updated At (14 columns)</span>
+            <strong>Earlier files still recognized for review</strong><span>Prior 9-column samples and 13-column backups without HSN are recognized, but missing HSN or thresholds produce row errors. Add explicit values before importing new products.</span>
           </div>
-          <p>GST must originally be 0 to 100. Selling price is optional. Prices/GST accept up to six source decimals and round half-up to two places; review shows the values that will be saved. Rounded price maximum 999999999999.99. Keep long prices as Excel text. Optional stock thresholds retain six-place precision without rounding.</p>
+          <p>GST must originally be 0 to 100. Selling price is optional. Prices/GST accept up to six source decimals and round half-up to two places; review shows the values that will be saved. Rounded price maximum 999999999999.99. Keep long prices as Excel text. Low-stock thresholds in ml are required for every imported new product; zero is valid. HSN code is required, digits only (leading zeros kept), must be an Excel text cell, and must match an active HSN mapping for the row's GST. The obsolete legacy HSN column is accepted only after this same authoritative validation.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>

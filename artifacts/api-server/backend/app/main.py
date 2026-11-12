@@ -67,6 +67,8 @@ logger = logging.getLogger("evexia.api")
 logging.getLogger("uvicorn.access").disabled = True
 from app.api.v1.allergens import router as allergens_router
 from app.services.allergens import AllergenError
+from app.api.v1.hsn import router as hsn_router
+from app.services.hsn import HsnError
 from app.api.v1.pricing_rules import router as pricing_rules_router
 from app.services.pricing_rules import PricingRuleError
 from app.api.v1.purchase_orders import router as purchase_orders_router
@@ -376,6 +378,10 @@ def create_app() -> FastAPI:
     async def allergen_error(request: Request, exc: AllergenError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(HsnError)
+    async def hsn_error(request: Request, exc: HsnError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(PricingRuleError)
     async def pricing_rule_error(request: Request, exc: PricingRuleError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
@@ -437,6 +443,7 @@ def create_app() -> FastAPI:
     app.include_router(product_categories_router, prefix="/api/v1")
     app.include_router(opening_balances_router, prefix="/api/v1")
     app.include_router(allergens_router, prefix="/api/v1")
+    app.include_router(hsn_router, prefix="/api/v1")
     app.include_router(pricing_rules_router, prefix="/api/v1")
     app.include_router(purchase_orders_router, prefix="/api/v1")
     app.include_router(immunotherapy_router, prefix="/api/v1")

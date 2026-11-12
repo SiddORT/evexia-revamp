@@ -112,6 +112,7 @@ export default function AllergenMaster() {
     { key: 'category', label: 'Category', render: (r) => refName(r.category_name, r.category_status) },
     { key: 'price', label: 'Selling price', render: (r) => <span className="admin-allergen-number">{dash(r.selling_price)}</span> },
     { key: 'gst', label: 'GST (%)', render: (r) => <span className="admin-allergen-number">{r.gst}</span> },
+    { key: 'hsn', label: 'HSN code', render: (r) => <span className="admin-allergen-number" data-testid={`text-allergen-hsn-${r.id}`}>{dash(r.hsn_code)}</span> },
     { key: 'location', label: 'Storage location', render: (r) => refName(r.storage_location_name, r.storage_location_status) },
     { key: 'concentration', label: 'Concentration', render: (r) => r.concentration },
     { key: 'threshold', label: 'Low stock alert (ml)', render: (r) => <span className="admin-allergen-number">{dash(r.threshold_limit)}</span> },
@@ -173,7 +174,7 @@ export default function AllergenMaster() {
               <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2 data-testid={`text-allergen-name-${r.id}`}>{r.name}</h2></div><StatusBadge status={r.status} id={`m-${r.id}`} kind="allergen" /></div>
               <p>{r.code || 'Not assigned'} · {refName(r.category_name, r.category_status)} · {refName(r.storage_location_name, r.storage_location_status)}</p>
                {r.inventoryOnly && <p>Dilution material · inventory/pricing only</p>}
-               <p>Price {dash(r.selling_price)} · GST {r.gst}% · {r.concentration} · Low stock alert (ml) {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
+               <p>Price {dash(r.selling_price)} · GST {r.gst}% · HSN {dash(r.hsn_code)} · {r.concentration} · Low stock alert (ml) {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
               <dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}
             </article>)}</div></>
             : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p></div>}

@@ -53,6 +53,12 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0096_hsn_master"], ["0097_hsn_staged_merge"]):
+            db.execute(text("SELECT id,code,gst,status,version,created_by,updated_by,created_at,updated_at FROM hsn_mappings LIMIT 0"))
+            db.execute(text("SELECT mapping_id,version,actor_id,at,before_code,before_gst,before_status,after_code,after_gst,after_status FROM hsn_changes LIMIT 0"))
+            db.execute(text("SELECT hsn_code FROM allergen_products LIMIT 0"))
+            revisions = (["0095_quantity_staged_merge"] if revisions == ["0097_hsn_staged_merge"]
+                         else ["0092_quantity_hundredths"])
         if revisions in (["0092_quantity_hundredths"], ["0095_quantity_staged_merge"]):
             quantity_successor = revisions[0]
             from app.services.quantity_precision import ready as quantity_ready

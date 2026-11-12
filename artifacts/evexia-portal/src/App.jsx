@@ -53,6 +53,7 @@ const ProductMaster = lazyRoute(() => import('./pages/admin/ProductMaster.jsx'))
 const ProductImportPage = lazyRoute(() => import('./pages/admin/ProductImportPage.jsx'));
 const ProductFormPage = lazyRoute(() => import('./pages/admin/ProductFormPage.jsx'));
 const ProductAssemblyPage = lazyRoute(() => import('./pages/admin/ProductAssemblyPage.jsx'));
+const HsnMaster = lazyRoute(() => import('./pages/admin/HsnMaster.jsx'));
 const AllergenFormPage = lazyRoute(() => import('./pages/admin/AllergenFormPage.jsx'));
 const PatientDosageHistory = lazyRoute(() => import('./pages/admin/PatientDosageHistory.jsx'));
 const VendorMaster = lazyRoute(() => import('./pages/admin/VendorMaster.jsx'));
@@ -169,6 +170,7 @@ function App() {
       <Route path="/admin/masters/products/new">{() => <ProductFormPage />}</Route>
       <Route path="/admin/masters/products/assemble" component={ProductAssemblyPage} />
       <Route path="/admin/masters/products/:id">{(params) => <ProductFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/hsn" component={HsnMaster} />
       <Route path="/admin/masters/allergens" component={AllergenMaster} />
       <Route path="/admin/masters/allergens/new">{() => <AllergenFormPage />}</Route>
       <Route path="/admin/masters/allergens/:id">{(params) => <AllergenFormPage id={params.id} />}</Route>

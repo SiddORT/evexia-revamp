@@ -167,7 +167,27 @@ def assignments(body):
     return values
 
 
-def insert(db, actor, body):
+def validate_hsn(db, body, existing=None, *, dilution=False):
+    """Retain unchanged historical snapshots, never infer or rewrite them."""
+    if existing is not None and body.hsn_code == existing.hsn_code and Decimal(body.gst) == existing.gst:
+        return
+    if body.hsn_code is None:
+        if dilution:
+            return
+        raise AllergenError("HSN is required. Select an active HSN/GST mapping.", 422, "allergen_hsn_required")
+    from app.db.hsn_models import HsnMapping
+    mapping = db.scalar(select(HsnMapping).where(HsnMapping.code == body.hsn_code)
+                        .execution_options(populate_existing=True).with_for_update(read=True))
+    if mapping is None or mapping.status != "active" or mapping.gst != Decimal(body.gst):
+        raise AllergenError("HSN and GST must match one active saved HSN mapping. Refresh choices; nothing was saved.",
+                            409, "allergen_hsn_mismatch")
+
+
+def insert(db, actor, body, *, dilution=False):
+    if not dilution and body.threshold_limit is None:
+        raise AllergenError("Low stock alert (ml) is required for a new product; zero is valid.",
+                            422, "allergen_threshold_required")
+    validate_hsn(db, body, dilution=dilution)
     snapshots = validate_references(db, body)
     now = utcnow()
     row = AllergenProduct(**assignments(body), **snapshots, created_by=actor.user.id, updated_by=actor.user.id,
@@ -214,7 +234,7 @@ def setup_dilution(db, actor, body):
         if body.selling_price is not None or not body.mix or body.status != "active":
             raise AllergenError("Dilution setup requires Active, Mix and blank selling price. An optional nonnegative low stock alert in ml, including zero, is allowed; blank disables alerts. Enter the required master description and GST explicitly. No prices or stock are seeded.",
                                 422, "allergen_dilution_setup")
-        row = insert(db, current, body)
+        row = insert(db, current, body, dilution=True)
         db.add(ImmunotherapyDilutionMaterial(id=1, product_id=row.id, request_id=body.idempotencyKey,
                                             request_digest=digest, created_by=current.user.id))
         db.flush()
@@ -258,6 +278,11 @@ def mutate(db, actor, record_id, body, operation):
                 if binding and binding.product_id == row.id and not body.mix:
                     raise AllergenError("The bound Dilution material must remain Mix. Your draft is not saved.",
                                         422, "allergen_dilution_mix")
+                dilution = bool(binding and binding.product_id == row.id)
+                validate_hsn(db, body, row, dilution=dilution)
+                if not dilution and row.threshold_limit is not None and body.threshold_limit is None:
+                    raise AllergenError("A saved low stock threshold cannot be cleared for an ordinary product. Zero is valid.",
+                                        422, "allergen_threshold_required")
                 snapshots = validate_references(db, body, row)
                 for field, value in assignments(body).items():
                     setattr(row, field, value)

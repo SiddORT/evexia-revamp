@@ -7,16 +7,17 @@ import AllergenSearchableSelect from '../../components/admin/AllergenSearchableS
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen, setupDilutionMaterial } from '../../services/serverAllergens.js';
 import { catalogueRate } from '../../services/rates.js';
+import { findHsnMappings, lookupAllergenHsn, normalGst } from '../../services/serverHsn.js';
 import { ALLERGEN_CONCENTRATIONS } from '../../services/allergenConcentrations.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../allergen.css';
 
 const LIST = '/admin/masters/allergens';
-const empty = () => ({ name: '', category_id: '', storage_location_id: '', selling_price: '', gst: '', concentration: '', threshold_limit: '', status: 'active', mix: false });
-const fromRecord = (r) => ({ name: r.name, category_id: r.category_id, storage_location_id: r.storage_location_id, selling_price: r.selling_price ?? '', gst: r.gst, concentration: r.concentration, threshold_limit: r.threshold_limit ?? '', status: r.status, mix: r.inventoryOnly === true || r.mix === true });
+const empty = () => ({ name: '', category_id: '', storage_location_id: '', selling_price: '', gst: '', concentration: '', threshold_limit: '', hsn_code: '', status: 'active', mix: false });
+const fromRecord = (r) => ({ name: r.name, category_id: r.category_id, storage_location_id: r.storage_location_id, selling_price: r.selling_price ?? '', gst: r.gst, concentration: r.concentration, threshold_limit: r.threshold_limit ?? '', hsn_code: r.hsn_code ?? '', status: r.status, mix: r.inventoryOnly === true || r.mix === true });
 const norm = (v) => v.trim().replace(/\s+/g, ' ').toLowerCase();
-const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; ${r.concentration}; low stock alert ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
+const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; HSN ${r.hsn_code ?? 'none'}; ${r.concentration}; low stock alert ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
 
 function AllergenForm({ record, onSave, onCancel, onRefresh }) {
   const [dilutionSetup, setDilutionSetup] = useState(false);
@@ -29,29 +30,92 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
   const [blocked, setBlocked] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
+  const [choices, setChoices] = useState([]);
+  const [lookupNote, setLookupNote] = useState('');
+  const lookupSeq = useRef(0);
+  const lookupCtl = useRef(null);
+  const clearLookup = () => { lookupSeq.current += 1; lookupCtl.current?.abort(); setChoices([]); setLookupNote(''); };
   useEffect(() => {
     alive.current = true;
     const owner = getSession().user?.id;
     const unsubscribe = subscribeSession(() => {
       const s = getSession();
-      if (s.user?.id !== owner || !['authenticated', 'renewing', 'renewal-error'].includes(s.status)) { setValues(empty()); setServerError(''); setErrors({}); }
+      if (s.user?.id !== owner || !['authenticated', 'renewing', 'renewal-error'].includes(s.status)) { setValues(empty()); setServerError(''); setErrors({}); clearLookup(); }
     });
-    return () => { alive.current = false; unsubscribe(); };
+    return () => { alive.current = false; lookupCtl.current?.abort(); unsubscribe(); };
   }, []);
   function update(field, value) {
     setValues((c) => ({ ...c, [field]: value }));
     setErrors((c) => ({ ...c, [field]: undefined }));
     if (!blocked) setServerError('');
   }
+  const pairChanged = (v) => !record || String(v.hsn_code).trim() !== String(record.hsn_code ?? '') || String(v.gst).trim() !== String(record.gst ?? '');
+  async function lookup(params) {
+    const seq = ++lookupSeq.current;
+    lookupCtl.current?.abort(); lookupCtl.current = new AbortController();
+    const guard = reportingIdentityGuard();
+    try {
+      const page = await lookupAllergenHsn({ ...params, limit: 25, offset: 0 }, lookupCtl.current.signal); guard();
+      if (seq !== lookupSeq.current || !alive.current) return null;
+      const items = (page.items || []).filter((i) => !i.status || i.status === 'active');
+      setChoices(items);
+      setLookupNote(page.filtered > items.length ? `Showing ${items.length} of ${page.filtered} active mappings; type a full code or GST rate to narrow.` : '');
+      return items;
+    } catch (cause) {
+      if (cause?.name === 'AbortError') return null;
+      try { guard(); } catch { return null; }
+      if (seq === lookupSeq.current && alive.current) setLookupNote(`HSN lookup unavailable: ${cause.message}. Your entries are kept.`);
+      return null;
+    }
+  }
+  const draft = useRef(values);
+  useEffect(() => { void lookup({ query: '' }); }, []);
+  draft.current = values;
+  async function hsnBlur() {
+    if (record && !pairChanged(values)) return;
+    const code = values.hsn_code.trim(); const gstAt = values.gst;
+    if (!/^[0-9]{1,16}$/.test(code)) return;
+    const guard = reportingIdentityGuard(); const gen = lookupSeq.current + 1;
+    if (!(await lookup({ query: code }))) return;
+    let items; try { items = await findHsnMappings({ code }); guard(); } catch (cause) { try { guard(); } catch { return; } if (alive.current) setLookupNote(cause.message); return; }
+    const cur = draft.current;
+    if (!alive.current || gen !== lookupSeq.current || cur.hsn_code.trim() !== code || cur.gst !== gstAt) return;
+    const hit = items.find((i) => i.code === code);
+    if (hit) { setValues((c) => c.hsn_code.trim() === code && c.gst === gstAt ? { ...c, gst: String(hit.gst) } : c); setErrors((c) => ({ ...c, gst: undefined, hsn_code: undefined })); }
+    else setErrors((c) => ({ ...c, hsn_code: 'No active HSN mapping has this exact code.' }));
+  }
+  async function gstBlur(n) {
+    if (n === null) return;
+    const at = { ...values, gst: n };
+    if (record && !pairChanged(at)) return;
+    const codeAt = values.hsn_code;
+    const guard = reportingIdentityGuard(); const gen = lookupSeq.current + 1;
+    if (!(await lookup({ query: n }))) return;
+    let items; try { items = await findHsnMappings({ gst: n }); guard(); } catch (cause) { try { guard(); } catch { return; } if (alive.current) setLookupNote(cause.message); return; }
+    const cur = draft.current;
+    if (!alive.current || gen !== lookupSeq.current || normalGst(cur.gst) !== n || cur.hsn_code !== codeAt) return;
+    const hits = items.filter((i) => normalGst(i.gst) === n);
+    if (hits.length === 1) { setValues((c) => normalGst(c.gst) === n && c.hsn_code === codeAt ? { ...c, hsn_code: hits[0].code } : c); setErrors((c) => ({ ...c, hsn_code: undefined })); }
+    else if (!hits.length && !dilutionMaterial) setErrors((c) => ({ ...c, hsn_code: `No active HSN mapping for GST ${n}%.` }));
+  }
   async function submit(event) {
     event.preventDefault();
     if (busy.current || blocked) return;
-    const next = validateAllergen(values, { dilutionSetup, inventoryOnly: record?.inventoryOnly === true });
+    const next = validateAllergen(values, { dilutionSetup, inventoryOnly: record?.inventoryOnly === true, isNew: !record, existing: record });
     setErrors(next);
     if (Object.keys(next).length) return;
     const guard = reportingIdentityGuard();
     busy.current = true; setPending(true); setServerError('');
-    try { await onSave(allergenPayload(values), dilutionSetup ? setupKey.current : null); }
+    try {
+      const code = values.hsn_code.trim();
+      if (code && pairChanged(values)) {
+        let hits;
+        try { hits = await findHsnMappings({ code }); guard(); }
+        catch (cause) { try { guard(); } catch { return; } if (alive.current) setServerError(`HSN mapping could not be verified: ${cause.message}. Nothing was saved; your draft is retained.`); return; }
+        const hit = hits.find((i) => i.code === code);
+        if (!hit) { if (alive.current) setErrors((c) => ({ ...c, hsn_code: 'No active HSN mapping has this exact code.' })); return; }
+        if (normalGst(hit.gst) !== normalGst(values.gst)) { if (alive.current) setErrors((c) => ({ ...c, hsn_code: `HSN ${code} maps to GST ${hit.gst}%, not ${values.gst}%.` })); return; }
+      } await onSave(allergenPayload(values), dilutionSetup ? setupKey.current : null); }
     catch (cause) {
       try { guard(); } catch { return; }
       if (alive.current) {
@@ -110,7 +174,15 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
             retained={record ? { id: record.storage_location_id, name: record.storage_location_name, status: record.storage_location_status } : null} onChange={(id) => update('storage_location_id', id)} />
           {err('storage_location_id')}</div>
         {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint, hint: dilutionSetup ? 'Must be blank for Dilution setup. Configure actual cutoff rates later in Pricing Rules.' : undefined })}
-        {text('gst', 'GST (%)', { numeric: true, info: 'Original value must be 0 to 100, up to 6 source fractional digits. Rounded half-up to two places on save.' })}
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-gst">GST (%) <span className="mr-form__required">*</span></label>
+          <input id="allergen-gst" className="mr-form__control" inputMode="decimal" list="allergen-hsn-gst-choices" value={values.gst} onChange={(e) => { lookupSeq.current += 1; update('gst', e.target.value); void lookup({ query: e.target.value }); }} onBlur={() => { const n = normalGst(values.gst); if (n !== null && n !== values.gst) update('gst', n); void gstBlur(n); }} aria-invalid={Boolean(errors.gst)} aria-describedby={errors.gst ? 'allergen-gst-error' : 'allergen-gst-hint'} data-testid="input-allergen-gst" />
+          <datalist id="allergen-hsn-gst-choices">{[...new Set(choices.map((c) => String(c.gst)))].map((g) => <option key={g} value={g} />)}</datalist>
+          <p id="allergen-gst-hint" className="mr-form__hint">0 to 100, rounded half-up to two places. Fills the matching active HSN code.</p>{err('gst')}</div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-hsn_code">HSN code {dilutionMaterial ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>
+          <input id="allergen-hsn_code" className="mr-form__control" inputMode="numeric" maxLength={16} autoComplete="off" list="allergen-hsn-code-choices" value={values.hsn_code} onChange={(e) => { const v = e.target.value; lookupSeq.current += 1; update('hsn_code', v); if (/^[0-9]{1,16}$/.test(v.trim())) void lookup({ query: v.trim() }); }} onBlur={() => void hsnBlur()} aria-invalid={Boolean(errors.hsn_code)} aria-describedby={['allergen-hsn_code-hint', errors.hsn_code && 'allergen-hsn_code-error'].filter(Boolean).join(' ')} data-testid="input-allergen-hsn_code" />
+          <datalist id="allergen-hsn-code-choices">{choices.map((c) => <option key={c.id ?? c.code} value={c.code}>{`GST ${c.gst}%`}</option>)}</datalist>
+          {choices.length > 0 && <AllergenSearchableSelect id="allergen-hsn-choice" label="Active HSN mappings" value="" placeholder="Pick an active mapping" disabled={pending} testId="select-allergen-hsn-choice" options={choices.map((c) => ({ value: c.code, label: `${c.code} · GST ${c.gst}%` }))} onChange={(code) => { const c = choices.find((i) => i.code === code); if (c) { setValues((v) => ({ ...v, hsn_code: c.code, gst: String(c.gst) })); setErrors((e) => ({ ...e, hsn_code: undefined, gst: undefined })); } }} />}
+          <p id="allergen-hsn_code-hint" className="mr-form__hint">{record && !pairChanged(values) ? 'Saved HSN/GST pair retained unchanged. ' : 'Must match an active HSN mapping for this GST. '}{lookupNote}</p>{err('hsn_code')}</div>
         {dilutionSetup ? text('concentration', 'Required master description', { max: 200, hint: 'Enter the supplied description. This material is not a clinical formulation; no concentration or ratio is assumed.' }) : <div className="mr-form__field">
           <label className="mr-form__label" htmlFor="allergen-concentration">Concentration <span className="mr-form__required">*</span></label>
           <AllergenSearchableSelect id="allergen-concentration" label="Concentration" value={values.concentration} disabled={pending} placeholder="Select concentration"
@@ -121,7 +193,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
             ]} onChange={(value) => update('concentration', value)} />
           {err('concentration')}
         </div>}
-         {text('threshold_limit', 'Low stock alert (ml)', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: 'In ml. Blank disables alerts; 0 alerts only at zero stock. Stock alert includes quantities at or below this value.' })}
+         {text('threshold_limit', 'Low stock alert (ml)', { optional: dilutionMaterial || (record && (record.threshold_limit == null || record.threshold_limit === '')), numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: `In ml. ${dilutionMaterial ? 'Blank disables alerts.' : record && record.threshold_limit == null ? 'A historical blank may be retained.' : 'Required; enter an explicit value.'} 0 alerts only at zero stock. Stock alert includes quantities at or below this value.` })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><AllergenSearchableSelect id="allergen-status" label="Status" value={values.status} disabled={pending} placeholder="Select status" invalid={Boolean(errors.status)} describedBy={errors.status ? 'allergen-status-error' : undefined} testId="select-allergen-status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => update('status', value)} />{err('status')}</div>
         <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
           <button type="button" role="switch" disabled={dilutionMaterial} aria-checked={values.mix} aria-labelledby="allergen-mix-label allergen-mix-state" aria-invalid={Boolean(errors.mix)} aria-describedby={['allergen-mix-hint', errors.mix && 'allergen-mix-error'].filter(Boolean).join(' ')} className="admin-allergen-switch" onClick={() => update('mix', !values.mix)} data-testid="switch-allergen-mix">

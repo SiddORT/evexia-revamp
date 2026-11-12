@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import master_router
+from app.api.deps import master_router, operation_router
 from app.api.v1.locations import read_file as read_master_file, UPLOAD
 from app.api.v1.product_categories import DOWNLOAD
 from app.db.session import get_db
@@ -14,9 +14,20 @@ from app.services.auth import Identity
 from app.services import allergens, allergen_transfer
 from app.services.locations import LocationError
 from app.services.downloads import server_record
+from app.schemas.hsn import HsnPage
 
 router = APIRouter(prefix="/admin/allergens", tags=["Allergen Master"])
 manager = master_router("allergen")
+
+
+@router.get("/hsn-lookup", response_model=HsnPage, operation_id="lookupAllergenHsn")
+def references_hsn(query: str = Query("", max_length=200), limit: int = Query(25, ge=1, le=100),
+                   offset: int = Query(0, ge=0, le=1000000),
+                   code: str | None = Query(None, pattern=r"^[0-9]{1,16}$"),
+                   gst: str | None = Query(None, min_length=1, max_length=64),
+                   actor: Identity = Depends(operation_router("allergen", {"references_hsn": None})), db: Session = Depends(get_db)):
+    from app.services.hsn import listing
+    return listing(db, actor, query, limit=limit, offset=offset, lookup=True, code=code, gst=gst)
 
 
 @router.get("", response_model=AllergenPage, operation_id="listAllergens")

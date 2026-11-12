@@ -35,8 +35,13 @@ export function validatePriceBounds(min, max) {
   if (!errors.min && !errors.max && min && max && compareDecimal(catalogueRate(min), catalogueRate(max)) > 0) errors.max = 'Maximum price must not be below minimum price.';
   return errors;
 }
-export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = false } = {}) {
+export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = false, isNew = false, existing = null } = {}) {
   const e = {};
+  const fresh = isNew || !existing;
+  const code = String(v.hsn_code ?? '').trim();
+  const pairUnchanged = !fresh && code === String(existing.hsn_code ?? '') && String(v.gst).trim() === String(existing.gst ?? '');
+  if (code && !/^[0-9]{1,16}$/.test(code)) e.hsn_code = 'HSN code uses 1 to 16 digits only.';
+  else if (!code && !(dilutionSetup || inventoryOnly) && !pairUnchanged) e.hsn_code = 'HSN code is required. Select an active mapping matching this GST.';
   const nameError = masterNameError(v.name, 'allergen name');
   if (nameError) e.name = nameError;
   if (!v.category_id) e.category_id = 'Select a product category.';
@@ -49,6 +54,7 @@ export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = fal
   const descriptionLabel = dilutionSetup ? 'Master description' : 'Concentration';
   if (!conc) e.concentration = `${descriptionLabel} is required.`; else if (textLength(conc) > 200) e.concentration = `${descriptionLabel} must be 200 characters or fewer.`;
   const th = v.threshold_limit.trim();
+  if (!th && !(dilutionSetup || inventoryOnly) && (fresh || (existing.threshold_limit != null && existing.threshold_limit !== ''))) e.threshold_limit = 'Low stock alert is required.';
   if (th && !DECIMAL_RE.test(th)) e.threshold_limit = 'Enter a plain nonnegative decimal (12 integer, 6 fractional digits max).';
   if (!['active', 'inactive'].includes(v.status)) e.status = 'Select a status.';
   if (typeof v.mix !== 'boolean') e.mix = 'Select Mix or No Mix.';
@@ -59,4 +65,4 @@ export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = fal
   if ((dilutionSetup || inventoryOnly) && v.mix !== true) e.mix = 'Dilution must remain Mix.';
   return e;
 }
-export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix });
+export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, hsn_code: String(v.hsn_code ?? '').trim() || null, status: v.status, mix: v.mix });

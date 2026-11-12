@@ -19,6 +19,7 @@ class AllergenProduct(Timestamps, Base):
         CheckConstraint("length(concentration) BETWEEN 1 AND 200 AND concentration = btrim(concentration)", name="ck_allergen_concentration"),
         CheckConstraint("selling_price >= 0 AND selling_price <= 999999999999.99 AND selling_price = round(selling_price, 2)", name="ck_allergen_price"),
         CheckConstraint("gst >= 0 AND gst <= 100 AND gst = round(gst, 2)", name="ck_allergen_gst"),
+        CheckConstraint("hsn_code IS NULL OR hsn_code ~ '^[0-9]{1,16}$'", name="ck_allergen_hsn"),
         CheckConstraint("threshold_limit >= 0 AND threshold_limit <= 999999999999.999999", name="ck_allergen_threshold"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_allergen_deletion"),
     )
@@ -32,6 +33,7 @@ class AllergenProduct(Timestamps, Base):
     storage_location_name: Mapped[str] = mapped_column(String(200), nullable=False)
     selling_price: Mapped[Decimal | None] = mapped_column(Numeric())
     gst: Mapped[Decimal] = mapped_column(Numeric(), nullable=False)
+    hsn_code: Mapped[str | None] = mapped_column(String(16))
     concentration: Mapped[str] = mapped_column(String(200), nullable=False)
     threshold_limit: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
     mix: Mapped[bool] = mapped_column(Boolean, nullable=False)

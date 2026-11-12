@@ -3,12 +3,12 @@
 ## Scope and access
 
 The Portal's Allergen list, add/edit forms and prepared import route use the
-authenticated `/api/v1/admin/allergens` API. Only the protected system Super
-Admin with `admin.access` may use this catalogue. Reference helpers authorize
+authenticated `/api/v1/admin/allergens` API. The protected system Super
+Admin and staff with explicitly assigned Allergen actions may use this catalogue. Reference helpers authorize
 the consuming Allergen workflow; they do not grant access to either shared
-reference master. Allergen is deliberately outside the eight-master staff
-permission catalogue. No roles, grants, login upgrades or identity provisioning
-are added.
+reference master. HSN Master has independent `hsn.view`, `hsn.add` and `hsn.edit`
+permissions. Existing roles receive no new grants automatically; no login upgrades
+or identity provisioning are added.
 
 This is product catalogue metadata, **not inventory or a mixing operation**.
 The existing local allergen/category/location storage, obsolete local HSN values
@@ -17,7 +17,53 @@ or deleted by these pages. Live Purchase Orders select active shared Allergen
 products and snapshot catalogue selling price/GST; see `purchase-order-backend.md`.
 Legacy Purchase Received, Stock Status and Move Stocks remain separate.
 
-## Rollout — operator approval required
+## HSN rollout and historical data
+
+`0096_hsn_master` follows the declared quantity-precision development target and
+adds an **empty** `hsn_mappings` master, an attributed before/after change ledger,
+and nullable `allergen_products.hsn_code` snapshots. No mapping is seeded, no
+existing product row is populated, and no existing GST/threshold is changed.
+`0097_hsn_staged_merge` joins the source graph only: the declared HSN target
+does **not** activate separately staged Cron/Designation changes. The normal
+development synchronization applies the declared target; production activation
+is not performed by this feature. Downgrade refuses if HSN data exists.
+
+### HSN Master
+
+Open **Masters → HSN Master** (`/admin/masters/hsn`). Authorized users can list,
+create, edit and activate/inactivate mappings. API routes at `/api/v1/admin/hsn`
+are `GET ""`, `POST ""`, `POST /{id}/edit`, and `POST /{id}/status`.
+Edits/status changes require `expected_version`; stale saves return 409 with
+the draft retained. All writes atomically retain verified actor/time and
+before/after code, GST and status. There is no deletion or automatic replay.
+
+Codes are strings of 1–16 digits, retaining leading zeros. GST uses the existing
+plain-decimal, original-0–100, six-source-place, half-up-to-two-place rate rules.
+Database uniqueness covers both code and normalized GST, including inactive
+mappings: **one HSN per GST rate, and one GST rate per HSN**. For example, rates
+`5`, `5.00` and `5.004` all collide as `5.00`. Zero GST is valid.
+
+New ordinary Allergens require an explicit HSN and low-stock threshold in ml;
+zero threshold is valid. HSN and GST fill each other from active saved mappings
+on entry/selection. An unknown code, unmatched rate or inconsistent pair cannot
+be saved. The consuming Allergen lookup requires only Allergen access, not HSN
+editing privileges. It supports paginated suggestions and exact code/GST lookup.
+
+Product HSN/GST are **snapshots**, not cascading foreign-key values. Editing or
+inactivating a master mapping never rewrites saved products, orders or invoices.
+Historical null HSN/threshold values stay readable; an unchanged saved pair
+(including a missing HSN or an inactive/remapped HSN) may be retained on edit.
+Changing either member requires a currently valid active pair. An already
+populated ordinary-product HSN or threshold cannot be cleared. Focusing and
+leaving an unchanged historical field does not refresh its saved snapshot.
+
+The explicitly bound **Dilution** inventory/pricing material retains its special
+policy: **always Mix**, optional low-stock threshold (blank disables alerts, zero
+is valid), and optional HSN. If supplied/changed, its HSN/GST must match an active
+mapping. Required description and explicitly entered GST remain unchanged.
+Neither its name nor a similar name grants this exception.
+
+## Original catalogue rollout (historical)
 
 Migration `0022_allergen_catalogue` follows the now-landed `0022_vendors` (itself
 after `0021_master_permissions`), keeping the application on a single Alembic
@@ -52,8 +98,9 @@ trash/restore, hard deletion or automatic import of local storage.
 Whitespace is normalized; non-deleted names are case-insensitively unique using
 the existing PostgreSQL normalized-name expression, including inactive records.
 `category_id` and `storage_location_id` are required shared UUID references.
-`selling_price` and `threshold_limit` are optional **nullable** decimal strings:
-null means absent, `"0"` means supplied zero. `gst` is a required decimal string
+`selling_price` is optional. `threshold_limit` is nullable for historical records
+and bound Dilution, but required for ordinary new products (including imports).
+Null means absent, `"0"` means supplied zero. `gst` is a required decimal string
 between zero and 100. Amounts accept up to 12 integer and 6 fractional digits
 without exponent notation or binary floats. Selling prices/GST round half-up to
 two places at save/import review; responses and CSV/XLSX text exports use exactly
@@ -69,7 +116,8 @@ see [operator rollout](rate-rounding-rollout.md). No historical PO/receipt is re
 - `true` = **Mix**
 - `false` = **No Mix**
 
-There is no HSN field in the business schema, current form/list/sample/export.
+`hsn_code` is the nullable saved identifier in detail/list/form/export responses;
+ordinary new writes require it and an active, matching GST pair.
 Unknown fields and forged IDs/version/audit attribution are rejected.
 
 Create accepts business fields. Edit accepts full business fields plus strict
@@ -128,7 +176,7 @@ reference names that must be replaced with actual active shared directory names.
 Imports are create-only, all-or-nothing, at most **2 MiB and 1,000 records**.
 Review saves no catalogue records or uploaded file bytes. A digest binds exact
 file bytes and filename, current actor and refresh session, resolved reference
-IDs/versions and a short time bucket. It expires at the next 15-minute UTC bucket
+IDs/versions, HSN mapping ID/version/code/GST/status and a short time bucket. It expires at the next 15-minute UTC bucket
 boundary (at most 15 minutes; a review near the boundary may expire sooner).
 File/session/reference changes and expiry require fresh review. Every UI commit
 attempt consumes its review, including failures/conflicts; uncertain outcomes
@@ -139,9 +187,10 @@ references atomically, with database uniqueness as the final race guard.
 Current sample fields, exact order:
 
 `Product Name, Category, Selling Price, GST, Storage Location, Concentration,
-Threshold limit, Status, Mix / No Mix`
+Threshold limit, Status, Mix / No Mix, HSN code`
 
-Current full exports append `Created By, Created At, Updated By, Updated At`.
+Current ten-column samples and fourteen-column full exports use this order;
+full exports append `Created By, Created At, Updated By, Updated At`.
 Both CSV and genuine single-sheet XLSX exports can be reviewed and reimported
 after eligible products are removed. Incoming audit values are ignored; import
 creates new IDs, version 1 and current server actor/time, never historical audit.
@@ -151,7 +200,13 @@ An explicitly supported **legacy CSV only** layout is:
 `Product Name, Category, Selling Price, GST, Storage Location, Concentration,
 Threshold limit, HSN code, Status, Allergens / No Mix`
 
-Legacy HSN is ignored; exact `Allergens` maps to Mix (`true`), `No Mix` to `false`.
+Previous nine-column samples/thirteen-column exports without HSN remain recognized
+for review; each missing HSN is a row error, not an inferred value from GST.
+Missing thresholds are likewise errors for all imported new products.
+
+Legacy HSN is only a candidate: it must exactly match an active shared mapping
+and its supplied GST before reuse; obsolete local values are never trusted.
+Exact `Allergens` maps to Mix (`true`), `No Mix` to `false`.
 Legacy local IDs are not resolved or migrated. Category/location names must
 uniquely match active non-deleted shared records; unavailable or ambiguous
 references produce row errors. Other layouts or invalid values are rejected.
@@ -161,7 +216,9 @@ payloads, unsafe archives, multiple sheets, oversized cells/rows/columns and
 unsupported formats. Decimal XLSX imports read the original validated monetary
 XML lexemes, not openpyxl's binary floats. Bounded scientific XML notation is
 supported only when exact; text cells are recommended because precision already
-lost in an Excel producer cannot be recovered. All workbook export cells are
+lost in an Excel producer cannot be recovered. HSN cells **must be text**:
+numeric identifier cells are rejected rather than inventing lost leading zeros.
+All workbook export cells are
 text, and formula-like strings use reversible spreadsheet-safe escaping.
 
 Exports download **all current-filter matches**, not merely the visible page,
@@ -198,6 +255,10 @@ Failed saves preserve edits. A conflict disables blind retry until an explicit
 review of current server details; Cancel is an explicit discard decision.
 
 ## Automated checks
+
+Regression and release checks were explicitly excluded from the HSN change and
+were not run for it. The commands below describe the pre-existing catalogue suite;
+they do not establish coverage of the new HSN contract.
 
 Run against synthetic fixtures only:
 

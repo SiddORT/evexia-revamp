@@ -21,6 +21,7 @@ export const MASTER_CATALOGUE = Object.freeze([
   { key: 'language', label: 'Language', path: 'languages', import: 'language' },
   { key: 'designation', label: 'Designation', path: 'designations', import: 'designation' },
   { key: 'allergen', label: 'Allergen', path: 'allergens', import: 'allergen' },
+  { key: 'hsn', label: 'HSN', path: 'hsn', actions: ['view', 'add', 'edit'] },
   { key: 'product', label: 'Product', path: 'products', import: 'product' },
   { key: 'vendor', label: 'Vendor', path: 'vendors', import: 'vendor' },
   { key: 'sales_target', label: 'Sales Target', path: 'sales-targets', import: 'sales-target' },

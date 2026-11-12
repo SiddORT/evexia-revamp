@@ -2,6 +2,8 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0096_hsn_master": "automatic",
+    "0097_hsn_staged_merge": "automatic",
     "0093_designation_short_name": "automatic",
     "0095_quantity_staged_merge": "automatic",
     "0092_quantity_hundredths": "automatic",

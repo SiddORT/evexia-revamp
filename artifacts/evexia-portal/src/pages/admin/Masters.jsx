@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, HeartPulse, Layers, Landmark, Languages, MapPinned, Stethoscope, Target, Truck, Upload, UsersRound, Warehouse } from 'lucide-react';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, Hash, HeartPulse, Layers, Landmark, Languages, MapPinned, Stethoscope, Target, Truck, Upload, UsersRound, Warehouse } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -64,6 +64,11 @@ export default function Masters() {
         <Link href="/admin/masters/products" className="admin-master-link" data-testid="link-master-products">
           <span className="admin-master-link__icon"><Layers size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Product Master</strong><small>Versioned allergen combos, independent prices and reviewed stock assembly.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/hsn" className="admin-master-link" data-testid="link-master-hsn">
+          <span className="admin-master-link__icon"><Hash size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>HSN Master</strong><small>Map HSN codes to GST rates; one code per rate, shared on the server.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/allergens" className="admin-master-link" data-testid="link-master-allergens">

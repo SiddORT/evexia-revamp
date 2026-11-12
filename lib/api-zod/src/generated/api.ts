@@ -7,9 +7,6 @@
  */
 import * as zod from "zod";
 
-export const createDesignationBodyShortNameDefault = ``;
-export const editDesignationBodyShortNameDefault = ``;
-
 export const listAllergensQueryQueryMax = 200;
 export const listAllergensQueryMinPriceOneMax = 64;
 export const listAllergensQueryMaxPriceOneMax = 64;
@@ -2767,6 +2764,26 @@ export const mrSalesYearsQueryOffsetMax = 10000;
 export const mrSalesYearsQueryLimitDefault = 50;
 export const mrSalesYearsQueryLimitMax = 100;
 export const resolvePortalHostnameQueryHostnameMax = 253;
+export const lookupAllergenHsnQueryQueryMax = 200;
+export const lookupAllergenHsnQueryLimitDefault = 25;
+export const lookupAllergenHsnQueryLimitMax = 100;
+export const lookupAllergenHsnQueryOffsetDefault = 0;
+export const lookupAllergenHsnQueryOffsetMin = 0;
+export const lookupAllergenHsnQueryOffsetMax = 1000000;
+export const lookupAllergenHsnQueryGstOneMax = 64;
+export const lookupAllergenHsnResponseItemsItemGstMax = 64;
+export const listHsnMappingsQueryQueryMax = 200;
+export const listHsnMappingsQueryLimitDefault = 10;
+export const listHsnMappingsQueryLimitMax = 100;
+export const listHsnMappingsQueryOffsetDefault = 0;
+export const listHsnMappingsQueryOffsetMin = 0;
+export const listHsnMappingsQueryOffsetMax = 1000000;
+export const listHsnMappingsResponseItemsItemGstMax = 64;
+export const createHsnMappingBodyGstMax = 64;
+export const createHsnMappingResponseGstMax = 64;
+export const editHsnMappingBodyGstMax = 64;
+export const editHsnMappingResponseGstMax = 64;
+export const statusHsnMappingResponseGstMax = 64;
 
 /**
  * @summary <Lambda>
@@ -2822,6 +2839,10 @@ export const ListAllergensQueryParams = zod.object({
     .default(listAllergensQueryOffsetDefault),
 });
 
+export const listAllergensResponseItemsItemHsnCodeOneRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
 export const ListAllergensResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
@@ -2842,6 +2863,15 @@ export const ListAllergensResponse = zod.object({
         .max(listAllergensResponseItemsItemGstMax)
         .describe(
           "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+        ),
+      hsn_code: zod
+        .union([
+          zod.string().regex(listAllergensResponseItemsItemHsnCodeOneRegExp),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
         ),
       id: zod.string().uuid(),
       inventoryOnly: zod
@@ -2886,6 +2916,8 @@ export const ListAllergensResponse = zod.object({
  * @summary Create
  */
 
+export const createAllergenBodyHsnCodeOneRegExp = new RegExp("^[0-9]{1,16}$");
+
 export const CreateAllergenBody = zod.object({
   category_id: zod.string().uuid(),
   concentration: zod.string().min(1).max(createAllergenBodyConcentrationMax),
@@ -2895,6 +2927,12 @@ export const CreateAllergenBody = zod.object({
     .max(createAllergenBodyGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([zod.string().regex(createAllergenBodyHsnCodeOneRegExp), zod.null()])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   mix: zod
     .boolean()
@@ -2918,6 +2956,10 @@ export const CreateAllergenBody = zod.object({
     .optional(),
 });
 
+export const createAllergenResponseHsnCodeOneRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
 export const CreateAllergenResponse = zod.object({
   category_id: zod.string().uuid(),
   category_name: zod.string(),
@@ -2935,6 +2977,15 @@ export const CreateAllergenResponse = zod.object({
     .max(createAllergenResponseGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(createAllergenResponseHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   id: zod.string().uuid(),
   inventoryOnly: zod
@@ -3066,6 +3117,7 @@ export const ReviewAllergenImportResponse = zod.object({
       concentration: zod.string(),
       errors: zod.array(zod.string()),
       gst: zod.string(),
+      hsn_code: zod.union([zod.string(), zod.null()]),
       mix: zod.string(),
       name: zod.string(),
       row: zod.number().int(),
@@ -3145,6 +3197,10 @@ export const DownloadAllergenSampleResponse = zod.unknown();
  * @summary Setup Dilution
  */
 
+export const setupDilutionMaterialBodyHsnCodeOneRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
 export const SetupDilutionMaterialBody = zod.object({
   category_id: zod.string().uuid(),
   concentration: zod
@@ -3157,6 +3213,15 @@ export const SetupDilutionMaterialBody = zod.object({
     .max(setupDilutionMaterialBodyGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(setupDilutionMaterialBodyHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   idempotencyKey: zod.string().uuid(),
   mix: zod
@@ -3184,6 +3249,10 @@ export const SetupDilutionMaterialBody = zod.object({
     .optional(),
 });
 
+export const setupDilutionMaterialResponseHsnCodeOneRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
 export const SetupDilutionMaterialResponse = zod.object({
   category_id: zod.string().uuid(),
   category_name: zod.string(),
@@ -3201,6 +3270,15 @@ export const SetupDilutionMaterialResponse = zod.object({
     .max(setupDilutionMaterialResponseGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(setupDilutionMaterialResponseHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   id: zod.string().uuid(),
   inventoryOnly: zod
@@ -3243,6 +3321,8 @@ export const GetAllergenParams = zod.object({
   allergen_id: zod.coerce.string().uuid(),
 });
 
+export const getAllergenResponseHsnCodeOneRegExp = new RegExp("^[0-9]{1,16}$");
+
 export const GetAllergenResponse = zod.object({
   category_id: zod.string().uuid(),
   category_name: zod.string(),
@@ -3257,6 +3337,15 @@ export const GetAllergenResponse = zod.object({
     .max(getAllergenResponseGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(getAllergenResponseHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   id: zod.string().uuid(),
   inventoryOnly: zod.boolean().default(getAllergenResponseInventoryOnlyDefault),
@@ -3301,6 +3390,10 @@ export const DeleteAllergenBody = zod.object({
   expected_version: zod.number().int().min(1),
 });
 
+export const deleteAllergenResponseHsnCodeOneRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
 export const DeleteAllergenResponse = zod.object({
   category_id: zod.string().uuid(),
   category_name: zod.string(),
@@ -3318,6 +3411,15 @@ export const DeleteAllergenResponse = zod.object({
     .max(deleteAllergenResponseGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(deleteAllergenResponseHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   id: zod.string().uuid(),
   inventoryOnly: zod
@@ -3360,6 +3462,8 @@ export const EditAllergenParams = zod.object({
   allergen_id: zod.coerce.string().uuid(),
 });
 
+export const editAllergenBodyHsnCodeOneRegExp = new RegExp("^[0-9]{1,16}$");
+
 export const EditAllergenBody = zod.object({
   category_id: zod.string().uuid(),
   concentration: zod.string().min(1).max(editAllergenBodyConcentrationMax),
@@ -3370,6 +3474,12 @@ export const EditAllergenBody = zod.object({
     .max(editAllergenBodyGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([zod.string().regex(editAllergenBodyHsnCodeOneRegExp), zod.null()])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   mix: zod
     .boolean()
@@ -3390,6 +3500,8 @@ export const EditAllergenBody = zod.object({
     .optional(),
 });
 
+export const editAllergenResponseHsnCodeOneRegExp = new RegExp("^[0-9]{1,16}$");
+
 export const EditAllergenResponse = zod.object({
   category_id: zod.string().uuid(),
   category_name: zod.string(),
@@ -3404,6 +3516,15 @@ export const EditAllergenResponse = zod.object({
     .max(editAllergenResponseGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(editAllergenResponseHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   id: zod.string().uuid(),
   inventoryOnly: zod
@@ -3451,6 +3572,10 @@ export const SetAllergenStatusBody = zod.object({
   status: zod.enum(["active", "inactive"]),
 });
 
+export const setAllergenStatusResponseHsnCodeOneRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
 export const SetAllergenStatusResponse = zod.object({
   category_id: zod.string().uuid(),
   category_name: zod.string(),
@@ -3468,6 +3593,15 @@ export const SetAllergenStatusResponse = zod.object({
     .max(setAllergenStatusResponseGstMax)
     .describe(
       "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
+  hsn_code: zod
+    .union([
+      zod.string().regex(setAllergenStatusResponseHsnCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.",
     ),
   id: zod.string().uuid(),
   inventoryOnly: zod
@@ -3991,6 +4125,8 @@ export const ListDesignationsResponse = zod.object({
  * @summary Create
  */
 
+export const createDesignationBodyShortNameDefault = ``;
+
 export const CreateDesignationBody = zod.object({
   name: zod.string().min(1).max(createDesignationBodyNameMax),
   shortName: zod
@@ -4165,6 +4301,8 @@ export const DeleteDesignationResponse = zod.object({
 export const EditDesignationParams = zod.object({
   designation_id: zod.coerce.string().uuid(),
 });
+
+export const editDesignationBodyShortNameDefault = ``;
 
 export const EditDesignationBody = zod.object({
   expected_version: zod.number().int().min(1),
@@ -48262,3 +48400,199 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+/**
+ * @summary References Hsn
+ */
+export const lookupAllergenHsnQueryQueryDefault = ``;
+
+export const lookupAllergenHsnQueryCodeOneRegExp = new RegExp("^[0-9]{1,16}$");
+
+export const LookupAllergenHsnQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(lookupAllergenHsnQueryQueryMax)
+    .default(lookupAllergenHsnQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(lookupAllergenHsnQueryLimitMax)
+    .default(lookupAllergenHsnQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(lookupAllergenHsnQueryOffsetMin)
+    .max(lookupAllergenHsnQueryOffsetMax)
+    .default(lookupAllergenHsnQueryOffsetDefault),
+  code: zod
+    .union([
+      zod.coerce.string().regex(lookupAllergenHsnQueryCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
+  gst: zod
+    .union([
+      zod.coerce.string().min(1).max(lookupAllergenHsnQueryGstOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+export const lookupAllergenHsnResponseItemsItemCodeRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
+export const LookupAllergenHsnResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      code: zod.string().regex(lookupAllergenHsnResponseItemsItemCodeRegExp),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      gst: zod.string().min(1).max(lookupAllergenHsnResponseItemsItemGstMax),
+      id: zod.string().uuid(),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listHsnMappingsQueryQueryDefault = ``;
+
+export const listHsnMappingsQueryStatusDefault = `all`;
+
+export const ListHsnMappingsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listHsnMappingsQueryQueryMax)
+    .default(listHsnMappingsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listHsnMappingsQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listHsnMappingsQueryLimitMax)
+    .default(listHsnMappingsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listHsnMappingsQueryOffsetMin)
+    .max(listHsnMappingsQueryOffsetMax)
+    .default(listHsnMappingsQueryOffsetDefault),
+});
+
+export const listHsnMappingsResponseItemsItemCodeRegExp = new RegExp(
+  "^[0-9]{1,16}$",
+);
+
+export const ListHsnMappingsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      code: zod.string().regex(listHsnMappingsResponseItemsItemCodeRegExp),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      gst: zod.string().min(1).max(listHsnMappingsResponseItemsItemGstMax),
+      id: zod.string().uuid(),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createHsnMappingBodyCodeRegExp = new RegExp("^[0-9]{1,16}$");
+
+export const CreateHsnMappingBody = zod.object({
+  code: zod.string().regex(createHsnMappingBodyCodeRegExp),
+  gst: zod.string().min(1).max(createHsnMappingBodyGstMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createHsnMappingResponseCodeRegExp = new RegExp("^[0-9]{1,16}$");
+
+export const CreateHsnMappingResponse = zod.object({
+  code: zod.string().regex(createHsnMappingResponseCodeRegExp),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(createHsnMappingResponseGstMax),
+  id: zod.string().uuid(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditHsnMappingParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const editHsnMappingBodyCodeRegExp = new RegExp("^[0-9]{1,16}$");
+
+export const EditHsnMappingBody = zod.object({
+  code: zod.string().regex(editHsnMappingBodyCodeRegExp),
+  expected_version: zod.number().int().min(1),
+  gst: zod.string().min(1).max(editHsnMappingBodyGstMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editHsnMappingResponseCodeRegExp = new RegExp("^[0-9]{1,16}$");
+
+export const EditHsnMappingResponse = zod.object({
+  code: zod.string().regex(editHsnMappingResponseCodeRegExp),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(editHsnMappingResponseGstMax),
+  id: zod.string().uuid(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const StatusHsnMappingParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const StatusHsnMappingBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const statusHsnMappingResponseCodeRegExp = new RegExp("^[0-9]{1,16}$");
+
+export const StatusHsnMappingResponse = zod.object({
+  code: zod.string().regex(statusHsnMappingResponseCodeRegExp),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(statusHsnMappingResponseGstMax),
+  id: zod.string().uuid(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});

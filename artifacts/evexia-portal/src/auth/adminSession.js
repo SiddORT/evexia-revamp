@@ -783,7 +783,8 @@ function masterAllowed(user, resource, path, writing, params = {}) {
     : /^\/[0-9a-f-]{36}\/doctors$/.test(path) && resource === 'mrs' ? null
     : /^\/postal\//.test(path) ? (params.action || 'add')
     : path === '/language-choices' && resource === 'patients' && !writing ? null
-    : ['/references', '/filters', '/choices'].includes(path) || /^\/references\/(?:categories|locations)$/.test(path) ? null : undefined;
+    : (resource === 'allergens' && path === '/hsn-lookup' && !writing)
+      || ['/references', '/filters', '/choices'].includes(path) || /^\/references\/(?:categories|locations)$/.test(path) ? null : undefined;
   if (need === undefined) return false;
   return need ? hasMasterPermission(user, master.key, need) : canViewMaster(user, master.key);
 }
@@ -800,9 +801,9 @@ function attachMasterValidation(error, data, label) {
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const exportDisplay = download && path === '/export' ? exportPreferenceHeader(captureExportPreferences()) : null;
   const zone = resource === 'zones';
-  if (!['languages', 'allergens', 'vendors', 'opening-balances', 'zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories', 'sales-targets'].includes(resource)) throw new SessionError('Unsupported master resource.');
-  const label = resource === 'languages' ? 'Language' : resource === 'opening-balances' ? 'Opening balance' : resource === 'sales-targets' ? 'Sales target' : resource === 'allergens' ? 'Allergen' : resource === 'vendors' ? 'Vendor' : resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
-  const unavailable = resource === 'languages' ? 'language_unavailable' : resource === 'opening-balances' ? 'opening_balance_unavailable' : resource === 'sales-targets' ? 'sales_target_unavailable' : resource === 'allergens' ? 'allergen_unavailable' : resource === 'vendors' ? 'vendor_unavailable' : resource === 'patients' ? 'patient_unavailable' : resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
+  if (!['hsn', 'languages', 'allergens', 'vendors', 'opening-balances', 'zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories', 'sales-targets'].includes(resource)) throw new SessionError('Unsupported master resource.');
+  const label = resource === 'hsn' ? 'HSN' : resource === 'languages' ? 'Language' : resource === 'opening-balances' ? 'Opening balance' : resource === 'sales-targets' ? 'Sales target' : resource === 'allergens' ? 'Allergen' : resource === 'vendors' ? 'Vendor' : resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = resource === 'hsn' ? 'hsn_unavailable' : resource === 'languages' ? 'language_unavailable' : resource === 'opening-balances' ? 'opening_balance_unavailable' : resource === 'sales-targets' ? 'sales_target_unavailable' : resource === 'allergens' ? 'allergen_unavailable' : resource === 'vendors' ? 'vendor_unavailable' : resource === 'patients' ? 'patient_unavailable' : resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset|doctors))?)$/;
   const route = resource === 'languages' ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|history))?)$/ : resource === 'sales-targets' ? /^(?:|\/choices|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'allergens' ? /^(?:|\/references\/(?:categories|locations)|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
@@ -810,7 +811,8 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   const dilutionSetup = resource === 'allergens' && path === '/setup-dilution'
     && body !== null && typeof body === 'object' && !Array.isArray(body)
     && file === undefined && !download && Object.keys(params).length === 0;
-  if (!route.test(path) && !dilutionSetup && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+  const hsnLookup = resource === 'allergens' && path === '/hsn-lookup' && body === undefined && file === undefined && !download;
+  if (!route.test(path) && !dilutionSetup && !hsnLookup && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
       && !(resource === 'doctors' && /^\/[0-9a-f-]{36}\/orders$/.test(path) && body === undefined && file === undefined && !download)
       && !(resource === 'headquarters' && path === '/zone-choices' && body === undefined && file === undefined)
       && !(resource === 'storage-locations' && /^\/postal\/[1-9][0-9]{5}$/.test(path))
@@ -856,7 +858,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   });
   let response;
   try {
-    languageWriteDispatched = resource === 'languages' && writing && path !== '/import/review';
+    languageWriteDispatched = ['languages', 'hsn'].includes(resource) && writing && path !== '/import/review';
     response = await load();
     languageWriteRejected = response.status >= 400 && response.status < 500;
     if (response.status === 401) {
@@ -914,7 +916,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
       error.message = `${label} validation failed: ${fields.join(', ')}. Check required fields, formats and the documented limits. Nothing was saved.`;
     }
     if (response.status === 422 && data?.error?.fields?.length && [
-      'zones', 'languages', 'courier-partners', 'designations', 'mrs', 'doctors', 'patients',
+      'hsn', 'zones', 'languages', 'courier-partners', 'designations', 'mrs', 'doctors', 'patients',
       'vendors', 'product-categories', 'storage-locations', 'headquarters', 'products',
       'allergens', 'sales-targets', 'opening-balances', 'opening-stock',
     ].includes(resource)) {
@@ -922,7 +924,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     }
     // A Language commit can have an uncertain outcome even when its safe
     // database error was mapped to "unavailable". Never encourage create replay.
-    error.ambiguous = writing && path !== '/import/review' && response.status >= 500 && (['languages', 'headquarters'].includes(resource) || error.code !== unavailable);
+    error.ambiguous = writing && path !== '/import/review' && response.status >= 500 && (['hsn', 'languages', 'headquarters'].includes(resource) || error.code !== unavailable);
     // The server may have revoked one action without ending the staff session.
     // Refresh the authoritative matrix; never replay the denied operation.
     if (response.status === 403 && zone && state.user?.identity_kind === 'staff') await verifySession();
@@ -945,6 +947,7 @@ export function serverDownloadGuard(blob) {
   return guard;
 }
 export const languageRequest = (path, options) => masterRequest('languages', path, options);
+export const hsnRequest = (path, options) => masterRequest('hsn', path, options);
 export const zoneRequest = (path, options) => masterRequest('zones', path, options);
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);

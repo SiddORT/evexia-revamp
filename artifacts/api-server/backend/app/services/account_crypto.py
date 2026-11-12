@@ -184,12 +184,18 @@ def ready(db):
         ["0093_designation_short_name"],
         ["0092_quantity_hundredths"],
         ["0095_quantity_staged_merge"],
+        ["0096_hsn_master"],
+        ["0097_hsn_staged_merge"],
     ):
         raise AccountCryptoError()
     # This exact catalogue-only successor retains the predecessor account
     # anchors and protected identity; it introduces no encryption inventory.
     if revisions == ["0093_designation_short_name"]:
         revisions = ["0094_language_low_stock_merge"]
+    if revisions == ["0096_hsn_master"]:
+        revisions = ["0092_quantity_hundredths"]
+    elif revisions == ["0097_hsn_staged_merge"]:
+        revisions = ["0095_quantity_staged_merge"]
     current = crypto()
     row = db.execute(text(
         "SELECT configuration_digest, protected_email_index FROM account_crypto_state WHERE id=1"

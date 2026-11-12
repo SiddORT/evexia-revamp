@@ -11,6 +11,7 @@ export interface AllergenImportRow {
   concentration: string;
   errors: string[];
   gst: string;
+  hsn_code: string | null;
   mix: string;
   name: string;
   row: number;

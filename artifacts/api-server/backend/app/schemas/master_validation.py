@@ -81,7 +81,9 @@ def master_field_errors(path, errors):
     from app.schemas.opening_balances import OpeningBalanceFields
     from app.schemas.opening_stock import OpeningCreate
 
+    from app.schemas.hsn import HsnFields
     schemas = {
+        "hsn": HsnFields,
         "zones": ZoneFields, "languages": LanguageFields, "courier-partners": CourierFields,
         "designations": DesignationFields, "mrs": MRCreate, "doctors": DoctorFields,
         "patients": PatientFields, "vendors": VendorFields, "product-categories": ProductCategoryFields,
@@ -121,6 +123,7 @@ def master_field_errors(path, errors):
         "mrp": "Enter a nonnegative plain rate with up to six source decimals; selling price must not exceed MRP.",
         "sellingPrice": "Enter a nonnegative plain rate with up to six source decimals, no greater than MRP.",
         "gst": "Enter a percentage from 0 to 100 with up to six source decimals.",
+        "hsn_code": "Enter a saved HSN code as 1–16 digits, preserving leading zeros.",
         "orderDiscount": "Enter a percentage from 0 to 100 with up to six source decimals.",
         "threshold_limit": "Enter a nonnegative quantity with up to six decimals.",
         "quantity": "Enter a supported plain quantity up to 1000000 with up to six source decimals; saves round half-up to two places. Finished products still require whole quantities.",

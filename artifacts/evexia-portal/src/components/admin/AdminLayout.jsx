@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, BadgeIndianRupee, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, Wallet, Archive, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, Hash, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, BadgeIndianRupee, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, Wallet, Archive, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, isSuperAdminIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
@@ -35,6 +35,7 @@ const MASTER_GROUPS = [
   ] },
   { label: 'Products & Supply', links: [
     { label: 'Product Category', href: '/admin/masters/product-categories', testId: 'link-admin-product-categories', Icon: Boxes, nested: true },
+    { label: 'HSN Master', href: '/admin/masters/hsn', testId: 'link-admin-hsn', Icon: Hash },
     { label: 'Allergen Master', href: '/admin/masters/allergens', testId: 'link-admin-allergens', Icon: FlaskConical, nested: true },
     { label: 'Product Master', href: '/admin/masters/products', testId: 'link-admin-products', Icon: Layers, nested: true },
     { label: 'Opening Stock', href: '/admin/masters/opening-stock', testId: 'link-admin-opening-stock', Icon: Layers, nested: true },

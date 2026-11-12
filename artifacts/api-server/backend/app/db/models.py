@@ -207,6 +207,7 @@ from app.db import email_template_models as _email_template_models  # noqa: E402
 from app.db import purchase_received_models as _purchase_received_models  # noqa: E402,F401
 from app.db import pr_batch_models as _pr_batch_models  # noqa: E402,F401
 from app.db import language_models as _language_models  # noqa: E402,F401
+from app.db import hsn_models as _hsn_models  # noqa: E402,F401
 from app.db import immunotherapy_models as _immunotherapy_models  # noqa: E402,F401
 from app.db import immunotherapy_extract_models as _immunotherapy_extract_models  # noqa: E402,F401
 from app.db import gst_settings_models as _gst_settings_models  # noqa: E402,F401

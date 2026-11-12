@@ -26,12 +26,13 @@ MAX_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 1000
 EXPORT_LIMIT = 5000
 REVIEW_SECONDS = 15 * 60
-HEADERS = ["Product Name", "Category", "Selling Price", "GST", "Storage Location",
+PREVIOUS_HEADERS = ["Product Name", "Category", "Selling Price", "GST", "Storage Location",
            "Concentration", "Threshold limit", "Status", "Mix / No Mix",
            "Created By", "Created At", "Updated By", "Updated At"]
-LEGACY = HEADERS[:7] + ["HSN code", "Status", "Allergens / No Mix"]
+HEADERS = PREVIOUS_HEADERS[:9] + ["HSN code"] + PREVIOUS_HEADERS[9:]
+LEGACY = PREVIOUS_HEADERS[:7] + ["HSN code", "Status", "Allergens / No Mix"]
 ROW_FIELDS = ("name", "category_name", "selling_price", "gst", "storage_location_name",
-              "concentration", "threshold_limit", "status", "mix")
+              "concentration", "threshold_limit", "status", "mix", "hsn_code")
 
 
 def encode(rows, format):
@@ -42,7 +43,7 @@ def invalid(message):
     raise allergens.AllergenError(message, 422, "allergen_invalid_file")
 
 
-def exact_workbook_rows(data, *, max_columns=13, numeric_columns=None):
+def exact_workbook_rows(data, *, max_columns=14, numeric_columns=None):
     rows = workbook_rows(data, max_columns=max_columns)
     # Retain original numeric XML lexemes for all decimal columns. Excel numeric
     # cells can already be rounded by their producer; text cells are recommended.
@@ -62,6 +63,14 @@ def exact_workbook_rows(data, *, max_columns=13, numeric_columns=None):
                 if cell.tag.rsplit("}", 1)[-1] != "c" or cell.attrib.get("t", "n") != "n":
                     continue
                 coordinate = cell.attrib.get("r", "")
+                # Codes are identifiers, not numbers. A numeric Excel cell
+                # cannot prove its leading zeros; require an explicit text cell.
+                if (numeric_columns is None and coordinate.startswith("J") and coordinate[1:].isdigit()
+                        and int(coordinate[1:]) > 1 and rows and rows[0] in (HEADERS[:10], HEADERS)):
+                    index = int(coordinate[1:]) - 1
+                    if index < len(rows) and len(rows[index]) > 9:
+                        rows[index][9] = "HSN must be a text cell"
+                    continue
                 if coordinate[:1] not in columns or not coordinate[1:].isdigit():
                     continue
                 index = int(coordinate[1:]) - 1
@@ -93,8 +102,8 @@ def parse(data, filename):
         try:
             rows = []
             for row in csv.reader(io.StringIO(data.decode("utf-8-sig")), strict=True):
-                if len(rows) >= MAX_ROWS + 1 or len(row) > 13 or any(len(cell) > 10000 for cell in row):
-                    invalid("CSV exceeds 1,000 records, thirteen columns or 10,000 characters per cell.")
+                if len(rows) >= MAX_ROWS + 1 or len(row) > 14 or any(len(cell) > 10000 for cell in row):
+                    invalid("CSV exceeds 1,000 records, fourteen columns or 10,000 characters per cell.")
                 rows.append(row)
         except (UnicodeError, csv.Error):
             invalid("Use valid UTF-8 CSV with well-formed quoted cells.")
@@ -106,9 +115,10 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] not in (HEADERS[:9], HEADERS, LEGACY):
-        invalid("Use the nine-column sample, thirteen-column current export, or exact legacy CSV headers.")
+    if not rows or rows[0] not in (HEADERS[:10], HEADERS, PREVIOUS_HEADERS[:9], PREVIOUS_HEADERS, LEGACY):
+        invalid("Use the current ten-column sample or fourteen-column export, or an exact previously exported header layout.")
     legacy = rows[0] == LEGACY
+    current_layout = rows[0] in (HEADERS[:10], HEADERS)
     if legacy and not csv_file:
         invalid("The obsolete HSN / Allergens layout is supported only for legacy CSV backups.")
     width = len(rows[0])
@@ -117,10 +127,14 @@ def parse(data, filename):
         errors = [] if len(cells) == width else ["Row must match the header column count."]
         values = [(cells[index].strip() if index < len(cells) else "") for index in range(width)]
         if legacy:
-            # HSN is explicitly discarded; never added to the business model.
-            del values[7]
-        values = values[:9]
-        values.extend([""] * (9 - len(values)))
+            # Obsolete HSN is only a candidate: resolve() must validate it
+            # against the live mapping and its supplied GST before reuse.
+            candidate = values.pop(7)
+            values = values[:9] + [candidate]
+        elif not current_layout:
+            values = values[:9] + [""]
+        values = values[:10]
+        values.extend([""] * (10 - len(values)))
         for index in (0, 1, 4, 5):
             value = values[index]
             # Local CSV exports escaped formula prefixes, but did NOT escape
@@ -129,6 +143,11 @@ def parse(data, filename):
         row = dict(zip(ROW_FIELDS, values))
         row["selling_price"] = row["selling_price"] or None
         row["threshold_limit"] = row["threshold_limit"] or None
+        row["hsn_code"] = row["hsn_code"] or None
+        if row["hsn_code"] is None:
+            errors.append("HSN code is required for every imported new product; no mapping is inferred from GST.")
+        if row["threshold_limit"] is None:
+            errors.append("Threshold limit (ml) is required for every imported new product; zero is valid.")
         row["status"] = row["status"].lower()
         raw_mix = row["mix"]
         accepted = ("Allergens", "No Mix") if legacy else ("Mix", "No Mix")
@@ -138,11 +157,11 @@ def parse(data, filename):
         # Reference resolution is authoritative SQL, never browser-local IDs.
         try:
             body = AllergenFields(**business(row, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"))
-            for field in ("name", "selling_price", "gst", "concentration", "threshold_limit", "status"):
+            for field in ("name", "selling_price", "gst", "hsn_code", "concentration", "threshold_limit", "status"):
                 row[field] = getattr(body, field)
         except ValidationError as exc:
             labels = {"name": "Product Name", "selling_price": "Selling Price", "gst": "GST",
-                      "concentration": "Concentration", "threshold_limit": "Threshold limit", "status": "Status"}
+                      "hsn_code": "HSN code", "concentration": "Concentration", "threshold_limit": "Threshold limit", "status": "Status"}
             for issue in exc.errors():
                 field = issue["loc"][0]
                 errors.append(f"{labels.get(field, 'Product')}: {issue['msg']}.")
@@ -155,7 +174,7 @@ def parse(data, filename):
 def business(row, category_id, storage_location_id):
     return dict(name=row["name"], category_id=category_id, storage_location_id=storage_location_id,
                 selling_price=row["selling_price"], gst=row["gst"], concentration=row["concentration"],
-                threshold_limit=row["threshold_limit"], status=row["status"], mix=row["mix"] == "Mix")
+                hsn_code=row["hsn_code"], threshold_limit=row["threshold_limit"], status=row["status"], mix=row["mix"] == "Mix")
 
 
 def normalized_keys(db, names):
@@ -184,6 +203,24 @@ def resolve(db, rows):
             snapshots.append(f"{name_field}:{row['row']}:{record.id}:{record.version}" if record else f"{name_field}:{row['row']}:unavailable")
             if record is None:
                 row["errors"].append(f"{title} must uniquely match an active non-deleted shared record by name.")
+    from app.db.hsn_models import HsnMapping
+    mappings = list(db.scalars(select(HsnMapping).where(
+        HsnMapping.code.in_({row["hsn_code"] for row in rows if row["hsn_code"]}))
+        .order_by(HsnMapping.id).execution_options(populate_existing=True).with_for_update(read=True)))
+    by_code = {mapping.code: mapping for mapping in mappings}
+    for row in rows:
+        mapping = by_code.get(row["hsn_code"])
+        snapshots.append(f"hsn:{row['row']}:{mapping.id}:{mapping.version}:{mapping.code}:{mapping.gst}:{mapping.status}"
+                         if mapping else f"hsn:{row['row']}:unavailable")
+        if row["hsn_code"] is not None:
+            if mapping is None or mapping.status != "active":
+                row["errors"].append("HSN code must match an active shared HSN mapping; obsolete file values are not trusted.")
+            else:
+                try:
+                    if mapping.gst != Decimal(row["gst"]):
+                        row["errors"].append("HSN code and GST do not match the saved HSN mapping.")
+                except InvalidOperation:
+                    row["errors"].append("GST must be a valid percentage matching the HSN mapping.")
     return resolved, snapshots
 
 
@@ -191,7 +228,7 @@ def review_digest(actor, data, filename, snapshots):
     # An intentionally short, stateless review lease: no file bytes saved.
     # References, actor and refresh session are bound, not merely file bytes.
     bucket = int(utcnow().timestamp()) // REVIEW_SECONDS
-    message = "\0".join(("allergen:half-up-cents", str(actor.user.id), actor.session_id, str(bucket), filename,
+    message = "\0".join(("allergen:hsn-required-v1", str(actor.user.id), actor.session_id, str(bucket), filename,
                          hashlib.sha256(data).hexdigest(), *snapshots)).encode()
     return hmac.new(get_settings().signing_key.encode(), message, hashlib.sha256).hexdigest()
 
@@ -230,8 +267,9 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 def sample(format):
     # Deliberately not local sample references. Operators replace these labels
     # with names from their active shared directories before review.
-    return encode([HEADERS[:9], ["Diagnostic reagent", "Your active category", "125.50", "12.00",
-                                "Your active location", "10 mg/mL", "", "active", "Mix"]], format)
+    return encode([HEADERS[:10], ["Diagnostic reagent", "Your active category", "125.50", "12.00",
+                                 "Your active location", "10 mg/mL", "0", "active", "Mix",
+                                 "Your saved HSN code"]], format)
 
 
 @present_export
@@ -247,7 +285,7 @@ def export(db, actor, query="", status="all", format="csv", **filters):
             record = allergens.projection(db, row)
             rows.append([safe_text(row.name), safe_text(record["category_name"]), record["selling_price"] or "",
                          record["gst"], safe_text(record["storage_location_name"]), safe_text(row.concentration),
-                         record["threshold_limit"] or "", row.status, "Mix" if row.mix else "No Mix",
+                         record["threshold_limit"] or "", row.status, "Mix" if row.mix else "No Mix", row.hsn_code or "",
                          safe_text(record["createdBy"]), row.created_at.isoformat(),
                          safe_text(record["updatedBy"]), row.updated_at.isoformat()])
         db.commit()

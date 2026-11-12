@@ -8,7 +8,7 @@ from app.schemas.rates import rate
 from app.schemas.master_validation import MasterWriteFields
 
 BUSINESS_FIELDS = ("name", "category_id", "storage_location_id", "selling_price", "gst",
-                   "concentration", "threshold_limit", "status", "mix")
+                   "hsn_code", "concentration", "threshold_limit", "status", "mix")
 
 
 class AllergenFields(MasterWriteFields):
@@ -19,6 +19,7 @@ class AllergenFields(MasterWriteFields):
     storage_location_id: uuid.UUID
     selling_price: str | None = Field(default=None, max_length=64, description="Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.")
     gst: str = Field(min_length=1, max_length=64, description="Original percentage 0–100, up to six source places; half-up rounded and returned with two places.")
+    hsn_code: str | None = Field(default=None, pattern=r"^[0-9]{1,16}$", description="Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.")
     concentration: str = Field(min_length=1, max_length=200)
     threshold_limit: str | None = Field(default=None, max_length=64)
     status: Literal["active", "inactive"]
@@ -115,6 +116,7 @@ class AllergenImportRow(BaseModel):
     storage_location_name: str
     selling_price: str | None
     gst: str
+    hsn_code: str | None
     concentration: str
     threshold_limit: str | None
     status: str

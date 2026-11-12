@@ -210,6 +210,11 @@ import type {
   HeadquarterVersion,
   HeadquarterZonePage,
   HealthStatus,
+  HsnEdit,
+  HsnFields,
+  HsnPage,
+  HsnResponse,
+  HsnStatus,
   ImmEligibilityInput,
   ImmExtractCategories,
   ImmExtractView,
@@ -273,6 +278,7 @@ import type {
   ListDownloadLogsParams,
   ListHeadquarterZoneChoicesParams,
   ListHeadquartersParams,
+  ListHsnMappingsParams,
   ListImmunotherapyExtractCategoriesParams,
   ListImmunotherapyOrdersParams,
   ListInHouseStockParams,
@@ -329,6 +335,7 @@ import type {
   LocationStatus,
   LocationVersion,
   LoginRequest,
+  LookupAllergenHsnParams,
   LookupDoctorPincodeParams,
   LookupMRPincodeParams,
   LookupPatientPincodeParams,
@@ -47934,3 +47941,546 @@ export function useGetVersion<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getLookupAllergenHsnUrl = (params?: LookupAllergenHsnParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens/hsn-lookup?${stringifiedParams}`
+    : `/api/v1/admin/allergens/hsn-lookup`;
+};
+
+/**
+ * @summary References Hsn
+ */
+export const lookupAllergenHsn = async (
+  params?: LookupAllergenHsnParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HsnPage> => {
+  return customFetch<HsnPage>(getLookupAllergenHsnUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupAllergenHsnQueryKey = (
+  params?: LookupAllergenHsnParams,
+) => {
+  return [
+    `/api/v1/admin/allergens/hsn-lookup`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupAllergenHsnQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupAllergenHsn>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: LookupAllergenHsnParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupAllergenHsn>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupAllergenHsnQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupAllergenHsn>>
+  > = ({ signal }) => lookupAllergenHsn(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupAllergenHsn>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupAllergenHsnQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupAllergenHsn>>
+>;
+export type LookupAllergenHsnQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References Hsn
+ */
+
+export function useLookupAllergenHsn<
+  TData = Awaited<ReturnType<typeof lookupAllergenHsn>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: LookupAllergenHsnParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupAllergenHsn>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupAllergenHsnQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListHsnMappingsUrl = (params?: ListHsnMappingsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/hsn?${stringifiedParams}`
+    : `/api/v1/admin/hsn`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listHsnMappings = async (
+  params?: ListHsnMappingsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HsnPage> => {
+  return customFetch<HsnPage>(getListHsnMappingsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListHsnMappingsQueryKey = (params?: ListHsnMappingsParams) => {
+  return [`/api/v1/admin/hsn`, ...(params ? [params] : [])] as const;
+};
+
+export const getListHsnMappingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHsnMappings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListHsnMappingsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHsnMappings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListHsnMappingsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listHsnMappings>>> = ({
+    signal,
+  }) => listHsnMappings(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHsnMappings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHsnMappingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHsnMappings>>
+>;
+export type ListHsnMappingsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListHsnMappings<
+  TData = Awaited<ReturnType<typeof listHsnMappings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListHsnMappingsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHsnMappings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHsnMappingsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateHsnMappingUrl = () => {
+  return `/api/v1/admin/hsn`;
+};
+
+/**
+ * @summary Create
+ */
+export const createHsnMapping = async (
+  hsnFields: HsnFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HsnResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HsnResponse>(getCreateHsnMappingUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(hsnFields),
+  });
+};
+
+export const getCreateHsnMappingMutationKey = () =>
+  ["createHsnMapping"] as const;
+
+export const getCreateHsnMappingMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHsnMapping>>,
+    TError,
+    CreateHsnMappingMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHsnMapping>>,
+  TError,
+  CreateHsnMappingMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateHsnMappingMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHsnMapping>>,
+    CreateHsnMappingMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createHsnMapping(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHsnMappingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHsnMapping>>
+>;
+export type CreateHsnMappingMutationBody = BodyType<HsnFields>;
+export type CreateHsnMappingMutationError = ErrorType<ErrorEnvelope>;
+export type CreateHsnMappingMutationVariables = { data: BodyType<HsnFields> };
+
+/**
+ * @summary Create
+ */
+export const useCreateHsnMapping = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHsnMapping>>,
+    TError,
+    CreateHsnMappingMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHsnMapping>>,
+  TError,
+  CreateHsnMappingMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateHsnMappingMutationOptions(options));
+};
+
+export const getEditHsnMappingUrl = (recordId: string) => {
+  return `/api/v1/admin/hsn/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editHsnMapping = async (
+  recordId: string,
+  hsnEdit: HsnEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HsnResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HsnResponse>(getEditHsnMappingUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(hsnEdit),
+  });
+};
+
+export const getEditHsnMappingMutationKey = () => ["editHsnMapping"] as const;
+
+export const getEditHsnMappingMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editHsnMapping>>,
+    TError,
+    EditHsnMappingMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editHsnMapping>>,
+  TError,
+  EditHsnMappingMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditHsnMappingMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editHsnMapping>>,
+    EditHsnMappingMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return editHsnMapping(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditHsnMappingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editHsnMapping>>
+>;
+export type EditHsnMappingMutationBody = BodyType<HsnEdit>;
+export type EditHsnMappingMutationError = ErrorType<ErrorEnvelope>;
+export type EditHsnMappingMutationVariables = {
+  recordId: string;
+  data: BodyType<HsnEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditHsnMapping = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editHsnMapping>>,
+    TError,
+    EditHsnMappingMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editHsnMapping>>,
+  TError,
+  EditHsnMappingMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditHsnMappingMutationOptions(options));
+};
+
+export const getStatusHsnMappingUrl = (recordId: string) => {
+  return `/api/v1/admin/hsn/${recordId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const statusHsnMapping = async (
+  recordId: string,
+  hsnStatus: HsnStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HsnResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HsnResponse>(getStatusHsnMappingUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(hsnStatus),
+  });
+};
+
+export const getStatusHsnMappingMutationKey = () =>
+  ["statusHsnMapping"] as const;
+
+export const getStatusHsnMappingMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof statusHsnMapping>>,
+    TError,
+    StatusHsnMappingMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof statusHsnMapping>>,
+  TError,
+  StatusHsnMappingMutationVariables,
+  TContext
+> => {
+  const mutationKey = getStatusHsnMappingMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof statusHsnMapping>>,
+    StatusHsnMappingMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return statusHsnMapping(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StatusHsnMappingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof statusHsnMapping>>
+>;
+export type StatusHsnMappingMutationBody = BodyType<HsnStatus>;
+export type StatusHsnMappingMutationError = ErrorType<ErrorEnvelope>;
+export type StatusHsnMappingMutationVariables = {
+  recordId: string;
+  data: BodyType<HsnStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useStatusHsnMapping = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof statusHsnMapping>>,
+    TError,
+    StatusHsnMappingMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof statusHsnMapping>>,
+  TError,
+  StatusHsnMappingMutationVariables,
+  TContext
+> => {
+  return useMutation(getStatusHsnMappingMutationOptions(options));
+};

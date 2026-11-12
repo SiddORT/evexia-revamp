@@ -20,6 +20,8 @@ export interface DilutionMaterialSetup {
    * @maxLength 64
    */
   gst: string;
+  /** Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable. */
+  hsn_code?: string | null;
   idempotencyKey: string;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
   mix: boolean;

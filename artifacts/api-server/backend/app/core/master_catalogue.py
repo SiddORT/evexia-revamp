@@ -16,6 +16,7 @@ MASTER_RESOURCES = {
     "language": CRUD_TRANSFER,
     "designation": CRUD_TRANSFER,
     "allergen": CRUD_TRANSFER,
+    "hsn": ("view", "add", "edit"),
     "product": CRUD_TRANSFER,
     "vendor": CRUD_TRANSFER,
     "sales_target": CRUD_TRANSFER,

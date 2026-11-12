@@ -214,6 +214,8 @@ export interface AllergenEdit {
    * @maxLength 64
    */
   gst: string;
+  /** Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable. */
+  hsn_code?: string | null;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
   mix: boolean;
   /**
@@ -249,6 +251,8 @@ export interface AllergenFields {
    * @maxLength 64
    */
   gst: string;
+  /** Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable. */
+  hsn_code?: string | null;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
   mix: boolean;
   /**
@@ -272,6 +276,7 @@ export interface AllergenImportRow {
   concentration: string;
   errors: string[];
   gst: string;
+  hsn_code: string | null;
   mix: string;
   name: string;
   row: number;
@@ -325,6 +330,8 @@ export interface AllergenResponse {
    * @maxLength 64
    */
   gst: string;
+  /** Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable. */
+  hsn_code?: string | null;
   id: string;
   inventoryOnly?: boolean;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
@@ -1082,6 +1089,8 @@ export interface DilutionMaterialSetup {
    * @maxLength 64
    */
   gst: string;
+  /** Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable. */
+  hsn_code?: string | null;
   idempotencyKey: string;
   /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
   mix: boolean;
@@ -13916,6 +13925,92 @@ export interface ZoneVersion {
   expected_version: number;
 }
 
+export type HsnEditStatus = (typeof HsnEditStatus)[keyof typeof HsnEditStatus];
+
+export const HsnEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HsnEdit {
+  /** @pattern ^[0-9]{1,16}$ */
+  code: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  status: HsnEditStatus;
+}
+
+export type HsnFieldsStatus =
+  (typeof HsnFieldsStatus)[keyof typeof HsnFieldsStatus];
+
+export const HsnFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HsnFields {
+  /** @pattern ^[0-9]{1,16}$ */
+  code: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  status: HsnFieldsStatus;
+}
+
+export type HsnResponseStatus =
+  (typeof HsnResponseStatus)[keyof typeof HsnResponseStatus];
+
+export const HsnResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HsnResponse {
+  /** @pattern ^[0-9]{1,16}$ */
+  code: string;
+  createdAt: string;
+  createdBy: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  id: string;
+  status: HsnResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface HsnPage {
+  filtered: number;
+  items: HsnResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type HsnStatusStatus =
+  (typeof HsnStatusStatus)[keyof typeof HsnStatusStatus];
+
+export const HsnStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HsnStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: HsnStatusStatus;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -17522,3 +17617,49 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
+
+export type LookupAllergenHsnParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  code?: string | null;
+  gst?: string | null;
+};
+
+export type ListHsnMappingsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListHsnMappingsStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListHsnMappingsStatus =
+  (typeof ListHsnMappingsStatus)[keyof typeof ListHsnMappingsStatus];
+
+export const ListHsnMappingsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;

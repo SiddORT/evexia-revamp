@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -157,7 +157,10 @@ def main() -> None:
                     if (args.scope == "low-stock" and
                         (path.startswith("/v1/admin/low-stock-settings") or path.endswith("/low-stock-alerts")))
                     or (args.scope == "languages" and
-                        (path == "/v1/admin/languages" or path.startswith("/v1/admin/languages/")))}
+                        (path == "/v1/admin/languages" or path.startswith("/v1/admin/languages/")))
+                    or (args.scope == "hsn-allergens" and
+                        (path == "/v1/admin/hsn" or path.startswith("/v1/admin/hsn/")
+                         or path == "/v1/admin/allergens" or path.startswith("/v1/admin/allergens/")))}
         needed = set()
 
         def collect(value):
@@ -177,8 +180,9 @@ def main() -> None:
         collect(selected)
         schema_updates = {}
         for name in needed:
-            prefix = "Language" if args.scope == "languages" else "LowStock"
-            if name.startswith(prefix) or name not in existing["components"]["schemas"]:
+            prefixes = (("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
+                        else ("Language",) if args.scope == "languages" else ("LowStock",))
+            if name.startswith(prefixes) or name not in existing["components"]["schemas"]:
                 schema_updates[name] = contract["components"]["schemas"][name]
         # Preserve handwritten contract formatting and unrelated refinements,
         # not just their parsed values. Only scoped member values are replaced.
@@ -215,7 +219,8 @@ def main() -> None:
             for name, value in sorted(updates.items()):
                 if name in entries:
                     begin, end = entries[name]
-                    edits.append((begin, end, encoded(value)))
+                    if json.loads(source[begin:end]) != value:
+                        edits.append((begin, end, encoded(value)))
                 else:
                     additions.append(indent + json.dumps(name) + ": " + encoded(value))
             if additions:
