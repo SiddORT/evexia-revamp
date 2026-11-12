@@ -75,6 +75,7 @@ export default function OpeningStockMaster() {
     { key: 'rate', label: 'Unit rate', render: (r) => <span className="inv-mono">{money(r.unitRate)}</span> },
     { key: 'val', label: 'Opening value', render: (r) => <span className="inv-mono">{valueMoney(r.openingValue)}</span> },
     { key: 'loc', label: 'Location', render: (r) => locationLabel(r.location) },
+    { key: 'expiry', label: 'Expiry', render: (r) => r.expiryDate ? date(r.expiryDate) : 'Unknown / unavailable' },
     { key: 'date', label: 'Recorded', render: (r) => <>{date(r.recordedDate)}<span className="stock-sub">{r.actor}</span></> },
     { key: 'act', label: 'Actions', render: (r) => <div className="admin-table__actions">
       <button id={`opening-view-${r.id}`} type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Opening stock details" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button></div> },

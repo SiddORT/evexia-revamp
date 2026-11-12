@@ -12,6 +12,7 @@ import type { OpeningSavedMode } from "./openingSavedMode";
 import type { OpeningSavedState } from "./openingSavedState";
 
 export interface OpeningSaved {
+  expiryDate?: Date | null;
   activity: MovementActivity[];
   actor: string;
   actorId: string;

@@ -4,6 +4,7 @@ import { ArrowLeft, Download } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import OpeningPendingBanner from '../../components/admin/OpeningPendingBanner.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js';
 import { recordLocalAction } from '../../services/localActivity.js';
 import { listReference } from '../../services/serverInventory.js';
@@ -63,6 +64,7 @@ const STATE_LABEL = { ready: 'Ready', skipped: 'Skipped (untouched)', already_im
 
 export default function OpeningStockImportPage() {
   const [, navigate] = useLocation();
+  const { date: displayDate } = useAdminDateFormatters();
   const [file, setFile] = useState(null);
   const [review, setReview] = useState(null);
   const [busy, setBusy] = useState('');
@@ -119,7 +121,7 @@ export default function OpeningStockImportPage() {
     } finally { lock.current = false; setBusy(''); }
   }
   return <AdminLayout title="Import opening stock"><div className="move-stocks-page opening-stock-import">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Import</p><h1>Import opening stock</h1><p className="admin-page-head__description">Download the sample catalogue, fill quantity, unit rate and optional location for the rows you need, then review before committing.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Import</p><h1>Import opening stock</h1><p className="admin-page-head__description">Download the sample catalogue, fill quantity, unit rate, optional location and optional expiry date for the rows you need, then review before committing.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => leaveGuard(BASE)}><ArrowLeft size={16} /> All opening stock</button></div></div>
     <MasterImportTabs kind="opening-stock" />
     <OpeningPendingBanner refreshSignal={tick} onResolved={(r) => { keyRef.current = null; setBlocked(false); if (r.state === 'committed') { recordLocalAction('opening_stock', 'imported'); setFile(null); setReview(null); setResult({ posted: r.result?.postedCount ?? 0, already: r.result?.alreadyImportedCount ?? 0, records: r.result?.records?.length ?? 0 }); return; } setMessage('The earlier import was not committed. Your file and review are kept.'); setTick((t) => t + 1); }} />
@@ -130,6 +132,7 @@ export default function OpeningStockImportPage() {
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busy)} onClick={() => sample('xlsx')} data-testid="button-sample-xlsx"><Download size={16} /> Sample XLSX</button>
       </div>
       <p className="mr-form__hint">Untouched catalogue rows are skipped. Partially filled rows show errors. A quantity of zero creates no posting. Rows already imported, including rows from an export, are not posted again.</p>
+      <p className="mr-form__hint">Expiry date uses YYYY-MM-DD in samples; blank means unknown. Exact previous 12-column backups remain supported with unknown expiry. A saved source/row identity cannot be reused with a changed expiry. Unknown, expiry-today and expired allergens remain unusable under the Asia/Kolkata boundary.</p>
       <div className="ms-field"><label htmlFor="os-file">Filled file (CSV or XLSX)</label>
         <input id="os-file" ref={input} type="file" className="mr-form__control" accept=".csv,.xlsx" disabled={Boolean(busy)} onChange={(e) => { setFile(e.target.files?.[0] || null); setReview(null); keyRef.current = null; }} data-testid="input-opening-file" /></div>
       <div><button type="button" className="admin-button" disabled={!file || Boolean(busy) || blocked} onClick={doReview} data-testid="button-review-import">{busy === 'review' ? 'Reviewing…' : 'Review file'}</button></div>
@@ -140,10 +143,10 @@ export default function OpeningStockImportPage() {
         {review.summary && <><p className="mr-form__hint">{review.summary.records} record{review.summary.records === 1 ? '' : 's'} would be created. {review.summary.scope}</p>
           <div className="inv-scroll"><table className="inv-lines"><caption>Reviewed quantity and opening value by item, unit and original location</caption><thead><tr><th scope="col">Item</th><th scope="col">Location</th><th scope="col">Quantity</th><th scope="col">Opening value</th></tr></thead>
             <tbody>{review.summary.breakdown.map((b) => <tr key={`${b.itemKind}:${b.itemId}:${b.locationId || 'u'}`}><td>{b.productName}</td><td>{b.locationName}</td><td>{b.quantity} {b.unit}</td><td>{valueMoney(b.openingValue)}</td></tr>)}</tbody></table></div></>}
-        <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Row</th><th scope="col">State</th><th scope="col">Item</th><th scope="col">Quantity</th><th scope="col">Unit rate</th><th scope="col">Location</th><th scope="col">Errors</th></tr></thead>
+        <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Row</th><th scope="col">State</th><th scope="col">Item</th><th scope="col">Quantity</th><th scope="col">Unit rate</th><th scope="col">Location</th><th scope="col">Expiry</th><th scope="col">Errors</th></tr></thead>
           <tbody>{review.rows.map((r) => <tr key={r.row}><td>{r.row}</td><td>{r.errors?.length ? 'Error' : STATE_LABEL[r.state] || r.state}</td>
             <td>{r.values ? (names.items.get(`${r.values.itemKind}:${r.values.itemId}`)?.name || `${r.values.itemKind === 'combo' ? 'Product' : 'Allergen'} ${r.values.itemId}`) : ''}{r.values && <span className="stock-sub">{r.values.itemKind === 'combo' ? 'Product' : 'Allergen'}{names.items.get(`${r.values.itemKind}:${r.values.itemId}`)?.unit ? ` · ${names.items.get(`${r.values.itemKind}:${r.values.itemId}`).unit}` : ''}</span>}</td><td className="inv-mono">{r.values?.quantity ?? ''}</td><td className="inv-mono">{r.values?.unitRate != null ? money(r.values.unitRate) : ''}</td><td>{r.values ? (r.values.locationId ? (names.locations.get(r.values.locationId) || r.values.locationId) : 'Unallocated') : ''}</td>
-            <td>{r.errors?.length ? <span className="mr-form__error" role="alert">{r.errors.join(' ')}</span> : ''}</td></tr>)}</tbody></table></div>
+            <td>{r.values ? (r.values.expiryDate ? displayDate(r.values.expiryDate) : 'Unknown / unavailable') : ''}</td><td>{r.errors?.length ? <span className="mr-form__error" role="alert">{r.errors.join(' ')}</span> : ''}</td></tr>)}</tbody></table></div>
         {!review.valid && <p className="mr-form__error" role="alert">Fix the marked rows in your file and review again. Nothing can be committed until every filled row is valid.</p>}
         <div className="ms-head-actions"><button type="button" className="admin-button" disabled={!review.valid || !review.command || !review.reviewToken || Boolean(busy) || blocked} onClick={commit} data-testid="button-commit-import">{busy === 'commit' ? 'Importing…' : review.validCount === 0 ? 'Confirm and reconcile' : 'Confirm and import'}</button></div>
         {!review.command && <p className="mr-form__hint" role="status">Every row is untouched, so there is nothing to commit. Fill quantity and unit rate for the rows you need.</p>}

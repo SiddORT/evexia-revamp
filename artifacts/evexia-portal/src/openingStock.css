@@ -102,7 +102,7 @@
 }
 .opening-stock-form .opening-stock-form__remove {
   grid-column: 2;
-  grid-row: 8;
+  grid-row: 10;
   align-self: start;
   width: 42px;
   height: 42px;
@@ -123,15 +123,15 @@
   }
   .opening-stock-form .opening-stock-form__remove {
     grid-column: 3;
-    grid-row: 4;
+    grid-row: 6;
   }
 }
 @container (min-width: 1000px) {
   .opening-stock-form .opening-stock-form__controls {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr);
   }
   .opening-stock-form .opening-stock-form__controls--removable {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) 42px;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr) 42px;
   }
   .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(3) {
     grid-column: 3;
@@ -139,8 +139,11 @@
   .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(4) {
     grid-column: 4;
   }
-  .opening-stock-form .opening-stock-form__remove {
+  .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(5) {
     grid-column: 5;
+  }
+  .opening-stock-form .opening-stock-form__remove {
+    grid-column: 6;
     grid-row: 2;
   }
 }

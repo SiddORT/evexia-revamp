@@ -28077,6 +28077,7 @@ export const ListOpeningStockResponse = zod.object({
         }),
       ),
       actor: zod.string(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       actorId: zod.string().uuid(),
       after: zod.string(),
       appendOnly: zod.boolean(),
@@ -28156,6 +28157,7 @@ export const CreateOpeningStockBody = zod.object({
   rows: zod
     .array(
       zod.object({
+        expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
         itemId: zod.string().uuid(),
         itemKind: zod.enum(["allergen", "combo"]),
         locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -28190,6 +28192,7 @@ export const CreateOpeningStockResponse = zod.object({
         }),
       ),
       actor: zod.string(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       actorId: zod.string().uuid(),
       after: zod.string(),
       appendOnly: zod.boolean(),
@@ -28304,6 +28307,7 @@ export const ReviewOpeningStockImportResponse = zod.object({
       rows: zod
         .array(
           zod.object({
+            expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
             itemId: zod.string().uuid(),
             itemKind: zod.enum(["allergen", "combo"]),
             locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -28338,6 +28342,7 @@ export const ReviewOpeningStockImportResponse = zod.object({
       state: zod.enum(["ready", "skipped", "already_imported"]),
       values: zod.union([
         zod.object({
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           itemId: zod.string().uuid(),
           itemKind: zod.enum(["allergen", "combo"]),
           locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -28393,6 +28398,7 @@ export const PreviewOpeningStockBody = zod.object({
   rows: zod
     .array(
       zod.object({
+        expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
         itemId: zod.string().uuid(),
         itemKind: zod.enum(["allergen", "combo"]),
         locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -28417,6 +28423,7 @@ export const PreviewOpeningStockResponse = zod.object({
   reviewToken: zod.string(),
   rows: zod.array(
     zod.object({
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       itemId: zod.string().uuid(),
       itemKind: zod.enum(["allergen", "combo"]),
       itemVersion: zod.number().int(),
@@ -28530,6 +28537,7 @@ export const ReconcileOpeningStockRequestResponse = zod.object({
             }),
           ),
           actor: zod.string(),
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           actorId: zod.string().uuid(),
           after: zod.string(),
           appendOnly: zod.boolean(),
@@ -28630,6 +28638,7 @@ export const getOpeningStockResponseQuantityRegExp = new RegExp(
 );
 
 export const GetOpeningStockResponse = zod.object({
+  expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
   activity: zod.array(
     zod.object({
       action: zod.string(),

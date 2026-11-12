@@ -20603,6 +20603,13 @@
       "OpeningReviewedRow": {
         "additionalProperties": false,
         "properties": {
+          "expiryDate": {
+            "anyOf": [
+              {"format": "date", "type": "string"},
+              {"type": "null"}
+            ],
+            "title": "Expirydate"
+          },
           "itemId": {
             "format": "uuid",
             "title": "Itemid",
@@ -20698,6 +20705,13 @@
       "OpeningRow": {
         "additionalProperties": false,
         "properties": {
+          "expiryDate": {
+            "anyOf": [
+              {"format": "date", "type": "string"},
+              {"type": "null"}
+            ],
+            "title": "Expirydate"
+          },
           "itemId": {
             "format": "uuid",
             "title": "Itemid",
@@ -20759,6 +20773,13 @@
       "OpeningSaved": {
         "additionalProperties": false,
         "properties": {
+          "expiryDate": {
+            "anyOf": [
+              {"format": "date", "type": "string"},
+              {"type": "null"}
+            ],
+            "title": "Expirydate"
+          },
           "activity": {
             "items": {
               "$ref": "#/components/schemas/MovementActivity"

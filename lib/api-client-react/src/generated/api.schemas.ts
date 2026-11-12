@@ -7719,6 +7719,7 @@ export const OpeningRowItemKind = {
 } as const;
 
 export interface OpeningRow {
+  expiryDate?: string | null;
   itemId: string;
   itemKind: OpeningRowItemKind;
   locationId?: string | null;
@@ -7825,6 +7826,7 @@ export const OpeningSavedState = {
 } as const;
 
 export interface OpeningSaved {
+  expiryDate?: string | null;
   activity: MovementActivity[];
   actor: string;
   actorId: string;
@@ -7928,6 +7930,7 @@ export const OpeningReviewedRowState = {
 } as const;
 
 export interface OpeningReviewedRow {
+  expiryDate?: string | null;
   itemId: string;
   itemKind: OpeningReviewedRowItemKind;
   itemVersion: number;

@@ -17,7 +17,7 @@ from xml.etree import ElementTree as XML
 
 FORMATS = {"dd-mmm-yyyy", "mm-dd-yyyy", "dd-mm-yyyy", "yyyy-mm-dd"}
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-CALENDAR_HEADERS = {"Date of Joining", "Date of Birth", "Recorded date"}
+CALENDAR_HEADERS = {"Date of Joining", "Date of Birth", "Recorded date", "Expiry date"}
 INSTANT_HEADERS = {"Created At", "Updated At"}
 MARKER = re.compile(r"^(.*?) \[EVEXIA date=(dd-mmm-yyyy|mm-dd-yyyy|dd-mm-yyyy|yyyy-mm-dd)\]$")
 AUDIT_ZONE = re.compile(r"^(Created At|Updated At) \(([^()]{1,100})\)$")

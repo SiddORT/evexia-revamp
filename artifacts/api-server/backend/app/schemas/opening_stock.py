@@ -20,6 +20,18 @@ class OpeningRow(BaseModel):
     quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
     unitRate: str = Field(max_length=64)
     locationId: uuid.UUID | None = None
+    expiryDate: date | None = None
+
+    @field_validator("expiryDate", mode="before")
+    @classmethod
+    def expiry_date(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, datetime) or not (
+            isinstance(value, date) or isinstance(value, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value)
+        ):
+            raise ValueError("Use a real expiry date in YYYY-MM-DD format, or null for unknown.")
+        return value
 
     @field_validator("unitRate")
     @classmethod

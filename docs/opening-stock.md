@@ -49,10 +49,43 @@ All stock writers still take the User/session locks then the shared inventory
 advisory lock. Opening records, retries and opening lots are immutable; postings
 and movement history retain existing database guards.
 
-Location-specific assembly cannot select Unallocated quantities. Opening lots
-also have unavailable expiry, so the existing assembly expiry guard refuses them
-as components even after allocation. No new expiry-assignment or clinical policy
-is introduced here.
+Location-specific assembly cannot select Unallocated quantities. New opening
+rows may retain an explicitly entered expiry; the existing common expiry guard
+admits future-dated allergen lots only. Undated historical openings remain
+unusable even after allocation. No clinical policy is introduced here.
+
+### Explicit expiry entry — source-only delivery
+
+Each new row offers an optional date-only expiry with no default. The server
+accepts real `YYYY-MM-DD` calendar dates or null, rejecting timestamps, numbers,
+impossible dates and empty strings at the JSON boundary. The form sends null
+for blank; transfers map blank cells to null. Review, list, details and import
+review show the supplied date using subscribed date preferences, or
+**Unknown / unavailable**. Sample dates stay ISO. Exports follow the existing
+explicit date-format header context and imports restore ISO before validation;
+without export preferences the backup stays ISO.
+
+Expiry is part of the reviewed command, review digest, request digest,
+immutable opening snapshot and authoritative lot metadata. An already-posted
+source/row identity with a different expiry conflicts, including attempts to
+date an old undated opening. Historical encrypted payloads missing the field
+read as unknown without resealing them. Exact pre-expiry request retries retain
+their old digest compatibility only when every submitted expiry is null.
+Reconciliation returns the stored result, never credits a second time.
+
+Move Stocks already loads positive balances at the selected real source or
+the explicit Unallocated bucket. Shared eligibility admits future dates
+(including the next-15-days window), rejects expiry-today/past/unknown at the
+Asia/Kolkata boundary, and rechecks at review and posting. Combo movement
+rules and the separate physical-versus-usable Stock Status contract are unchanged.
+There is no historical backfill, schema migration or ledger rewrite.
+
+This delivery received source/diff inspection only: future, today, past, blank,
+invalid and independently dated rows; old encrypted payloads/backups;
+same-identity expiry changes; and durable save/retry paths were traced in source.
+No tests, builds, typechecks, browser/manual runtime verification, release
+checks, workflow wrappers/starts, startup hooks or migrations were run.
+Runtime behavior and layout remain unverified.
 
 ### Stock Status physical and usable quantities
 
@@ -68,7 +101,8 @@ Stock Status uses separate required presentation fields:
 - `physicalUnallocatedQuantity`: the included NULL-location portion, not an
   additional quantity to add to the total.
 - `physicalLots`: corresponding current lot/location balances, retaining saved
-  opening provenance and unavailable historical batch/expiry dates.
+  opening provenance, explicitly supplied expiry (if any), and unknown batch
+  history without inference.
 
 Other expired, expiry-today or unknown-expiry non-opening allergen lots remain
 excluded here. Allergen eligibility still ends at 00:00 Asia/Kolkata on the
@@ -142,7 +176,7 @@ closing returns focus to the initiating Actions control.
 ## Portable transfers
 
 The sample contains the current eligible catalogue, stable item kind/UUID,
-readable names/units, new source/row UUIDs and blank quantity/rate/location.
+readable names/units, new source/row UUIDs and blank quantity/rate/location/expiry.
 The import page provides a paged searchable active location UUID/name guide.
 Optional location may be an active UUID or exact unambiguous active name; supplied
 ID/name pairs must agree. Catalogue metadata does not initialize a location.
@@ -153,7 +187,12 @@ creates no posting. Repeated source/row identities are errors before posting.
 One recorded date is supported per new import operation; blank dates mean the
 UTC review date. Original backup dates remain retained, never overwritten.
 
-Files are limited to 2 MiB/1,000 data rows/12 columns/10,000 characters per cell.
+Current files append `Expiry date` as the thirteenth column. Exact previous
+12-column headers and rows remain accepted with unknown expiry; arbitrary
+reordered/extended headers or mismatched row lengths remain invalid. Export
+retains saved expiry, or blank for unknown, without changing source/row IDs.
+
+Files are limited to 2 MiB/1,000 data rows/13 columns/10,000 characters per cell.
 Raw uploads and one-field multipart uploads share the existing bounded master
 reader, including 64 KiB overhead and a 15-second read limit. XLSX uses existing
 archive/XML/link/formula guards followed by original numeric XML lexemes for

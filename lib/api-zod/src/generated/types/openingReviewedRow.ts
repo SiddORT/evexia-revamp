@@ -10,6 +10,7 @@ import type { OpeningReviewedRowItemKind } from "./openingReviewedRowItemKind";
 import type { OpeningReviewedRowState } from "./openingReviewedRowState";
 
 export interface OpeningReviewedRow {
+  expiryDate?: Date | null;
   itemId: string;
   itemKind: OpeningReviewedRowItemKind;
   itemVersion: number;

@@ -20,7 +20,7 @@ const BASE = '/admin/masters/opening-stock';
 const UNALLOCATED = { value: 'unallocated', label: 'Unallocated (no physical location)' };
 const MAX_ROWS = 50;
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const blankRow = () => ({ rowId: newId(), item: null, quantity: '', unitRate: '', location: UNALLOCATED });
+const blankRow = () => ({ rowId: newId(), item: null, quantity: '', unitRate: '', expiryDate: '', location: UNALLOCATED });
 const validDay = (v) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
   const parsed = new Date(`${v}T00:00:00Z`);
@@ -70,18 +70,19 @@ export default function OpeningStockFormPage() {
       if (!r.item) m.push('Select an allergen or product.');
       else if (!validQuantity(r.quantity, r.item.itemKind)) m.push(r.item.itemKind === 'combo' ? 'Quantity must be a whole number from 1 to 1000000.' : 'Enter a positive quantity up to 1000000; up to six source decimals round half-up to two places, at least 0.01.');
       if (r.unitRate.trim() && !validRate(r.unitRate)) m.push('Unit rate must be a number up to 999999999999.99 with at most 6 decimals (rounded half-up to 2).');
+      if (r.expiryDate && !validDay(r.expiryDate)) m.push('Enter a real expiry date or leave blank for unknown.');
       if (m.length) e[i] = m.join(' ');
     });
     return e;
   }
   const body = () => ({ mode: 'manual', recordedDate: draft.recordedDate, rows: draft.rows.map((r) => ({
     sourceId: draft.sourceId, rowId: r.rowId, itemKind: r.item.itemKind, itemId: r.item.itemId,
-    quantity: r.quantity.trim(), unitRate: r.unitRate.trim() || '0.00', locationId: r.location.value === 'unallocated' ? null : r.location.value })) });
+    quantity: r.quantity.trim(), unitRate: r.unitRate.trim() || '0.00', expiryDate: r.expiryDate || null, locationId: r.location.value === 'unallocated' ? null : r.location.value })) });
 
   function showFieldErrors(error) {
     const next = {};
     for (const [field, message] of Object.entries(error.fields || {})) {
-      const row = /^rows\.(\d+)\.(?:quantity|unitRate|itemId|itemKind|locationId|sourceId|rowId)$/.exec(field);
+      const row = /^rows\.(\d+)\.(?:quantity|unitRate|expiryDate|itemId|itemKind|locationId|sourceId|rowId)$/.exec(field);
       if (row && draft.rows[Number(row[1])]) next[row[1]] = message;
       else if (field === 'recordedDate') next.date = message;
       else if (field === 'rows') next.rows = message;
@@ -121,7 +122,7 @@ export default function OpeningStockFormPage() {
     } finally { lock.current = false; if (mounted.current) setBusy(''); }
   }
   const err = (k) => errors[k] && <p id={`os-${k}-error`} className="mr-form__error" role="alert">{errors[k]}</p>;
-  const dirty = !done && (Boolean(review) || draft.rows.length > 1 || draft.recordedDate !== today() || draft.rows.some((r) => r.item || r.quantity || r.unitRate || r.location.value !== 'unallocated'));
+  const dirty = !done && (Boolean(review) || draft.rows.length > 1 || draft.recordedDate !== today() || draft.rows.some((r) => r.item || r.quantity || r.unitRate || r.expiryDate || r.location.value !== 'unallocated'));
   const leaveGuard = useProductDraftNavigation({ dirty, busy: Boolean(busy), uncertain: blocked, message: 'Discard this unsaved opening stock entry and leave? Nothing has been committed.' });
   const leave = () => leaveGuard(BASE);
   return <AdminLayout title="Add opening stock"><div className="move-stocks-page opening-stock-form">
@@ -134,6 +135,7 @@ export default function OpeningStockFormPage() {
         <div className="ms-fields"><div className="ms-field opening-stock-form__date"><label htmlFor="os-date">Recorded date <span className="mr-form__required">*</span></label>
           <input id="os-date" type="date" className="mr-form__control" value={draft.recordedDate} onChange={(e) => { reset(); setDraft((d) => ({ ...d, recordedDate: e.target.value })); setErrors((x) => ({ ...x, date: undefined })); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'os-date-error' : undefined} data-testid="input-opening-date" />{err('date')}</div></div>
         {err('rows')}
+        <p className="mr-form__hint" id="os-expiry-help">Expiry is optional; blank means unknown. Allergen stock with unknown expiry, expiry today or a past expiry cannot be moved or used. Expiry is evaluated in Asia/Kolkata. Saved opening records cannot be edited.</p>
         {draft.rows.map((r, i) => <div key={r.rowId} className="opening-stock-form__row" data-testid={`row-opening-${i}`}>
           <div className={`opening-stock-form__controls${draft.rows.length > 1 ? ' opening-stock-form__controls--removable' : ''}`}>
           <div className="ms-field"><label htmlFor={`os-item-${i}`}>Allergen or product <span className="mr-form__required">*</span></label>
@@ -144,6 +146,7 @@ export default function OpeningStockFormPage() {
           <div className="ms-field"><label htmlFor={`os-loc-${i}`}>Storage location</label>
             <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={openingLocationReferences} refreshKey={locationRevision} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
               onChange={(_v, o) => patchRow(i, { location: o ? { value: o.value, label: o.label } : UNALLOCATED })} /></div>
+          <div className="ms-field"><label htmlFor={`os-expiry-${i}`}>Expiry date</label><input id={`os-expiry-${i}`} type="date" className="mr-form__control" value={r.expiryDate} onChange={(e) => patchRow(i, { expiryDate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={`os-expiry-help${errors[i] ? ` os-${i}-error` : ''}`} data-testid={`input-opening-expiry-${i}`} /></div>
           {draft.rows.length > 1 && <button type="button" className="admin-button admin-button--secondary opening-stock-form__remove" aria-label={`Remove opening stock row ${i + 1}`} onClick={() => { reset(); setDraft((d) => ({ ...d, rows: d.rows.filter((_x, j) => j !== i) })); }} data-testid={`button-remove-opening-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
           </div>
           {err(i)}
@@ -152,8 +155,8 @@ export default function OpeningStockFormPage() {
       </div></fieldset>
       {review && <div className="ms-form-body" data-testid="panel-opening-review"><h2 className="ms-section-title">Review before committing</h2>
         <p>Recorded {displayDate(review.body.recordedDate)}. Values below are canonical as returned by the server.</p>
-        <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Item</th><th scope="col">Quantity (ml)</th><th scope="col">Unit rate</th><th scope="col">Opening value</th><th scope="col">Location</th></tr></thead>
-          <tbody>{review.rows.map((r) => <tr key={r.rowId}><td>{r.productName}<span className="stock-sub">{r.itemKind === 'combo' ? 'Product' : 'Allergen'}</span></td><td className="inv-mono">{r.quantity} {r.unit}</td><td className="inv-mono">{money(r.unitRate)}</td><td className="inv-mono">{valueMoney(r.openingValue)}</td><td>{locationLabel(r.location)}</td></tr>)}</tbody></table></div>
+        <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Item</th><th scope="col">Quantity (ml)</th><th scope="col">Unit rate</th><th scope="col">Opening value</th><th scope="col">Location</th><th scope="col">Expiry</th></tr></thead>
+          <tbody>{review.rows.map((r) => <tr key={r.rowId}><td>{r.productName}<span className="stock-sub">{r.itemKind === 'combo' ? 'Product' : 'Allergen'}</span></td><td className="inv-mono">{r.quantity} {r.unit}</td><td className="inv-mono">{money(r.unitRate)}</td><td className="inv-mono">{valueMoney(r.openingValue)}</td><td>{locationLabel(r.location)}</td><td>{r.expiryDate ? displayDate(r.expiryDate) : 'Unknown / unavailable'}</td></tr>)}</tbody></table></div>
         {review.summary && <p className="mr-form__hint">{review.summary.records} record{review.summary.records === 1 ? '' : 's'}. {review.summary.scope}</p>}</div>}
       <div className="ms-footer"><span>{review ? 'Nothing is saved until you confirm.' : 'Reviewed on the server before commit.'}</span><div className="ms-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={leave} disabled={busy === 'save'}>Cancel</button>

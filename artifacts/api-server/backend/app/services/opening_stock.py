@@ -14,6 +14,7 @@ from app.services.purchase_received_crypto import PRError
 from app.services.zones import label
 
 HISTORY = "Pre-system batch, expiry, receipt and assembly history unavailable; no historical values inferred."
+DATED_HISTORY = "Expiry explicitly entered at opening; pre-system batch, receipt and assembly history unavailable; no historical values inferred."
 SCOPE = ("All matching committed opening records, not current stock or sales revenue. Opening value is exact "
          "canonical quantity × retained two-place unit rate, rounded half-up to hundredths, not an accounting valuation. "
          "Quantities/values grouped by item, established unit and original location; movements never rewrite openings.")
@@ -69,7 +70,8 @@ def existing(db, row):
 def same_input(saved, row):
     return all(saved[k] == row.model_dump(mode="json")[k] for k in
                ("sourceId", "rowId", "itemKind", "itemId", "unitRate", "locationId")) and \
-        Decimal(saved["quantity"]) == Decimal(row.quantity)
+        Decimal(saved["quantity"]) == Decimal(row.quantity) and \
+        saved.get("expiryDate") == (row.expiryDate.isoformat() if row.expiryDate else None)
 
 
 def review_row(db, crypto, row, recorded_date):
@@ -116,9 +118,17 @@ def create(db, actor, body):
     from app.services.retry_capabilities import envelope, result as retry_response
     def work(current, crypto):
         hashes = crypto.digests(["opening-request:v1", body.model_dump(mode="json")])
+        # Pre-expiry retries hashed rows without this optional field. Only an
+        # entirely undated command may match that immutable historical digest.
+        compatible_hashes = set(hashes.values())
+        if all(row.expiryDate is None for row in body.rows):
+            legacy = body.model_dump(mode="json")
+            for row in legacy["rows"]:
+                row.pop("expiryDate")
+            compatible_hashes.update(crypto.digests(["opening-request:v1", legacy]).values())
         retry = db.get(Retry, body.idempotencyKey)
         if retry:
-            if retry.actor_id != current.user.id or retry.digest not in hashes.values():
+            if retry.actor_id != current.user.id or retry.digest not in compatible_hashes:
                 raise PRError("Request identity is closed or conflicts; reconcile before another save.", 409, "opening_retry")
             return retry_response(current, "opening_stock", crypto.open(retry.key, "opening_retry", retry.payload_ciphertext))
         review = review_data(db, crypto, body)
@@ -144,7 +154,8 @@ def create(db, actor, body):
             db.flush()
             data = dict(**reviewed, id=str(oid), lotId=str(lid), recordedDate=body.recordedDate.isoformat(),
                 mode=body.mode, createdAt=now.isoformat(), actor=actor_name, actorId=str(current.user.id),
-                source="opening", appendOnly=True, before="0.00", after=reviewed["quantity"], historicalData=HISTORY,
+                source="opening", appendOnly=True, before="0.00", after=reviewed["quantity"],
+                historicalData=DATED_HISTORY if row.expiryDate else HISTORY,
                 activity=[dict(action="opening_stock_imported" if body.mode == "import" else "opening_stock_created",
                     at=now.isoformat(), actor=actor_name, requestId=db.info.get("request_id"))])
             db.add(Opening(id=oid, source_id=row.sourceId, row_id=row.rowId, actor_id=current.user.id,
@@ -154,8 +165,8 @@ def create(db, actor, body):
                 productId=str(row.itemId), productName=reviewed["productName"], unit=reviewed["unit"],
                 unitRate=row.unitRate, openingValue=reviewed["openingValue"],
                 openingLocation=reviewed["location"], recordedDate=body.recordedDate.isoformat(),
-                batchNo=None, expiryDate=None, receiptId=None, receiptNumber=None, lineId=None,
-                receivedDate=None, originalCreatedAt=now.isoformat(), historicalData=HISTORY,
+                batchNo=None, expiryDate=reviewed["expiryDate"], receiptId=None, receiptNumber=None, lineId=None,
+                receivedDate=None, originalCreatedAt=now.isoformat(), historicalData=data["historicalData"],
                 originLocationId=str(row.locationId) if row.locationId else None,
                 originLocationName=reviewed["location"]["name"])
             lot = Lot(id=lid, opening_id=oid, product_id=row.itemId if row.itemKind == "allergen" else None,

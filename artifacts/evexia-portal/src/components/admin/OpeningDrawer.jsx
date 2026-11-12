@@ -51,6 +51,7 @@ export default function OpeningDrawer({ id, onClose, returnFocusTo }) {
           <div><dt>Opening value</dt><dd className="inv-mono">{valueMoney(o.openingValue)}</dd></div>
           <div><dt>Location</dt><dd>{locationLabel(o.location)}</dd></div>
           <div><dt>Recorded date</dt><dd>{date(o.recordedDate)}</dd></div>
+          <div><dt>Expiry date</dt><dd>{o.expiryDate ? date(o.expiryDate) : 'Unknown / unavailable'}</dd></div>
         </dl>}
     </div>
   </dialog>;

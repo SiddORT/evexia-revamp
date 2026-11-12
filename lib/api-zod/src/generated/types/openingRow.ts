@@ -8,6 +8,7 @@
 import type { OpeningRowItemKind } from "./openingRowItemKind";
 
 export interface OpeningRow {
+  expiryDate?: Date | null;
   itemId: string;
   itemKind: OpeningRowItemKind;
   locationId?: string | null;

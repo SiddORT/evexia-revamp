@@ -1024,6 +1024,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (mutation) {
     const expected = new Set((body?.rows || []).map((r) => `${r.sourceId}:${r.rowId}`));
+    const expectedExpiry = new Map((body?.rows || []).map((r) => [`${r.sourceId}:${r.rowId}`, r.expiryDate ?? null]));
     const returned = new Set((data?.records || []).map((r) => `${r.sourceId}:${r.rowId}`));
     // New openings use hundredths; retry/import results can retain immutable
     // thousandth snapshots. Validate their strings without rounding evidence.
@@ -1034,6 +1035,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
         || returned.size !== data.records.length
         || data.records.some((r) => !uuidPattern.test(r.id) || !uuidPattern.test(r.lotId)
           || !expected.has(`${r.sourceId}:${r.rowId}`) || r.source !== 'opening'
+          || (r.expiryDate ?? null) !== expectedExpiry.get(`${r.sourceId}:${r.rowId}`)
           || !savedQuantity(r.quantity) || !/^\d+\.\d{2}$/.test(r.unitRate))) {
       const e = new SessionError('The server save response is incomplete. Keep this draft and check the save outcome before another save.');
       e.ambiguous = true; throw e;

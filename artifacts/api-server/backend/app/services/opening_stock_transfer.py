@@ -20,10 +20,12 @@ from app.services.purchase_received_crypto import PRError
 
 MAX_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 1000
-HEADERS = ["Source ID", "Row ID", "Item type", "Item ID", "Item name", "Unit", "Quantity",
+LEGACY_HEADERS = ["Source ID", "Row ID", "Item type", "Item ID", "Item name", "Unit", "Quantity",
            "Unit rate", "Storage location ID", "Storage location name", "Recorded date", "Location guidance"]
+HEADERS = LEGACY_HEADERS + ["Expiry date"]
 GUIDANCE = ("Blank location = Unallocated. Use a current active Storage Location UUID (see the import page location guide), "
-            "or an exact unique active name. Never use catalogue location hints. Keep quantity/rate cells as text.")
+            "or an exact unique active name. Never use catalogue location hints. Keep quantity/rate cells as text. "
+            "Optional expiry: YYYY-MM-DD; blank means unknown, never inferred.")
 
 
 def invalid(message):
@@ -38,7 +40,7 @@ def parse(data, filename):
         try:
             for row in csv.reader(io.StringIO(data.decode("utf-8-sig")), strict=True):
                 if len(rows) > MAX_ROWS or len(row) > len(HEADERS) or any(len(v) > 10000 for v in row):
-                    invalid("CSV exceeds 1000 catalogue rows, 12 columns or 10000 characters per cell.")
+                    invalid("CSV exceeds 1000 catalogue rows, 13 columns or 10000 characters per cell.")
                 rows.append(row)
         except (UnicodeError, csv.Error):
             invalid("Use well-formed UTF-8 CSV.")
@@ -50,8 +52,12 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 CSV and genuine inert XLSX files are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] != HEADERS or len(rows) < 2:
-        invalid("Use the unchanged 12-column Opening Stock sample or exported backup headers.")
+    if not rows or rows[0] not in (HEADERS, LEGACY_HEADERS) or len(rows) < 2:
+        invalid("Use the unchanged 13-column Opening Stock sample/backup or exact previous 12-column backup headers.")
+    if rows[0] == LEGACY_HEADERS:
+        # Normalize only exact legacy rows; malformed lengths remain errors.
+        return [row + [""] if len(row) == len(LEGACY_HEADERS) else []
+                for row in rows[1:]]
     return rows[1:]
 
 
@@ -64,11 +70,11 @@ def review(db, actor, data, filename):
         for number, raw in enumerate(cells, 2):
             errors, row, state, values = [], None, "ready", None
             if len(raw) != len(HEADERS):
-                output.append(dict(row=number, values=None, errors=["Row must contain exactly 12 cells."], state="ready"))
+                output.append(dict(row=number, values=None, errors=["Row must match the file's exact header cell count (13 current, 12 legacy)."], state="ready"))
                 continue
-            source, rid, kind, iid, name, unit, qty, rate, lid, lname, recorded, _ = [unsafed(v.strip()) for v in raw]
+            source, rid, kind, iid, name, unit, qty, rate, lid, lname, recorded, _, expiry = [unsafed(v.strip()) for v in raw]
             # Untouched catalogue rows and genuinely empty rows are not inputs.
-            if not any((qty, rate, lid, lname, recorded)):
+            if not any((qty, rate, lid, lname, recorded, expiry)):
                 output.append(dict(row=number, values=None, errors=[], state="skipped"))
                 continue
             try:
@@ -84,7 +90,7 @@ def review(db, actor, data, filename):
                             raise ValueError("Location name must resolve to exactly one active location; use its UUID to disambiguate.")
                         lid = str(matches[0].id)
                 row = OpeningRow(sourceId=source, rowId=rid, itemKind=kind, itemId=iid,
-                    quantity=qty, unitRate=rate or "0", locationId=lid or None)
+                    quantity=qty, unitRate=rate or "0", locationId=lid or None, expiryDate=expiry or None)
                 key = (row.sourceId, row.rowId)
                 if key in seen:
                     raise ValueError("Repeated source/row identity within this file.")
@@ -107,7 +113,8 @@ def review(db, actor, data, filename):
                 values = row.model_dump(mode="json")
             except ValidationError as exc:
                 labels = {"quantity": "Quantity: use 0–1000000 with up to six source decimals; saves round half-up to two places. Products still require whole quantities.",
-                          "unitRate": "Unit rate: nonnegative decimal string, up to 6 source decimals, rounded half-up to 2, maximum 999999999999.99."}
+                           "unitRate": "Unit rate: nonnegative decimal string, up to 6 source decimals, rounded half-up to 2, maximum 999999999999.99.",
+                           "expiryDate": "Expiry date: use a real calendar date in YYYY-MM-DD format, or leave blank for unknown."}
                 for err in exc.errors():
                     field = str(err["loc"][0]) if err["loc"] else "row"
                     errors.append("Quantity: finished products require whole quantities." if not err["loc"] else
@@ -152,7 +159,7 @@ def sample(db, actor, format):
             raise PRError("Eligible catalogue exceeds the 1000-row sample limit. No partial catalogue returned.", 422, "opening_sample_limit")
         source = str(uuid.uuid4())
         return encoded([HEADERS] + [[source, str(uuid.uuid4()), r["itemKind"], r["id"], r["name"], r["unit"],
-            "", "", "", "", "", GUIDANCE] for r in catalogue], format)
+            "", "", "", "", "", GUIDANCE, ""] for r in catalogue], format)
     return inv.transaction(db, actor, work, capability=("opening_stock", "import"))
 
 
@@ -164,5 +171,5 @@ def export(db, actor, query, format):
             raise PRError("More than 1000 matching openings; narrow the search. No partial export returned.", 422, "opening_export_limit")
         return encoded([HEADERS] + [[r["sourceId"], r["rowId"], r["itemKind"], r["itemId"], r["productName"],
             r["unit"], r["quantity"], r["unitRate"], r["locationId"] or "",
-            r["location"]["name"] if r["locationId"] else "", r["recordedDate"], GUIDANCE] for r in rows], format)
+             r["location"]["name"] if r["locationId"] else "", r["recordedDate"], GUIDANCE, r.get("expiryDate") or ""] for r in rows], format)
     return inv.transaction(db, actor, work, capability=("opening_stock", "export"))
