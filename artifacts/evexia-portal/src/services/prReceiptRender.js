@@ -295,14 +295,10 @@ function wrappedText(x, baseline, lines, options = {}) {
     textElement(x, baseline + index * lineHeight, line, options)).join('');
 }
 
+import { displayQuantity } from './quantities.js';
 function quantity(value) {
   if (value === null || value === undefined || value === '') return DASH;
-  const number = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(number)) return safeText(value);
-  return new Intl.NumberFormat('en-IN', {
-    maximumFractionDigits: 3,
-    useGrouping: true,
-  }).format(number);
+  return displayQuantity(String(value));
 }
 
 function normalizeModel(model) {

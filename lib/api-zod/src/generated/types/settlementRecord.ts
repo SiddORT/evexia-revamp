@@ -12,9 +12,6 @@ import type { SettlementRecordVerification } from "./settlementRecordVerificatio
 import type { SettlementTransaction } from "./settlementTransaction";
 
 export interface SettlementRecord {
-  status: string;
-  payable: boolean;
-  paymentStatus: SettlementRecordPaymentStatus;
   balance: string | null;
   date: string;
   doctor: SettlementPerson | null;
@@ -25,6 +22,9 @@ export interface SettlementRecord {
   number: string;
   paid: string;
   patients: SettlementPerson[];
+  payable: boolean;
+  paymentStatus: SettlementRecordPaymentStatus;
+  status: string;
   total: string | null;
   transactions: SettlementTransaction[];
   verification: SettlementRecordVerification;

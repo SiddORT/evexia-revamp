@@ -7,6 +7,12 @@ Rates/prices and discounts must round half-up in saved values and transfers,
 not merely look rounded on screen. Presentation and decimal-string exports use
 exactly two fractional digits. This is not a blanket policy for every number.
 
+The later approved business-quantity policy in
+[business-quantity-policy.md](business-quantity-policy.md) supersedes the quantity
+and threshold exclusions below for its explicitly listed operational areas.
+Historical financial facts, existing exact money contracts and clinical values
+still retain their separate boundaries.
+
 **Why:** The user confirmed that category prices, Allergen selling prices/GST,
 discounts and new procurement snapshots follow the same two-decimal policy,
 while quantities, thresholds, balances and historical financial records retain

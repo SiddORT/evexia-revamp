@@ -143,6 +143,8 @@ function parseScaled(text, scale) {
 }
 const roundDiv = (numerator, divisor) => (numerator * 2n + divisor) / (divisor * 2n);
 
+import { normalizeQuantity } from './quantities.js';
+
 export const MAX_LINES = 100;
 export function validConcentration(value) {
   return typeof value === 'string' && [...value.trim()].length >= 1 && [...value.trim()].length <= 200
@@ -154,8 +156,8 @@ const MAX_PRICE = 999999999999999999n; // 999999999999.999999 at scale 6
 const MAX_GST = 100n * 1000000n;
 
 export function parseQuantity(text) {
-  const value = parseScaled(text, 3);
-  return value === null || value <= 0n || value > MAX_QTY ? null : value;
+  try { return parseScaled(normalizeQuantity(String(text).trim(), { positive: true }), 3); }
+  catch { return null; }
 }
 
 /** Validate original bounds before rounding; untouched saved rates stay exact. */

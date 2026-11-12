@@ -85,7 +85,8 @@ export async function reconcileKey(key) {
   return r;
 }
 
-export const qty3 = (v) => { const n = BigInt(v); return `${n / 1000n}.${String(n % 1000n).padStart(3, '0')}`; };
+import { displayQuantity } from './quantities.js';
+export const qty3 = (v) => { const n = BigInt(v); return displayQuantity(`${n / 1000n}.${String(n % 1000n).padStart(3, '0')}`); };
 
 /** Exact two-place half-up rate in integer cents (mirrors server rounding); null when invalid. */
 export function toCents(value) {

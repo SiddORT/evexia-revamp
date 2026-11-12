@@ -17,7 +17,7 @@ import { masterNameError, normalizeMasterName } from '../../services/masterValid
 
 const BASE = '/admin/masters/products';
 const PRICE_HELP = 'Independent of component prices. Rounded half-up to two decimals by the server. Selling price must not exceed MRP.';
-const qtyRe = /^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/;
+const qtyRe = /^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$/;
 let rowSeq = 0;
 const blank = () => ({ rid: ++rowSeq, allergen: null, quantity: '' });
 const signature = (name, mrp, sellingPrice, status, rows) => JSON.stringify([name, mrp, sellingPrice, status, rows.map((r) => [r.allergen?.value || '', r.quantity])]);
@@ -90,7 +90,7 @@ export default function ProductFormPage({ id }) {
     rows.forEach((r) => {
       if (!r.allergen) e[r.rid] = 'Select an allergen.';
       else if (seen.has(r.allergen.value)) e[r.rid] = 'Each allergen can appear only once.';
-      else if (!qtyRe.test(r.quantity.trim()) || milli(r.quantity) === null || milli(r.quantity) <= 0n || milli(r.quantity) > MAX_MILLI) e[r.rid] = 'Enter a positive quantity up to 1000000, with up to 3 decimals.';
+      else if (!qtyRe.test(r.quantity.trim()) || milli(r.quantity) === null || milli(r.quantity) <= 0n || milli(r.quantity) > MAX_MILLI) e[r.rid] = 'Enter a positive quantity up to 1000000; up to six source decimals round half-up to two places, at least 0.01.';
       if (r.allergen) seen.add(r.allergen.value);
     });
     return e;

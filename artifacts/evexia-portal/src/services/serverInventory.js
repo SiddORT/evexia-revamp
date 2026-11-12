@@ -1,4 +1,5 @@
 import { presentExportTable } from './exportDatePresentation.js';
+import { quantityHundredths, displayQuantity } from './quantities.js';
 import { getSession, inventoryRequest as request } from '../auth/adminSession.js';
 
 export const UNIT = 'procurement quantity units';
@@ -68,12 +69,9 @@ export async function forgetMove(key) {
   });
 }
 
-/** Exact decimal helpers: thousandths as BigInt, never Number. */
+/** Compatibility scale: canonical hundredths × 10, not higher-precision stock. */
 export const milli = (v) => {
-  const s = String(v ?? '').trim();
-  if (!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/.test(s)) return null;
-  const [a, b = ''] = s.split('.');
-  return BigInt(a + b.padEnd(3, '0'));
+  try { return quantityHundredths(String(v ?? '').trim()) * 10n; } catch { return null; }
 };
 export const MAX_MILLI = 1000000000n;
 export function validateLines(lines) {
@@ -81,7 +79,7 @@ export function validateLines(lines) {
   let count = 0;
   lines.forEach(({ lot, quantity }) => {
     const n = milli(quantity), a = milli(lot.available);
-    if (n === null || n <= 0n) errors[lot.id] = 'Enter a positive quantity with up to 3 decimals.';
+    if (n === null || n <= 0n) errors[lot.id] = 'Enter a positive quantity; up to six source decimals round half-up to two places, at least 0.01.';
     else if (n > MAX_MILLI) errors[lot.id] = 'Quantity cannot exceed 1000000.';
     else if (a !== null && n > a) errors[lot.id] = `Quantity exceeds available ${lot.available}.`;
     else count++;
@@ -90,7 +88,7 @@ export function validateLines(lines) {
 }
 export function sumMilli(values) {
   const total = values.reduce((s, v) => s + (milli(v) ?? 0n), 0n);
-  return `${total / 1000n}.${String(total % 1000n).padStart(3, '0')}`;
+  return displayQuantity(`${total / 1000n}.${String(total % 1000n).padStart(3, '0')}`);
 }
 
 export const formatPrice = (v) => v == null || v === '' || Number.isNaN(Number(v)) ? 'Not set'
@@ -128,6 +126,7 @@ export const LEDGER_TYPES = [
   { value: 'assembly_consumption', label: 'Assembly consumption' }, { value: 'adjustment', label: 'Manual adjustment' },
   { value: 'disposal', label: 'Expired-stock disposal' },
   { value: 'dilution', label: 'In-house dilution' },
+  { value: 'precision', label: 'Two-decimal precision boundary' }, { value: 'order_consumption', label: 'Approved order consumption' },
 ];
 export const typeLabel = (t) => LEDGER_TYPES.find((o) => o.value === t)?.label || String(t || 'Entry');
 const adjKey = () => `evexia.adjust.pending:${ownerMove()}`;

@@ -9,7 +9,7 @@ class AdjustmentInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     productId: uuid.UUID
     direction: Literal["add", "reduce"]
-    quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
     reason: str = Field(min_length=1, max_length=2000)
     locationId: uuid.UUID | None
     lotId: uuid.UUID | None = None

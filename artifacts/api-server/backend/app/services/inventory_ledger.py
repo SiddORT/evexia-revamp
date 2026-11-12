@@ -18,8 +18,10 @@ from app.services import inventory as inv, purchase_orders as orders
 from app.services.inventory_adjustments import product, identity
 from app.services.purchase_received_crypto import ReceiptCrypto
 from app.core.config import get_settings
+from app.schemas.quantities import rounded_quantity
+from app.services.quantity_precision import checkpoints, verify_chain, source_residual
 
-TYPES = {"opening", "receipt", "receipt_correction", "transfer", "allocation", "dilution",
+TYPES = {"precision", "opening", "receipt", "receipt_correction", "transfer", "allocation", "dilution", "order_consumption",
          "assembly_consumption", "adjustment", "disposal"}
 
 
@@ -107,15 +109,8 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
         loc = lambda key: locations.get(key, "Location unavailable") if key else "Unallocated"
         # A lifetime sum alone can conceal missing net-zero movements. Check each
         # retained lot/location chain, including exhausted lots, before arithmetic.
-        chain = defaultdict(lambda: Decimal(0))
-        for row in raw:
-            key = (row.lot_id, row.location_id)
-            if row.before != chain[key] or row.after != row.before + row.delta:
-                fail("Recorded lot/location history has a missing or inconsistent posting.")
-            chain[key] = row.after
-        actual = {(b.lot_id, b.location_id): b.quantity for b in balances}
-        if any(chain[k] != actual.get(k, Decimal(0)) for k in chain.keys() | actual.keys()):
-            fail("Recorded postings do not reconcile to current authoritative stock.")
+        boundary = checkpoints(db, "inventory", list(by_id))
+        verify_chain(raw, balances, boundary)
         for lot in lots:
             if lot.accepted <= 0:
                 continue
@@ -124,8 +119,17 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
                       f"opening:{lot.opening_id}" if lot.opening_id else None)
             credits = [p for p in raw if p.lot_id == lot.id and
                        (p.source_key == origin if origin else p.source_key.startswith(f"receipt:{lot.receipt_id}:"))]
-            if sum((p.delta for p in credits), Decimal(0)) != lot.accepted:
+            if sum((p.delta for p in credits), Decimal(0)) + source_residual(db, lot.id) != rounded_quantity(lot.accepted):
                 fail("Retained positive lot provenance has missing source postings.")
+        from types import SimpleNamespace
+        for checkpoint in boundary:
+            raw.append(SimpleNamespace(
+                id=checkpoint["id"], lot_id=checkpoint["owner_id"],
+                location_id=uuid.UUID(checkpoint["location_key"]) if checkpoint["location_key"] else None,
+                movement_id=None, source_key="precision:" + str(checkpoint["id"]),
+                created_at=checkpoint["created_at"], delta=checkpoint["residual"],
+                before=checkpoint["original"], after=checkpoint["normalized"], actor_id=None))
+        raw.sort(key=lambda r: (r.created_at, r.id))
         receipt_crypto = ReceiptCrypto(get_settings())
         related = procurement(db, product_id, receipt_crypto)
         receipt_ids = {l.receipt_id for l in lots if l.receipt_id}
@@ -148,7 +152,18 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
             at, business, actor_name, reason = first.created_at, None, "Unavailable (legacy actor snapshot)", "Unavailable (not retained)"
             kind, sid, available = None, None, False
             reference = first.source_key
-            if first.source_key.startswith("dilution:"):
+            if first.source_key.startswith("precision:"):
+                tx, kind = "precision", "quantity_precision"
+                reference = "Two-decimal operational precision boundary"
+                actor_name = "Coordinated schema transition"
+                reason = ("Original postings and source documents retained. Exact rounding residual: "
+                          + format(first.delta, "f") + "; not a receipt, transfer, adjustment or clinical consumption.")
+            elif first.source_key.startswith("it-approval:"):
+                tx, kind = "order_consumption", "immunotherapy"
+                sid = first.source_key.split(":")[1]
+                reference = "Approved Immunotherapy material consumption"
+                reason = "Authorized saved order-material consumption; original approval evidence retained."
+            elif first.source_key.startswith("dilution:"):
                 movement = db.get(inv.Movement, first.movement_id)
                 if not movement:
                     fail("A dilution movement source is missing.")
@@ -251,16 +266,17 @@ def ledger(db, actor, product_id, from_date=None, to_date=None, location_id=None
         visible = []
         for event in events:
             delta = event.pop("_delta")
+            displayed_delta = rounded_quantity(running + delta) - rounded_quantity(running)
             running += delta
             if from_date and event["at"] < from_date:
-                opening += delta
+                opening = rounded_quantity(running)
                 continue
             if to_date and event["at"] >= to_date:
                 continue
-            additions += max(delta, Decimal(0))
-            reductions += max(-delta, Decimal(0))
-            event.update(at=event["at"].isoformat(), quantityIn=inv.q(max(delta, Decimal(0))),
-                         quantityOut=inv.q(max(-delta, Decimal(0))), balance=inv.q(running))
+            additions += max(displayed_delta, Decimal(0))
+            reductions += max(-displayed_delta, Decimal(0))
+            event.update(at=event["at"].isoformat(), quantityIn=inv.q(max(displayed_delta, Decimal(0))),
+                         quantityOut=inv.q(max(-displayed_delta, Decimal(0))), balance=inv.q(running))
             if not transaction_type or event["type"] == transaction_type:
                 visible.append(event)
         current = sum((b.quantity for b in balances if not location_id or b.location_id == selected_location), Decimal(0))

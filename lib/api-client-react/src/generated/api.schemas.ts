@@ -51,8 +51,8 @@ export interface AdjustmentCreate {
   lotId?: string | null;
   productId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**
@@ -81,8 +81,8 @@ export interface AdjustmentInput {
   lotId?: string | null;
   productId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**
@@ -130,8 +130,8 @@ export interface AdjustmentSaved {
   productName: string;
   productVersion: number;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**
@@ -173,8 +173,8 @@ export interface AdjustmentSnapshot {
   productName: string;
   productVersion: number;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**
@@ -462,8 +462,9 @@ export interface MoveLine {
   dilutionFactor?: MoveLineDilutionFactor;
   lotId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * Source quantity; exact half-up normalization to hundredths before review and commit.
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   sourceKind?: MoveLineSourceKind;
@@ -541,8 +542,8 @@ export interface ProductMemberView {
   available: boolean;
   name: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   unit: string;
@@ -1109,8 +1110,8 @@ export interface DisposalCreate {
   idempotencyKey: string;
   locationId: string | null;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**
@@ -1135,8 +1136,8 @@ export interface DisposalInput {
   batchId: string;
   locationId: string | null;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**
@@ -4995,6 +4996,20 @@ export interface LanguageReview {
   validCount: number;
 }
 
+export type LanguageStatusStatus =
+  (typeof LanguageStatusStatus)[keyof typeof LanguageStatusStatus];
+
+export const LanguageStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface LanguageStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: LanguageStatusStatus;
+}
+
 export interface LanguageVersion {
   /** @minimum 1 */
   expected_version: number;
@@ -5253,6 +5268,107 @@ export interface LoginRequest {
    */
   password: string;
   remember_me?: boolean;
+}
+
+export interface LowStockAlertRow {
+  category: string;
+  name: string;
+  productId: string;
+  quantity: string;
+  reason: string;
+  thresholdLimit: string | null;
+  unit: string;
+}
+
+export interface LowStockAlertPage {
+  asOf: string;
+  /** @minimum 0 */
+  filtered: number;
+  items: LowStockAlertRow[];
+  limit: number;
+  offset: number;
+  /** @minimum 0 */
+  total: number;
+}
+
+export type LowStockSaveOutcomeOutcome =
+  (typeof LowStockSaveOutcomeOutcome)[keyof typeof LowStockSaveOutcomeOutcome];
+
+export const LowStockSaveOutcomeOutcome = {
+  committed: "committed",
+  cancelled: "cancelled",
+} as const;
+
+export type LowStockSettingsViewFrequency =
+  (typeof LowStockSettingsViewFrequency)[keyof typeof LowStockSettingsViewFrequency];
+
+export const LowStockSettingsViewFrequency = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+} as const;
+
+export type LowStockSettingsViewRuntimeStatus =
+  (typeof LowStockSettingsViewRuntimeStatus)[keyof typeof LowStockSettingsViewRuntimeStatus];
+
+export const LowStockSettingsViewRuntimeStatus = {
+  blocked: "blocked",
+  eligible: "eligible",
+} as const;
+
+export interface LowStockSettingsView {
+  /** @maxItems 20 */
+  additional_emails: string[];
+  event: "low_stock_alert";
+  frequency: LowStockSettingsViewFrequency;
+  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
+  local_time: string;
+  month_day?: number | null;
+  next_run_at: string;
+  runtime_message: string;
+  runtime_status: LowStockSettingsViewRuntimeStatus;
+  start_date: string;
+  timezone: "Asia/Kolkata";
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  version: number;
+  weekday?: number | null;
+}
+
+export interface LowStockSaveOutcome {
+  committed_version: number | null;
+  outcome: LowStockSaveOutcomeOutcome;
+  saved: LowStockSettingsView;
+}
+
+export type LowStockSettingsWriteFrequency =
+  (typeof LowStockSettingsWriteFrequency)[keyof typeof LowStockSettingsWriteFrequency];
+
+export const LowStockSettingsWriteFrequency = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+} as const;
+
+export interface LowStockSettingsWrite {
+  /** @maxItems 20 */
+  additional_emails: string[];
+  event: "low_stock_alert";
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  frequency: LowStockSettingsWriteFrequency;
+  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
+  local_time: string;
+  month_day?: number | null;
+  request_id: string;
+  start_date: string;
+  timezone: "Asia/Kolkata";
+  weekday?: number | null;
 }
 
 export type LupinUpdatePaymentStatus =
@@ -7590,8 +7706,8 @@ export interface OpeningRow {
   itemKind: OpeningRowItemKind;
   locationId?: string | null;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   rowId: string;
@@ -7711,8 +7827,8 @@ export interface OpeningSaved {
   openingValue: string;
   productName: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   recordedDate: string;
@@ -7803,8 +7919,8 @@ export interface OpeningReviewedRow {
   openingValue: string;
   productName: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   rowId: string;
@@ -8116,8 +8232,8 @@ export interface POLineInput {
   lineId?: string | null;
   productId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   unitPrice?: string | null;
@@ -8430,8 +8546,8 @@ export const PRCreateReceiverMode = {
 
 export interface PRLineInput {
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   acceptedQty: string;
   actualUnitCost?: string | null;
@@ -8444,8 +8560,8 @@ export interface PRLineInput {
   expiryDate: string;
   lineId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   receivedQty: string;
 }
@@ -9995,8 +10111,8 @@ export const ProductCreateStatus = {
 export interface ProductMemberInput {
   allergenId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
 }
@@ -10285,7 +10401,7 @@ export interface ReserveCreate {
   notes?: string;
   /**
    * @minLength 1
-   * @maxLength 11
+   * @maxLength 14
    */
   quantity: string;
   /** @pattern ^[0-9a-f]{64}$ */
@@ -10311,7 +10427,7 @@ export interface ReserveInput {
   notes?: string;
   /**
    * @minLength 1
-   * @maxLength 11
+   * @maxLength 14
    */
   quantity: string;
   /** @maxLength 40 */
@@ -10351,7 +10467,7 @@ export interface ReserveSaved {
   notes?: string;
   /**
    * @minLength 1
-   * @maxLength 11
+   * @maxLength 14
    */
   quantity: string;
   reserveOnly?: true;
@@ -10420,7 +10536,7 @@ export interface ReserveSnapshot {
   notes?: string;
   /**
    * @minLength 1
-   * @maxLength 11
+   * @maxLength 14
    */
   quantity: string;
   reserveOnly?: true;
@@ -11210,11 +11326,11 @@ export interface SettlementPostedAllocation {
 }
 
 export interface SettlementBatchResult {
-  reference?: string | null;
   date: string;
   entries: SettlementPostedAllocation[];
   id: string;
   mode: SettlementBatchResultMode;
+  reference?: string | null;
   total: string;
 }
 
@@ -11231,7 +11347,6 @@ export const SettlementInputMode = {
 } as const;
 
 export interface SettlementInput {
-  reference?: string | null;
   date: string;
   /**
    * @minItems 1
@@ -11240,17 +11355,8 @@ export interface SettlementInput {
   entries: SettlementAllocation[];
   idempotency_key: string;
   mode: SettlementInputMode;
+  reference?: string | null;
 }
-
-export type SettlementRecordPaymentStatus =
-  (typeof SettlementRecordPaymentStatus)[keyof typeof SettlementRecordPaymentStatus];
-
-export const SettlementRecordPaymentStatus = {
-  Unpaid: "Unpaid",
-  Part_paid: "Part paid",
-  Paid: "Paid",
-  Unavailable: "Unavailable",
-} as const;
 
 export interface SettlementPerson {
   code?: string | null;
@@ -11270,6 +11376,16 @@ export const SettlementRecordKind = {
   Kit: "Kit",
   SPT: "SPT",
   Lupin: "Lupin",
+} as const;
+
+export type SettlementRecordPaymentStatus =
+  (typeof SettlementRecordPaymentStatus)[keyof typeof SettlementRecordPaymentStatus];
+
+export const SettlementRecordPaymentStatus = {
+  Unpaid: "Unpaid",
+  Part_paid: "Part paid",
+  Paid: "Paid",
+  Unavailable: "Unavailable",
 } as const;
 
 export type SettlementTransactionMode =
@@ -11294,9 +11410,6 @@ export const SettlementTransactionVerification = {
 } as const;
 
 export interface SettlementTransaction {
-  reference?: string | null;
-  verifiedAt?: string | null;
-  verifiedBy?: string | null;
   actorId: string;
   amount: string;
   batchId: string;
@@ -11304,7 +11417,10 @@ export interface SettlementTransaction {
   date: string;
   id: string;
   mode: SettlementTransactionMode;
+  reference?: string | null;
   verification: SettlementTransactionVerification;
+  verifiedAt?: string | null;
+  verifiedBy?: string | null;
 }
 
 export type SettlementRecordVerification =
@@ -11317,9 +11433,6 @@ export const SettlementRecordVerification = {
 } as const;
 
 export interface SettlementRecord {
-  status: string;
-  payable: boolean;
-  paymentStatus: SettlementRecordPaymentStatus;
   balance: string | null;
   date: string;
   doctor: SettlementPerson | null;
@@ -11330,6 +11443,9 @@ export interface SettlementRecord {
   number: string;
   paid: string;
   patients: SettlementPerson[];
+  payable: boolean;
+  paymentStatus: SettlementRecordPaymentStatus;
+  status: string;
   total: string | null;
   transactions: SettlementTransaction[];
   verification: SettlementRecordVerification;
@@ -13800,121 +13916,6 @@ export interface ZoneVersion {
   expected_version: number;
 }
 
-export type LowStockSaveOutcomeOutcome =
-  (typeof LowStockSaveOutcomeOutcome)[keyof typeof LowStockSaveOutcomeOutcome];
-
-export const LowStockSaveOutcomeOutcome = {
-  committed: "committed",
-  cancelled: "cancelled",
-} as const;
-
-export type LowStockSettingsViewFrequency =
-  (typeof LowStockSettingsViewFrequency)[keyof typeof LowStockSettingsViewFrequency];
-
-export const LowStockSettingsViewFrequency = {
-  daily: "daily",
-  weekly: "weekly",
-  monthly: "monthly",
-} as const;
-
-export type LowStockSettingsViewRuntimeStatus =
-  (typeof LowStockSettingsViewRuntimeStatus)[keyof typeof LowStockSettingsViewRuntimeStatus];
-
-export const LowStockSettingsViewRuntimeStatus = {
-  blocked: "blocked",
-  eligible: "eligible",
-} as const;
-
-export interface LowStockSettingsView {
-  event: "low_stock_alert";
-  frequency: LowStockSettingsViewFrequency;
-  weekday?: number | null;
-  month_day?: number | null;
-  start_date: string;
-  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
-  local_time: string;
-  timezone: "Asia/Kolkata";
-  /** @maxItems 20 */
-  additional_emails: string[];
-  /**
-   * @minimum 0
-   * @maximum 2147483647
-   */
-  version: number;
-  next_run_at: string;
-  runtime_status: LowStockSettingsViewRuntimeStatus;
-  runtime_message: string;
-}
-
-export interface LowStockSaveOutcome {
-  outcome: LowStockSaveOutcomeOutcome;
-  committed_version: number | null;
-  saved: LowStockSettingsView;
-}
-
-export type LowStockSettingsWriteFrequency =
-  (typeof LowStockSettingsWriteFrequency)[keyof typeof LowStockSettingsWriteFrequency];
-
-export const LowStockSettingsWriteFrequency = {
-  daily: "daily",
-  weekly: "weekly",
-  monthly: "monthly",
-} as const;
-
-export interface LowStockSettingsWrite {
-  event: "low_stock_alert";
-  frequency: LowStockSettingsWriteFrequency;
-  weekday?: number | null;
-  month_day?: number | null;
-  start_date: string;
-  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
-  local_time: string;
-  timezone: "Asia/Kolkata";
-  /** @maxItems 20 */
-  additional_emails: string[];
-  /**
-   * @minimum 0
-   * @maximum 2147483646
-   */
-  expected_version: number;
-  request_id: string;
-}
-
-export interface LowStockAlertRow {
-  productId: string;
-  name: string;
-  category: string;
-  quantity: string;
-  unit: string;
-  thresholdLimit: string | null;
-  reason: string;
-}
-
-export interface LowStockAlertPage {
-  items: LowStockAlertRow[];
-  /** @minimum 0 */
-  total: number;
-  /** @minimum 0 */
-  filtered: number;
-  asOf: string;
-  offset: number;
-  limit: number;
-}
-
-export type LanguageStatusStatus =
-  (typeof LanguageStatusStatus)[keyof typeof LanguageStatusStatus];
-
-export const LanguageStatusStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export interface LanguageStatus {
-  /** @minimum 1 */
-  expected_version: number;
-  status: LanguageStatusStatus;
-}
-
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -14763,6 +14764,23 @@ export const RefreshInventoryExpiryGroup = {
 } as const;
 
 export type ReviewInventoryInitializationParams = {
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListLowStockAlertsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -16790,13 +16808,6 @@ export const DownloadSalesTargetSampleFormat = {
 } as const;
 
 export type ListSettlementsParams = {
-  /**
-   * @maxLength 100
-   */
-  search?: string;
-  order_status?: ListSettlementsOrderStatus;
-  payment_status?: ListSettlementsPaymentStatus;
-  payable_only?: boolean;
   kind?: ListSettlementsKind;
   order_from?: string | null;
   order_to?: string | null;
@@ -16806,6 +16817,13 @@ export type ListSettlementsParams = {
   mr_id?: string | null;
   patient_id?: string | null;
   verification?: ListSettlementsVerification;
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  order_status?: ListSettlementsOrderStatus;
+  payment_status?: ListSettlementsPaymentStatus;
+  payable_only?: boolean;
   /**
    * @minimum 0
    * @maximum 20000
@@ -16817,6 +16835,27 @@ export type ListSettlementsParams = {
    */
   limit?: number;
 };
+
+export type ListSettlementsKind =
+  (typeof ListSettlementsKind)[keyof typeof ListSettlementsKind];
+
+export const ListSettlementsKind = {
+  All: "All",
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type ListSettlementsVerification =
+  (typeof ListSettlementsVerification)[keyof typeof ListSettlementsVerification];
+
+export const ListSettlementsVerification = {
+  All: "All",
+  No_transactions: "No transactions",
+  Not_verified: "Not verified",
+  Verified: "Verified",
+} as const;
 
 export type ListSettlementsOrderStatus =
   (typeof ListSettlementsOrderStatus)[keyof typeof ListSettlementsOrderStatus];
@@ -16843,27 +16882,6 @@ export const ListSettlementsPaymentStatus = {
   Part_paid: "Part paid",
   Paid: "Paid",
   Unavailable: "Unavailable",
-} as const;
-
-export type ListSettlementsKind =
-  (typeof ListSettlementsKind)[keyof typeof ListSettlementsKind];
-
-export const ListSettlementsKind = {
-  All: "All",
-  IT: "IT",
-  Kit: "Kit",
-  SPT: "SPT",
-  Lupin: "Lupin",
-} as const;
-
-export type ListSettlementsVerification =
-  (typeof ListSettlementsVerification)[keyof typeof ListSettlementsVerification];
-
-export const ListSettlementsVerification = {
-  All: "All",
-  No_transactions: "No transactions",
-  Not_verified: "Not verified",
-  Verified: "Verified",
 } as const;
 
 export type SettlementReferencesParams = {
@@ -17503,21 +17521,4 @@ export type ResolvePortalHostnameParams = {
    * @maxLength 253
    */
   hostname: string;
-};
-
-export type ListLowStockAlertsParams = {
-  /**
-   * @maxLength 200
-   */
-  query?: string;
-  /**
-   * @minimum 0
-   * @maximum 1000000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
 };

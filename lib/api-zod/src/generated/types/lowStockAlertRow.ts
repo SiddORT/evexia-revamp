@@ -7,11 +7,11 @@
  */
 
 export interface LowStockAlertRow {
-  productId: string;
-  name: string;
   category: string;
+  name: string;
+  productId: string;
   quantity: string;
-  unit: string;
-  thresholdLimit: string | null;
   reason: string;
+  thresholdLimit: string | null;
+  unit: string;
 }

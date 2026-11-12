@@ -27,7 +27,7 @@ class InventoryLot(Base):
 
 class InventoryBalance(Base):
     __tablename__ = "inventory_balances"
-    __table_args__ = (CheckConstraint("quantity >= 0 AND quantity <= 1000000 AND quantity = round(quantity,3)", name="ck_inventory_nonnegative"),)
+    __table_args__ = (CheckConstraint("quantity >= 0 AND quantity <= 1000000 AND quantity = round(quantity,2)", name="ck_inventory_nonnegative"),)
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     lot_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory_lots.id"))
     location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
@@ -56,6 +56,7 @@ class InventoryMovement(Base):
 class InventoryPosting(Base):
     __tablename__ = "inventory_postings"
     __table_args__ = (
+        CheckConstraint("precision_epoch IN (1,2)", name="ck_inventory_postings_precision_epoch"),
         UniqueConstraint("source_key", "lot_id", "location_id", name="uq_inventory_posting_source"),
         CheckConstraint("delta <> 0 AND delta BETWEEN -1000000 AND 1000000 AND delta = round(delta,3)", name="ck_inventory_delta"),
         CheckConstraint("before BETWEEN 0 AND 1000000 AND after BETWEEN 0 AND 1000000 AND before = round(before,3) AND after = round(after,3) AND after = before + delta", name="ck_inventory_posting_balance"),
@@ -70,6 +71,7 @@ class InventoryPosting(Base):
     delta: Mapped[Decimal] = mapped_column(Numeric())
     before: Mapped[Decimal] = mapped_column(Numeric())
     after: Mapped[Decimal] = mapped_column(Numeric())
+    precision_epoch: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
 
 
 class InventoryRequest(Base):

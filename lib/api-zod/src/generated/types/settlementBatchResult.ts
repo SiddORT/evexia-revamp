@@ -9,10 +9,10 @@ import type { SettlementBatchResultMode } from "./settlementBatchResultMode";
 import type { SettlementPostedAllocation } from "./settlementPostedAllocation";
 
 export interface SettlementBatchResult {
-  reference?: string | null;
   date: string;
   entries: SettlementPostedAllocation[];
   id: string;
   mode: SettlementBatchResultMode;
+  reference?: string | null;
   total: string;
 }

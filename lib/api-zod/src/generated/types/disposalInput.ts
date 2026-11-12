@@ -11,8 +11,8 @@ export interface DisposalInput {
   batchId: string;
   locationId: string | null;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   /**

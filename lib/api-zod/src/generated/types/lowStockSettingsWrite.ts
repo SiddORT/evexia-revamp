@@ -8,20 +8,20 @@
 import type { LowStockSettingsWriteFrequency } from "./lowStockSettingsWriteFrequency";
 
 export interface LowStockSettingsWrite {
-  event: "low_stock_alert";
-  frequency: LowStockSettingsWriteFrequency;
-  weekday?: number | null;
-  month_day?: number | null;
-  start_date: Date;
-  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
-  local_time: string;
-  timezone: "Asia/Kolkata";
   /** @maxItems 20 */
   additional_emails: string[];
+  event: "low_stock_alert";
   /**
    * @minimum 0
    * @maximum 2147483646
    */
   expected_version: number;
+  frequency: LowStockSettingsWriteFrequency;
+  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
+  local_time: string;
+  month_day?: number | null;
   request_id: string;
+  start_date: Date;
+  timezone: "Asia/Kolkata";
+  weekday?: number | null;
 }

@@ -1,6 +1,6 @@
 """Receipt-backed inventory. All writers share one short transaction lock.
 
-The initial contract is procurement quantity units, exact to 0.001, not packs.
+Operational quantities are canonical hundredths; original evidence is retained.
 Current stock is lifetime acceptance plus transfers, not a financial-year sum.
 """
 import uuid
@@ -25,10 +25,11 @@ from app.services.staff_crypto import StaffCrypto
 from app.services.zones import label
 from app.services import purchase_received as receipts
 from app.services.expiry_policy import usable, require_usable
+from app.schemas.quantities import quantity_string, display_quantity, rounded_quantity
 
 LIMIT = 2000
 LOCK = 145573
-COVERAGE = ("Stock originates in server accepted receipts and reviewed pre-system openings, exact to 0.001 procurement quantity units. "
+COVERAGE = ("Operational stock is exact to 0.01 procurement quantity units. Original thousandth evidence is retained across the explicit precision boundary. "
             "Reviewed assemblies consume those components and create separate whole-combo lots in this same ledger. "
             "Reasoned manual adjustments add distinct adjustment-origin stock or reduce an existing lot/location. "
             "Opening finished products do not consume components. Unallocated stock needs explicit allocation. No pack conversions. Stock carries across financial years. "
@@ -50,12 +51,14 @@ class InventoryCrypto(ReceiptCrypto):
 
 def lock(db):
     db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK})
+    from app.services.quantity_precision import ready
+    ready(db)
 
 
 def transaction(db, actor, work, *, capability=None):
     def run(current, _):
         lock(db)
-        return work(current, InventoryCrypto(get_settings()))
+        return work(current, InventoryCrypto(get_settings(), db))
     try:
         return receipts.transaction(db, actor, run, capability=capability)
     except PRError as exc:
@@ -74,16 +77,13 @@ def bounded(db, statement):
 
 def quantity(value):
     try:
-        n = Decimal(value)
-        if not n.is_finite() or n < 0 or n > 1000000 or n != n.quantize(Decimal(".001")):
-            raise ValueError()
-        return n
-    except (ValueError, InvalidOperation):
-        raise PRError("Quantity must be between zero and 1000000, with at most three decimals.", 422, "inventory_quantity") from None
+        return Decimal(quantity_string(str(value)))
+    except (ValueError, InvalidOperation, TypeError):
+        raise PRError("Use a quantity from zero to 1000000 with up to six source decimals; it rounds half-up to two places. Positive entries must round to at least 0.01.", 422, "inventory_quantity") from None
 
 
 def q(value):
-    return format(value, ".3f")
+    return display_quantity(value)
 
 
 def selected_allergen_advice(db, identities):
@@ -110,7 +110,7 @@ def selected_allergen_advice(db, identities):
                 return [{**item, "name": products[uuid.UUID(item["allergenId"])].name
                          if uuid.UUID(item["allergenId"]) in products else item["name"]} for item in unknown]
             totals = {}
-            crypto = InventoryCrypto(get_settings())
+            crypto = InventoryCrypto(get_settings(), db)
             rows = list(db.execute(select(Lot, Balance).join(Balance, Balance.lot_id == Lot.id)
                     .where(Lot.product_id.in_(ids), Balance.quantity > 0).limit(LIMIT + 1)))
             if len(rows) > LIMIT:
@@ -148,8 +148,10 @@ def balance_at(db, lot_id, location):
 
 
 def post(db, lot, location, delta, source, actor, movement=None):
+    if delta != rounded_quantity(delta):
+        raise PRError("New stock postings must be canonical hundredths.", 409, "inventory_precision")
     if delta < 0 and not lot.combo_id and source.startswith(("assembly:", "adjustment:", "move:", "it-approval:")):
-        require_usable(InventoryCrypto(get_settings()).open(lot.id, "lot", lot.payload_ciphertext))
+        require_usable(InventoryCrypto(get_settings(), db).open(lot.id, "lot", lot.payload_ciphertext))
     if location is None and not lot.opening_id:
         raise PRError("Only opening stock can be Unallocated.", 409, "inventory_unallocated")
     row = balance_at(db, lot.id, location)
@@ -171,7 +173,7 @@ def post(db, lot, location, delta, source, actor, movement=None):
 
 def reconcile_receipt(db, actor, data, initializing=False):
     """Called inside the receipt transaction, after shared inventory lock."""
-    crypto = InventoryCrypto(get_settings())
+    crypto = InventoryCrypto(get_settings(), db)
     receipt_id = uuid.UUID(data["id"])
     state = db.get(ReceiptState, receipt_id)
     existing = bounded(db, select(Lot).where(Lot.receipt_id == receipt_id).order_by(Lot.id))
@@ -221,7 +223,7 @@ def reconcile_receipt(db, actor, data, initializing=False):
             retained = db.get(ExpirySeparation, ("lot", lot.id)) or disposed
             if metadata and retained and any(old.get(k) != metadata.get(k) for k in ("productId", "batchNo", "expiryDate")):
                 raise PRError("Expired/disposed batch identity and expiry cannot be rewritten.", 409, "inventory_lot_retained")
-            if disposed and accepted > lot.accepted:
+            if disposed and accepted > rounded_quantity(lot.accepted):
                 raise PRError("A disposed receipt lot cannot receive additional acceptance. Record a separate genuine receipt batch.", 409, "inventory_lot_retained")
         if line and line.get("actualUnitCost") is not None:
             from app.services.inventory_expiry import cost, record_cost
@@ -229,7 +231,7 @@ def reconcile_receipt(db, actor, data, initializing=False):
                 record_cost(db, crypto, actor, "lot", lot.id, line["actualUnitCost"],
                             line["costProvenance"], origin="purchase_receipt")
         # Reductions occur ONLY at original receipt location, never at a destination.
-        post(db, lot, lot.origin_id, accepted - lot.accepted,
+        post(db, lot, lot.origin_id, accepted - rounded_quantity(lot.accepted),
              f"receipt:{receipt_id}:{data['version']}", actor)
         lot.accepted = accepted
     if state:
@@ -262,7 +264,7 @@ def initialization_report(db, actor, offset=0, limit=25):
         items = []
         for row in rows:
             try:
-                data = receipts.projection(row, ReceiptCrypto(get_settings()))
+                data = receipts.projection(row, ReceiptCrypto(get_settings(), db))
                 validate_initialization(db, row, data)
                 state = db.get(ReceiptState, row.id)
                 items.append(dict(receiptId=str(row.id), version=row.version,
@@ -286,7 +288,7 @@ def initialize_one(db, actor, receipt_id, token):
     """
     def work(current, crypto):
         row = receipts.get_row(db, receipt_id)
-        data = receipts.projection(row, ReceiptCrypto(get_settings()))
+        data = receipts.projection(row, ReceiptCrypto(get_settings(), db))
         validate_initialization(db, row, data)
         if token not in crypto.digests(data).values():
             raise PRError("Initialization review is stale.", 409, "inventory_initialization_stale")
@@ -333,24 +335,29 @@ def validate_initialization(db, row, data):
 
 def receipt_evidence(db, row, data):
     """Per-product reconciliation, never a meaningless mixed-product total."""
+    from app.services.quantity_precision import checkpoints, verify_chain, source_residual as precision_source_residual
     lots = bounded(db, select(Lot).where(Lot.receipt_id == row.id).order_by(Lot.id))
     evidence = []
     for line in data["lines"]:
         lot = next((r for r in lots if str(r.line_id) == line["lineId"]), None)
         amounts = bounded(db, select(Balance).where(Balance.lot_id == lot.id).order_by(Balance.location_id)) if lot else []
         ledger = bounded(db, select(Posting).where(Posting.lot_id == lot.id).order_by(Posting.id)) if lot else []
-        for amount in amounts:
-            posted = sum((p.delta for p in ledger if p.location_id == amount.location_id), Decimal(0))
-            if posted != amount.quantity:
-                raise PRError("Ledger and balance reconciliation differs.", 409, "inventory_reconciliation")
+        boundary = checkpoints(db, "inventory", [lot.id]) if lot else []
+        verify_chain(sorted(ledger, key=lambda p: (p.created_at, p.id)), amounts, boundary)
         expected = quantity(line["acceptedQty"]) if data["status"] == "active" else Decimal(0)
         balance = sum((a.quantity for a in amounts), Decimal(0))
         consumed = -sum((p.delta for p in ledger if p.source_key.startswith("assembly:")), Decimal(0))
         disposed = -sum((p.delta for p in ledger if p.source_key.startswith("disposal:")), Decimal(0))
+        source = sum((p.delta for p in ledger if p.source_key.startswith("receipt:")), Decimal(0))
+        other = sum((p.delta for p in ledger if not p.source_key.startswith("receipt:")), Decimal(0))
+        residual = sum((r["residual"] for r in boundary), Decimal(0))
         evidence.append(dict(lineId=line["lineId"], productId=line["productId"],
-            accepted=q(expected), posted=q(lot.accepted) if lot else "0.000",
+            accepted=q(expected), posted=q(lot.accepted) if lot else "0.00",
             consumedInAssemblies=q(consumed), disposedQuantity=q(disposed), onHand=q(balance),
-            matches=bool((lot.accepted if lot else Decimal(0)) == expected and expected - consumed - disposed == balance)))
+            precisionResidual=format(residual, "f"),
+            matches=bool(rounded_quantity(lot.accepted if lot else Decimal(0)) == expected
+                         and source + (precision_source_residual(db, lot.id) if lot else Decimal(0)) == expected
+                         and source + other + residual == balance)))
     return evidence
 
 
@@ -372,13 +379,13 @@ def stock_snapshot(db, crypto, params):
                 category=product.category_name, categoryId=str(product.category_id), concentration=product.concentration,
                 sellingPrice=str(product.selling_price) if product.selling_price is not None else None,
                 thresholdLimit=str(product.threshold_limit) if product.threshold_limit is not None else None,
-                quantity="0.000", unit="procurement quantity units", lots=[], history=[], state="catalogue_zero")
+                quantity="0.00", unit="procurement quantity units", lots=[], history=[], state="catalogue_zero")
         for product in combos:
             meta = crypto.open(product.id, "product", product.payload_ciphertext)
             result[str(product.id)] = dict(itemKind="combo", productId=str(product.id), name=meta["name"],
                 category="Assembled combos", categoryId=None, concentration="", sellingPrice=meta["sellingPrice"],
                 thresholdLimit=None,
-                quantity="0.000", unit="whole combos", lots=[], history=[], state="catalogue_zero")
+                quantity="0.00", unit="whole combos", lots=[], history=[], state="catalogue_zero")
         for lot in lots:
             meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
             # Retained stock remains visible even after catalogue soft deletion.
@@ -390,7 +397,7 @@ def stock_snapshot(db, crypto, params):
                     categoryId=str(product.category_id) if product else None,
                     concentration=product.concentration if product else "", sellingPrice=None,
                     thresholdLimit=str(product.threshold_limit) if product and product.threshold_limit is not None else None,
-                    quantity="0.000", unit=meta["unit"], lots=[], history=[], state="retained_product")
+                    quantity="0.00", unit=meta["unit"], lots=[], history=[], state="retained_product")
             item = result[pid]
             if not lot.combo_id and not usable(meta):
                 # Physical balances/history are retained; only usable quantity
@@ -464,7 +471,7 @@ def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0,
         rows = bounded(db, statement.order_by(Posting.created_at.desc(), Posting.id))
         return dict(items=[dict(id=str(r.id), at=r.created_at.isoformat(), lotId=str(r.lot_id),
              locationId=str(r.location_id) if r.location_id else None, movementId=str(r.movement_id) if r.movement_id else None,
-             delta=q(r.delta), before=q(r.before), after=q(r.after), actor=label(db, r.actor_id),
+              delta=q(rounded_quantity(r.after) - rounded_quantity(r.before)), before=q(r.before), after=q(r.after), actor=label(db, r.actor_id),
              source=r.source_key) for r in rows[offset:offset + limit]],
              filtered=len(rows), offset=offset, limit=limit,
              scope="Recorded receipt, opening, assembly, IT approval consumption and transfer/allocation posting times, not inferred historical activity. Period changes history only, never on-hand.")
@@ -581,12 +588,12 @@ def review_move(db, crypto, body, actor=None):
             continue
         lot = db.get(Lot, line.lotId)
         balance = balance_at(db, line.lotId, body.sourceId)
-        if not lot or not balance or balance.quantity < Decimal(line.quantity):
+        if not lot or not balance or balance.quantity < quantity(line.quantity):
             raise PRError("Available source stock changed. Review the retained draft again.", 409, "inventory_insufficient")
         product = db.get(ComboProduct, lot.combo_id) if lot.combo_id else db.get(AllergenProduct, lot.product_id)
         if not product or (not lot.combo_id and (product.status != "active" or product.deleted_at)):
             raise PRError("The selected product is no longer active.", 409, "inventory_product")
-        if lot.combo_id and quantity(line.quantity) != Decimal(line.quantity).to_integral_value():
+        if lot.combo_id and Decimal(line.quantity) != Decimal(line.quantity).to_integral_value():
             raise PRError("Assembled products move only as positive whole combos.", 422, "inventory_combo_quantity")
         destination = balance_at(db, lot.id, body.destinationId)
         src, dst, amount = balance.quantity, destination.quantity if destination else Decimal(0), quantity(line.quantity)

@@ -53,8 +53,24 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0092_quantity_hundredths"], ["0095_quantity_staged_merge"]):
+            quantity_successor = revisions[0]
+            from app.services.quantity_precision import ready as quantity_ready
+            quantity_ready(db)
+            db.execute(text("SELECT kind,owner_id,location_key,original,normalized,residual FROM quantity_precision_locations LIMIT 0"))
+            db.execute(text("SELECT purpose,record_id,original_digest,normalized_ciphertext FROM quantity_precision_snapshots LIMIT 0"))
+            db.execute(text("SELECT allergen_id,original,normalized,residual FROM quantity_precision_thresholds LIMIT 0"))
+            for table in ("inventory_postings", "in_house_postings"):
+                db.execute(text(f"SELECT precision_epoch FROM {table} LIMIT 0"))
+                if not db.scalar(text("""
+                    SELECT EXISTS (SELECT 1 FROM pg_trigger t JOIN pg_proc p ON p.oid=t.tgfoid
+                    WHERE t.tgrelid=CAST(:table AS regclass) AND t.tgname='quantity_hundredths'
+                      AND t.tgenabled='O' AND p.proname='guard_quantity_hundredths')
+                """), {"table": table}):
+                    raise RuntimeError("Quantity precision insertion guards required")
+            revisions = (["0093_designation_short_name"] if quantity_successor == "0095_quantity_staged_merge"
+                         else ["0093_language_status"])
         if revisions == ["0093_designation_short_name"]:
-            # Only the designation CHECK changed; retain all predecessor probes.
             db.execute(text('SELECT "shortName" FROM designations LIMIT 0'))
             revisions = ["0094_language_low_stock_merge"]
         if revisions in (["0093_language_status"], ["0094_language_low_stock_merge"]):

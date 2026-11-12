@@ -11,13 +11,6 @@ import type { ListSettlementsPaymentStatus } from "./listSettlementsPaymentStatu
 import type { ListSettlementsVerification } from "./listSettlementsVerification";
 
 export type ListSettlementsParams = {
-  /**
-   * @maxLength 100
-   */
-  search?: string;
-  order_status?: ListSettlementsOrderStatus;
-  payment_status?: ListSettlementsPaymentStatus;
-  payable_only?: boolean;
   kind?: ListSettlementsKind;
   order_from?: Date | null;
   order_to?: Date | null;
@@ -27,6 +20,13 @@ export type ListSettlementsParams = {
   mr_id?: string | null;
   patient_id?: string | null;
   verification?: ListSettlementsVerification;
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  order_status?: ListSettlementsOrderStatus;
+  payment_status?: ListSettlementsPaymentStatus;
+  payable_only?: boolean;
   /**
    * @minimum 0
    * @maximum 20000

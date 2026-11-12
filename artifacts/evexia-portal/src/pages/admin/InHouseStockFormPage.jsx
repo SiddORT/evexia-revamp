@@ -64,7 +64,7 @@ function InHouseStockForm() {
     const c = draft.concentration.trim();
     if (!draft.allergen) e.allergen = 'Select an active allergen.';
     if (!ALLERGEN_CONCENTRATIONS.includes(c)) e.concentration = 'Select a concentration.';
-    if (!validQuantity(draft.quantity)) e.quantity = 'Quantity must be a plain positive decimal up to 1000000 with at most 3 decimals.';
+    if (!validQuantity(draft.quantity)) e.quantity = 'Enter a positive quantity up to 1000000; up to six source decimals round half-up to two places, at least 0.01.';
     if (!validDay(draft.expiryDate)) e.expiryDate = 'Enter a valid expiry date.';
     if (!draft.location) e.location = 'Select a storage location.';
     if (draft.batch.trim().length > 100) e.batch = 'Batch must be 100 characters or fewer.';

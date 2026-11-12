@@ -339,7 +339,7 @@ def assemble(db, actor, body):
         snapshot = review["assembly"]
         data = dict(**snapshot, id=str(aid), lotId=str(lid), createdAt=now.isoformat(),
             actor=label(db, current.user.id), actorId=str(current.user.id),
-            outputBefore="0.000", outputAfter=inv.q(Decimal(body.quantity)),
+            outputBefore="0.00", outputAfter=inv.q(Decimal(body.quantity)),
             activity=[dict(action="assembled", at=now.isoformat(), actor=label(db, current.user.id), requestId=db.info.get("request_id"))])
         revision = db.scalar(select(Revision).where(Revision.product_id == body.productId, Revision.version == body.expected_version))
         if not revision:

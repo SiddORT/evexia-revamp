@@ -14,7 +14,8 @@ import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js'
 
 const BASE = '/admin/masters/products';
 const validDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`));
-const fmt = (n) => `${n / 1000n}.${String(n % 1000n).padStart(3, '0')}`;
+import { displayQuantity } from '../../services/quantities.js';
+const fmt = (n) => displayQuantity(`${n / 1000n}.${String(n % 1000n).padStart(3, '0')}`);
 const listProductsRef = (_k, params) => listProducts({ query: params.query, status: 'active', offset: params.offset, limit: params.limit });
 
 export default function ProductAssemblyPage() {
@@ -110,7 +111,7 @@ export default function ProductAssemblyPage() {
     picks.forEach(({ lot, quantity: q, gone }) => {
       if (gone) { e[lot.id] = 'This lot is no longer available. Remove it to continue.'; return; }
       const n = milli(q), a = milli(lot.available);
-      if (n === null || n <= 0n) e[lot.id] = 'Enter a positive quantity with up to 3 decimals.';
+      if (n === null || n <= 0n) e[lot.id] = 'Enter a positive quantity; up to six source decimals round half-up to two places.';
       else if (a !== null && n > a) e[lot.id] = `Quantity exceeds available ${lot.available}.`;
     });
     return e;

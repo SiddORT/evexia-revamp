@@ -583,7 +583,7 @@ export const listInHouseStockResponseItemsItemConcentrationMax = 200;
 export const listInHouseStockResponseItemsItemCostProvenanceOneMin = 3;
 export const listInHouseStockResponseItemsItemCostProvenanceOneMax = 1000;
 export const listInHouseStockResponseItemsItemNotesMax = 2000;
-export const listInHouseStockResponseItemsItemQuantityMax = 11;
+export const listInHouseStockResponseItemsItemQuantityMax = 14;
 export const listInHouseStockResponseItemsItemReserveOnlyDefault = true;
 export const listInHouseStockResponseItemsItemUnitMax = 40;
 export const createInHouseStockBodyActualUnitCostOneMax = 16;
@@ -592,7 +592,7 @@ export const createInHouseStockBodyConcentrationMax = 200;
 export const createInHouseStockBodyCostProvenanceOneMin = 3;
 export const createInHouseStockBodyCostProvenanceOneMax = 1000;
 export const createInHouseStockBodyNotesMax = 2000;
-export const createInHouseStockBodyQuantityMax = 11;
+export const createInHouseStockBodyQuantityMax = 14;
 export const createInHouseStockBodyUnitMax = 40;
 export const createInHouseStockResponseActualUnitCostOneMax = 16;
 export const createInHouseStockResponseBatchMax = 100;
@@ -600,7 +600,7 @@ export const createInHouseStockResponseConcentrationMax = 200;
 export const createInHouseStockResponseCostProvenanceOneMin = 3;
 export const createInHouseStockResponseCostProvenanceOneMax = 1000;
 export const createInHouseStockResponseNotesMax = 2000;
-export const createInHouseStockResponseQuantityMax = 11;
+export const createInHouseStockResponseQuantityMax = 14;
 export const createInHouseStockResponseReserveOnlyDefault = true;
 export const createInHouseStockResponseUnitMax = 40;
 export const exportInHouseStockQueryQueryMax = 200;
@@ -610,7 +610,7 @@ export const exportInHouseStockResponseItemsItemConcentrationMax = 200;
 export const exportInHouseStockResponseItemsItemCostProvenanceOneMin = 3;
 export const exportInHouseStockResponseItemsItemCostProvenanceOneMax = 1000;
 export const exportInHouseStockResponseItemsItemNotesMax = 2000;
-export const exportInHouseStockResponseItemsItemQuantityMax = 11;
+export const exportInHouseStockResponseItemsItemQuantityMax = 14;
 export const exportInHouseStockResponseItemsItemReserveOnlyDefault = true;
 export const exportInHouseStockResponseItemsItemUnitMax = 40;
 export const previewInHouseStockBodyActualUnitCostOneMax = 16;
@@ -619,7 +619,7 @@ export const previewInHouseStockBodyConcentrationMax = 200;
 export const previewInHouseStockBodyCostProvenanceOneMin = 3;
 export const previewInHouseStockBodyCostProvenanceOneMax = 1000;
 export const previewInHouseStockBodyNotesMax = 2000;
-export const previewInHouseStockBodyQuantityMax = 11;
+export const previewInHouseStockBodyQuantityMax = 14;
 export const previewInHouseStockBodyUnitMax = 40;
 export const previewInHouseStockResponseRecordActualUnitCostOneMax = 16;
 export const previewInHouseStockResponseRecordBatchMax = 100;
@@ -627,7 +627,7 @@ export const previewInHouseStockResponseRecordConcentrationMax = 200;
 export const previewInHouseStockResponseRecordCostProvenanceOneMin = 3;
 export const previewInHouseStockResponseRecordCostProvenanceOneMax = 1000;
 export const previewInHouseStockResponseRecordNotesMax = 2000;
-export const previewInHouseStockResponseRecordQuantityMax = 11;
+export const previewInHouseStockResponseRecordQuantityMax = 14;
 export const previewInHouseStockResponseRecordReserveOnlyDefault = true;
 export const previewInHouseStockResponseRecordUnitMax = 40;
 export const getInHouseStockReferencesQueryQueryMax = 200;
@@ -643,7 +643,7 @@ export const reconcileInHouseStockResponseResultOneConcentrationMax = 200;
 export const reconcileInHouseStockResponseResultOneCostProvenanceOneMin = 3;
 export const reconcileInHouseStockResponseResultOneCostProvenanceOneMax = 1000;
 export const reconcileInHouseStockResponseResultOneNotesMax = 2000;
-export const reconcileInHouseStockResponseResultOneQuantityMax = 11;
+export const reconcileInHouseStockResponseResultOneQuantityMax = 14;
 export const reconcileInHouseStockResponseResultOneReserveOnlyDefault = true;
 export const reconcileInHouseStockResponseResultOneUnitMax = 40;
 export const getInHouseStockResponseActualUnitCostOneMax = 16;
@@ -652,26 +652,26 @@ export const getInHouseStockResponseConcentrationMax = 200;
 export const getInHouseStockResponseCostProvenanceOneMin = 3;
 export const getInHouseStockResponseCostProvenanceOneMax = 1000;
 export const getInHouseStockResponseNotesMax = 2000;
-export const getInHouseStockResponseQuantityMax = 11;
+export const getInHouseStockResponseQuantityMax = 14;
 export const getInHouseStockResponseReserveOnlyDefault = true;
 export const getInHouseStockResponseUnitMax = 40;
 export const reconcileInventoryAdjustmentResponseAdjustmentOneBatchNoOneMax = 120;
-export const reconcileInventoryAdjustmentResponseAdjustmentOneQuantityMax = 11;
+export const reconcileInventoryAdjustmentResponseAdjustmentOneQuantityMax = 14;
 export const reconcileInventoryAdjustmentResponseAdjustmentOneReasonMax = 2000;
 export const createInventoryAdjustmentBodyBatchNoOneMax = 120;
-export const createInventoryAdjustmentBodyQuantityMax = 11;
+export const createInventoryAdjustmentBodyQuantityMax = 14;
 export const createInventoryAdjustmentBodyReasonMax = 2000;
 export const createInventoryAdjustmentResponseBatchNoOneMax = 120;
-export const createInventoryAdjustmentResponseQuantityMax = 11;
+export const createInventoryAdjustmentResponseQuantityMax = 14;
 export const createInventoryAdjustmentResponseReasonMax = 2000;
 export const previewInventoryAdjustmentBodyBatchNoOneMax = 120;
-export const previewInventoryAdjustmentBodyQuantityMax = 11;
+export const previewInventoryAdjustmentBodyQuantityMax = 14;
 export const previewInventoryAdjustmentBodyReasonMax = 2000;
 export const previewInventoryAdjustmentResponseAdjustmentBatchNoOneMax = 120;
-export const previewInventoryAdjustmentResponseAdjustmentQuantityMax = 11;
+export const previewInventoryAdjustmentResponseAdjustmentQuantityMax = 14;
 export const previewInventoryAdjustmentResponseAdjustmentReasonMax = 2000;
 export const getInventoryAdjustmentResponseBatchNoOneMax = 120;
-export const getInventoryAdjustmentResponseQuantityMax = 11;
+export const getInventoryAdjustmentResponseQuantityMax = 14;
 export const getInventoryAdjustmentResponseReasonMax = 2000;
 export const listInventoryExpiryQueryQueryMax = 200;
 export const listInventoryExpiryQueryOffsetDefault = 0;
@@ -682,7 +682,7 @@ export const listInventoryExpiryQueryLimitMax = 100;
 export const recordActualBatchCostBodyProvenanceMin = 3;
 export const recordActualBatchCostBodyProvenanceMax = 1000;
 export const recordActualBatchCostBodyUnitCostMax = 16;
-export const disposeExpiredInventoryBodyQuantityMax = 11;
+export const disposeExpiredInventoryBodyQuantityMax = 14;
 export const disposeExpiredInventoryBodyReasonMin = 3;
 export const disposeExpiredInventoryBodyReasonMax = 1000;
 export const refreshInventoryExpiryQueryQueryMax = 200;
@@ -691,7 +691,7 @@ export const refreshInventoryExpiryQueryOffsetMin = 0;
 export const refreshInventoryExpiryQueryOffsetMax = 1000000;
 export const refreshInventoryExpiryQueryLimitDefault = 25;
 export const refreshInventoryExpiryQueryLimitMax = 100;
-export const reviewExpiryDisposalBodyQuantityMax = 11;
+export const reviewExpiryDisposalBodyQuantityMax = 14;
 export const reviewExpiryDisposalBodyReasonMin = 3;
 export const reviewExpiryDisposalBodyReasonMax = 1000;
 export const reviewInventoryInitializationQueryOffsetDefault = 0;
@@ -699,6 +699,14 @@ export const reviewInventoryInitializationQueryOffsetMin = 0;
 export const reviewInventoryInitializationQueryOffsetMax = 1000000;
 export const reviewInventoryInitializationQueryLimitDefault = 25;
 export const reviewInventoryInitializationQueryLimitMax = 100;
+export const listLowStockAlertsQueryQueryMax = 200;
+export const listLowStockAlertsQueryOffsetDefault = 0;
+export const listLowStockAlertsQueryOffsetMin = 0;
+export const listLowStockAlertsQueryOffsetMax = 1000000;
+export const listLowStockAlertsQueryLimitDefault = 25;
+export const listLowStockAlertsQueryLimitMax = 100;
+export const listLowStockAlertsResponseFilteredMin = 0;
+export const listLowStockAlertsResponseTotalMin = 0;
 export const listInventoryMovementsQueryQueryMax = 200;
 export const listInventoryMovementsQueryOffsetDefault = 0;
 export const listInventoryMovementsQueryOffsetMin = 0;
@@ -708,11 +716,11 @@ export const listInventoryMovementsQueryLimitMax = 100;
 export const listInventoryMovementsQueryUnallocatedDefault = false;
 export const listInventoryMovementsQueryAllergenIdsMax = 4000;
 export const listInventoryMovementsResponseItemsItemLinesItemReserveOnlyDefault = false;
-export const createInventoryMovementBodyLinesItemQuantityMax = 11;
+export const createInventoryMovementBodyLinesItemQuantityMax = 14;
 export const createInventoryMovementBodyLinesMax = 100;
 export const createInventoryMovementBodyOtherNameOneMax = 120;
 export const createInventoryMovementResponseLinesItemReserveOnlyDefault = false;
-export const previewInventoryMovementBodyLinesItemQuantityMax = 11;
+export const previewInventoryMovementBodyLinesItemQuantityMax = 14;
 export const previewInventoryMovementBodyLinesMax = 100;
 export const previewInventoryMovementBodyOtherNameOneMax = 120;
 export const previewInventoryMovementResponseMovementLinesItemReserveOnlyDefault = false;
@@ -1266,6 +1274,31 @@ export const getLanguageHistoryQueryOffsetDefault = 0;
 export const getLanguageHistoryQueryOffsetMin = 0;
 export const getLanguageHistoryQueryOffsetMax = 1000000;
 export const getLanguageHistoryResponseRecordNameMax = 200;
+export const statusLanguageResponseNameMax = 200;
+export const getLowStockSettingsResponseAdditionalEmailsMax = 20;
+export const getLowStockSettingsResponseMonthDayOneMax = 31;
+export const getLowStockSettingsResponseVersionMin = 0;
+export const getLowStockSettingsResponseVersionMax = 2147483647;
+export const getLowStockSettingsResponseWeekdayOneMin = 0;
+export const getLowStockSettingsResponseWeekdayOneMax = 6;
+export const saveLowStockSettingsBodyAdditionalEmailsMax = 20;
+export const saveLowStockSettingsBodyExpectedVersionMin = 0;
+export const saveLowStockSettingsBodyExpectedVersionMax = 2147483646;
+export const saveLowStockSettingsBodyMonthDayOneMax = 31;
+export const saveLowStockSettingsBodyWeekdayOneMin = 0;
+export const saveLowStockSettingsBodyWeekdayOneMax = 6;
+export const saveLowStockSettingsResponseSavedAdditionalEmailsMax = 20;
+export const saveLowStockSettingsResponseSavedMonthDayOneMax = 31;
+export const saveLowStockSettingsResponseSavedVersionMin = 0;
+export const saveLowStockSettingsResponseSavedVersionMax = 2147483647;
+export const saveLowStockSettingsResponseSavedWeekdayOneMin = 0;
+export const saveLowStockSettingsResponseSavedWeekdayOneMax = 6;
+export const reconcileLowStockSettingsResponseSavedAdditionalEmailsMax = 20;
+export const reconcileLowStockSettingsResponseSavedMonthDayOneMax = 31;
+export const reconcileLowStockSettingsResponseSavedVersionMin = 0;
+export const reconcileLowStockSettingsResponseSavedVersionMax = 2147483647;
+export const reconcileLowStockSettingsResponseSavedWeekdayOneMin = 0;
+export const reconcileLowStockSettingsResponseSavedWeekdayOneMax = 6;
 export const listLupinOrdersQueryLimitDefault = 25;
 export const listLupinOrdersQueryLimitMax = 100;
 export const listLupinOrdersQuerySearchMax = 200;
@@ -1677,24 +1710,24 @@ export const listOpeningStockQueryOffsetMin = 0;
 export const listOpeningStockQueryOffsetMax = 1000000;
 export const listOpeningStockQueryLimitDefault = 25;
 export const listOpeningStockQueryLimitMax = 100;
-export const listOpeningStockResponseItemsItemQuantityMax = 11;
+export const listOpeningStockResponseItemsItemQuantityMax = 14;
 export const listOpeningStockResponseItemsItemUnitRateMax = 64;
-export const createOpeningStockBodyRowsItemQuantityMax = 11;
+export const createOpeningStockBodyRowsItemQuantityMax = 14;
 export const createOpeningStockBodyRowsItemUnitRateMax = 64;
 export const createOpeningStockBodyRowsMax = 1000;
-export const createOpeningStockResponseRecordsItemQuantityMax = 11;
+export const createOpeningStockResponseRecordsItemQuantityMax = 14;
 export const createOpeningStockResponseRecordsItemUnitRateMax = 64;
 export const exportOpeningStockQueryQueryMax = 200;
 export const reviewOpeningStockImportQueryFilenameMax = 200;
-export const reviewOpeningStockImportResponseCommandOneRowsItemQuantityMax = 11;
+export const reviewOpeningStockImportResponseCommandOneRowsItemQuantityMax = 14;
 export const reviewOpeningStockImportResponseCommandOneRowsItemUnitRateMax = 64;
 export const reviewOpeningStockImportResponseCommandOneRowsMax = 1000;
-export const reviewOpeningStockImportResponseRowsItemValuesOneQuantityMax = 11;
+export const reviewOpeningStockImportResponseRowsItemValuesOneQuantityMax = 14;
 export const reviewOpeningStockImportResponseRowsItemValuesOneUnitRateMax = 64;
-export const previewOpeningStockBodyRowsItemQuantityMax = 11;
+export const previewOpeningStockBodyRowsItemQuantityMax = 14;
 export const previewOpeningStockBodyRowsItemUnitRateMax = 64;
 export const previewOpeningStockBodyRowsMax = 1000;
-export const previewOpeningStockResponseRowsItemQuantityMax = 11;
+export const previewOpeningStockResponseRowsItemQuantityMax = 14;
 export const previewOpeningStockResponseRowsItemUnitRateMax = 64;
 export const getOpeningStockItemsQueryQueryMax = 200;
 export const getOpeningStockItemsQueryOffsetDefault = 0;
@@ -1702,9 +1735,9 @@ export const getOpeningStockItemsQueryOffsetMin = 0;
 export const getOpeningStockItemsQueryOffsetMax = 1000000;
 export const getOpeningStockItemsQueryLimitDefault = 25;
 export const getOpeningStockItemsQueryLimitMax = 100;
-export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityMax = 11;
+export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityMax = 14;
 export const reconcileOpeningStockRequestResponseResultOneRecordsItemUnitRateMax = 64;
-export const getOpeningStockResponseQuantityMax = 11;
+export const getOpeningStockResponseQuantityMax = 14;
 export const getOpeningStockResponseUnitRateMax = 64;
 export const listOrderDraftsQueryLimitDefault = 25;
 export const listOrderDraftsQueryLimitMax = 50;
@@ -1988,25 +2021,25 @@ export const listStockProductsQueryOffsetMin = 0;
 export const listStockProductsQueryOffsetMax = 1000000;
 export const listStockProductsQueryLimitDefault = 25;
 export const listStockProductsQueryLimitMax = 100;
-export const listStockProductsResponseItemsItemMembersItemQuantityMax = 11;
-export const createStockProductBodyMembersItemQuantityMax = 11;
+export const listStockProductsResponseItemsItemMembersItemQuantityMax = 14;
+export const createStockProductBodyMembersItemQuantityMax = 14;
 export const createStockProductBodyMembersMin = 2;
 export const createStockProductBodyMembersMax = 100;
 export const createStockProductBodyNameMax = 200;
-export const createStockProductResponseMembersItemQuantityMax = 11;
-export const assembleStockProductBodyAllocationsItemQuantityMax = 11;
+export const createStockProductResponseMembersItemQuantityMax = 14;
+export const assembleStockProductBodyAllocationsItemQuantityMax = 14;
 export const assembleStockProductBodyAllocationsMin = 2;
 export const assembleStockProductBodyAllocationsMax = 100;
 export const assembleStockProductBodyBatchNoMax = 80;
 export const assembleStockProductBodyQuantityMax = 1000000;
-export const assembleStockProductResponseMembersItemQuantityMax = 11;
-export const previewProductAssemblyBodyAllocationsItemQuantityMax = 11;
+export const assembleStockProductResponseMembersItemQuantityMax = 14;
+export const previewProductAssemblyBodyAllocationsItemQuantityMax = 14;
 export const previewProductAssemblyBodyAllocationsMin = 2;
 export const previewProductAssemblyBodyAllocationsMax = 100;
 export const previewProductAssemblyBodyBatchNoMax = 80;
 export const previewProductAssemblyBodyQuantityMax = 1000000;
-export const previewProductAssemblyResponseAssemblyMembersItemQuantityMax = 11;
-export const getProductAssemblyResponseMembersItemQuantityMax = 11;
+export const previewProductAssemblyResponseAssemblyMembersItemQuantityMax = 14;
+export const getProductAssemblyResponseMembersItemQuantityMax = 14;
 export const exportStockProductsQueryQueryMax = 200;
 export const exportStockProductsQueryAllergenIdsOneMax = 100;
 export const getStockProductFilterReferencesQueryQueryMax = 200;
@@ -2023,29 +2056,29 @@ export const getStockProductReferencesQueryOffsetMin = 0;
 export const getStockProductReferencesQueryOffsetMax = 1000000;
 export const getStockProductReferencesQueryLimitDefault = 25;
 export const getStockProductReferencesQueryLimitMax = 100;
-export const reconcileStockProductRequestResponseResultOneMembersItemQuantityMax = 11;
-export const reconcileStockProductRequestResponseResultTwoMembersItemQuantityMax = 11;
-export const deleteStockProductResponseMembersItemQuantityMax = 11;
-export const getStockProductResponseMembersItemQuantityMax = 11;
-export const editStockProductBodyMembersItemQuantityMax = 11;
+export const reconcileStockProductRequestResponseResultOneMembersItemQuantityMax = 14;
+export const reconcileStockProductRequestResponseResultTwoMembersItemQuantityMax = 14;
+export const deleteStockProductResponseMembersItemQuantityMax = 14;
+export const getStockProductResponseMembersItemQuantityMax = 14;
+export const editStockProductBodyMembersItemQuantityMax = 14;
 export const editStockProductBodyMembersMin = 2;
 export const editStockProductBodyMembersMax = 100;
 export const editStockProductBodyNameMax = 200;
-export const editStockProductResponseMembersItemQuantityMax = 11;
+export const editStockProductResponseMembersItemQuantityMax = 14;
 export const getStockProductActivityQueryOffsetDefault = 0;
 export const getStockProductActivityQueryOffsetMin = 0;
 export const getStockProductActivityQueryOffsetMax = 1000000;
 export const getStockProductActivityQueryLimitDefault = 25;
 export const getStockProductActivityQueryLimitMax = 100;
-export const getStockProductActivityResponseItemsItemAfterMembersItemQuantityMax = 11;
-export const getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityMax = 11;
+export const getStockProductActivityResponseItemsItemAfterMembersItemQuantityMax = 14;
+export const getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityMax = 14;
 export const getStockProductAssembliesQueryOffsetDefault = 0;
 export const getStockProductAssembliesQueryOffsetMin = 0;
 export const getStockProductAssembliesQueryOffsetMax = 1000000;
 export const getStockProductAssembliesQueryLimitDefault = 25;
 export const getStockProductAssembliesQueryLimitMax = 100;
-export const getStockProductAssembliesResponseItemsItemMembersItemQuantityMax = 11;
-export const setStockProductStatusResponseMembersItemQuantityMax = 11;
+export const getStockProductAssembliesResponseItemsItemMembersItemQuantityMax = 14;
+export const setStockProductStatusResponseMembersItemQuantityMax = 14;
 export const listPurchaseOrdersQueryQueryMax = 200;
 export const listPurchaseOrdersQueryLimitDefault = 10;
 export const listPurchaseOrdersQueryLimitMax = 100;
@@ -2059,7 +2092,7 @@ export const createPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1
 export const createPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
 export const createPurchaseOrderBodyLinesItemConcentrationMax = 200;
 export const createPurchaseOrderBodyLinesItemGstOneMax = 64;
-export const createPurchaseOrderBodyLinesItemQuantityMax = 11;
+export const createPurchaseOrderBodyLinesItemQuantityMax = 14;
 export const createPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
 export const createPurchaseOrderBodyLinesMax = 100;
 export const createPurchaseOrderResponseActiveReceiptCountDefault = 0;
@@ -2083,7 +2116,7 @@ export const previewPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 
 export const previewPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseOrderBodyLinesItemConcentrationMax = 200;
 export const previewPurchaseOrderBodyLinesItemGstOneMax = 64;
-export const previewPurchaseOrderBodyLinesItemQuantityMax = 11;
+export const previewPurchaseOrderBodyLinesItemQuantityMax = 14;
 export const previewPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
 export const previewPurchaseOrderBodyLinesMax = 100;
 export const listPurchaseOrderReferencesQueryQueryMax = 200;
@@ -2104,7 +2137,7 @@ export const editPurchaseOrderBodyDocumentContextOneRendererVersionDefault = 1;
 export const editPurchaseOrderBodyDocumentContextOneSchemaVersionDefault = 1;
 export const editPurchaseOrderBodyLinesItemConcentrationMax = 200;
 export const editPurchaseOrderBodyLinesItemGstOneMax = 64;
-export const editPurchaseOrderBodyLinesItemQuantityMax = 11;
+export const editPurchaseOrderBodyLinesItemQuantityMax = 14;
 export const editPurchaseOrderBodyLinesItemUnitPriceOneMax = 64;
 export const editPurchaseOrderBodyLinesMax = 100;
 export const editPurchaseOrderResponseActiveReceiptCountDefault = 0;
@@ -2119,7 +2152,7 @@ export const previewPurchaseOrderEditBodyDocumentContextOneRendererVersionDefaul
 export const previewPurchaseOrderEditBodyDocumentContextOneSchemaVersionDefault = 1;
 export const previewPurchaseOrderEditBodyLinesItemConcentrationMax = 200;
 export const previewPurchaseOrderEditBodyLinesItemGstOneMax = 64;
-export const previewPurchaseOrderEditBodyLinesItemQuantityMax = 11;
+export const previewPurchaseOrderEditBodyLinesItemQuantityMax = 14;
 export const previewPurchaseOrderEditBodyLinesItemUnitPriceOneMax = 64;
 export const previewPurchaseOrderEditBodyLinesMax = 100;
 export const listPurchaseReceivedQueryQueryMax = 200;
@@ -2134,12 +2167,12 @@ export const createPurchaseReceivedBodyDocumentContextOnePresentationResolvedTim
 export const createPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const createPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
 export const createPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
-export const createPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const createPurchaseReceivedBodyLinesItemAcceptedQtyMax = 14;
 export const createPurchaseReceivedBodyLinesItemActualUnitCostOneMax = 16;
 export const createPurchaseReceivedBodyLinesItemBatchNoMax = 120;
 export const createPurchaseReceivedBodyLinesItemCostProvenanceOneMin = 3;
 export const createPurchaseReceivedBodyLinesItemCostProvenanceOneMax = 1000;
-export const createPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
+export const createPurchaseReceivedBodyLinesItemReceivedQtyMax = 14;
 export const createPurchaseReceivedBodyLinesMax = 100;
 export const createPurchaseReceivedBodyOtherNameOneMax = 120;
 export const listPurchaseReceivedActivityQueryQueryMax = 200;
@@ -2183,12 +2216,12 @@ export const previewPurchaseReceivedBodyDocumentContextOnePresentationResolvedTi
 export const previewPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const previewPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
-export const previewPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const previewPurchaseReceivedBodyLinesItemAcceptedQtyMax = 14;
 export const previewPurchaseReceivedBodyLinesItemActualUnitCostOneMax = 16;
 export const previewPurchaseReceivedBodyLinesItemBatchNoMax = 120;
 export const previewPurchaseReceivedBodyLinesItemCostProvenanceOneMin = 3;
 export const previewPurchaseReceivedBodyLinesItemCostProvenanceOneMax = 1000;
-export const previewPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
+export const previewPurchaseReceivedBodyLinesItemReceivedQtyMax = 14;
 export const previewPurchaseReceivedBodyLinesMax = 100;
 export const previewPurchaseReceivedBodyOtherNameOneMax = 120;
 export const listPurchaseReceivedReferencesQueryQueryMax = 200;
@@ -2206,12 +2239,12 @@ export const editPurchaseReceivedBodyDocumentContextOnePresentationResolvedTimeZ
 export const editPurchaseReceivedBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const editPurchaseReceivedBodyDocumentContextOneRendererVersionDefault = 1;
 export const editPurchaseReceivedBodyDocumentContextOneSchemaVersionDefault = 1;
-export const editPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const editPurchaseReceivedBodyLinesItemAcceptedQtyMax = 14;
 export const editPurchaseReceivedBodyLinesItemActualUnitCostOneMax = 16;
 export const editPurchaseReceivedBodyLinesItemBatchNoMax = 120;
 export const editPurchaseReceivedBodyLinesItemCostProvenanceOneMin = 3;
 export const editPurchaseReceivedBodyLinesItemCostProvenanceOneMax = 1000;
-export const editPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
+export const editPurchaseReceivedBodyLinesItemReceivedQtyMax = 14;
 export const editPurchaseReceivedBodyLinesMax = 100;
 export const editPurchaseReceivedBodyOtherNameOneMax = 120;
 export const getPurchaseReceivedChangesQueryLimitDefault = 10;
@@ -2223,12 +2256,12 @@ export const previewPurchaseReceivedEditBodyDocumentContextOnePresentationResolv
 export const previewPurchaseReceivedEditBodyDocumentContextOnePresentationTimeZoneMax = 80;
 export const previewPurchaseReceivedEditBodyDocumentContextOneRendererVersionDefault = 1;
 export const previewPurchaseReceivedEditBodyDocumentContextOneSchemaVersionDefault = 1;
-export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax = 11;
+export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax = 14;
 export const previewPurchaseReceivedEditBodyLinesItemActualUnitCostOneMax = 16;
 export const previewPurchaseReceivedEditBodyLinesItemBatchNoMax = 120;
 export const previewPurchaseReceivedEditBodyLinesItemCostProvenanceOneMin = 3;
 export const previewPurchaseReceivedEditBodyLinesItemCostProvenanceOneMax = 1000;
-export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyMax = 11;
+export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyMax = 14;
 export const previewPurchaseReceivedEditBodyLinesMax = 100;
 export const previewPurchaseReceivedEditBodyOtherNameOneMax = 120;
 export const recordBrowserActivityBodyEventsMax = 20;
@@ -2383,8 +2416,8 @@ export const settlementReferencesQueryOffsetMin = 0;
 export const settlementReferencesQueryOffsetMax = 20000;
 export const settlementReferencesQueryLimitDefault = 25;
 export const settlementReferencesQueryLimitMax = 100;
-export const recordSettlementBodyReferenceOneMax = 100;
 export const recordSettlementBodyEntriesMax = 100;
+export const recordSettlementBodyReferenceOneMax = 100;
 export const verifySettlementTransactionResponseDoctorOneContactsMaskedDefault = false;
 export const verifySettlementTransactionResponseMrOneContactsMaskedDefault = false;
 export const verifySettlementTransactionResponsePatientsItemContactsMaskedDefault = false;
@@ -2734,39 +2767,6 @@ export const mrSalesYearsQueryOffsetMax = 10000;
 export const mrSalesYearsQueryLimitDefault = 50;
 export const mrSalesYearsQueryLimitMax = 100;
 export const resolvePortalHostnameQueryHostnameMax = 253;
-export const getLowStockSettingsResponseWeekdayOneMin = 0;
-export const getLowStockSettingsResponseWeekdayOneMax = 6;
-export const getLowStockSettingsResponseMonthDayOneMax = 31;
-export const getLowStockSettingsResponseAdditionalEmailsMax = 20;
-export const getLowStockSettingsResponseVersionMin = 0;
-export const getLowStockSettingsResponseVersionMax = 2147483647;
-export const saveLowStockSettingsBodyWeekdayOneMin = 0;
-export const saveLowStockSettingsBodyWeekdayOneMax = 6;
-export const saveLowStockSettingsBodyMonthDayOneMax = 31;
-export const saveLowStockSettingsBodyAdditionalEmailsMax = 20;
-export const saveLowStockSettingsBodyExpectedVersionMin = 0;
-export const saveLowStockSettingsBodyExpectedVersionMax = 2147483646;
-export const saveLowStockSettingsResponseSavedWeekdayOneMin = 0;
-export const saveLowStockSettingsResponseSavedWeekdayOneMax = 6;
-export const saveLowStockSettingsResponseSavedMonthDayOneMax = 31;
-export const saveLowStockSettingsResponseSavedAdditionalEmailsMax = 20;
-export const saveLowStockSettingsResponseSavedVersionMin = 0;
-export const saveLowStockSettingsResponseSavedVersionMax = 2147483647;
-export const reconcileLowStockSettingsResponseSavedWeekdayOneMin = 0;
-export const reconcileLowStockSettingsResponseSavedWeekdayOneMax = 6;
-export const reconcileLowStockSettingsResponseSavedMonthDayOneMax = 31;
-export const reconcileLowStockSettingsResponseSavedAdditionalEmailsMax = 20;
-export const reconcileLowStockSettingsResponseSavedVersionMin = 0;
-export const reconcileLowStockSettingsResponseSavedVersionMax = 2147483647;
-export const listLowStockAlertsQueryQueryMax = 200;
-export const listLowStockAlertsQueryOffsetDefault = 0;
-export const listLowStockAlertsQueryOffsetMin = 0;
-export const listLowStockAlertsQueryOffsetMax = 1000000;
-export const listLowStockAlertsQueryLimitDefault = 25;
-export const listLowStockAlertsQueryLimitMax = 100;
-export const listLowStockAlertsResponseTotalMin = 0;
-export const listLowStockAlertsResponseFilteredMin = 0;
-export const statusLanguageResponseNameMax = 200;
 
 /**
  * @summary <Lambda>
@@ -10336,14 +10336,14 @@ export const GetImmunotherapyExtractSettingsQueryParams = zod.object({
 });
 
 export const getImmunotherapyExtractSettingsResponseLegacyRowsOneItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const getImmunotherapyExtractSettingsResponseLegacyRowsOneItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 
 export const getImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const getImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 
 export const GetImmunotherapyExtractSettingsResponse = zod.object({
   categoryId: zod.string().uuid(),
@@ -10446,9 +10446,9 @@ export const SaveImmunotherapyExtractSettingsParams = zod.object({
 });
 
 export const saveImmunotherapyExtractSettingsBodyRowsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const saveImmunotherapyExtractSettingsBodyRowsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 
 export const SaveImmunotherapyExtractSettingsBody = zod.object({
   dosage: zod.enum([
@@ -10509,14 +10509,14 @@ export const SaveImmunotherapyExtractSettingsBody = zod.object({
 });
 
 export const saveImmunotherapyExtractSettingsResponseLegacyRowsOneItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const saveImmunotherapyExtractSettingsResponseLegacyRowsOneItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 
 export const saveImmunotherapyExtractSettingsResponseRowsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const saveImmunotherapyExtractSettingsResponseRowsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 
 export const SaveImmunotherapyExtractSettingsResponse = zod.object({
   categoryId: zod.string().uuid(),
@@ -10740,9 +10740,9 @@ export const ListImmunotherapyOrdersResponse = zod.object({
  */
 
 export const createImmunotherapyOrderBodyGroupsItemItemsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const createImmunotherapyOrderBodyGroupsItemItemsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const createImmunotherapyOrderBodyGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
@@ -10986,9 +10986,9 @@ export const CreateImmunotherapyOrderResponse = zod.object({
  */
 
 export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const previewImmunotherapyEligibilityBodyValuesOneGroupsItemItemsItemResultRegExp =
@@ -11349,9 +11349,9 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
  */
 
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
@@ -11641,9 +11641,9 @@ export const CommitImmunotherapyImportResponse = zod.object({
  */
 
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
@@ -12504,9 +12504,9 @@ export const EditImmunotherapyOrderParams = zod.object({
 });
 
 export const editImmunotherapyOrderBodyGroupsItemItemsItemDilutionOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const editImmunotherapyOrderBodyGroupsItemItemsItemExtractOneRegExp =
-  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,3})?$");
+  new RegExp("^[0-9]{1,6}(?:\\.[0-9]{1,6})?$");
 export const editImmunotherapyOrderBodyGroupsItemItemsItemRateOneRegExp =
   new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
 export const editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
@@ -13589,7 +13589,7 @@ export const ReconcileInventoryAdjustmentParams = zod.object({
 });
 
 export const reconcileInventoryAdjustmentResponseAdjustmentOneQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const ReconcileInventoryAdjustmentResponse = zod.object({
   adjustment: zod.union([
@@ -13644,7 +13644,7 @@ export const ReconcileInventoryAdjustmentResponse = zod.object({
  */
 
 export const createInventoryAdjustmentBodyQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const createInventoryAdjustmentBodyReviewTokenRegExp = new RegExp(
@@ -13676,7 +13676,7 @@ export const CreateInventoryAdjustmentBody = zod.object({
 });
 
 export const createInventoryAdjustmentResponseQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const CreateInventoryAdjustmentResponse = zod.object({
@@ -13719,7 +13719,7 @@ export const CreateInventoryAdjustmentResponse = zod.object({
  */
 
 export const previewInventoryAdjustmentBodyQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const PreviewInventoryAdjustmentBody = zod.object({
@@ -13743,7 +13743,7 @@ export const PreviewInventoryAdjustmentBody = zod.object({
 });
 
 export const previewInventoryAdjustmentResponseAdjustmentQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const PreviewInventoryAdjustmentResponse = zod.object({
   adjustment: zod.object({
@@ -13791,7 +13791,7 @@ export const GetInventoryAdjustmentParams = zod.object({
 });
 
 export const getInventoryAdjustmentResponseQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const GetInventoryAdjustmentResponse = zod.object({
@@ -13987,7 +13987,7 @@ export const RecordActualBatchCostResponse = zod.object({
  */
 
 export const disposeExpiredInventoryBodyQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const disposeExpiredInventoryBodyReviewTokenRegExp = new RegExp(
@@ -14242,7 +14242,7 @@ export const ReconcileExpiryRequestResponse = zod.object({
  */
 
 export const reviewExpiryDisposalBodyQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const ReviewExpiryDisposalBody = zod.object({
@@ -14354,6 +14354,49 @@ export const ReviewInventoryInitializationResponse = zod.object({
   ),
   limit: zod.number().int(),
   offset: zod.number().int(),
+});
+
+/**
+ * @summary Low Stock Alerts
+ */
+export const listLowStockAlertsQueryQueryDefault = ``;
+
+export const ListLowStockAlertsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listLowStockAlertsQueryQueryMax)
+    .default(listLowStockAlertsQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listLowStockAlertsQueryOffsetMin)
+    .max(listLowStockAlertsQueryOffsetMax)
+    .default(listLowStockAlertsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listLowStockAlertsQueryLimitMax)
+    .default(listLowStockAlertsQueryLimitDefault),
+});
+
+export const ListLowStockAlertsResponse = zod.object({
+  asOf: zod.coerce.date(),
+  filtered: zod.number().int().min(listLowStockAlertsResponseFilteredMin),
+  items: zod.array(
+    zod.object({
+      category: zod.string(),
+      name: zod.string(),
+      productId: zod.string().uuid(),
+      quantity: zod.string(),
+      reason: zod.string(),
+      thresholdLimit: zod.union([zod.string(), zod.null()]),
+      unit: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int().min(listLowStockAlertsResponseTotalMin),
 });
 
 /**
@@ -14586,7 +14629,7 @@ export const ListInventoryMovementsResponse = zod.object({
  */
 
 export const createInventoryMovementBodyLinesItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 export const createInventoryMovementBodyLinesItemSourceKindDefault = `inventory`;
 
@@ -14613,7 +14656,10 @@ export const CreateInventoryMovementBody = zod.object({
         quantity: zod
           .string()
           .max(createInventoryMovementBodyLinesItemQuantityMax)
-          .regex(createInventoryMovementBodyLinesItemQuantityRegExp),
+          .regex(createInventoryMovementBodyLinesItemQuantityRegExp)
+          .describe(
+            "Source quantity; exact half-up normalization to hundredths before review and commit.",
+          ),
         sourceKind: zod
           .enum(["inventory", "reserve"])
           .default(createInventoryMovementBodyLinesItemSourceKindDefault),
@@ -14795,7 +14841,7 @@ export const CreateInventoryMovementResponse = zod.object({
  */
 
 export const previewInventoryMovementBodyLinesItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 export const previewInventoryMovementBodyLinesItemSourceKindDefault = `inventory`;
 
@@ -14817,7 +14863,10 @@ export const PreviewInventoryMovementBody = zod.object({
         quantity: zod
           .string()
           .max(previewInventoryMovementBodyLinesItemQuantityMax)
-          .regex(previewInventoryMovementBodyLinesItemQuantityRegExp),
+          .regex(previewInventoryMovementBodyLinesItemQuantityRegExp)
+          .describe(
+            "Source quantity; exact half-up normalization to hundredths before review and commit.",
+          ),
         sourceKind: zod
           .enum(["inventory", "reserve"])
           .default(previewInventoryMovementBodyLinesItemSourceKindDefault),
@@ -15560,12 +15609,12 @@ export const listInventoryStockResponseItemsItemItemKindDefault = `allergen`;
 export const listInventoryStockResponseItemsItemLotsItemItemKindDefault = `allergen`;
 
 export const listInventoryStockResponseItemsItemLotsItemSourceKindDefault = `inventory`;
-export const listInventoryStockResponseItemsItemUnallocatedQuantityDefault = `0.000`;
+export const listInventoryStockResponseItemsItemUnallocatedQuantityDefault = `0.00`;
 export const listInventoryStockResponseSnapshotOneItemItemKindDefault = `allergen`;
 export const listInventoryStockResponseSnapshotOneItemLotsItemItemKindDefault = `allergen`;
 
 export const listInventoryStockResponseSnapshotOneItemLotsItemSourceKindDefault = `inventory`;
-export const listInventoryStockResponseSnapshotOneItemUnallocatedQuantityDefault = `0.000`;
+export const listInventoryStockResponseSnapshotOneItemUnallocatedQuantityDefault = `0.00`;
 
 export const ListInventoryStockResponse = zod.object({
   asOf: zod.coerce.date(),
@@ -20960,6 +21009,220 @@ export const GetLanguageHistoryResponse = zod.object({
     total: zod.number().int(),
   }),
   total: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const StatusLanguageParams = zod.object({
+  language_id: zod.coerce.string().uuid(),
+});
+
+export const StatusLanguageBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const StatusLanguageResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  deletedBy: zod.union([zod.string(), zod.null()]),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(statusLanguageResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Read
+ */
+
+export const getLowStockSettingsResponseLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const GetLowStockSettingsResponse = zod.object({
+  additional_emails: zod
+    .array(zod.string().email())
+    .max(getLowStockSettingsResponseAdditionalEmailsMax),
+  event: zod.literal("low_stock_alert"),
+  frequency: zod.enum(["daily", "weekly", "monthly"]),
+  local_time: zod.string().regex(getLowStockSettingsResponseLocalTimeRegExp),
+  month_day: zod
+    .union([
+      zod.number().int().min(1).max(getLowStockSettingsResponseMonthDayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  next_run_at: zod.coerce.date(),
+  runtime_message: zod.string(),
+  runtime_status: zod.enum(["blocked", "eligible"]),
+  start_date: zod.coerce.date(),
+  timezone: zod.literal("Asia/Kolkata"),
+  version: zod
+    .number()
+    .int()
+    .min(getLowStockSettingsResponseVersionMin)
+    .max(getLowStockSettingsResponseVersionMax),
+  weekday: zod
+    .union([
+      zod
+        .number()
+        .int()
+        .min(getLowStockSettingsResponseWeekdayOneMin)
+        .max(getLowStockSettingsResponseWeekdayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Write
+ */
+
+export const saveLowStockSettingsBodyLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const SaveLowStockSettingsBody = zod.object({
+  additional_emails: zod
+    .array(zod.string().email())
+    .max(saveLowStockSettingsBodyAdditionalEmailsMax),
+  event: zod.literal("low_stock_alert"),
+  expected_version: zod
+    .number()
+    .int()
+    .min(saveLowStockSettingsBodyExpectedVersionMin)
+    .max(saveLowStockSettingsBodyExpectedVersionMax),
+  frequency: zod.enum(["daily", "weekly", "monthly"]),
+  local_time: zod.string().regex(saveLowStockSettingsBodyLocalTimeRegExp),
+  month_day: zod
+    .union([
+      zod.number().int().min(1).max(saveLowStockSettingsBodyMonthDayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  request_id: zod.string().uuid(),
+  start_date: zod.coerce.date(),
+  timezone: zod.literal("Asia/Kolkata"),
+  weekday: zod
+    .union([
+      zod
+        .number()
+        .int()
+        .min(saveLowStockSettingsBodyWeekdayOneMin)
+        .max(saveLowStockSettingsBodyWeekdayOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+export const saveLowStockSettingsResponseSavedLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const SaveLowStockSettingsResponse = zod.object({
+  committed_version: zod.union([zod.number().int(), zod.null()]),
+  outcome: zod.enum(["committed", "cancelled"]),
+  saved: zod.object({
+    additional_emails: zod
+      .array(zod.string().email())
+      .max(saveLowStockSettingsResponseSavedAdditionalEmailsMax),
+    event: zod.literal("low_stock_alert"),
+    frequency: zod.enum(["daily", "weekly", "monthly"]),
+    local_time: zod
+      .string()
+      .regex(saveLowStockSettingsResponseSavedLocalTimeRegExp),
+    month_day: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(1)
+          .max(saveLowStockSettingsResponseSavedMonthDayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    next_run_at: zod.coerce.date(),
+    runtime_message: zod.string(),
+    runtime_status: zod.enum(["blocked", "eligible"]),
+    start_date: zod.coerce.date(),
+    timezone: zod.literal("Asia/Kolkata"),
+    version: zod
+      .number()
+      .int()
+      .min(saveLowStockSettingsResponseSavedVersionMin)
+      .max(saveLowStockSettingsResponseSavedVersionMax),
+    weekday: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(saveLowStockSettingsResponseSavedWeekdayOneMin)
+          .max(saveLowStockSettingsResponseSavedWeekdayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+  }),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileLowStockSettingsParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const reconcileLowStockSettingsResponseSavedLocalTimeRegExp = new RegExp(
+  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const ReconcileLowStockSettingsResponse = zod.object({
+  committed_version: zod.union([zod.number().int(), zod.null()]),
+  outcome: zod.enum(["committed", "cancelled"]),
+  saved: zod.object({
+    additional_emails: zod
+      .array(zod.string().email())
+      .max(reconcileLowStockSettingsResponseSavedAdditionalEmailsMax),
+    event: zod.literal("low_stock_alert"),
+    frequency: zod.enum(["daily", "weekly", "monthly"]),
+    local_time: zod
+      .string()
+      .regex(reconcileLowStockSettingsResponseSavedLocalTimeRegExp),
+    month_day: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(1)
+          .max(reconcileLowStockSettingsResponseSavedMonthDayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    next_run_at: zod.coerce.date(),
+    runtime_message: zod.string(),
+    runtime_status: zod.enum(["blocked", "eligible"]),
+    start_date: zod.coerce.date(),
+    timezone: zod.literal("Asia/Kolkata"),
+    version: zod
+      .number()
+      .int()
+      .min(reconcileLowStockSettingsResponseSavedVersionMin)
+      .max(reconcileLowStockSettingsResponseSavedVersionMax),
+    weekday: zod
+      .union([
+        zod
+          .number()
+          .int()
+          .min(reconcileLowStockSettingsResponseSavedWeekdayOneMin)
+          .max(reconcileLowStockSettingsResponseSavedWeekdayOneMax),
+        zod.null(),
+      ])
+      .optional(),
+  }),
 });
 
 /**
@@ -27360,7 +27623,7 @@ export const ListOpeningStockQueryParams = zod.object({
 });
 
 export const listOpeningStockResponseItemsItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const ListOpeningStockResponse = zod.object({
@@ -27444,7 +27707,7 @@ export const createOpeningStockBodyReviewTokenRegExp = new RegExp(
 );
 
 export const createOpeningStockBodyRowsItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const CreateOpeningStockBody = zod.object({
@@ -27472,7 +27735,7 @@ export const CreateOpeningStockBody = zod.object({
 });
 
 export const createOpeningStockResponseRecordsItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const CreateOpeningStockResponse = zod.object({
@@ -27589,10 +27852,10 @@ export const ReviewOpeningStockImportBody = zod.object({
 });
 
 export const reviewOpeningStockImportResponseCommandOneRowsItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const reviewOpeningStockImportResponseRowsItemValuesOneQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const ReviewOpeningStockImportResponse = zod.object({
   alreadyImportedCount: zod.number().int(),
@@ -27683,7 +27946,7 @@ export const ReviewOpeningStockImportResponse = zod.object({
  */
 
 export const previewOpeningStockBodyRowsItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const PreviewOpeningStockBody = zod.object({
@@ -27709,7 +27972,7 @@ export const PreviewOpeningStockBody = zod.object({
 });
 
 export const previewOpeningStockResponseRowsItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const PreviewOpeningStockResponse = zod.object({
@@ -27811,7 +28074,7 @@ export const ReconcileOpeningStockRequestParams = zod.object({
 });
 
 export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const ReconcileOpeningStockRequestResponse = zod.object({
   result: zod.union([
@@ -27925,7 +28188,7 @@ export const GetOpeningStockParams = zod.object({
 });
 
 export const getOpeningStockResponseQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const GetOpeningStockResponse = zod.object({
@@ -31672,7 +31935,7 @@ export const ListItPricingRulesResponse = zod.object({
 export const CreateItPricingRuleBody = zod.object({
   afterRate: zod.string().max(createItPricingRuleBodyAfterRateMax),
   allergenCategoryIds: zod
-    .union([zod.record(zod.string().uuid(), zod.string().uuid()), zod.null()])
+    .union([zod.record(zod.string(), zod.string().uuid()), zod.null()])
     .optional(),
   allergenIds: zod
     .array(zod.string().uuid())
@@ -31831,7 +32094,7 @@ export const EditItPricingRuleParams = zod.object({
 export const EditItPricingRuleBody = zod.object({
   afterRate: zod.string().max(editItPricingRuleBodyAfterRateMax),
   allergenCategoryIds: zod
-    .union([zod.record(zod.string().uuid(), zod.string().uuid()), zod.null()])
+    .union([zod.record(zod.string(), zod.string().uuid()), zod.null()])
     .optional(),
   allergenIds: zod
     .array(zod.string().uuid())
@@ -32316,7 +32579,7 @@ export const ListStockProductsQueryParams = zod.object({
 });
 
 export const listStockProductsResponseItemsItemMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const ListStockProductsResponse = zod.object({
   filtered: zod.number().int(),
@@ -32382,7 +32645,7 @@ export const ListStockProductsResponse = zod.object({
  */
 
 export const createStockProductBodyMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const createStockProductBodyStatusDefault = `active`;
@@ -32410,7 +32673,7 @@ export const CreateStockProductBody = zod.object({
 });
 
 export const createStockProductResponseMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const CreateStockProductResponse = zod.object({
@@ -32444,7 +32707,7 @@ export const CreateStockProductResponse = zod.object({
  */
 
 export const assembleStockProductBodyAllocationsItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 export const assembleStockProductBodyAllocationsItemSourceKindDefault = `inventory`;
 
@@ -32467,7 +32730,10 @@ export const AssembleStockProductBody = zod.object({
         quantity: zod
           .string()
           .max(assembleStockProductBodyAllocationsItemQuantityMax)
-          .regex(assembleStockProductBodyAllocationsItemQuantityRegExp),
+          .regex(assembleStockProductBodyAllocationsItemQuantityRegExp)
+          .describe(
+            "Source quantity; exact half-up normalization to hundredths before review and commit.",
+          ),
         sourceKind: zod
           .enum(["inventory", "reserve"])
           .default(assembleStockProductBodyAllocationsItemSourceKindDefault),
@@ -32486,7 +32752,7 @@ export const AssembleStockProductBody = zod.object({
 });
 
 export const assembleStockProductResponseMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const AssembleStockProductResponse = zod.object({
@@ -32564,7 +32830,7 @@ export const AssembleStockProductResponse = zod.object({
  */
 
 export const previewProductAssemblyBodyAllocationsItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 export const previewProductAssemblyBodyAllocationsItemSourceKindDefault = `inventory`;
 
 export const PreviewProductAssemblyBody = zod.object({
@@ -32582,7 +32848,10 @@ export const PreviewProductAssemblyBody = zod.object({
         quantity: zod
           .string()
           .max(previewProductAssemblyBodyAllocationsItemQuantityMax)
-          .regex(previewProductAssemblyBodyAllocationsItemQuantityRegExp),
+          .regex(previewProductAssemblyBodyAllocationsItemQuantityRegExp)
+          .describe(
+            "Source quantity; exact half-up normalization to hundredths before review and commit.",
+          ),
         sourceKind: zod
           .enum(["inventory", "reserve"])
           .default(previewProductAssemblyBodyAllocationsItemSourceKindDefault),
@@ -32603,7 +32872,7 @@ export const PreviewProductAssemblyBody = zod.object({
 });
 
 export const previewProductAssemblyResponseAssemblyMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const PreviewProductAssemblyResponse = zod.object({
   assembly: zod.object({
@@ -32673,7 +32942,7 @@ export const GetProductAssemblyParams = zod.object({
 });
 
 export const getProductAssemblyResponseMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const GetProductAssemblyResponse = zod.object({
@@ -32937,10 +33206,10 @@ export const ReconcileStockProductRequestParams = zod.object({
 });
 
 export const reconcileStockProductRequestResponseResultOneMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const reconcileStockProductRequestResponseResultTwoMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const ReconcileStockProductRequestResponse = zod.object({
   result: zod.union([
@@ -33089,7 +33358,7 @@ export const DeleteStockProductBody = zod.object({
 });
 
 export const deleteStockProductResponseMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const DeleteStockProductResponse = zod.object({
@@ -33126,7 +33395,7 @@ export const GetStockProductParams = zod.object({
 });
 
 export const getStockProductResponseMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const GetStockProductResponse = zod.object({
@@ -33163,7 +33432,7 @@ export const EditStockProductParams = zod.object({
 });
 
 export const editStockProductBodyMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const editStockProductBodyStatusDefault = `active`;
@@ -33192,7 +33461,7 @@ export const EditStockProductBody = zod.object({
 });
 
 export const editStockProductResponseMembersItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const EditStockProductResponse = zod.object({
@@ -33244,10 +33513,10 @@ export const GetStockProductActivityQueryParams = zod.object({
 });
 
 export const getStockProductActivityResponseItemsItemAfterMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const GetStockProductActivityResponse = zod.object({
   filtered: zod.number().int(),
@@ -33381,7 +33650,7 @@ export const GetStockProductAssembliesQueryParams = zod.object({
 });
 
 export const getStockProductAssembliesResponseItemsItemMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const GetStockProductAssembliesResponse = zod.object({
   filtered: zod.number().int(),
@@ -33478,7 +33747,7 @@ export const SetStockProductStatusBody = zod.object({
 });
 
 export const setStockProductStatusResponseMembersItemQuantityRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const SetStockProductStatusResponse = zod.object({
   createdAt: zod.coerce.date(),
@@ -33653,7 +33922,7 @@ export const createPurchaseOrderBodyLinesItemGstDefault = null;
 export const createPurchaseOrderBodyLinesItemLineIdDefault = null;
 
 export const createPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const createPurchaseOrderBodyLinesItemUnitPriceOneRegExp = new RegExp(
@@ -34110,7 +34379,7 @@ export const previewPurchaseOrderBodyLinesItemGstDefault = null;
 export const previewPurchaseOrderBodyLinesItemLineIdDefault = null;
 
 export const previewPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const previewPurchaseOrderBodyLinesItemUnitPriceOneRegExp = new RegExp(
@@ -34603,7 +34872,7 @@ export const editPurchaseOrderBodyLinesItemGstDefault = null;
 export const editPurchaseOrderBodyLinesItemLineIdDefault = null;
 
 export const editPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const editPurchaseOrderBodyLinesItemUnitPriceOneRegExp = new RegExp(
@@ -34852,7 +35121,7 @@ export const previewPurchaseOrderEditBodyLinesItemGstDefault = null;
 export const previewPurchaseOrderEditBodyLinesItemLineIdDefault = null;
 
 export const previewPurchaseOrderEditBodyLinesItemQuantityRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const previewPurchaseOrderEditBodyLinesItemUnitPriceOneRegExp =
@@ -35148,14 +35417,14 @@ export const ListPurchaseReceivedResponse = zod.object({
  */
 
 export const createPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const createPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 
 export const createPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const createPurchaseReceivedBodyReviewTokenRegExp = new RegExp(
@@ -35704,14 +35973,14 @@ export const GetPurchaseReceivedFiltersResponse = zod.object({
  */
 
 export const previewPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const previewPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 
 export const previewPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const PreviewPurchaseReceivedBody = zod.object({
@@ -36257,14 +36526,14 @@ export const EditPurchaseReceivedParams = zod.object({
 });
 
 export const editPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const editPurchaseReceivedBodyLinesItemActualUnitCostOneRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 
 export const editPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
-  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+  "^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$",
 );
 
 export const editPurchaseReceivedBodyReviewTokenRegExp = new RegExp(
@@ -36459,13 +36728,13 @@ export const PreviewPurchaseReceivedEditParams = zod.object({
 });
 
 export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const previewPurchaseReceivedEditBodyLinesItemActualUnitCostOneRegExp =
   new RegExp("^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,6})?$");
 
 export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyRegExp =
-  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+  new RegExp("^(?:0|[1-9][0-9]{0,6})(?:\\.[0-9]{1,6})?$");
 
 export const PreviewPurchaseReceivedEditBody = zod.object({
   documentContext: zod
@@ -39162,15 +39431,27 @@ export const SetSalesTargetStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listSettlementsQueryKindDefault = `All`;
+export const listSettlementsQueryVerificationDefault = `All`;
 export const listSettlementsQuerySearchDefault = ``;
 
 export const listSettlementsQueryOrderStatusDefault = `All`;
 export const listSettlementsQueryPaymentStatusDefault = `All`;
 
-export const listSettlementsQueryKindDefault = `All`;
-export const listSettlementsQueryVerificationDefault = `All`;
-
 export const ListSettlementsQueryParams = zod.object({
+  kind: zod
+    .enum(["All", "IT", "Kit", "SPT", "Lupin"])
+    .default(listSettlementsQueryKindDefault),
+  order_from: zod.union([zod.date(), zod.null()]).optional(),
+  order_to: zod.union([zod.date(), zod.null()]).optional(),
+  payment_from: zod.union([zod.date(), zod.null()]).optional(),
+  payment_to: zod.union([zod.date(), zod.null()]).optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  verification: zod
+    .enum(["All", "No transactions", "Not verified", "Verified"])
+    .default(listSettlementsQueryVerificationDefault),
   search: zod.coerce
     .string()
     .max(listSettlementsQuerySearchMax)
@@ -39195,19 +39476,6 @@ export const ListSettlementsQueryParams = zod.object({
   payable_only: zod.coerce
     .boolean()
     .default(listSettlementsQueryPayableOnlyDefault),
-  kind: zod
-    .enum(["All", "IT", "Kit", "SPT", "Lupin"])
-    .default(listSettlementsQueryKindDefault),
-  order_from: zod.union([zod.date(), zod.null()]).optional(),
-  order_to: zod.union([zod.date(), zod.null()]).optional(),
-  payment_from: zod.union([zod.date(), zod.null()]).optional(),
-  payment_to: zod.union([zod.date(), zod.null()]).optional(),
-  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  verification: zod
-    .enum(["All", "No transactions", "Not verified", "Verified"])
-    .default(listSettlementsQueryVerificationDefault),
   offset: zod.coerce
     .number()
     .int()
@@ -39225,9 +39493,6 @@ export const ListSettlementsQueryParams = zod.object({
 export const ListSettlementsResponse = zod.object({
   items: zod.array(
     zod.object({
-      status: zod.string(),
-      payable: zod.boolean(),
-      paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
       balance: zod.union([zod.string(), zod.null()]),
       date: zod.string(),
       doctor: zod.union([
@@ -39282,12 +39547,12 @@ export const ListSettlementsResponse = zod.object({
           qualification: zod.union([zod.string(), zod.null()]).optional(),
         }),
       ),
+      payable: zod.boolean(),
+      paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
+      status: zod.string(),
       total: zod.union([zod.string(), zod.null()]),
       transactions: zod.array(
         zod.object({
-          reference: zod.union([zod.string(), zod.null()]).optional(),
-          verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
-          verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
           actorId: zod.string(),
           amount: zod.string(),
           batchId: zod.string(),
@@ -39302,11 +39567,14 @@ export const ListSettlementsResponse = zod.object({
             "Card",
             "Other",
           ]),
+          reference: zod.union([zod.string(), zod.null()]).optional(),
           verification: zod.enum([
             "No transactions",
             "Not verified",
             "Verified",
           ]),
+          verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
+          verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
         }),
       ),
       verification: zod.enum(["No transactions", "Not verified", "Verified"]),
@@ -39327,9 +39595,6 @@ export const SettlementOrderHistoryParams = zod.object({
 });
 
 export const SettlementOrderHistoryResponse = zod.object({
-  status: zod.string(),
-  payable: zod.boolean(),
-  paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
   balance: zod.union([zod.string(), zod.null()]),
   date: zod.string(),
   doctor: zod.union([
@@ -39380,12 +39645,12 @@ export const SettlementOrderHistoryResponse = zod.object({
       qualification: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
+  payable: zod.boolean(),
+  paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
+  status: zod.string(),
   total: zod.union([zod.string(), zod.null()]),
   transactions: zod.array(
     zod.object({
-      reference: zod.union([zod.string(), zod.null()]).optional(),
-      verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
-      verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
       actorId: zod.string(),
       amount: zod.string(),
       batchId: zod.string(),
@@ -39400,7 +39665,10 @@ export const SettlementOrderHistoryResponse = zod.object({
         "Card",
         "Other",
       ]),
+      reference: zod.union([zod.string(), zod.null()]).optional(),
       verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+      verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
+      verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   verification: zod.enum(["No transactions", "Not verified", "Verified"]),
@@ -39457,7 +39725,6 @@ export const ReconcileSettlementParams = zod.object({
 export const ReconcileSettlementResponse = zod.object({
   batch: zod.union([
     zod.object({
-      reference: zod.union([zod.string(), zod.null()]).optional(),
       date: zod.string(),
       entries: zod.array(
         zod.object({
@@ -39475,6 +39742,7 @@ export const ReconcileSettlementResponse = zod.object({
         "Card",
         "Other",
       ]),
+      reference: zod.union([zod.string(), zod.null()]).optional(),
       total: zod.string(),
     }),
     zod.null(),
@@ -39494,7 +39762,6 @@ export const ReconcileSettlementResponse = zod.object({
 /**
  * @summary Post
  */
-
 export const recordSettlementBodyEntriesItemAmountRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,2})?$",
 );
@@ -39503,9 +39770,6 @@ export const recordSettlementBodyEntriesItemExpectedPaidRegExp = new RegExp(
 );
 
 export const RecordSettlementBody = zod.object({
-  reference: zod
-    .union([zod.string().max(recordSettlementBodyReferenceOneMax), zod.null()])
-    .optional(),
   date: zod.coerce.date(),
   entries: zod
     .array(
@@ -39523,10 +39787,12 @@ export const RecordSettlementBody = zod.object({
     .max(recordSettlementBodyEntriesMax),
   idempotency_key: zod.string().uuid(),
   mode: zod.enum(["Cash", "UPI", "Bank transfer", "Cheque", "Card", "Other"]),
+  reference: zod
+    .union([zod.string().max(recordSettlementBodyReferenceOneMax), zod.null()])
+    .optional(),
 });
 
 export const RecordSettlementResponse = zod.object({
-  reference: zod.union([zod.string(), zod.null()]).optional(),
   date: zod.string(),
   entries: zod.array(
     zod.object({
@@ -39537,6 +39803,7 @@ export const RecordSettlementResponse = zod.object({
   ),
   id: zod.string(),
   mode: zod.enum(["Cash", "UPI", "Bank transfer", "Cheque", "Card", "Other"]),
+  reference: zod.union([zod.string(), zod.null()]).optional(),
   total: zod.string(),
 });
 
@@ -39548,9 +39815,6 @@ export const VerifySettlementTransactionParams = zod.object({
 });
 
 export const VerifySettlementTransactionResponse = zod.object({
-  status: zod.string(),
-  payable: zod.boolean(),
-  paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
   balance: zod.union([zod.string(), zod.null()]),
   date: zod.string(),
   doctor: zod.union([
@@ -39603,12 +39867,12 @@ export const VerifySettlementTransactionResponse = zod.object({
       qualification: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
+  payable: zod.boolean(),
+  paymentStatus: zod.enum(["Unpaid", "Part paid", "Paid", "Unavailable"]),
+  status: zod.string(),
   total: zod.union([zod.string(), zod.null()]),
   transactions: zod.array(
     zod.object({
-      reference: zod.union([zod.string(), zod.null()]).optional(),
-      verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
-      verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
       actorId: zod.string(),
       amount: zod.string(),
       batchId: zod.string(),
@@ -39623,7 +39887,10 @@ export const VerifySettlementTransactionResponse = zod.object({
         "Card",
         "Other",
       ]),
+      reference: zod.union([zod.string(), zod.null()]).optional(),
       verification: zod.enum(["No transactions", "Not verified", "Verified"]),
+      verifiedAt: zod.union([zod.string(), zod.null()]).optional(),
+      verifiedBy: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   verification: zod.enum(["No transactions", "Not verified", "Verified"]),
@@ -47995,260 +48262,3 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
-
-/**
- * @summary Read
- */
-
-export const getLowStockSettingsResponseLocalTimeRegExp = new RegExp(
-  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
-);
-
-export const GetLowStockSettingsResponse = zod.object({
-  event: zod.literal("low_stock_alert"),
-  frequency: zod.enum(["daily", "weekly", "monthly"]),
-  weekday: zod
-    .union([
-      zod
-        .number()
-        .int()
-        .min(getLowStockSettingsResponseWeekdayOneMin)
-        .max(getLowStockSettingsResponseWeekdayOneMax),
-      zod.null(),
-    ])
-    .optional(),
-  month_day: zod
-    .union([
-      zod.number().int().min(1).max(getLowStockSettingsResponseMonthDayOneMax),
-      zod.null(),
-    ])
-    .optional(),
-  start_date: zod.coerce.date(),
-  local_time: zod.string().regex(getLowStockSettingsResponseLocalTimeRegExp),
-  timezone: zod.literal("Asia/Kolkata"),
-  additional_emails: zod
-    .array(zod.string().email())
-    .max(getLowStockSettingsResponseAdditionalEmailsMax),
-  version: zod
-    .number()
-    .int()
-    .min(getLowStockSettingsResponseVersionMin)
-    .max(getLowStockSettingsResponseVersionMax),
-  next_run_at: zod.coerce.date(),
-  runtime_status: zod.enum(["blocked", "eligible"]),
-  runtime_message: zod.string(),
-});
-
-/**
- * @summary Write
- */
-
-export const saveLowStockSettingsBodyLocalTimeRegExp = new RegExp(
-  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
-);
-
-export const SaveLowStockSettingsBody = zod.object({
-  event: zod.literal("low_stock_alert"),
-  frequency: zod.enum(["daily", "weekly", "monthly"]),
-  weekday: zod
-    .union([
-      zod
-        .number()
-        .int()
-        .min(saveLowStockSettingsBodyWeekdayOneMin)
-        .max(saveLowStockSettingsBodyWeekdayOneMax),
-      zod.null(),
-    ])
-    .optional(),
-  month_day: zod
-    .union([
-      zod.number().int().min(1).max(saveLowStockSettingsBodyMonthDayOneMax),
-      zod.null(),
-    ])
-    .optional(),
-  start_date: zod.coerce.date(),
-  local_time: zod.string().regex(saveLowStockSettingsBodyLocalTimeRegExp),
-  timezone: zod.literal("Asia/Kolkata"),
-  additional_emails: zod
-    .array(zod.string().email())
-    .max(saveLowStockSettingsBodyAdditionalEmailsMax),
-  expected_version: zod
-    .number()
-    .int()
-    .min(saveLowStockSettingsBodyExpectedVersionMin)
-    .max(saveLowStockSettingsBodyExpectedVersionMax),
-  request_id: zod.string().uuid(),
-});
-
-export const saveLowStockSettingsResponseSavedLocalTimeRegExp = new RegExp(
-  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
-);
-
-export const SaveLowStockSettingsResponse = zod.object({
-  outcome: zod.enum(["committed", "cancelled"]),
-  committed_version: zod.union([zod.number().int(), zod.null()]),
-  saved: zod.object({
-    event: zod.literal("low_stock_alert"),
-    frequency: zod.enum(["daily", "weekly", "monthly"]),
-    weekday: zod
-      .union([
-        zod
-          .number()
-          .int()
-          .min(saveLowStockSettingsResponseSavedWeekdayOneMin)
-          .max(saveLowStockSettingsResponseSavedWeekdayOneMax),
-        zod.null(),
-      ])
-      .optional(),
-    month_day: zod
-      .union([
-        zod
-          .number()
-          .int()
-          .min(1)
-          .max(saveLowStockSettingsResponseSavedMonthDayOneMax),
-        zod.null(),
-      ])
-      .optional(),
-    start_date: zod.coerce.date(),
-    local_time: zod
-      .string()
-      .regex(saveLowStockSettingsResponseSavedLocalTimeRegExp),
-    timezone: zod.literal("Asia/Kolkata"),
-    additional_emails: zod
-      .array(zod.string().email())
-      .max(saveLowStockSettingsResponseSavedAdditionalEmailsMax),
-    version: zod
-      .number()
-      .int()
-      .min(saveLowStockSettingsResponseSavedVersionMin)
-      .max(saveLowStockSettingsResponseSavedVersionMax),
-    next_run_at: zod.coerce.date(),
-    runtime_status: zod.enum(["blocked", "eligible"]),
-    runtime_message: zod.string(),
-  }),
-});
-
-/**
- * @summary Reconcile
- */
-export const ReconcileLowStockSettingsParams = zod.object({
-  key: zod.coerce.string().uuid(),
-});
-
-export const reconcileLowStockSettingsResponseSavedLocalTimeRegExp = new RegExp(
-  "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
-);
-
-export const ReconcileLowStockSettingsResponse = zod.object({
-  outcome: zod.enum(["committed", "cancelled"]),
-  committed_version: zod.union([zod.number().int(), zod.null()]),
-  saved: zod.object({
-    event: zod.literal("low_stock_alert"),
-    frequency: zod.enum(["daily", "weekly", "monthly"]),
-    weekday: zod
-      .union([
-        zod
-          .number()
-          .int()
-          .min(reconcileLowStockSettingsResponseSavedWeekdayOneMin)
-          .max(reconcileLowStockSettingsResponseSavedWeekdayOneMax),
-        zod.null(),
-      ])
-      .optional(),
-    month_day: zod
-      .union([
-        zod
-          .number()
-          .int()
-          .min(1)
-          .max(reconcileLowStockSettingsResponseSavedMonthDayOneMax),
-        zod.null(),
-      ])
-      .optional(),
-    start_date: zod.coerce.date(),
-    local_time: zod
-      .string()
-      .regex(reconcileLowStockSettingsResponseSavedLocalTimeRegExp),
-    timezone: zod.literal("Asia/Kolkata"),
-    additional_emails: zod
-      .array(zod.string().email())
-      .max(reconcileLowStockSettingsResponseSavedAdditionalEmailsMax),
-    version: zod
-      .number()
-      .int()
-      .min(reconcileLowStockSettingsResponseSavedVersionMin)
-      .max(reconcileLowStockSettingsResponseSavedVersionMax),
-    next_run_at: zod.coerce.date(),
-    runtime_status: zod.enum(["blocked", "eligible"]),
-    runtime_message: zod.string(),
-  }),
-});
-
-/**
- * @summary Low Stock Alerts
- */
-export const listLowStockAlertsQueryQueryDefault = ``;
-
-export const ListLowStockAlertsQueryParams = zod.object({
-  query: zod.coerce
-    .string()
-    .max(listLowStockAlertsQueryQueryMax)
-    .default(listLowStockAlertsQueryQueryDefault),
-  offset: zod.coerce
-    .number()
-    .int()
-    .min(listLowStockAlertsQueryOffsetMin)
-    .max(listLowStockAlertsQueryOffsetMax)
-    .default(listLowStockAlertsQueryOffsetDefault),
-  limit: zod.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(listLowStockAlertsQueryLimitMax)
-    .default(listLowStockAlertsQueryLimitDefault),
-});
-
-export const ListLowStockAlertsResponse = zod.object({
-  items: zod.array(
-    zod.object({
-      productId: zod.string().uuid(),
-      name: zod.string(),
-      category: zod.string(),
-      quantity: zod.string(),
-      unit: zod.string(),
-      thresholdLimit: zod.union([zod.string(), zod.null()]),
-      reason: zod.string(),
-    }),
-  ),
-  total: zod.number().int().min(listLowStockAlertsResponseTotalMin),
-  filtered: zod.number().int().min(listLowStockAlertsResponseFilteredMin),
-  asOf: zod.coerce.date(),
-  offset: zod.number().int(),
-  limit: zod.number().int(),
-});
-
-/**
- * @summary Status
- */
-export const StatusLanguageParams = zod.object({
-  language_id: zod.coerce.string().uuid(),
-});
-
-export const StatusLanguageBody = zod.object({
-  expected_version: zod.number().int().min(1),
-  status: zod.enum(["active", "inactive"]),
-});
-
-export const StatusLanguageResponse = zod.object({
-  createdAt: zod.coerce.date(),
-  createdBy: zod.string(),
-  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
-  deletedBy: zod.union([zod.string(), zod.null()]),
-  id: zod.string().uuid(),
-  name: zod.string().min(1).max(statusLanguageResponseNameMax),
-  status: zod.enum(["active", "inactive"]),
-  updatedAt: zod.coerce.date(),
-  updatedBy: zod.string(),
-  version: zod.number().int(),
-});

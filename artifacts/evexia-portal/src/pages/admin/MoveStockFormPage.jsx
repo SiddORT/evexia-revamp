@@ -184,7 +184,7 @@ export default function MoveStockFormPage() {
     unavailable.forEach((p) => { e[p.lot.id] = 'This lot is no longer available at the source. Remove it to continue.'; });
     if (unavailable.length) e.lines = 'Remove lots that are no longer available before review.';
     Object.entries(validateLines(selectedLines).errors).forEach(([k, v]) => { if (!e[k]) e[k] = v; });
-    selectedLines.forEach(({ lot, quantity }) => { if (lot.itemKind === 'combo' && !e[lot.id] && !/^[1-9]\d*(?:\.0{1,3})?$/.test(quantity.trim())) e[lot.id] = 'Assembled combos move only as positive whole combos.'; });
+    selectedLines.forEach(({ lot, quantity }) => { if (lot.itemKind === 'combo' && !e[lot.id] && !/^[1-9]\d*(?:\.0{1,6})?$/.test(quantity.trim())) e[lot.id] = 'Assembled combos move only as positive whole combos.'; });
     selectedLines.forEach(({ lot, dilute, factor }) => {
       if (!isReserveLine(lot)) return;
       const validation = reserveConfiguration(lot, { quantity: picked[lot.id].quantity, dilute, factor });
@@ -258,7 +258,7 @@ export default function MoveStockFormPage() {
   const hasUnavailable = unavailable.length > 0;
 
   return <AdminLayout title="Move stock"><div className="move-stocks-page">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose source batches and a destination. Protected in-house reserves require an explicit dilution choice; No keeps them reserve-only. Quantities allow up to 3 decimals; assembled combos move only in whole numbers.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose source batches and a destination. Protected in-house reserves require an explicit dilution choice; No keeps them reserve-only. Quantities save half-up to two places from up to six source decimals; assembled combos remain whole numbers.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-move"><ArrowLeft size={16} /> All movements</button></div></div>
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
     {prefill.message && <div className="admin-feedback" role="status">{prefill.message}

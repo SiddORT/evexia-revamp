@@ -1,12 +1,13 @@
 import { isSamplePR } from './prSampleIdentity.js';
 import { PR_TEMPLATES } from './prReceiptTemplates.js';
+import { displayQuantity } from './quantities.js';
 
 const quantityMilli = (value) => {
   const text = String(value ?? '').trim();
   if (!/^\d+(?:\.\d{1,3})?$/.test(text)) return null;
-  const number = Number(text);
-  if (!Number.isFinite(number) || number < 0 || number > 1000000) return null;
-  return Math.round(number * 1000);
+  const [integer, fraction = ''] = text.split('.');
+  const exact = BigInt(integer) * 1000n + BigInt(fraction.padEnd(3, '0'));
+  return exact <= 1000000000n ? exact : null;
 };
 
 const HISTORY_EXPLANATION =
@@ -42,7 +43,7 @@ export function normalizePRReceipt(receipt) {
       if (balance === null || balance > ordered) {
         throw new Error(`Purchase Received document line ${index + 1} has an invalid saved post-receipt balance.`);
       }
-      balanceAfterQty = balance / 1000;
+      balanceAfterQty = displayQuantity(String(line.balanceAfterQty));
     }
     return { ...line, balanceAfterQty };
   });

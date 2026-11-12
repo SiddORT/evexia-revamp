@@ -1,4 +1,5 @@
 // Draft-only exact calculations. The protected server review remains authoritative.
+import { normalizeQuantity, displayQuantity } from './quantities.js';
 const scaled = (v, digits) => {
   const [a, b = ''] = v.split('.');
   return BigInt(a + b.padEnd(digits, '0'));
@@ -9,10 +10,12 @@ const render = (n, digits) => {
 };
 export function reserveConfiguration(lot, { quantity = '', dilute, factor }) {
   const errors = {};
-  const q = String(quantity).trim();
+  let q;
+  try { q = normalizeQuantity(String(quantity).trim(), { positive: true }); }
+  catch { q = ''; }
   let input;
   if (!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/.test(q) || (input = scaled(q, 3)) <= 0n)
-    errors.quantity = 'Enter a positive source quantity with up to 3 decimals.';
+    errors.quantity = 'Enter a positive source quantity; up to six source decimals round half-up to two places.';
   else if (input > 1000000000n) errors.quantity = 'Quantity cannot exceed 1000000 ml.';
   else if (input > scaled(String(lot.available), 3)) errors.quantity = `Quantity exceeds available ${lot.available}.`;
   if (dilute !== true && dilute !== false) errors.dilute = 'Choose Yes or No for dilution.';
@@ -32,7 +35,7 @@ export function reserveConfiguration(lot, { quantity = '', dilute, factor }) {
       else if (value % f) errors.dilute = 'Resulting concentration needs more than six decimals. Choose another approved factor or No.';
       else if (!errors.quantity) {
         if (input * f > 1000000000n) errors.quantity = 'Diluted output cannot exceed 1000000 ml. Reduce the source quantity.';
-        else output = { quantity: render(input * f, 3), concentration: render(value / f, 6) + (percent ? '%' : '') };
+        else output = { quantity: displayQuantity(render(input * f, 3)), concentration: render(value / f, 6) + (percent ? '%' : '') };
       }
     }
   }

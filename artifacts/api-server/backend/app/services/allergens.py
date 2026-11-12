@@ -63,7 +63,7 @@ def projection(db, row):
     location = db.get(StorageLocation, row.storage_location_id)
     values = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     for field in ("selling_price", "gst", "threshold_limit"):
-        values[field] = (format(values[field], ".6f") if field == "threshold_limit" else display_rate(values[field])) if values[field] is not None else None
+        values[field] = display_rate(values[field]) if values[field] is not None else None
     return dict(id=row.id, code=row.code, inventoryOnly=bool(binding and binding.product_id == row.id), **values, version=row.version,
                 category_name=row.category_name, storage_location_name=row.storage_location_name,
                 category_status=reference_status(category), storage_location_status=reference_status(location),

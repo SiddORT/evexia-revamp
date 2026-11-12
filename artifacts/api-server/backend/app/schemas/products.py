@@ -5,6 +5,7 @@ from typing import Literal
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.rates import rate
+from app.schemas.quantities import quantity_string
 from app.schemas.master_validation import MasterWriteFields
 from app.schemas.inventory import MoveLine, MovementLocation, MovementActivity
 
@@ -12,14 +13,12 @@ from app.schemas.inventory import MoveLine, MovementLocation, MovementActivity
 class ProductMemberInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     allergenId: uuid.UUID
-    quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
 
     @field_validator("quantity")
     @classmethod
     def positive(cls, value):
-        if not 0 < Decimal(value) <= 1000000:
-            raise ValueError("Member quantity must be positive and at most 1000000.")
-        return value
+        return quantity_string(value, positive=True)
 
 
 class ProductFields(MasterWriteFields):

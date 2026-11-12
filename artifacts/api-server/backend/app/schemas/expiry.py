@@ -1,6 +1,8 @@
 import uuid
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from decimal import Decimal
+from app.schemas.rates import rate
 
 RATE = r"^(?:0|[1-9]\d{0,8})(?:\.\d{1,6})?$"
 
@@ -8,6 +10,11 @@ RATE = r"^(?:0|[1-9]\d{0,8})(?:\.\d{1,6})?$"
 class ActualCost(BaseModel):
     actualUnitCost: str | None = Field(default=None, pattern=RATE, max_length=16)
     costProvenance: str | None = Field(default=None, min_length=3, max_length=1000)
+
+    @field_validator("actualUnitCost")
+    @classmethod
+    def normalized_cost(cls, value):
+        return None if value is None else rate(value, Decimal("999999999.99"))
 
     @model_validator(mode="after")
     def cost_pair(self):
@@ -29,10 +36,15 @@ class CostInput(BatchIdentity):
     provenance: str = Field(min_length=3, max_length=1000)
     idempotencyKey: uuid.UUID
 
+    @field_validator("unitCost")
+    @classmethod
+    def normalized_cost(cls, value):
+        return rate(value, Decimal("999999999.99"))
+
 
 class DisposalInput(BatchIdentity):
     locationId: uuid.UUID | None
-    quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
     reason: str = Field(min_length=3, max_length=1000)
 
 
@@ -42,6 +54,11 @@ class DisposalCreate(DisposalInput):
 
 
 class ExpiryCostEvidence(BaseModel):
+    @field_validator("unitCost", check_fields=False)
+    @classmethod
+    def display_cost(cls, value):
+        from app.schemas.quantities import display_quantity
+        return None if value is None else display_quantity(value)
     id: uuid.UUID
     sourceKind: Literal["lot", "reserve"]
     batchId: uuid.UUID
@@ -56,6 +73,11 @@ class ExpiryCostEvidence(BaseModel):
 
 
 class InventoryExpiryRow(BaseModel):
+    @field_validator("quantity", "unitCost", "expiredValue", check_fields=False)
+    @classmethod
+    def display_business_values(cls, value):
+        from app.schemas.quantities import display_quantity
+        return None if value is None else display_quantity(value)
     sourceKind: Literal["lot", "reserve"]
     batchId: uuid.UUID
     locationId: uuid.UUID | None

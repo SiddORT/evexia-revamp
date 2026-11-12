@@ -12,8 +12,8 @@ def exact_price(value):
 
 
 def exact_quantity(value):
-    """Thresholds are NOT rates; retain their six-place contract."""
-    return format(source_decimal(value), ".6f")
+    """Retain bounded source parsing; operational thresholds use hundredths."""
+    return rate(value)
 
 
 class ProductCategoryFields(MasterWriteFields):

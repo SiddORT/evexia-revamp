@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import ClassVar, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.rates import rate
+from app.schemas.quantities import quantity_string
 from app.schemas.inventory import MovementLocation, MovementActivity
 
 
@@ -16,7 +17,7 @@ class OpeningRow(BaseModel):
     rowId: uuid.UUID
     itemKind: Literal["allergen", "combo"]
     itemId: uuid.UUID
-    quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
     unitRate: str = Field(max_length=64)
     locationId: uuid.UUID | None = None
 
@@ -34,6 +35,8 @@ class OpeningRow(BaseModel):
             raise ValueError("Quantity cannot exceed 1000000.")
         if self.itemKind == "combo" and amount != amount.to_integral_value():
             raise ValueError("Finished products require whole quantities.")
+        if not self.read_snapshot:
+            self.quantity = quantity_string(self.quantity, whole=self.itemKind == "combo")
         return self
 
 

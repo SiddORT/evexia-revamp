@@ -3,12 +3,18 @@ from datetime import date
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.procurement_documents import DocumentContext
+from app.schemas.quantities import quantity_string
 
 
 class POLineInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     productId: uuid.UUID
-    quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
+
+    @field_validator("quantity")
+    @classmethod
+    def canonical_quantity(cls, value):
+        return quantity_string(value, positive=True)
     # Optional only for exact reconciliation of pre-rate retry payloads.
     # New reviews and uncommitted saves require both explicit decimal strings.
     unitPrice: str | None = Field(default=None, max_length=64, pattern=r"^[0-9]+(?:\.[0-9]{1,6})?$")

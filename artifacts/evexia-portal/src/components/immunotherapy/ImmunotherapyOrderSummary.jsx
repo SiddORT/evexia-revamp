@@ -10,6 +10,7 @@ import PrescriptionViewer from './PrescriptionViewer.jsx';
 import { MR_GROUPING_POLICY } from '../../services/immunotherapyGrouping.js';
 import ClinicalAssignment from './ClinicalAssignment.jsx';
 import MaterialPricingEvidence from './MaterialPricingEvidence.jsx';
+import { displayQuantity } from '../../services/quantities.js';
 import '../../kitsOrders.css';
 import './immunotherapyOrderSummary.css';
 
@@ -85,7 +86,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
                 ...(!mrPortal && !canonical ? [['Suborder ID', item.suborderId || 'Not assigned']] : []), ['Allergen', item.allergen?.name],
                 ...(!mrPortal ? [['Allergen identity', item.allergenId]] : []),
                 ['Concentration', item.allergen?.concentration], ['Skin test result (mm)', item.result],
-                ...(canonical ? [['Extract (ml)', item.extract ?? 'Not recorded'], ['Dilution (ml)', item.dilution ?? 'Not recorded']]
+                ...(canonical ? [['Extract (ml)', item.extract == null ? 'Not recorded' : displayQuantity(item.extract)], ['Dilution (ml)', item.dilution == null ? 'Not recorded' : displayQuantity(item.dilution)]]
                   : !mrPortal ? [['Rate (INR)', money(parseAmount(item.rate))]] : []),
               ]} />
               {!mrPortal && <ClinicalAssignment item={item} />}

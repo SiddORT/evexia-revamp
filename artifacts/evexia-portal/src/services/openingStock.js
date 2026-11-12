@@ -70,13 +70,10 @@ const split = (v) => { const [a, b = ''] = String(v).trim().split('.'); return [
 /** Exact half-up rounding of a nonnegative decimal string to two places, in cents. */
 const toCents = (v) => { const [a, b] = split(v); const f = (b + '000000').slice(0, 6); return (BigInt(a) * 1000000n + BigInt(f) + 5000n) / 10000n; };
 export const validRate = (v) => RATE_RE.test(String(v).trim()) && toCents(v) <= MAX_RATE_CENTS;
+import { normalizeQuantity } from './quantities.js';
 export function validQuantity(v, kind) {
   const s = String(v).trim();
-  if (kind === 'combo') return /^(?:[1-9]\d{0,5}|1000000)$/.test(s);
-  if (!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/.test(s)) return false;
-  const [a, b] = split(s);
-  const milli = BigInt(a) * 1000n + BigInt((b + '000').slice(0, 3));
-  return milli > 0n && milli <= 1000000000n;
+  try { normalizeQuantity(s, { positive: true, whole: kind === 'combo' }); return true; } catch { return false; }
 }
 const group = (digits) => BigInt(digits).toLocaleString('en-IN');
 const valid = (v) => typeof v === 'string' && /^\d+(?:\.\d+)?$/.test(v.trim());
@@ -86,12 +83,8 @@ export const money = (v) => {
   const c = toCents(v);
   return `INR ${group(String(c / 100n))}.${String(c % 100n).padStart(2, '0')}`;
 };
-/** Opening value: exact, up to five decimals, never rounded, at least two. */
+/** Operational opening value: exactly two places, exact half-up. */
 export const valueMoney = (v) => {
-  if (!valid(v)) return 'Not set';
-  const [a, b] = split(v);
-  let frac = b.replace(/0+$/, '');
-  if (frac.length < 2) frac = frac.padEnd(2, '0');
-  return `INR ${group(a)}.${frac}`;
+  return money(v);
 };
 export const locationLabel = (l) => l?.id ? l.name : 'Unallocated';

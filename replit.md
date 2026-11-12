@@ -1,3 +1,28 @@
+# Two-decimal operational quantities — prepared source, not runtime activation
+
+The approved business-quantity policy supersedes older thousandth/five-place
+quantity/value guidance below in the inventory-coupled areas. New operational
+quantities use exact decimal half-up hundredths. Accept bounded source precision
+(up to six fractional digits), validate original range/whole constraints, then
+normalize before review/calculation/persistence. Positive movement quantities
+must not round to zero. Whole-combo restrictions and integer-paise settlement
+accounting remain unchanged; concentrations, clinical results, identifiers and
+counts are not quantity fields.
+
+The coordinated automatic successor is `0092_quantity_hundredths`. Its locked,
+transactional preflight authenticates dependencies and prepares an append-only
+precision boundary; original postings and source ciphertext remain evidence.
+Source-acceptance and location/on-hand residuals are distinct. Never independently
+round old posting rows or remove their immutable guards. Retain original PR and
+Directory decryption keys for the precision archives; ordinary live-envelope key
+rotation does not authorize deleting historical keys.
+
+See `docs/business-quantity-hundredths-preparation.md` for implementation, recovery
+and blocked-case details. This work is source/migration preparation only: no tests,
+builds, typechecks, regression/release wrappers, browser probes, managed service
+restarts, migration execution, production access or deployments were authorized.
+Do not start services or post-merge hooks as an indirect way to activate or test it.
+
 # Automatic migration policy
 
 Language Master status actions use Zone badges/power confirmations, with

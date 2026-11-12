@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, Numeric, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, Numeric, UniqueConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -30,6 +30,7 @@ class InHousePosting(Base):
     """Append-only location transfers/consumption; original reserve is untouched."""
     __tablename__ = "in_house_postings"
     __table_args__ = (
+        CheckConstraint("precision_epoch IN (1,2)", name="ck_in_house_postings_precision_epoch"),
         UniqueConstraint("movement_id", "reserve_id", "location_id", name="uq_reserve_posting"),
         UniqueConstraint("disposal_id", "reserve_id", "location_id", name="uq_reserve_disposal_posting"),
         CheckConstraint("(movement_id IS NOT NULL AND disposal_id IS NULL) OR (movement_id IS NULL AND disposal_id IS NOT NULL)", name="ck_reserve_posting_origin"),
@@ -44,3 +45,4 @@ class InHousePosting(Base):
     delta: Mapped[Decimal] = mapped_column(Numeric())
     before: Mapped[Decimal] = mapped_column(Numeric())
     after: Mapped[Decimal] = mapped_column(Numeric())
+    precision_epoch: Mapped[int] = mapped_column(Integer, default=2, server_default="2")

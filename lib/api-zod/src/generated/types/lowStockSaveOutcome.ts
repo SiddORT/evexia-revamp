@@ -9,7 +9,7 @@ import type { LowStockSaveOutcomeOutcome } from "./lowStockSaveOutcomeOutcome";
 import type { LowStockSettingsView } from "./lowStockSettingsView";
 
 export interface LowStockSaveOutcome {
-  outcome: LowStockSaveOutcomeOutcome;
   committed_version: number | null;
+  outcome: LowStockSaveOutcomeOutcome;
   saved: LowStockSettingsView;
 }

@@ -15,9 +15,16 @@ export function parseAmount(value) {
   return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
 }
 export const SUBORDER_BASIS = 'suborder_mrp_v1';
-export const QTY = /^[0-9]{1,6}(?:\.[0-9]{1,3})?$/;
-export const QTY_HELP = 'Enter a quantity in ml with up to six whole digits and three decimals, or leave it empty until approval.';
-export const quantityError = (value) => value == null || value === '' || QTY.test(value) ? '' : QTY_HELP;
+export const QTY = /^[0-9]{1,6}(?:\.[0-9]{1,6})?$/;
+export const QTY_HELP = 'Enter ml with up to six source decimals; saves round half-up to two places. Positive values must round to at least 0.01. Blank remains not recorded.';
+import { normalizeQuantity } from './quantities.js';
+export const quantityError = (value) => {
+  if (value == null || value === '') return '';
+  if (!QTY.test(value)) return QTY_HELP;
+  const [integer, fraction] = value.split('.');
+  try { normalizeQuantity((integer.replace(/^0+/, '') || '0') + (fraction == null ? '' : `.${fraction}`), { maximum: '999999.999999' }); return ''; }
+  catch { return QTY_HELP; }
+};
 // Explicit Admin conversion: each previous occurrence becomes its own suborder; nothing is merged.
 export function convertToSuborders(groups, basis) {
   const missing = groups.some((g) => g.items.some((i) => !i.suborderId));

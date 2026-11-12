@@ -123,7 +123,7 @@ def master_field_errors(path, errors):
         "gst": "Enter a percentage from 0 to 100 with up to six source decimals.",
         "orderDiscount": "Enter a percentage from 0 to 100 with up to six source decimals.",
         "threshold_limit": "Enter a nonnegative quantity with up to six decimals.",
-        "quantity": "Enter a supported plain quantity up to 1000000 with at most three decimals; finished products require whole quantities.",
+        "quantity": "Enter a supported plain quantity up to 1000000 with up to six source decimals; saves round half-up to two places. Finished products still require whole quantities.",
         "unitRate": "Enter an independent nonnegative plain unit rate with up to six source decimals.",
         "amount": "Enter a signed plain amount within ±9999999999999.99 with at most two decimals. Negative balances are valid.",
         "paymentLimit": "Enter a nonnegative plain payment limit with at most two decimals within the supported limit.",

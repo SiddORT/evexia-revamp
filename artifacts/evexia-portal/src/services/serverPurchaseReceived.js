@@ -56,20 +56,17 @@ export async function forgetPR(key) {
   });
 }
 
-const milli = (v) => {
-  if (!/^\d+(?:\.\d{1,3})?$/.test(String(v ?? '').trim())) return null;
-  const [a, b = ''] = String(v).trim().split('.');
-  const n = BigInt(a + b.padEnd(3, '0'));
-  return n <= 1000000000n ? n : null;
-};
+import { normalizeQuantity, quantityHundredths } from './quantities.js';
+import { compareRate } from './rates.js';
+const milli = (v) => { try { return quantityHundredths(String(v ?? '').trim()) * 10n; } catch { return null; } };
 export function inputPR(values) {
   return { poId: values.poId, receivedDate: values.receivedDate, receiverMode: values.receiverMode,
     staffId: values.receiverMode === 'staff' ? values.staff?.id || null : null,
     otherName: values.receiverMode === 'other' ? values.otherName.trim() : null,
     lines: values.rows.filter((r) => milli(r.receivedQty) !== 0n && String(r.receivedQty).trim() !== '')
       // Receipt entry sends only its editable fields; historical cost evidence stays server-owned.
-      .map((r) => ({ lineId: r.lineId, receivedQty: String(r.receivedQty).trim(),
-        acceptedQty: String(r.acceptedQty).trim(), batchNo: r.batchNo, expiryDate: r.expiryDate })) };
+      .map((r) => ({ lineId: r.lineId, receivedQty: normalizeQuantity(String(r.receivedQty).trim(), { positive: true }),
+        acceptedQty: normalizeQuantity(String(r.acceptedQty).trim()), batchNo: r.batchNo, expiryDate: r.expiryDate })) };
 }
 export function validateDraftPR(values, po, receipt) {
   const errors = {};
@@ -83,9 +80,10 @@ export function validateDraftPR(values, po, receipt) {
     const received = milli(r.receivedQty), accepted = milli(r.acceptedQty);
     const key = (f, message) => { errors[`lines.${i}.${f}`] = message; };
     if ((!String(r.receivedQty).trim() || received === 0n) && (!String(r.acceptedQty).trim() || accepted === 0n)) return;
-    if (received === null || received <= 0n) key('receivedQty', 'Enter a positive quantity with up to 3 decimals.');
+    if (received === null || received <= 0n) key('receivedQty', 'Enter a positive quantity that rounds to at least 0.01; up to six source decimals.');
     else positive++;
-    if (accepted === null || (received !== null && accepted > received)) key('acceptedQty', 'Enter acceptance between zero and received, up to 3 decimals.');
+    if (accepted === null || (received !== null && (accepted > received || compareRate(String(r.acceptedQty).trim(), String(r.receivedQty).trim()) > 0)))
+      key('acceptedQty', 'Original acceptance cannot exceed original received quantity; values save half-up to two places.');
     const available = milli(po?.balances?.[r.lineId] ?? '0');
     const old = milli(receipt?.lines.find((l) => l.lineId === r.lineId)?.receivedQty ?? '0');
     if (received !== null && available !== null && received > (old > available ? old : available)) key('receivedQty', 'Quantity exceeds current or retained historical allowance.');

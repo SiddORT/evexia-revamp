@@ -30,7 +30,7 @@ def scan():
     with session_factory()() as db:
         inv.lock(db)
         db.execute(text("SELECT pg_advisory_xact_lock(145579)"))
-        crypto = inv.InventoryCrypto(get_settings())
+        crypto = inv.InventoryCrypto(get_settings(), db)
         day, now = today(), utcnow()
         for kind, model in (("lot", inv.Lot), ("reserve", InHouseStock)):
             progress = db.get(ExpiryScan, kind)
@@ -106,7 +106,7 @@ def prepare(db, day):
         raise Blocked("expiry_template_required")
     inv.lock(db)
     db.execute(text("SELECT pg_advisory_xact_lock(145579)"))
-    rows = [r for r in current_rows(db, inv.InventoryCrypto(settings), day) if r["status"] in ("today", "next15")]
+    rows = [r for r in current_rows(db, inv.InventoryCrypto(settings, db), day) if r["status"] in ("today", "next15")]
     sections, text_sections = [], []
     for group, heading in (("today", "Expiring today — already unusable"), ("next15", "Tomorrow through day 15 inclusive")):
         matching = [r for r in rows if r["status"] == group]

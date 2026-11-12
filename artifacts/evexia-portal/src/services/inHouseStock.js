@@ -95,13 +95,11 @@ export async function reconcileKey(key) {
   return r;
 }
 
+import { normalizeQuantity } from './quantities.js';
 const split = (v) => { const [a, b = ''] = String(v).trim().split('.'); return [a, b]; };
 export function validQuantity(v) {
-  const s = String(v).trim();
-  if (!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/.test(s)) return false;
-  const [a, b] = split(s);
-  const milli = BigInt(a) * 1000n + BigInt((b + '000').slice(0, 3));
-  return milli > 0n && milli <= 1000000000n;
+  try { normalizeQuantity(String(v).trim(), { positive: true }); return true; }
+  catch { return false; }
 }
 export function validDay(v) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;

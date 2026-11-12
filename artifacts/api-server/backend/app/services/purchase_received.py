@@ -31,7 +31,7 @@ def transaction(db, actor, work, *, capability=None):
         engine = db.get_bind().engine
         if engine.echo or logging.getLogger("sqlalchemy.engine").isEnabledFor(logging.INFO) or logging.getLogger("sqlalchemy.engine.Engine").isEnabledFor(logging.INFO):
             raise PRError()
-        crypto = ReceiptCrypto(get_settings())
+        crypto = ReceiptCrypto(get_settings(), db)
         result = work(current, crypto)
         db.commit()
         return result
@@ -111,6 +111,10 @@ def review_data(db, crypto, body, existing=None):
             raise PRError("Each source PO line must be present at most once.", 422, "pr_line")
         seen.add(line_id)
         received, accepted = Decimal(line.receivedQty), Decimal(line.acceptedQty)
+        if accepted > received:
+            raise PRError("Original accepted quantity cannot exceed original received quantity.", 422, "pr_quantity")
+        from app.services.inventory import quantity
+        received, accepted = quantity(line.receivedQty), quantity(line.acceptedQty)
         available = Decimal(po["balances"][line_id])
         prior = next((l for l in old["lines"] if l["lineId"] == line_id), None) if old else None
         if prior and (line.actualUnitCost is not None and
@@ -126,11 +130,11 @@ def review_data(db, crypto, body, existing=None):
                     if prior and prior.get("balanceAfterQty") is not None else None)
         after = available - accepted if not old else historic
         lines.append(dict(lineId=line_id, productId=src["productId"], productName=prior["productName"] if prior else src["productName"],
-            orderedQty=prior["orderedQty"] if prior else src["quantity"], receivedQty=str(received), acceptedQty=str(accepted),
-            rejectedQty=str(received - accepted), batchNo=line.batchNo, expiryDate=line.expiryDate.isoformat(),
+            orderedQty=prior["orderedQty"] if prior else src["quantity"], receivedQty=format(received, ".2f"), acceptedQty=format(accepted, ".2f"),
+            rejectedQty=format(received - accepted, ".2f"), batchNo=line.batchNo, expiryDate=line.expiryDate.isoformat(),
             actualUnitCost=prior.get("actualUnitCost") if prior else line.actualUnitCost,
             costProvenance=prior.get("costProvenance") if prior else line.costProvenance,
-            balanceAfterQty=str(after) if after is not None and after >= 0 else None))
+            balanceAfterQty=format(after, ".2f") if after is not None and after >= 0 else None))
     if old:
         data = {k: old[k] for k in ("poId", "poNumber", "poDate", "vendorId", "vendorName", "vendorPhone", "vendorAddress", "vendorGstNo", "locationId", "locationName")}
     else:

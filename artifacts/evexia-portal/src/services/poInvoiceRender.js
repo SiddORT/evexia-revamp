@@ -96,13 +96,10 @@ function formatRupees(value) {
   return `₹${groupIndian(whole)}.${fraction}`;
 }
 
-function formatDecimal(value, maxFractionDigits = 3) {
-  if (typeof value === 'string' && /^\d+(?:\.\d{1,3})?$/.test(value)) value = Number(value);
-  if (typeof value !== 'number' || !Number.isFinite(value)) return EM_DASH;
-  return new Intl.NumberFormat('en-IN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: maxFractionDigits,
-  }).format(value);
+import { displayQuantity } from './quantities.js';
+function formatDecimal(value) {
+  if (value == null || value === '') return EM_DASH;
+  return displayQuantity(String(value));
 }
 
 function wrapText(value, maxWidth, fontSize) {

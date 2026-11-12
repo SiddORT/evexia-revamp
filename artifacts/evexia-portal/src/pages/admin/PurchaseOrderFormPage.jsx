@@ -51,7 +51,7 @@ function validate(values) {
   values.lines.forEach((line, index) => {
     if (!line.product) errors[`lines.${index}.productId`] = 'Select a product.';
     if (line.concentration !== undefined && !validConcentration(line.concentration)) errors[`lines.${index}.concentration`] = 'Enter concentration as 1–200 characters of descriptive text without control characters.';
-    if (parseQuantity(line.quantity) === null) errors[`lines.${index}.quantity`] = 'Enter a quantity above 0, up to 1,000,000 with at most 3 decimals.';
+    if (parseQuantity(line.quantity) === null) errors[`lines.${index}.quantity`] = 'Enter a positive quantity up to 1,000,000; up to six source decimals round half-up to two places.';
     if (parsePORate(line.unitPrice, false, line.savedRates?.unitPrice) === null) errors[`lines.${index}.unitPrice`] = 'Enter a unit price from 0 to 999,999,999,999.99, with at most 6 decimals.';
     if (parsePORate(line.gst, true, line.savedRates?.gst) === null) errors[`lines.${index}.gst`] = 'Enter GST from 0 to 100, with at most 6 decimals.';
     const figures = computeDraftLine(line, tax.treatment);

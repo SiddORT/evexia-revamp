@@ -1,12 +1,20 @@
 """Untrusted writes contain references and clinical values, never identity snapshots."""
 import uuid
+from decimal import Decimal
 from datetime import date
 from typing import Literal, Annotated
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator, AfterValidator
+from app.schemas.quantities import quantity_string
 
 Result = Annotated[str, Field(pattern=r"^\d{1,6}(?:\.\d{1,2})?$")]
 Amount = Annotated[str, Field(pattern=r"^\d{1,10}(?:\.\d{1,2})?$")]
-Volume = Annotated[str, Field(pattern=r"^[0-9]{1,6}(?:\.[0-9]{1,3})?$")]
+def volume(value):
+    integer, separator, fraction = value.partition(".")
+    return quantity_string((integer.lstrip("0") or "0") + (separator + fraction if separator else ""),
+                           maximum=Decimal("999999.999999"))
+
+
+Volume = Annotated[str, Field(pattern=r"^[0-9]{1,6}(?:\.[0-9]{1,6})?$")]
 Status = Literal["Confirmed", "In process", "Shipped", "Delivered", "Rejected", "Returned"]
 Dosage = Literal["PD", "DD", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"]
 
@@ -36,6 +44,11 @@ class ImmItem(Strict):
     extract: Volume | None = None
     dilution: Volume | None = None
     suborderId: str | None = Field(default=None, pattern=r"^(?:SUB(?:[0-9]{3,12}|-[0-9]{6,12})|IT-[0-9]{6,}[A-Z]+)$")
+
+    @field_validator("extract", "dilution")
+    @classmethod
+    def normalized_volume(cls, value):
+        return None if value is None else volume(value)
 
 
 class ImmBottle(Strict):

@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0093_language_status",
-  "policy_sha256": "d2dc51411da70a9dde5b6b54834b285467e7570155ff91e1b1c60a3c765ab4de",
+  "target": "0092_quantity_hundredths",
+  "policy_sha256": "cba1caae2fde4dbe581dbe11a543969eafe6054ffd1928ec239eac33672c96b8",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -104,9 +104,11 @@
     "0090_settlement_verification": "6bea6b350d4db636913c474de38422c32992209e34abd6424e7531916b7872fb",
     "0091_low_stock_alerts": "0fee3bfa764e6627f7feeb46f4427985e4ea07fb13524c13f5cb223005a8ccfe",
     "0092_low_stock_cron": "803c1dd637a199d48130941e116c42bc77630d477afef712ec555dfc30e30b69",
+    "0092_quantity_hundredths": "4d62e6c5c9eaff20bbc2c3455ffbf6fc4c2a022feba96da0b7bb7d4de1d723b6",
     "0093_designation_short_name": "d2b0c9583a144a464b43f48bc47d729a10b41f27b80fb21d733b7b93e246057b",
     "0093_language_status": "6a0c062e3af8ff31ed23c57f07aed3b137c2782fb02d9a3b380def8b6bd1dffd",
-    "0094_language_low_stock_merge": "ab5796b9c78edab4f8a8633dae47d11cb9c7066868d4f9ce42bd92a8d974e4cf"
+    "0094_language_low_stock_merge": "ab5796b9c78edab4f8a8633dae47d11cb9c7066868d4f9ce42bd92a8d974e4cf",
+    "0095_quantity_staged_merge": "c1cf56d1252dc2c7bf75607d7284158e7faed2eb9823dd28b3be1843c1e9625a"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

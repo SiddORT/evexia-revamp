@@ -20,9 +20,13 @@ def acquire(db, actor):
 
 def balances(db, record):
     from app.services.inventory import bounded, quantity
-    amounts = {record["locationId"]: quantity(record["quantity"])}
-    for posting in bounded(db, select(InHousePosting).where(
-            InHousePosting.reserve_id == uuid.UUID(record["id"])).order_by(InHousePosting.id)):
+    from app.services.quantity_precision import reserve_baseline
+    checkpoint = reserve_baseline(db, uuid.UUID(record["id"]))
+    amounts = checkpoint if checkpoint is not None else {record["locationId"]: quantity(record["quantity"])}
+    query = select(InHousePosting).where(InHousePosting.reserve_id == uuid.UUID(record["id"]))
+    if checkpoint is not None:
+        query = query.where(InHousePosting.precision_epoch == 2)
+    for posting in bounded(db, query.order_by(InHousePosting.id)):
         key = str(posting.location_id)
         amounts[key] = amounts.get(key, Decimal(0)) + posting.delta
     return amounts
@@ -32,7 +36,7 @@ def availability(db, record):
     from app.services.inventory import q
     from app.services.expiry_policy import usable
     amounts = balances(db, record)
-    return dict(availableQuantity=q(sum(amounts.values(), Decimal(0))) if usable(record) else "0.000",
+    return dict(availableQuantity=q(sum(amounts.values(), Decimal(0))) if usable(record) else "0.00",
         locationBalances=[dict(locationId=key, locationName=db.get(StorageLocation, uuid.UUID(key)).name,
                                quantity=q(amount)) for key, amount in sorted(amounts.items()) if amount])
 
@@ -63,7 +67,7 @@ def choices(db, crypto, source_id):
 
 
 def calculate(amount, concentration, unit, factor, movement_date):
-    """No binary float, rounding, legacy-unit inference or catalogue lookups."""
+    """Canonical ml arithmetic; clinical concentration remains exact separately."""
     from app.services.inventory import quantity, q
     if unit not in ("", "ml"):
         raise PRError("Dilution requires an explicit ml reserve. This legacy unit cannot be converted; choose No or use a supported reserve.", 422, "reserve_dilution_unit")
@@ -116,7 +120,7 @@ def review_line(db, crypto, body, line):
         quantity(dst + amount)
     return dict(**meta, **result, lotId=str(row.id), quantity=q(amount),
         sourceBefore=q(src), sourceAfter=q(src - amount),
-        destinationBefore="0.000" if line.dilute else q(dst),
+        destinationBefore="0.00" if line.dilute else q(dst),
         destinationAfter=result["resultingQuantity"] if line.dilute else q(dst + amount),
         productVersion=product.version)
 

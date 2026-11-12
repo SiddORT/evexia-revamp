@@ -106,7 +106,7 @@ def review(db, actor, data, filename):
                 commands.append(row)
                 values = row.model_dump(mode="json")
             except ValidationError as exc:
-                labels = {"quantity": "Quantity: use exact 0–1000000 (up to 3 decimals for allergens, whole products).",
+                labels = {"quantity": "Quantity: use 0–1000000 with up to six source decimals; saves round half-up to two places. Products still require whole quantities.",
                           "unitRate": "Unit rate: nonnegative decimal string, up to 6 source decimals, rounded half-up to 2, maximum 999999999999.99."}
                 for err in exc.errors():
                     field = str(err["loc"][0]) if err["loc"] else "row"

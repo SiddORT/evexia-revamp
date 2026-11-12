@@ -38,7 +38,7 @@ export default function StockAdjustment({ row, correctionOf = null, onClose, onC
   function edit(setter) { return (e) => { setter(e.target.value); setReview(null); setError(''); }; }
   function validate() {
     const er = {}; const q = milli(quantity);
-    if (q === null || q <= 0n) er.quantity = 'Enter a positive quantity with up to 3 decimals.';
+    if (q === null || q <= 0n) er.quantity = 'Enter a positive quantity; up to six source decimals round half-up to two places, at least 0.01.';
     else if (q > MAX_MILLI) er.quantity = 'Quantity cannot exceed 1000000.';
     else if (direction === 'reduce' && lot && milli(lot.available) !== null && q > milli(lot.available)) er.quantity = `Quantity exceeds available ${lot.available}.`;
     if (!reason.trim()) er.reason = 'A reason is required.';

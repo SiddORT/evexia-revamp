@@ -15,12 +15,12 @@ from app.services.zones import label
 
 HISTORY = "Pre-system batch, expiry, receipt and assembly history unavailable; no historical values inferred."
 SCOPE = ("All matching committed opening records, not current stock or sales revenue. Opening value is exact "
-         "original quantity × retained two-place unit rate (up to five decimal places), not an accounting valuation. "
+         "canonical quantity × retained two-place unit rate, rounded half-up to hundredths, not an accounting valuation. "
          "Quantities/values grouped by item, established unit and original location; movements never rewrite openings.")
 
 
 def value(quantity, rate):
-    return format(Decimal(quantity) * Decimal(rate), ".5f")
+    return inv.q(Decimal(quantity) * Decimal(rate))
 
 
 def summary(records):
@@ -33,10 +33,10 @@ def summary(records):
         if key not in groups:
             groups[key] = dict(itemKind=row["itemKind"], itemId=row["itemId"],
                 productName=row["productName"], unit=row["unit"], locationId=row["locationId"],
-                locationName=row["location"]["name"], quantity="0.000", openingValue="0.00000")
+                locationName=row["location"]["name"], quantity="0.00", openingValue="0.00")
         group = groups[key]
         group["quantity"] = inv.q(Decimal(group["quantity"]) + Decimal(row["quantity"]))
-        group["openingValue"] = format(Decimal(group["openingValue"]) + Decimal(row["openingValue"]), ".5f")
+        group["openingValue"] = inv.q(Decimal(group["openingValue"]) + Decimal(row["openingValue"]))
     return dict(records=len(records), imports=len(sources), breakdown=list(groups.values()), scope=SCOPE)
 
 
@@ -144,7 +144,7 @@ def create(db, actor, body):
             db.flush()
             data = dict(**reviewed, id=str(oid), lotId=str(lid), recordedDate=body.recordedDate.isoformat(),
                 mode=body.mode, createdAt=now.isoformat(), actor=actor_name, actorId=str(current.user.id),
-                source="opening", appendOnly=True, before="0.000", after=reviewed["quantity"], historicalData=HISTORY,
+                source="opening", appendOnly=True, before="0.00", after=reviewed["quantity"], historicalData=HISTORY,
                 activity=[dict(action="opening_stock_imported" if body.mode == "import" else "opening_stock_created",
                     at=now.isoformat(), actor=actor_name, requestId=db.info.get("request_id"))])
             db.add(Opening(id=oid, source_id=row.sourceId, row_id=row.rowId, actor_id=current.user.id,

@@ -2,7 +2,8 @@
 import uuid
 from datetime import date
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from app.schemas.quantities import display_quantity
 from app.schemas.purchase_orders import POResponse
 from app.schemas.procurement_documents import DocumentContext
 from app.schemas.expiry import ActualCost
@@ -11,8 +12,8 @@ from app.schemas.expiry import ActualCost
 class PRLineInput(ActualCost):
     model_config = ConfigDict(extra="forbid")
     lineId: uuid.UUID
-    receivedQty: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
-    acceptedQty: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    receivedQty: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
+    acceptedQty: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14)
     batchNo: str = Field(min_length=1, max_length=120)
     expiryDate: date
 
@@ -53,6 +54,10 @@ class PRDelete(BaseModel):
 
 
 class PRLineSnapshot(BaseModel):
+    @field_validator("orderedQty", "receivedQty", "acceptedQty", "rejectedQty", "balanceAfterQty", "actualUnitCost")
+    @classmethod
+    def present_quantity(cls, value):
+        return None if value is None else display_quantity(value)
     actualUnitCost: str | None = None
     costProvenance: str | None = None
     lineId: uuid.UUID

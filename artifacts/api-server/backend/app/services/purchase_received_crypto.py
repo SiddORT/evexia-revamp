@@ -14,7 +14,8 @@ class PRError(Exception):
 
 
 class ReceiptCrypto:
-    def __init__(self, settings):
+    def __init__(self, settings, db=None):
+        self.db = db
         try:
             raw = json.loads(settings.pr_encryption_keys.get_secret_value())
             self.active = settings.pr_encryption_key_id
@@ -42,7 +43,11 @@ class ReceiptCrypto:
         encrypted = AESGCM(self.keys[self.active]).encrypt(nonce, encoded, f"evexia:pr:v1:{record_id}:{field}".encode())
         return f"v1:{self.active}:{base64.b64encode(nonce + encrypted).decode()}"
 
-    def open(self, record_id, field, value):
+    def open(self, record_id, field, value, *, original=False):
+        if not original and self.db is not None and field in ("receipt", "inventory:product", "inventory:opening", "inventory:in_house_reserve", "inventory:lot", "inventory:batch_cost"):
+            from app.services.quantity_precision import ciphertext
+            value = ciphertext(self.db, field, record_id, value,
+                               lambda token: ReceiptCrypto.open(self, record_id, field, token, original=True))
         try:
             version, key, encoded = value.split(":")
             if version != "v1":

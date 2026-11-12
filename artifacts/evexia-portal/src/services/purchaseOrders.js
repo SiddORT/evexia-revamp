@@ -35,7 +35,8 @@ const rateAmount = (value, max) => {
 };
 export const money = (paise) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format((paise || 0) / 100);
 
-export function calculateLine(line) {
+import { normalizeQuantity, quantityHundredths } from './quantities.js';
+export function calculateLine(line, { historical = false } = {}) {
   const quantity = amount(line.quantity, 1000000, 3, 0.001);
   // Legacy saved orders used numeric rates and binary arithmetic. Keep their
   // validation/document path exactly as issued; new saves use decimal strings.
@@ -48,21 +49,30 @@ export function calculateLine(line) {
   }
   const unitPrice = rateAmount(line.unitPrice, 10000000);
   const gst = rateAmount(line.gst, 100);
-  if (quantity === null || unitPrice === null || gst === null) return null;
+  let hundredths;
+  try {
+    if (historical) {
+      const text = String(line.quantity);
+      if (!/^\d+(?:\.\d{1,3})?$/.test(text) || quantity === null) return null;
+      const [integer, fraction = ''] = text.split('.');
+      hundredths = BigInt(integer) * 1000n + BigInt(fraction.padEnd(3, '0'));
+    } else hundredths = quantityHundredths(String(line.quantity).trim(), { positive: true });
+  } catch { return null; }
+  if (unitPrice === null || gst === null) return null;
   const priceCents = BigInt(unitPrice.replace('.', ''));
   const gstHundredths = BigInt(gst.replace('.', ''));
   const divide = (n, d) => (n * 2n + d) / (d * 2n);
-  const subtotal = Number(divide(BigInt(fixed(quantity, 1000)) * priceCents, 1000n));
+  const subtotal = Number(divide(hundredths * priceCents, historical ? 1000n : 100n));
   const gstAmount = Number(divide(BigInt(subtotal) * gstHundredths, 10000n));
   const total = subtotal + gstAmount;
   if (!Number.isSafeInteger(total) || total > 10000000000) return null;
   return { subtotal, gstAmount, total };
 }
 
-export function totals(lines) {
+export function totals(lines, options) {
   const result = { subtotal: 0, gstAmount: 0, total: 0 };
   for (const line of lines) {
-    const part = calculateLine(line);
+    const part = calculateLine(line, options);
     if (!part) return null;
     for (const field of Object.keys(result)) result[field] += part[field];
   }
@@ -132,13 +142,14 @@ export function validatePO(values, refs, existing = null) {
     const retained = matched?.productId === line.productId && matched.productName;
     if (typeof line.productId !== 'string' || !line.productId || (!found && !retained) ||
       (found?.status !== 'active' && !retained)) errors[`lines.${i}.productId`] = 'Choose an active saved product.';
-    const quantity = amount(line.quantity, 1000000, 3, 0.001);
+    let quantity = null;
+    try { quantity = normalizeQuantity(String(line.quantity).trim(), { positive: true }); } catch { /* explicit error below */ }
     const unitPrice = rateAmount(line.unitPrice, 10000000);
     const gst = rateAmount(line.gst, 100);
-    if (quantity === null) errors[`lines.${i}.quantity`] = 'Enter a positive quantity (up to 3 decimal places).';
+    if (quantity === null) errors[`lines.${i}.quantity`] = 'Enter a positive quantity, at least 0.01 after half-up rounding; up to six source decimals.';
     if (unitPrice === null) errors[`lines.${i}.unitPrice`] = 'Enter a non-negative price in INR up to 10000000; rounded half-up to two decimals.';
     if (gst === null) errors[`lines.${i}.gst`] = 'Enter GST from 0 to 100%; rounded half-up to two decimals.';
-    const figures = calculateLine({ ...line, unitPrice, gst });
+    const figures = calculateLine({ ...line, quantity, unitPrice, gst });
     if (!figures) errors[`lines.${i}.total`] = 'Line amount exceeds the safe limit or contains invalid numbers.';
     let id = explicitId ? matched?.id || line.id : matched?.id;
     if (!id) {
@@ -180,10 +191,10 @@ function validRecord(record) {
       !Array.isArray(o.lines) || !o.lines.length || o.lines.length > 100) return true;
     if (o.lines.some((l) => !(keys(l, lineKeys) || keys(l, legacyLineKeys)) ||
       (Object.hasOwn(l, 'id') && !nonempty(l.id)) || !nonempty(l.productId) || !nonempty(l.productName) ||
-      !same(calculateLine(l), { subtotal: l.subtotal, gstAmount: l.gstAmount, total: l.total }))) return true;
+      !same(calculateLine(l, { historical: true }), { subtotal: l.subtotal, gstAmount: l.gstAmount, total: l.total }))) return true;
     const lineIds = o.lines.filter((line) => Object.hasOwn(line, 'id')).map((line) => line.id.normalize('NFC'));
     if (new Set(lineIds).size !== lineIds.length) return true;
-    return !same(totals(o.lines), { subtotal: o.subtotal, gstAmount: o.gstAmount, total: o.total });
+    return !same(totals(o.lines, { historical: true }), { subtotal: o.subtotal, gstAmount: o.gstAmount, total: o.total });
   })) return false;
   if (record.events.some((e) => !(keys(e, eventKeys) || keys(e, [...eventKeys, 'actor'])) ||
     !nonempty(e.id) || !nonempty(e.summary) || (Object.hasOwn(e, 'actor') && !nonempty(e.actor)) || !iso(e.at) ||

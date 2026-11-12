@@ -9,22 +9,22 @@ import type { LowStockSettingsViewFrequency } from "./lowStockSettingsViewFreque
 import type { LowStockSettingsViewRuntimeStatus } from "./lowStockSettingsViewRuntimeStatus";
 
 export interface LowStockSettingsView {
-  event: "low_stock_alert";
-  frequency: LowStockSettingsViewFrequency;
-  weekday?: number | null;
-  month_day?: number | null;
-  start_date: Date;
-  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
-  local_time: string;
-  timezone: "Asia/Kolkata";
   /** @maxItems 20 */
   additional_emails: string[];
+  event: "low_stock_alert";
+  frequency: LowStockSettingsViewFrequency;
+  /** @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$ */
+  local_time: string;
+  month_day?: number | null;
+  next_run_at: Date;
+  runtime_message: string;
+  runtime_status: LowStockSettingsViewRuntimeStatus;
+  start_date: Date;
+  timezone: "Asia/Kolkata";
   /**
    * @minimum 0
    * @maximum 2147483647
    */
   version: number;
-  next_run_at: Date;
-  runtime_status: LowStockSettingsViewRuntimeStatus;
-  runtime_message: string;
+  weekday?: number | null;
 }

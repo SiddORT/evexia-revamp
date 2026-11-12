@@ -76,7 +76,7 @@ def review(db, crypto, body):
             raise inv.PRError("Insufficient stock in this exact lot/location. Your draft is preserved.", 409, "inventory_insufficient")
         before = balance.quantity
     delta = amount if body.direction == "add" else -amount
-    data = dict(**body.model_dump(mode="json"), productName=item.name, concentration=item.concentration,
+    data = dict(**{**body.model_dump(mode="json"), "quantity": inv.q(amount)}, productName=item.name, concentration=item.concentration,
         productVersion=item.version, locationVersion=location.version if location else None,
         locationName=location.name if location else "Unallocated", before=inv.q(before),
         delta=inv.q(delta), after=inv.q(before + delta), unit="procurement quantity units",

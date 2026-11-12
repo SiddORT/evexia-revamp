@@ -24,7 +24,7 @@ def transaction(db, actor, work):
 
 
 def decimal_text(value):
-    return format(value, "f")
+    return inv.q(value)
 
 
 def cost(db, crypto, kind, key):
@@ -38,7 +38,7 @@ def cost_basis(db, crypto, kind, key, meta):
         # by that exact factor. Later explicit source costs also cover output.
         source = cost(db, crypto, "reserve", uuid.UUID(meta["reserveId"]))
         if source:
-            return {**source, "unitCost": decimal_text(Decimal(source["unitCost"]) / Decimal(meta["dilutionFactor"])),
+            return {**source, "unitCost": format(Decimal(source["unitCost"]) / Decimal(meta["dilutionFactor"]), "f"),
                     "provenance": source["provenance"] + " (allocated from source reserve; no added diluent/overhead inferred)"}
         return None
     return cost(db, crypto, kind, key)
@@ -83,7 +83,7 @@ def projection(db, crypto, kind, row, meta, location_id, amount, day):
         batchNo=meta.get("batchNo") or meta.get("batch") or "Batch unavailable",
         expiryDate=meta.get("expiryDate"), status=state(meta.get("expiryDate"), day),
         quantity=inv.q(amount), unit=meta.get("unit") or ("ml" if kind == "reserve" else "procurement quantity units"),
-        unitCost=rate, expiredValue=decimal_text(amount * Decimal(rate)) if rate is not None else None,
+        unitCost=decimal_text(Decimal(rate)) if rate is not None else None, expiredValue=decimal_text(amount * Decimal(rate)) if rate is not None else None,
         costProvenance=evidence["provenance"] if evidence else None,
         costTargetKind="reserve" if derived else kind,
         costTargetId=meta["reserveId"] if derived else str(row.id),

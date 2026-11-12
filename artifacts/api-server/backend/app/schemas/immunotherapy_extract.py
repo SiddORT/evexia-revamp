@@ -35,6 +35,16 @@ class ImmExtractWrite(ImmExtractRows):
     dosage: Dosage
     expected_version: int = Field(ge=0, le=2147483646, strict=True)
 
+    @model_validator(mode="after")
+    def normalized_volumes(self):
+        from app.schemas.immunotherapy import volume
+        for row in self.rows:
+            for field in ("extract", "dilution"):
+                value = getattr(row, field)
+                if value is not None:
+                    setattr(row, field, volume(value))
+        return self
+
 
 class ImmExtractBlock(ImmExtractRows):
     version: int = Field(ge=1, le=2147483647, strict=True)

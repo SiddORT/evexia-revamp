@@ -29,13 +29,13 @@ def consume(db, actor, row, snapshot):
         raise ImmError("Order consumption history already exists without matching order evidence. Ask Admin to reconcile; nothing was deducted.",
                        409, "imm_consumption_history")
     try:
-        crypto = inventory.InventoryCrypto(get_settings())
+        crypto = inventory.InventoryCrypto(get_settings(), db)
         required, materials = defaultdict(lambda: Decimal(0)), {}
         for group in snapshot["pricingEvidence"]["groups"]:
             for component in group["components"]:
                 identity = uuid.UUID(component["materialId"])
                 ml = Decimal(component["quantityMl"])
-                if not ml.is_finite() or ml < 0 or ml > Decimal("1000000000") or ml != ml.quantize(Decimal(".001")):
+                if not ml.is_finite() or ml < 0 or ml > Decimal("1000000000") or ml != ml.quantize(Decimal(".01")):
                     raise ImmError("Saved material quantities are unreadable; approval has not consumed stock.", 409, "imm_consumption_evidence")
                 required[identity] += ml
                 materials[identity] = component["name"]

@@ -27,10 +27,16 @@ const iso = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:
 const quantityMilli = (value) => {
   const text = String(value ?? '').trim();
   if (!/^\d+(?:\.\d{1,3})?$/.test(text)) return null;
-  const number = Number(text);
-  if (!Number.isFinite(number) || number < 0 || number > 1000000) return null;
-  return Math.round(number * 1000);
+  const [integer, fraction = ''] = text.split('.');
+  const exact = BigInt(integer) * 1000n + BigInt(fraction.padEnd(3, '0'));
+  return exact <= 1000000000n ? Number(exact) : null;
 };
+import { normalizeQuantity, quantityHundredths, displayQuantity } from './quantities.js';
+import { compareRate } from './rates.js';
+const draftMilli = (value) => {
+  try { return Number(quantityHundredths(String(value).trim()) * 10n); } catch { return null; }
+};
+const canonicalMilli = (value) => displayQuantity(`${Math.trunc(value / 1000)}.${String(value % 1000).padStart(3, '0')}`);
 const blankQuantity = (value) => value === null || value === undefined ||
   (typeof value === 'string' && value.trim() === '');
 const fromMilli = (value) => value / 1000;
@@ -265,22 +271,23 @@ export function validatePR(values, snapshot, existing = null) {
     const receivedBlank = blankQuantity(input.receivedQty);
     const acceptedBlank = blankQuantity(input.acceptedQty);
     if (receivedBlank && acceptedBlank) return null;
-    const received = receivedBlank ? null : quantityMilli(input.receivedQty);
-    const accepted = acceptedBlank ? null : quantityMilli(input.acceptedQty);
+    const received = receivedBlank ? null : draftMilli(input.receivedQty);
+    const accepted = acceptedBlank ? null : draftMilli(input.acceptedQty);
     if (receivedBlank && accepted === 0) return null;
     if (receivedBlank) errors[`${prefix}.receivedQty`] = 'Received quantity is required when an accepted quantity is entered.';
-    else if (received === null) errors[`${prefix}.receivedQty`] = 'Enter a non-negative quantity up to 3 decimal places.';
+    else if (received === null) errors[`${prefix}.receivedQty`] = 'Enter a quantity with up to six source decimals, rounded half-up to two places. Positive values must round to at least 0.01.';
     if (acceptedBlank && received !== null && received > 0) {
       errors[`${prefix}.acceptedQty`] = 'Accepted quantity is required for a positive receipt row.';
     } else if (!acceptedBlank && accepted === null) {
-      errors[`${prefix}.acceptedQty`] = 'Enter an accepted quantity up to 3 decimal places.';
+      errors[`${prefix}.acceptedQty`] = 'Enter acceptance with up to six source decimals, rounded half-up to two places.';
     }
     if (received !== null && received === 0) {
       if (accepted !== null && accepted > 0) errors[`${prefix}.acceptedQty`] = 'Accepted quantity cannot exceed received quantity.';
       return null;
     }
     if (received === null) return null;
-    if (received !== null && received > 0 && accepted !== null && accepted > received) {
+    if (received !== null && received > 0 && accepted !== null &&
+        (accepted > received || compareRate(String(input.acceptedQty).trim(), String(input.receivedQty).trim()) > 0)) {
       errors[`${prefix}.acceptedQty`] = 'Accepted quantity cannot exceed received quantity.';
     }
     const available = quantityMilli(balances[input.lineId] ?? 0);
@@ -309,8 +316,8 @@ export function validatePR(values, snapshot, existing = null) {
     }
     if (!poLine || received === null || received === 0 || accepted === null) return null;
     return { lineId: poLine.id, productId: poLine.productId, productName: poLine.productName,
-      orderedQty: poLine.quantity, receivedQty: fromMilli(received), acceptedQty: fromMilli(accepted),
-      rejectedQty: fromMilli(received - accepted), batchNo, expiryDate: input.expiryDate };
+      orderedQty: normalizeQuantity(String(poLine.quantity), { positive: true }), receivedQty: canonicalMilli(received), acceptedQty: canonicalMilli(accepted),
+      rejectedQty: canonicalMilli(received - accepted), batchNo, expiryDate: input.expiryDate };
   });
   const positiveLines = lines.filter(Boolean);
   if (!positiveLines.length && !errors.lines) errors.lines = 'Enter at least one positive received quantity.';

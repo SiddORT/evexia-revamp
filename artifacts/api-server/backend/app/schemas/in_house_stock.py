@@ -3,16 +3,18 @@ import re
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Literal
+from typing import Literal, ClassVar
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.expiry import ActualCost
+from app.schemas.quantities import quantity_string, display_quantity
 
 
 class ReserveInput(ActualCost):
+    read_snapshot: ClassVar[bool] = False
     model_config = ConfigDict(extra="forbid")
     allergenId: uuid.UUID
     concentration: str = Field(min_length=1, max_length=200)
-    quantity: str = Field(min_length=1, max_length=11)
+    quantity: str = Field(min_length=1, max_length=14)
     # New entry forms omit units; retain historical unit descriptions unchanged.
     unit: str = Field(default="", max_length=40)
     expiryDate: date
@@ -41,11 +43,9 @@ class ReserveInput(ActualCost):
     @classmethod
     def exact_quantity(cls, value):
         value = value.strip()
-        if not re.fullmatch(r"(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?", value):
-            raise ValueError("Use a plain positive decimal with at most three fractional digits.")
-        if not 0 < Decimal(value) <= Decimal("1000000"):
-            raise ValueError("Quantity must be positive and no more than 1000000.")
-        return format(Decimal(value), ".3f")
+        if cls.read_snapshot:
+            return display_quantity(value)
+        return quantity_string(value, positive=True)
 
 
 class ReserveCreate(ReserveInput):
@@ -54,6 +54,7 @@ class ReserveCreate(ReserveInput):
 
 
 class ReserveSnapshot(ReserveInput):
+    read_snapshot = True
     allergenName: str
     categoryId: uuid.UUID
     categoryName: str

@@ -68,7 +68,7 @@ export default function OpeningStockFormPage() {
     draft.rows.forEach((r, i) => {
       const m = [];
       if (!r.item) m.push('Select an allergen or product.');
-      else if (!validQuantity(r.quantity, r.item.itemKind)) m.push(r.item.itemKind === 'combo' ? 'Quantity must be a whole number from 1 to 1000000.' : 'Quantity must be positive, up to 1000000 with at most 3 decimals.');
+      else if (!validQuantity(r.quantity, r.item.itemKind)) m.push(r.item.itemKind === 'combo' ? 'Quantity must be a whole number from 1 to 1000000.' : 'Enter a positive quantity up to 1000000; up to six source decimals round half-up to two places, at least 0.01.');
       if (!validRate(r.unitRate)) m.push('Unit rate must be a number up to 999999999999.99 with at most 6 decimals (rounded half-up to 2).');
       if (m.length) e[i] = m.join(' ');
     });

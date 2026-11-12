@@ -24,7 +24,7 @@ export interface ReserveCreate {
   notes?: string;
   /**
    * @minLength 1
-   * @maxLength 11
+   * @maxLength 14
    */
   quantity: string;
   /** @pattern ^[0-9a-f]{64}$ */

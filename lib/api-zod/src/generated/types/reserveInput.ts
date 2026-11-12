@@ -23,7 +23,7 @@ export interface ReserveInput {
   notes?: string;
   /**
    * @minLength 1
-   * @maxLength 11
+   * @maxLength 14
    */
   quantity: string;
   /** @maxLength 40 */

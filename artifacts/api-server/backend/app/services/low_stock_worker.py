@@ -170,7 +170,7 @@ def process_digest(started_at):
             return
         settings = get_settings()
         try:
-            data = snapshot(db, inv.InventoryCrypto(settings))
+            data = snapshot(db, inv.InventoryCrypto(settings, db))
             content = rendered(data, portal_link(db, settings)) if data["items"] else None
             db.commit()  # release inventory lock before any network work
         except Exception:

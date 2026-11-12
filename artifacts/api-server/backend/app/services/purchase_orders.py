@@ -71,7 +71,22 @@ def projection(db, row):
                 subtotal=row.subtotal, gstAmount=row.gst_amount, total=row.total,
                 taxBasis=row.tax_basis, taxComponents=row.tax_components,
                 createdAt=row.created_at.isoformat(), updatedAt=row.updated_at.isoformat(), deletedAt=row.deleted_at,
-                lines=[dict(**line.snapshot, id=str(line.id)) for line in lines])
+                lines=[dict(**operational_line(db, line), id=str(line.id)) for line in lines])
+
+
+def operational_line(db, line):
+    import json
+    from app.services.quantity_precision import source_digest
+    from app.services.inventory import InventoryCrypto
+    from app.core.config import get_settings
+    raw = json.dumps(line.snapshot, sort_keys=True, separators=(",", ":"))
+    saved = db.execute(text("""
+        SELECT original_digest,normalized_ciphertext FROM quantity_precision_snapshots
+        WHERE purpose='po_line' AND record_id=:id
+    """), {"id": line.id}).mappings().one_or_none()
+    if saved and saved["original_digest"] == source_digest(raw):
+        return InventoryCrypto(get_settings()).open(line.id, "po_line", saved["normalized_ciphertext"])
+    return line.snapshot
 
 
 def accepted_rate(line, field, maximum, saved):

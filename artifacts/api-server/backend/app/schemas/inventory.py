@@ -2,13 +2,14 @@
 import uuid
 from datetime import date, datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from app.schemas.quantities import display_quantity
 
 
 class MoveLine(BaseModel):
     model_config = ConfigDict(extra="forbid")
     lotId: uuid.UUID
-    quantity: str = Field(pattern=r"^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$", max_length=11)
+    quantity: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$", max_length=14, description="Source quantity; exact half-up normalization to hundredths before review and commit.")
     sourceKind: Literal["inventory", "reserve"] = "inventory"
     dilute: bool | None = None
     dilutionFactor: Literal[2, 5, 10] | None = None
@@ -91,6 +92,11 @@ class InventoryRecipeMember(BaseModel):
     unit: str
     available: bool
 
+    @field_validator("quantity")
+    @classmethod
+    def present_quantity(cls, value):
+        return display_quantity(value)
+
 
 class InventoryRecipeSnapshot(BaseModel):
     version: int
@@ -98,6 +104,12 @@ class InventoryRecipeSnapshot(BaseModel):
 
 
 class InventoryProvenance(BaseModel):
+    @field_validator("quantity", "available", "unitRate", "openingValue", "mrp", "sellingPrice",
+                     "assembledQuantity", "resultingQuantity", "sourceBefore", "sourceAfter",
+                     "destinationBefore", "destinationAfter", check_fields=False)
+    @classmethod
+    def present_business_value(cls, value):
+        return None if value is None else display_quantity(value)
     sourceKind: Literal["inventory", "reserve"] = "inventory"
     reserveId: uuid.UUID | None = None
     reserveOnly: bool = False
@@ -144,8 +156,12 @@ class InventoryLotView(InventoryProvenance):
 
 
 class InventoryStockRow(BaseModel):
+    @field_validator("thresholdLimit", "sellingPrice", "quantity", "unallocatedQuantity")
+    @classmethod
+    def present_business_value(cls, value):
+        return None if value is None else display_quantity(value)
     thresholdLimit: str | None = None
-    unallocatedQuantity: str = "0.000"
+    unallocatedQuantity: str = "0.00"
     itemKind: Literal["allergen", "combo"] = "allergen"
     productId: uuid.UUID
     name: str

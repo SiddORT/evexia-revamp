@@ -8,12 +8,12 @@
 import type { LowStockAlertRow } from "./lowStockAlertRow";
 
 export interface LowStockAlertPage {
-  items: LowStockAlertRow[];
-  /** @minimum 0 */
-  total: number;
+  asOf: Date;
   /** @minimum 0 */
   filtered: number;
-  asOf: Date;
-  offset: number;
+  items: LowStockAlertRow[];
   limit: number;
+  offset: number;
+  /** @minimum 0 */
+  total: number;
 }

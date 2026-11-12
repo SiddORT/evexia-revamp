@@ -41,7 +41,10 @@ def configuration(db, keys, category_id):
         return dict(schemaVersion=2, dosages={dose: None for dose in DOSAGES},
                     legacyRows=None, legacyVersion=None)
     try:
-        payload = unseal(keys, "extract-settings", category_id, row.payload_ciphertext)
+        from app.services.quantity_precision import ciphertext
+        payload = unseal(keys, "extract-settings", category_id, ciphertext(
+            db, "extract-settings", category_id, row.payload_ciphertext,
+            lambda token: unseal(keys, "extract-settings", category_id, token)))
         if isinstance(payload, list):
             legacy = TypeAdapter(list[ImmExtractPair]).validate_python(payload)
             if len(legacy) != 3:

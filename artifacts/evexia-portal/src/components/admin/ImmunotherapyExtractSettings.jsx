@@ -8,7 +8,8 @@ import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
 const editable = (rows) => rows.map((row) => ({ extract: row.extract ?? '', dilution: row.dilution ?? '' }));
 const equal = (saved, rows) => saved && JSON.stringify(editable(saved.rows)) === JSON.stringify(rows);
 const categoryLabel = (category) => `${category.name}${category.status !== 'active' ? ' (inactive)' : ''}`;
-const savedQuantity = (value) => value == null || value === '' ? 'Not recorded' : value;
+import { displayQuantity } from '../../services/quantities.js';
+const savedQuantity = (value) => value == null || value === '' ? 'Not recorded' : displayQuantity(value);
 const groupLabel = (size) => ['', 'Single — 1 allergen', 'Double — 2 allergens', 'Triple — 3 allergens'][size];
 const rankLabel = (rank) => ['', '1st allergen', '2nd allergen', '3rd allergen'][rank];
 
@@ -120,7 +121,7 @@ export default function ImmunotherapyExtractSettings({ onGuardChange }) {
     event.preventDefault();
     if (busy || blocked || !saved || !dirty) return;
     if (rows.some((row) => quantityError(row.extract) || quantityError(row.dilution))) {
-      setError('Use up to six whole digits and three decimals in ml. Blank means not recorded; no quantities are calculated.'); return;
+      setError('Use up to six whole digits and six source decimals in ml. Saves round half-up to two places; positive values must round to at least 0.01. Blank stays not recorded.'); return;
     }
     const seq = ++sequence.current;
     state.current.busy = true;

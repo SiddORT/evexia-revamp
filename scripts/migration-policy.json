@@ -3,6 +3,8 @@
   "default": "automatic",
   "revisions": {
     "0093_designation_short_name": "automatic",
+    "0095_quantity_staged_merge": "automatic",
+    "0092_quantity_hundredths": "automatic",
     "0093_language_status": "automatic",
     "0094_language_low_stock_merge": "automatic",
     "0092_low_stock_cron": "automatic",

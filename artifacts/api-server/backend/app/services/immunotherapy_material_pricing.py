@@ -135,11 +135,11 @@ def _quote(db, keys, data, effective_date):
                 rule = selected[uuid.UUID(item["allergenId"])]
                 ml = Decimal(item["extract"])
                 amount = (ml * Decimal(rule["ratePerMl"])).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
-                charges.append(dict(**rule, kind="extract", quantityMl=format(ml, ".3f"), amount=format(amount, ".2f")))
+                charges.append(dict(**rule, kind="extract", quantityMl=format(ml, ".2f"), amount=format(amount, ".2f")))
                 dilution_ml += Decimal(item["dilution"])
             rule = selected[material_id]
             amount = (dilution_ml * Decimal(rule["ratePerMl"])).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
-            charges.append(dict(**rule, kind="dilution", quantityMl=format(dilution_ml, ".3f"), amount=format(amount, ".2f")))
+            charges.append(dict(**rule, kind="dilution", quantityMl=format(dilution_ml, ".2f"), amount=format(amount, ".2f")))
             subtotal = sum((Decimal(c["amount"]) for c in charges), Decimal(0))
             group["mrp"] = format(subtotal, ".2f")
             components.append(dict(amount=group["mrp"], components=charges))

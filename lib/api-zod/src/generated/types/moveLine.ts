@@ -13,8 +13,9 @@ export interface MoveLine {
   dilutionFactor?: MoveLineDilutionFactor;
   lotId: string;
   /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   * Source quantity; exact half-up normalization to hundredths before review and commit.
+   * @maxLength 14
+   * @pattern ^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$
    */
   quantity: string;
   sourceKind?: MoveLineSourceKind;

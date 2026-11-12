@@ -29,11 +29,14 @@ def tax_basis(gstin, destination):
 
 def calculate_components(quantity, price, gst, treatment):
     from app.services.purchase_orders import POError, MAX_TOTAL
+    from app.schemas.quantities import quantity_string
     with localcontext() as context:
         context.prec = 50
-        q, price, gst = Decimal(quantity), Decimal(price), Decimal(gst)
-        if not q.is_finite() or q < Decimal(".001") or q > 1000000 or q != q.quantize(Decimal(".001")):
-            raise POError("Quantity must be from 0.001 to 1,000,000 with at most three decimals.", 422, "po_quantity")
+        try:
+            q = Decimal(quantity_string(str(quantity), positive=True))
+        except ValueError:
+            raise POError("Quantity must round to 0.01–1000000; use up to six source fractional digits.", 422, "po_quantity") from None
+        price, gst = Decimal(price), Decimal(gst)
         if not price.is_finite() or price < 0 or price > Decimal("999999999999.999999") or not gst.is_finite() or not 0 <= gst <= 100:
             raise POError("PO unit price or GST rate is invalid. Correct the line before reviewing.", 422, "po_rate")
         subtotal = int((q * price * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))

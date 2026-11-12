@@ -24,7 +24,7 @@ def transaction(db, actor, work):
         lock(db)
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK})
         from app.core.config import get_settings
-        return work(current, InventoryCrypto(get_settings()))
+        return work(current, InventoryCrypto(get_settings(), db))
     # No capability argument: retain protected singleton Super Admin authorization.
     return protected_transaction(db, actor, run)
 
