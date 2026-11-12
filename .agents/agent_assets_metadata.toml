@@ -98,3 +98,17 @@ mtime_ms = 1794381183382
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/489e9e0f-ba5a-445c-962f-0b6116de952d/ab7b1c19-0a7b-457f-b88e-f3428cf8f25b"
 storage_version_token = "1794381261107557"
 content_type = "image/png"
+
+[[outputs]]
+id = "tV53sRuQSS14MYGOjcj90"
+uri = "file://generated-artifacts/opening-stock-inspection/listing.png"
+type = "image"
+title = "Verified Stock Status balance"
+description = "Actual signed-in preview: Brassica Nigra shows 100.00 physical quantity and 0.00 usable quantity. The other three affected items were also verified at 100.00."
+logical_id = "739200fb-a58f-42c3-906d-a0ee8cc396ae"
+content_hash = "sha256:577d573dad53a5b93278babffc9765c0c120c1c1187d1cb8be43a8b61f60fc7b"
+size = 78650
+mtime_ms = 1794481687627
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/739200fb-a58f-42c3-906d-a0ee8cc396ae/a4c93061-fd76-4d1b-bf40-e96ce5d75da2"
+storage_version_token = "1794481804360448"
+content_type = "image/png"
