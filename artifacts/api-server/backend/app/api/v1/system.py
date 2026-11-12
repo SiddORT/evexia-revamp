@@ -53,6 +53,38 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0098_opening_corrections"]:
+            # Opening-only ancestry deliberately excludes the staged low-stock
+            # and designation branches. Retain every 0096 predecessor probe.
+            db.execute(text("SELECT id,opening_id,version,actor_id,event_id,created_at,payload_ciphertext FROM opening_stock_revisions LIMIT 0"))
+            db.execute(text("SELECT opening_revision FROM inventory_lots LIMIT 0"))
+            if not db.scalar(text("""
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conrelid='inventory_lots'::regclass
+                      AND conname='uq_inventory_opening_revision'
+                      AND contype='u'
+                      AND ARRAY(
+                          SELECT a.attname::text FROM unnest(conkey) WITH ORDINALITY k(attnum,position)
+                          JOIN pg_attribute a ON a.attrelid=conrelid AND a.attnum=k.attnum
+                          ORDER BY k.position
+                      ) = ARRAY['opening_id','opening_revision']
+                )
+            """)):
+                raise RuntimeError("Opening revision lot uniqueness required")
+            for name, trigger_type in (("opening_stock_revisions_immutable", 27),
+                                       ("opening_stock_revisions_no_truncate", 34)):
+                if not db.scalar(text("""
+                    SELECT EXISTS (
+                        SELECT 1 FROM pg_trigger t JOIN pg_proc p ON p.oid=t.tgfoid
+                        WHERE t.tgrelid='opening_stock_revisions'::regclass
+                          AND t.tgname=:name AND t.tgenabled='O'
+                          AND t.tgtype=:trigger_type
+                          AND p.proname='inventory_immutable'
+                    )
+                """), {"name": name, "trigger_type": trigger_type}):
+                    raise RuntimeError("Opening correction history guards required")
+            revisions = ["0096_hsn_master"]
         if revisions in (["0096_hsn_master"], ["0097_hsn_staged_merge"]):
             db.execute(text("SELECT id,code,gst,status,version,created_by,updated_by,created_at,updated_at FROM hsn_mappings LIMIT 0"))
             db.execute(text("SELECT mapping_id,version,actor_id,at,before_code,before_gst,before_status,after_code,after_gst,after_status FROM hsn_changes LIMIT 0"))

@@ -51,6 +51,14 @@ SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_o
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
 
 
+def _maintenance_revision(db):
+    # Opening revisions use PR/inventory encryption, not directory fields.
+    # Preserve exactly 0096's locks, fields and retained order inventories.
+    # Do not admit the staged merge or arbitrary later schemas.
+    revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    return "0096_hsn_master" if revision == "0098_opening_corrections" else revision
+
+
 class RotationError(Exception):
     def __init__(self):
         super().__init__("Directory rotation failed; leave writers paused and verify state.")
@@ -59,7 +67,7 @@ class RotationError(Exception):
 def _fields(db):
     # Reviewed predecessors retain their exact old inventory so paused
     # maintenance can finish before the separately approved phone migration.
-    revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    revision = _maintenance_revision(db)
     revision = {"0096_hsn_master": "0092_quantity_hundredths", "0097_hsn_staged_merge": "0095_quantity_staged_merge"}.get(revision, revision)
     if revision == "0093_designation_short_name":
         revision = "0094_language_low_stock_merge"
@@ -98,6 +106,8 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if revisions == ["0098_opening_corrections"]:
+        revisions = ["0096_hsn_master"]
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
     if revisions in (["0096_hsn_master"], ["0097_hsn_staged_merge"]):
@@ -330,7 +340,7 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron", "0093_language_status", "0094_language_low_stock_merge", "0093_designation_short_name", "0092_quantity_hundredths", "0095_quantity_staged_merge", "0096_hsn_master", "0097_hsn_staged_merge"):
+    if _maintenance_revision(db) in ("0061_immunotherapy_orders", "0062_kits_orders", "0063_spt_orders", "0064_procurement_documents", "0065_lupin_orders", "0066_spt_registration_owner", "0082_order_drafts", "0083_immunotherapy_batches", "0084_allergen_expiry", "0085_placement_email_details", "0086_it_pricing_rules", "0086_immunotherapy_extract", "0087_pricing_rule_categories", "0088_gst_settings", "0089_invoice_settings", "0090_settlement_verification", "0089_it_material_pricing", "0091_low_stock_alerts", "0092_low_stock_cron", "0093_language_status", "0094_language_low_stock_merge", "0093_designation_short_name", "0092_quantity_hundredths", "0095_quantity_staged_merge", "0096_hsn_master", "0097_hsn_staged_merge"):
         for name, (model, pk, field, domain) in _order_payloads(db).items():
             _, unseal = _order_crypto(name)
             cursor, count = None, 0
@@ -354,7 +364,7 @@ def _inventory(db, crypto, digest_key):
                 count += len(rows)
                 cursor = rows[-1][pk.name]
             counts[name] = count
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0092_quantity_hundredths", "0095_quantity_staged_merge", "0096_hsn_master", "0097_hsn_staged_merge"):
+    if _maintenance_revision(db) in ("0092_quantity_hundredths", "0095_quantity_staged_merge", "0096_hsn_master", "0097_hsn_staged_merge"):
         # Originals remain immutable; their keys must never appear retireable.
         _, unseal = _order_crypto("immunotherapy_extract_settings")
         retained = db.execute(text("SELECT record_id,original_ciphertext,normalized_ciphertext FROM quantity_precision_snapshots WHERE purpose='extract-settings' ORDER BY record_id")).mappings()
@@ -383,7 +393,7 @@ def _order_payloads(db):
         "immunotherapy_orders": (orders, orders.c.id, "snapshot_ciphertext", "orders"),
         "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
     }
-    revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    revision = _maintenance_revision(db)
     revision = {"0096_hsn_master": "0092_quantity_hundredths", "0097_hsn_staged_merge": "0095_quantity_staged_merge"}.get(revision, revision)
     if revision == "0093_designation_short_name":
         revision = "0094_language_low_stock_merge"

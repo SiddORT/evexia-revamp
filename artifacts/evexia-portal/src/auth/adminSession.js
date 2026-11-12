@@ -969,6 +969,30 @@ export const inHouseStockRequest = (path, options) => purchaseOrderRequest(path,
 
 
 /** Opening Stock transport: JSON, multipart review and logged blob downloads. */
+// Public, read-only runtime evidence; never starts compatibility/release checks,
+// refreshes an auth cookie, reloads the page or sends/replays a stock command.
+export async function openingStockEditAvailability(signal) {
+  const unavailable = () => {
+    const error = new SessionError('Opening stock editing is unavailable on the running API or database. Keep this page open and retry after the opening-only update is activated.', 503);
+    error.code = 'opening_edit_unavailable';
+    return error;
+  };
+  try {
+    const options = {
+      credentials: 'same-origin', cache: 'no-store',
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    };
+    const version = await fetch('/api/v1/version', options);
+    const identity = version.ok ? await version.json() : null;
+    if (identity?.release?.schema !== '0098_opening_corrections') throw unavailable();
+    const readiness = await fetch('/api/v1/health/readiness', options);
+    if (!readiness.ok || (await readiness.json())?.status !== 'ready') throw unavailable();
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw unavailable();
+  }
+}
+
 export async function openingStockRequest(path = '', { body, params = {}, signal, method, file, download } = {}) {
   const exportDisplay = download && path === '/export' ? exportPreferenceHeader(captureExportPreferences()) : null;
   const uid = '[0-9a-f-]{36}';
@@ -1014,7 +1038,11 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
   if (!response.ok) {
     if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession(false, 'admin');
     if (response.status === 401) { await verifySession(true, 'admin'); const e = new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401); e.ambiguous = mutation; throw e; }
-    const e = new SessionError(response.status === 403 ? 'Your current saved role does not allow this opening stock operation.'
+    const editing = /^\/[0-9a-f-]{36}\/edit(?:\/preview)?$/i.test(path);
+    const missingEditRoute = editing && response.status === 404 && data?.error?.code === 'not_found';
+    const e = new SessionError(missingEditRoute ? 'Opening stock editing is unavailable on the running server. Keep this page open and retry after the opening-only update is activated.'
+      : editing && response.status === 503 && data?.error?.code === 'inventory_unavailable' ? 'Opening stock editing is unavailable because its database or encrypted storage is not ready. Keep this page open; do not submit a replacement save until any pending outcome is checked.'
+      : response.status === 403 ? 'Your current saved role does not allow this opening stock operation.'
       : response.status >= 500 ? 'Opening stock service is unavailable. Your draft is preserved; check the outcome before saving again.'
       : typeof data?.error?.message === 'string' ? data.error.message : 'Opening stock fields are invalid. Check quantities, rates and references.', response.status);
     e.code = data?.error?.code;

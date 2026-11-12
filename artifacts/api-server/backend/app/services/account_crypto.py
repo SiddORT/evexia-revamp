@@ -186,12 +186,16 @@ def ready(db):
         ["0095_quantity_staged_merge"],
         ["0096_hsn_master"],
         ["0097_hsn_staged_merge"],
+        ["0098_opening_corrections"],
     ):
         raise AccountCryptoError()
     # This exact catalogue-only successor retains the predecessor account
     # anchors and protected identity; it introduces no encryption inventory.
     if revisions == ["0093_designation_short_name"]:
         revisions = ["0094_language_low_stock_merge"]
+    # Only this reviewed opening successor retains the exact 0096 anchors.
+    if revisions == ["0098_opening_corrections"]:
+        revisions = ["0096_hsn_master"]
     if revisions == ["0096_hsn_master"]:
         revisions = ["0092_quantity_hundredths"]
     elif revisions == ["0097_hsn_staged_merge"]:

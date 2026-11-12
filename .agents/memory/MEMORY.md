@@ -132,3 +132,4 @@
 - [Low-stock Cron Jobs policy](low-stock-cron-policy.md) — recurring Kolkata schedules supersede fixed weekly timing; legacy defaults, protected recipient and activation gates remain.
 - [Opening stock visibility](opening-stock-visibility-scope.md) — physical opening balances are visible, not newly usable; unrelated unusable stock and low-stock policy remain outside scope.
 - [Opening expiry policy](opening-expiry-policy.md) — explicit expiry may be corrected on unused saved openings through audited revisions; imports never edit or revive stock.
+- [Opening-only activation](opening-only-activation.md) — opening correction approval does not activate unrelated staged low-stock or designation branches.

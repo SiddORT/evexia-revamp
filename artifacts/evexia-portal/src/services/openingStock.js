@@ -1,4 +1,4 @@
-import { getSession, openingStockRequest as request } from '../auth/adminSession.js';
+import { getSession, openingStockEditAvailability, openingStockRequest as request } from '../auth/adminSession.js';
 
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v !== '' && v != null));
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -6,11 +6,18 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const listOpenings = (params, signal) => request('', { params: clean(params), signal });
 export const listItemReferences = (_kind, params, signal) => request('/references/items', { params: clean(params), signal });
 export const getOpening = (id, signal) => request(`/${id}`, { signal });
+export const getOpeningForEdit = async (id, signal) => {
+  await openingStockEditAvailability(signal);
+  return getOpening(id, signal);
+};
 export const openingActivity = (id, params, signal) => request(`/${id}/activity`, { params: clean(params), signal });
 export const openingAnalytics = (id, signal) => request(`/${id}/analytics`, { signal });
 export const previewOpening = (body) => request('/preview', { body });
 export const commitOpening = (body) => request('', { body });
-export const previewOpeningEdit = (id, body) => request(`/${id}/edit/preview`, { body });
+export const previewOpeningEdit = async (id, body) => {
+  await openingStockEditAvailability();
+  return request(`/${id}/edit/preview`, { body });
+};
 export const commitOpeningEdit = (id, body) => request(`/${id}/edit`, { body });
 export const reviewImport = (file, signal) => request('/import/review', { file, params: { filename: file.name }, signal });
 export const downloadSample = (format) => request('/sample', { params: { format }, download: true });

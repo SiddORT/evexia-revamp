@@ -1,10 +1,10 @@
-"""Staged only: immutable opening corrections and revision-specific lots."""
+"""Opening-only successor: immutable corrections and revision-specific lots."""
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 
 revision = "0098_opening_corrections"
-down_revision = "0097_hsn_staged_merge"
+down_revision = "0096_hsn_master"
 branch_labels = depends_on = None
 
 

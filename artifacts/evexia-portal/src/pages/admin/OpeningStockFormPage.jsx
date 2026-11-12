@@ -8,7 +8,7 @@ import OpeningPendingBanner from '../../components/admin/OpeningPendingBanner.js
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js';
 import { recordLocalAction } from '../../services/localActivity.js';
-import { commitOpening, commitOpeningEdit, getOpening, previewOpeningEdit, journaled, listItemReferences, locationLabel, money, valueMoney, newId, pendingOpening, previewOpening, validQuantity, validRate } from '../../services/openingStock.js';
+import { commitOpening, commitOpeningEdit, getOpeningForEdit, previewOpeningEdit, journaled, listItemReferences, locationLabel, money, valueMoney, newId, pendingOpening, previewOpening, validQuantity, validRate } from '../../services/openingStock.js';
 import { listReference } from '../../services/serverInventory.js';
 const openingLocationReferences = (kind, params, signal) => listReference(kind, { ...params, purpose: 'opening_stock' }, signal);
 import '../../mr.css';
@@ -51,9 +51,12 @@ export default function OpeningStockFormPage({ params }) {
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
     if (!editId) return;
+    // A development hot refresh must not replace an already mounted draft.
+    // Navigating to a different saved record still loads that record explicitly.
+    if (original?.id === editId && initialDraft.current) return;
     const controller = new AbortController();
     setOriginal(null); setLoadError('');
-    getOpening(editId, controller.signal).then((saved) => {
+    getOpeningForEdit(editId, controller.signal).then((saved) => {
       if (controller.signal.aborted) return;
       const loaded = { sourceId: saved.sourceId, recordedDate: saved.recordedDate, rows: [{
         rowId: saved.rowId,
