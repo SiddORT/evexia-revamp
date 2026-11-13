@@ -341,6 +341,12 @@ authorized normal deployment. Keep maintenance whenever any outcome is unknown.
 
 ## Deploy and subsequent patches
 
+**Existing 0103 login-recovery exception:** follow the separately approved
+[backend-only compatibility procedure](vps-login-0103-compatibility.md), not the
+normal deployment below. The runtime accepts the reviewed merge without changing
+the declared 0102 development target; the ordinary source-head planner rejects
+that target/head combination. Do not widen migration approvals to bypass it.
+
 After installation, use the normal push-to-`main` workflow (or rerun the
 workflow for the intended current commit). Do not call the older
 `deploy-scripts/deploy.sh`: it is intentionally untouched and still has an

@@ -189,13 +189,20 @@ def ready(db):
         ["0098_opening_corrections"],
         ["0100_applicable_gst"],
         ["0102_category_count_tariffs"],
+        # Exact merged ancestry adds tariff/opening/GST and staged low-stock
+        # storage plus optional designation labels, never account fields/keys.
+        ["0103_tariff_staged_merge"],
     ):
         raise AccountCryptoError()
     # This exact catalogue-only successor retains the predecessor account
     # anchors and protected identity; it introduces no encryption inventory.
     if revisions == ["0093_designation_short_name"]:
         revisions = ["0094_language_low_stock_merge"]
-    # Only this reviewed opening successor retains the exact 0096 anchors.
+    # Both parents of this exact merge retain the same protected identity and
+    # lookup configuration. Do not accept intermediate merges or future heads.
+    if revisions == ["0103_tariff_staged_merge"]:
+        revisions = ["0102_category_count_tariffs"]
+    # Only these reviewed opening successors retain the exact 0096 anchors.
     if revisions == ["0102_category_count_tariffs"]:
         revisions = ["0100_applicable_gst"]
     if revisions == ["0100_applicable_gst"]:

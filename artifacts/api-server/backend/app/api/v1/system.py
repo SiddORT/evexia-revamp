@@ -40,6 +40,10 @@ def readiness(db: Session = Depends(get_db)):
         if SCHEMA_REVISION == "0044_purchase_received":
             # Explicit additive batch successor, never automatic activation.
             accepted.append(["0045_pr_batch_numbers"])
+        if SCHEMA_REVISION == "0102_category_count_tariffs":
+            # Runtime compatibility only: never change the development target
+            # or activate the staged scheduler by accepting this exact merge.
+            accepted.append(["0103_tariff_staged_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -53,7 +57,8 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
-        if revisions == ["0102_category_count_tariffs"]:
+        staged_tariff_merge = revisions == ["0103_tariff_staged_merge"]
+        if revisions in (["0102_category_count_tariffs"], ["0103_tariff_staged_merge"]):
             from app.services.category_count_tariffs import ready as tariff_ready
             tariff_ready(db)
             revisions = ["0100_applicable_gst"]
@@ -92,7 +97,10 @@ def readiness(db: Session = Depends(get_db)):
                     )
                 """), {"name": name, "trigger_type": trigger_type}):
                     raise RuntimeError("Opening correction history guards required")
-            revisions = ["0096_hsn_master"]
+            # The merged VPS schema must validate BOTH branches: tariff/GST/
+            # opening above, then HSN/quantity AND staged designation/low-stock.
+            revisions = (["0097_hsn_staged_merge"] if staged_tariff_merge
+                         else ["0096_hsn_master"])
         if revisions in (["0096_hsn_master"], ["0097_hsn_staged_merge"]):
             db.execute(text("SELECT id,code,gst,status,version,created_by,updated_by,created_at,updated_at FROM hsn_mappings LIMIT 0"))
             db.execute(text("SELECT mapping_id,version,actor_id,at,before_code,before_gst,before_status,after_code,after_gst,after_status FROM hsn_changes LIMIT 0"))

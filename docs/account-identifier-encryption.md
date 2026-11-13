@@ -90,3 +90,10 @@ Automatic downgrade to plaintext is refused, even for test environments.
 After commit, use a reviewed forward correction or restore the full verified
 backup with its matching previous application and keys. Never use stamp,
 fake approvals, test settings or an unqualified upgrade-head operator command.
+
+## Existing VPS database at 0103
+
+The narrowly reviewed runtime compatibility correction, complete merged ancestry,
+read-only preflight and separately approved backend-only rollout are documented in
+[VPS login compatibility](vps-login-0103-compatibility.md). The development target
+remains 0102. This is not migration, key-rotation or deployment authorization.
