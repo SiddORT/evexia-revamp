@@ -24,7 +24,7 @@ export default function GSTHistory({ refreshKey, owner }) {
     {!error && page && <><ol className="gst-settings__revisions">{page.items.map((r) => <li className="gst-settings__card" key={r.version}>
       <h4>Policy revision {r.version} <span className="gst-settings__revision-action">{r.action === 'add' ? 'GST change' : 'Opening policy confirmed'}</span></h4>
       <dl className="gst-settings__history-details"><div><dt>Effective date</dt><dd>{r.effective_date}</dd></div>
-        <div><dt>Prior schedule</dt><dd>{schedule(r.prior)}</dd></div>
+        {r.action === 'add' && <div><dt>Prior schedule</dt><dd>{schedule(r.prior)}</dd></div>}
         <div><dt>New schedule</dt><dd>{schedule(r.new)}</dd></div>
         <div><dt>Recorded timestamp</dt><dd><time dateTime={r.recorded_at}>{r.recorded_at}</time></dd></div>
         <div><dt>Verified actor</dt><dd>{r.actor_label} · Authenticated account {r.actor_id}</dd></div></dl>
