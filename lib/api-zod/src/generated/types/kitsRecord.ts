@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { GSTEvidence } from "./gSTEvidence";
 import type { KitsConfiguration } from "./kitsConfiguration";
 import type { KitsPricingSnapshot } from "./kitsPricingSnapshot";
 import type { KitsRecipient } from "./kitsRecipient";
@@ -39,6 +40,7 @@ export interface KitsRecord {
   decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
   doctorId: string;
+  gstEvidence?: GSTEvidence | null;
   id: string;
   kit?: KitsConfiguration;
   /** @maxLength 12 */

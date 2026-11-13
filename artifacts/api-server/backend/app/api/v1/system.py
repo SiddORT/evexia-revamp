@@ -53,6 +53,10 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions == ["0100_applicable_gst"]:
+            from app.services.gst_settings import ready as gst_ready
+            gst_ready(db)
+            revisions = ["0098_opening_corrections"]
         if revisions == ["0098_opening_corrections"]:
             # Opening-only ancestry deliberately excludes the staged low-stock
             # and designation branches. Retain every 0096 predecessor probe.

@@ -23,6 +23,7 @@ from app.api.v1.files import storage_dependency, order_upload_operation
 from app.api.v1.immunotherapy import MULTIPART
 from app.schemas.order_approval import OrderApproval, OrderRejection
 from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
+from app.schemas.gst_settings import GSTEvidence
 
 router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
     dependencies=[Depends(operation_router("kits", {
@@ -30,6 +31,12 @@ router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
         "review": "import", "commit": "import", "create": "add",
         "policy": "upload_attachment", "upload": "upload_attachment",
     }, allow_mr=True))])
+
+
+@router.get("/gst-evidence", response_model=GSTEvidence, operation_id="getKitsGSTEvidence")
+def gst_evidence(record_id: uuid.UUID | None = None, order_date: date | None = None,
+                 actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return service.gst_evidence(db, actor, record_id, order_date)
 
 
 def filters(search: str = Query("", max_length=200), status: Status | None = None,

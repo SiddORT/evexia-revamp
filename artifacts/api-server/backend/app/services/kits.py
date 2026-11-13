@@ -21,15 +21,23 @@ from app.core.security import utcnow
 from app.services.capability_policy import is_super_admin
 from app.schemas.kits_pricing import KitsPricingInput, calculate
 
-FINANCIAL_FIELDS = {"pricing", "businessParking", "poNumber"}
+FINANCIAL_FIELDS = {"pricing", "businessParking", "poNumber", "gstEvidence"}
 
 
-def finances(actor, body, previous):
+def business_today(db):
+    # One business day per request/transaction, including import review/apply
+    # across Kolkata midnight. The actual saved date and rate cannot diverge.
+    if "kits_business_date" not in db.info:
+        db.info["kits_business_date"] = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    return db.info["kits_business_date"]
+
+
+def finances(db, actor, body, previous):
     """Omission preserves history; explicit financial writes require singleton authority."""
     supplied = FINANCIAL_FIELDS & body.model_fields_set
     if supplied and not is_super_admin(actor):
         raise ImmError("Only the protected Super Admin may submit Kits pricing or PO fields.", 403, "access_denied")
-    values = {key: previous[key] for key in FINANCIAL_FIELDS if previous and key in previous}
+    values = {key: previous[key] for key in FINANCIAL_FIELDS - {"gstEvidence"} if previous and key in previous}
     if actor.role == "mr" and previous:
         # Never recalculate protected prices implicitly, including on a second
         # correction save after the item basis has already changed.
@@ -45,13 +53,38 @@ def finances(actor, body, previous):
         if key in supplied:
             values[key] = getattr(body, key)
     if values.get("pricing") is not None:
+        # Non-financial writes and imports must never reprice a saved snapshot.
+        if previous and previous.get("pricing") is not None and "pricing" not in supplied:
+            return values
         try:
             raw = values["pricing"]
             price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
-            tax = (previous or {}).get("pricing") or {}
-            values["pricing"] = calculate(body, price, tax.get("taxPercentage", "5.00"))
+            tax = (previous or {}).get("pricing")
+            if tax is not None and all(
+                getattr(price, k) == tax.get(k) for k in KitsPricingInput.model_fields
+            ) and all(
+                body.model_dump(mode="json").get(k) == previous.get(k)
+                for k in ("kit", "lancets", "applicators", "tray")
+            ):
+                # A transfer or unchanged ordinary save is not permission to
+                # normalize or rewrite historical money.
+                values["pricing"] = tax
+                return values
+            if tax is not None:
+                if not isinstance(tax.get("taxPercentage"), str):
+                    raise ImmError("Saved GST evidence is unavailable; historical pricing cannot be inferred.", 409, "gst_unavailable")
+                evidence = tax.get("gstPolicy")
+                rate = tax["taxPercentage"]
+            else:
+                from app.services.gst_settings import resolve
+                evidence = resolve(db, previous["date"] if previous else body.orderDate or business_today(db))
+                if body.gstEvidence is not None and body.gstEvidence.model_dump() != evidence:
+                    raise ImmError("Applicable GST changed. Refresh GST evidence and compare the preview before saving.", 409, "gst_quote_stale")
+                rate = evidence["rate"]
+            values["pricing"] = calculate(body, price, rate, evidence)
         except ValueError:
             raise ImmError("Enter valid unit rates for included items and a discount not exceeding gross.", 422, "kits_pricing") from None
+    values.pop("gstEvidence", None)
     return values
 
 
@@ -113,6 +146,8 @@ def transaction(db, actor, work, *, action=None, before_commit=None):
     except Exception:
         db.rollback()
         raise
+    finally:
+        db.info.pop("kits_business_date", None)
 
 
 def find(db, identity):
@@ -143,7 +178,7 @@ def resolved(db, actor, keys, body, previous=None):
     from app.services.order_approval import protect
     protect(db, "kits", body, previous)
     mr_assignment(db, body, previous)
-    financial = finances(actor, body, previous)
+    financial = finances(db, actor, body, previous)
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "expected_version", "orderDate", "attachmentIds", *FINANCIAL_FIELDS})
     value.update(financial)
     changed = {}
@@ -209,7 +244,7 @@ def apply(db, actor, keys, body, identity=None, expected=None):
         number = db.scalar(text("SELECT nextval('kits_order_number_seq')"))
         from app.services.business_numbers import format_number
         row = Order(id=uuid.uuid4(), number=format_number("kits", number), version=1,
-            date=body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date(), created_by=actor.user.id)
+            date=body.orderDate or business_today(db), created_by=actor.user.id)
         db.add(row)
     else:
         row.version += 1
@@ -262,6 +297,17 @@ def update(db, actor, identity, body):
         return idempotent(db, a, keys, body.idempotencyKey, payload,
             lambda: apply(db, a, keys, body, identity, body.expected_version))
     return transaction(db, actor, work, action="edit")
+
+
+def gst_evidence(db, actor, identity=None, order_date=None):
+    """Only rate evidence, never protected settings history or financial totals."""
+    def work(a, keys):
+        if not is_super_admin(a):
+            raise ImmError("Only the protected Super Admin can price Kits.", 403, "access_denied")
+        from app.services.gst_settings import resolve
+        row = find(db, identity) if identity else None
+        return resolve(db, row.date if row else order_date or business_today(db))
+    return transaction(db, actor, work, action="edit" if identity else "add")
 
 
 def detail(db, actor, identity):

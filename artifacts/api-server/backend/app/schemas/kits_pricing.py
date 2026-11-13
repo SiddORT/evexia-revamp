@@ -4,6 +4,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Literal
 from pydantic import Field, field_validator
 from app.schemas.immunotherapy import Strict
+from app.schemas.gst_settings import GSTEvidence
 
 CENT = Decimal("0.01")
 MAX_AMOUNT = Decimal("999999999.99")
@@ -49,7 +50,8 @@ class KitsPricingInput(Strict):
 
 
 class KitsPricingSnapshot(KitsPricingInput):
-    taxPercentage: str
+    taxPercentage: str | None = None
+    gstPolicy: GSTEvidence | None = None
     lineAmounts: dict[str, str]
     gross: str
     discountAmount: str
@@ -59,7 +61,7 @@ class KitsPricingSnapshot(KitsPricingInput):
     total: str
 
 
-def calculate(body, pricing, tax_percentage="5.00"):
+def calculate(body, pricing, tax_percentage, gst_policy=None):
     values = pricing.model_dump()
     lines = {}
     for key in ("kit", "lancets", "applicators", "tray"):
@@ -86,7 +88,7 @@ def calculate(body, pricing, tax_percentage="5.00"):
     total = taxable + gst
     if total > MAX_TOTAL:
         raise ValueError("Total is out of range")
-    return dict(**values, taxPercentage=tax_percentage, lineAmounts=lines,
+    return dict(**values, taxPercentage=tax_percentage, **({"gstPolicy": gst_policy} if gst_policy is not None else {}), lineAmounts=lines,
         gross=format(gross, ".2f"), discountAmount=format(discount, ".2f"),
         discounted=format(taxable, ".2f"), taxable=format(taxable, ".2f"),
         gst=format(gst, ".2f"), total=format(total, ".2f"))

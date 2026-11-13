@@ -1091,7 +1091,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'pricing-rules'
     ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'gst-settings'
-    ? /^$/
+    ? /^(?:|\/history)$/
     : resource === 'low-stock-settings'
     ? /^(?:|\/requests\/[0-9a-f-]{36}\/reconcile)$/i
     : resource === 'invoice-settings'
@@ -1111,7 +1111,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'immunotherapy-orders'
     ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/patients\/[0-9a-f-]{36}\/next-dosage|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
     : resource === 'kits-orders'
-    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
+    ? /^(?:|\/(?:gst-evidence|export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
@@ -1227,7 +1227,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
         : 'Settlements could not be loaded. Check your connection and retry.'
       : gstSettingsOperation
-      ? 'Shared GST Settings could not be confirmed. Your edits are preserved; load saved settings before saving again.'
+      ? mutation ? 'Applicable GST save could not be confirmed. Keep this editor open and retry the unchanged save.'
+        : 'Applicable GST could not be loaded. Your edits are preserved; retry loading.'
       : batchOperation
       ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
       : resource === 'in-house-stock'
@@ -1301,8 +1302,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : 'Pricing Rules request failed. Your editor is preserved.'
       : gstSettingsOperation
       ? response.status === 403 ? 'GST Settings require the protected Super Admin.'
-        : response.status === 422 ? 'Enter a real cutoff calendar date and both GST rates from 0 to 100, with up to two decimal places. Your edits are preserved.'
-        : response.status === 409 ? 'GST Settings changed. Load saved settings and compare them with your kept edits before saving.'
+        : response.status === 422 ? 'Enter a real Applicable from calendar date and GST percentage from 0 to 100, with up to two decimal places. Your edits are preserved.'
+        : response.status === 409 ? data?.error?.code === 'gst_duplicate_date' ? 'This Applicable from date already exists. Load the schedule and choose a distinct date.'
+          : 'Applicable GST changed or requires opening-policy confirmation. Load saved policy and compare before saving your kept draft.'
         : [404, 405].includes(response.status) ? 'The running API does not provide GST Settings. The updated API and schema must be activated; your edits are preserved.'
         : uncertain().message
       : resource === 'settlements' && response.status === 403
@@ -1372,15 +1374,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     // exact submitted categories, saved target membership, rates, date and version.
     if (!data?.id || !Number.isSafeInteger(data.version) || data.version < 1) throw uncertain('response');
   } else if (mutation && gstSettingsOperation) {
-    // GST has no order identity, number or lines. Confirm the exact save.
-    const rate = (value) => {
-      if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]?|100)(?:\.[0-9]{1,2})?$/.test(value)) return null;
-      const [whole, fraction = ''] = value.split('.');
-      return `${whole}.${fraction.padEnd(2, '0')}`;
-    };
-    if (data?.configured !== true || data.version !== body.expected_version + 1
-      || data.cutoff_date !== body.cutoff_date || rate(data.before_rate) !== rate(body.before_rate)
-      || rate(data.on_after_rate) !== rate(body.on_after_rate)) throw uncertain();
+    // A confirmed retry can load a later schedule, but must identify this
+    // exact immutable request and its original committed revision.
+    if (data?.configured !== true || data.confirmed_request_id !== body.request_id
+      || data.confirmed_version !== body.expected_version + 1
+      || !Number.isSafeInteger(data.version) || data.version < data.confirmed_version) throw uncertain();
   } else if (mutation && extractSettingsOperation) {
     // Object property order is not part of the JSON contract. Pydantic emits
     // inherited extract/dilution fields before compositionSize/rank. Compare

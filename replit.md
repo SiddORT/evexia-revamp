@@ -56,13 +56,19 @@ payment limit requires strict `<` exposure here only. See
 is prepared; this delivery did not execute tests, release/validation wrappers,
 runtime probes, restarts, migrations, deployments or live writes. Runtime
 behavior remains unverified.
-GST Settings is protected Super Admin shared configuration only: one literal
-calendar cutoff and exact before/on-or-after percentages, with no invented
-initial values. The exact cutoff belongs to on/after. Do not apply it to orders,
-pricing, catalogue taxes, calculations, invoices or historical snapshots without
-a separate user request. This delivery is source-only: no regression/release
-checks, test/build/typecheck/validation wrappers, service restarts, migration
-execution, deployment or live writes. Runtime behavior remains unverified.
+Applicable GST is protected Super Admin effective-dated shared policy with
+immutable history: approved opening 12% through 21 September 2025 and 5% from
+22 September 2025 inclusive. Keep legacy configuration as opening provenance;
+conflicts need intentional confirmation. First Kits pricing uses its immutable
+order date and saves rate/boundary/revision evidence. Existing saved totals and
+tax remain unchanged; explicit pricing edits retain the saved tax rate. No new
+GST model for Immunotherapy/Lupin/SPT, PO line-tax overrides, catalogue changes,
+invoice activation or settlement backfill. `0100_applicable_gst` follows the
+opening-only path; `0101_gst_staged_merge` does not activate unrelated staged
+features in development. This delivery is source-only: no regression/release
+checks, tests/builds/typechecks/validation wrappers, runtime/browser probes,
+service starts/restarts, migrations, deployment or live writes.
+Runtime behavior remains unverified.
 See `docs/gst-settings.md`.
 
 All migrations are automatic in both Replit development and VPS deployments.

@@ -1,5 +1,25 @@
 # Kits & Consumables saved orders
 
+## Applicable GST source update
+
+First pricing now selects the effective GST server-side by immutable order
+calendar date: approved opening 12% before 22 September 2025, 5% from that date
+inclusive, followed by any explicit effective-dated changes. The editor loads
+scoped rate evidence, binds it to the preview/save and rejects stale policy
+evidence. New pricing snapshots save rate/boundary/policy revision. A missing
+policy blocks first pricing; no 5% fallback remains.
+
+Saved priced amounts and actual tax are not backfilled or changed by reads,
+policy updates, imports with omitted/unchanged pricing, eligibility or retries.
+An explicit pricing edit retains the saved tax rate. Authorized summaries
+distinguish applied GST from today's policy; unavailable historical evidence
+stays unavailable. Other order types, agreed PO line taxes, invoices and
+settlement amounts are outside this update. See [Applicable GST](gst-settings.md).
+This section supersedes older hardcoded-tax descriptions below.
+Only source inspection and offline generation/formatting were performed:
+runtime behavior remains unverified, and no checks, services, migrations or live
+business writes were run.
+
 Admin Kits is a protected Super Admin supply-order workflow. Staff grants, MR
 and Doctor portals, Immunotherapy, SPT and Lupin retain their existing boundaries.
 No stock, financial ledger, invoice, payment collection, clinical history or

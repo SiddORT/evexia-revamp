@@ -44,7 +44,7 @@ def public_result(actor, resource, value):
                     return [redact(item) for item in child]
                 if isinstance(child, dict):
                     return {key: redact(item) for key, item in child.items()
-                            if key not in {"pricing", "businessParking", "poNumber"}}
+                            if key not in {"pricing", "businessParking", "poNumber", "gstEvidence"}}
                 return child
             value = redact(value)
     if actor.staff is None or allowed(actor, resource, "read_attachment"):

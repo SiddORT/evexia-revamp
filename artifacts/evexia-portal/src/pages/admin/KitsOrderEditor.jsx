@@ -4,7 +4,7 @@ import { ArrowLeft, Eye, Paperclip } from 'lucide-react';
 import AdminLayout, { useOrderBase, useOrderActions, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import { DownloadOrderFile, OrderFileList } from '../../components/orders/OrderFiles.jsx';
-import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, attachmentBlob, updateOrder, request, uploadAttachment, validateAttachments, fileSize } from '../../services/serverKits.js';
+import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, attachmentBlob, updateOrder, request, uploadAttachment, validateAttachments, fileSize, loadKitsGST } from '../../services/serverKits.js';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import { blankPricing, calculateKitsPricing, pricingInput, moneyText, normalizeKitsAmount } from '../../services/kitsPricing.js';
@@ -59,7 +59,17 @@ export default function KitsOrderEditor({ order: initialOrder }) {
   const uploads = useRef(new Map());
   const viewerOpener = useRef(null);
   const submission = useRef(null), saving = useRef(false), summaryRef = useRef(null);
-  const tax = order.pricing?.taxPercentage || '5.00';
+  const [gstEvidence, setGSTEvidence] = useState(null), [gstError, setGSTError] = useState('');
+  const [gstReload, setGSTReload] = useState(0);
+  const tax = order.pricing ? order.pricing.taxPercentage : gstEvidence?.rate;
+  useEffect(() => {
+    if (mrPortal || order.pricing) return undefined;
+    const controller = new AbortController();
+    setGSTEvidence(null); setGSTError('');
+    loadKitsGST(order.id, controller.signal).then(setGSTEvidence)
+      .catch((cause) => { if (!controller.signal.aborted) setGSTError(cause.message); });
+    return () => controller.abort();
+  }, [order.id, mrPortal, Boolean(order.pricing), gstReload]);
   const protectedOk = Boolean(can.protected || (mrPortal && can.edit && order.mrEditable));
   useEffect(() => {
     if (!can.upload_attachment) return undefined;
@@ -114,7 +124,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
           if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
           attachments.push(uploads.current.get(file));
         }
-        submission.current = { ...orderInput({ ...v, attachments }), ...(!mrPortal ? { pricing: pricingInput(pricing), businessParking: parking, poNumber: po } : {}), expected_version: order.version, idempotencyKey: crypto.randomUUID() };
+        submission.current = { ...orderInput({ ...v, attachments }), ...(!mrPortal ? { pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}), businessParking: parking, poNumber: po } : {}), expected_version: order.version, idempotencyKey: crypto.randomUUID() };
       }
       await updateOrder(order.id, submission.current);
       submission.current = null; setUncertain(false); setDone(true);
@@ -167,13 +177,15 @@ export default function KitsOrderEditor({ order: initialOrder }) {
                   <tr key={k}><th scope="row">{l}</th><td>{count(k, l)}</td><td /><td />{!mrPortal && <><td>{rate(r, l)}</td><td>{L[k] ? moneyText(L[k]) : '-'}</td></>}</tr>)}
               </tbody></table></div>
           {!mrPortal && <>{calc.error && <Err text={calc.error} />}
+          {!order.pricing && <p role={gstError ? 'alert' : 'status'}>{gstError || (gstEvidence ? `Applicable GST for saved order date ${gstEvidence.order_date}: ${gstEvidence.rate}% (effective ${gstEvidence.applicable_from}, policy revision ${gstEvidence.policy_revision}).` : 'Loading Applicable GST…')}
+            <button type="button" className="kits-link" disabled={frozen} onClick={() => setGSTReload((n) => n + 1)}>Refresh GST evidence</button></p>}
           <div className="kito-fin">
             <div className="kits-field"><label htmlFor="kito-fwd">Forwarding charges</label><input id="kito-fwd" inputMode="decimal" value={pricing.forwardingCharges} onChange={(e) => setP({ forwardingCharges: e.target.value })} /></div>
             <div className="kits-field"><label htmlFor="kito-dv">Discount</label><div className="kito-disc"><input id="kito-dv" inputMode="decimal" value={pricing.discountValue} onChange={(e) => setP({ discountValue: e.target.value })} />
               <select aria-label="Discount type" value={pricing.discountType} onChange={(e) => setP({ discountType: e.target.value })}><option value="percent">%</option><option value="inr">Fixed INR</option></select></div></div>
           </div>
           <dl className="kpr-totals" aria-live="polite" data-testid="kits-editor-totals">
-            {[['Gross value', 'gross'], ['Discount', 'discountAmount'], ['Discounted value', 'discounted'], ['Taxable value', 'taxable'], [`GST (${tax}%)`, 'gst']].map(([l, k]) => <div key={k}><dt>{l}</dt><dd>{snap ? moneyText(snap[k]) : '-'}</dd></div>)}
+            {[['Gross value', 'gross'], ['Discount', 'discountAmount'], ['Discounted value', 'discounted'], ['Taxable value', 'taxable'], [tax == null ? 'GST unavailable' : `GST (${tax}%)`, 'gst']].map(([l, k]) => <div key={k}><dt>{l}</dt><dd>{snap ? moneyText(snap[k]) : '-'}</dd></div>)}
             <div className="kpr-total"><dt>Total amount</dt><dd>{snap ? moneyText(snap.total) : '-'}</dd></div></dl>
           <p className="kits-hint">{order.pricing ? 'Preview only; the server recalculates every total on save.' : 'Not yet priced. Enter rates to price this order; the server recalculates totals on save.'}</p>
           <p className="kits-hint">Quantity × unit rate for each included item, plus forwarding = gross. Discount is applied once to gross; discounted value is taxable. GST is added last. Products and ml do not multiply prices.</p></>}

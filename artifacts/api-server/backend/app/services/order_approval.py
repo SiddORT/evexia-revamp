@@ -143,7 +143,7 @@ def saved_pricing(kind, previous):
         if not raw:
             raise ValueError("No saved pricing")
         price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
-        if calculate(body, price, raw["taxPercentage"]) != raw:
+        if calculate(body, price, raw["taxPercentage"], raw.get("gstPolicy")) != {k: v for k, v in raw.items() if k != "gstPolicy" or v is not None}:
             raise ValueError("Stale supply pricing")
     else:
         if Decimal(previous["total"]) != Decimal(body.patientCount) * Decimal(body.price):

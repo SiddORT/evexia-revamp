@@ -1,4 +1,22 @@
 import { moneyText } from '../../services/kitsPricing.js';
+import { useEffect, useState } from 'react';
+import { loadKitsGST } from '../../services/serverKits.js';
+
+function CurrentGST() {
+  const [evidence, setEvidence] = useState(null), [error, setError] = useState(''), [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController(); setEvidence(null); setError('');
+    loadKitsGST(null, controller.signal).then(setEvidence).catch((cause) => {
+      if (!controller.signal.aborted) setError(cause.message);
+    });
+    return () => controller.abort();
+  }, [refresh]);
+  return <p className="kits-hint" role={error ? 'alert' : 'status'}>
+    {evidence ? `Today's applicable policy (${evidence.order_date}): ${evidence.rate}%. This is not the GST charged on this saved order.`
+      : error ? `Today's applicable policy is unavailable. ${error}` : "Loading today's applicable GST policy…"}
+    <button type="button" className="kits-link" onClick={() => setRefresh((n) => n + 1)}>Refresh current policy</button>
+  </p>;
+}
 
 function AdditionalInformation({ order }) {
   return <section className="kpr-additional" aria-label="Parking and PO">
@@ -15,6 +33,7 @@ export default function KitsPricingSummary({ order }) {
   const p = order?.pricing;
   const k = order?.kit || {};
   if (!p) return <div className="kpr kpr-empty" data-testid="kits-pricing-unpriced"><p>Not yet priced. No historical totals have been assumed.</p>
+    <p>Actual applied GST: unavailable — no saved pricing evidence.</p><CurrentGST />
     <AdditionalInformation order={order} /></div>;
   const L = p.lineAmounts || {};
   const rows = [];
@@ -34,9 +53,12 @@ export default function KitsPricingSummary({ order }) {
       <div><dt>Discount ({disc})</dt><dd>{moneyText(p.discountAmount)}</dd></div>
       <div><dt>Discounted value</dt><dd>{moneyText(p.discounted)}</dd></div>
       <div><dt>Taxable value</dt><dd>{moneyText(p.taxable)}</dd></div>
-      <div><dt>GST ({p.taxPercentage}%)</dt><dd>{moneyText(p.gst)}</dd></div>
+      <div><dt>{p.taxPercentage == null ? 'Actual applied GST: rate unavailable' : `Actual applied GST (${p.taxPercentage}%)`}</dt><dd>{moneyText(p.gst)}</dd></div>
       <div className="kpr-total"><dt>Total amount</dt><dd>{moneyText(p.total)}</dd></div>
-    </dl></section>
+    </dl>
+    <p className="kits-hint">{p.gstPolicy ? `Saved GST policy revision ${p.gstPolicy.policy_revision} · Effective from ${p.gstPolicy.applicable_from === '0001-01-01' ? 'opening period' : p.gstPolicy.applicable_from} · Order date ${p.gstPolicy.order_date}.`
+      : 'Policy revision and effective boundary were not saved with this historical price. The saved rate and amounts above are actual order evidence, not inferred from current policy.'}</p>
+    <CurrentGST /></section>
     <AdditionalInformation order={order} />
   </div>;
 }

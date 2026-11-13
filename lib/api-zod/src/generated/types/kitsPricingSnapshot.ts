@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { GSTEvidence } from "./gSTEvidence";
 import type { KitsPricingSnapshotDiscountType } from "./kitsPricingSnapshotDiscountType";
 import type { KitsPricingSnapshotLineAmounts } from "./kitsPricingSnapshotLineAmounts";
 
@@ -19,10 +20,11 @@ export interface KitsPricingSnapshot {
   forwardingCharges: string;
   gross: string;
   gst: string;
+  gstPolicy?: GSTEvidence | null;
   kitRate?: string | null;
   lancetsRate?: string | null;
   lineAmounts: KitsPricingSnapshotLineAmounts;
-  taxPercentage: string;
+  taxPercentage?: string | null;
   taxable: string;
   total: string;
   trayRate?: string | null;

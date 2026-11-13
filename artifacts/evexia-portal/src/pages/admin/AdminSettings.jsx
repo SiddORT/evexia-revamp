@@ -41,7 +41,7 @@ export default function AdminSettings() {
   };
   const Active = active.Component;
   return <AdminLayout title="Settings">
-     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs, Communication, Cron Jobs, Batch Number Settings, GST Settings, Invoice Details and Immunotherapy Extract & Dilution are shared settings managed by Super Admin. Template style defaults stay in this browser; Invoice Details are shared. GST Settings are saved for future order processing; orders and calculations are currently unchanged.' : ''}</p></div></div>
+     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs, Communication, Cron Jobs, Batch Number Settings, Applicable GST, Invoice Details and Immunotherapy Extract & Dilution are shared settings managed by Super Admin. Template style defaults stay in this browser; Invoice Details are shared. Applicable GST governs first pricing of Kits by saved order date; saved priced orders keep their GST and amounts.' : ''}</p></div></div>
     <div className="admin-settings-layout">
       <nav className="admin-settings-nav" aria-label="Settings categories">
         <div className="admin-settings-nav__search">

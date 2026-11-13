@@ -2,6 +2,7 @@ import { getSession, immunotherapyFileRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { privateUploadMessage } from '../auth/privateFileErrors.js';
 import { orderRequest } from './orderFreshness.js';
+import { validGSTDate, validGSTRate } from './serverGSTSettings.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function failure(error, stage, mrPresentation) {
@@ -12,6 +13,9 @@ function failure(error, stage, mrPresentation) {
     order_stale: 'The saved order changed. Reopen View before approving; no newer order will be overwritten.',
     order_approval: 'Only a complete submitted pending order can be approved.',
     kits_pricing: 'Enter unit rates for each included item, valid nonnegative amounts, and a percent discount from 0–100 or fixed discount no greater than gross.',
+    gst_quote_stale: 'Applicable GST changed. Refresh GST evidence and compare the new preview. Your draft is preserved.',
+    gst_confirmation_required: 'The protected Super Admin must compare and confirm the opening Applicable GST policy in Settings before first pricing.',
+    gst_unavailable: 'Applicable GST or saved tax evidence is unavailable. No default tax rate has been substituted.',
     kits_relationship: 'Review the current Doctor/MR assignment and any selected Patient’s billing Doctor.',
     mr_order_assignment: 'The order MR must be your signed-in MR. Ask an administrator to review your saved assignment.',
     kits_attachment: 'An attachment is no longer eligible. Ask the operator to review its private upload state.',
@@ -65,6 +69,15 @@ export async function updateOrder(id, body) {
     }
     return result;
   } catch (error) { throw failure(error, 'save', mrPresentation); }
+}
+export async function loadKitsGST(recordId, signal) {
+  const evidence = await request('/gst-evidence', { params: recordId ? { record_id: recordId } : {}, signal });
+  if (!evidence || !validGSTRate(evidence.rate) || !validGSTDate(evidence.applicable_from)
+      || !validGSTDate(evidence.order_date) || evidence.applicable_from > evidence.order_date
+      || !Number.isSafeInteger(evidence.policy_revision) || evidence.policy_revision < 0) {
+    throw new Error('Applicable GST evidence could not be confirmed. No default rate is assumed.');
+  }
+  return evidence;
 }
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);

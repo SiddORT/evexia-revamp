@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Literal
 from pydantic import Field, model_validator, field_validator
 from app.schemas.kits_pricing import KitsPricingInput, KitsPricingSnapshot, amount
+from app.schemas.gst_settings import GSTEvidence
 from app.schemas.immunotherapy import Strict, Status, ImmReferencePage, ImmImportReview, ImmUploadPolicy
 
 Payment = Literal["Unpaid", "Paid", "Partial"]
@@ -55,6 +56,7 @@ class KitsInput(Strict):
     paymentStatus: Payment = "Unpaid"
     attachmentIds: list[uuid.UUID] = Field(default_factory=list, max_length=10)
     pricing: KitsPricingInput | None = None
+    gstEvidence: GSTEvidence | None = None
     businessParking: str | None = Field(default=None, max_length=32)
     poNumber: str | None = Field(default=None, max_length=200)
 

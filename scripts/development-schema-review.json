@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0098_opening_corrections",
+  "target": "0100_applicable_gst",
   "policy_sha256": "e11eab9d6aea8647f6e2ae96821dc88d2a80df4c15496ff8413b64212e396667",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -112,7 +112,9 @@
     "0096_hsn_master": "c4121c76ad5c8acd1c7c65a4ba235252c96230452c1f66993e470f8c59018053",
     "0097_hsn_staged_merge": "a885e527fb30c91330d0691fbecb33e91e3804789393ba0bde7ad7d15fd8dc28",
     "0098_opening_corrections": "fc6faf07bb3c42e630b4e70b5356ee550160f0bb6faadcce2643695729e3974d",
-    "0099_opening_staged_merge": "8d7239337ecc1b09b6f752e5045de2c3382be4b77b7ef6e59c7b688298c4b93b"
+    "0099_opening_staged_merge": "8d7239337ecc1b09b6f752e5045de2c3382be4b77b7ef6e59c7b688298c4b93b",
+    "0100_applicable_gst": "36c69dbee02c034b9fe214535cf229d2eb6733711dfe28457f98fcf66464876c",
+    "0101_gst_staged_merge": "59421c53f03743c5c2278eb544a9f323a9444d020e7c58456dea132061b88cd5"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

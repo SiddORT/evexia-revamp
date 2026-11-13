@@ -1,51 +1,101 @@
-# GST Settings (configuration only)
+# Applicable GST and durable history
 
-The Settings navigation/search exposes GST Settings only to Super Admin.
-Both independent `/api/v1/admin/gst-settings` operations revalidate the
-protected Super Admin identity and session on the server. No Staff or MR
-capability grants access.
+Source delivery only: runtime behavior, persistence, concurrency, migration
+execution and rendered layout are **unverified**. No tests, regression/release
+or completion-validation wrappers, builds/typechecks, runtime/browser probes,
+managed service starts/restarts, migrations, deployments or live-order writes
+were performed. Offline contract/client formatting and schema metadata
+generation are source preparation, not runtime evidence.
 
-GET returns `configured: false`, version `0` and three null fields until the
-first explicit save. There is no seeded cutoff or rate. POST requires all three
-fields and `expected_version`. A transaction-held advisory lock serializes
-writers, including first creation. Conflicts return 409 without updating data.
-Loads never create configuration.
+## Effective-date policy and opening provenance
 
-The cutoff is a literal `YYYY-MM-DD` calendar date stored as PostgreSQL DATE.
-The exact cutoff belongs to the **on or after** period; before is strictly
-earlier. No time zone, timestamp conversion or GST selection is involved.
-Rates are required decimal strings between 0 and 100 inclusive, up to two
-fractional places, stored as exact unconstrained NUMERIC with range/precision
-constraints (not floating point or a rounding typmod). Zero is valid.
-Responses use two decimal places. Non-personal business configuration is stored
-in the dedicated shared `gst_settings` table, not browser storage.
+The approved initial policy is **12% through 21 September 2025, then 5% from
+22 September 2025 inclusive**. It is represented by an opening period
+(`0001-01-01`, not an asserted historical creation date) and the literal
+`2025-09-22` boundary. A rate applies from its date inclusive until the next
+boundary exclusive. Today uses Asia/Kolkata; all boundaries are calendar dates.
 
-The compact form keeps drafts in memory. Save/Cancel edits and the existing
-Settings navigation guard protect unsaved work. Loading the saved configuration
-after a conflict/uncertain result retains edits and displays all current saved
-values for comparison; saving again is explicit. Cancel uses the last loaded
-values and does not bypass a required reload after an uncertain save.
+Reads never insert/update settings. With no legacy configuration the approved
+schedule is the read-only initial baseline, revision zero. If legacy
+`gst_settings` exists it remains untouched, labeled with its saved version and
+cutoff/rates. Original actor/timestamp are unavailable, not fabricated.
+Conflicting legacy values remain visible next to the approved comparison;
+first pricing fails closed until Super Admin deliberately confirms the approved
+opening policy. Confirmation records a new event, not an audit of old changes.
+The first explicit revision durably captures this opening provenance.
 
-## Strict scope boundary
+Settings' **Add GST change** requires an exact percentage string (0–100,
+maximum two fractional digits) and real literal **Applicable from** date.
+Future dates are allowed, shown separately, and cannot replace today's rate
+before their date. Multiple distinct future boundaries are supported. Duplicate
+effective dates are rejected, not silently replaced. Existing boundaries cannot
+be edited/deleted. The supported schedule is bounded to 1,000 periods.
 
-This configuration is saved for future order processing. No order service reads,
-selects or applies these values. Kits, Immunotherapy, Lupin, SPT, Purchase
-Orders, catalogue taxes, defaults, totals, invoices, saved orders and historical
-snapshots are unchanged. Future integration requires a separate user request.
-There are no multiple schedules, exceptions, tax components or statutory lookup.
+## Protected writes, history and uncertain outcomes
 
-## Source delivery and activation
+`GET/POST /api/v1/admin/gst-settings` and `GET .../history` independently
+revalidate the protected Super Admin account/session. MR/Staff order permissions
+do not grant Settings access. History is newest-first keyset paging, default
+10 and maximum 25 revisions per request.
 
-Forward `0088_gst_settings` follows `0087_pricing_rule_categories`; no historical
-migration is modified. Coordinated declaration, inherited readiness probes and
-maintenance compatibility include this successor without changing existing
-encryption inventories. The table is not seeded. Normal automatic migration
-policy is unchanged, but **no migration or service restart was performed for
-this delivery**. Development source integrity is generated offline only.
-Production fresh-install catalog evidence is not fabricated or advanced.
+`gst_policy_revisions` is the policy itself, not an audit written separately
+from a mutable current row. A transaction-held advisory lock serializes writers
+and first-pricing policy selection. Each immutable revision stores full prior/new
+schedules, effective business date, action, opening provenance, verified actor
+UUID/role label, database recorded timestamp and the canonical request.
+UPDATE/DELETE/TRUNCATE guards preserve history. Business effective date and
+recorded timestamp have different meanings.
 
-No tests, regression/release checks, validation wrappers, builds/typechecks,
-browser checks, deployments or live data edits were run. Contract/client and
-source metadata generation are not runtime verification. Persistence,
-authorization, concurrency, failure recovery and rendered layout remain
-unverified at runtime.
+Writes require `expected_version` and an actor-owned `request_id`. Retries of
+the exact canonical request acknowledge its original revision and load the
+latest schedule without writing/reverting anything. Reusing a key for another
+actor/payload is rejected. The client keeps an uncertain save payload frozen
+and offers only unchanged retry. It never concludes an absent read means a
+delayed write was cancelled. Stale definitive failures retain the draft and
+require loading/comparing the saved schedule before an explicit new request.
+Navigation guards and platform confirmations remain in use.
+
+## Kits-only financial connection
+
+Only Kits has an existing GST-bearing pricing model. Immunotherapy, Lupin, SPT,
+PO agreed line GST, catalogue GST/HSN, invoices and settlement histories are not
+given any new tax model or recalculated.
+
+First pricing selects server-side using the immutable saved order date, or
+the existing supplied creation/import calendar date / Kolkata-today rule for
+a new order. New encrypted pricing snapshots retain `taxPercentage` and
+`gstPolicy` (selected rate, applicable boundary, policy revision and order date).
+Revision zero means the approved initial baseline, not an invented audit event.
+An unavailable schema or unconfirmed opening conflict blocks first pricing;
+there is no fallback to 5% or acceptance of a client tax override.
+
+`GET /api/v1/admin/kits-orders/gst-evidence` returns only that small evidence
+object to authorized protected pricing callers. Optional `record_id` resolves
+the owned/scoped saved row date and ignores any competing supplied date;
+without a row the optional creation date defaults to Kolkata today.
+The editor calculates exact integer-paise half-up previews with that rate and
+submits the evidence. Save resolves again under the policy transaction lock
+and rejects stale evidence. Import reviews bind resolved financial snapshots in
+the existing review token; changes require a fresh review.
+
+Saved priced orders retain their actual GST evidence. Explicit pricing edits
+use the saved rate, never today's rate. Omitted pricing, unchanged pricing/item
+bases, reads, policy saves and idempotent retries preserve saved money without
+normalizing/backfilling it. Non-financial MR corrections retain protected prices
+and the existing eligibility completeness checks. Eligibility recalculation only
+compares saved evidence; it never persists/reprices it.
+
+Authorized summaries label actual applied GST separately from today's policy.
+Missing historical price/tax evidence is unavailable/not yet priced; absent
+policy revision/boundary is not inferred. Existing financial redaction stays
+unchanged; MR/Staff do not receive pricing or protected history.
+
+## Prepared schema, not activation
+
+`0100_applicable_gst` follows the opening-only `0098_opening_corrections`
+development path. DDL-free `0101_gst_staged_merge` keeps one source head while
+leaving unrelated staged branches outside the declared development target.
+No applied migration is modified. Readiness inherits all opening/HSN/quantity
+and earlier probes; maintenance preserves predecessor encryption inventories.
+Automatic migration policy is unchanged. No operational runner or post-merge
+hook was executed, and production fresh-install catalog evidence is not advanced.

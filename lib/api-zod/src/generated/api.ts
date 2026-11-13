@@ -414,10 +414,9 @@ export const editEmailTemplateResponseItemsItemTextMax = 20000;
 export const editEmailTemplateResponseItemsMax = 103;
 export const sendEmailTemplateTestBodyRecipientMax = 320;
 export const sendEmailTemplateTestBodyVersionMax = 2147483647;
-export const saveGSTSettingsBodyBeforeRateMax = 6;
 export const saveGSTSettingsBodyExpectedVersionMin = 0;
 export const saveGSTSettingsBodyExpectedVersionMax = 2147483646;
-export const saveGSTSettingsBodyOnAfterRateMax = 6;
+export const saveGSTSettingsBodyRateOneMax = 6;
 export const listHeadquartersQueryQueryMax = 200;
 export const listHeadquartersQueryLimitDefault = 10;
 export const listHeadquartersQueryLimitMax = 100;
@@ -2786,6 +2785,8 @@ export const createHsnMappingResponseGstMax = 64;
 export const editHsnMappingBodyGstMax = 64;
 export const editHsnMappingResponseGstMax = 64;
 export const statusHsnMappingResponseGstMax = 64;
+export const getGSTHistoryQueryLimitDefault = 10;
+export const getGSTHistoryQueryLimitMax = 25;
 
 /**
  * @summary <Lambda>
@@ -9895,10 +9896,34 @@ export const SendEmailTemplateTestResponse = zod.object({
  * @summary Read
  */
 export const GetGSTSettingsResponse = zod.object({
-  before_rate: zod.union([zod.string(), zod.null()]),
+  baseline: zod.object({
+    before_rate: zod.string(),
+    cutoff_date: zod.string(),
+    legacy_version: zod.union([zod.number().int(), zod.null()]),
+    on_after_rate: zod.string(),
+    source: zod.enum(["stored_configuration", "approved_initial"]),
+  }),
+  business_date: zod.string(),
   configured: zod.boolean(),
-  cutoff_date: zod.union([zod.string(), zod.null()]),
-  on_after_rate: zod.union([zod.string(), zod.null()]),
+  confirmed_request_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  confirmed_version: zod.union([zod.number().int(), zod.null()]).optional(),
+  current: zod.object({
+    applicable_from: zod.string(),
+    rate: zod.string(),
+  }),
+  periods: zod.array(
+    zod.object({
+      applicable_from: zod.string(),
+      rate: zod.string(),
+    }),
+  ),
+  requires_confirmation: zod.boolean(),
+  scheduled: zod.array(
+    zod.object({
+      applicable_from: zod.string(),
+      rate: zod.string(),
+    }),
+  ),
   version: zod.number().int(),
 });
 
@@ -9906,39 +9931,59 @@ export const GetGSTSettingsResponse = zod.object({
  * @summary Write
  */
 
-export const saveGSTSettingsBodyBeforeRateRegExp = new RegExp(
-  "^(?:(?:0|[1-9][0-9]?)(?:\\.[0-9]{1,2})?|100(?:\\.0{1,2})?)$",
-);
-export const saveGSTSettingsBodyCutoffDateRegExp = new RegExp(
-  "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-);
-
-export const saveGSTSettingsBodyOnAfterRateRegExp = new RegExp(
+export const saveGSTSettingsBodyRateOneRegExp = new RegExp(
   "^(?:(?:0|[1-9][0-9]?)(?:\\.[0-9]{1,2})?|100(?:\\.0{1,2})?)$",
 );
 
 export const SaveGSTSettingsBody = zod.object({
-  before_rate: zod
-    .string()
-    .max(saveGSTSettingsBodyBeforeRateMax)
-    .regex(saveGSTSettingsBodyBeforeRateRegExp),
-  cutoff_date: zod.string().regex(saveGSTSettingsBodyCutoffDateRegExp),
+  action: zod.enum(["adopt_approved", "add"]),
+  applicable_from: zod.union([zod.string(), zod.null()]).optional(),
   expected_version: zod
     .number()
     .int()
     .min(saveGSTSettingsBodyExpectedVersionMin)
     .max(saveGSTSettingsBodyExpectedVersionMax),
-  on_after_rate: zod
-    .string()
-    .max(saveGSTSettingsBodyOnAfterRateMax)
-    .regex(saveGSTSettingsBodyOnAfterRateRegExp),
+  rate: zod
+    .union([
+      zod
+        .string()
+        .max(saveGSTSettingsBodyRateOneMax)
+        .regex(saveGSTSettingsBodyRateOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
+  request_id: zod.string().uuid(),
 });
 
 export const SaveGSTSettingsResponse = zod.object({
-  before_rate: zod.union([zod.string(), zod.null()]),
+  baseline: zod.object({
+    before_rate: zod.string(),
+    cutoff_date: zod.string(),
+    legacy_version: zod.union([zod.number().int(), zod.null()]),
+    on_after_rate: zod.string(),
+    source: zod.enum(["stored_configuration", "approved_initial"]),
+  }),
+  business_date: zod.string(),
   configured: zod.boolean(),
-  cutoff_date: zod.union([zod.string(), zod.null()]),
-  on_after_rate: zod.union([zod.string(), zod.null()]),
+  confirmed_request_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  confirmed_version: zod.union([zod.number().int(), zod.null()]).optional(),
+  current: zod.object({
+    applicable_from: zod.string(),
+    rate: zod.string(),
+  }),
+  periods: zod.array(
+    zod.object({
+      applicable_from: zod.string(),
+      rate: zod.string(),
+    }),
+  ),
+  requires_confirmation: zod.boolean(),
+  scheduled: zod.array(
+    zod.object({
+      applicable_from: zod.string(),
+      rate: zod.string(),
+    }),
+  ),
   version: zod.number().int(),
 });
 
@@ -17278,6 +17323,17 @@ export const ListKitsOrdersResponse = zod.object({
         .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
+      gstEvidence: zod
+        .union([
+          zod.object({
+            applicable_from: zod.string(),
+            order_date: zod.string(),
+            policy_revision: zod.number().int(),
+            rate: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       id: zod.string().uuid(),
       kit: zod
         .object({
@@ -17407,6 +17463,17 @@ export const ListKitsOrdersResponse = zod.object({
               ),
             gross: zod.string(),
             gst: zod.string(),
+            gstPolicy: zod
+              .union([
+                zod.object({
+                  applicable_from: zod.string(),
+                  order_date: zod.string(),
+                  policy_revision: zod.number().int(),
+                  rate: zod.string(),
+                }),
+                zod.null(),
+              ])
+              .optional(),
             kitRate: zod
               .union([
                 zod
@@ -17426,7 +17493,7 @@ export const ListKitsOrdersResponse = zod.object({
               ])
               .optional(),
             lineAmounts: zod.record(zod.string(), zod.string()),
-            taxPercentage: zod.string(),
+            taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
             taxable: zod.string(),
             total: zod.string(),
             trayRate: zod
@@ -17537,6 +17604,17 @@ export const CreateKitsOrderBody = zod.object({
     ])
     .optional(),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   idempotencyKey: zod.string().uuid(),
   kit: zod
     .object({
@@ -17750,6 +17828,17 @@ export const CreateKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   id: zod.string().uuid(),
   kit: zod
     .object({
@@ -17859,6 +17948,17 @@ export const CreateKitsOrderResponse = zod.object({
           .max(createKitsOrderResponsePricingOneForwardingChargesMax),
         gross: zod.string(),
         gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         kitRate: zod
           .union([
             zod.string().max(createKitsOrderResponsePricingOneKitRateOneMax),
@@ -17874,7 +17974,7 @@ export const CreateKitsOrderResponse = zod.object({
           ])
           .optional(),
         lineAmounts: zod.record(zod.string(), zod.string()),
-        taxPercentage: zod.string(),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
         taxable: zod.string(),
         total: zod.string(),
         trayRate: zod
@@ -18059,6 +18159,17 @@ export const PreviewKitsEligibilityBody = zod.object({
         .optional(),
       doctorId: zod.string().uuid(),
       expected_version: zod.number().int().min(1),
+      gstEvidence: zod
+        .union([
+          zod.object({
+            applicable_from: zod.string(),
+            order_date: zod.string(),
+            policy_revision: zod.number().int(),
+            rate: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       idempotencyKey: zod.string().uuid(),
       kit: zod
         .object({
@@ -18254,6 +18365,17 @@ export const PreviewKitsEligibilityBody = zod.object({
         ])
         .optional(),
       doctorId: zod.string().uuid(),
+      gstEvidence: zod
+        .union([
+          zod.object({
+            applicable_from: zod.string(),
+            order_date: zod.string(),
+            policy_revision: zod.number().int(),
+            rate: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       idempotencyKey: zod.string().uuid(),
       kit: zod
         .object({
@@ -18593,6 +18715,17 @@ export const ExportKitsOrdersResponse = zod.object({
         .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
+      gstEvidence: zod
+        .union([
+          zod.object({
+            applicable_from: zod.string(),
+            order_date: zod.string(),
+            policy_revision: zod.number().int(),
+            rate: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       id: zod.string().uuid(),
       kit: zod
         .object({
@@ -18722,6 +18855,17 @@ export const ExportKitsOrdersResponse = zod.object({
               ),
             gross: zod.string(),
             gst: zod.string(),
+            gstPolicy: zod
+              .union([
+                zod.object({
+                  applicable_from: zod.string(),
+                  order_date: zod.string(),
+                  policy_revision: zod.number().int(),
+                  rate: zod.string(),
+                }),
+                zod.null(),
+              ])
+              .optional(),
             kitRate: zod
               .union([
                 zod
@@ -18743,7 +18887,7 @@ export const ExportKitsOrdersResponse = zod.object({
               ])
               .optional(),
             lineAmounts: zod.record(zod.string(), zod.string()),
-            taxPercentage: zod.string(),
+            taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
             taxable: zod.string(),
             total: zod.string(),
             trayRate: zod
@@ -18880,6 +19024,17 @@ export const CommitKitsImportBody = zod.object({
             ])
             .optional(),
           doctorId: zod.string().uuid(),
+          gstEvidence: zod
+            .union([
+              zod.object({
+                applicable_from: zod.string(),
+                order_date: zod.string(),
+                policy_revision: zod.number().int(),
+                rate: zod.string(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
           kit: zod
             .object({
               custom: zod
@@ -19164,6 +19319,17 @@ export const CommitKitsImportResponse = zod.object({
         .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
+      gstEvidence: zod
+        .union([
+          zod.object({
+            applicable_from: zod.string(),
+            order_date: zod.string(),
+            policy_revision: zod.number().int(),
+            rate: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       id: zod.string().uuid(),
       kit: zod
         .object({
@@ -19295,6 +19461,17 @@ export const CommitKitsImportResponse = zod.object({
               ),
             gross: zod.string(),
             gst: zod.string(),
+            gstPolicy: zod
+              .union([
+                zod.object({
+                  applicable_from: zod.string(),
+                  order_date: zod.string(),
+                  policy_revision: zod.number().int(),
+                  rate: zod.string(),
+                }),
+                zod.null(),
+              ])
+              .optional(),
             kitRate: zod
               .union([
                 zod
@@ -19316,7 +19493,7 @@ export const CommitKitsImportResponse = zod.object({
               ])
               .optional(),
             lineAmounts: zod.record(zod.string(), zod.string()),
-            taxPercentage: zod.string(),
+            taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
             taxable: zod.string(),
             total: zod.string(),
             trayRate: zod
@@ -19451,6 +19628,17 @@ export const ReviewKitsImportBody = zod.object({
             ])
             .optional(),
           doctorId: zod.string().uuid(),
+          gstEvidence: zod
+            .union([
+              zod.object({
+                applicable_from: zod.string(),
+                order_date: zod.string(),
+                policy_revision: zod.number().int(),
+                rate: zod.string(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
           kit: zod
             .object({
               custom: zod
@@ -19787,6 +19975,17 @@ export const GetKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   id: zod.string().uuid(),
   kit: zod
     .object({
@@ -19893,6 +20092,17 @@ export const GetKitsOrderResponse = zod.object({
           .max(getKitsOrderResponsePricingOneForwardingChargesMax),
         gross: zod.string(),
         gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         kitRate: zod
           .union([
             zod.string().max(getKitsOrderResponsePricingOneKitRateOneMax),
@@ -19906,7 +20116,7 @@ export const GetKitsOrderResponse = zod.object({
           ])
           .optional(),
         lineAmounts: zod.record(zod.string(), zod.string()),
-        taxPercentage: zod.string(),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
         taxable: zod.string(),
         total: zod.string(),
         trayRate: zod
@@ -20034,6 +20244,17 @@ export const ApproveKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   id: zod.string().uuid(),
   kit: zod
     .object({
@@ -20143,6 +20364,17 @@ export const ApproveKitsOrderResponse = zod.object({
           .max(approveKitsOrderResponsePricingOneForwardingChargesMax),
         gross: zod.string(),
         gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         kitRate: zod
           .union([
             zod.string().max(approveKitsOrderResponsePricingOneKitRateOneMax),
@@ -20158,7 +20390,7 @@ export const ApproveKitsOrderResponse = zod.object({
           ])
           .optional(),
         lineAmounts: zod.record(zod.string(), zod.string()),
-        taxPercentage: zod.string(),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
         taxable: zod.string(),
         total: zod.string(),
         trayRate: zod
@@ -20266,6 +20498,17 @@ export const UpdateKitsOrderBody = zod.object({
     .optional(),
   doctorId: zod.string().uuid(),
   expected_version: zod.number().int().min(1),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   idempotencyKey: zod.string().uuid(),
   kit: zod
     .object({
@@ -20479,6 +20722,17 @@ export const UpdateKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   id: zod.string().uuid(),
   kit: zod
     .object({
@@ -20588,6 +20842,17 @@ export const UpdateKitsOrderResponse = zod.object({
           .max(updateKitsOrderResponsePricingOneForwardingChargesMax),
         gross: zod.string(),
         gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         kitRate: zod
           .union([
             zod.string().max(updateKitsOrderResponsePricingOneKitRateOneMax),
@@ -20603,7 +20868,7 @@ export const UpdateKitsOrderResponse = zod.object({
           ])
           .optional(),
         lineAmounts: zod.record(zod.string(), zod.string()),
-        taxPercentage: zod.string(),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
         taxable: zod.string(),
         total: zod.string(),
         trayRate: zod
@@ -20732,6 +20997,17 @@ export const RejectKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   id: zod.string().uuid(),
   kit: zod
     .object({
@@ -20841,6 +21117,17 @@ export const RejectKitsOrderResponse = zod.object({
           .max(rejectKitsOrderResponsePricingOneForwardingChargesMax),
         gross: zod.string(),
         gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         kitRate: zod
           .union([
             zod.string().max(rejectKitsOrderResponsePricingOneKitRateOneMax),
@@ -20856,7 +21143,7 @@ export const RejectKitsOrderResponse = zod.object({
           ])
           .optional(),
         lineAmounts: zod.record(zod.string(), zod.string()),
-        taxPercentage: zod.string(),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
         taxable: zod.string(),
         total: zod.string(),
         trayRate: zod
@@ -20984,6 +21271,17 @@ export const ResubmitKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   id: zod.string().uuid(),
   kit: zod
     .object({
@@ -21093,6 +21391,17 @@ export const ResubmitKitsOrderResponse = zod.object({
           .max(resubmitKitsOrderResponsePricingOneForwardingChargesMax),
         gross: zod.string(),
         gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         kitRate: zod
           .union([
             zod.string().max(resubmitKitsOrderResponsePricingOneKitRateOneMax),
@@ -21108,7 +21417,7 @@ export const ResubmitKitsOrderResponse = zod.object({
           ])
           .optional(),
         lineAmounts: zod.record(zod.string(), zod.string()),
-        taxPercentage: zod.string(),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
         taxable: zod.string(),
         total: zod.string(),
         trayRate: zod
@@ -28967,6 +29276,17 @@ export const SubmitOrderDraftResponse = zod.union([
       .optional(),
     doctor: zod.record(zod.string(), zod.unknown()),
     doctorId: zod.string().uuid(),
+    gstEvidence: zod
+      .union([
+        zod.object({
+          applicable_from: zod.string(),
+          order_date: zod.string(),
+          policy_revision: zod.number().int(),
+          rate: zod.string(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
     id: zod.string().uuid(),
     kit: zod
       .object({
@@ -29080,6 +29400,17 @@ export const SubmitOrderDraftResponse = zod.union([
             .max(submitOrderDraftResponseTwoPricingOneForwardingChargesMax),
           gross: zod.string(),
           gst: zod.string(),
+          gstPolicy: zod
+            .union([
+              zod.object({
+                applicable_from: zod.string(),
+                order_date: zod.string(),
+                policy_revision: zod.number().int(),
+                rate: zod.string(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
           kitRate: zod
             .union([
               zod
@@ -29097,7 +29428,7 @@ export const SubmitOrderDraftResponse = zod.union([
             ])
             .optional(),
           lineAmounts: zod.record(zod.string(), zod.string()),
-          taxPercentage: zod.string(),
+          taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
           taxable: zod.string(),
           total: zod.string(),
           trayRate: zod
@@ -48904,4 +49235,61 @@ export const StatusHsnMappingResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+});
+
+/**
+ * @summary History
+ */
+
+export const GetGSTHistoryQueryParams = zod.object({
+  before_version: zod
+    .union([zod.coerce.number().int().min(1), zod.null()])
+    .optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getGSTHistoryQueryLimitMax)
+    .default(getGSTHistoryQueryLimitDefault),
+});
+
+export const GetGSTHistoryResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor_id: zod.string().uuid(),
+      actor_label: zod.string(),
+      effective_date: zod.union([zod.string(), zod.null()]),
+      new: zod.array(
+        zod.object({
+          applicable_from: zod.string(),
+          rate: zod.string(),
+        }),
+      ),
+      prior: zod.array(
+        zod.object({
+          applicable_from: zod.string(),
+          rate: zod.string(),
+        }),
+      ),
+      recorded_at: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  next_before_version: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Gst Evidence
+ */
+export const GetKitsGSTEvidenceQueryParams = zod.object({
+  record_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  order_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const GetKitsGSTEvidenceResponse = zod.object({
+  applicable_from: zod.string(),
+  order_date: zod.string(),
+  policy_revision: zod.number().int(),
+  rate: zod.string(),
 });

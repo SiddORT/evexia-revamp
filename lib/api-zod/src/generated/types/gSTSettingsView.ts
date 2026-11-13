@@ -5,11 +5,18 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { GSTOpeningBaseline } from "./gSTOpeningBaseline";
+import type { GSTPeriod } from "./gSTPeriod";
 
 export interface GSTSettingsView {
-  before_rate: string | null;
+  baseline: GSTOpeningBaseline;
+  business_date: string;
   configured: boolean;
-  cutoff_date: string | null;
-  on_after_rate: string | null;
+  confirmed_request_id?: string | null;
+  confirmed_version?: number | null;
+  current: GSTPeriod;
+  periods: GSTPeriod[];
+  requires_confirmation: boolean;
+  scheduled: GSTPeriod[];
   version: number;
 }

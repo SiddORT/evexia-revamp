@@ -62,7 +62,7 @@ def proposed_total(kind, data, previous=None):
                                             if k in data and k not in {"pricing", "businessParking", "poNumber"}}
                                            | {"attachmentIds": [f["id"] for f in data.get("attachments", [])]})
             price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
-            if calculate(body, price, raw["taxPercentage"]) != raw:
+            if calculate(body, price, raw["taxPercentage"], raw.get("gstPolicy")) != {k: v for k, v in raw.items() if k != "gstPolicy" or v is not None}:
                 return None
         except (ValueError, KeyError, TypeError):
             return None

@@ -3120,32 +3120,58 @@ export interface FileResponse {
   version: number;
 }
 
+export type GSTOpeningBaselineSource =
+  (typeof GSTOpeningBaselineSource)[keyof typeof GSTOpeningBaselineSource];
+
+export const GSTOpeningBaselineSource = {
+  stored_configuration: "stored_configuration",
+  approved_initial: "approved_initial",
+} as const;
+
+export interface GSTOpeningBaseline {
+  before_rate: string;
+  cutoff_date: string;
+  legacy_version: number | null;
+  on_after_rate: string;
+  source: GSTOpeningBaselineSource;
+}
+
+export interface GSTPeriod {
+  applicable_from: string;
+  rate: string;
+}
+
 export interface GSTSettingsView {
-  before_rate: string | null;
+  baseline: GSTOpeningBaseline;
+  business_date: string;
   configured: boolean;
-  cutoff_date: string | null;
-  on_after_rate: string | null;
+  confirmed_request_id?: string | null;
+  confirmed_version?: number | null;
+  current: GSTPeriod;
+  periods: GSTPeriod[];
+  requires_confirmation: boolean;
+  scheduled: GSTPeriod[];
   version: number;
 }
 
+export type GSTSettingsWriteAction =
+  (typeof GSTSettingsWriteAction)[keyof typeof GSTSettingsWriteAction];
+
+export const GSTSettingsWriteAction = {
+  adopt_approved: "adopt_approved",
+  add: "add",
+} as const;
+
 export interface GSTSettingsWrite {
-  /**
-   * @maxLength 6
-   * @pattern ^(?:(?:0|[1-9][0-9]?)(?:\.[0-9]{1,2})?|100(?:\.0{1,2})?)$
-   */
-  before_rate: string;
-  /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
-  cutoff_date: string;
+  action: GSTSettingsWriteAction;
+  applicable_from?: string | null;
   /**
    * @minimum 0
    * @maximum 2147483646
    */
   expected_version: number;
-  /**
-   * @maxLength 6
-   * @pattern ^(?:(?:0|[1-9][0-9]?)(?:\.[0-9]{1,2})?|100(?:\.0{1,2})?)$
-   */
-  on_after_rate: string;
+  rate?: string | null;
+  request_id: string;
 }
 
 export interface HeadquarterAreaInput {
@@ -4481,6 +4507,13 @@ export interface KitsConfiguration {
   volume?: string;
 }
 
+export interface GSTEvidence {
+  applicable_from: string;
+  order_date: string;
+  policy_revision: number;
+  rate: string;
+}
+
 export type KitsUpdateOrderFor =
   (typeof KitsUpdateOrderFor)[keyof typeof KitsUpdateOrderFor];
 
@@ -4556,6 +4589,7 @@ export interface KitsUpdate {
   doctorId: string;
   /** @minimum 1 */
   expected_version: number;
+  gstEvidence?: GSTEvidence | null;
   idempotencyKey: string;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
@@ -4621,6 +4655,7 @@ export interface KitsWrite {
   attachmentIds?: string[];
   businessParking?: string | null;
   doctorId: string;
+  gstEvidence?: GSTEvidence | null;
   idempotencyKey: string;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
@@ -4692,6 +4727,7 @@ export interface KitsInput {
   attachmentIds?: string[];
   businessParking?: string | null;
   doctorId: string;
+  gstEvidence?: GSTEvidence | null;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;
@@ -4769,10 +4805,11 @@ export interface KitsPricingSnapshot {
   forwardingCharges: string;
   gross: string;
   gst: string;
+  gstPolicy?: GSTEvidence | null;
   kitRate?: string | null;
   lancetsRate?: string | null;
   lineAmounts: KitsPricingSnapshotLineAmounts;
-  taxPercentage: string;
+  taxPercentage?: string | null;
   taxable: string;
   total: string;
   trayRate?: string | null;
@@ -4836,6 +4873,7 @@ export interface KitsRecord {
   decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
   doctorId: string;
+  gstEvidence?: GSTEvidence | null;
   id: string;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
@@ -14022,6 +14060,22 @@ export interface HsnStatus {
   status: HsnStatusStatus;
 }
 
+export interface GSTHistoryItem {
+  action: string;
+  actor_id: string;
+  actor_label: string;
+  effective_date: string | null;
+  new: GSTPeriod[];
+  prior: GSTPeriod[];
+  recorded_at: string;
+  version: number;
+}
+
+export interface GSTHistoryPage {
+  items: GSTHistoryItem[];
+  next_before_version: number | null;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -17674,3 +17728,17 @@ export const ListHsnMappingsStatus = {
   active: "active",
   inactive: "inactive",
 } as const;
+
+export type GetGSTHistoryParams = {
+  before_version?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 25
+   */
+  limit?: number;
+};
+
+export type GetKitsGSTEvidenceParams = {
+  record_id?: string | null;
+  order_date?: string | null;
+};

@@ -177,14 +177,18 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  GSTEvidence,
+  GSTHistoryPage,
   GSTSettingsView,
   GSTSettingsWrite,
+  GetGSTHistoryParams,
   GetImmunotherapyExtractSettingsParams,
   GetInHouseStockReferencesParams,
   GetInventoryLedgerParams,
   GetInventoryReferencesParams,
   GetInventoryStockHistoryParams,
   GetItPricingRuleReferencesParams,
+  GetKitsGSTEvidenceParams,
   GetLanguageHistoryParams,
   GetOpeningStockItemsParams,
   GetPurchaseOrderChangesParams,
@@ -48484,3 +48488,200 @@ export const useStatusHsnMapping = <
 > => {
   return useMutation(getStatusHsnMappingMutationOptions(options));
 };
+
+export const getGetGSTHistoryUrl = (params?: GetGSTHistoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/gst-settings/history?${stringifiedParams}`
+    : `/api/v1/admin/gst-settings/history`;
+};
+
+/**
+ * @summary History
+ */
+export const getGSTHistory = async (
+  params?: GetGSTHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<GSTHistoryPage> => {
+  return customFetch<GSTHistoryPage>(getGetGSTHistoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGSTHistoryQueryKey = (params?: GetGSTHistoryParams) => {
+  return [
+    `/api/v1/admin/gst-settings/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetGSTHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGSTHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetGSTHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGSTHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGSTHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGSTHistory>>> = ({
+    signal,
+  }) => getGSTHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGSTHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGSTHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGSTHistory>>
+>;
+export type GetGSTHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary History
+ */
+
+export function useGetGSTHistory<
+  TData = Awaited<ReturnType<typeof getGSTHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetGSTHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGSTHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGSTHistoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetKitsGSTEvidenceUrl = (params?: GetKitsGSTEvidenceParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/kits-orders/gst-evidence?${stringifiedParams}`
+    : `/api/v1/admin/kits-orders/gst-evidence`;
+};
+
+/**
+ * @summary Gst Evidence
+ */
+export const getKitsGSTEvidence = async (
+  params?: GetKitsGSTEvidenceParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<GSTEvidence> => {
+  return customFetch<GSTEvidence>(getGetKitsGSTEvidenceUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetKitsGSTEvidenceQueryKey = (
+  params?: GetKitsGSTEvidenceParams,
+) => {
+  return [
+    `/api/v1/admin/kits-orders/gst-evidence`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetKitsGSTEvidenceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getKitsGSTEvidence>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetKitsGSTEvidenceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKitsGSTEvidence>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetKitsGSTEvidenceQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getKitsGSTEvidence>>
+  > = ({ signal }) => getKitsGSTEvidence(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getKitsGSTEvidence>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetKitsGSTEvidenceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getKitsGSTEvidence>>
+>;
+export type GetKitsGSTEvidenceQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Gst Evidence
+ */
+
+export function useGetKitsGSTEvidence<
+  TData = Awaited<ReturnType<typeof getKitsGSTEvidence>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetKitsGSTEvidenceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKitsGSTEvidence>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetKitsGSTEvidenceQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

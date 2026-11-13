@@ -1,5 +1,15 @@
 # Automatic migration policy
 
+Applicable GST prepares `0100_applicable_gst` after the declared opening-only
+`0098_opening_corrections`, without activating unrelated staged low-stock or
+designation changes. `0101_gst_staged_merge` is a DDL-free source join, not the
+declared development target. The new table has immutable policy history and
+does not seed settings or rewrite saved orders. Coordinated source metadata,
+inherited readiness and predecessor maintenance compatibility are prepared.
+This delivery did not execute migrations, post-merge hooks, starts/restarts,
+checks, runtime probes or deployments. Production catalog evidence is unchanged.
+See [Applicable GST](gst-settings.md).
+
 Language status prepares `0093_language_status` as a branch of the previously
 declared `0089_it_material_pricing` target, now the declared development schema.
 The DDL-free `0094_language_low_stock_merge` keeps a single source head while

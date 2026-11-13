@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { GSTEvidence } from "./gSTEvidence";
 import type { KitsConfiguration } from "./kitsConfiguration";
 import type { KitsInputOrderFor } from "./kitsInputOrderFor";
 import type { KitsInputPaymentStatus } from "./kitsInputPaymentStatus";
@@ -20,6 +21,7 @@ export interface KitsInput {
   attachmentIds?: string[];
   businessParking?: string | null;
   doctorId: string;
+  gstEvidence?: GSTEvidence | null;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;

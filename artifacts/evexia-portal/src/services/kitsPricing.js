@@ -23,7 +23,8 @@ export function pricingInput(pricing) {
   return Object.fromEntries([...KEYS.map((key) => `${key}Rate`), 'forwardingCharges', 'discountType', 'discountValue']
     .map((key) => [key, key.endsWith('Rate') && pricing[key] === '' ? null : pricing[key]]));
 }
-export function calculateKitsPricing(order, pricing, taxPercentage = '5.00') {
+export function calculateKitsPricing(order, pricing, taxPercentage) {
+  if (typeof taxPercentage !== 'string') throw new Error('Applicable GST is unavailable. Load authoritative GST evidence before pricing.');
   const values = pricingInput(pricing), lineAmounts = {};
   let gross = decimal(values.forwardingCharges).paise;
   values.forwardingCharges = text(gross);

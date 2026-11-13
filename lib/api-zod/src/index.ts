@@ -80,3 +80,8 @@ export * from "./generated/types/languageReviewValues";
 export * from "./generated/types/productImportResult";
 export * from "./generated/types/productImportReview";
 export * from "./generated/types/productImportRow";
+export * from "./generated/types/gSTEvidence";
+export * from "./generated/types/gSTHistoryItem";
+export * from "./generated/types/gSTHistoryPage";
+export * from "./generated/types/gSTOpeningBaseline";
+export * from "./generated/types/gSTPeriod";

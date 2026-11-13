@@ -138,6 +138,7 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
       && canReadResource(user, 'stock_movement');
   }
   if (['immunotherapy-orders', 'spt-orders', 'kits-orders', 'lupin-orders'].includes(resource)) {
+    if (resource === 'kits-orders' && path === '/gst-evidence') return !writing && isSuperAdminIdentity(user);
     if (path === '/export') return grant('export');
     if (/^\/import\/(?:review|commit)$/.test(path)) return grant('import');
     if (path === '/policy' || /^\/attachments\/[0-9a-f-]{36}\/cancel$/i.test(path)) return grant('upload_attachment');

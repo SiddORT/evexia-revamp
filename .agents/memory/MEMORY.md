@@ -133,3 +133,4 @@
 - [Opening stock visibility](opening-stock-visibility-scope.md) — physical opening balances are visible, not newly usable; unrelated unusable stock and low-stock policy remain outside scope.
 - [Opening expiry policy](opening-expiry-policy.md) — explicit expiry may be corrected on unused saved openings through audited revisions; imports never edit or revive stock.
 - [Opening-only activation](opening-only-activation.md) — opening correction approval does not activate unrelated staged low-stock or designation branches.
+- [Applicable GST scope](applicable-gst-scope.md) — effective-date policy governs Kits first pricing only; preserve saved taxes/totals and explicit legacy provenance.
