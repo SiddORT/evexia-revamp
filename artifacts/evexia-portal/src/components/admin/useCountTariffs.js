@@ -7,7 +7,7 @@ const initial = (value) => Object.fromEntries([1, 2, 3].map((count) => {
   const rows = value.history.filter((r) => r.allergenCount === count).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
   return [count, { totalMrp: rows[0]?.totalMrp ?? value.suggestedUnitPrice ?? '', effectiveFrom: '' }];
 }));
-export default function useCountTariffs(categoryId, enabled, owner) {
+export default function useCountTariffs(categoryId, enabled, owner, { pricingOnly = false } = {}) {
   const [saved, setSaved] = useState(null);
   const [drafts, setDrafts] = useState(null);
   const [baseline, setBaseline] = useState(null);
@@ -63,15 +63,18 @@ export default function useCountTariffs(categoryId, enabled, owner) {
       const next = { totalMrp: row.totalMrp, effectiveFrom: '' };
       setDrafts((old) => ({ ...old, [body.allergenCount]: next }));
       setBaseline((old) => ({ ...old, [body.allergenCount]: next }));
-      setAttempt(null);
-      setNotice(`Count ${body.allergenCount} tariff saved as version ${row.version}. Quantities were not saved by this action.`);
+      latest.current.attempt = null; setAttempt(null);
+      setNotice(pricingOnly
+        ? `Count ${body.allergenCount} MRP saved as version ${row.version}. Saved orders are unchanged.`
+        : `Count ${body.allergenCount} tariff saved as version ${row.version}. Quantities were not saved by this action.`);
     } catch (cause) {
       if (sequence !== seq.current) return;
       if (cause.terminal) {
-        setAttempt(null); setBlocked(true);
+        latest.current.attempt = null; setAttempt(null); setBlocked(true);
         setError(`${cause.message} This exact submission was durably rejected. Reload history and compare your retained draft before a new save.`);
       } else if (body === attempt || cause.ambiguous || cause.malformed || !cause.status || cause.status >= 500 || [408, 429].includes(cause.status)) {
-        setAttempt(body); setError('Tariff save unconfirmed. Fields are locked. Retry the same submission to recover its original outcome; do not start another save.');
+        latest.current.attempt = body; setAttempt(body);
+        setError('Tariff save unconfirmed. Fields are locked. Retry the same submission to recover its original outcome; do not start another save.');
       } else {
         setError(cause.message);
         if (cause.status === 409) setBlocked(true);
@@ -84,6 +87,11 @@ export default function useCountTariffs(categoryId, enabled, owner) {
   const scoped = saved?.categoryId === categoryId;
   return { saved: scoped ? saved : null, drafts: scoped ? drafts : null, busy, blocked, attempt, error, notice, dirty,
     locked: busy || Boolean(attempt), reload, save,
+    // Read the synchronous request lock too: dismissal/navigation can happen
+    // before React has rendered the busy state after a save click.
+    getGuardState: () => ({ busy: active.current, dirty: Boolean(latest.current.drafts
+      && JSON.stringify(latest.current.drafts) !== JSON.stringify(latest.current.baseline)),
+    uncertain: Boolean(latest.current.attempt), blocked: Boolean(latest.current.attempt) }),
     edit: (count, field, value) => { if (!active.current && !attempt) { setDrafts((old) => ({ ...old, [count]: { ...old[count], [field]: value } })); setNotice(''); } },
-    cancel: () => { if (!active.current && !attempt) { setDrafts(baseline); setError(''); setNotice('Tariff edits cancelled. Quantity edits are unchanged.'); } } };
+    cancel: () => { if (!active.current && !attempt) { setDrafts(baseline); setError(''); setNotice(pricingOnly ? 'Unsaved MRP edits cancelled.' : 'Tariff edits cancelled. Quantity edits are unchanged.'); } } };
 }

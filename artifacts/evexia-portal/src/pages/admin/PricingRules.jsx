@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BadgeIndianRupee, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import ImmunotherapyExtractSettings from '../../components/admin/ImmunotherapyExtractSettings.jsx';
+import PricingPolicyWorkspace from '../../components/admin/PricingPolicyWorkspace.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { isSuperAdminIdentity } from '../../auth/capabilities.js';
-import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
 import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { formatRate } from '../../services/rates.js';
 import { listPricingRules } from '../../services/serverPricingRules.js';
@@ -26,25 +25,13 @@ export default function PricingRules() {
 }
 
 function PricingWorkspace() {
-  const status = useRef({});
-  const registerGuard = useCallback((guard, state) => { status.current = state || {}; }, []);
-  useConfirmedNavigation(() => status.current, 'Discard unsaved pricing or quantity changes and leave this page?');
-  useEffect(() => {
-    const unload = (event) => {
-      if (!status.current.dirty && !status.current.busy && !status.current.uncertain) return;
-      event.preventDefault(); event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', unload);
-    return () => window.removeEventListener('beforeunload', unload);
-  }, []);
+  const [legacyOpen, setLegacyOpen] = useState(false);
   return <AdminLayout title="Pricing Rules"><div className="pricing-rules-page">
-    <div className="admin-page-head"><div>
-      <p className="admin-page-head__eyebrow">Configuration / Pricing</p><h1>Pricing Rules</h1>
-      <p className="admin-page-head__description">Dated Total Suborder MRP by Product Category and exact clinical allergen count.
-        Extract and Dilution quantities remain dosage-specific, independently ranked and inventory-bound. Saved orders are not repriced.</p>
-    </div></div>
-    <ImmunotherapyExtractSettings withPricing onGuardChange={registerGuard} />
-    <LegacyPricingEvidence />
+    <PricingPolicyWorkspace />
+    <details className="admin-panel pricing-legacy-disclosure" onToggle={(event) => setLegacyOpen(event.currentTarget.open)}>
+      <summary>Historical material-price evidence · read-only</summary>
+      {legacyOpen && <LegacyPricingEvidence />}
+    </details>
   </div></AdminLayout>;
 }
 

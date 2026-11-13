@@ -14,3 +14,13 @@ or clinical outcomes even if the displayed master looked similar.
 **How to apply:** Keep money revisions independent of quantity settings. A price
 change alone never authorizes reapplying current clinical quantities to saved
 orders, inventing count multipliers or adding a Dilution charge.
+
+Pricing Rules must be an MRP-only workspace; Extract & Dilution belong in the
+existing Settings editor. This supersedes the combined pricing/quantity
+presentation, not the clinical configuration or calculation policy.
+
+**Why:** The user explicitly requested separate workflows without deleting
+clinical settings or changing their persistence.
+
+**How to apply:** MRP loading, editing and navigation guards must not depend on
+quantity services. Keep legacy INR/ml evidence read-only and distinct from MRP.

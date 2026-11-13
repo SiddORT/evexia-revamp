@@ -70,3 +70,84 @@
   .pricing-editor__actions { justify-content: stretch; }
   .pricing-editor__actions .admin-button { flex: 1 1 auto; }
 }
+/* Dated MRP policy workspace */
+.pricing-rules-page { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
+.pricing-page-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; min-width: 0; }
+.pricing-page-head > div { flex: 1 1 18rem; min-width: 0; }
+.pricing-page-head p { margin: 4px 0 0; color: var(--admin-text-soft); font-size: 0.875rem; line-height: 1.5; max-width: 70ch; }
+.pricing-page-head > .admin-button { flex: 0 0 auto; width: auto; }
+.pricing-rules-page .admin-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; font-family: inherit; }
+.pricing-policy-workspace { display: grid; gap: 16px; min-width: 0; overflow: visible; }
+.pricing-policy-workspace h2 { margin: 0; font-size: 1.125rem; }
+.pricing-policy-workspace > p { margin: -10px 0 0; color: var(--admin-text-soft); font-size: 0.8125rem; line-height: 1.5; }
+.pricing-policy-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; min-width: 0; }
+.pricing-policy-controls .pricing-category-field { flex: 1 1 22rem; max-width: 32rem; }
+.pricing-saved-filter { display: inline-flex; align-items: flex-start; gap: 8px; min-height: 40px; padding-block: 9px; font-size: 0.875rem; color: var(--admin-text); cursor: pointer; min-width: 0; }
+.pricing-saved-filter input { flex: none; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--admin-accent); }
+.pricing-saved-filter input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.pricing-policy-review-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; }
+.pricing-policy-review-head > :first-child { min-width: 0; font-weight: 600; font-size: 0.875rem; }
+.pricing-policy-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.pricing-policy-summary__row { display: grid; gap: 4px; min-width: 0; padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-state-link); color: var(--admin-text-soft); font-size: 0.8125rem; line-height: 1.45; }
+.pricing-policy-summary__row h3 { margin: 0; color: var(--admin-text); font-size: 0.875rem; font-weight: 600; }
+.pricing-policy-summary__row > strong { color: var(--admin-text); font-size: 1.25rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.pricing-policy-summary__row > p { margin: 0; }
+/* Dialog editor */
+.admin-dialog.pricing-policy-dialog { box-sizing: border-box; width: min(860px, calc(100vw - 32px)); max-width: 860px; }
+.pricing-policy-editor { display: grid; gap: 16px; min-width: 0; overflow-wrap: anywhere; }
+.pricing-policy-editor .admin-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; font-family: inherit; }
+.pricing-policy-editor :is(input, button, summary):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.pricing-policy-editor .pricing-category-field { max-width: 32rem; }
+.pricing-policy-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; min-width: 0; }
+.pricing-policy-rows { display: grid; gap: 12px; min-width: 0; }
+.pricing-count-row { display: grid; gap: 10px; min-width: 0; padding: 14px 16px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-surface); }
+.pricing-count-row h3 { margin: 0; font-size: 0.9375rem; color: var(--admin-text); }
+.pricing-count-row__fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; min-width: 0; }
+.pricing-count-row__fields > .admin-button { min-height: 40px; }
+.pricing-count-row__hint { display: block; color: var(--admin-text-soft); font-size: 0.8125rem; line-height: 1.45; }
+.pricing-rules-page .pricing-input, .pricing-policy-editor .pricing-input { box-sizing: border-box; min-width: 0; max-width: 100%; }
+.pricing-count-history { min-width: 0; font-size: 0.8125rem; }
+.pricing-count-history summary { cursor: pointer; color: var(--admin-accent); font-weight: 600; border-radius: 6px; }
+.pricing-count-history summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.pricing-count-history ol { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 18px; }
+.pricing-count-history li { min-width: 0; line-height: 1.45; color: var(--admin-text); }
+.pricing-count-history li strong { font-variant-numeric: tabular-nums; margin-right: 8px; }
+.pricing-count-history li small { display: block; color: var(--admin-text-soft); }
+.pricing-policy-status { margin: 0; padding: 10px 12px; border: 1px solid var(--admin-border); border-inline-start: 4px solid var(--admin-info); border-radius: 8px; background: var(--admin-info-soft); color: var(--admin-text); font-size: 0.8125rem; line-height: 1.5; }
+.pricing-policy-status.admin-feedback--error { border-inline-start-color: var(--admin-danger); background: var(--admin-state-soft); color: var(--admin-danger); }
+/* Legacy disclosure */
+.pricing-legacy-disclosure { min-width: 0; }
+.pricing-legacy-disclosure > summary { cursor: pointer; font-weight: 600; font-size: 0.9375rem; color: var(--admin-text); border-radius: 6px; }
+.pricing-legacy-disclosure > summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+.pricing-legacy-disclosure[open] > summary { margin-bottom: 14px; }
+.pricing-legacy-disclosure .admin-table-scroll { max-width: 100%; overflow-x: auto; }
+/* Cold-route searchable picker */
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox { position: relative; min-width: 0; font-weight: 400; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox .searchable-select__control { box-sizing: border-box; display: flex; align-items: center; min-width: 0; min-height: 40px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger { display: flex; flex: 1 1 auto; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; min-height: 38px; padding: 8px 11px; border: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 0.875rem; text-align: left; cursor: pointer; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger svg { flex: none; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger:disabled { opacity: .65; cursor: not-allowed; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -3px; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__clear { flex: none; display: grid; place-items: center; margin-right: 6px; padding: 4px; border: 0; border-radius: 6px; background: transparent; color: var(--admin-text-soft); cursor: pointer; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__clear:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 1px; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu { position: absolute; left: 0; right: 0; z-index: 40; box-sizing: border-box; max-width: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 6px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); box-shadow: 0 10px 28px rgb(0 0 0 / .12); }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu > input { position: sticky; top: 0; z-index: 1; box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 8px; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 0.875rem; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu > input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__option { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 6px; font-size: 0.875rem; color: var(--admin-text); cursor: pointer; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__option span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) :is(.searchable-select__option:hover, .searchable-select__option--active) { background: var(--admin-state-hover); }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__option[aria-selected="true"] { font-weight: 600; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__empty { padding: 10px; color: var(--admin-text-soft); font-size: 0.8125rem; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu .admin-button { display: block; margin-top: 8px; }
+@media (max-width: 767px) {
+  .pricing-page-head > .admin-button { flex: 0 1 auto; }
+  .pricing-policy-controls { align-items: stretch; }
+  .pricing-policy-controls .pricing-category-field, .pricing-policy-editor .pricing-category-field { flex-basis: 100%; max-width: none; }
+  .pricing-count-row__fields { grid-template-columns: minmax(0, 1fr); }
+  .pricing-count-row { padding: 12px; }
+  .pricing-policy-actions { justify-content: stretch; }
+  .pricing-policy-actions .admin-button, .pricing-policy-review-head .admin-button { flex: 1 1 auto; }
+}
