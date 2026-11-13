@@ -1,7 +1,8 @@
 """Protected configuration and immutable retry outcomes; orders snapshot applied rules."""
 import uuid
 from datetime import datetime
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, Text, UniqueConstraint
+from datetime import date
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -47,3 +48,22 @@ class PricingRuleRequest(Base):
     key: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     payload_ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CategoryCountTariff(Base):
+    """Append-only dated revisions; the amount is encrypted, never a live price."""
+    __tablename__ = "it_category_count_tariffs"
+    __table_args__ = (
+        UniqueConstraint("category_id", "allergen_count", "effective_from", name="uq_it_tariff_date"),
+        UniqueConstraint("category_id", "allergen_count", "version", name="uq_it_tariff_version"),
+        CheckConstraint("allergen_count BETWEEN 1 AND 3 AND version >= 1", name="ck_it_tariff_count_version"),
+        CheckConstraint("payload_ciphertext LIKE 'v1:%'", name="ck_it_tariff_cipher"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("product_categories.id"))
+    allergen_count: Mapped[int] = mapped_column(Integer)
+    effective_from: Mapped[date] = mapped_column(Date)
+    version: Mapped[int] = mapped_column(Integer)
+    payload_ciphertext: Mapped[str] = mapped_column(Text)
+    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

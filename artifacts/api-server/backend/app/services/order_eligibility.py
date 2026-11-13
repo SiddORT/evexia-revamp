@@ -76,7 +76,7 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     from app.services.shipments import SOURCES
     identity = scope_identity(db)
     business_date = today()
-    governed_it = kind == "immunotherapy" and data.get("pricingPolicy") == "configured_material_ml_v1"
+    governed_it = kind == "immunotherapy" and data.get("pricingPolicy") in ("configured_material_ml_v1", "category_count_total_mrp_v1")
     result = dict(eligible=True, reasons=[], paymentLimit=None, doctorDaysLimit=None,
                   outstanding=None, proposedBalance=None, resultingOutstanding=None, businessDate=business_date.isoformat(),
                   doctorPendingBalance=None, oldestDoctorUnpaidAgeDays=None, oldestDoctorUnpaidDate=None)
@@ -251,7 +251,7 @@ def stock_advice(db, kind, data):
         return []
     from app.services import inventory
     identities = {item["allergenId"] for group in data["groups"] for item in group["items"]}
-    if data.get("pricingPolicy") == "configured_material_ml_v1":
+    if data.get("pricingPolicy") in ("configured_material_ml_v1", "category_count_total_mrp_v1"):
         identities.update(component["materialId"] for group in data["pricingEvidence"]["groups"]
                           for component in group["components"] if component["kind"] == "dilution")
     return inventory.selected_allergen_advice(db, identities)

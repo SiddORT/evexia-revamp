@@ -39,6 +39,10 @@ import type {
   AssemblySaved,
   AssignPatientRequest,
   BrowserActivityBatch,
+  CategoryCountTariffCategoryPage,
+  CategoryCountTariffInput,
+  CategoryCountTariffSaved,
+  CategoryCountTariffView,
   ChangePasswordRequest,
   CommitAllergenImportBody,
   CommitAllergenImportParams,
@@ -273,6 +277,7 @@ import type {
   LedgerPage,
   ListAllergenReferencesParams,
   ListAllergensParams,
+  ListCategoryCountTariffCategoriesParams,
   ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
@@ -48678,6 +48683,332 @@ export function useGetKitsGSTEvidence<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetKitsGSTEvidenceQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getAppendCategoryCountTariffUrl = () => {
+  return `/api/v1/admin/pricing-rules/count-tariffs`;
+};
+
+/**
+ * @summary Append Count Tariff
+ */
+export const appendCategoryCountTariff = async (
+  categoryCountTariffInput: CategoryCountTariffInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryCountTariffSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CategoryCountTariffSaved>(
+    getAppendCategoryCountTariffUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(categoryCountTariffInput),
+    },
+  );
+};
+
+export const getAppendCategoryCountTariffMutationKey = () =>
+  ["appendCategoryCountTariff"] as const;
+
+export const getAppendCategoryCountTariffMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof appendCategoryCountTariff>>,
+    TError,
+    AppendCategoryCountTariffMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof appendCategoryCountTariff>>,
+  TError,
+  AppendCategoryCountTariffMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAppendCategoryCountTariffMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof appendCategoryCountTariff>>,
+    AppendCategoryCountTariffMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return appendCategoryCountTariff(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AppendCategoryCountTariffMutationResult = NonNullable<
+  Awaited<ReturnType<typeof appendCategoryCountTariff>>
+>;
+export type AppendCategoryCountTariffMutationBody =
+  BodyType<CategoryCountTariffInput>;
+export type AppendCategoryCountTariffMutationError = ErrorType<ErrorEnvelope>;
+export type AppendCategoryCountTariffMutationVariables = {
+  data: BodyType<CategoryCountTariffInput>;
+};
+
+/**
+ * @summary Append Count Tariff
+ */
+export const useAppendCategoryCountTariff = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof appendCategoryCountTariff>>,
+    TError,
+    AppendCategoryCountTariffMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof appendCategoryCountTariff>>,
+  TError,
+  AppendCategoryCountTariffMutationVariables,
+  TContext
+> => {
+  return useMutation(getAppendCategoryCountTariffMutationOptions(options));
+};
+
+export const getListCategoryCountTariffCategoriesUrl = (
+  params?: ListCategoryCountTariffCategoriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/count-tariffs/categories?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/count-tariffs/categories`;
+};
+
+/**
+ * @summary Count Categories
+ */
+export const listCategoryCountTariffCategories = async (
+  params?: ListCategoryCountTariffCategoriesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryCountTariffCategoryPage> => {
+  return customFetch<CategoryCountTariffCategoryPage>(
+    getListCategoryCountTariffCategoriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCategoryCountTariffCategoriesQueryKey = (
+  params?: ListCategoryCountTariffCategoriesParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/count-tariffs/categories`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListCategoryCountTariffCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCategoryCountTariffCategories>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCategoryCountTariffCategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCategoryCountTariffCategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListCategoryCountTariffCategoriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCategoryCountTariffCategories>>
+  > = ({ signal }) =>
+    listCategoryCountTariffCategories(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCategoryCountTariffCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCategoryCountTariffCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCategoryCountTariffCategories>>
+>;
+export type ListCategoryCountTariffCategoriesQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Count Categories
+ */
+
+export function useListCategoryCountTariffCategories<
+  TData = Awaited<ReturnType<typeof listCategoryCountTariffCategories>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCategoryCountTariffCategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCategoryCountTariffCategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCategoryCountTariffCategoriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetCategoryCountTariffsUrl = (categoryId: string) => {
+  return `/api/v1/admin/pricing-rules/count-tariffs/${categoryId}`;
+};
+
+/**
+ * @summary Count History
+ */
+export const getCategoryCountTariffs = async (
+  categoryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryCountTariffView> => {
+  return customFetch<CategoryCountTariffView>(
+    getGetCategoryCountTariffsUrl(categoryId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCategoryCountTariffsQueryKey = (categoryId: string) => {
+  return [`/api/v1/admin/pricing-rules/count-tariffs/${categoryId}`] as const;
+};
+
+export const getGetCategoryCountTariffsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCategoryCountTariffs>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCategoryCountTariffs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCategoryCountTariffsQueryKey(categoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCategoryCountTariffs>>
+  > = ({ signal }) =>
+    getCategoryCountTariffs(categoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: categoryId !== null && categoryId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCategoryCountTariffs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCategoryCountTariffsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCategoryCountTariffs>>
+>;
+export type GetCategoryCountTariffsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Count History
+ */
+
+export function useGetCategoryCountTariffs<
+  TData = Awaited<ReturnType<typeof getCategoryCountTariffs>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCategoryCountTariffs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCategoryCountTariffsQueryOptions(
+    categoryId,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

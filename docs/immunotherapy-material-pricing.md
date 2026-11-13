@@ -1,5 +1,14 @@
 # Configured Immunotherapy material pricing and consumption
 
+> New governed placements now use
+> [dated category/count Total Suborder MRP](category-count-pricing.md), not
+> `configured_material_ml_v1`. The per-ml monetary formula and separate material
+> pricing prerequisite described below apply only to retained legacy-policy
+> orders. The new policy still requires the real bound Dilution inventory
+> material, explicit per-allergen quantities and these approval/stock safeguards.
+> New tariffs add no Extract or Dilution charge. Migration and runtime behavior
+> remain unapplied/unverified under the source-only restriction.
+
 ## Authorized scope
 
 New MR category/Mix Immunotherapy placements (including final submission of a

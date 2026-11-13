@@ -2,6 +2,7 @@
 // preview. Do not derive eligibility or interpret the server's reason text here.
 export default function ImmunotherapyFinancialReview({ review, ineligible }) {
   return <div className="financial-review">
+    {review.totalSuborderMrps && <p>Total Suborder MRP: {review.totalSuborderMrps}. The new order amount is this exact sum, with no extra Extract or Dilution charge.</p>}
     <dl className="financial-review__totals">
       <Fact label="New order amount" value={review.orderAmount} name="new-amount" />
       <Fact label="Resulting exposure" value={review.resultingExposure} name="exposure" />

@@ -1,5 +1,13 @@
 # Automatic migration policy
 
+Category Count Pricing prepares `0102_category_count_tariffs` after the declared
+`0100_applicable_gst`, with a DDL-free `0103_tariff_staged_merge` source join.
+The declaration remains on the tariff-only path; unrelated staged branches are
+not activated. The empty append-only encrypted history has no legacy conversion
+or automatic date/price seeds. Source hashes are prepared without executing the
+review/validation wrappers, migrations or service lifecycle. Production catalog
+evidence is unchanged. See [Category Count Pricing](category-count-pricing.md).
+
 Applicable GST prepares `0100_applicable_gst` after the declared opening-only
 `0098_opening_corrections`, without activating unrelated staged low-stock or
 designation changes. `0101_gst_staged_merge` is a DDL-free source join, not the

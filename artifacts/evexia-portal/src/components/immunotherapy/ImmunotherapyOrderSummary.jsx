@@ -80,7 +80,7 @@ export default function ImmunotherapyOrderSummary({ order: initialOrder }) {
           {displayGroups.length ? displayGroups.map((group, index) => <section className={mrPortal ? undefined : 'imm-saved-order__bottle'} key={group.id || index} aria-label={mrPortal ? 'Saved allergens' : `Saved group ${index + 1}`}>
             {!mrPortal && <h3>{canonical ? `Suborder ${group.id}` : `Saved group ${index + 1}`}</h3>}
             {!mrPortal && group.compositionPolicy === MR_GROUPING_POLICY && <p className="kits-hint">Saved MR category/Mix grouping. This membership and SUB identity do not change when masters change.</p>}
-            {!mrPortal && <Facts rows={[['Internal group', group.id], ...(legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : canonical ? [['MRP', money(parseAmount(group.mrp))]] : [])]} />}
+            {!mrPortal && <Facts rows={[['Internal group', group.id], ...(legacy ? [['Legacy bottle MRP', money(parseAmount(group.mrp))]] : canonical ? [[order.pricingPolicy === 'category_count_total_mrp_v1' ? 'Total Suborder MRP' : 'MRP', money(parseAmount(group.mrp))]] : [])]} />}
             {group.items?.length ? <ul className="imm-saved-order__allergens">{group.items.map((item, itemIndex) => <li key={`${item.allergenId}-${itemIndex}`}>
               <Facts compact rows={[
                 ...(!mrPortal && !canonical ? [['Suborder ID', item.suborderId || 'Not assigned']] : []), ['Allergen', item.allergen?.name],

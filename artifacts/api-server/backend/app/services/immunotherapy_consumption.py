@@ -8,14 +8,14 @@ from app.core.security import utcnow
 from app.db.inventory_models import InventoryLot as Lot, InventoryBalance as Balance, InventoryPosting as Posting
 from app.db.location_models import StorageLocation
 from app.services.immunotherapy import ImmError
-from app.services.immunotherapy_material_pricing import POLICY, validate_saved
+from app.services.immunotherapy_material_pricing import POLICIES, validate_saved
 from app.services import inventory
 from app.services.purchase_received_crypto import PRError
 from app.services.expiry_policy import usable
 
 
 def consume(db, actor, row, snapshot):
-    if snapshot.get("pricingPolicy") != POLICY:
+    if snapshot.get("pricingPolicy") not in POLICIES:
         return  # Historic/Admin compositions have no newly authorized recipe.
     if snapshot.get("materialConsumption"):
         raise ImmError("This order already has consumption evidence. No further stock was deducted.", 409, "imm_consumption_exists")

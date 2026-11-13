@@ -411,11 +411,11 @@ function Editor({ order, mode, draft }) {
       {hasUnsavedDraftChanges && <p className="imm-editor-draft-notices__unsaved" role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
     </section>}
     <dl className="imm-facts"><div><dt>Order Batch No</dt><dd>{orderBatchLabel(order)}</dd></div></dl>
-    {order?.pricingPolicy === 'configured_material_ml_v1' && <>
+    {['configured_material_ml_v1', 'category_count_total_mrp_v1'].includes(order?.pricingPolicy) && <>
       <MaterialPricingEvidence order={order} mr={mrPortal} />
       {!readOnly && <label className="imm-hint"><input type="checkbox" checked={Boolean(v.refreshQuote)} disabled={Boolean(pending) || uncertain}
         onChange={(event) => setV((current) => ({ ...current, refreshQuote: event.target.checked }))} />
-        {' '}Refresh configured quote on this save and review the new price explicitly. Current quantity settings will be resolved again; historical orders are not repriced.
+        {' '}Refresh configured quote on this save and review the new price explicitly. {order.pricingPolicy === 'category_count_total_mrp_v1' ? 'Saved assigned quantities and explicit corrections are retained; only newly added children resolve current quantity settings.' : 'Current quantity settings will be resolved again.'} Historical orders are not repriced.
       </label>}
     </>}
     {uncertain && <section className="imm-boundary imm-recovery" role="alert" tabIndex={-1} ref={summaryRef} aria-labelledby="imm-recovery-title">

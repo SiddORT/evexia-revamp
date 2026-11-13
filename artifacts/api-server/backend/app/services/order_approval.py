@@ -104,7 +104,7 @@ def saved_pricing(kind, previous):
     if previous.get("pricingNeedsReview"):
         raise ValueError("Changed pricing basis requires Admin review")
     if kind == "immunotherapy":
-        if previous.get("pricingPolicy") == "configured_material_ml_v1":
+        if previous.get("pricingPolicy") in ("configured_material_ml_v1", "category_count_total_mrp_v1"):
             from app.services.immunotherapy_material_pricing import validate_saved
             validate_saved(previous)
         from app.schemas.immunotherapy import ImmInput

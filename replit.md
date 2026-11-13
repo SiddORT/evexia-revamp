@@ -1,3 +1,16 @@
+# Category Count Pricing History — prepared source only
+
+New governed MR Immunotherapy pricing and the combined Pricing Rules master now
+follow `docs/category-count-pricing.md`. This supersedes the older Pricing Rules
+editor and material-price policy below for new placements only. Saved orders
+retain their existing policy/evidence and stock safeguards. Quantity Settings
+and the combined master use one shared authority. The declared forward
+`0102_category_count_tariffs` and DDL-free source join are prepared, not applied.
+Only source/diff review and offline contract/client generation/formatting were
+performed. No tests/builds/typechecks, regression/release or validation wrappers,
+runtime/browser probes, service starts/restarts, live migrations, live writes
+or deployments were run. Runtime behavior and migrations remain unverified.
+
 # Two-decimal operational quantities — prepared source, not runtime activation
 
 The approved business-quantity policy supersedes older thousandth/five-place

@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "gst-kits"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "gst-kits", "count-tariffs"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -161,6 +161,7 @@ def main() -> None:
                     or (args.scope == "hsn-allergens" and
                         (path == "/v1/admin/hsn" or path.startswith("/v1/admin/hsn/")
                          or path == "/v1/admin/allergens" or path.startswith("/v1/admin/allergens/")))
+                    or (args.scope == "count-tariffs" and path.startswith("/v1/admin/pricing-rules/count-tariffs"))
                     or (args.scope == "gst-kits" and
                         (path == "/v1/admin/gst-settings" or path.startswith("/v1/admin/gst-settings/")
                          or path == "/v1/admin/kits-orders" or path.startswith("/v1/admin/kits-orders/")))}

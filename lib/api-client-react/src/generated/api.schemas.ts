@@ -14076,6 +14076,49 @@ export interface GSTHistoryPage {
   next_before_version: number | null;
 }
 
+export interface CategoryCountTariffCategoryPage {
+  items: ItPricingReference[];
+  nextOffset: number | null;
+}
+
+export interface CategoryCountTariffInput {
+  /**
+   * @minimum 1
+   * @maximum 3
+   */
+  allergenCount: number;
+  categoryId: string;
+  effectiveFrom: string;
+  /**
+   * @minimum 0
+   * @maximum 2147483646
+   */
+  expected_version: number;
+  idempotencyKey: string;
+  /** @maxLength 64 */
+  totalMrp: string;
+}
+
+export interface CategoryCountTariffSaved {
+  actorId: string;
+  allergenCount: number;
+  categoryId: string;
+  effectiveFrom: string;
+  id: string;
+  recordedAt: string;
+  totalMrp: string;
+  version: number;
+}
+
+export interface CategoryCountTariffView {
+  categoryId: string;
+  categoryName: string;
+  categoryVersion: number;
+  history: CategoryCountTariffSaved[];
+  suggestedUnitPrice: string | null;
+  suggestionError?: string | null;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -17741,4 +17784,22 @@ export type GetGSTHistoryParams = {
 export type GetKitsGSTEvidenceParams = {
   record_id?: string | null;
   order_date?: string | null;
+};
+
+export type ListCategoryCountTariffCategoriesParams = {
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  savedOnly?: boolean;
 };

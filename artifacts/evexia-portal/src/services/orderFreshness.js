@@ -50,6 +50,16 @@ async function beforePlacement(path, options, resource) {
     const total = preview.priceQuote.totalMinor;
     if (!Number.isSafeInteger(total) || total < 0) throw eligibilityError('The quoted total is unreadable. Your draft is preserved.');
     const orderAmount = `${Math.floor(total / 100)}.${String(total % 100).padStart(2, '0')}`;
+    let totalSuborderMrps = null;
+    if (preview.priceQuote.policy === 'category_count_total_mrp_v1') {
+      const groups = preview.priceQuote.groups;
+      if (!Array.isArray(groups) || !groups.length || groups.some((g) =>
+        typeof g?.amount !== 'string' || !/^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$/.test(g.amount))
+        || groups.reduce((sum, g) => sum + BigInt(g.amount.replace('.', '')), 0n) !== BigInt(total)) {
+        throw eligibilityError('The Total Suborder MRP headers do not match the quoted total. Your draft is preserved.');
+      }
+      totalSuborderMrps = groups.map((g) => `₹${g.amount}`).join(' + ');
+    }
     const warnings = preview.stockAdvice.filter((advice) => advice.state !== 'healthy');
     const accepted = await confirmEligibility('Review the saved financial facts before confirming. Your draft remains available if you return to the order.', {
       title: 'Immunotherapy financial confirmation',
@@ -58,6 +68,7 @@ async function beforePlacement(path, options, resource) {
       actionDisabled: !preview.eligible,
       financialReview: {
         orderDate: preview.priceQuote.orderDate ?? 'Unavailable',
+        totalSuborderMrps,
         doctorPending: amount(preview.doctorPendingBalance),
         doctorDaysLimit: days,
         oldestAge: preview.oldestDoctorUnpaidAgeDays == null

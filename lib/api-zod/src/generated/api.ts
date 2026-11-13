@@ -2787,6 +2787,17 @@ export const editHsnMappingResponseGstMax = 64;
 export const statusHsnMappingResponseGstMax = 64;
 export const getGSTHistoryQueryLimitDefault = 10;
 export const getGSTHistoryQueryLimitMax = 25;
+export const appendCategoryCountTariffBodyAllergenCountMax = 3;
+export const appendCategoryCountTariffBodyExpectedVersionMin = 0;
+export const appendCategoryCountTariffBodyExpectedVersionMax = 2147483646;
+export const appendCategoryCountTariffBodyTotalMrpMax = 64;
+export const listCategoryCountTariffCategoriesQueryQueryMax = 100;
+export const listCategoryCountTariffCategoriesQueryOffsetDefault = 0;
+export const listCategoryCountTariffCategoriesQueryOffsetMin = 0;
+export const listCategoryCountTariffCategoriesQueryOffsetMax = 1000000;
+export const listCategoryCountTariffCategoriesQueryLimitDefault = 50;
+export const listCategoryCountTariffCategoriesQueryLimitMax = 100;
+export const listCategoryCountTariffCategoriesQuerySavedOnlyDefault = false;
 
 /**
  * @summary <Lambda>
@@ -28377,6 +28388,7 @@ export const ListOpeningStockResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       activity: zod.array(
         zod.object({
           action: zod.string(),
@@ -28386,7 +28398,6 @@ export const ListOpeningStockResponse = zod.object({
         }),
       ),
       actor: zod.string(),
-      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       actorId: zod.string().uuid(),
       after: zod.string(),
       appendOnly: zod.boolean(),
@@ -28492,6 +28503,7 @@ export const CreateOpeningStockResponse = zod.object({
   postedCount: zod.number().int(),
   records: zod.array(
     zod.object({
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       activity: zod.array(
         zod.object({
           action: zod.string(),
@@ -28501,7 +28513,6 @@ export const CreateOpeningStockResponse = zod.object({
         }),
       ),
       actor: zod.string(),
-      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       actorId: zod.string().uuid(),
       after: zod.string(),
       appendOnly: zod.boolean(),
@@ -28837,6 +28848,7 @@ export const ReconcileOpeningStockRequestResponse = zod.object({
       postedCount: zod.number().int(),
       records: zod.array(
         zod.object({
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           activity: zod.array(
             zod.object({
               action: zod.string(),
@@ -28846,7 +28858,6 @@ export const ReconcileOpeningStockRequestResponse = zod.object({
             }),
           ),
           actor: zod.string(),
-          expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           actorId: zod.string().uuid(),
           after: zod.string(),
           appendOnly: zod.boolean(),
@@ -49292,4 +49303,101 @@ export const GetKitsGSTEvidenceResponse = zod.object({
   order_date: zod.string(),
   policy_revision: zod.number().int(),
   rate: zod.string(),
+});
+
+/**
+ * @summary Append Count Tariff
+ */
+
+export const AppendCategoryCountTariffBody = zod.object({
+  allergenCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(appendCategoryCountTariffBodyAllergenCountMax),
+  categoryId: zod.string().uuid(),
+  effectiveFrom: zod.coerce.date(),
+  expected_version: zod
+    .number()
+    .int()
+    .min(appendCategoryCountTariffBodyExpectedVersionMin)
+    .max(appendCategoryCountTariffBodyExpectedVersionMax),
+  idempotencyKey: zod.string().uuid(),
+  totalMrp: zod.string().max(appendCategoryCountTariffBodyTotalMrpMax),
+});
+
+export const AppendCategoryCountTariffResponse = zod.object({
+  actorId: zod.string().uuid(),
+  allergenCount: zod.number().int(),
+  categoryId: zod.string().uuid(),
+  effectiveFrom: zod.coerce.date(),
+  id: zod.string().uuid(),
+  recordedAt: zod.coerce.date(),
+  totalMrp: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Count Categories
+ */
+export const listCategoryCountTariffCategoriesQueryQueryDefault = ``;
+
+export const ListCategoryCountTariffCategoriesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listCategoryCountTariffCategoriesQueryQueryMax)
+    .default(listCategoryCountTariffCategoriesQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listCategoryCountTariffCategoriesQueryOffsetMin)
+    .max(listCategoryCountTariffCategoriesQueryOffsetMax)
+    .default(listCategoryCountTariffCategoriesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listCategoryCountTariffCategoriesQueryLimitMax)
+    .default(listCategoryCountTariffCategoriesQueryLimitDefault),
+  savedOnly: zod.coerce
+    .boolean()
+    .default(listCategoryCountTariffCategoriesQuerySavedOnlyDefault),
+});
+
+export const ListCategoryCountTariffCategoriesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  nextOffset: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Count History
+ */
+export const GetCategoryCountTariffsParams = zod.object({
+  category_id: zod.coerce.string().uuid(),
+});
+
+export const GetCategoryCountTariffsResponse = zod.object({
+  categoryId: zod.string().uuid(),
+  categoryName: zod.string(),
+  categoryVersion: zod.number().int(),
+  history: zod.array(
+    zod.object({
+      actorId: zod.string().uuid(),
+      allergenCount: zod.number().int(),
+      categoryId: zod.string().uuid(),
+      effectiveFrom: zod.coerce.date(),
+      id: zod.string().uuid(),
+      recordedAt: zod.coerce.date(),
+      totalMrp: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  suggestedUnitPrice: zod.union([zod.string(), zod.null()]),
+  suggestionError: zod.union([zod.string(), zod.null()]).optional(),
 });

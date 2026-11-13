@@ -384,7 +384,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(PricingRuleError)
     async def pricing_rule_error(request: Request, exc: PricingRuleError):
-        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+        headers = {"X-IT-Tariff-Outcome": "rejected"} if getattr(exc, "tariff_terminal", False) else None
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status, headers=headers)
 
     @app.exception_handler(PRError)
     async def purchase_received_error(request: Request, exc: PRError):

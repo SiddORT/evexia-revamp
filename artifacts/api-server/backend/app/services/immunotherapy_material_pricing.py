@@ -14,6 +14,8 @@ from app.services.immunotherapy import ImmError, encode
 from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 
 POLICY = "configured_material_ml_v1"
+from app.schemas.category_count_tariffs import POLICY as COUNT_POLICY
+POLICIES = (POLICY, COUNT_POLICY)
 
 
 def configuration_locks(db):
@@ -47,9 +49,12 @@ def digest(value):
     return hashlib.sha256(encode(value).encode()).hexdigest()
 
 
-def quote(db, keys, data, effective_date):
+def quote(db, keys, data, effective_date, policy=COUNT_POLICY, preserve_quantities=False):
     from app.services.directory_inventory import DirectoryCryptoError
     try:
+        if policy == COUNT_POLICY:
+            from app.services.immunotherapy_count_pricing import quote as count_quote
+            return count_quote(db, keys, data, effective_date, preserve_quantities=preserve_quantities)
         return _quote(db, keys, data, effective_date)
     except SQLAlchemyError:
         raise ImmError("Pricing/quantity settings storage is unavailable. No price was substituted and no order was placed. Keep your draft and retry.",
@@ -153,12 +158,20 @@ def _quote(db, keys, data, effective_date):
     return evidence
 
 
-def retain(data, previous):
+def retain(data, previous, *, correction_actor=None):
     """No silently stale price after changes, and no implicit historical adoption."""
-    if not previous or previous.get("pricingPolicy") != POLICY:
+    if not previous or previous.get("pricingPolicy") not in POLICIES:
         return
     for key in ("pricingPolicy", "pricingEvidence", "materialConsumption"):
         data[key] = deepcopy(previous.get(key))
+    if previous.get("pricingPolicy") == COUNT_POLICY and correction_actor is not None:
+        from app.services.immunotherapy_count_pricing import retain_quantity_correction
+        retain_quantity_correction(data, previous, correction_actor)
+        # The correction helper only accepts the same saved clinical/pricing
+        # basis; changed membership or dosage still requires an explicit quote.
+        if (data["pricingEvidence"]["basis"] == basis(data)
+                and [g["mrp"] for g in data["groups"]] == [g["mrp"] for g in previous["groups"]]):
+            return
     if basis(data) != previous["pricingEvidence"]["basis"] or [g["mrp"] for g in data["groups"]] != [g["mrp"] for g in previous["groups"]]:
         raise ImmError("This priced composition or quantity changed. Select Refresh configured quote, save and review the new quote explicitly before approval.",
                        409, "imm_quote_refresh")
@@ -181,13 +194,20 @@ def prepare_quote(db, keys, data, body, effective_date, previous):
     from app.services.mr_orders import scope_identity
     fresh = not previous and bool(scope_identity(db))
     if fresh or body.refreshQuote:
-        quote(db, keys, data, effective_date)
+        count_refresh = bool(previous and previous.get("pricingPolicy") == COUNT_POLICY)
+        quote(db, keys, data, effective_date, policy=previous.get("pricingPolicy") if previous else COUNT_POLICY,
+              preserve_quantities=count_refresh)
+        if count_refresh:
+            data["pricingEvidence"]["previousQuote"] = deepcopy(previous["pricingEvidence"])
         return True
     return False
 
 
 def validate_saved(data):
     """Approval uses immutable saved evidence, not today's rates/settings."""
+    if data.get("pricingPolicy") == COUNT_POLICY:
+        from app.services.immunotherapy_count_pricing import validate_saved as validate_count
+        return validate_count(data)
     evidence = data["pricingEvidence"]
     if evidence["policy"] != POLICY or evidence["basis"] != basis(data) or evidence["totalMinor"] != data["totalMinor"]:
         raise ValueError("Saved configured quote no longer matches composition")

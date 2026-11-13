@@ -28,6 +28,16 @@
 .imm-extract-settings__table tbody th { padding-top: 18px; }
 .imm-extract-settings__table tbody tr + tr { border-top: 1px solid var(--admin-border); }
 .imm-extract-settings__table input { font-variant-numeric: tabular-nums; }
+.pricing-rules-page .imm-extract-settings__table { max-width: none; min-width: 56rem; }
+.pricing-rules-page .imm-extract-settings__table thead th:first-child { width: 14%; }
+.pricing-rules-page .imm-extract-settings__table thead th:nth-child(2) { width: 38%; }
+.imm-extract-settings__table td > div + div { margin-top: 14px; }
+.imm-extract-settings__table td > label { display: block; margin: 10px 0 5px; }
+.imm-extract-settings__table td > small { display: block; margin: 6px 0; color: var(--admin-text-soft); font-size: 12px; }
+.imm-extract-settings__table td > details { margin-top: 12px; overflow-wrap: anywhere; }
+.imm-extract-settings__table details small { display: block; color: var(--admin-text-soft); }
+.imm-extract-settings__table details ol { padding-left: 18px; }
+.imm-extract-settings__table details li + li { margin-top: 12px; }
 .imm-extract-settings__saved-value { display: block; margin-top: 4px; color: var(--admin-text-soft); font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
 .imm-extract-settings__saved-value span { font-variant-numeric: tabular-nums; }
 /* Keep the reused master picker self-contained on a cold Settings route.

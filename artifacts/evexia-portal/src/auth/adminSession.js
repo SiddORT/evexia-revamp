@@ -1146,7 +1146,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   }
   const settlementVerification = resource === 'settlements' && /^\/transactions\/[0-9a-f-]{36}\/verify$/.test(path);
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
-    || (writing && path !== '' && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
+    || (writing && path !== '' && path !== '/count-tariffs' && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
     || (!writing && path.endsWith('/edit')))) {
     throw new SessionError('Unsupported Pricing Rules configuration operation.');
   }
@@ -1315,6 +1315,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
+    if (resource === 'pricing-rules' && path === '/count-tariffs') {
+      error.terminal = response.status >= 400 && response.status < 500
+        && response.headers.get('X-IT-Tariff-Outcome') === 'rejected';
+    }
     if (resource === 'immunotherapy-orders' || (resource === 'order-drafts/immunotherapy' && path.endsWith('/submit'))) {
       error.terminal = response.status >= 400 && response.status < 500
         && response.headers.get('X-Immunotherapy-Outcome') === 'rejected';

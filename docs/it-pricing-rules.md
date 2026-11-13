@@ -1,3 +1,14 @@
+# Current policy: dated category/count Total Suborder MRP
+
+The combined master and new governed Immunotherapy consumer are documented in
+[Category Count Pricing History](category-count-pricing.md). This supersedes
+the older editor, individual-allergen targeting and before/after INR/ml policy
+for **new** governed orders. The legacy rules below remain read-only page
+evidence and retained compatibility endpoints, never new-policy fallback.
+Three main count rows retain independent dosage/rank quantity pairs in the same
+master using the existing Settings service. No migration or runtime verification
+was performed for the new policy.
+
 # IT Pricing Rules — governed MR Immunotherapy pricing
 
 ## Scope and access

@@ -313,8 +313,8 @@ def resolved(db, body, previous=None):
         value["attachments"].append(dict(id=str(f.id), name=f.display_name, size=f.size, type=f.content_type, state=f.state))
     if not body.refreshQuote:
         from app.services.immunotherapy_material_pricing import retain
-        retain(value, previous)
-    elif not previous or previous.get("pricingPolicy") != "configured_material_ml_v1":
+        retain(value, previous, correction_actor=None if scope_identity(db) else db.info.get("imm_actor"))
+    elif not previous or previous.get("pricingPolicy") not in ("configured_material_ml_v1", "category_count_total_mrp_v1"):
         raise ImmError("Quote refresh is only available for supported configured-price orders. Historical and unrestricted Admin orders retain their saved pricing path.",
                        422, "imm_quote_refresh")
     return value
