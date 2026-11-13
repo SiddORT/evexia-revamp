@@ -71,6 +71,15 @@ service starts/restarts, migrations, deployment or live writes.
 Runtime behavior remains unverified.
 See `docs/gst-settings.md`.
 
+The Applicable GST presentation groups the current rate, conditional opening-policy
+warning, effective/scheduled periods, retained baseline, editor and authenticated
+history using GST-scoped DM Sans typography and existing semantic theme tokens.
+Permissions, confirmation, draft/retry handling and history paging are unchanged.
+This interface refinement was source/diff-reviewed only: no tests, builds,
+typechecks, regression/release/validation wrappers, browser/runtime probes,
+service starts/restarts, migrations, live writes or deployments were run.
+Visual and runtime behavior remain unverified.
+
 All migrations are automatic in both Replit development and VPS deployments.
 This standing instruction replaces earlier per-revision `operator_only` and
 additive-only normal-runner approval policies. Do not ask the user to approve
