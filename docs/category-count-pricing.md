@@ -59,6 +59,23 @@ as the new editor and never consulted as new-policy fallback.
 
 ## Timeline, writes and protected history
 
+The Pricing Rules transport admits only the category/count tariff root append,
+category discovery read and UUID category-history read, alongside its unchanged
+legacy pricing routes. The root is write-only; discovery and history are
+read-only. Successful tariff replies pass to `serverCountTariffs` for dedicated
+page/history and exact-submission validation, not legacy-rule or Purchase Order
+validation. Existing session, Super Admin and durable-rejection/uncertain-retry
+handling still apply.
+
+The MRP-only Pricing Rules page and Add Pricing Rule dialog share paged
+discovery with the API's 100-character search limit. Category errors use error
+feedback and offer an explicit retry outside the menu without clearing tariff
+drafts. Inside the dialog the menu participates in layout so its results and
+Retry stay within the scrollable dialog. These repairs were reviewed only in
+source and diff against the supplied screenshots: no tests, builds, typechecks,
+validation wrappers, runtime/browser probes, service starts/restarts, migrations,
+deployments or live writes were performed. Runtime behavior is unverified.
+
 `GET /v1/admin/pricing-rules/count-tariffs/categories` returns bounded
 category search pages; `savedOnly=true` filters to saved tariffs.
 `GET /v1/admin/pricing-rules/count-tariffs/{category_id}` reads chronological

@@ -3,7 +3,7 @@ import { Check, ChevronDown, X } from 'lucide-react';
 import './searchableSelect.css';
 
 // Allergen-only variant: remote menus own their result filtering and paging.
-export default function AllergenSearchableSelect({ id, label, value, options, selectedLabel, onChange, placeholder, invalid, describedBy, disabled = false, testId, onSearch, loading = false, error = '', onRetry, onMore, remaining = 0, hasMore = remaining > 0, moreLabel, empty }) {
+export default function AllergenSearchableSelect({ id, label, value, options, selectedLabel, onChange, placeholder, invalid, describedBy, disabled = false, testId, onSearch, searchMaxLength = 200, loading = false, error = '', onRetry, onMore, remaining = 0, hasMore = remaining > 0, moreLabel, empty }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1);
@@ -73,7 +73,7 @@ export default function AllergenSearchableSelect({ id, label, value, options, se
     {open && <div className="searchable-select__menu admin-allergen-combobox__menu" style={placement}>
       <input ref={input} role="combobox" aria-label={`Search ${label.toLowerCase()}`} aria-expanded="true" aria-autocomplete="list"
         aria-controls={`${id}-options`} aria-activedescendant={active >= 0 && matches[active] ? `${id}-option-${active}` : undefined}
-        autoComplete="off" maxLength={200} value={query} disabled={disabled} data-testid={`${testId}-search`}
+        autoComplete="off" maxLength={searchMaxLength} value={query} disabled={disabled} data-testid={`${testId}-search`}
         placeholder={`Search ${label.toLowerCase()}…`} onChange={(event) => search(event.target.value)} />
       <div id={`${id}-options`} role="listbox" aria-label={label} aria-busy={loading} className="admin-allergen-combobox__options">
         {matches.map((option, index) => <div key={option.value} id={`${id}-option-${index}`} role="option"

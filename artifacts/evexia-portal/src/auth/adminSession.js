@@ -1084,6 +1084,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const draftResource = /^order-drafts\/(?:immunotherapy|kits|lupin)$/.test(resource);
   const draftKind = draftResource ? resource.split('/')[1] : null;
   const draftSubmission = draftResource && path.endsWith('/submit');
+  const tariffOperation = resource === 'pricing-rules'
+    && /^\/count-tariffs(?:\/(?:categories|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))?$/.test(path);
   // Submission returns the normal order contract, never a Purchase Order.
   const responseResource = draftSubmission ? `${draftKind}-orders` : resource;
   const allowed = draftResource
@@ -1124,8 +1126,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const lupinDecision = resource === 'lupin-orders'
     && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path);
   const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
-  if ((!allowed.test(path) && !eligibilityPreview) || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
-    throw new SessionError('Unsupported purchase order operation.');
+  if ((!allowed.test(path) && !tariffOperation && !eligibilityPreview) || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
+    throw new SessionError(resource === 'pricing-rules'
+      ? 'Unsupported Pricing Rules configuration operation.' : 'Unsupported purchase order operation.');
   }
   if ((file !== undefined && (resource !== 'products' || !['/import/review', '/import/commit'].includes(path)))
       || (download && (resource !== 'products' || !['/sample', '/export'].includes(path)))) {
@@ -1147,7 +1150,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const settlementVerification = resource === 'settlements' && /^\/transactions\/[0-9a-f-]{36}\/verify$/.test(path);
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
     || (writing && path !== '' && path !== '/count-tariffs' && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
-    || (!writing && path.endsWith('/edit')))) {
+    || (!writing && (path.endsWith('/edit') || path === '/count-tariffs')))) {
     throw new SessionError('Unsupported Pricing Rules configuration operation.');
   }
   if (resource === 'settlements' && writing !== (path === '/transactions' || settlementVerification)) {
@@ -1207,7 +1210,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const downloadGuard = download ? reportingIdentityGuard() : null;
   const form = file === undefined ? null : new FormData();
   if (form) form.append('file', file);
-  const pricingChoices = resource === 'pricing-rules' && path.startsWith('/references/');
+  const pricingChoices = resource === 'pricing-rules' && (path.startsWith('/references/') || path === '/count-tariffs/categories');
   const pricingReadLabel = pricingChoices ? path.endsWith('/allergens') ? 'Allergen choices' : 'Category choices' : 'Pricing Rules';
   const pricingReadAction = pricingChoices ? 'Retry choices; your selections are retained.' : 'Retry loading Pricing Rules.';
   const uncertain = (reason = 'delivery') => {
@@ -1297,6 +1300,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : pricingChoices ? data?.error?.code === 'pricing_rule_category'
           ? 'Allergen choices require categories that are still active. Your selections are retained; review the selected categories and retry choices.'
           : `${pricingReadLabel} request was rejected. ${pricingReadAction}`
+        : tariffOperation ? typeof data?.error?.message === 'string' && /^it_tariff_/.test(data?.error?.code || '')
+          ? data.error.message
+          : response.status === 422 ? 'Check the saved category, allergen count (1, 2 or 3), nonnegative total suborder MRP and explicit Effective From date. Your edits are preserved.'
+          : 'Category/count MRP request failed. Your edits are preserved; retry the same submission if its save is unconfirmed.'
         : typeof data?.error?.message === 'string' && (response.status !== 422 || /^pricing_rule_/.test(data?.error?.code || '')) ? data.error.message
         : response.status === 422 ? 'Check the category, active matching allergens, real cutoff date, and both required nonnegative INR prices (up to 12 integer and 6 source decimal places).'
         : 'Pricing Rules request failed. Your editor is preserved.'
@@ -1359,6 +1366,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       }
     }
     throw error;
+  }
+  if (tariffOperation) {
+    // serverCountTariffs validates category pages, history and the exact saved
+    // append against its frozen request. Never parse these as legacy rules or POs.
+    return data;
   }
   if (invoiceSettingsOperation) {
     // The focused Invoice Details adapter validates its own settings/history/QR

@@ -160,9 +160,14 @@ export default function PricingPolicyWorkspace() {
       selectedLabel={selected ? categoryLabel(selected) : undefined}
       options={choices.items.map((item) => ({ value: item.id, label: categoryLabel(item) }))}
       placeholder={editorOpen ? 'Search and select a category' : 'Select a category to review'}
-      disabled={tariff.locked} onChange={choose} onSearch={choices.search}
+      disabled={tariff.locked} onChange={choose} onSearch={choices.search} searchMaxLength={100}
       loading={choices.busy} error={choices.error} onRetry={() => choices.search(choices.query, true)}
       hasMore={choices.nextOffset !== null} onMore={choices.more} moreLabel="Load more categories" />
+  </div>;
+  const categoryError = !choices.busy && choices.error && <div className="admin-feedback admin-feedback--error pricing-category-error">
+    <p role="alert">Category choices could not be loaded. {choices.error}</p>
+    <button type="button" className="admin-button admin-button--secondary" disabled={tariff.locked}
+      onClick={() => choices.search(choices.query, true)}>Retry category choices</button>
   </div>;
   const status = <>
     {tariff.busy && <p className="admin-feedback" role="status">Loading or saving MRP…</p>}
@@ -207,10 +212,10 @@ export default function PricingPolicyWorkspace() {
           data-testid="checkbox-pricing-saved-only"
           onChange={(event) => { choices.search('', true); setSavedOnly(event.target.checked); }} />Saved tariffs only</label>
       </div>}
+      {!editorOpen && categoryError}
       <div hidden={editorOpen}>
-        {!selected && <p className="admin-feedback" role={choices.error ? 'alert' : 'status'}>{choices.busy ? 'Loading category choices…'
-          : choices.error ? 'Category choices could not be loaded. Open the selector to retry.'
-            : !choices.items.length ? 'No matching categories. Turn off “Saved tariffs only” to browse all categories, or add a pricing rule.'
+        {!selected && !choices.error && <p className="admin-feedback" role="status">{choices.busy ? 'Loading category choices…'
+          : !choices.items.length ? 'No matching categories. Turn off “Saved tariffs only” to browse all categories, or add a pricing rule.'
               : 'Choose a category above to review saved MRP, or add a pricing rule.'}</p>}
         {status}
         {selected && <DataTable columns={columns} rows={rows} rowKey={(row) => row.count}
@@ -238,6 +243,7 @@ export default function PricingPolicyWorkspace() {
           {tariff.saved && tariff.drafts && counts.includes(allergenCount) &&
             <PricingCountFields key={`${selected.id}-${allergenCount}`} count={allergenCount} tariff={tariff} />}
         </div>
+        {categoryError}
         {!selected && <p className="pricing-rules-note">Select a category to create or review its dated MRP policy.</p>}
         {status}
         {tariff.blocked && !tariff.attempt && <p className="admin-feedback admin-feedback--error" role="alert">

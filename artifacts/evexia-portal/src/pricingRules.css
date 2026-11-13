@@ -78,7 +78,7 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 .pricing-page-head p { margin: 4px 0 0; color: var(--admin-text-soft); font-size: 0.875rem; line-height: 1.5; max-width: 70ch; }
 .pricing-page-head > .admin-button { flex: 0 0 auto; width: auto; }
 .pricing-rules-page .admin-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; font-family: inherit; }
-.pricing-policy-workspace { display: grid; gap: 16px; min-width: 0; overflow: visible; }
+.pricing-policy-workspace { display: grid; gap: 16px; min-width: 0; overflow: visible; padding: 18px; }
 .pricing-policy-workspace h2 { margin: 0; font-size: 1.125rem; }
 .pricing-policy-workspace > p { margin: -10px 0 0; color: var(--admin-text-soft); font-size: 0.8125rem; line-height: 1.5; }
 .pricing-policy-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; min-width: 0; }
@@ -99,6 +99,8 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 .pricing-policy-editor .pricing-category-field { max-width: 32rem; }
 .pricing-policy-editor .pricing-policy-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .pricing-policy-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; min-width: 0; }
+.pricing-category-error { min-width: 0; margin: 0; }
+.pricing-category-error p { margin: 0 0 8px; }
 .pricing-rules-page .pricing-input, .pricing-policy-editor .pricing-input { box-sizing: border-box; min-width: 0; max-width: 100%; }
 .pricing-count-history { min-width: 0; font-size: 0.8125rem; }
 .pricing-count-history summary { cursor: pointer; color: var(--admin-accent); font-weight: 600; border-radius: 6px; }
@@ -115,7 +117,7 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 .pricing-legacy-disclosure .admin-table-scroll { max-width: 100%; overflow-x: auto; }
 /* Cold-route searchable picker */
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox { position: relative; min-width: 0; font-weight: 400; }
-:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox .searchable-select__control { box-sizing: border-box; display: flex; align-items: center; min-width: 0; min-height: 40px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox .searchable-select__control { box-sizing: border-box; display: flex; align-items: center; min-width: 0; min-height: 42px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger { display: flex; flex: 1 1 auto; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; min-height: 38px; padding: 8px 11px; border: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 0.875rem; text-align: left; cursor: pointer; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__trigger span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
@@ -125,6 +127,9 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__clear { flex: none; display: grid; place-items: center; margin-right: 6px; padding: 4px; border: 0; border-radius: 6px; background: transparent; color: var(--admin-text-soft); cursor: pointer; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__clear:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 1px; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu { position: absolute; left: 0; right: 0; z-index: 40; box-sizing: border-box; max-width: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 6px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); box-shadow: 0 10px 28px rgb(0 0 0 / .12); }
+/* Let the scrollable dialog contain the menu, including its Retry button.
+   Viewport-based absolute placement can extend past the dialog's clipped edge. */
+.pricing-policy-editor .admin-allergen-combobox__menu { position: static; margin-top: 4px; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu > input { position: sticky; top: 0; z-index: 1; box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 8px; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 0.875rem; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu > input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__option { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 6px; font-size: 0.875rem; color: var(--admin-text); cursor: pointer; }
@@ -132,6 +137,7 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) :is(.searchable-select__option:hover, .searchable-select__option--active) { background: var(--admin-state-hover); }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__option[aria-selected="true"] { font-weight: 600; }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__empty { padding: 10px; color: var(--admin-text-soft); font-size: 0.8125rem; }
+:is(.pricing-policy-workspace, .pricing-policy-editor) .searchable-select__empty[role="alert"] { color: var(--admin-danger); }
 :is(.pricing-policy-workspace, .pricing-policy-editor) .admin-allergen-combobox__menu .admin-button { display: block; margin-top: 8px; }
 @media (max-width: 767px) {
   .pricing-page-head > .admin-button { flex: 0 1 auto; }
