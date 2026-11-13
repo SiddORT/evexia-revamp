@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import Dialog from './Dialog.jsx';
+import DataTable from './DataTable.jsx';
 import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
 import useCountTariffs from './useCountTariffs.js';
 import { formatAdminDate, useAdminPreferences } from './adminPreferences.js';
@@ -8,6 +9,7 @@ import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { tariffCategories } from '../../services/serverCountTariffs.js';
+import '../../mr.css';
 
 const counts = [1, 2, 3];
 const countName = (count) => ['', 'Single', 'Double', 'Triple'][count];
@@ -60,6 +62,7 @@ export default function PricingPolicyWorkspace() {
   const session = useAdminSession();
   const confirm = usePlatformConfirm();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [allergenCount, setAllergenCount] = useState('');
   const [selected, setSelected] = useState(null);
   const [savedOnly, setSavedOnly] = useState(true);
   const [revision, setRevision] = useState(0);
@@ -68,7 +71,6 @@ export default function PricingPolicyWorkspace() {
   const prefs = useAdminPreferences();
   const date = (value) => formatAdminDate(value, prefs) || value;
   const addButton = useRef(null);
-  const editButton = useRef(null);
   const returnFocus = useRef(null);
   const pickerId = editorOpen ? 'pricing-policy-category' : 'pricing-review-category';
   const choiceSequence = useRef(0);
@@ -128,17 +130,33 @@ export default function PricingPolicyWorkspace() {
     choices.search('');
     setEditorOpen(false);
   }
-  function openEditor(create) {
+  function openEditor(count = '', trigger = addButton.current) {
     const state = tariff.getGuardState();
     if (confirming.current || state.busy || state.uncertain || state.dirty) return;
-    returnFocus.current = create ? addButton.current : editButton.current;
+    returnFocus.current = trigger;
     choices.search('');
-    if (create) setSelected(null);
+    if (!count) setSelected(null);
+    setAllergenCount(count);
     setEditorOpen(true);
   }
-  const picker = <div className="pricing-field pricing-category-field">
-    <label htmlFor={pickerId}>Product Category</label>
+  function chooseCount(value) {
+    const state = latest.current.tariff.getGuardState();
+    if (confirming.current || state.busy || state.uncertain) return;
+    // Keep every count's draft in the existing hook; switching only changes
+    // which draft is visible, never its amount/date or an unresolved request.
+    setAllergenCount(value ? Number(value) : '');
+  }
+  function submit(event) {
+    event.preventDefault();
+    const state = latest.current.tariff.getGuardState();
+    if (confirming.current || state.busy) return;
+    if (tariff.attempt) { void tariff.save(tariff.attempt.allergenCount); return; }
+    if (selected && counts.includes(allergenCount)) void tariff.save(allergenCount);
+  }
+  const picker = <div className="mr-form__field pricing-category-field">
+    <label className="mr-form__label" htmlFor={pickerId}>Product Category{editorOpen ? ' *' : ''}</label>
     <AllergenSearchableSelect id={pickerId} label="Product Category" value={selected?.id || ''}
+      testId={pickerId}
       selectedLabel={selected ? categoryLabel(selected) : undefined}
       options={choices.items.map((item) => ({ value: item.id, label: categoryLabel(item) }))}
       placeholder={editorOpen ? 'Search and select a category' : 'Select a category to review'}
@@ -147,106 +165,129 @@ export default function PricingPolicyWorkspace() {
       hasMore={choices.nextOffset !== null} onMore={choices.more} moreLabel="Load more categories" />
   </div>;
   const status = <>
-    {tariff.busy && <p className="pricing-policy-status" role="status">Loading or saving MRP…</p>}
-    {tariff.error && <p className="pricing-policy-status admin-feedback--error" role="alert">{tariff.error}</p>}
-    {tariff.notice && <p className="pricing-policy-status" role="status">{tariff.notice}</p>}
-    {tariff.dirty && <p className="pricing-policy-status" role="status">Unsaved MRP changes. Each count is saved separately.</p>}
+    {tariff.busy && <p className="admin-feedback" role="status">Loading or saving MRP…</p>}
+    {tariff.error && <p className="admin-feedback admin-feedback--error" role="alert">{tariff.error}</p>}
+    {tariff.notice && <p className="admin-feedback" role="status">{tariff.notice}</p>}
+    {tariff.dirty && <p className="admin-feedback" role="status">Unsaved MRP changes. Switching counts keeps each count’s edits; Save applies only to the selected count. Changing category or cancelling discards all unsaved counts only after confirmation.</p>}
   </>;
+  const rows = tariff.saved ? counts.map((count) => {
+    const history = historyFor(tariff, count);
+    return { count, history, latest: history[history.length - 1] };
+  }) : [];
+  const columns = [
+    { key: 'serial', label: 'Sr No', render: (_row, index) => index + 1 },
+    { key: 'category', label: 'Product Category', render: () => categoryLabel(selected) },
+    { key: 'count', label: 'Allergen Count', render: (row) => `${row.count} (${countName(row.count)})` },
+    { key: 'rate', label: 'Rate / Total Suborder MRP (INR)', render: (row) => row.latest
+      ? <span className="pricing-table__amount">₹{row.latest.totalMrp}</span> : 'Unconfigured' },
+    { key: 'effectiveFrom', label: 'Effective From', render: (row) => row.latest
+      ? <><time dateTime={row.latest.effectiveFrom}>{date(row.latest.effectiveFrom)}</time><p className="pricing-rules-note">Latest dated revision; not necessarily effective today.</p></>
+      : 'No saved date' },
+    { key: 'actions', label: 'Actions / History', render: (row) => <>
+      <button type="button" className="admin-button admin-button--secondary" disabled={tariff.locked}
+        data-testid={`button-pricing-revision-${row.count}`}
+        aria-label={`${row.latest ? 'Add dated rate' : 'Configure rate'} for ${row.count} ${row.count === 1 ? 'allergen' : 'allergens'}`}
+        onClick={(event) => openEditor(row.count, event.currentTarget)}>{row.latest ? 'Add dated rate' : 'Configure rate'}</button>
+      {row.history.length > 0 && <details className="pricing-count-history"><summary>Saved history ({row.history.length})</summary>
+        <TariffHistory history={row.history} date={date} />
+      </details>}
+    </> },
+  ];
   return <>
     <div className="admin-page-head pricing-page-head"><div>
       <p className="admin-page-head__eyebrow">Configuration / Pricing</p><h1>Pricing Rules</h1>
       <p className="admin-page-head__description">Total suborder MRP by category and exact allergen count. Dated revisions keep saved orders unchanged.</p>
     </div><button ref={addButton} type="button" className="admin-button" disabled={tariff.locked}
-      onClick={() => openEditor(true)}><Plus size={16} aria-hidden="true" />Add Pricing Policy</button></div>
-    <section className="admin-panel pricing-policy-workspace" aria-label="Saved MRP policies">
-      <h2>Saved pricing policies</h2>
+      data-testid="button-add-pricing-rule" onClick={() => openEditor()}><Plus size={16} aria-hidden="true" />Add Pricing Rule</button></div>
+    <section className="admin-panel pricing-policy-workspace" aria-label="Saved pricing rules">
+      <h2>Saved pricing rules</h2>
       <p className="pricing-rules-note">Review a category’s MRP and dated history. Each amount is the total suborder MRP in INR, not per ml or per allergen.</p>
       {!editorOpen && <div className="pricing-policy-controls">{picker}
         <label className="pricing-saved-filter"><input type="checkbox" checked={savedOnly} disabled={tariff.locked}
+          data-testid="checkbox-pricing-saved-only"
           onChange={(event) => { choices.search('', true); setSavedOnly(event.target.checked); }} />Saved tariffs only</label>
       </div>}
       <div hidden={editorOpen}>
-        {!selected && <p className="pricing-policy-status">{choices.busy ? 'Loading category choices…'
+        {!selected && <p className="admin-feedback" role={choices.error ? 'alert' : 'status'}>{choices.busy ? 'Loading category choices…'
           : choices.error ? 'Category choices could not be loaded. Open the selector to retry.'
-            : !choices.items.length ? 'No matching categories. Turn off “Saved tariffs only” to browse all categories, or add a pricing policy.'
-              : 'Choose a category above to review saved MRP, or add a pricing policy.'}</p>}
+            : !choices.items.length ? 'No matching categories. Turn off “Saved tariffs only” to browse all categories, or add a pricing rule.'
+              : 'Choose a category above to review saved MRP, or add a pricing rule.'}</p>}
         {status}
-        {selected && <div className="pricing-policy-review-head"><h3>{categoryLabel(selected)}</h3>
-          <button ref={editButton} type="button" className="admin-button admin-button--secondary" disabled={tariff.locked || !tariff.saved}
-            onClick={() => openEditor(false)}>Add dated MRP</button></div>}
-        {tariff.saved && <div className="pricing-policy-summary">{counts.map((count) => {
-          const history = historyFor(tariff, count);
-          return <section className="pricing-policy-summary__row" key={count}>
-            <h3>{countName(count)} · {count} {count === 1 ? 'allergen' : 'allergens'}</h3>
-            {!history.length ? <p>No saved MRP for this count.</p> : <>
-              <strong>₹{history[history.length - 1].totalMrp} MRP</strong>
-              <p>Latest dated revision from <time dateTime={history[history.length - 1].effectiveFrom}>
-                {date(history[history.length - 1].effectiveFrom)}</time></p>
-              <details className="pricing-count-history"><summary>Saved MRP history ({history.length})</summary>
-                <TariffHistory history={history} date={date} />
-              </details>
-            </>}
-          </section>;
-        })}</div>}
+        {selected && <DataTable columns={columns} rows={rows} rowKey={(row) => row.count}
+          label="Selected category pricing rules" testIdPrefix="pricing-count" loading={tariff.busy && !tariff.saved}
+          loadingLabel="Loading category pricing rules…" empty={<p>No saved pricing history is available. Retry loading this category.</p>} />}
         {selected && !tariff.saved && !tariff.busy && <button className="admin-button admin-button--secondary" type="button"
+          data-testid="button-retry-pricing-history"
           onClick={() => tariff.reload()}>Retry MRP history</button>}
       </div>
     </section>
-    {editorOpen && <Dialog className="pricing-policy-dialog" title="Pricing Policy" eyebrow="Category / MRP"
-      description="Set total suborder MRP in INR for Single, Double and Triple. Save each count with its own explicit Effective From date. Zero is a valid explicit amount."
+    {editorOpen && <Dialog className="pricing-policy-dialog" title="Add Pricing Rule" eyebrow="Category / MRP"
+      description="Choose one category and allergen count. Enter total suborder MRP in INR and an explicit Effective From date. Zero is a valid amount; saved history cannot be overwritten."
       onClose={closeEditor} dismissDisabled={tariff.locked} returnFocusRef={returnFocus}>
-      <div className="pricing-policy-editor">
-        {picker}
+      <form className="pricing-policy-editor" onSubmit={submit}>
+        <div className="mr-form__grid pricing-policy-form-grid">
+          {picker}
+          <div className="mr-form__field">
+            <label className="mr-form__label" htmlFor="pricing-policy-count">Allergen Count *</label>
+            <select id="pricing-policy-count" className="mr-form__control" required value={allergenCount}
+              disabled={tariff.locked} onChange={(event) => chooseCount(event.target.value)} data-testid="select-pricing-count">
+              <option value="" disabled>Select allergen count</option>
+              {counts.map((count) => <option key={count} value={count}>{count} ({countName(count)})</option>)}
+            </select>
+          </div>
+          {tariff.saved && tariff.drafts && counts.includes(allergenCount) &&
+            <PricingCountFields key={`${selected.id}-${allergenCount}`} count={allergenCount} tariff={tariff} />}
+        </div>
         {!selected && <p className="pricing-rules-note">Select a category to create or review its dated MRP policy.</p>}
         {status}
-        {tariff.blocked && !tariff.attempt && <p className="pricing-policy-status admin-feedback--error" role="alert">
+        {tariff.blocked && !tariff.attempt && <p className="admin-feedback admin-feedback--error" role="alert">
           Saving is paused. Reload MRP history, compare the retained amounts and dates with saved history, then save a new revision.
         </p>}
         {selected && <div className="pricing-policy-actions">
           {tariff.attempt ? <button className="admin-button" type="button" disabled={tariff.busy}
-            onClick={() => tariff.save(tariff.attempt.allergenCount)}>Retry same MRP submission</button> : <>
+            data-testid="button-retry-pricing-submission"
+            onClick={() => tariff.save(tariff.attempt.allergenCount)}>Retry same MRP submission</button> :
             <button className="admin-button admin-button--secondary" type="button" disabled={tariff.busy}
+              data-testid="button-reload-pricing-history"
               onClick={() => tariff.reload()}>Reload MRP history; keep edits</button>
-            <button className="admin-button admin-button--secondary" type="button" disabled={tariff.busy || !tariff.dirty}
-              onClick={tariff.cancel}>Cancel MRP edits</button>
-          </>}
+          }
         </div>}
-        {tariff.saved && tariff.drafts && <div className="pricing-policy-rows">{counts.map((count) =>
-          <PricingCountRow key={count} count={count} tariff={tariff} date={date} />)}</div>}
-        <div className="pricing-policy-actions"><button className="admin-button admin-button--secondary" type="button"
-          disabled={tariff.locked} onClick={closeEditor}>Close editor</button></div>
-      </div>
+        {tariff.saved && counts.includes(allergenCount) && <details key={`${selected.id}-${allergenCount}`}
+          className="pricing-count-history"><summary>Saved history for count {allergenCount} ({historyFor(tariff, allergenCount).length})</summary>
+          <TariffHistory history={historyFor(tariff, allergenCount)} date={date} />
+        </details>}
+        <div className="admin-dialog__actions">
+          <button className="admin-button admin-button--secondary" type="button" data-testid="button-cancel-pricing-rule"
+            disabled={tariff.locked} onClick={closeEditor}>Cancel</button>
+          <button className="admin-button" type="submit" data-testid="button-save-pricing-rule"
+            disabled={tariff.locked || tariff.blocked || !tariff.saved || !tariff.drafts || !selected || !counts.includes(allergenCount)}>Save</button>
+        </div>
+      </form>
     </Dialog>}
   </>;
 }
 
-function PricingCountRow({ count, tariff, date }) {
+function PricingCountFields({ count, tariff }) {
   const draft = tariff.drafts[count];
   const history = historyFor(tariff, count);
-  return <section className="pricing-count-row" aria-labelledby={`pricing-count-${count}`}>
-    <h3 id={`pricing-count-${count}`}>{countName(count)} · {count} {count === 1 ? 'allergen' : 'allergens'}</h3>
-    <div className="pricing-count-row__fields">
-      <div className="pricing-field"><label htmlFor={`pricing-mrp-${count}`}>{countName(count)} MRP (INR)</label>
-        <input className="pricing-input" id={`pricing-mrp-${count}`} inputMode="decimal" maxLength={64}
+  return <>
+      <div className="mr-form__field"><label className="mr-form__label" htmlFor={`pricing-mrp-${count}`}>Rate / Total Suborder MRP (INR) *</label>
+        <input className="mr-form__control" id={`pricing-mrp-${count}`} inputMode="decimal" maxLength={64} required
+          data-testid={`input-pricing-mrp-${count}`}
           value={draft.totalMrp} disabled={tariff.locked} aria-describedby={`pricing-hint-${count}`}
           onChange={(event) => tariff.edit(count, 'totalMrp', event.target.value)} /></div>
-      <div className="pricing-field"><label htmlFor={`pricing-date-${count}`}>Effective From</label>
-        <input className="pricing-input" id={`pricing-date-${count}`} type="date" value={draft.effectiveFrom}
+      <div className="mr-form__field"><label className="mr-form__label" htmlFor={`pricing-date-${count}`}>Effective From *</label>
+        <input className="mr-form__control" id={`pricing-date-${count}`} type="date" value={draft.effectiveFrom} required
+          data-testid={`input-pricing-date-${count}`}
           aria-label={`${countName(count)} MRP Effective From`} disabled={tariff.locked}
           onChange={(event) => tariff.edit(count, 'effectiveFrom', event.target.value)} /></div>
-      <button type="button" className="admin-button" disabled={tariff.locked || tariff.blocked}
-        onClick={() => tariff.save(count)}>Save {countName(count)} MRP</button>
-    </div>
-    <p id={`pricing-hint-${count}`} className="pricing-count-row__hint">
+    <p id={`pricing-hint-${count}`} className="mr-form__hint mr-form__field--wide">
       {!history.length ? tariff.saved.suggestedUnitPrice === null
         ? `${tariff.saved.suggestionError} Enter an explicit MRP.`
         : `Editable Unit Price suggestion: ₹${tariff.saved.suggestedUnitPrice} from ${tariff.saved.categoryName} (category version ${tariff.saved.categoryVersion}). Not saved or multiplied by count.`
-        : 'Saved MRP shown. Enter an explicit date to append a revision; existing history cannot be overwritten.'}
+        : 'Latest dated MRP shown, not necessarily effective today. Enter an explicit date to append a revision; existing history cannot be overwritten.'}
     </p>
-    <details className="pricing-count-history"><summary>MRP history ({history.length})</summary>
-      <TariffHistory history={history} date={date} />
-    </details>
-  </section>;
+  </>;
 }
 
 function TariffHistory({ history, date }) {
