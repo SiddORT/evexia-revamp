@@ -147,3 +147,52 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
   .pricing-policy-actions { justify-content: stretch; }
   .pricing-policy-actions .admin-button { flex: 1 1 auto; }
 }
+
+/* Replacement combination master: no global form/table overrides. */
+.pricing-combination-workspace { gap: 14px; }
+.pricing-combination-controls { display: grid; grid-template-columns: minmax(16rem, 2fr) minmax(7rem, .7fr) minmax(12rem, 1fr); gap: 12px 16px; align-items: end; }
+.pricing-combination-controls .mr-form__field,
+.pricing-combination-batch .mr-form__field { min-width: 0; display: grid; gap: 6px; }
+.pricing-combination-allergens { margin: 0; min-width: 0; border: 1px solid var(--admin-border); border-radius: 9px; padding: 12px; display: grid; gap: 12px; }
+.pricing-combination-allergens legend { padding-inline: 6px; font-weight: 600; font-size: .875rem; }
+.pricing-combination-allergens p { margin: 0; font-size: .8125rem; color: var(--admin-text-soft); line-height: 1.5; }
+.pricing-combination-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; max-height: 280px; overflow-y: auto; overscroll-behavior: contain; padding: 3px; }
+.pricing-combination-choices label { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding-block: 5px; font-size: .875rem; color: var(--admin-text); }
+.pricing-combination-choices input { flex: none; accent-color: var(--admin-accent); }
+.pricing-combination-choices span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pricing-combination-choices small { flex: none; color: var(--admin-text-soft); }
+.pricing-combination-editor { display: grid; gap: 12px; min-width: 0; }
+.pricing-combination-editor > p { margin: 0; font-size: .8125rem; color: var(--admin-text-soft); line-height: 1.5; }
+.pricing-combination-batch { display: grid; grid-template-columns: minmax(10rem, 16rem) auto minmax(10rem, 14rem); align-items: end; justify-content: start; gap: 12px; }
+.pricing-combination-workspace .admin-table { min-width: 780px; }
+.pricing-combination-workspace .admin-table th:first-child { width: 5rem; }
+.pricing-combination-workspace .admin-table th:nth-child(2) { width: 38%; }
+.pricing-combination-workspace .admin-table th:last-child { width: 14rem; }
+.pricing-combination-workspace .admin-table td { vertical-align: top; }
+.pricing-combination-workspace .admin-table td small { display: block; color: var(--admin-text-soft); margin-block: 4px; }
+.pricing-combination-members { display: grid; gap: 8px; margin: 0; padding-left: 18px; }
+.pricing-combination-members li span { overflow-wrap: anywhere; }
+.pricing-combination-rate { width: 100%; max-width: 13rem; text-align: right; font-variant-numeric: tabular-nums; }
+.pricing-combination-search { max-width: 30rem; }
+.pricing-combination-workspace .admin-table-scroll,
+.pricing-combination-history .admin-table-scroll { min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior: contain; }
+.pricing-combination-workspace .admin-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pricing-combination-workspace :is(input, select, button):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.pricing-combination-workspace .mr-form__control { box-sizing: border-box; min-width: 0; max-width: 100%; }
+.admin-dialog.pricing-history-dialog { width: min(1000px, calc(100vw - 32px)); max-width: 1000px; }
+.pricing-combination-history { display: grid; gap: 12px; min-width: 0; overflow-wrap: anywhere; }
+.pricing-combination-history .admin-table { min-width: 720px; }
+.pricing-combination-history small { display: block; color: var(--admin-text-soft); }
+.pricing-combination-history p { color: var(--admin-text-soft); font-size: .8125rem; line-height: 1.5; }
+.pricing-combination-history .admin-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+@media (max-width: 1000px) {
+  .pricing-combination-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pricing-combination-controls .pricing-category-field { grid-column: 1 / -1; }
+  .pricing-combination-batch { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pricing-combination-batch > .mr-form__field:last-child { grid-column: 1 / -1; max-width: 16rem; }
+}
+@media (max-width: 600px) {
+  .pricing-combination-controls, .pricing-combination-choices, .pricing-combination-batch { grid-template-columns: minmax(0, 1fr); }
+  .pricing-combination-batch > .mr-form__field:last-child { max-width: none; }
+  .pricing-combination-workspace { padding: 14px; }
+}

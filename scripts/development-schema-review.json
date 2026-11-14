@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0102_category_count_tariffs",
-  "policy_sha256": "e11eab9d6aea8647f6e2ae96821dc88d2a80df4c15496ff8413b64212e396667",
+  "target": "0104_combination_pricing",
+  "policy_sha256": "0b6c594f83a2ed1d1439505bdd44c4c97251427bee2afb16950bdcd0f6944cdf",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -116,7 +116,9 @@
     "0100_applicable_gst": "36c69dbee02c034b9fe214535cf229d2eb6733711dfe28457f98fcf66464876c",
     "0101_gst_staged_merge": "59421c53f03743c5c2278eb544a9f323a9444d020e7c58456dea132061b88cd5",
     "0102_category_count_tariffs": "3c8086d4dc5e14d97ce01037d9e94aa784bd529dac831f24007366839fe0ec0a",
-    "0103_tariff_staged_merge": "6daa802b94c73a8f12def7c50e3b0ae9b67b7a2589c9c641f3587b0970774700"
+    "0103_tariff_staged_merge": "6daa802b94c73a8f12def7c50e3b0ae9b67b7a2589c9c641f3587b0970774700",
+    "0104_combination_pricing": "3b831c6cfcefc3f91278abd1f001bc9ae22274e71773c9f3528e1f0a04d94d43",
+    "0105_combination_staged_merge": "bb02417a2a08be9440aeafce0b2760bd03fc753207adcd611f7e4d1bb53dd222"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

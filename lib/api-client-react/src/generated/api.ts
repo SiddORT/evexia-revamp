@@ -44,6 +44,13 @@ import type {
   CategoryCountTariffSaved,
   CategoryCountTariffView,
   ChangePasswordRequest,
+  CombinationAllergenPage,
+  CombinationCategoryPage,
+  CombinationGenerate,
+  CombinationHistory,
+  CombinationPage,
+  CombinationResult,
+  CombinationSave,
   CommitAllergenImportBody,
   CommitAllergenImportParams,
   CommitCourierImportBody,
@@ -185,6 +192,7 @@ import type {
   GSTHistoryPage,
   GSTSettingsView,
   GSTSettingsWrite,
+  GetCombinationPricingHistoryParams,
   GetGSTHistoryParams,
   GetImmunotherapyExtractSettingsParams,
   GetInHouseStockReferencesParams,
@@ -278,6 +286,8 @@ import type {
   ListAllergenReferencesParams,
   ListAllergensParams,
   ListCategoryCountTariffCategoriesParams,
+  ListCombinationPricingAllergensParams,
+  ListCombinationPricingCategoriesParams,
   ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
@@ -49016,3 +49026,597 @@ export function useGetCategoryCountTariffs<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListCombinationPricingAllergensUrl = (
+  categoryId: string,
+  params?: ListCombinationPricingAllergensParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/combinations/allergens/${categoryId}?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/combinations/allergens/${categoryId}`;
+};
+
+/**
+ * @summary Combination Allergens
+ */
+export const listCombinationPricingAllergens = async (
+  categoryId: string,
+  params?: ListCombinationPricingAllergensParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationAllergenPage> => {
+  return customFetch<CombinationAllergenPage>(
+    getListCombinationPricingAllergensUrl(categoryId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCombinationPricingAllergensQueryKey = (
+  categoryId: string,
+  params?: ListCombinationPricingAllergensParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/combinations/allergens/${categoryId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListCombinationPricingAllergensQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCombinationPricingAllergens>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  params?: ListCombinationPricingAllergensParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCombinationPricingAllergens>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListCombinationPricingAllergensQueryKey(categoryId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCombinationPricingAllergens>>
+  > = ({ signal }) =>
+    listCombinationPricingAllergens(categoryId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: categoryId !== null && categoryId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCombinationPricingAllergens>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCombinationPricingAllergensQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCombinationPricingAllergens>>
+>;
+export type ListCombinationPricingAllergensQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Combination Allergens
+ */
+
+export function useListCombinationPricingAllergens<
+  TData = Awaited<ReturnType<typeof listCombinationPricingAllergens>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  params?: ListCombinationPricingAllergensParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCombinationPricingAllergens>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCombinationPricingAllergensQueryOptions(
+    categoryId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListCombinationPricingCategoriesUrl = (
+  params?: ListCombinationPricingCategoriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/combinations/categories?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/combinations/categories`;
+};
+
+/**
+ * @summary Combination Categories
+ */
+export const listCombinationPricingCategories = async (
+  params?: ListCombinationPricingCategoriesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationCategoryPage> => {
+  return customFetch<CombinationCategoryPage>(
+    getListCombinationPricingCategoriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCombinationPricingCategoriesQueryKey = (
+  params?: ListCombinationPricingCategoriesParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/combinations/categories`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListCombinationPricingCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCombinationPricingCategories>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCombinationPricingCategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCombinationPricingCategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListCombinationPricingCategoriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCombinationPricingCategories>>
+  > = ({ signal }) =>
+    listCombinationPricingCategories(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCombinationPricingCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCombinationPricingCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCombinationPricingCategories>>
+>;
+export type ListCombinationPricingCategoriesQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Combination Categories
+ */
+
+export function useListCombinationPricingCategories<
+  TData = Awaited<ReturnType<typeof listCombinationPricingCategories>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCombinationPricingCategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCombinationPricingCategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCombinationPricingCategoriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGenerateCombinationPricingRowsUrl = () => {
+  return `/api/v1/admin/pricing-rules/combinations/generate`;
+};
+
+/**
+ * @summary Combination Generate
+ */
+export const generateCombinationPricingRows = async (
+  combinationGenerate: CombinationGenerate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationPage> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CombinationPage>(getGenerateCombinationPricingRowsUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(combinationGenerate),
+  });
+};
+
+export const getGenerateCombinationPricingRowsMutationKey = () =>
+  ["generateCombinationPricingRows"] as const;
+
+export const getGenerateCombinationPricingRowsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateCombinationPricingRows>>,
+    TError,
+    GenerateCombinationPricingRowsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateCombinationPricingRows>>,
+  TError,
+  GenerateCombinationPricingRowsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getGenerateCombinationPricingRowsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateCombinationPricingRows>>,
+    GenerateCombinationPricingRowsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateCombinationPricingRows(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateCombinationPricingRowsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateCombinationPricingRows>>
+>;
+export type GenerateCombinationPricingRowsMutationBody =
+  BodyType<CombinationGenerate>;
+export type GenerateCombinationPricingRowsMutationError =
+  ErrorType<ErrorEnvelope>;
+export type GenerateCombinationPricingRowsMutationVariables = {
+  data: BodyType<CombinationGenerate>;
+};
+
+/**
+ * @summary Combination Generate
+ */
+export const useGenerateCombinationPricingRows = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateCombinationPricingRows>>,
+    TError,
+    GenerateCombinationPricingRowsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateCombinationPricingRows>>,
+  TError,
+  GenerateCombinationPricingRowsMutationVariables,
+  TContext
+> => {
+  return useMutation(getGenerateCombinationPricingRowsMutationOptions(options));
+};
+
+export const getGetCombinationPricingHistoryUrl = (
+  categoryId: string,
+  params: GetCombinationPricingHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/combinations/history/${categoryId}?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/combinations/history/${categoryId}`;
+};
+
+/**
+ * @summary Combination History
+ */
+export const getCombinationPricingHistory = async (
+  categoryId: string,
+  params: GetCombinationPricingHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationHistory> => {
+  return customFetch<CombinationHistory>(
+    getGetCombinationPricingHistoryUrl(categoryId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCombinationPricingHistoryQueryKey = (
+  categoryId: string,
+  params?: GetCombinationPricingHistoryParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/combinations/history/${categoryId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetCombinationPricingHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCombinationPricingHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  params: GetCombinationPricingHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCombinationPricingHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetCombinationPricingHistoryQueryKey(categoryId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCombinationPricingHistory>>
+  > = ({ signal }) =>
+    getCombinationPricingHistory(categoryId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: categoryId !== null && categoryId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCombinationPricingHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCombinationPricingHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCombinationPricingHistory>>
+>;
+export type GetCombinationPricingHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Combination History
+ */
+
+export function useGetCombinationPricingHistory<
+  TData = Awaited<ReturnType<typeof getCombinationPricingHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  categoryId: string,
+  params: GetCombinationPricingHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCombinationPricingHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCombinationPricingHistoryQueryOptions(
+    categoryId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSaveCombinationPricingBatchUrl = () => {
+  return `/api/v1/admin/pricing-rules/combinations/save`;
+};
+
+/**
+ * @summary Combination Save
+ */
+export const saveCombinationPricingBatch = async (
+  combinationSave: CombinationSave,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CombinationResult>(getSaveCombinationPricingBatchUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(combinationSave),
+  });
+};
+
+export const getSaveCombinationPricingBatchMutationKey = () =>
+  ["saveCombinationPricingBatch"] as const;
+
+export const getSaveCombinationPricingBatchMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveCombinationPricingBatch>>,
+    TError,
+    SaveCombinationPricingBatchMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveCombinationPricingBatch>>,
+  TError,
+  SaveCombinationPricingBatchMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSaveCombinationPricingBatchMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveCombinationPricingBatch>>,
+    SaveCombinationPricingBatchMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return saveCombinationPricingBatch(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveCombinationPricingBatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveCombinationPricingBatch>>
+>;
+export type SaveCombinationPricingBatchMutationBody = BodyType<CombinationSave>;
+export type SaveCombinationPricingBatchMutationError = ErrorType<ErrorEnvelope>;
+export type SaveCombinationPricingBatchMutationVariables = {
+  data: BodyType<CombinationSave>;
+};
+
+/**
+ * @summary Combination Save
+ */
+export const useSaveCombinationPricingBatch = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveCombinationPricingBatch>>,
+    TError,
+    SaveCombinationPricingBatchMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveCombinationPricingBatch>>,
+  TError,
+  SaveCombinationPricingBatchMutationVariables,
+  TContext
+> => {
+  return useMutation(getSaveCombinationPricingBatchMutationOptions(options));
+};

@@ -14119,6 +14119,217 @@ export interface CategoryCountTariffView {
   suggestionError?: string | null;
 }
 
+export interface CombinationMember {
+  id: string;
+  mix: boolean;
+  name: string;
+  version: number;
+}
+
+export interface CombinationAllergenPage {
+  items: CombinationMember[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface CombinationCategoryPage {
+  items: ItPricingReference[];
+  nextOffset: number | null;
+}
+
+export interface CombinationEdit {
+  /**
+   * @minItems 1
+   * @maxItems 3
+   */
+  memberIds: string[];
+  /**
+   * @maxLength 15
+   * @pattern ^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$
+   */
+  totalMrp: string;
+}
+
+export type CombinationGenerateDosage =
+  (typeof CombinationGenerateDosage)[keyof typeof CombinationGenerateDosage];
+
+export const CombinationGenerateDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export interface CombinationGenerate {
+  allergenIds?: string[] | null;
+  categoryId: string;
+  dosage: CombinationGenerateDosage;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000
+   */
+  offset?: number;
+  /** @maxLength 100 */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 3
+   */
+  size: number;
+}
+
+export type CombinationRevisionDosage =
+  (typeof CombinationRevisionDosage)[keyof typeof CombinationRevisionDosage];
+
+export const CombinationRevisionDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export interface CombinationRevision {
+  actorId: string;
+  categoryId: string;
+  categoryName: string;
+  dosage: CombinationRevisionDosage;
+  effectiveFrom: string;
+  id: string;
+  memberIds: string[];
+  members: CombinationMember[];
+  recordedAt: string;
+  /**
+   * @maxLength 15
+   * @pattern ^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$
+   */
+  totalMrp: string;
+  version: number;
+}
+
+export interface CombinationHistory {
+  items: CombinationRevision[];
+  nextOffset: number | null;
+}
+
+export type CombinationPageDosage =
+  (typeof CombinationPageDosage)[keyof typeof CombinationPageDosage];
+
+export const CombinationPageDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export type CombinationPageRowVersions = { [key: string]: number };
+
+export interface CombinationRow {
+  key: string;
+  latest: CombinationRevision | null;
+  members: CombinationMember[];
+}
+
+export interface CombinationPage {
+  categoryId: string;
+  dosage: CombinationPageDosage;
+  eligibilityVersion: string;
+  items: CombinationRow[];
+  limit: number;
+  offset: number;
+  rowVersions: CombinationPageRowVersions;
+  scopeKeys: string[];
+  scopeTotal: number;
+  scopeVersion: string;
+  size: number;
+  total: number;
+}
+
+export type CombinationResultDosage =
+  (typeof CombinationResultDosage)[keyof typeof CombinationResultDosage];
+
+export const CombinationResultDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export interface CombinationResult {
+  categoryId: string;
+  dosage: CombinationResultDosage;
+  effectiveFrom: string;
+  eligibilityVersion: string;
+  requestId: string;
+  saved: CombinationRevision[];
+  scopeVersion: string;
+}
+
+export type CombinationSaveDosage =
+  (typeof CombinationSaveDosage)[keyof typeof CombinationSaveDosage];
+
+export const CombinationSaveDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export interface CombinationSave {
+  allergenIds?: string[] | null;
+  categoryId: string;
+  copyRate?: string | null;
+  dosage: CombinationSaveDosage;
+  /** @maxItems 1000 */
+  edits?: CombinationEdit[];
+  effectiveFrom: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  eligibilityVersion: string;
+  idempotencyKey: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  scopeVersion: string;
+  /**
+   * @minimum 1
+   * @maximum 3
+   */
+  size: number;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -17803,3 +18014,71 @@ export type ListCategoryCountTariffCategoriesParams = {
   limit?: number;
   savedOnly?: boolean;
 };
+
+export type ListCombinationPricingAllergensParams = {
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListCombinationPricingCategoriesParams = {
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetCombinationPricingHistoryParams = {
+  dosage: GetCombinationPricingHistoryDosage;
+  /**
+   * @maxLength 110
+   */
+  memberKey?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetCombinationPricingHistoryDosage =
+  (typeof GetCombinationPricingHistoryDosage)[keyof typeof GetCombinationPricingHistoryDosage];
+
+export const GetCombinationPricingHistoryDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;

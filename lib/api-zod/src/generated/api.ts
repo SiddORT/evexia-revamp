@@ -2798,6 +2798,41 @@ export const listCategoryCountTariffCategoriesQueryOffsetMax = 1000000;
 export const listCategoryCountTariffCategoriesQueryLimitDefault = 50;
 export const listCategoryCountTariffCategoriesQueryLimitMax = 100;
 export const listCategoryCountTariffCategoriesQuerySavedOnlyDefault = false;
+export const listCombinationPricingAllergensQueryQueryMax = 100;
+export const listCombinationPricingAllergensQueryOffsetDefault = 0;
+export const listCombinationPricingAllergensQueryOffsetMin = 0;
+export const listCombinationPricingAllergensQueryOffsetMax = 1000000;
+export const listCombinationPricingAllergensQueryLimitDefault = 50;
+export const listCombinationPricingAllergensQueryLimitMax = 100;
+export const listCombinationPricingCategoriesQueryQueryMax = 100;
+export const listCombinationPricingCategoriesQueryOffsetDefault = 0;
+export const listCombinationPricingCategoriesQueryOffsetMin = 0;
+export const listCombinationPricingCategoriesQueryOffsetMax = 1000000;
+export const listCombinationPricingCategoriesQueryLimitDefault = 50;
+export const listCombinationPricingCategoriesQueryLimitMax = 100;
+export const generateCombinationPricingRowsBodyAllergenIdsOneMax = 500;
+export const generateCombinationPricingRowsBodyLimitDefault = 25;
+export const generateCombinationPricingRowsBodyLimitMax = 100;
+export const generateCombinationPricingRowsBodyOffsetDefault = 0;
+export const generateCombinationPricingRowsBodyOffsetMin = 0;
+export const generateCombinationPricingRowsBodyOffsetMax = 1000;
+export const generateCombinationPricingRowsBodyQueryMax = 100;
+export const generateCombinationPricingRowsBodySizeMax = 3;
+export const generateCombinationPricingRowsResponseItemsItemLatestOneTotalMrpMax = 15;
+export const getCombinationPricingHistoryQueryMemberKeyMax = 110;
+export const getCombinationPricingHistoryQueryOffsetDefault = 0;
+export const getCombinationPricingHistoryQueryOffsetMin = 0;
+export const getCombinationPricingHistoryQueryOffsetMax = 1000000;
+export const getCombinationPricingHistoryQueryLimitDefault = 25;
+export const getCombinationPricingHistoryQueryLimitMax = 100;
+export const getCombinationPricingHistoryResponseItemsItemTotalMrpMax = 15;
+export const saveCombinationPricingBatchBodyAllergenIdsOneMax = 500;
+export const saveCombinationPricingBatchBodyCopyRateOneMax = 15;
+export const saveCombinationPricingBatchBodyEditsItemMemberIdsMax = 3;
+export const saveCombinationPricingBatchBodyEditsItemTotalMrpMax = 15;
+export const saveCombinationPricingBatchBodyEditsMax = 1000;
+export const saveCombinationPricingBatchBodySizeMax = 3;
+export const saveCombinationPricingBatchResponseSavedItemTotalMrpMax = 15;
 
 /**
  * @summary <Lambda>
@@ -49400,4 +49435,430 @@ export const GetCategoryCountTariffsResponse = zod.object({
   ),
   suggestedUnitPrice: zod.union([zod.string(), zod.null()]),
   suggestionError: zod.union([zod.string(), zod.null()]).optional(),
+});
+
+/**
+ * @summary Combination Allergens
+ */
+export const ListCombinationPricingAllergensParams = zod.object({
+  category_id: zod.coerce.string().uuid(),
+});
+
+export const listCombinationPricingAllergensQueryQueryDefault = ``;
+
+export const ListCombinationPricingAllergensQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listCombinationPricingAllergensQueryQueryMax)
+    .default(listCombinationPricingAllergensQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listCombinationPricingAllergensQueryOffsetMin)
+    .max(listCombinationPricingAllergensQueryOffsetMax)
+    .default(listCombinationPricingAllergensQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listCombinationPricingAllergensQueryLimitMax)
+    .default(listCombinationPricingAllergensQueryLimitDefault),
+});
+
+export const ListCombinationPricingAllergensResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      mix: zod.boolean(),
+      name: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Combination Categories
+ */
+export const listCombinationPricingCategoriesQueryQueryDefault = ``;
+
+export const ListCombinationPricingCategoriesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listCombinationPricingCategoriesQueryQueryMax)
+    .default(listCombinationPricingCategoriesQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listCombinationPricingCategoriesQueryOffsetMin)
+    .max(listCombinationPricingCategoriesQueryOffsetMax)
+    .default(listCombinationPricingCategoriesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listCombinationPricingCategoriesQueryLimitMax)
+    .default(listCombinationPricingCategoriesQueryLimitDefault),
+});
+
+export const ListCombinationPricingCategoriesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  nextOffset: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Combination Generate
+ */
+
+export const generateCombinationPricingRowsBodyQueryDefault = ``;
+
+export const GenerateCombinationPricingRowsBody = zod.object({
+  allergenIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(generateCombinationPricingRowsBodyAllergenIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  categoryId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  limit: zod
+    .number()
+    .int()
+    .min(1)
+    .max(generateCombinationPricingRowsBodyLimitMax)
+    .default(generateCombinationPricingRowsBodyLimitDefault),
+  offset: zod
+    .number()
+    .int()
+    .min(generateCombinationPricingRowsBodyOffsetMin)
+    .max(generateCombinationPricingRowsBodyOffsetMax)
+    .default(generateCombinationPricingRowsBodyOffsetDefault),
+  query: zod
+    .string()
+    .max(generateCombinationPricingRowsBodyQueryMax)
+    .default(generateCombinationPricingRowsBodyQueryDefault),
+  size: zod
+    .number()
+    .int()
+    .min(1)
+    .max(generateCombinationPricingRowsBodySizeMax),
+});
+
+export const generateCombinationPricingRowsResponseItemsItemLatestOneTotalMrpRegExp =
+  new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
+
+export const GenerateCombinationPricingRowsResponse = zod.object({
+  categoryId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  eligibilityVersion: zod.string(),
+  items: zod.array(
+    zod.object({
+      key: zod.string(),
+      latest: zod.union([
+        zod.object({
+          actorId: zod.string().uuid(),
+          categoryId: zod.string().uuid(),
+          categoryName: zod.string(),
+          dosage: zod.enum([
+            "PD",
+            "DD",
+            "B1",
+            "B2",
+            "B3",
+            "B4",
+            "B5",
+            "B6",
+            "B7",
+            "B8",
+          ]),
+          effectiveFrom: zod.coerce.date(),
+          id: zod.string().uuid(),
+          memberIds: zod.array(zod.string().uuid()),
+          members: zod.array(
+            zod.object({
+              id: zod.string().uuid(),
+              mix: zod.boolean(),
+              name: zod.string(),
+              version: zod.number().int(),
+            }),
+          ),
+          recordedAt: zod.coerce.date(),
+          totalMrp: zod
+            .string()
+            .max(
+              generateCombinationPricingRowsResponseItemsItemLatestOneTotalMrpMax,
+            )
+            .regex(
+              generateCombinationPricingRowsResponseItemsItemLatestOneTotalMrpRegExp,
+            ),
+          version: zod.number().int(),
+        }),
+        zod.null(),
+      ]),
+      members: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          mix: zod.boolean(),
+          name: zod.string(),
+          version: zod.number().int(),
+        }),
+      ),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  rowVersions: zod.record(zod.string(), zod.number().int()),
+  scopeKeys: zod.array(zod.string()),
+  scopeTotal: zod.number().int(),
+  scopeVersion: zod.string(),
+  size: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Combination History
+ */
+export const GetCombinationPricingHistoryParams = zod.object({
+  category_id: zod.coerce.string().uuid(),
+});
+
+export const getCombinationPricingHistoryQueryMemberKeyDefault = ``;
+
+export const GetCombinationPricingHistoryQueryParams = zod.object({
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  memberKey: zod.coerce
+    .string()
+    .max(getCombinationPricingHistoryQueryMemberKeyMax)
+    .default(getCombinationPricingHistoryQueryMemberKeyDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getCombinationPricingHistoryQueryOffsetMin)
+    .max(getCombinationPricingHistoryQueryOffsetMax)
+    .default(getCombinationPricingHistoryQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getCombinationPricingHistoryQueryLimitMax)
+    .default(getCombinationPricingHistoryQueryLimitDefault),
+});
+
+export const getCombinationPricingHistoryResponseItemsItemTotalMrpRegExp =
+  new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
+
+export const GetCombinationPricingHistoryResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      actorId: zod.string().uuid(),
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
+      dosage: zod.enum([
+        "PD",
+        "DD",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+      ]),
+      effectiveFrom: zod.coerce.date(),
+      id: zod.string().uuid(),
+      memberIds: zod.array(zod.string().uuid()),
+      members: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          mix: zod.boolean(),
+          name: zod.string(),
+          version: zod.number().int(),
+        }),
+      ),
+      recordedAt: zod.coerce.date(),
+      totalMrp: zod
+        .string()
+        .max(getCombinationPricingHistoryResponseItemsItemTotalMrpMax)
+        .regex(getCombinationPricingHistoryResponseItemsItemTotalMrpRegExp),
+      version: zod.number().int(),
+    }),
+  ),
+  nextOffset: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Combination Save
+ */
+
+export const saveCombinationPricingBatchBodyCopyRateOneRegExp = new RegExp(
+  "^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$",
+);
+
+export const saveCombinationPricingBatchBodyEditsItemTotalMrpRegExp =
+  new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
+
+export const saveCombinationPricingBatchBodyEligibilityVersionRegExp =
+  new RegExp("^[a-f0-9]{64}$");
+export const saveCombinationPricingBatchBodyScopeVersionRegExp = new RegExp(
+  "^[a-f0-9]{64}$",
+);
+
+export const SaveCombinationPricingBatchBody = zod.object({
+  allergenIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(saveCombinationPricingBatchBodyAllergenIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  categoryId: zod.string().uuid(),
+  copyRate: zod
+    .union([
+      zod
+        .string()
+        .max(saveCombinationPricingBatchBodyCopyRateOneMax)
+        .regex(saveCombinationPricingBatchBodyCopyRateOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  edits: zod
+    .array(
+      zod.object({
+        memberIds: zod
+          .array(zod.string().uuid())
+          .min(1)
+          .max(saveCombinationPricingBatchBodyEditsItemMemberIdsMax),
+        totalMrp: zod
+          .string()
+          .max(saveCombinationPricingBatchBodyEditsItemTotalMrpMax)
+          .regex(saveCombinationPricingBatchBodyEditsItemTotalMrpRegExp),
+      }),
+    )
+    .max(saveCombinationPricingBatchBodyEditsMax)
+    .optional(),
+  effectiveFrom: zod.coerce.date(),
+  eligibilityVersion: zod
+    .string()
+    .regex(saveCombinationPricingBatchBodyEligibilityVersionRegExp),
+  idempotencyKey: zod.string().uuid(),
+  scopeVersion: zod
+    .string()
+    .regex(saveCombinationPricingBatchBodyScopeVersionRegExp),
+  size: zod.number().int().min(1).max(saveCombinationPricingBatchBodySizeMax),
+});
+
+export const saveCombinationPricingBatchResponseSavedItemTotalMrpRegExp =
+  new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
+
+export const SaveCombinationPricingBatchResponse = zod.object({
+  categoryId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  effectiveFrom: zod.coerce.date(),
+  eligibilityVersion: zod.string(),
+  requestId: zod.string().uuid(),
+  saved: zod.array(
+    zod.object({
+      actorId: zod.string().uuid(),
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
+      dosage: zod.enum([
+        "PD",
+        "DD",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+      ]),
+      effectiveFrom: zod.coerce.date(),
+      id: zod.string().uuid(),
+      memberIds: zod.array(zod.string().uuid()),
+      members: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          mix: zod.boolean(),
+          name: zod.string(),
+          version: zod.number().int(),
+        }),
+      ),
+      recordedAt: zod.coerce.date(),
+      totalMrp: zod
+        .string()
+        .max(saveCombinationPricingBatchResponseSavedItemTotalMrpMax)
+        .regex(saveCombinationPricingBatchResponseSavedItemTotalMrpRegExp),
+      version: zod.number().int(),
+    }),
+  ),
+  scopeVersion: zod.string(),
 });

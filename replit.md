@@ -175,6 +175,20 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+Pricing Rules now uses the protected **Combination Pricing Master**: Product
+Category → saved eligible allergens with read-only Mix/No Mix → canonical
+PD/DD/B1–B8 dosage → individual/pair/triple. Specific member/dosage rates are
+configuration-only Total Suborder MRP, not INR/ml or clinical quantities.
+Existing count/material records remain read-only evidence; existing saved orders
+and current order-price consumers are unchanged. Activating combination rates
+in placement/quotation needs separate authorization. Forward `0104` and staged
+join `0105`, schema/readiness metadata, API/client source and the replacement
+workspace are prepared but unapplied. **No tests, builds, typechecks, regression/
+release/validation wrappers, runtime/browser/preview probes, service starts/
+restarts, migrations, live writes or deployment were performed.** Only source/
+diff review and offline contract generation/formatting were used. See
+`docs/combination-pricing.md` for bounds, copy/draft scope and activation limits.
+
 MR Dashboard and Targets report only the authenticated MR's saved financial-year
 target and approved-order sales across Immunotherapy, SPT, Kits and Lupin.
 Approved/In process, Shipped and Delivered contribute by saved order date;

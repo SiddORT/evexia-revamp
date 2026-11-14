@@ -1,5 +1,12 @@
 # Category Count Pricing History — prepared source
 
+> **Current configuration UI:** [Combination Pricing Master](combination-pricing.md)
+> replaces the count editor with explicit member/dosage rates. The count and
+> material rules described below remain retained read-only evidence; their
+> existing order consumers are unchanged. New combination rates are not active
+> in placement/quotation and are never converted from these older rates.
+> Earlier combined-editor descriptions below are historical, not a second UI.
+
 ## Policy and scope
 
 New governed MR Immunotherapy placements, including final placement of a private

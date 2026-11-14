@@ -67,7 +67,7 @@ def project(row, crypto):
 def history(db, actor, category_id):
     def work(_, crypto):
         category = db.get(ProductCategory, category_id)
-        if not category or category.deleted_at:
+        if not category:
             raise PricingRuleError("Choose a saved available category.", 404, "it_tariff_category")
         suggestion, suggestion_error = None, None
         try:

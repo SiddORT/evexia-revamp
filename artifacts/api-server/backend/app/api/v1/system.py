@@ -44,6 +44,8 @@ def readiness(db: Session = Depends(get_db)):
             # Runtime compatibility only: never change the development target
             # or activate the staged scheduler by accepting this exact merge.
             accepted.append(["0103_tariff_staged_merge"])
+        if SCHEMA_REVISION == "0104_combination_pricing":
+            accepted.append(["0105_combination_staged_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -57,7 +59,11 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
-        staged_tariff_merge = revisions == ["0103_tariff_staged_merge"]
+        staged_tariff_merge = revisions in (["0103_tariff_staged_merge"], ["0105_combination_staged_merge"])
+        if revisions in (["0104_combination_pricing"], ["0105_combination_staged_merge"]):
+            from app.services.combination_pricing import ready as combination_ready
+            combination_ready(db)
+            revisions = ["0103_tariff_staged_merge"] if staged_tariff_merge else ["0102_category_count_tariffs"]
         if revisions in (["0102_category_count_tariffs"], ["0103_tariff_staged_merge"]):
             from app.services.category_count_tariffs import ready as tariff_ready
             tariff_ready(db)

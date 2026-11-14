@@ -1,4 +1,14 @@
-# Current policy: dated category/count Total Suborder MRP
+# Current configuration: Combination Pricing Master
+
+See [Combination Pricing Master](combination-pricing.md) for the protected
+category → saved allergens → canonical dosage → size workspace. Its explicit
+Total Suborder MRP rates are configuration-only and require separate approval
+before order quotation/placement activation. Count and material-rate records
+remain read-only evidence; existing order-price consumers and saved orders are
+unchanged. No historical rates are converted into specific combination prices.
+No checks, runtime verification, migrations or deployment were performed.
+
+## Retained count-policy documentation
 
 The combined master and new governed Immunotherapy consumer are documented in
 [Category Count Pricing History](category-count-pricing.md). This supersedes

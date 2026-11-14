@@ -15,9 +15,47 @@ from app.schemas.category_count_tariffs import (
     CategoryCountTariffView, CategoryCountTariffCategoryPage,
 )
 from app.services import category_count_tariffs
+from app.services import combination_pricing
+from app.schemas.combination_pricing import (
+    CombinationGenerate, CombinationSave, CombinationPage, CombinationResult,
+    CombinationHistory, CombinationAllergenPage, CombinationCategoryPage,
+)
+from app.schemas.immunotherapy_extract import Dosage
 
 router = APIRouter(prefix="/admin/pricing-rules", tags=["IT Pricing Rules"])
 manager = require_permissions("admin.access")
+
+
+@router.get("/combinations/categories", response_model=CombinationCategoryPage, operation_id="listCombinationPricingCategories")
+def combination_categories(query: str = Query("", max_length=100),
+                           offset: int = Query(0, ge=0, le=1000000), limit: int = Query(50, ge=1, le=100),
+                           actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_pricing.categories(db, actor, query, offset, limit)
+
+
+@router.get("/combinations/allergens/{category_id}", response_model=CombinationAllergenPage, operation_id="listCombinationPricingAllergens")
+def combination_allergens(category_id: uuid.UUID, query: str = Query("", max_length=100),
+                         offset: int = Query(0, ge=0, le=1000000), limit: int = Query(50, ge=1, le=100),
+                         actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_pricing.allergens(db, actor, category_id, query, offset, limit)
+
+
+@router.post("/combinations/generate", response_model=CombinationPage, operation_id="generateCombinationPricingRows")
+def combination_generate(body: CombinationGenerate, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_pricing.generate(db, actor, body)
+
+
+@router.post("/combinations/save", response_model=CombinationResult, operation_id="saveCombinationPricingBatch")
+def combination_save(body: CombinationSave, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_pricing.save(db, actor, body)
+
+
+@router.get("/combinations/history/{category_id}", response_model=CombinationHistory, operation_id="getCombinationPricingHistory")
+def combination_history(category_id: uuid.UUID, dosage: Dosage,
+                        memberKey: str = Query("", max_length=110),
+                        offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
+                        actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_pricing.history(db, actor, category_id, dosage, memberKey, offset, limit)
 
 
 @router.get("/count-tariffs/categories", response_model=CategoryCountTariffCategoryPage, operation_id="listCategoryCountTariffCategories")

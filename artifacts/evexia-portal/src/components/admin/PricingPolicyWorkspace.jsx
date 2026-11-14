@@ -1,307 +1,280 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus } from 'lucide-react';
-import Dialog from './Dialog.jsx';
 import DataTable from './DataTable.jsx';
 import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
-import useCountTariffs from './useCountTariffs.js';
-import { formatAdminDate, useAdminPreferences } from './adminPreferences.js';
+import useCombinationPricing from './useCombinationPricing.js';
+import usePricingCategories from './usePricingCategories.js';
+import CombinationPricingHistory from './CombinationPricingHistory.jsx';
+import CountTariffEvidence from './CountTariffEvidence.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
-import { tariffCategories } from '../../services/serverCountTariffs.js';
+import { combinationAllergens, DOSAGES, exactCombinationRate } from '../../services/serverCombinationPricing.js';
+import { formatAdminDate, useAdminPreferences } from './adminPreferences.js';
 import '../../mr.css';
 
-const counts = [1, 2, 3];
-const countName = (count) => ['', 'Single', 'Double', 'Triple'][count];
-const categoryLabel = (category) => `${category.name}${category.status === 'active' ? '' : ' (inactive)'}`;
-const historyFor = (tariff, count) => (tariff.saved?.history || [])
-  .filter((row) => row.allergenCount === count).sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
-
-// Category discovery remains scoped and paged through the existing tariff API.
-function useTariffCategories(savedOnly, revision) {
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState({ items: [], nextOffset: null });
-  const [busy, setBusy] = useState(true);
-  const [error, setError] = useState('');
-  const [retry, setRetry] = useState(0);
-  const sequence = useRef(0);
-  const pending = useRef(false);
-  useEffect(() => {
-    const controller = new AbortController();
-    const seq = ++sequence.current;
-    pending.current = true;
-    setPage({ items: [], nextOffset: null }); setBusy(true); setError('');
-    const timer = setTimeout(() => tariffCategories({ query, savedOnly, limit: 50 }, controller.signal)
-      .then((value) => { if (seq === sequence.current) setPage(value); })
-      .catch((cause) => { if (!controller.signal.aborted && seq === sequence.current) setError(cause.message); })
-      .finally(() => { if (seq === sequence.current) { pending.current = false; setBusy(false); } }), 200);
-    return () => { clearTimeout(timer); controller.abort(); sequence.current++; };
-  }, [query, savedOnly, revision, retry]);
-  function search(text, force = false) {
-    if (!force && text === query) return;
-    sequence.current++; pending.current = true;
-    setPage({ items: [], nextOffset: null }); setBusy(true); setError('');
-    if (force) setRetry((value) => value + 1);
-    else setQuery(text);
-  }
-  async function more() {
-    if (pending.current || page.nextOffset === null) return;
-    const seq = sequence.current;
-    pending.current = true; setBusy(true); setError('');
-    try {
-      const value = await tariffCategories({ query, savedOnly, offset: page.nextOffset, limit: 50 });
-      if (seq === sequence.current) setPage((old) => ({ ...value,
-        items: [...old.items, ...value.items.filter((item) => !old.items.some((known) => known.id === item.id))] }));
-    } catch (cause) { if (seq === sequence.current) setError(cause.message); }
-    finally { if (seq === sequence.current) { pending.current = false; setBusy(false); } }
-  }
-  return { ...page, query, busy, error, search, more };
-}
-
+const SIZES = ['Individual', 'Combination of 2', 'Combination of 3'];
 export default function PricingPolicyWorkspace() {
   const session = useAdminSession();
   const confirm = usePlatformConfirm();
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [allergenCount, setAllergenCount] = useState('');
-  const [selected, setSelected] = useState(null);
-  const [savedOnly, setSavedOnly] = useState(true);
-  const [revision, setRevision] = useState(0);
-  const choices = useTariffCategories(editorOpen ? false : savedOnly, revision);
-  const tariff = useCountTariffs(selected?.id, true, session.user?.id, { pricingOnly: true });
   const prefs = useAdminPreferences();
-  const date = (value) => formatAdminDate(value, prefs) || value;
-  const addButton = useRef(null);
-  const returnFocus = useRef(null);
-  const pickerId = editorOpen ? 'pricing-policy-category' : 'pricing-review-category';
-  const choiceSequence = useRef(0);
-  const confirming = useRef(false);
+  const choices = usePricingCategories();
+  const [category, setCategory] = useState(null);
+  const [dosage, setDosage] = useState('PD');
+  const [size, setSize] = useState(1);
+  const [selection, setSelection] = useState(null);
+  const [allergenQuery, setAllergenQuery] = useState('');
+  const [allergenOffset, setAllergenOffset] = useState(0);
+  const [allergens, setAllergens] = useState(null);
+  const [allergenBusy, setAllergenBusy] = useState(false);
+  const [allergenError, setAllergenError] = useState('');
+  const [allergenRetry, setAllergenRetry] = useState(0);
+  const [copySource, setCopySource] = useState('');
+  const [localError, setLocalError] = useState('');
+  const [history, setHistory] = useState(null);
+  const [countOpen, setCountOpen] = useState(false);
+  const historyTrigger = useRef(null);
+  const pendingFocus = useRef(null);
+  const wasWorking = useRef(false);
+  const deciding = useRef(false);
+  const selectionBusy = useRef(false);
+  const [selecting, setSelecting] = useState(false);
+  const sequence = useRef(0);
+  const tariff = useCombinationPricing(category?.status === 'active'
+    ? { categoryId: category.id, dosage, size, allergenIds: selection } : null, session.user.id);
   const latest = useRef({});
-  latest.current = { tariff, selected, editorOpen, pickerId };
-  useConfirmedNavigation(() => latest.current.tariff.getGuardState(), 'Discard unsaved MRP changes and leave Pricing Rules?');
+  latest.current = { tariff, category, selection, dosage, size };
+  const guard = () => ({ ...latest.current.tariff.getGuardState(),
+    busy: latest.current.tariff.getGuardState().busy || selectionBusy.current });
+  useConfirmedNavigation(guard, 'Discard unsaved combination rates and leave Pricing Rules?');
   useEffect(() => {
     const unload = (event) => {
-      const state = latest.current.tariff.getGuardState();
-      if (!state.dirty && !state.busy && !state.uncertain) return;
-      event.preventDefault(); event.returnValue = '';
+      const state = guard();
+      if (state.dirty || state.busy || state.uncertain) { event.preventDefault(); event.returnValue = ''; }
     };
     window.addEventListener('beforeunload', unload);
-    return () => { window.removeEventListener('beforeunload', unload); choiceSequence.current++; };
+    return () => { sequence.current++; window.removeEventListener('beforeunload', unload); };
   }, []);
-  // Refresh saved-only discovery after a confirmed append without touching drafts.
-  const historySize = tariff.saved?.history.length || 0;
-  const observed = useRef({ categoryId: null, historySize: 0 });
   useEffect(() => {
-    if (observed.current.categoryId === selected?.id && historySize > observed.current.historySize) {
-      setRevision((value) => value + 1);
-    }
-    observed.current = { categoryId: selected?.id, historySize };
-  }, [selected?.id, historySize]);
-
+    if (!category || category.status !== 'active') { setAllergens(null); return undefined; }
+    const ctl = new AbortController(); setAllergenBusy(true); setAllergens(null); setAllergenError('');
+    const timer = setTimeout(() => combinationAllergens(category.id,
+      { query: allergenQuery, offset: allergenOffset, limit: 50 }, ctl.signal)
+      .then((value) => { if (!ctl.signal.aborted) setAllergens(value); })
+      .catch((cause) => { if (!ctl.signal.aborted) setAllergenError(cause.message); })
+      .finally(() => { if (!ctl.signal.aborted) setAllergenBusy(false); }), allergenQuery ? 250 : 0);
+    return () => { clearTimeout(timer); ctl.abort(); };
+  }, [category?.id, category?.status, allergenQuery, allergenOffset, allergenRetry]);
   async function allowDiscard(message) {
-    const state = latest.current.tariff.getGuardState();
-    if (confirming.current || state.busy || state.uncertain) return false;
-    if (!state.dirty) return true;
-    confirming.current = true;
+    if (deciding.current || guard().busy || guard().uncertain) return false;
+    if (!guard().dirty) return true;
+    deciding.current = true;
     try {
-      const accepted = await confirm(message);
-      const now = latest.current.tariff.getGuardState();
-      return accepted && !now.busy && !now.uncertain;
-    } finally { confirming.current = false; }
+      const yes = await confirm(message);
+      return yes && !guard().busy && !guard().uncertain;
+    } finally { deciding.current = false; }
   }
-  async function choose(id) {
-    if (id === latest.current.selected?.id) return;
-    // Capture before the shared picker resets the menu's search results.
-    const category = choices.items.find((item) => item.id === id) || null;
-    if (id && !category) return;
-    const choice = ++choiceSequence.current;
-    document.getElementById(latest.current.pickerId)?.focus();
-    if (!await allowDiscard('Discard unsaved MRP amounts and dates for this category?')) return;
-    const now = latest.current.tariff.getGuardState();
-    if (choice !== choiceSequence.current || now.busy || now.uncertain) return;
-    setSelected(category);
+  async function change(action, trigger) {
+    trigger?.focus();
+    const seq = ++sequence.current;
+    if (!await allowDiscard('Discard unsaved rates and date before changing this pricing scope?')) return;
+    if (seq !== sequence.current) return;
+    pendingFocus.current = trigger;
+    action(); setCopySource(''); setLocalError('');
   }
-  async function closeEditor() {
-    if (!await allowDiscard('Discard unsaved MRP amounts and dates and close the editor?')) return;
-    const now = latest.current.tariff.getGuardState();
-    if (now.busy || now.uncertain) return;
-    choiceSequence.current++;
-    if (!returnFocus.current?.isConnected) returnFocus.current = addButton.current;
-    latest.current.tariff.cancel();
-    choices.search('');
-    setEditorOpen(false);
+  async function chooseCategory(id) {
+    const next = choices.items.find((c) => c.id === id) || null;
+    if (id && !next) return;
+    if (id === latest.current.category?.id) return;
+    await change(() => {
+      setCategory(next); setSelection(null); setAllergenQuery(''); setAllergenOffset(0); setCountOpen(false);
+    }, document.getElementById('combination-category'));
   }
-  function openEditor(count = '', trigger = addButton.current) {
-    const state = tariff.getGuardState();
-    if (confirming.current || state.busy || state.uncertain || state.dirty) return;
-    returnFocus.current = trigger;
-    choices.search('');
-    if (!count) setSelected(null);
-    setAllergenCount(count);
-    setEditorOpen(true);
+  async function toggleAllergen(id, checked, trigger) {
+    trigger?.focus();
+    const seq = ++sequence.current;
+    if (!await allowDiscard('Discard unsaved rates and date before changing the allergen subset?')) return;
+    if (seq !== sequence.current) return;
+    pendingFocus.current = trigger;
+    const current = latest.current;
+    let ids = current.selection;
+    if (ids === null) {
+      // A deliberate deselection from All must collect the complete bounded
+      // category, never treat the visible/search-matching page as the selection.
+      selectionBusy.current = true; setSelecting(true); setLocalError('');
+      try {
+        ids = [];
+        let offset = 0;
+        do {
+          const page = await combinationAllergens(current.category.id, { query: '', offset, limit: 100 });
+          if (seq !== sequence.current) return;
+          if (page.total > 500) throw new Error('This category exceeds 500 eligible allergens. Use “Clear all; choose subset”, then select up to 500 members from the paged list.');
+          ids.push(...page.items.map((m) => m.id)); offset += page.items.length;
+          if (offset >= page.total) break;
+          if (!page.items.length) throw new Error('Allergen selection changed while loading. Retry choices; no selection was changed.');
+        } while (true);
+        if (new Set(ids).size !== ids.length) throw new Error('Allergen pages changed while loading. Retry; no selection was changed.');
+      } catch (cause) { setLocalError(cause.message); return; }
+      finally { selectionBusy.current = false; setSelecting(false); }
+    }
+    const next = checked ? [...new Set([...ids, id])] : ids.filter((value) => value !== id);
+    if (next.length > 500) { setLocalError('Select at most 500 allergens in one explicit subset.'); return; }
+    setSelection(next.sort()); setCopySource(''); setLocalError('');
   }
-  function chooseCount(value) {
-    const state = latest.current.tariff.getGuardState();
-    if (confirming.current || state.busy || state.uncertain) return;
-    // Keep every count's draft in the existing hook; switching only changes
-    // which draft is visible, never its amount/date or an unresolved request.
-    setAllergenCount(value ? Number(value) : '');
+  async function copy() {
+    if (deciding.current || guard().busy || guard().uncertain || tariff.blocked || !tariff.page?.scopeTotal) return;
+    let amount;
+    try { amount = exactCombinationRate(copySource); } catch (cause) { setLocalError(cause.message); return; }
+    deciding.current = true;
+    const expected = tariff.page;
+    try {
+      const old = tariff.draft;
+      const differing = Object.values(old.edits).some((v) => {
+        try { return exactCombinationRate(v) !== amount; } catch { return true; }
+      }) || (old.copyRate !== null && old.copyRate !== amount);
+      if (differing && !await confirm(`Overwrite differing draft values for all ${expected.scopeTotal} generated rows, including nonvisible and search-hidden rows, with ₹${amount}? This changes this category, dosage, allergen selection and size only. Save is still required.`)) return;
+      if (latest.current.tariff.page !== expected || guard().busy || guard().uncertain) return;
+      tariff.copy(amount); setLocalError('');
+    } finally { deciding.current = false; }
   }
-  function submit(event) {
-    event.preventDefault();
-    const state = latest.current.tariff.getGuardState();
-    if (confirming.current || state.busy) return;
-    if (tariff.attempt) { void tariff.save(tariff.attempt.allergenCount); return; }
-    if (selected && counts.includes(allergenCount)) void tariff.save(allergenCount);
+  async function discardAndReload() {
+    if (!await allowDiscard('Discard every unsaved rate, copied value and date, then load current master eligibility and saved rates?')) return;
+    tariff.reset(); setCopySource(''); setLocalError('');
+    setAllergenRetry((n) => n + 1);
   }
-  const picker = <div className="mr-form__field pricing-category-field">
-    <label className="mr-form__label" htmlFor={pickerId}>Product Category{editorOpen ? ' *' : ''}</label>
-    <AllergenSearchableSelect id={pickerId} label="Product Category" value={selected?.id || ''}
-      testId={pickerId}
-      selectedLabel={selected ? categoryLabel(selected) : undefined}
-      options={choices.items.map((item) => ({ value: item.id, label: categoryLabel(item) }))}
-      placeholder={editorOpen ? 'Search and select a category' : 'Select a category to review'}
-      disabled={tariff.locked} onChange={choose} onSearch={choices.search} searchMaxLength={100}
-      loading={choices.busy} error={choices.error} onRetry={() => choices.search(choices.query, true)}
-      hasMore={choices.nextOffset !== null} onMore={choices.more} moreLabel="Load more categories" />
-  </div>;
-  const categoryError = !choices.busy && choices.error && <div className="admin-feedback admin-feedback--error pricing-category-error">
-    <p role="alert">Category choices could not be loaded. {choices.error}</p>
-    <button type="button" className="admin-button admin-button--secondary" disabled={tariff.locked}
-      onClick={() => choices.search(choices.query, true)}>Retry category choices</button>
-  </div>;
-  const status = <>
-    {tariff.busy && <p className="admin-feedback" role="status">Loading or saving MRP…</p>}
-    {tariff.error && <p className="admin-feedback admin-feedback--error" role="alert">{tariff.error}</p>}
-    {tariff.notice && <p className="admin-feedback" role="status">{tariff.notice}</p>}
-    {tariff.dirty && <p className="admin-feedback" role="status">Unsaved MRP changes. Switching counts keeps each count’s edits; Save applies only to the selected count. Changing category or cancelling discards all unsaved counts only after confirmation.</p>}
-  </>;
-  const rows = tariff.saved ? counts.map((count) => {
-    const history = historyFor(tariff, count);
-    return { count, history, latest: history[history.length - 1] };
-  }) : [];
+  function showHistory(key, trigger) {
+    historyTrigger.current = trigger;
+    setHistory({ categoryId: category.id, dosage, memberKey: key });
+  }
+  const disabled = tariff.locked || selecting;
+  useEffect(() => {
+    if (wasWorking.current && !disabled) {
+      const target = pendingFocus.current;
+      const focused = document.activeElement;
+      if (target?.isConnected && !target.matches(':disabled')
+        && (!focused || focused === document.body || focused.matches(':disabled'))) target.focus();
+      pendingFocus.current = null;
+    }
+    wasWorking.current = disabled;
+  }, [disabled]);
+  const rateFor = (row) => Object.hasOwn(tariff.draft.edits, row.key) ? tariff.draft.edits[row.key]
+    : tariff.draft.copyRate ?? '';
   const columns = [
-    { key: 'serial', label: 'Sr No', render: (_row, index) => index + 1 },
-    { key: 'category', label: 'Product Category', render: () => categoryLabel(selected) },
-    { key: 'count', label: 'Allergen Count', render: (row) => `${row.count} (${countName(row.count)})` },
-    { key: 'rate', label: 'Rate / Total Suborder MRP (INR)', render: (row) => row.latest
-      ? <span className="pricing-table__amount">₹{row.latest.totalMrp}</span> : 'Unconfigured' },
-    { key: 'effectiveFrom', label: 'Effective From', render: (row) => row.latest
-      ? <><time dateTime={row.latest.effectiveFrom}>{date(row.latest.effectiveFrom)}</time><p className="pricing-rules-note">Latest dated revision; not necessarily effective today.</p></>
-      : 'No saved date' },
-    { key: 'actions', label: 'Actions / History', render: (row) => <>
-      <button type="button" className="admin-button admin-button--secondary" disabled={tariff.locked}
-        data-testid={`button-pricing-revision-${row.count}`}
-        aria-label={`${row.latest ? 'Add dated rate' : 'Configure rate'} for ${row.count} ${row.count === 1 ? 'allergen' : 'allergens'}`}
-        onClick={(event) => openEditor(row.count, event.currentTarget)}>{row.latest ? 'Add dated rate' : 'Configure rate'}</button>
-      {row.history.length > 0 && <details className="pricing-count-history"><summary>Saved history ({row.history.length})</summary>
-        <TariffHistory history={row.history} date={date} />
-      </details>}
-    </> },
+    { key: 'serial', label: 'Sr No', render: (_r, index) => index + 1 },
+    { key: 'members', label: 'Allergen membership', render: (r) => <ul className="pricing-combination-members">
+      {r.members.map((m) => <li key={m.id}><span>{m.name}</span><small>{m.mix ? 'Mix' : 'No Mix'}</small></li>)}</ul> },
+    { key: 'saved', label: 'Latest recorded MRP / history', render: (r) => <>
+      {r.latest ? <><strong>₹{r.latest.totalMrp}</strong><small>From {formatAdminDate(r.latest.effectiveFrom, prefs) || r.latest.effectiveFrom} · v{r.latest.version}</small></> : <span>Unconfigured</span>}
+      <button type="button" className="admin-button admin-button--secondary" disabled={disabled}
+        onClick={(e) => showHistory(r.key, e.currentTarget)}>History</button></> },
+    { key: 'rate', label: 'Rate / Total Suborder MRP (INR)', render: (r) => <input className="mr-form__control pricing-combination-rate"
+      aria-label={`Draft total suborder MRP in INR for ${r.members.map((m) => m.name).join(' + ')}`}
+      inputMode="decimal" maxLength={15} value={rateFor(r)} disabled={disabled || tariff.blocked}
+      placeholder="Unconfigured" onChange={(e) => tariff.edit(r.key, e.target.value)} /> },
   ];
   return <>
     <div className="admin-page-head pricing-page-head"><div>
       <p className="admin-page-head__eyebrow">Configuration / Pricing</p><h1>Pricing Rules</h1>
-      <p className="admin-page-head__description">Total suborder MRP by category and exact allergen count. Dated revisions keep saved orders unchanged.</p>
-    </div><button ref={addButton} type="button" className="admin-button" disabled={tariff.locked}
-      data-testid="button-add-pricing-rule" onClick={() => openEditor()}><Plus size={16} aria-hidden="true" />Add Pricing Rule</button></div>
-    <section className="admin-panel pricing-policy-workspace" aria-label="Saved pricing rules">
-      <h2>Saved pricing rules</h2>
-      <p className="pricing-rules-note">Review a category’s MRP and dated history. Each amount is the total suborder MRP in INR, not per ml or per allergen.</p>
-      {!editorOpen && <div className="pricing-policy-controls">{picker}
-        <label className="pricing-saved-filter"><input type="checkbox" checked={savedOnly} disabled={tariff.locked}
-          data-testid="checkbox-pricing-saved-only"
-          onChange={(event) => { choices.search('', true); setSavedOnly(event.target.checked); }} />Saved tariffs only</label>
-      </div>}
-      {!editorOpen && categoryError}
-      <div hidden={editorOpen}>
-        {!selected && !choices.error && <p className="admin-feedback" role="status">{choices.busy ? 'Loading category choices…'
-          : !choices.items.length ? 'No matching categories. Turn off “Saved tariffs only” to browse all categories, or add a pricing rule.'
-              : 'Choose a category above to review saved MRP, or add a pricing rule.'}</p>}
-        {status}
-        {selected && <DataTable columns={columns} rows={rows} rowKey={(row) => row.count}
-          label="Selected category pricing rules" testIdPrefix="pricing-count" loading={tariff.busy && !tariff.saved}
-          loadingLabel="Loading category pricing rules…" empty={<p>No saved pricing history is available. Retry loading this category.</p>} />}
-        {selected && !tariff.saved && !tariff.busy && <button className="admin-button admin-button--secondary" type="button"
-          data-testid="button-retry-pricing-history"
-          onClick={() => tariff.reload()}>Retry MRP history</button>}
+      <p>Combination Pricing Master · total suborder MRP in INR, never per ml or per allergen. Saved orders and current order quotation are unchanged.</p>
+    </div></div>
+    <section className="admin-panel pricing-policy-workspace pricing-combination-workspace" aria-label="Combination Pricing Master">
+      <h2>Category → Allergens → Dosage → Combination size</h2>
+      <p>Configuration only. Activating these prices in order placement or quotation needs separate authorization. No Extract or Dilution quantities are loaded, inferred or changed.</p>
+      <div className="pricing-combination-controls">
+        <div className="mr-form__field pricing-category-field"><label className="mr-form__label" htmlFor="combination-category">Product Category</label>
+          <AllergenSearchableSelect id="combination-category" label="Product Category" testId="combination-category"
+            value={category?.id || ''} selectedLabel={category ? `${category.name}${category.status === 'active' ? '' : ` (${category.status}; history only)`}` : undefined}
+            options={choices.items.map((c) => ({ value: c.id, label: `${c.name}${c.status === 'active' ? '' : ` (${c.status}; history only)`}` }))}
+            placeholder="Search and select a category" disabled={disabled} onChange={chooseCategory}
+            onSearch={choices.search} loading={choices.busy} error={choices.error} onRetry={() => choices.search(choices.query, true)}
+            hasMore={choices.nextOffset !== null} onMore={choices.more} moreLabel="Load more categories" searchMaxLength={100} />
+        </div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-dosage">Dosage</label>
+          <select id="combination-dosage" className="mr-form__control" value={dosage} disabled={disabled}
+            onChange={(e) => { const value = e.target.value; void change(() => setDosage(value), e.target); }}>
+            {DOSAGES.map((value) => <option key={value}>{value}</option>)}</select></div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-size">Combination size</label>
+          <select id="combination-size" className="mr-form__control" value={size} disabled={disabled}
+            onChange={(e) => { const value = Number(e.target.value); void change(() => setSize(value), e.target); }}>
+            {SIZES.map((name, i) => <option key={name} value={i + 1}>{name}</option>)}</select></div>
       </div>
+      {!category && <p role="status">Choose a category to load its saved eligible allergens. Initially all eligible members are selected.</p>}
+      {category?.status === 'active' && <fieldset className="pricing-combination-allergens" disabled={disabled}>
+        <legend>Allergens · {selection === null ? 'All eligible members selected' : `${selection.length} selected`}</legend>
+        <p>Mix / No Mix is read-only from Allergen Master. No Mix is individual-only. The bound Dilution inventory material is excluded. Search does not change selection.</p>
+        <div className="pricing-policy-controls">
+          <label className="admin-search"><span className="pricing-sr-only">Search category allergens</span>
+            <input type="search" value={allergenQuery} maxLength={100} placeholder="Search allergens…"
+              onChange={(e) => { setAllergenQuery(e.target.value); setAllergenOffset(0); }} /></label>
+          <button type="button" className="admin-button admin-button--secondary" disabled={selection === null}
+            onClick={(e) => change(() => setSelection(null), e.currentTarget)}>Select all eligible</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={selection?.length === 0}
+            onClick={(e) => change(() => setSelection([]), e.currentTarget)}>Clear all; choose subset</button>
+        </div>
+        {allergenBusy ? <p role="status">Loading saved allergens…</p>
+          : allergenError ? <div role="alert"><p>{allergenError}</p><button type="button" className="admin-button"
+            onClick={() => setAllergenRetry((n) => n + 1)}>Retry allergen choices</button></div>
+          : <><div className="pricing-combination-choices">{allergens?.items.map((m) => <label key={m.id}>
+            <input type="checkbox" checked={selection === null || selection.includes(m.id)}
+              onChange={(e) => toggleAllergen(m.id, e.target.checked, e.target)} />
+            <span>{m.name}</span><small>{m.mix ? 'Mix' : 'No Mix'}</small></label>)}</div>
+            {!allergens?.items.length && <p>No matching eligible allergens.</p>}
+            <div className="admin-pagination"><span>{allergens?.total ?? 0} search matches; selection includes nonvisible pages.</span>
+              <button type="button" className="admin-button admin-button--secondary" disabled={!allergenOffset}
+                onClick={() => setAllergenOffset((n) => Math.max(0, n - 50))}>Previous allergens</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={!allergens || allergenOffset + 50 >= allergens.total}
+                onClick={() => setAllergenOffset((n) => n + 50)}>Next allergens</button></div></>}
+      </fieldset>}
+      {tariff.busy && <p role="status">Loading or saving combination rates…</p>}
+      {(tariff.error || localError) && <p role="alert" className="admin-feedback admin-feedback--error">{localError || tariff.error}</p>}
+      {tariff.notice && <p role="status" className="admin-feedback">{tariff.notice}</p>}
+      {tariff.dirty && <p role="status">Unsaved draft. Blank untouched rates remain unconfigured; explicit 0 is valid. Changing scope requires discarding this draft after confirmation.</p>}
+      {tariff.attempt ? <button type="button" className="admin-button" disabled={tariff.busy} onClick={tariff.save}>Retry same submission</button>
+        : category?.status === 'active' && <div className="pricing-policy-actions">
+          <button type="button" className="admin-button admin-button--secondary" disabled={disabled}
+            onClick={tariff.retry}>Reload saved rates; keep draft</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={disabled}
+            onClick={discardAndReload}>Discard draft and reload masters</button></div>}
+      {tariff.page && <form onSubmit={(e) => { e.preventDefault(); void tariff.save(); }} className="pricing-combination-editor">
+        <p>{category.name} · {dosage} · {SIZES[size - 1]} · {tariff.page.scopeTotal} eligible generated rows.
+          Latest recorded is not necessarily the rate effective today; review dated history.</p>
+        <div className="pricing-combination-batch">
+          <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-copy">Source rate (INR)</label>
+            <input id="combination-copy" className="mr-form__control" inputMode="decimal" maxLength={15}
+              value={copySource} disabled={disabled || tariff.blocked} onChange={(e) => setCopySource(e.target.value)} /></div>
+          <button type="button" className="admin-button admin-button--secondary" disabled={disabled || tariff.blocked || !tariff.page.scopeTotal}
+            onClick={copy}>Copy rate to all {tariff.page.scopeTotal} rows</button>
+          <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-effective">Effective From</label>
+            <input id="combination-effective" className="mr-form__control" type="date" required value={tariff.draft.effectiveFrom}
+              disabled={disabled || tariff.blocked} onChange={(e) => tariff.date(e.target.value)} /></div>
+        </div>
+        <p className="pricing-rules-note">Copy applies only to every generated row for this category, dosage, allergen selection and size, including hidden pages and search-hidden rows. It is draft-only. A row override after Copy replaces that row’s draft amount. Save appends dated revisions; it never overwrites history.</p>
+        <label className="admin-search pricing-combination-search"><span className="pricing-sr-only">Search generated combinations</span>
+          <input type="search" value={tariff.view.query} maxLength={100} placeholder="Search generated membership…"
+            disabled={Boolean(tariff.attempt) || selecting || tariff.blocked}
+            onChange={(e) => tariff.changeView({ query: e.target.value, offset: 0 })} /></label>
+        <DataTable columns={columns} rows={tariff.page.items} rowKey={(r) => r.key} rowOffset={tariff.page.offset}
+          loading={tariff.busy} label="Generated combination rates" testIdPrefix="combination-rate"
+          empty={<p>No eligible combinations match. No Mix members cannot form pairs/triples. Select eligible Mix members or Individual.</p>} />
+        <div className="admin-panel__foot admin-pagination">
+          <span>{tariff.page.total} search matches / {tariff.page.scopeTotal} scope rows</span>
+          <label>Rows per page <select value={tariff.view.limit} disabled={disabled || tariff.blocked}
+            onChange={(e) => tariff.changeView({ limit: Number(e.target.value), offset: 0 })}>
+            {[10, 25, 50, 100].map((n) => <option key={n}>{n}</option>)}</select></label>
+          <button type="button" className="admin-button admin-button--secondary" disabled={disabled || tariff.blocked || !tariff.view.offset}
+            onClick={() => tariff.changeView({ offset: Math.max(0, tariff.view.offset - tariff.view.limit) })}>Previous</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={disabled || tariff.blocked || tariff.view.offset + tariff.view.limit >= tariff.page.total}
+            onClick={() => tariff.changeView({ offset: tariff.view.offset + tariff.view.limit })}>Next</button>
+        </div>
+        <div className="pricing-policy-actions"><button type="submit" className="admin-button"
+          disabled={disabled || tariff.blocked || !tariff.page.scopeTotal}>Save dated rates</button></div>
+      </form>}
+      {category && <div className="pricing-policy-actions"><button type="button" className="admin-button admin-button--secondary"
+        disabled={disabled} onClick={(e) => showHistory('', e.currentTarget)}>Review all saved {dosage} combinations</button></div>}
+      {category && <details className="pricing-count-history" onToggle={(e) => setCountOpen(e.currentTarget.open)}>
+        <summary>Historical category/count tariffs · read-only</summary>
+        {countOpen && <CountTariffEvidence key={category.id} categoryId={category.id} />}
+      </details>}
     </section>
-    {editorOpen && <Dialog className="pricing-policy-dialog" title="Add Pricing Rule" eyebrow="Category / MRP"
-      description="Choose one category and allergen count. Enter total suborder MRP in INR and an explicit Effective From date. Zero is a valid amount; saved history cannot be overwritten."
-      onClose={closeEditor} dismissDisabled={tariff.locked} returnFocusRef={returnFocus}>
-      <form className="pricing-policy-editor" onSubmit={submit}>
-        <div className="mr-form__grid pricing-policy-form-grid">
-          {picker}
-          <div className="mr-form__field">
-            <label className="mr-form__label" htmlFor="pricing-policy-count">Allergen Count *</label>
-            <select id="pricing-policy-count" className="mr-form__control" required value={allergenCount}
-              disabled={tariff.locked} onChange={(event) => chooseCount(event.target.value)} data-testid="select-pricing-count">
-              <option value="" disabled>Select allergen count</option>
-              {counts.map((count) => <option key={count} value={count}>{count} ({countName(count)})</option>)}
-            </select>
-          </div>
-          {tariff.saved && tariff.drafts && counts.includes(allergenCount) &&
-            <PricingCountFields key={`${selected.id}-${allergenCount}`} count={allergenCount} tariff={tariff} />}
-        </div>
-        {categoryError}
-        {!selected && <p className="pricing-rules-note">Select a category to create or review its dated MRP policy.</p>}
-        {status}
-        {tariff.blocked && !tariff.attempt && <p className="admin-feedback admin-feedback--error" role="alert">
-          Saving is paused. Reload MRP history, compare the retained amounts and dates with saved history, then save a new revision.
-        </p>}
-        {selected && <div className="pricing-policy-actions">
-          {tariff.attempt ? <button className="admin-button" type="button" disabled={tariff.busy}
-            data-testid="button-retry-pricing-submission"
-            onClick={() => tariff.save(tariff.attempt.allergenCount)}>Retry same MRP submission</button> :
-            <button className="admin-button admin-button--secondary" type="button" disabled={tariff.busy}
-              data-testid="button-reload-pricing-history"
-              onClick={() => tariff.reload()}>Reload MRP history; keep edits</button>
-          }
-        </div>}
-        {tariff.saved && counts.includes(allergenCount) && <details key={`${selected.id}-${allergenCount}`}
-          className="pricing-count-history"><summary>Saved history for count {allergenCount} ({historyFor(tariff, allergenCount).length})</summary>
-          <TariffHistory history={historyFor(tariff, allergenCount)} date={date} />
-        </details>}
-        <div className="admin-dialog__actions">
-          <button className="admin-button admin-button--secondary" type="button" data-testid="button-cancel-pricing-rule"
-            disabled={tariff.locked} onClick={closeEditor}>Cancel</button>
-          <button className="admin-button" type="submit" data-testid="button-save-pricing-rule"
-            disabled={tariff.locked || tariff.blocked || !tariff.saved || !tariff.drafts || !selected || !counts.includes(allergenCount)}>Save</button>
-        </div>
-      </form>
-    </Dialog>}
+    {history && <CombinationPricingHistory {...history} returnFocusRef={historyTrigger} onClose={() => setHistory(null)} />}
   </>;
-}
-
-function PricingCountFields({ count, tariff }) {
-  const draft = tariff.drafts[count];
-  const history = historyFor(tariff, count);
-  return <>
-      <div className="mr-form__field"><label className="mr-form__label" htmlFor={`pricing-mrp-${count}`}>Rate / Total Suborder MRP (INR) *</label>
-        <input className="mr-form__control" id={`pricing-mrp-${count}`} inputMode="decimal" maxLength={64} required
-          data-testid={`input-pricing-mrp-${count}`}
-          value={draft.totalMrp} disabled={tariff.locked} aria-describedby={`pricing-hint-${count}`}
-          onChange={(event) => tariff.edit(count, 'totalMrp', event.target.value)} /></div>
-      <div className="mr-form__field"><label className="mr-form__label" htmlFor={`pricing-date-${count}`}>Effective From *</label>
-        <input className="mr-form__control" id={`pricing-date-${count}`} type="date" value={draft.effectiveFrom} required
-          data-testid={`input-pricing-date-${count}`}
-          aria-label={`${countName(count)} MRP Effective From`} disabled={tariff.locked}
-          onChange={(event) => tariff.edit(count, 'effectiveFrom', event.target.value)} /></div>
-    <p id={`pricing-hint-${count}`} className="mr-form__hint mr-form__field--wide">
-      {!history.length ? tariff.saved.suggestedUnitPrice === null
-        ? `${tariff.saved.suggestionError} Enter an explicit MRP.`
-        : `Editable Unit Price suggestion: ₹${tariff.saved.suggestedUnitPrice} from ${tariff.saved.categoryName} (category version ${tariff.saved.categoryVersion}). Not saved or multiplied by count.`
-        : 'Latest dated MRP shown, not necessarily effective today. Enter an explicit date to append a revision; existing history cannot be overwritten.'}
-    </p>
-  </>;
-}
-
-function TariffHistory({ history, date }) {
-  if (!history.length) return <p>No saved MRP. An unsaved suggestion cannot price an order.</p>;
-  return <ol>{history.map((row, index) => <li key={row.id}>
-    <strong>₹{row.totalMrp} MRP</strong>{' · From '}
-    <time dateTime={row.effectiveFrom}>{date(row.effectiveFrom)}</time>
-    {history[index + 1] ? ` until before ${date(history[index + 1].effectiveFrom)}` : ' onwards'} (starting day included).
-    <small>Version {row.version}; revision {row.id}. Actor {row.actorId}; recorded {row.recordedAt}.</small>
-  </li>)}</ol>;
 }
