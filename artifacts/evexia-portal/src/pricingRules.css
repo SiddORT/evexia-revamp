@@ -219,6 +219,30 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 .pricing-chosen-members span { min-width: 0; overflow-wrap: anywhere; }
 .pricing-chosen-rate { position: relative; display: grid; gap: 5px; min-width: 0; font-size: .8125rem; }
 .pricing-chosen-rate input { width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+/* One-page pricing entry only; leave listings and other masters unchanged. */
+.pricing-rule-entry .pricing-entry-section { display: grid; gap: 12px; min-width: 0; padding-block: 4px 16px; border-bottom: 1px solid var(--admin-border); }
+.pricing-rule-entry .pricing-entry-section > p { margin: 0; color: var(--admin-text-soft); font-size: .8125rem; line-height: 1.5; }
+.pricing-rule-entry .pricing-entry-section h2 { font-size: 1rem; }
+.pricing-rule-entry .pricing-combination-controls { align-items: start; }
+.pricing-rule-entry .pricing-combination-allergens { position: relative; padding: 0; border: 0; }
+.pricing-rule-entry .pricing-selection-summary strong { color: var(--admin-text); }
+.pricing-rule-entry .pricing-combination-allergens .pricing-policy-controls > .admin-button { min-height: 32px; padding: 5px 10px; }
+.pricing-rule-entry .pricing-chosen-row { grid-template-columns: minmax(0, 1fr) minmax(0, 12rem); }
+.pricing-rule-entry .pricing-entry-footer { display: grid; gap: 10px; min-width: 0; }
+.pricing-rule-entry .pricing-entry-footer .pricing-target-summary { margin: 0; line-height: 1.6; font-size: .875rem; }
+.pricing-rule-entry .pricing-entry-more { min-width: 0; font-size: .875rem; }
+.pricing-rule-entry .pricing-entry-more > summary { cursor: pointer; font-weight: 600; color: var(--admin-text-soft); }
+.pricing-rule-entry .pricing-entry-more[open] > summary { margin-bottom: 12px; }
+.pricing-rule-entry .pricing-entry-more > .pricing-count-history { margin-top: 12px; }
+.pricing-rule-entry .pricing-entry-secondary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pricing-rule-entry .pricing-entry-recovery { display: grid; justify-items: start; gap: 10px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-state-soft); }
+.pricing-rule-entry :is(.pricing-entry-recovery, .admin-feedback) p { margin: 0 0 8px; line-height: 1.5; }
+.pricing-rule-entry .pricing-entry-history-list { display: grid; gap: 6px; list-style: none; padding: 0; }
+.pricing-rule-entry summary:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+@media (max-width: 600px) {
+  .pricing-rule-entry .pricing-chosen-row { grid-template-columns: minmax(0, 1fr); }
+  .pricing-rule-entry .pricing-entry-secondary-actions { flex-direction: column; align-items: stretch; }
+}
 @media (max-width: 600px) {
   .pricing-chosen-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .pricing-chosen-row > .admin-button { justify-self: start; }
