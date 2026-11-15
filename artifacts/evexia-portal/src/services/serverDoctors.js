@@ -18,14 +18,26 @@ export async function allDoctorMRChoices(signal, saved) {
   return result.items;
 }
 export const createDoctor = (body) => doctorRequest('', { body });
-export const editDoctor = (record, body) => doctorRequest(`/${record.id}/edit`, { body: { ...body, expected_version: record.version } });
+// Exact location corrections carry their separate Area version and reason.
+// Other fields still use the ordinary Doctor version.
+export const editDoctor = (record, body) => {
+  return doctorRequest(`/${record.id}/edit`, { body: { ...body, expected_version: record.version } });
+};
 export const statusDoctor = (record, status) => doctorRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
 export const deleteDoctor = (record) => doctorRequest(`/${record.id}/delete`, { body: { expected_version: record.version } });
 export const contactDoctor = (record, contactRequirement) => doctorRequest(`/${record.id}/contact`, { body: { contactRequirement, expected_version: record.version } });
-export const bulkDoctors = (records, operation, value) => doctorRequest('/bulk', { body: {
+export const bulkDoctors = (records, operation, value, reason) => doctorRequest('/bulk', { body: {
   selected: records.map((record) => ({ id: record.id, expected_version: record.version })), operation,
-  ...(operation === 'shift' ? { mrId: value } : { verification: value }),
+  ...(operation === 'shift' ? { mrId: value, ...(reason ? { reason } : {}) } : { verification: value }),
 } });
+// Doctor MR Mapping (bounded: list limit <= 100, references/history limit <= 50).
+export const listDoctorMappings = (params, signal) => doctorRequest('/mapping', { params: clean({ ...params, limit: Math.min(Number(params?.limit) || 25, 100) }), signal });
+export const doctorMappingReferences = (kind, params = {}, signal) => doctorRequest('/mapping/references', { params: clean({
+  kind, query: params.query, limit: Math.min(Number(params.limit) || 50, 50), offset: params.offset,
+  include_saved: params.includeSaved ?? params.include_saved, cursor: params.cursor,
+}), signal });
+export const doctorAssignmentHistory = (id, params = {}, signal) => doctorRequest(`/${id}/assignment-history`, { params: clean({ limit: Math.min(Number(params.limit) || 20, 50), offset: params.offset }), signal });
+export const setDoctorArea = (record, areaId, reason) => doctorRequest(`/${record.id}/area`, { body: { expected_area_version: Number(record.areaVersion ?? 0), areaId: areaId || null, reason } });
 export const lookupDoctorPIN = (pin, signal, action = 'add') => doctorRequest(`/postal/${pin}`, { signal, params: { action } });
 export const sampleDoctors = (format, signal) => doctorRequest('/sample', { params: { format }, download: true, signal });
 export const exportDoctors = (params, format, signal) => doctorRequest('/export', { params: { ...clean(params), format }, download: true, signal });

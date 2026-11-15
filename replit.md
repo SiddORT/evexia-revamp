@@ -1,3 +1,19 @@
+# Doctor MR Mapping — prepared source only
+
+The separate Admin Doctor–MR Mapping destination uses existing Doctor permissions,
+bounded server-side filters, prospective encrypted assignment history and an
+independently versioned optional Doctor Area link. Area means a saved catalogue
+assignment, never a postal-address inference. Transfers preserve one current MR,
+move linked Patients atomically, require reasons, and leave saved orders/financial
+facts unchanged. Existing mappings have honest current-state baselines, not
+invented original assignment dates. See `docs/doctor-mr-mapping.md`.
+
+`0108_doctor_mr_mapping` and its DDL-free staged join are prepared, not applied.
+Only scoped contract/client generation, source inspection and an isolated static
+presentation fixture were used. No regression/release/completion-validation
+wrappers, typechecks, live migration, production write, deployment, or managed
+service start/restart was performed. Database behavior remains runtime-unverified.
+
 # Category Count Pricing History — prepared source only
 
 New governed MR Immunotherapy pricing and the combined Pricing Rules master now

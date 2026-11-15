@@ -56,9 +56,9 @@ def _maintenance_revision(db):
     # Preserve exactly 0096's locks, fields and retained order inventories.
     # Do not admit the staged merge or arbitrary later schemas.
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    if revision in ("0105_combination_staged_merge", "0107_combination_status_merge", "0107_territory_staged_merge"):
+    if revision in ("0105_combination_staged_merge", "0107_combination_status_merge", "0107_territory_staged_merge", "0109_mapping_staged_merge"):
         return "0097_hsn_staged_merge"
-    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status", "0106_territory_assignments") else revision
+    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status", "0106_territory_assignments", "0108_doctor_mr_mapping") else revision
 
 
 class RotationError(Exception):
@@ -108,6 +108,11 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if revisions in (["0108_doctor_mr_mapping"], ["0109_mapping_staged_merge"]):
+        from app.services.doctor_mapping import ready as mapping_ready
+        mapping_ready(db)
+        db.execute(text(f"LOCK TABLE doctor_assignment_events IN {mode} MODE NOWAIT"))
+        revisions = ["0106_territory_assignments"] if revisions == ["0108_doctor_mr_mapping"] else ["0107_territory_staged_merge"]
     if revisions in (["0106_territory_assignments"], ["0107_territory_staged_merge"]):
         revisions = ["0107_combination_status_merge"] if revisions == ["0107_territory_staged_merge"] else ["0106_combination_rule_status"]
     staged_status = revisions == ["0107_combination_status_merge"]
@@ -359,6 +364,32 @@ def _inventory(db, crypto, digest_key):
             cursor = rows[-1]["id"]
         counts[name] = count
     patient = tables["patient_directory"]
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge"):
+        # Immutable archive: authenticate and report original-key usage, but do
+        # not include it in mutable rotation batches or historical field lists.
+        cursor, count = None, 0
+        while True:
+            staging._deadline(start, 120)
+            rows = list(db.execute(text("""
+                SELECT id,doctor_id,kind,actor_id,recorded_at,payload_ciphertext
+                FROM doctor_assignment_events
+                WHERE CAST(:cursor AS uuid) IS NULL OR id > CAST(:cursor AS uuid)
+                ORDER BY id LIMIT 200
+            """), {"cursor": str(cursor) if cursor else None}).mappings())
+            if not rows:
+                break
+            for row in rows:
+                logical = dict(row)
+                stored = logical.pop("payload_ciphertext")
+                usage[stored.split(":")[1]] += 1
+                logical["payload"] = crypto.decrypt_mapping(row["id"], stored)
+                for digest, payload in ((mac, logical), (raw, dict(row))):
+                    encoded = canonical(["doctor_assignment_events", _encoded(payload)])
+                    digest.update(len(encoded).to_bytes(8, "big"))
+                    digest.update(encoded)
+            count += len(rows)
+            cursor = rows[-1]["id"]
+        counts["doctor_assignment_events"] = count
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()

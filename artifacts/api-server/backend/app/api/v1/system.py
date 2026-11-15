@@ -50,6 +50,8 @@ def readiness(db: Session = Depends(get_db)):
             accepted.append(["0107_combination_status_merge"])
         if SCHEMA_REVISION == "0106_territory_assignments":
             accepted.append(["0107_territory_staged_merge"])
+        if SCHEMA_REVISION == "0108_doctor_mr_mapping":
+            accepted.append(["0109_mapping_staged_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -63,6 +65,10 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0108_doctor_mr_mapping"], ["0109_mapping_staged_merge"]):
+            from app.services.doctor_mapping import ready as mapping_ready
+            mapping_ready(db)
+            revisions = ["0107_territory_staged_merge"] if revisions == ["0109_mapping_staged_merge"] else ["0106_territory_assignments"]
         if revisions in (["0106_territory_assignments"], ["0107_territory_staged_merge"]):
             db.execute(text('SELECT "coverageScope","hqIds","areaIds" FROM mr_directory LIMIT 0'))
             db.execute(text('SELECT "zoneId","hqId","areaId" FROM doctor_directory LIMIT 0'))

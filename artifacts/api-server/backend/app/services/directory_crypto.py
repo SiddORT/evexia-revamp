@@ -109,6 +109,24 @@ class DirectoryCrypto(StaffCrypto):
         """Caller supplies authoritative PostgreSQL lower(name), not casefold."""
         return self._index("mr_directory:name", ["name", normalized_name])
 
+    def encrypt_mapping(self, record_id, payload):
+        """Separate immutable archive namespace, not a live-directory field.
+
+        Historical snapshots retain their original key; directory rotations must
+        never rewrite this archive or retire its decryption keys.
+        """
+        try:
+            return super().encrypt(f"doctor-mapping:{uuid.UUID(str(record_id))}", "payload",
+                                   canonical(payload).decode())
+        except Exception:
+            raise DirectoryCryptoError() from None
+
+    def decrypt_mapping(self, record_id, ciphertext):
+        try:
+            return json.loads(super().decrypt(f"doctor-mapping:{uuid.UUID(str(record_id))}", "payload", ciphertext))
+        except Exception:
+            raise DirectoryCryptoError() from None
+
     def doctor_state_index(self, state):
         """Preserve existing exact case-sensitive equality, including empty text."""
         return self._index("doctor_directory:state", ["state", state])

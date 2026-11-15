@@ -3,15 +3,18 @@ import DoctorMRSelect from './DoctorMRSelect.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import InfoDisclosure from './InfoDisclosure.jsx';
+import Dialog from './Dialog.jsx';
+import { AreaDialog, MappingReferenceSelect, ReasonField, TransferEffects, person, reasonError } from './doctorMapping/MappingParts.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
-import { doctorTerritoryChoices, lookupDoctorPIN } from '../../services/serverDoctors.js';
+import { doctorTerritoryChoices, lookupDoctorPIN, setDoctorArea } from '../../services/serverDoctors.js';
 import { discountRate, roundRate } from '../../services/rates.js';
 import { masterNameError, masterLengthErrors, normalizeMasterName, presentMasterFailure } from '../../services/masterValidation.js';
 import '../../doctor-form.css';
 import './territory.css';
+import '../../doctor-mr-mapping.css';
 
 const FIELDS = [
   'name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'dateOfJoining',
@@ -155,6 +158,15 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [areaReason, setAreaReason] = useState('');
+  const [savedArea, setSavedArea] = useState(() => ({ zoneId: doctor?.zoneId || null, hqId: doctor?.hqId || null, areaId: doctor?.areaId || null, areaName: doctor?.areaName || '', areaHeadquarterName: doctor?.areaHeadquarterName || '', areaVersion: doctor?.areaVersion ?? 0 }));
+  const [areaDialog, setAreaDialog] = useState(false);
+  const [areaDraft, setAreaDraft] = useState({ areaId: '', reason: '' });
+  const [areaPending, setAreaPending] = useState(false);
+  const [areaError, setAreaError] = useState('');
+  const [areaFeedback, setAreaFeedback] = useState('');
+  const [mrReview, setMrReview] = useState(null);
+  const [reconcileBlocked, setReconcileBlocked] = useState(false);
   useEffect(() => {
     onDraftChange?.({ dirty: JSON.stringify(values) !== JSON.stringify({ ...initialValues(doctor), ...(fixedMR ? { mrId: String(fixedMR.id) } : {}) }), busy: saving });
   }, [values, saving, doctor, fixedMR, onDraftChange]);
@@ -248,12 +260,28 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
     </div>;
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (saving || blocked) return;
+  async function saveArea() {
+    if (areaPending || reconcileBlocked) return;
+    setAreaPending(true); setAreaError('');
+    try {
+      const result = await setDoctorArea({ id: doctor.id, areaVersion: savedArea.areaVersion }, areaDraft.areaId || null, areaDraft.reason.trim());
+      setSavedArea({ zoneId: result.zoneId || null, hqId: result.hqId || null, areaId: result?.areaId ?? null, areaName: result?.areaName || '', areaHeadquarterName: result?.areaHeadquarterName || '', areaVersion: result?.areaVersion ?? savedArea.areaVersion + 1 });
+      setValues((old) => ({ ...old, areaId: result.areaId || '', hqId: result.hqId || '', zoneId: result.zoneId || '' }));
+      setAreaReason('');
+      setAreaDialog(false); setAreaDraft({ areaId: '', reason: '' }); setAreaFeedback('Doctor Area saved. Postal address and MR are unchanged.');
+    } catch (cause) {
+      if (cause?.ambiguous || !cause?.status || cause?.status === 409) { setReconcileBlocked(true); setAreaDialog(false); }
+      setAreaError(cause?.message || 'Doctor Area could not be saved. Your draft is kept.');
+    } finally { setAreaPending(false); }
+  }
+
+  async function handleSubmit(event, assignmentReason) {
+    event?.preventDefault();
+    if (saving || blocked || reconcileBlocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
     cleaned.name = normalizeMasterName(values.name);
     const nextErrors = validate(cleaned);
+    if (doctor && LOCATION.some((key) => cleaned[key] !== (savedArea[key] || '')) && reasonError(areaReason)) nextErrors.areaId = reasonError(areaReason);
     if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
     if (locationRequired) for (const key of LOCATION) if (!cleaned[key]) nextErrors[key] = 'Choose the complete Zone, HQ and Area for this assignment.';
     if (cleaned.mrId && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId || (!selectedMR.usable && cleaned.mrId !== doctor?.mrId))) nextErrors.mrId = 'Select an active server MR with a usable Zone.';
@@ -268,6 +296,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
       setActiveTab(TABS.find((tab) => tab.fields.includes(first)).id);
       return;
     }
+    const mrChanged = Boolean(doctor) && cleaned.mrId !== String(doctor.mrId ?? '');
+    if (mrChanged && assignmentReason === undefined) { setMrReview((old) => old || { reason: '', reviewed: false, touched: false }); return; }
     setSaveError('');
     address.pause();
     setSaving(true);
@@ -280,9 +310,13 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
         orderDiscount: cleaned.orderDiscount === '' ? '0.00' : discountRate(cleaned.orderDiscount),
         daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
         paymentLimit: cleaned.paymentLimit === '' ? '0.00' : roundRate(cleaned.paymentLimit),
+        ...(doctor ? { ...(mrChanged ? { assignmentReason } : {}), expected_area_version: savedArea.areaVersion, areaReason } : {}),
       });
+      if (result?.success) setMrReview(null);
+      if (!result?.success && (result?.reconcile || result?.ambiguous)) { setReconcileBlocked(true); setMrReview(null); }
       if (!result?.success) presentMasterFailure(result, { fields: ERROR_FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
     } catch (error) {
+      if (error?.ambiguous || !error?.status || error?.status === 409) { setReconcileBlocked(true); setMrReview(null); }
       presentMasterFailure(error, { fields: ERROR_FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
     } finally {
       setSaving(false);
@@ -304,6 +338,10 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
     </div>
     <div className="doctor-form__body">
       {missingMR && <p className="doctor-form__notice" role="status">The previously assigned MR is no longer available. Select an available MR before saving.</p>}
+      {reconcileBlocked && <div className="doctor-form__notice doctor-form__notice--error" role="alert" data-testid="status-doctor-reconcile">
+        <p>The last save result is uncertain or the record changed. Saving is paused until you reload the current record and review its assignment history. Your draft stays on screen until you reload.</p>
+        <a className="doctor-master__text-button" href="/admin/masters/doctor-mr-mapping" target="_blank" rel="noreferrer" data-testid="link-doctor-review-history">Open Doctor MR Mapping to review history</a>
+      </div>}
       {saveError && <div className="doctor-form__notice doctor-form__notice--error" role="alert" data-testid="error-doctor-save">
         <p>{saveError}</p><p>Refresh to review the latest records before trying again. Refreshing discards changes on this page.</p>
         <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-doctor-save">Refresh records</button>
@@ -356,6 +394,15 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
             {!fixedMR && !locationComplete && <p className="doctor-form__hint">Choose Zone, HQ and Area to see every active MR responsible for that exact location.</p>}
             {!fixedMR && locationComplete && <p className="doctor-form__hint">Eligible: MRs covering the entire Zone, the entire HQ, or this Area explicitly. No MR is chosen for you.</p>}
           </div>
+          {!fixedMR && doctor && <div className="doctor-form__field doctor-form__field--assignment">
+            <span className="doctor-form__label" id="doctor-area-label">Doctor Area</span>
+            <p className="doctor-form__hint" aria-labelledby="doctor-area-label" data-testid="text-doctor-area">{savedArea.areaName ? `${savedArea.areaName}${savedArea.areaHeadquarterName ? ` · Area HQ: ${savedArea.areaHeadquarterName}` : ''}` : 'Area not set'}</p>
+            <button type="button" className="admin-button admin-button--secondary" disabled={saving || blocked || reconcileBlocked} onClick={() => { setAreaError(''); setAreaFeedback(''); setAreaDraft((old) => old.reason || old.areaId ? old : { areaId: savedArea.areaId || '', reason: '' }); setAreaDialog(true); }} data-testid="button-correct-doctor-area">Correct Doctor Area</button>
+            {areaFeedback && <p className="doctor-form__hint" role="status">{areaFeedback}</p>}
+            {areaError && !areaDialog && <p className="doctor-form__error" role="alert">{areaError}</p>}
+            <p className="doctor-form__hint">Saved separately with a reason. Not the postal address and not MR coverage.</p>
+          </div>}
+          {doctor && LOCATION.some((key) => values[key] !== (savedArea[key] || '')) && <ReasonField id="doctor-area-edit-reason" label="Reason for Doctor Area correction" value={areaReason} onChange={setAreaReason} hint="The selected Area and its parent HQ are saved with this reason in assignment history. MR coverage is not changed." />}
           {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
         </div>
       </section>
@@ -388,8 +435,29 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
     <div className="doctor-form__footer">
       <div className="doctor-form__actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-doctor">Cancel</button>
-        <button type="submit" className="admin-button" disabled={saving || blocked} data-testid="button-save-doctor">{saving ? 'Saving…' : doctor ? 'Save changes' : 'Add Doctor'}</button>
+        <button type="submit" className="admin-button" disabled={saving || blocked || reconcileBlocked} data-testid="button-save-doctor">{saving ? 'Saving…' : doctor ? 'Save changes' : 'Add Doctor'}</button>
       </div>
     </div>
+    {areaDialog && doctor && <AreaDialog doctor={{ ...doctor, ...savedArea }} draft={areaDraft} onDraft={setAreaDraft} pending={areaPending} error={areaError} onConfirm={saveArea} onClose={() => { if (!areaPending) { setAreaDialog(false); setAreaError(''); } }} />}
+    {mrReview && doctor && (() => {
+      const rError = reasonError(mrReview.reason);
+      const ready = !rError && mrReview.reviewed;
+      return <Dialog title="Review MR change" eyebrow={`Doctor ${doctor.doctorNumber || ''}`.trim()} onClose={() => { if (!saving) setMrReview(null); }} dismissDisabled={saving}
+        description="Changing the MR transfers this Doctor. Confirm the identities below; the server re-checks the record version and destination."
+        footer={<><button type="button" className="admin-button admin-button--secondary" disabled={saving} onClick={() => setMrReview(null)} data-testid="button-cancel-mr-review">Back to form</button>
+          <button type="button" className="admin-button" disabled={!ready || saving} onClick={() => handleSubmit(null, mrReview.reason.trim())} data-testid="button-confirm-mr-review">{saving ? 'Saving…' : 'Save with MR change'}</button></>}>
+        <div className="doctor-mapping__dialog">
+          <dl className="doctor-mapping__event-body">
+            <div><dt>Doctor</dt><dd>{person(doctor, 'doctorNumber')}</dd></div>
+            <div><dt>Current MR</dt><dd>{doctor.mrName ? `${doctor.mrName}${doctor.mrUserId ? ` (${doctor.mrUserId})` : ''}` : 'Missing MR'}</dd></div>
+            <div><dt>New MR</dt><dd>{person(selectedMR, 'userId')}{selectedMR?.zoneName ? ` · Zone ${selectedMR.zoneName}` : ''}</dd></div>
+          </dl>
+          <TransferEffects />
+          <ReasonField id="doctor-assignment-reason" value={mrReview.reason} onChange={(reason) => setMrReview((old) => ({ ...old, reason }))} error={mrReview.reason ? rError : ''} />
+          <label className="doctor-mapping__confirm"><input type="checkbox" checked={mrReview.reviewed} onChange={(event) => setMrReview((old) => ({ ...old, reviewed: event.target.checked }))} data-testid="checkbox-mr-review" /> I reviewed the old and new MR and that linked Patients move with this Doctor.</label>
+          {saveError && <div className="admin-feedback admin-feedback--error" role="alert">{saveError}</div>}
+        </div>
+      </Dialog>;
+    })()}
   </form>;
 }

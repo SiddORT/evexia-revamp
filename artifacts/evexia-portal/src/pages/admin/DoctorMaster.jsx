@@ -8,7 +8,7 @@ import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../.
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
-import Dialog from '../../components/admin/Dialog.jsx';
+import { TransferDialog } from '../../components/admin/doctorMapping/MappingParts.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
@@ -56,7 +56,8 @@ export default function DoctorMaster() {
   const hydrateMRs = (items) => setHydratedMRs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))]);
   const [selected, setSelected] = useState([]);
   const [confirming, setConfirming] = useState(null);
-  const [targetMR, setTargetMR] = useState('');
+  const [shiftDraft, setShiftDraft] = useState({ mrId: '', reason: '', reviewed: false });
+  const [shiftBlocked, setShiftBlocked] = useState(false);
   const [actionError, setActionError] = useState('');
   const refreshButton = useRef(null);
   const [focusAfterDelete, setFocusAfterDelete] = useState(false);
@@ -84,7 +85,7 @@ export default function DoctorMaster() {
   const activeFilters = [search.trim() && 'search', zoneFilter !== 'all' && 'zone', mrFilter !== 'all' && 'MR', stateFilter !== 'all' && 'state', statusFilter !== 'all' && 'status'].filter(Boolean);
 
   function resetFilters() {
-    setSearch(''); setDebounced(''); setZoneFilter('all'); setMrFilter('all'); setStateFilter('all'); setStatusFilter('all'); setSelected([]); setTargetMR(''); setPage(1);
+    setSearch(''); setDebounced(''); setZoneFilter('all'); setMrFilter('all'); setStateFilter('all'); setStatusFilter('all'); setSelected([]); setPage(1);
   }
   function filterWith(setter, value) { setter(value); setSelected([]); setPage(1); }
   function selectOne(id, checked) { setSelected((previous) => checked ? [...new Set([...previous, id])] : previous.filter((value) => value !== id)); }
@@ -104,10 +105,6 @@ export default function DoctorMaster() {
     if (confirming.type === 'status') result = await changeStatus(confirming.snapshots[0], confirming.value);
     if (confirming.type === 'delete') result = await remove(confirming.snapshots[0]);
     if (confirming.type === 'verification') result = await changeVerification(confirming.snapshots, confirming.value);
-    if (confirming.type === 'shift') {
-      if (!targetMR || !mrById.get(targetMR)?.usable) { setActionError('Choose an available active MR and Zone.'); return; }
-      result = await shiftMR(confirming.snapshots, targetMR);
-    }
     if (result?.success) {
       if (confirming.type === 'delete') setFocusAfterDelete(true);
       setConfirming(null); setActionError(''); setSelected([]);
@@ -198,7 +195,7 @@ export default function DoctorMaster() {
         <div className="doctor-master__toolbar">
           <div className="doctor-master__toolbar-top master-filter-toolbar">
             <div className="doctor-master__search-actions">
-              <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
+              <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); setShiftBlocked(false); }} data-testid="button-refresh-doctors">Refresh records</button>
               <label className="admin-search doctor-master__search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search doctors by name, registration, clinic or contact</span><input maxLength={200} value={search} onChange={(event) => filterWith(setSearch, event.target.value)} placeholder="Search name, registration, clinic or contact" data-testid="input-search-doctors" /></label>
             </div>
             {hasFilters && <span className="doctor-master__filter-feedback" data-testid="text-doctor-filter-feedback">{`${partial ? 'Search section' : `${filtered} matching`} · ${activeFilters.join(', ')} applied`}</span>}
@@ -218,7 +215,8 @@ export default function DoctorMaster() {
         {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>Doctor records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={() => { retry(); setActionError(''); }} style={{ marginTop: 16 }} data-testid="button-retry-doctors">Refresh records</button></div> : <>
           {(missingMR || missingZone) && <div className="admin-feedback admin-feedback--error" role="status" style={{ margin: '12px 16px' }}>Some doctor assignments reference {missingMR && missingZone ? 'missing MRs or zones' : missingMR ? 'missing MRs' : 'missing zones'}. Review their assignments before shifting records.</div>}
           {can.edit && selectedVisible.length > 0 && <div className="doctor-master__bulk" role="group" aria-label="Selected doctor actions"><span className="doctor-master__bulk-label" data-testid="text-selected-doctors">{selectedVisible.length} selected from visible records</span>
-            <button type="button" className="admin-button admin-button--secondary" onClick={() => { setTargetMR(''); openConfirmation({ type: 'shift', ids: selectedVisible }); }} data-testid="button-shift-doctors">Shift MR</button>
+            <button type="button" className="admin-button admin-button--secondary" disabled={shiftBlocked} title={shiftBlocked ? 'Refresh records and review history first' : undefined} onClick={() => openConfirmation({ type: 'shift', ids: selectedVisible })} data-testid="button-shift-doctors">Shift MR</button>
+            <button type="button" className="doctor-master__text-button" onClick={() => navigate('/admin/masters/doctor-mr-mapping')} data-testid="link-doctor-mr-mapping">Doctor MR Mapping</button>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => openConfirmation({ type: 'verification', ids: selectedVisible, value: 'verified' })} data-testid="button-verify-doctors">Verify</button>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => openConfirmation({ type: 'verification', ids: selectedVisible, value: 'unverified' })} data-testid="button-unverify-doctors">Unverify</button>
             <button type="button" className="doctor-master__text-button" onClick={() => setSelected([])} data-testid="button-clear-doctor-selection">Clear selection</button>
@@ -237,11 +235,15 @@ export default function DoctorMaster() {
       {confirming?.type === 'delete' && <ConfirmationDialog destructive pending={pending} blocked={loading || Boolean(error)} title="Delete doctor?" description={`Remove “${confirming.name}” from normal use? Stored relationships, Patients and Opening Balances remain. This does not change business status or reassign records.`} actionLabel="Delete doctor" onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'status' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'active' ? 'Activate' : 'Inactivate'} doctor?`} description={`Change “${confirming.name}” to ${confirming.value}? Verification is separate and this change does not create login access.`} actionLabel={confirming.value === 'active' ? 'Activate doctor' : 'Inactivate doctor'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'verification' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'verified' ? 'Verify' : 'Unverify'} ${count === 1 ? 'doctor' : `${count} doctors`}?`} description={`Set verification to ${confirming.value} for ${count} selected ${count === 1 ? 'doctor' : 'doctors'}? This does not change active status or create login access.`} actionLabel={confirming.value === 'verified' ? 'Confirm verification' : 'Confirm unverification'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
-      {confirming?.type === 'shift' && <Dialog title={`Shift ${count === 1 ? 'doctor' : `${count} doctors`} to another MR?`} eyebrow="Confirm assignment" description="The selected doctors will be assigned to the chosen MR and inherit that MR’s zone." onClose={closeConfirmation} footer={<><button type="button" className="admin-button admin-button--secondary" disabled={pending} onClick={closeConfirmation} data-testid="button-cancel-shift-doctors">Cancel</button><button type="button" className="admin-button" onClick={handleConfirm} disabled={!targetMR || pending || Boolean(error)} data-testid="button-confirm-shift-doctors">{pending ? 'Saving…' : 'Shift MR'}</button></>}>
-        <label className="doctor-master__dialog-field" htmlFor="doctor-target-mr">New MR<DoctorMRSelect id="doctor-target-mr" testId="select-shift-doctor-mr" value={targetMR} onHydrate={hydrateMRs} onChange={(value) => { setTargetMR(value); setActionError(''); }} /></label>
-        <p className="doctor-form__hint" data-testid="text-shift-location-note">This list is not filtered by location. On save, the server checks each selected Doctor's saved Zone, HQ and Area against the new MR's coverage and rejects the shift if any Doctor falls outside it or has no complete location.</p>
-        {actionError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ marginTop: 12 }}>{actionError}</div>}
-      </Dialog>}
+      {confirming?.type === 'shift' && <TransferDialog doctors={confirming.snapshots.map(({ id }) => records.find((row) => row.id === id)).filter(Boolean)} draft={shiftDraft} onDraft={(draft) => { setShiftDraft(draft); setActionError(''); }} mrs={mrs} onHydrate={hydrateMRs} pending={pending}
+        error={actionError} onConfirm={async (moving) => {
+          if (pending || shiftBlocked) return;
+          const target = mrById.get(shiftDraft.mrId);
+          if (!target?.usable) { setActionError('Choose an available active MR and Zone.'); return; }
+          const result = await shiftMR(moving.map((row) => ({ id: row.id, version: row.version })), shiftDraft.mrId, shiftDraft.reason.trim());
+          if (result?.success) { setConfirming(null); setSelected([]); setShiftDraft({ mrId: '', reason: '', reviewed: false }); setActionError(''); }
+          else { if (result?.reconcile) { setShiftBlocked(true); setConfirming(null); } setActionError(`${result?.error || 'The transfer could not be saved.'}${result?.reconcile ? ' The result is uncertain or records changed. Refresh records and review assignment history in Doctor MR Mapping before transferring again. Your draft is kept.' : ''}`); }
+        }} onClose={closeConfirmation} />}
     </div>
   </AdminLayout>;
 }

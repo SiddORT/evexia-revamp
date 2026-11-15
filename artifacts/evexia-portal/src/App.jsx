@@ -32,6 +32,7 @@ const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartne
 const MRMaster = lazyRoute(() => import('./pages/admin/MRMaster.jsx'));
 const MRFormPage = lazyRoute(() => import('./pages/admin/MRFormPage.jsx'));
 const DoctorMaster = lazyRoute(() => import('./pages/admin/DoctorMaster.jsx'));
+const DoctorMRMapping = lazyRoute(() => import('./pages/admin/DoctorMRMapping.jsx'));
 const DoctorFormPage = lazyRoute(() => import('./pages/admin/DoctorFormPage.jsx'));
 const DoctorPaymentHistory = lazyRoute(() => import('./pages/admin/LiveDoctorPaymentHistory.jsx'));
 const MasterExcelImportPage = lazyRoute(() => import('./pages/admin/MasterExcelImportPage.jsx'));
@@ -150,6 +151,7 @@ function App() {
       <Route path="/admin/masters/mrs" component={MRMaster} />
       <Route path="/admin/masters/mrs/new">{() => <MRFormPage />}</Route>
       <Route path="/admin/masters/mrs/:id">{(params) => <MRFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/doctor-mr-mapping" component={DoctorMRMapping} />
       <Route path="/admin/masters/doctors" component={DoctorMaster} />
       <Route path="/admin/masters/doctors/new">{() => <DoctorFormPage />}</Route>
       <Route path="/admin/masters/doctors/:id/payments">{(params) => <DoctorPaymentHistory id={params.id} />}</Route>

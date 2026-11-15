@@ -201,6 +201,7 @@ export const staffPathAllowed = (path, user) => {
     return Boolean(master && hasMasterPermission(user, master.key, 'import'));
   }
   if (/^\/admin\/masters\/opening-stock\/[0-9a-f-]{36}\/edit$/i.test(path)) return hasCapability(user, 'opening_stock', 'edit');
+  if (path === '/admin/masters/doctor-mr-mapping') return canViewMaster(user, 'doctor');
   const match = /^\/admin\/masters\/([^/]+)(?:\/([^/]+))?$/.exec(path);
   if (!match) return false;
   const master = MASTER_CATALOGUE.find((item) => item.path === match[1]);

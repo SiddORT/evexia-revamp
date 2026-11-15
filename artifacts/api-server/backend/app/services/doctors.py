@@ -94,8 +94,14 @@ def projection(db, row, context=None):
     elif not territories.location(db, row.zoneId, row.hqId, row.areaId) or not db.scalar(
             select(MRDirectory.id).where(MRDirectory.id == row.mrId, territories.eligibility(row.zoneId, row.hqId, row.areaId))):
         warnings.append("Saved location or responsible MR is no longer eligible. Retain unchanged history or explicitly resolve the assignment.")
+    mr_hq = db.get(Headquarter, mr.hq) if mr and mr.hq else None
+    zone_names = list(db.scalars(select(Zone.name).join(MRZoneAssignment, MRZoneAssignment.zone_id == Zone.id).where(
+        MRZoneAssignment.mr_id == row.mrId, Zone.deleted_at.is_(None)).order_by(Zone.name)))
     return dict(**{key: getattr(row, key) for key in DoctorFields.model_fields},
                 id=row.id, doctorNumber=row.doctorNumber, version=row.version, verification=row.verification,
+                areaVersion=row.areaVersion, areaHeadquarterName=hq.name if hq else "",
+                mrStatus=mr.status if mr and not mr.deleted_at else "missing",
+                headquarterName=mr_hq.name if mr_hq and not mr_hq.deleted_at else "", zoneNames=zone_names,
                 mrName=mr.name if mr and not mr.deleted_at else "",
                 mrUserId=(context["mrLabels"] if context is not None else mrs.account_labels(db, [mr.id])).get(mr.id, "") if mr and not mr.deleted_at else "",
                  zoneName=zone.name if zone and not zone.deleted_at else "",
@@ -108,6 +114,8 @@ def read_projection(db, actor, row, context=None):
     result = projection(db, row, context)
     if actor.role != "mr":
         return result
+    for key in ("areaVersion", "areaHeadquarterName", "mrStatus", "headquarterName", "zoneNames"):
+        result.pop(key, None)
     from app.services.person_contacts import person
     result = person(result)
     for field, display in (("phone", "phoneDisplay"), ("alternatePhone", "alternatePhoneDisplay")):
@@ -293,11 +301,14 @@ def audit(db, actor, row, operation):
 
 def insert(db, actor, body, verification="verified"):
     from app.services.master_numbers import allocate
+    from app.services import doctor_mapping
+    doctor_mapping.validate_area(db, body.areaId)
     now = utcnow()
     row = Doctor(**body.model_dump(), doctorNumber=allocate(db, "doctor"), verification=verification, version=1,
                  created_by=actor.user.id, updated_by=actor.user.id, created_at=now, updated_at=now)
     db.add(row)
     db.flush()
+    doctor_mapping.append(db, actor, row, "initial", "Initial assignment recorded when Doctor was created.")
     audit(db, actor, row, "create")
     return row
 
@@ -325,6 +336,7 @@ def mutate(db, actor, record_id, body, operation):
         if row.version != body.expected_version:
             raise DoctorError("Doctor changed. Your draft was not saved. Refresh to review the latest version.", 409, "doctor_stale")
         if operation == "edit":
+            from app.services import doctor_mapping
             from app.services.territories import validate_doctor
             # Older clients omit additive location fields: never erase them.
             body_values = {k: getattr(row, k) for k in ("zoneId", "hqId", "areaId") if k not in body.model_fields_set}
@@ -332,10 +344,14 @@ def mutate(db, actor, record_id, body, operation):
             validate_doctor(db, edited, row)
             assignment(db, edited.mrId, row)
             unique(db, body.registrationNumber, row.id)
+            if (edited.zoneId, edited.hqId, edited.areaId) != (row.zoneId, row.hqId, row.areaId):
+                if body.expected_area_version is None:
+                    raise DoctorError("Review the current Doctor Area before saving its correction.", 409, "doctor_area_stale")
+                doctor_mapping.change_area(db, current, row, edited.areaId, body.areaReason,
+                    body.expected_area_version, destination=edited.mrId)
             if body.mrId != row.mrId:
-                from app.services.patients import shift_doctors
-                shift_doctors(db, current, [(row, body.mrId)])
-            for key, value in edited.model_dump(exclude={"expected_version"}).items():
+                doctor_mapping.transfer(db, current, [row], body.mrId, body.assignmentReason)
+            for key, value in edited.model_dump(exclude={"expected_version", "assignmentReason", "expected_area_version", "areaReason", "areaId"}).items():
                 setattr(row, key, value)
         elif operation == "status":
             row.status = body.status
@@ -365,17 +381,18 @@ def bulk(db, actor, body):
             row = find(db, selected.id, True)
             if row.version != selected.expected_version:
                 raise DoctorError("A selected doctor changed. Nothing was saved. Refresh and select again.", 409, "doctor_stale")
-            assignment(db, body.mrId if body.operation == "shift" else row.mrId,
-                       None if body.operation == "shift" else row)
-            if body.operation == "shift":
+            assignment(db, body.mrId if body.operation == "shift" else row.mrId, row)
+            if body.operation == "shift" and row.mrId != body.mrId:
                 from app.services.territories import validate_doctor
                 validate_doctor(db, row, row, mr_id=body.mrId)
             rows.append(row)
         now = utcnow()
         if body.operation == "shift":
-            from app.services.patients import shift_doctors
-            shift_doctors(db, current, [(row, body.mrId) for row in rows])
-        for row in rows:
+            from app.services import doctor_mapping
+            changed = doctor_mapping.transfer(db, current, rows, body.mrId, body.reason)
+        else:
+            changed = rows
+        for row in changed:
             if body.operation == "shift":
                 row.mrId = body.mrId
             else:

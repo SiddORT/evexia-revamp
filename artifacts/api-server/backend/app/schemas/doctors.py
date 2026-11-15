@@ -134,6 +134,9 @@ class DoctorVersion(BaseModel):
 
 class DoctorEdit(DoctorFields):
     expected_version: int = Field(ge=1, strict=True)
+    assignmentReason: str = Field(default="", max_length=1000)
+    areaReason: str = Field(default="", max_length=1000)
+    expected_area_version: int | None = Field(default=None, ge=1, strict=True)
 
 
 class DoctorStatus(DoctorVersion):
@@ -159,6 +162,7 @@ class DoctorBulk(BaseModel):
     operation: Literal["shift", "verification"]
     mrId: uuid.UUID | None = None
     verification: Literal["verified", "unverified"] | None = None
+    reason: str = Field(default="", max_length=1000)
 
     @model_validator(mode="after")
     def selection(self):
@@ -176,6 +180,11 @@ class DoctorResponse(DoctorFields):
     doctorNumber: str
     id: uuid.UUID
     version: int
+    areaVersion: int
+    areaHeadquarterName: str
+    mrStatus: str
+    headquarterName: str
+    zoneNames: list[str]
     verification: Literal["verified", "unverified"]
     mrName: str
     mrUserId: str
@@ -343,3 +352,67 @@ class DoctorReview(BaseModel):
 
 class DoctorImportResult(BaseModel):
     imported: int
+
+
+class DoctorAreaCorrection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_area_version: int = Field(ge=1, strict=True)
+    areaId: uuid.UUID | None
+    reason: str = Field(min_length=10, max_length=1000)
+
+
+class MappingIdentity(BaseModel):
+    id: str
+    name: str
+    number: str
+
+
+class MappingAreaSnapshot(BaseModel):
+    id: str
+    name: str
+    headquarter: str
+
+
+class MappingActor(BaseModel):
+    id: str | None
+    name: str
+
+
+class MappingEventDetails(BaseModel):
+    doctor: MappingIdentity
+    previousMR: MappingIdentity | None
+    newMR: MappingIdentity | None
+    previousArea: MappingAreaSnapshot | None
+    newArea: MappingAreaSnapshot | None
+    actor: MappingActor
+    reason: str
+
+
+class DoctorAssignmentHistoryEvent(BaseModel):
+    id: uuid.UUID
+    kind: Literal["baseline", "initial", "transfer", "area"]
+    recordedAt: datetime
+    details: MappingEventDetails
+
+
+class DoctorAssignmentHistoryPage(BaseModel):
+    items: list[DoctorAssignmentHistoryEvent]
+    total: int
+    limit: int
+    offset: int
+
+
+class DoctorMappingReference(BaseModel):
+    id: uuid.UUID
+    name: str
+    userId: str
+    status: str
+    usable: bool
+    deleted: bool
+
+
+class DoctorMappingReferences(SearchSection):
+    items: list[DoctorMappingReference]
+    total: int | None
+    limit: int
+    offset: int

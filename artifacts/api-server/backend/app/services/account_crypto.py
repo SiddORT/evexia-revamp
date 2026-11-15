@@ -198,10 +198,16 @@ def ready(db):
         ["0107_combination_status_merge"],
         ["0106_territory_assignments"],
         ["0107_territory_staged_merge"],
+        ["0108_doctor_mr_mapping"],
+        ["0109_mapping_staged_merge"],
     ):
         raise AccountCryptoError()
     # This exact catalogue-only successor retains the predecessor account
     # anchors and protected identity; it introduces no encryption inventory.
+    if revisions in (["0108_doctor_mr_mapping"], ["0109_mapping_staged_merge"]):
+        from app.services.doctor_mapping import ready as mapping_ready
+        mapping_ready(db)
+        revisions = ["0106_territory_assignments"] if revisions == ["0108_doctor_mr_mapping"] else ["0107_territory_staged_merge"]
     if revisions in (["0106_territory_assignments"], ["0107_territory_staged_merge"]):
         revisions = ["0107_combination_status_merge"] if revisions == ["0107_territory_staged_merge"] else ["0106_combination_rule_status"]
     if revisions == ["0093_designation_short_name"]:

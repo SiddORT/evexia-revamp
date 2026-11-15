@@ -13,6 +13,7 @@ from app.schemas.doctors import (
     DoctorFields, DoctorEdit, DoctorStatus, DoctorContact, DoctorBulk, DoctorResponse, DoctorDeletion,
     DoctorPage, DoctorChoices, DoctorFilters, DoctorReview, DoctorImportResult,
     MRDoctorRead, MRDoctorReadPage, MRDoctorOrderPage,
+    DoctorAreaCorrection, DoctorAssignmentHistoryPage, DoctorMappingReferences,
 )
 from app.services import doctors, doctor_transfer, mrs
 from app.services.designations import DesignationError
@@ -21,6 +22,55 @@ from app.schemas.mrs import PostalResponse, MRChoices
 from app.services import mr_postal
 
 router = APIRouter(prefix="/admin/doctors", tags=["Doctor Master"])
+def mapping_manager(request: Request, identity=Depends(current_identity)):
+    if identity.role == "mr" or not master_allowed(
+        identity, "doctor", "edit" if request.method == "POST" else None
+    ):
+        raise HTTPException(403, "Admin Doctor mapping access required")
+    return identity
+
+
+@router.get("/mapping", response_model=DoctorPage, operation_id="listDoctorMRMapping")
+def mapping_listing(area_id: str = Query("", max_length=36), headquarter_id: uuid.UUID | None = None,
+                    zone_id: uuid.UUID | None = None, mr_id: uuid.UUID | None = None,
+                    doctor_id: uuid.UUID | None = None,
+                    status: Literal["all", "active", "inactive"] = "all",
+                    limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
+                    actor=Depends(mapping_manager), db: Session = Depends(get_db)):
+    from app.services import doctor_mapping
+    if area_id and area_id != "unset":
+        try:
+            area_id = uuid.UUID(area_id)
+        except ValueError:
+            raise doctors.DoctorError("Choose a valid Doctor Area.", 422, "doctor_filter") from None
+    return doctor_mapping.listing(db, actor, area_id=area_id, headquarter_id=headquarter_id,
+        zone_id=zone_id, mr_id=mr_id, doctor_id=doctor_id, status=status, limit=limit, offset=offset)
+
+
+@router.get("/mapping/references", response_model=DoctorMappingReferences, operation_id="listDoctorMappingReferences")
+def mapping_references(kind: Literal["area", "headquarter", "zone", "doctor"],
+                       query: str = Query("", max_length=200), limit: int = Query(50, ge=1, le=50),
+                       offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
+                       cursor: uuid.UUID | None = None, actor=Depends(mapping_manager), db: Session = Depends(get_db)):
+    from app.services import doctor_mapping
+    return doctor_mapping.references(db, actor, kind, query, limit, offset, include_saved, cursor)
+
+
+@router.get("/{doctor_id}/assignment-history", response_model=DoctorAssignmentHistoryPage, operation_id="getDoctorAssignmentHistory")
+def mapping_history(doctor_id: uuid.UUID, limit: int = Query(20, ge=1, le=50),
+                    offset: int = Query(0, ge=0, le=1000000),
+                    actor=Depends(mapping_manager), db: Session = Depends(get_db)):
+    from app.services import doctor_mapping
+    return doctor_mapping.history(db, actor, doctor_id, limit, offset)
+
+
+@router.post("/{doctor_id}/area", response_model=DoctorResponse, operation_id="correctDoctorArea")
+def mapping_area(doctor_id: uuid.UUID, body: DoctorAreaCorrection,
+                 actor=Depends(mapping_manager), db: Session = Depends(get_db)):
+    from app.services import doctor_mapping
+    return doctor_mapping.area_correction(db, actor, doctor_id, body)
+
+
 def manager(request: Request, identity=Depends(current_identity)):
     operations = {"listing": None, "detail": None, "orders": None, "filters": None, "references": None,
                   "create": "add", "sample": "import", "review": "import",

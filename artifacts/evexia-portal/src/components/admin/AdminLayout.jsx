@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, Hash, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, BadgeIndianRupee, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, Wallet, Archive, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, Hash, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, BadgeIndianRupee, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Waypoints, Target, Truck, Wallet, Archive, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, isSuperAdminIdentity, canReadResource, hasCapability } from '../../auth/capabilities.js';
@@ -31,6 +31,7 @@ const MASTER_GROUPS = [
     { label: 'Designation Master', href: '/admin/masters/designations', testId: 'link-admin-designations', Icon: BriefcaseBusiness },
     { label: 'MR Master', href: '/admin/masters/mrs', testId: 'link-admin-mrs', Icon: UsersRound },
     { label: 'Doctor Master', href: '/admin/masters/doctors', testId: 'link-admin-doctors', Icon: Stethoscope, nested: true },
+    { label: 'Doctor MR Mapping', href: '/admin/masters/doctor-mr-mapping', testId: 'link-admin-doctor-mr-mapping', Icon: Waypoints },
     { label: 'Patient Master', href: '/admin/masters/patients', testId: 'link-admin-patients', Icon: HeartPulse, nested: true },
   ] },
   { label: 'Products & Supply', links: [
@@ -112,7 +113,7 @@ export default function AdminLayout({ title, children }) {
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
     links: group.links.filter((link) => !staff || MASTER_CATALOGUE.some((master) =>
-      (link.href === `/admin/masters/${master.path}` || (master.key === 'language' && link.href === '/admin/languages')) && canViewMaster(user, master.key)))
+      (link.href === `/admin/masters/${master.path}` || (master.key === 'doctor' && link.href === '/admin/masters/doctor-mr-mapping') || (master.key === 'language' && link.href === '/admin/languages')) && canViewMaster(user, master.key)))
       .filter((link) => !searching || link.label.toLocaleLowerCase().includes(query)),
   })).filter((group) => group.links.length > 0);
   const showMasters = staff ? visibleGroups.length > 0 : (!searching || showAllMasters || visibleGroups.length > 0);

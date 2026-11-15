@@ -114,6 +114,8 @@ import type {
   DilutionMaterialSetup,
   DisposalCreate,
   DisposalInput,
+  DoctorAreaCorrection,
+  DoctorAssignmentHistoryPage,
   DoctorBulk,
   DoctorChoices,
   DoctorContact,
@@ -122,6 +124,7 @@ import type {
   DoctorFields,
   DoctorFilters,
   DoctorImportResult,
+  DoctorMappingReferences,
   DoctorPage,
   DoctorResponse,
   DoctorReview,
@@ -199,6 +202,7 @@ import type {
   GSTSettingsWrite,
   GetCombinationPricingHistoryParams,
   GetCombinationRuleStatusHistoryParams,
+  GetDoctorAssignmentHistoryParams,
   GetGSTHistoryParams,
   GetImmunotherapyExtractSettingsParams,
   GetInHouseStockReferencesParams,
@@ -300,6 +304,8 @@ import type {
   ListDesignationsParams,
   ListDoctorDirectoryParams,
   ListDoctorMRChoicesParams,
+  ListDoctorMRMappingParams,
+  ListDoctorMappingReferencesParams,
   ListDoctorTerritoryChoicesParams,
   ListDownloadLogsParams,
   ListHeadquarterZoneChoicesParams,
@@ -50284,6 +50290,457 @@ export function useListMRTerritoryChoices<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListMRTerritoryChoicesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListDoctorMRMappingUrl = (
+  params?: ListDoctorMRMappingParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/mapping?${stringifiedParams}`
+    : `/api/v1/admin/doctors/mapping`;
+};
+
+/**
+ * @summary Mapping Listing
+ */
+export const listDoctorMRMapping = async (
+  params?: ListDoctorMRMappingParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorPage> => {
+  return customFetch<DoctorPage>(getListDoctorMRMappingUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDoctorMRMappingQueryKey = (
+  params?: ListDoctorMRMappingParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/mapping`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDoctorMRMappingQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDoctorMRMapping>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDoctorMRMappingParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorMRMapping>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDoctorMRMappingQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDoctorMRMapping>>
+  > = ({ signal }) =>
+    listDoctorMRMapping(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDoctorMRMapping>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDoctorMRMappingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDoctorMRMapping>>
+>;
+export type ListDoctorMRMappingQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Mapping Listing
+ */
+
+export function useListDoctorMRMapping<
+  TData = Awaited<ReturnType<typeof listDoctorMRMapping>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDoctorMRMappingParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorMRMapping>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDoctorMRMappingQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListDoctorMappingReferencesUrl = (
+  params: ListDoctorMappingReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/mapping/references?${stringifiedParams}`
+    : `/api/v1/admin/doctors/mapping/references`;
+};
+
+/**
+ * @summary Mapping References
+ */
+export const listDoctorMappingReferences = async (
+  params: ListDoctorMappingReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorMappingReferences> => {
+  return customFetch<DoctorMappingReferences>(
+    getListDoctorMappingReferencesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListDoctorMappingReferencesQueryKey = (
+  params?: ListDoctorMappingReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/mapping/references`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDoctorMappingReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDoctorMappingReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListDoctorMappingReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorMappingReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDoctorMappingReferencesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDoctorMappingReferences>>
+  > = ({ signal }) =>
+    listDoctorMappingReferences(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDoctorMappingReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDoctorMappingReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDoctorMappingReferences>>
+>;
+export type ListDoctorMappingReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Mapping References
+ */
+
+export function useListDoctorMappingReferences<
+  TData = Awaited<ReturnType<typeof listDoctorMappingReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListDoctorMappingReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorMappingReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDoctorMappingReferencesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCorrectDoctorAreaUrl = (doctorId: string) => {
+  return `/api/v1/admin/doctors/${doctorId}/area`;
+};
+
+/**
+ * @summary Mapping Area
+ */
+export const correctDoctorArea = async (
+  doctorId: string,
+  doctorAreaCorrection: DoctorAreaCorrection,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse>(getCorrectDoctorAreaUrl(doctorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(doctorAreaCorrection),
+  });
+};
+
+export const getCorrectDoctorAreaMutationKey = () =>
+  ["correctDoctorArea"] as const;
+
+export const getCorrectDoctorAreaMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof correctDoctorArea>>,
+    TError,
+    CorrectDoctorAreaMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof correctDoctorArea>>,
+  TError,
+  CorrectDoctorAreaMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCorrectDoctorAreaMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof correctDoctorArea>>,
+    CorrectDoctorAreaMutationVariables
+  > = (props) => {
+    const { doctorId, data } = props ?? {};
+
+    return correctDoctorArea(doctorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CorrectDoctorAreaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof correctDoctorArea>>
+>;
+export type CorrectDoctorAreaMutationBody = BodyType<DoctorAreaCorrection>;
+export type CorrectDoctorAreaMutationError = ErrorType<ErrorEnvelope>;
+export type CorrectDoctorAreaMutationVariables = {
+  doctorId: string;
+  data: BodyType<DoctorAreaCorrection>;
+};
+
+/**
+ * @summary Mapping Area
+ */
+export const useCorrectDoctorArea = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof correctDoctorArea>>,
+    TError,
+    CorrectDoctorAreaMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof correctDoctorArea>>,
+  TError,
+  CorrectDoctorAreaMutationVariables,
+  TContext
+> => {
+  return useMutation(getCorrectDoctorAreaMutationOptions(options));
+};
+
+export const getGetDoctorAssignmentHistoryUrl = (
+  doctorId: string,
+  params?: GetDoctorAssignmentHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/${doctorId}/assignment-history?${stringifiedParams}`
+    : `/api/v1/admin/doctors/${doctorId}/assignment-history`;
+};
+
+/**
+ * @summary Mapping History
+ */
+export const getDoctorAssignmentHistory = async (
+  doctorId: string,
+  params?: GetDoctorAssignmentHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorAssignmentHistoryPage> => {
+  return customFetch<DoctorAssignmentHistoryPage>(
+    getGetDoctorAssignmentHistoryUrl(doctorId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDoctorAssignmentHistoryQueryKey = (
+  doctorId: string,
+  params?: GetDoctorAssignmentHistoryParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/${doctorId}/assignment-history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetDoctorAssignmentHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDoctorAssignmentHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  doctorId: string,
+  params?: GetDoctorAssignmentHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDoctorAssignmentHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetDoctorAssignmentHistoryQueryKey(doctorId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDoctorAssignmentHistory>>
+  > = ({ signal }) =>
+    getDoctorAssignmentHistory(doctorId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: doctorId !== null && doctorId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDoctorAssignmentHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDoctorAssignmentHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDoctorAssignmentHistory>>
+>;
+export type GetDoctorAssignmentHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Mapping History
+ */
+
+export function useGetDoctorAssignmentHistory<
+  TData = Awaited<ReturnType<typeof getDoctorAssignmentHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  doctorId: string,
+  params?: GetDoctorAssignmentHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDoctorAssignmentHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDoctorAssignmentHistoryQueryOptions(
+    doctorId,
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

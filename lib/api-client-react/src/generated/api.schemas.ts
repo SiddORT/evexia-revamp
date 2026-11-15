@@ -14451,6 +14451,91 @@ export interface CombinationStatusResult {
   rule: CombinationSavedRule;
 }
 
+export interface DoctorAreaCorrection {
+  areaId: string | null;
+  /** @minimum 1 */
+  expected_area_version: number;
+  /**
+   * @minLength 10
+   * @maxLength 1000
+   */
+  reason: string;
+}
+
+export type DoctorAssignmentHistoryEventKind =
+  (typeof DoctorAssignmentHistoryEventKind)[keyof typeof DoctorAssignmentHistoryEventKind];
+
+export const DoctorAssignmentHistoryEventKind = {
+  baseline: "baseline",
+  initial: "initial",
+  transfer: "transfer",
+  area: "area",
+} as const;
+
+export interface MappingActor {
+  id: string | null;
+  name: string;
+}
+
+export interface MappingIdentity {
+  id: string;
+  name: string;
+  number: string;
+}
+
+export interface MappingAreaSnapshot {
+  headquarter: string;
+  id: string;
+  name: string;
+}
+
+export interface MappingEventDetails {
+  actor: MappingActor;
+  doctor: MappingIdentity;
+  newArea: MappingAreaSnapshot | null;
+  newMR: MappingIdentity | null;
+  previousArea: MappingAreaSnapshot | null;
+  previousMR: MappingIdentity | null;
+  reason: string;
+}
+
+export interface DoctorAssignmentHistoryEvent {
+  details: MappingEventDetails;
+  id: string;
+  kind: DoctorAssignmentHistoryEventKind;
+  recordedAt: string;
+}
+
+export interface DoctorAssignmentHistoryPage {
+  items: DoctorAssignmentHistoryEvent[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface DoctorMappingReference {
+  deleted: boolean;
+  id: string;
+  name: string;
+  status: string;
+  usable: boolean;
+  userId: string;
+}
+
+export interface DoctorMappingReferences {
+  items: DoctorMappingReference[];
+  limit: number;
+  nextCursor?: string | null;
+  offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -18313,3 +18398,77 @@ export const ListMRTerritoryChoicesKind = {
   headquarters: "headquarters",
   areas: "areas",
 } as const;
+
+export type ListDoctorMRMappingParams = {
+  /**
+   * @maxLength 36
+   */
+  area_id?: string;
+  headquarter_id?: string | null;
+  zone_id?: string | null;
+  mr_id?: string | null;
+  doctor_id?: string | null;
+  status?: ListDoctorMRMappingStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListDoctorMRMappingStatus =
+  (typeof ListDoctorMRMappingStatus)[keyof typeof ListDoctorMRMappingStatus];
+
+export const ListDoctorMRMappingStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ListDoctorMappingReferencesParams = {
+  kind: ListDoctorMappingReferencesKind;
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_saved?: string | null;
+  cursor?: string | null;
+};
+
+export type ListDoctorMappingReferencesKind =
+  (typeof ListDoctorMappingReferencesKind)[keyof typeof ListDoctorMappingReferencesKind];
+
+export const ListDoctorMappingReferencesKind = {
+  area: "area",
+  headquarter: "headquarter",
+  zone: "zone",
+  doctor: "doctor",
+} as const;
+
+export type GetDoctorAssignmentHistoryParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};

@@ -773,6 +773,10 @@ function masterAllowed(user, resource, path, writing, params = {}) {
   const master = MASTER_CATALOGUE.find((item) => item.path === resource);
   if (user.identity_kind !== 'staff' || !master) return false;
   if (/^\/trash$|\/(?:restore|reset)$/.test(path)) return false;
+  if (resource === 'doctors' && (
+    (!writing && (['/mapping', '/mapping/references'].includes(path) || /^\/[0-9a-f-]{36}\/assignment-history$/.test(path)))
+    || (writing && /^\/[0-9a-f-]{36}\/area$/.test(path))
+  )) return writing ? hasMasterPermission(user, 'doctor', 'edit') : canViewMaster(user, 'doctor');
   const need = path === '' ? (writing ? 'add' : null)
     : /^\/[0-9a-f-]{36}$/.test(path) ? null
     : /\/(?:edit|status|contact)$/.test(path) || path === '/bulk' ? 'edit'
@@ -813,7 +817,11 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     && body !== null && typeof body === 'object' && !Array.isArray(body)
     && file === undefined && !download && Object.keys(params).length === 0;
   const hsnLookup = resource === 'allergens' && path === '/hsn-lookup' && body === undefined && file === undefined && !download;
-  if (!route.test(path) && !dilutionSetup && !hsnLookup && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+  const doctorMappingRoute = resource === 'doctors' && file === undefined && !download && (
+    (!body && (['/mapping', '/mapping/references'].includes(path) || /^\/[0-9a-f-]{36}\/assignment-history$/.test(path)))
+    || (body !== undefined && /^\/[0-9a-f-]{36}\/area$/.test(path))
+  );
+  if (!route.test(path) && !dilutionSetup && !hsnLookup && !doctorMappingRoute && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
       && !(resource === 'doctors' && /^\/[0-9a-f-]{36}\/orders$/.test(path) && body === undefined && file === undefined && !download)
       && !(resource === 'headquarters' && path === '/zone-choices' && body === undefined && file === undefined)
       && !(resource === 'storage-locations' && /^\/postal\/[1-9][0-9]{5}$/.test(path))
@@ -859,7 +867,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   });
   let response;
   try {
-    languageWriteDispatched = ['languages', 'hsn'].includes(resource) && writing && path !== '/import/review';
+    languageWriteDispatched = ['languages', 'hsn', 'doctors'].includes(resource) && writing && path !== '/import/review';
     response = await load();
     languageWriteRejected = response.status >= 400 && response.status < 500;
     if (response.status === 401) {

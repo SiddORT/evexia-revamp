@@ -62,13 +62,13 @@ export default function useDoctors(params = {}, detailId = null) {
       setFeedback(message); retry();
       return { success: true, record: result };
     } catch (cause) {
-      try { guard(); } catch { return { success: false, error: 'Session changed.' }; }
+      try { guard(); } catch { return { success: false, error: 'Session changed. Review current records and history before another save.', ambiguous: true, reconcile: true }; }
       // Authoritative territory rejections roll back before any mutation.
       // Let the user resolve the location/MR without discarding the draft;
       // stale versions and uncertain outcomes still require reconciliation.
       const rejectedAssignment = cause.status === 409 && ['mr_assignment', 'doctor_assignment'].includes(cause.code);
       if (alive.current && !rejectedAssignment && (cause.status === 409 || cause.ambiguous)) setState((old) => ({ ...old, error: `${cause.message} Review current records before retrying; your draft is preserved.` }));
-      return { success: false, error: cause.message, fields: cause.fields };
+      return { success: false, error: cause.message, fields: cause.fields, status: cause.status, ambiguous: Boolean(cause.ambiguous) || !cause.status, reconcile: Boolean(cause.ambiguous) || !cause.status || (cause.status === 409 && !rejectedAssignment) };
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
   const row = (id) => typeof id === 'object' ? id : state.records.find((record) => record.id === id);
@@ -80,6 +80,6 @@ export default function useDoctors(params = {}, detailId = null) {
     changeStatus: (id, status) => apply(() => statusDoctor(row(id), status), 'Doctor status updated.'),
     remove: (id) => apply(() => deleteDoctor(row(id)), 'Doctor removed from normal use. Stored relationships remain.'),
     changeVerification: (ids, value) => apply(() => bulkDoctors(selection(ids), 'verification', value), 'Verification updated.'),
-    shiftMR: (ids, id) => apply(() => bulkDoctors(selection(ids), 'shift', id), 'MR assignment updated.'),
+    shiftMR: (ids, id, reason) => apply(() => bulkDoctors(selection(ids), 'shift', id, reason), 'MR assignment updated. Linked Patients moved with their Doctors.'),
   };
 }
