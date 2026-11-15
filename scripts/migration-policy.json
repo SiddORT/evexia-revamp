@@ -4,6 +4,8 @@
   "revisions": {
     "0104_combination_pricing": "automatic",
     "0105_combination_staged_merge": "automatic",
+    "0106_combination_rule_status": "automatic",
+    "0107_combination_status_merge": "automatic",
     "0096_hsn_master": "automatic",
     "0097_hsn_staged_merge": "automatic",
     "0093_designation_short_name": "automatic",

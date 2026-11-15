@@ -14330,6 +14330,73 @@ export interface CombinationSave {
   size: number;
 }
 
+export type CombinationSavedRuleStatus =
+  (typeof CombinationSavedRuleStatus)[keyof typeof CombinationSavedRuleStatus];
+
+export const CombinationSavedRuleStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CombinationSavedRule {
+  latest: CombinationRevision;
+  status: CombinationSavedRuleStatus;
+  /** @minimum 1 */
+  statusVersion: number;
+}
+
+export interface CombinationSavedPage {
+  filtered: number;
+  items: CombinationSavedRule[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type CombinationStatusEventStatus =
+  (typeof CombinationStatusEventStatus)[keyof typeof CombinationStatusEventStatus];
+
+export const CombinationStatusEventStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CombinationStatusEvent {
+  actorId: string;
+  id: string;
+  recordedAt: string;
+  revisionId: string;
+  status: CombinationStatusEventStatus;
+  /** @minimum 1 */
+  version: number;
+}
+
+export interface CombinationStatusHistory {
+  items: CombinationStatusEvent[];
+  nextOffset: number | null;
+}
+
+export type CombinationStatusInputStatus =
+  (typeof CombinationStatusInputStatus)[keyof typeof CombinationStatusInputStatus];
+
+export const CombinationStatusInputStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CombinationStatusInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  idempotencyKey: string;
+  status: CombinationStatusInputStatus;
+}
+
+export interface CombinationStatusResult {
+  event: CombinationStatusEvent;
+  requestId: string;
+  rule: CombinationSavedRule;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -18082,3 +18149,43 @@ export const GetCombinationPricingHistoryDosage = {
   B7: "B7",
   B8: "B8",
 } as const;
+
+export type ListSavedCombinationRulesParams = {
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  status?: ListSavedCombinationRulesStatus;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListSavedCombinationRulesStatus =
+  (typeof ListSavedCombinationRulesStatus)[keyof typeof ListSavedCombinationRulesStatus];
+
+export const ListSavedCombinationRulesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type GetCombinationRuleStatusHistoryParams = {
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};

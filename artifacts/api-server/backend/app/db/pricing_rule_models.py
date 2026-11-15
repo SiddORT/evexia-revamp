@@ -88,3 +88,22 @@ class CombinationTariff(Base):
     payload_ciphertext: Mapped[str] = mapped_column(Text)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CombinationRuleStatus(Base):
+    """Append-only independent configuration status; version 1 is initialization."""
+    __tablename__ = "it_combination_rule_status"
+    __table_args__ = (
+        UniqueConstraint("category_id", "dosage", "member_key", "version", name="uq_it_combination_status_version"),
+        CheckConstraint("version >= 1", name="ck_it_combination_status_version"),
+        CheckConstraint("status IN ('active','inactive')", name="ck_it_combination_status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("product_categories.id"))
+    dosage: Mapped[str] = mapped_column(String(2))
+    member_key: Mapped[str] = mapped_column(String(110))
+    version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(8))
+    revision_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("it_combination_tariffs.id"))
+    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

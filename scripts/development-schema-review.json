@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0104_combination_pricing",
-  "policy_sha256": "0b6c594f83a2ed1d1439505bdd44c4c97251427bee2afb16950bdcd0f6944cdf",
+  "target": "0106_combination_rule_status",
+  "policy_sha256": "6721b0054c2be4350417a9b914516ecc6ac5ea11f8a3c6c153f5a75aa856bf46",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -118,7 +118,9 @@
     "0102_category_count_tariffs": "3c8086d4dc5e14d97ce01037d9e94aa784bd529dac831f24007366839fe0ec0a",
     "0103_tariff_staged_merge": "6daa802b94c73a8f12def7c50e3b0ae9b67b7a2589c9c641f3587b0970774700",
     "0104_combination_pricing": "3b831c6cfcefc3f91278abd1f001bc9ae22274e71773c9f3528e1f0a04d94d43",
-    "0105_combination_staged_merge": "bb02417a2a08be9440aeafce0b2760bd03fc753207adcd611f7e4d1bb53dd222"
+    "0105_combination_staged_merge": "bb02417a2a08be9440aeafce0b2760bd03fc753207adcd611f7e4d1bb53dd222",
+    "0106_combination_rule_status": "d38ec78bd43521537758102a8b4b84075d3c77efaf96bd7d5719a3cc5a39fb2e",
+    "0107_combination_status_merge": "106fe01ee4e773aeb8f70f0bea45a6bfcd27da4769f22d1e05925a7ca350dab2"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

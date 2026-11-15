@@ -2,7 +2,7 @@
 import re
 import uuid
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.immunotherapy_extract import Dosage
 from app.schemas.pricing_rules import ItPricingReference
@@ -146,4 +146,44 @@ class CombinationAllergenPage(Strict):
 
 class CombinationCategoryPage(Strict):
     items: list[ItPricingReference]
+    nextOffset: int | None
+
+
+class CombinationStatusEvent(Strict):
+    id: uuid.UUID
+    status: Literal["active", "inactive"]
+    version: int = Field(ge=1)
+    actorId: uuid.UUID
+    recordedAt: datetime
+    revisionId: uuid.UUID
+
+
+class CombinationSavedRule(Strict):
+    latest: CombinationRevision
+    status: Literal["active", "inactive"]
+    statusVersion: int = Field(ge=1)
+
+
+class CombinationSavedPage(Strict):
+    items: list[CombinationSavedRule]
+    total: int
+    filtered: int
+    offset: int
+    limit: int
+
+
+class CombinationStatusInput(Strict):
+    status: Literal["active", "inactive"]
+    expectedVersion: int = Field(ge=1, strict=True)
+    idempotencyKey: uuid.UUID
+
+
+class CombinationStatusResult(Strict):
+    requestId: uuid.UUID
+    rule: CombinationSavedRule
+    event: CombinationStatusEvent
+
+
+class CombinationStatusHistory(Strict):
+    items: list[CombinationStatusEvent]
     nextOffset: int | None

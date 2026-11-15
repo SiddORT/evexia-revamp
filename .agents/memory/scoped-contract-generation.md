@@ -15,3 +15,14 @@ Generated output is not necessarily an innocuous formatting-only change.
 but compare unrelated output against the prior source and retain its behavior.
 Do not run the package codegen wrapper when checks are prohibited: it chains a
 library typecheck. Use the direct generator and its constant-hoisting step only.
+
+Keep a JSON-formatted OpenAPI document in JSON syntax even when its filename
+ends in `.yaml`; format generated TypeScript separately, not with a YAML formatter.
+
+**Why:** A formatter selected by the filename converted JSON to YAML flow syntax
+with trailing commas and changed the whole document. The scoped exporter reads
+JSON and could no longer consume that output. Regenerating from the original
+JSON base preserves unrelated contracts and avoids this formatting-only failure.
+
+**How to apply:** Pass the original JSON base to the scoped offline exporter
+when recovering; do not include the OpenAPI file in a broad Prettier glob.

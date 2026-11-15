@@ -2,10 +2,13 @@
 
 ## Activation boundary
 
-The existing protected Super Admin **Pricing Rules** route now has one active
-configuration workspace: category → saved allergens → canonical dosage →
-Individual / Combination of 2 / Combination of 3. There is no second pricing
-configuration page. Mix / No Mix is read-only Allergen Master metadata.
+The protected Super Admin **Pricing Rules** route is a saved-records master list.
+**Add Rule** opens `/admin/pricing-rules/new` with the **Add Pricing Rule**
+workspace: category → saved allergens → canonical dosage → Individual /
+Combination of 2 / Combination of 3. Mix / No Mix is read-only Allergen Master
+metadata. Exact-key **Edit** opens `/admin/pricing-rules/:id/edit`; the ID anchors
+an immutable revision and resolves its latest category/dosage/member-key record.
+No inline draft, Copy controls or unconfigured generated rows appear on the list.
 
 These are **configuration-only** combination rates. **No current placement,
 quotation, confirmation, approval, clinical quantity or inventory consumer reads
@@ -126,12 +129,89 @@ authorized by this feature.
 
 ## Prepared migration and source handoff
 
+### Separate entry and independent configuration status
+
+The saved list uses the standard master DataTable, toolbar, status badges,
+confirmation dialog and TablePagination. It shows Sr No, saved Product Category
+and Allergens, Dosage, Combination Size, Latest Recorded MRP (including explicit
+zero), Effective From, Status and row-specific Edit, Activate/Deactivate and
+History actions. The default includes Active and Inactive keys. Historical
+category/count and legacy material evidence remain read-only disclosures.
+Loading, errors with explicit retry, and empty results are separate states.
+
+GET `/combinations/rules` returns bounded pages of latest **recorded version**
+per exact key, with complete total/filtered counts, never catalogue-generated
+combinations. Unsearched/status-only reads paginate in SQL and decrypt only that
+page. Search matches encrypted saved category/member names and dosage, streaming
+batches of 100 and retaining only the requested page. Above 20,000 saved keys it
+refuses search rather than show partial results or invented counts. Clearing search
+still allows ordinary pagination. There is no plaintext name search index.
+GET `/combinations/rules/{record_id}` resolves the saved exact key.
+
+Edit freezes category, dosage, size and member IDs. It prefills the latest rate,
+but leaves Effective From blank: a new revision requires an explicit unused date,
+including corrections to past rates. The existing atomic append endpoint, exact
+decimal normalization, eligibility/scope digests and unchanged-body uncertain
+retry are reused. An exact-key edit cannot change another combination.
+Ineligible saved members stay readable, but new rate revisions still require
+current eligibility. Back/Cancel retain the existing draft confirmation/unknown
+save guards; confirmed saves clear the draft and return to a freshly loaded list.
+
+POST `/combinations/rules/{record_id}/status` appends independent status evidence.
+Every existing/new key has a persisted **Active** baseline at status version 1.
+The additive migration prepares baseline rows for existing keys; new-key creation
+initializes its baseline in the same atomic transaction. Baseline evidence is
+explicitly labelled: its actor identifies the original source rate owner, its
+timestamp is baseline initialization time, and its revision ID preserves source
+provenance. It never claims a historical user activation. Later events record the
+actual status-change actor/time. Existing-key rate revisions do not touch status,
+so neither editing nor Copy/batch creation can reactivate inactive rules.
+Missing status rows fail explicitly rather than assume Active.
+GET `/combinations/rules/{record_id}/status-history` exposes paged immutable
+status evidence alongside dated rate history. Catalogue status stays independent.
+
+Status actions require the unchanged latest rate revision and expected status
+version. The shared transaction serializes rate/status changes. The actor-bound
+encrypted request ledger uses a separate operation identity for exact-body retry
+and durable rejection. Unknown/malformed outcomes lock navigation and other
+actions until **Retry same submission** resolves them. A definitive stale
+rejection requires closing, explicitly refreshing and reviewing before a fresh
+action. Activation reconstructs the exact eligible group; it never revives
+deleted/inactive categories, moved/inactive members, No Mix pairs/triples or the
+bound Dilution material. Deactivation remains available for historical keys.
+
+`0106_combination_rule_status` follows only `0104`, adding an append-only status
+table with initial Active baselines, per-key version uniqueness and
+UPDATE/DELETE/TRUNCATE guards. It does not rewrite rate history.
+`0107_combination_status_merge` retains the separate staged ancestry via `0105`.
+Development declaration/readiness now target `0106`. Exact `0107` compatibility
+checks status, combination, count-tariff and both inherited predecessor branches.
+Account/Directory maintenance supports only reviewed exact successors, without
+altering historical encryption inventories. Source policy classifications and
+literal development hashes are coordinated, not permission to execute migrations
+or activate unrelated staged features.
+
+The source handoff includes the four new contracts and generated client/Zod
+source. Only offline scoped OpenAPI export, direct Orval generation, constant
+hoisting and generated-source formatting were used. The package codegen wrapper
+was not used because it chains a prohibited typecheck. An initial offline export
+stopped on mismatched declarations; it generated after declaration coordination.
+Unrelated contract semantics were retained.
+
+**Source review is not runtime verification.** No tests/builds/typechecks,
+regression/release checks or validation wrappers, runtime/browser/preview probes,
+service starts/restarts, live writes, migration execution or deployments were
+performed by this task. UI, API and responsive/theme behavior remain operationally
+unverified. The new database changes are prepared, not applied.
+
+### Previous combination-only migration ancestry
+
 `0104_combination_pricing` follows the declared `0102_category_count_tariffs`
 branch, creates an empty append-only encrypted table, unique date/version
 constraints and UPDATE/DELETE/TRUNCATE immutability guards. It seeds no data.
 `0105_combination_staged_merge` joins that branch with the pre-existing staged
 `0103` source ancestry without making staged low-stock/designation features part
-of the development target. Development declaration/readiness use `0104`, and
+of the development target. The predecessor declaration/readiness used `0104`, and
 exact `0105` runtime compatibility retains **both** predecessor probe paths.
 Account/Directory maintenance inherits only the explicitly supported independent
 PR-key successor; existing historical encryption inventories are not rewritten.

@@ -46,6 +46,8 @@ def readiness(db: Session = Depends(get_db)):
             accepted.append(["0103_tariff_staged_merge"])
         if SCHEMA_REVISION == "0104_combination_pricing":
             accepted.append(["0105_combination_staged_merge"])
+        if SCHEMA_REVISION == "0106_combination_rule_status":
+            accepted.append(["0107_combination_status_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -59,7 +61,11 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
-        staged_tariff_merge = revisions in (["0103_tariff_staged_merge"], ["0105_combination_staged_merge"])
+        staged_tariff_merge = revisions in (["0103_tariff_staged_merge"], ["0105_combination_staged_merge"], ["0107_combination_status_merge"])
+        if revisions in (["0106_combination_rule_status"], ["0107_combination_status_merge"]):
+            from app.services.combination_rules import ready as combination_rules_ready
+            combination_rules_ready(db)
+            revisions = ["0105_combination_staged_merge"] if staged_tariff_merge else ["0104_combination_pricing"]
         if revisions in (["0104_combination_pricing"], ["0105_combination_staged_merge"]):
             from app.services.combination_pricing import ready as combination_ready
             combination_ready(db)

@@ -3,7 +3,7 @@ import { exactCombinationRate, generateCombinations, saveCombinationBatch } from
 import { validDate } from '../../services/serverPricingRules.js';
 
 const blank = () => ({ edits: {}, copyRate: null, effectiveFrom: '' });
-export default function useCombinationPricing(scope, owner) {
+export default function useCombinationPricing(scope, owner, onSaved) {
   const identity = JSON.stringify([owner, scope]);
   const [page, setPage] = useState(null);
   const [draft, setDraft] = useState(blank);
@@ -20,7 +20,7 @@ export default function useCombinationPricing(scope, owner) {
   const active = useRef(false);
   const saving = useRef(false);
   const latest = useRef({});
-  latest.current = { draft, attempt, page, blocked, identity, scope, view };
+  latest.current = { draft, attempt, page, blocked, identity, scope, view, onSaved };
   useEffect(() => {
     scoped.current = identity;
     baseline.current = null;
@@ -101,9 +101,12 @@ export default function useCombinationPricing(scope, owner) {
       const value = await saveCombinationBatch(pending.body, pending.keys, pending.versions, owner);
       if (sequence !== seq.current) return;
       latest.current.attempt = null; setAttempt(null);
-      baseline.current = null; setDraft(blank()); setPage(null); setBlocked(false);
+      baseline.current = null; latest.current.draft = blank(); setDraft(blank()); setPage(null); setBlocked(false);
       setNotice(`${value.saved.length} dated combination rate${value.saved.length === 1 ? '' : 's'} saved atomically. Current order quotation and saved orders are unchanged.`);
       setReload((n) => n + 1);
+      // Clear the synchronous navigation guard before leaving a confirmed save.
+      active.current = false; saving.current = false;
+      latest.current.onSaved?.(value);
     } catch (cause) {
       if (sequence !== seq.current) return;
       if (cause.terminal) {

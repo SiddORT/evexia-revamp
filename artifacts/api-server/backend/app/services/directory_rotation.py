@@ -56,7 +56,7 @@ def _maintenance_revision(db):
     # Preserve exactly 0096's locks, fields and retained order inventories.
     # Do not admit the staged merge or arbitrary later schemas.
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing") else revision
+    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status") else revision
 
 
 class RotationError(Exception):
@@ -106,6 +106,9 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if revisions == ["0106_combination_rule_status"]:
+        db.execute(text(f"LOCK TABLE it_combination_rule_status IN {mode} MODE NOWAIT"))
+        revisions = ["0104_combination_pricing"]
     if revisions == ["0104_combination_pricing"]:
         # Independent PR-key evidence; it adds no Directory-encrypted fields.
         db.execute(text(f"LOCK TABLE it_combination_tariffs IN {mode} MODE NOWAIT"))

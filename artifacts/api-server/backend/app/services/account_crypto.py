@@ -194,6 +194,8 @@ def ready(db):
         ["0103_tariff_staged_merge"],
         ["0104_combination_pricing"],
         ["0105_combination_staged_merge"],
+        ["0106_combination_rule_status"],
+        ["0107_combination_status_merge"],
     ):
         raise AccountCryptoError()
     # This exact catalogue-only successor retains the predecessor account
@@ -202,6 +204,10 @@ def ready(db):
         revisions = ["0094_language_low_stock_merge"]
     # Both parents of this exact merge retain the same protected identity and
     # lookup configuration. Do not accept intermediate merges or future heads.
+    if revisions == ["0107_combination_status_merge"]:
+        revisions = ["0105_combination_staged_merge"]
+    if revisions == ["0106_combination_rule_status"]:
+        revisions = ["0104_combination_pricing"]
     if revisions == ["0105_combination_staged_merge"]:
         revisions = ["0103_tariff_staged_merge"]
     if revisions == ["0104_combination_pricing"]:

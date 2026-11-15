@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BadgeIndianRupee, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import PricingPolicyWorkspace from '../../components/admin/PricingPolicyWorkspace.jsx';
+import SavedPricingRules from '../../components/admin/SavedPricingRules.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { isSuperAdminIdentity } from '../../auth/capabilities.js';
 import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
@@ -27,7 +27,7 @@ export default function PricingRules() {
 function PricingWorkspace() {
   const [legacyOpen, setLegacyOpen] = useState(false);
   return <AdminLayout title="Pricing Rules"><div className="pricing-rules-page">
-    <PricingPolicyWorkspace />
+    <SavedPricingRules />
     <details className="admin-panel pricing-legacy-disclosure" onToggle={(event) => setLegacyOpen(event.currentTarget.open)}>
       <summary>Historical material-price evidence · read-only</summary>
       {legacyOpen && <LegacyPricingEvidence />}

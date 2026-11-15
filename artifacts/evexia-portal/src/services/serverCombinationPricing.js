@@ -104,3 +104,54 @@ export async function combinationHistory(id, dosage, key, offset, signal) {
   });
   return page;
 }
+
+function savedRule(value) {
+  const r = value?.latest;
+  if (!r || !uuid(r.categoryId) || !DOSAGES.includes(r.dosage)
+    || !['active', 'inactive'].includes(value.status) || !integer(value.statusVersion) || value.statusVersion < 1) malformed();
+  revision(r, r.categoryId, r.dosage);
+  return value;
+}
+export async function listSavedCombinationRules(params, signal) {
+  const page = await request('/rules', { params, signal });
+  if (!Array.isArray(page?.items) || !integer(page.total) || !integer(page.filtered)
+    || page.filtered > page.total || page.offset !== params.offset || page.limit !== params.limit
+    || page.items.length !== Math.min(params.limit, Math.max(0, page.filtered - params.offset))) malformed();
+  page.items.forEach((value) => {
+    savedRule(value);
+    if (params.status !== 'all' && value.status !== params.status) malformed();
+  });
+  const keys = page.items.map((v) => JSON.stringify([v.latest.categoryId, v.latest.dosage, v.latest.memberIds]));
+  if (new Set(keys).size !== keys.length) malformed();
+  return page;
+}
+export async function getSavedCombinationRule(id, signal) {
+  return savedRule(await request(`/rules/${id}`, { signal }));
+}
+function statusEvent(e) {
+  if (!e || !uuid(e.id) || !uuid(e.actorId) || !uuid(e.revisionId)
+    || !['active', 'inactive'].includes(e.status) || !integer(e.version) || e.version < 1
+    || typeof e.recordedAt !== 'string' || Number.isNaN(Date.parse(e.recordedAt))) malformed();
+  return e;
+}
+export async function changeCombinationRuleStatus(record, body, owner) {
+  const result = await request(`/rules/${record.latest.id}/status`, { body });
+  savedRule(result?.rule); statusEvent(result?.event);
+  const r = result.rule;
+  if (result.requestId !== body.idempotencyKey || r.latest.id !== record.latest.id
+    || r.latest.categoryId !== record.latest.categoryId || r.latest.dosage !== record.latest.dosage
+    || r.latest.memberIds.join(',') !== record.latest.memberIds.join(',')
+    || r.latest.totalMrp !== record.latest.totalMrp || r.latest.version !== record.latest.version
+    || r.status !== body.status || r.statusVersion !== body.expectedVersion + 1
+    || result.event.version !== r.statusVersion || result.event.status !== r.status
+    || result.event.actorId !== owner || result.event.revisionId !== r.latest.id) malformed();
+  return result;
+}
+export async function combinationStatusHistory(id, offset, signal) {
+  const page = await request(`/rules/${id}/status-history`, { params: { offset, limit: 25 }, signal });
+  if (!Array.isArray(page?.items) || page.items.length > 25
+    || (page.nextOffset !== null && page.nextOffset !== offset + 25)) malformed();
+  page.items.forEach(statusEvent);
+  if (new Set(page.items.map((e) => e.id)).size !== page.items.length) malformed();
+  return page;
+}

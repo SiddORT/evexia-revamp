@@ -1087,7 +1087,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const tariffOperation = resource === 'pricing-rules'
     && /^\/count-tariffs(?:\/(?:categories|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))?$/.test(path);
   const combinationOperation = resource === 'pricing-rules'
-    && /^\/combinations\/(?:categories|generate|save|(?:allergens|history)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(path);
+    && /^\/combinations\/(?:categories|generate|save|rules(?:\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\/(?:status|status-history))?)?|(?:allergens|history)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(path);
+  const combinationStatus = combinationOperation && path.endsWith('/status');
   // Submission returns the normal order contract, never a Purchase Order.
   const responseResource = draftSubmission ? `${draftKind}-orders` : resource;
   const allowed = draftResource
@@ -1151,8 +1152,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   }
   const settlementVerification = resource === 'settlements' && /^\/transactions\/[0-9a-f-]{36}\/verify$/.test(path);
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
-    || (writing && path !== '' && path !== '/count-tariffs' && !['/combinations/generate', '/combinations/save'].includes(path) && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
-    || (!writing && (path.endsWith('/edit') || path === '/count-tariffs' || ['/combinations/generate', '/combinations/save'].includes(path))))) {
+    || (writing && path !== '' && path !== '/count-tariffs' && !combinationStatus && !['/combinations/generate', '/combinations/save'].includes(path) && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
+    || (!writing && (combinationStatus || path.endsWith('/edit') || path === '/count-tariffs' || ['/combinations/generate', '/combinations/save'].includes(path))))) {
     throw new SessionError('Unsupported Pricing Rules configuration operation.');
   }
   if (resource === 'settlements' && writing !== (path === '/transactions' || settlementVerification)) {
@@ -1328,7 +1329,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
-    if (resource === 'pricing-rules' && ['/count-tariffs', '/combinations/save'].includes(path)) {
+    if (resource === 'pricing-rules' && (combinationStatus || ['/count-tariffs', '/combinations/save'].includes(path))) {
       error.terminal = response.status >= 400 && response.status < 500
         && response.headers.get('X-IT-Tariff-Outcome') === 'rejected';
     }

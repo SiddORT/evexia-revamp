@@ -149,6 +149,14 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 }
 
 /* Replacement combination master: no global form/table overrides. */
+.pricing-saved-panel { min-width: 0; }
+.pricing-saved-panel .admin-table-scroll { min-width: 0; max-width: 100%; overflow-x: auto; }
+.pricing-saved-panel .admin-table { min-width: 1100px; }
+.pricing-saved-panel .admin-table td { vertical-align: top; }
+.pricing-saved-panel .pricing-combination-members { min-width: 12rem; max-width: 24rem; overflow-wrap: anywhere; }
+.pricing-saved-panel small { display: block; color: var(--admin-text-soft); }
+.pricing-saved-actions { display: flex; flex-wrap: wrap; gap: 6px; min-width: 12rem; }
+.pricing-saved-panel :is(button, select, input):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .pricing-combination-workspace { gap: 14px; }
 .pricing-combination-controls { display: grid; grid-template-columns: minmax(16rem, 2fr) minmax(7rem, .7fr) minmax(12rem, 1fr); gap: 12px 16px; align-items: end; }
 .pricing-combination-controls .mr-form__field,

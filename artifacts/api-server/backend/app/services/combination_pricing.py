@@ -8,7 +8,7 @@ from sqlalchemy import select, func, text, or_
 from app.core.security import utcnow
 from app.db.allergen_models import AllergenProduct as Allergen, ImmunotherapyDilutionMaterial
 from app.db.product_category_models import ProductCategory
-from app.db.pricing_rule_models import CombinationTariff as Tariff, CategoryCountTariff, PricingRuleRequest
+from app.db.pricing_rule_models import CombinationTariff as Tariff, CategoryCountTariff, PricingRuleRequest, CombinationRuleStatus
 from app.db.models import AuditEvent
 from app.schemas.combination_pricing import MAX_MEMBERS, MAX_ROWS, CombinationRevision
 from app.services.pricing_rules import transaction, PricingRuleError
@@ -210,6 +210,7 @@ def save(db, actor, body):
                 raise
             return outcome(error=dict(message=error.message, status=error.status, code=error.code))
         result = []
+        new_keys = []
         now = utcnow()
         for key, amount in amounts.items():
             row = Tariff(id=uuid.uuid4(), category_id=category.id, dosage=body.dosage,
@@ -219,10 +220,19 @@ def save(db, actor, body):
             row.payload_ciphertext = crypto.seal(row.id, "it-combination-tariff",
                 dict(totalMrp=amount, categoryName=category.name, members=[member(r) for r in groups[key]]))
             db.add(row)
+            if key not in saved:
+                new_keys.append(row)
             result.append(project(row, crypto))
         db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
             request_id=db.info.get("request_id"), action="it_combination_prices_added",
             resource_type="product_category", resource_id=category.id, outcome="success"))
+        db.flush()
+        # Initialize only genuinely new keys. A rate revision for an existing
+        # inactive key must never touch or reset its independent status.
+        for row in new_keys:
+            db.add(CombinationRuleStatus(id=uuid.uuid4(), category_id=row.category_id,
+                dosage=row.dosage, member_key=row.member_key, version=1, status="active",
+                revision_id=row.id, actor_id=current.user.id, recorded_at=now))
         db.flush()
         return outcome(response=dict(requestId=str(body.idempotencyKey), categoryId=str(category.id),
             dosage=body.dosage, effectiveFrom=body.effectiveFrom.isoformat(), saved=result,

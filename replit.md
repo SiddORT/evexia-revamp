@@ -669,21 +669,25 @@ Source/diff review only; no checks or service restarts were run for this change.
 
 ## IT Pricing Rules configuration
 
-Pricing Rules is a standalone protected Super Admin page directly below Orders.
-One atomic rule stores explicit multiple categories and up to 100 total allergen
-targets, a date-only cutoff and two alternative INR rates. Preserve original
-target-category attribution, exact legacy retries, and stale/conflicting/unknown
-save protection. Category membership is not an allergen wildcard. Scoped
-allergen Select all must collect every matching page or change nothing; the list
-uses full-dataset live search with no filter/apply/refresh toolbar actions.
-No order workflow fetches or applies these rules, including Immunotherapy.
-Future automatic application is IT-only and still requires explicit approval.
-Catalogue prices and clinical extract/dilution behavior are unchanged.
-See `docs/it-pricing-rules.md`. Forward `0087_pricing_rule_categories` and
-coordinated schema/readiness/maintenance metadata are prepared but unapplied.
-Source/diff review only: no automated checks, codegen/validation wrappers,
-builds/typechecks, runtime/browser verification, managed-service restarts,
-live writes, migration execution or production activation.
+Pricing Rules is a protected Super Admin saved-records master directly below
+Orders. Add Rule opens a dedicated Add Pricing Rule route; Edit opens a separate
+exact-key page. The key is category + canonical dosage + sorted exact allergen
+members (one to three); rates are total suborder MRP, not per ml/per allergen.
+Effective-date revisions are append-only and reject duplicate dates per key.
+The list has bounded saved-record pages, search, complete counts, independent
+All/Active/Inactive status, and Edit, Activate/Deactivate and read-only History.
+New/existing rules start Active; independent audited status events never reset
+on rate/batch saves. Reactivation revalidates current catalogue eligibility.
+Retain all draft/stale/owner/unknown-outcome protections and exact-body retries.
+Legacy material rules and category/count tariffs remain read-only evidence.
+No order workflow fetches or applies combination rates or their status; activating
+combination pricing in any consumer requires separate authorization.
+Catalogue prices, saved orders and clinical extract/dilution behavior are unchanged.
+See `docs/combination-pricing.md` and `docs/it-pricing-rules.md` for the historical
+contract. Additive `0106`/`0107` schema sources and coordinated readiness/metadata
+are prepared, not applied. Source/diff review and offline contract generation only:
+no tests/builds/typechecks, regression/release or validation wrappers,
+runtime/browser probes, service starts/restarts, live writes, migrations or deployment.
 
 ## Assets
 

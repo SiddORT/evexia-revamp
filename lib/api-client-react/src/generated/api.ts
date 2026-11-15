@@ -51,6 +51,11 @@ import type {
   CombinationPage,
   CombinationResult,
   CombinationSave,
+  CombinationSavedPage,
+  CombinationSavedRule,
+  CombinationStatusHistory,
+  CombinationStatusInput,
+  CombinationStatusResult,
   CommitAllergenImportBody,
   CommitAllergenImportParams,
   CommitCourierImportBody,
@@ -193,6 +198,7 @@ import type {
   GSTSettingsView,
   GSTSettingsWrite,
   GetCombinationPricingHistoryParams,
+  GetCombinationRuleStatusHistoryParams,
   GetGSTHistoryParams,
   GetImmunotherapyExtractSettingsParams,
   GetInHouseStockReferencesParams,
@@ -334,6 +340,7 @@ import type {
   ListReportingSessionsParams,
   ListReportingUsersParams,
   ListSalesTargetsParams,
+  ListSavedCombinationRulesParams,
   ListSettlementsParams,
   ListShipmentsParams,
   ListSptOrdersParams,
@@ -49620,3 +49627,456 @@ export const useSaveCombinationPricingBatch = <
 > => {
   return useMutation(getSaveCombinationPricingBatchMutationOptions(options));
 };
+
+export const getListSavedCombinationRulesUrl = (
+  params?: ListSavedCombinationRulesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/combinations/rules?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/combinations/rules`;
+};
+
+/**
+ * @summary Saved Combination Rules
+ */
+export const listSavedCombinationRules = async (
+  params?: ListSavedCombinationRulesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationSavedPage> => {
+  return customFetch<CombinationSavedPage>(
+    getListSavedCombinationRulesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListSavedCombinationRulesQueryKey = (
+  params?: ListSavedCombinationRulesParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/combinations/rules`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListSavedCombinationRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSavedCombinationRules>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSavedCombinationRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSavedCombinationRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSavedCombinationRulesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSavedCombinationRules>>
+  > = ({ signal }) =>
+    listSavedCombinationRules(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSavedCombinationRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSavedCombinationRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSavedCombinationRules>>
+>;
+export type ListSavedCombinationRulesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Saved Combination Rules
+ */
+
+export function useListSavedCombinationRules<
+  TData = Awaited<ReturnType<typeof listSavedCombinationRules>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSavedCombinationRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSavedCombinationRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSavedCombinationRulesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetSavedCombinationRuleUrl = (recordId: string) => {
+  return `/api/v1/admin/pricing-rules/combinations/rules/${recordId}`;
+};
+
+/**
+ * @summary Saved Combination Rule
+ */
+export const getSavedCombinationRule = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationSavedRule> => {
+  return customFetch<CombinationSavedRule>(
+    getGetSavedCombinationRuleUrl(recordId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSavedCombinationRuleQueryKey = (recordId: string) => {
+  return [
+    `/api/v1/admin/pricing-rules/combinations/rules/${recordId}`,
+  ] as const;
+};
+
+export const getGetSavedCombinationRuleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSavedCombinationRule>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSavedCombinationRule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSavedCombinationRuleQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSavedCombinationRule>>
+  > = ({ signal }) =>
+    getSavedCombinationRule(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSavedCombinationRule>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSavedCombinationRuleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSavedCombinationRule>>
+>;
+export type GetSavedCombinationRuleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Saved Combination Rule
+ */
+
+export function useGetSavedCombinationRule<
+  TData = Awaited<ReturnType<typeof getSavedCombinationRule>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSavedCombinationRule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSavedCombinationRuleQueryOptions(
+    recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getChangeCombinationRuleStatusUrl = (recordId: string) => {
+  return `/api/v1/admin/pricing-rules/combinations/rules/${recordId}/status`;
+};
+
+/**
+ * @summary Combination Rule Status
+ */
+export const changeCombinationRuleStatus = async (
+  recordId: string,
+  combinationStatusInput: CombinationStatusInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationStatusResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CombinationStatusResult>(
+    getChangeCombinationRuleStatusUrl(recordId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(combinationStatusInput),
+    },
+  );
+};
+
+export const getChangeCombinationRuleStatusMutationKey = () =>
+  ["changeCombinationRuleStatus"] as const;
+
+export const getChangeCombinationRuleStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changeCombinationRuleStatus>>,
+    TError,
+    ChangeCombinationRuleStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof changeCombinationRuleStatus>>,
+  TError,
+  ChangeCombinationRuleStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getChangeCombinationRuleStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof changeCombinationRuleStatus>>,
+    ChangeCombinationRuleStatusMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return changeCombinationRuleStatus(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChangeCombinationRuleStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof changeCombinationRuleStatus>>
+>;
+export type ChangeCombinationRuleStatusMutationBody =
+  BodyType<CombinationStatusInput>;
+export type ChangeCombinationRuleStatusMutationError = ErrorType<ErrorEnvelope>;
+export type ChangeCombinationRuleStatusMutationVariables = {
+  recordId: string;
+  data: BodyType<CombinationStatusInput>;
+};
+
+/**
+ * @summary Combination Rule Status
+ */
+export const useChangeCombinationRuleStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changeCombinationRuleStatus>>,
+    TError,
+    ChangeCombinationRuleStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof changeCombinationRuleStatus>>,
+  TError,
+  ChangeCombinationRuleStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getChangeCombinationRuleStatusMutationOptions(options));
+};
+
+export const getGetCombinationRuleStatusHistoryUrl = (
+  recordId: string,
+  params?: GetCombinationRuleStatusHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/pricing-rules/combinations/rules/${recordId}/status-history?${stringifiedParams}`
+    : `/api/v1/admin/pricing-rules/combinations/rules/${recordId}/status-history`;
+};
+
+/**
+ * @summary Combination Rule Status History
+ */
+export const getCombinationRuleStatusHistory = async (
+  recordId: string,
+  params?: GetCombinationRuleStatusHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CombinationStatusHistory> => {
+  return customFetch<CombinationStatusHistory>(
+    getGetCombinationRuleStatusHistoryUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCombinationRuleStatusHistoryQueryKey = (
+  recordId: string,
+  params?: GetCombinationRuleStatusHistoryParams,
+) => {
+  return [
+    `/api/v1/admin/pricing-rules/combinations/rules/${recordId}/status-history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetCombinationRuleStatusHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetCombinationRuleStatusHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetCombinationRuleStatusHistoryQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>
+  > = ({ signal }) =>
+    getCombinationRuleStatusHistory(recordId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCombinationRuleStatusHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>
+>;
+export type GetCombinationRuleStatusHistoryQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Combination Rule Status History
+ */
+
+export function useGetCombinationRuleStatusHistory<
+  TData = Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetCombinationRuleStatusHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCombinationRuleStatusHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCombinationRuleStatusHistoryQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

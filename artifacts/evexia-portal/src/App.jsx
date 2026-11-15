@@ -25,6 +25,7 @@ import Masters from './pages/admin/Masters.jsx';
 import LanguageMaster from './pages/admin/LanguageMaster.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 const PricingRules = lazyRoute(() => import('./pages/admin/PricingRules.jsx'));
+const PricingRuleFormPage = lazyRoute(() => import('./pages/admin/PricingRuleFormPage.jsx'));
 const Shipments = lazyRoute(() => import('./pages/admin/Shipments.jsx'));
 const AccountsSettlements = lazyRoute(() => import('./pages/admin/AccountsSettlements.jsx'));
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
@@ -140,6 +141,8 @@ function App() {
       <Route path="/admin/languages" component={LanguageMaster} />
       <Route path="/admin/masters/zones" component={ZoneMaster} />
       <Route path="/admin/pricing-rules" component={PricingRules} />
+      <Route path="/admin/pricing-rules/new">{() => <PricingRuleFormPage key="new" />}</Route>
+      <Route path="/admin/pricing-rules/:id/edit">{(params) => <PricingRuleFormPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/shipments" component={Shipments} />
       <Route path="/admin/accounts/settlements" component={AccountsSettlements} />
       <Route path="/admin/masters/courier-partners" component={CourierPartnerMaster} />

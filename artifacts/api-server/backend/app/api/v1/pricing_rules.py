@@ -16,14 +16,43 @@ from app.schemas.category_count_tariffs import (
 )
 from app.services import category_count_tariffs
 from app.services import combination_pricing
+from app.services import combination_rules
 from app.schemas.combination_pricing import (
     CombinationGenerate, CombinationSave, CombinationPage, CombinationResult,
     CombinationHistory, CombinationAllergenPage, CombinationCategoryPage,
+    CombinationSavedPage, CombinationSavedRule, CombinationStatusInput,
+    CombinationStatusResult, CombinationStatusHistory,
 )
 from app.schemas.immunotherapy_extract import Dosage
 
 router = APIRouter(prefix="/admin/pricing-rules", tags=["IT Pricing Rules"])
 manager = require_permissions("admin.access")
+
+
+@router.get("/combinations/rules", response_model=CombinationSavedPage, operation_id="listSavedCombinationRules")
+def saved_combination_rules(query: str = Query("", max_length=100),
+                            status: Literal["all", "active", "inactive"] = "all",
+                            offset: int = Query(0, ge=0, le=1000000), limit: int = Query(10, ge=1, le=100),
+                            actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_rules.listing(db, actor, query, status, offset, limit)
+
+
+@router.get("/combinations/rules/{record_id}", response_model=CombinationSavedRule, operation_id="getSavedCombinationRule")
+def saved_combination_rule(record_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_rules.detail(db, actor, record_id)
+
+
+@router.post("/combinations/rules/{record_id}/status", response_model=CombinationStatusResult, operation_id="changeCombinationRuleStatus")
+def combination_rule_status(record_id: uuid.UUID, body: CombinationStatusInput,
+                            actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_rules.change_status(db, actor, record_id, body)
+
+
+@router.get("/combinations/rules/{record_id}/status-history", response_model=CombinationStatusHistory, operation_id="getCombinationRuleStatusHistory")
+def combination_rule_status_history(record_id: uuid.UUID,
+                                   offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
+                                   actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return combination_rules.history(db, actor, record_id, offset, limit)
 
 
 @router.get("/combinations/categories", response_model=CombinationCategoryPage, operation_id="listCombinationPricingCategories")

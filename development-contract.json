@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0104_combination_pricing"
+  "schema": "0106_combination_rule_status"
 }

@@ -2833,6 +2833,20 @@ export const saveCombinationPricingBatchBodyEditsItemTotalMrpMax = 15;
 export const saveCombinationPricingBatchBodyEditsMax = 1000;
 export const saveCombinationPricingBatchBodySizeMax = 3;
 export const saveCombinationPricingBatchResponseSavedItemTotalMrpMax = 15;
+export const listSavedCombinationRulesQueryQueryMax = 100;
+export const listSavedCombinationRulesQueryOffsetDefault = 0;
+export const listSavedCombinationRulesQueryOffsetMin = 0;
+export const listSavedCombinationRulesQueryOffsetMax = 1000000;
+export const listSavedCombinationRulesQueryLimitDefault = 10;
+export const listSavedCombinationRulesQueryLimitMax = 100;
+export const listSavedCombinationRulesResponseItemsItemLatestTotalMrpMax = 15;
+export const getSavedCombinationRuleResponseLatestTotalMrpMax = 15;
+export const changeCombinationRuleStatusResponseRuleLatestTotalMrpMax = 15;
+export const getCombinationRuleStatusHistoryQueryOffsetDefault = 0;
+export const getCombinationRuleStatusHistoryQueryOffsetMin = 0;
+export const getCombinationRuleStatusHistoryQueryOffsetMax = 1000000;
+export const getCombinationRuleStatusHistoryQueryLimitDefault = 25;
+export const getCombinationRuleStatusHistoryQueryLimitMax = 100;
 
 /**
  * @summary <Lambda>
@@ -49861,4 +49875,237 @@ export const SaveCombinationPricingBatchResponse = zod.object({
     }),
   ),
   scopeVersion: zod.string(),
+});
+
+/**
+ * @summary Saved Combination Rules
+ */
+export const listSavedCombinationRulesQueryQueryDefault = ``;
+
+export const listSavedCombinationRulesQueryStatusDefault = `all`;
+
+export const ListSavedCombinationRulesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listSavedCombinationRulesQueryQueryMax)
+    .default(listSavedCombinationRulesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listSavedCombinationRulesQueryStatusDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listSavedCombinationRulesQueryOffsetMin)
+    .max(listSavedCombinationRulesQueryOffsetMax)
+    .default(listSavedCombinationRulesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listSavedCombinationRulesQueryLimitMax)
+    .default(listSavedCombinationRulesQueryLimitDefault),
+});
+
+export const listSavedCombinationRulesResponseItemsItemLatestTotalMrpRegExp =
+  new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
+
+export const ListSavedCombinationRulesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      latest: zod.object({
+        actorId: zod.string().uuid(),
+        categoryId: zod.string().uuid(),
+        categoryName: zod.string(),
+        dosage: zod.enum([
+          "PD",
+          "DD",
+          "B1",
+          "B2",
+          "B3",
+          "B4",
+          "B5",
+          "B6",
+          "B7",
+          "B8",
+        ]),
+        effectiveFrom: zod.coerce.date(),
+        id: zod.string().uuid(),
+        memberIds: zod.array(zod.string().uuid()),
+        members: zod.array(
+          zod.object({
+            id: zod.string().uuid(),
+            mix: zod.boolean(),
+            name: zod.string(),
+            version: zod.number().int(),
+          }),
+        ),
+        recordedAt: zod.coerce.date(),
+        totalMrp: zod
+          .string()
+          .max(listSavedCombinationRulesResponseItemsItemLatestTotalMrpMax)
+          .regex(
+            listSavedCombinationRulesResponseItemsItemLatestTotalMrpRegExp,
+          ),
+        version: zod.number().int(),
+      }),
+      status: zod.enum(["active", "inactive"]),
+      statusVersion: zod.number().int().min(1),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Saved Combination Rule
+ */
+export const GetSavedCombinationRuleParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getSavedCombinationRuleResponseLatestTotalMrpRegExp = new RegExp(
+  "^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$",
+);
+
+export const GetSavedCombinationRuleResponse = zod.object({
+  latest: zod.object({
+    actorId: zod.string().uuid(),
+    categoryId: zod.string().uuid(),
+    categoryName: zod.string(),
+    dosage: zod.enum([
+      "PD",
+      "DD",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "B6",
+      "B7",
+      "B8",
+    ]),
+    effectiveFrom: zod.coerce.date(),
+    id: zod.string().uuid(),
+    memberIds: zod.array(zod.string().uuid()),
+    members: zod.array(
+      zod.object({
+        id: zod.string().uuid(),
+        mix: zod.boolean(),
+        name: zod.string(),
+        version: zod.number().int(),
+      }),
+    ),
+    recordedAt: zod.coerce.date(),
+    totalMrp: zod
+      .string()
+      .max(getSavedCombinationRuleResponseLatestTotalMrpMax)
+      .regex(getSavedCombinationRuleResponseLatestTotalMrpRegExp),
+    version: zod.number().int(),
+  }),
+  status: zod.enum(["active", "inactive"]),
+  statusVersion: zod.number().int().min(1),
+});
+
+/**
+ * @summary Combination Rule Status
+ */
+export const ChangeCombinationRuleStatusParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const ChangeCombinationRuleStatusBody = zod.object({
+  expectedVersion: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const changeCombinationRuleStatusResponseRuleLatestTotalMrpRegExp =
+  new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
+
+export const ChangeCombinationRuleStatusResponse = zod.object({
+  event: zod.object({
+    actorId: zod.string().uuid(),
+    id: zod.string().uuid(),
+    recordedAt: zod.coerce.date(),
+    revisionId: zod.string().uuid(),
+    status: zod.enum(["active", "inactive"]),
+    version: zod.number().int().min(1),
+  }),
+  requestId: zod.string().uuid(),
+  rule: zod.object({
+    latest: zod.object({
+      actorId: zod.string().uuid(),
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
+      dosage: zod.enum([
+        "PD",
+        "DD",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+      ]),
+      effectiveFrom: zod.coerce.date(),
+      id: zod.string().uuid(),
+      memberIds: zod.array(zod.string().uuid()),
+      members: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          mix: zod.boolean(),
+          name: zod.string(),
+          version: zod.number().int(),
+        }),
+      ),
+      recordedAt: zod.coerce.date(),
+      totalMrp: zod
+        .string()
+        .max(changeCombinationRuleStatusResponseRuleLatestTotalMrpMax)
+        .regex(changeCombinationRuleStatusResponseRuleLatestTotalMrpRegExp),
+      version: zod.number().int(),
+    }),
+    status: zod.enum(["active", "inactive"]),
+    statusVersion: zod.number().int().min(1),
+  }),
+});
+
+/**
+ * @summary Combination Rule Status History
+ */
+export const GetCombinationRuleStatusHistoryParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetCombinationRuleStatusHistoryQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getCombinationRuleStatusHistoryQueryOffsetMin)
+    .max(getCombinationRuleStatusHistoryQueryOffsetMax)
+    .default(getCombinationRuleStatusHistoryQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getCombinationRuleStatusHistoryQueryLimitMax)
+    .default(getCombinationRuleStatusHistoryQueryLimitDefault),
+});
+
+export const GetCombinationRuleStatusHistoryResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      actorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      recordedAt: zod.coerce.date(),
+      revisionId: zod.string().uuid(),
+      status: zod.enum(["active", "inactive"]),
+      version: zod.number().int().min(1),
+    }),
+  ),
+  nextOffset: zod.union([zod.number().int(), zod.null()]),
 });
