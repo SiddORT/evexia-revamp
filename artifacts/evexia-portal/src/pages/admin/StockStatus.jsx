@@ -14,7 +14,7 @@ import StockLedger from '../../components/admin/StockLedger.jsx';
 import StockAdjustment from '../../components/admin/StockAdjustment.jsx';
 import StockStatusReport from '../../components/admin/StockStatusReport.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
-import { exportStockCSV, formatPrice, isSuperAdmin, listStock, STOCK_STATUSES, STOCK_QUANTITY_SCOPE } from '../../services/serverInventory.js';
+import { exportStockCSV, isSuperAdmin, listStock, STOCK_STATUSES, STOCK_QUANTITY_SCOPE } from '../../services/serverInventory.js';
 import { STOCK_STATUS_PATH, stockListContext } from '../../services/stockStatusNavigation.js';
 import { hasRemainingQuantity, stockExpiryPresentation } from '../../services/stockLotPresentation.js';
 import '../../stockStatus.css';
@@ -133,7 +133,6 @@ export default function StockStatus() {
     { key: 'p', label: 'Product', render: (r) => <><strong className="admin-table__name">{r.name}</strong><span className="stock-sub">{r.itemKind === 'combo' ? 'Assembled combo' : 'Allergen'} · {r.productId}</span></> },
     { key: 'c', label: 'Concentration', render: (r) => r.concentration },
     { key: 'k', label: 'Category', render: (r) => r.category },
-    { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
     { key: 'q', label: 'Displayed physical quantity', render: (r) => <><strong className="inv-mono stock-quantity"><span className="stock-quantity__number">{r.physicalQuantity}</span> {r.unit}</strong><span className="stock-sub">Usable: {r.quantity} {r.unit}</span>{hasRemainingQuantity(r.unknownExpiryOpeningQuantity) && <span className="stock-sub">Unknown-expiry opening (not usable): {r.unknownExpiryOpeningQuantity} {r.unit}</span>}{r.state === 'catalogue_zero' && <span className="stock-sub">No displayed physical stock</span>}{Number(r.physicalUnallocatedQuantity) > 0 && <span className="stock-sub">Unallocated (included above): {r.physicalUnallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
     { key: 'expiry', label: 'Expiry', render: (r) => {
       const { dates, hasUndated } = stockExpiryPresentation(r.physicalLots);

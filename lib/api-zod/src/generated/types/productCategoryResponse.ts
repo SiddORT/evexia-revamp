@@ -20,7 +20,7 @@ export interface ProductCategoryResponse {
   name: string;
   status: ProductCategoryResponseStatus;
   /**
-   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
+   * Saved catalogue price, returned with exactly two fractional digits.
    * @minLength 1
    * @maxLength 64
    */

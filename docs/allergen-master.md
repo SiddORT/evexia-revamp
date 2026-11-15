@@ -1,5 +1,25 @@
 # Shared Allergen Master
 
+## Hidden catalogue selling prices
+
+Allergen catalogue Selling Price is hidden in master forms, tables, compact
+cards, price-specific filters and ordinary conflict summaries. The portal
+omits the hidden field from edits, preserving the exact saved value. Omitted
+creates retain the existing null default. API clients may still explicitly
+submit a validated price or null; an omitted edit is distinct from explicit null.
+The column, read responses, protected audit evidence and downstream calculations
+remain intact. No migration or backfill is needed.
+
+Stock Status, its detail drawer, Inventory Report (including print) and stock
+CSV exports omit the shared catalogue-price column. Their quantities, costs,
+coverage and financial calculations are unchanged. Product Master's independent
+combo prices, PO agreed rates, saved tariffs and order financials are not hidden.
+
+Verification of this change was limited to source/diff review and offline
+contract generation. No tests, builds, typechecks, runtime/browser probes,
+service starts/restarts, migrations, release checks or deployment were run.
+Runtime behavior remains unverified.
+
 ## Scope and access
 
 The Portal's Allergen list, add/edit forms and prepared import route use the
@@ -103,7 +123,7 @@ and bound Dilution, but required for ordinary new products (including imports).
 Null means absent, `"0"` means supplied zero. `gst` is a required decimal string
 between zero and 100. Amounts accept up to 12 integer and 6 fractional digits
 without exponent notation or binary floats. Selling prices/GST round half-up to
-two places at save/import review; responses and CSV/XLSX text exports use exactly
+two places at save/import review; responses and supplied-price import reviews use exactly
 two places (`1.005` → `1.01`). Selling price's rounded maximum is
 `999999999999.99`; overflow after rounding is rejected. GST is checked against
 0–100 **before** rounding, so `100.000001` is rejected, not rounded into range.
@@ -120,7 +140,7 @@ see [operator rollout](rate-rounding-rollout.md). No historical PO/receipt is re
 ordinary new writes require it and an active, matching GST pair.
 Unknown fields and forged IDs/version/audit attribution are rejected.
 
-Create accepts business fields. Edit accepts full business fields plus strict
+Create accepts business fields. Edit accepts business fields plus strict
 positive integer `expected_version`. Status and delete also require
 `expected_version`; success increments the version and uses server UTC time and
 verified actor attribution. Deletion retains the row, deletion actor/time and
@@ -160,7 +180,8 @@ name, current category/location name (including retained unusable references),
 and concentration. `%`, `_` and backslash are escaped, never SQL wildcards.
 Search is at most 200 characters. Filters combine status
 (`all|active|inactive`), `category_id`, `storage_location_id`, Mix
-(`all|mix|no_mix`), and optional `min_price`/`max_price`. Supplied price bounds
+(`all|mix|no_mix`), and optional API `min_price`/`max_price` for existing consumers.
+Price filters are not presented by the portal. Supplied API price bounds
 exclude absent prices, preserve zero and exact precision, and reject an inverted
 range. Ordering is creation time descending, UUID descending. Pagination defaults
 to 10, permits 1–100 rows and bounded offsets.
@@ -189,8 +210,19 @@ Current sample fields, exact order:
 `Product Name, Category, Selling Price, GST, Storage Location, Concentration,
 Threshold limit, Status, Mix / No Mix, HSN code`
 
-Current ten-column samples and fourteen-column full exports use this order;
-full exports append `Created By, Created At, Updated By, Updated At`.
+Samples retain the optional Selling Price column with a blank example cell;
+the Excel sample also labels it optional in a header comment. Leave it blank or
+omit the entire column to create with null. Valid supplied prices remain accepted
+and visible during import review.
+
+Current record exports omit Selling Price and its value:
+
+`Product Name, Category, GST, Storage Location, Concentration, Threshold limit,
+Status, Mix / No Mix, HSN code, Created By, Created At, Updated By, Updated At`
+
+Imports accept this thirteen-column export and the corresponding nine-column
+price-free sample shape. Earlier ten-column samples and fourteen-column exports
+with prices remain supported; audit columns retain their original order.
 Both CSV and genuine single-sheet XLSX exports can be reviewed and reimported
 after eligible products are removed. Incoming audit values are ignored; import
 creates new IDs, version 1 and current server actor/time, never historical audit.
@@ -203,6 +235,8 @@ Threshold limit, HSN code, Status, Allergens / No Mix`
 Previous nine-column samples/thirteen-column exports without HSN remain recognized
 for review; each missing HSN is a row error, not an inferred value from GST.
 Missing thresholds are likewise errors for all imported new products.
+These earlier layouts and the legacy CSV layout also accept omission of the
+Selling Price column without shifting GST, Status, HSN or threshold meanings.
 
 Legacy HSN is only a candidate: it must exactly match an active shared mapping
 and its supplied GST before reuse; obsolete local values are never trusted.

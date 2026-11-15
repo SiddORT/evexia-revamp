@@ -2,19 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Layers3, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { createProductCategory, editProductCategory, getProductCategory, listProductCategories } from '../../services/serverProductCategories.js';
 import { normalizeCategoryName as normalizeName, validateProductCategory } from '../../services/productCategoryValidation.js';
-import { catalogueRate } from '../../services/rates.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../category.css';
 
 const LIST = '/admin/masters/product-categories';
-const empty = () => ({ name: '', description: '', unit_price: '', status: 'active' });
+const empty = () => ({ name: '', description: '', status: 'active' });
 
 function CategoryForm({ record, onSave, onCancel, onRefresh }) {
-  const [values, setValues] = useState(() => record ? { name: record.name, description: record.description, unit_price: record.unit_price, status: record.status } : empty());
+  const [values, setValues] = useState(() => record ? { name: record.name, description: record.description, status: record.status } : empty());
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [pending, setPending] = useState(false);
@@ -44,7 +42,7 @@ function CategoryForm({ record, onSave, onCancel, onRefresh }) {
     const guard = reportingIdentityGuard();
     busy.current = true; setPending(true); setServerError('');
     try {
-      await onSave({ name: normalizeName(values.name), description: values.description.trim(), unit_price: values.unit_price.trim(), status: values.status });
+      await onSave({ name: normalizeName(values.name), description: values.description.trim(), status: values.status });
     } catch (cause) {
       try { guard(); } catch { return; }
       if (alive.current) {
@@ -60,7 +58,7 @@ function CategoryForm({ record, onSave, onCancel, onRefresh }) {
     try {
       const current = await onRefresh(values); guard();
       if (!alive.current) return;
-      setServerError(current ? `Current server record: ${current.name}; ${current.unit_price}; ${current.description}; ${current.status}. Your draft is retained. Compare these details before saving again.` : 'No matching record exists. Your draft is retained; review before retrying.');
+      setServerError(current ? `Current server record: ${current.name}; ${current.description}; ${current.status}. Your draft is retained. Compare these details before saving again.` : 'No matching record exists. Your draft is retained; review before retrying.');
       setBlocked(false);
     } catch (cause) {
       try { guard(); } catch { return; }
@@ -74,13 +72,6 @@ function CategoryForm({ record, onSave, onCancel, onRefresh }) {
       <div className="mr-form__grid">
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-name">Product category name *</label><input id="category-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} placeholder="e.g. Diagnostic reagents" aria-invalid={Boolean(errors.name)} data-testid="input-category-name" />{errors.name && <p className="mr-form__error" role="alert">{errors.name}</p>}</div>
         <div className="mr-form__field mr-form__field--wide"><label className="mr-form__label" htmlFor="category-description">Description (optional)</label><textarea id="category-description" className="mr-form__control" value={values.description} onChange={(event) => update('description', event.target.value)} data-testid="input-category-description" />{errors.description && <p className="mr-form__error" role="alert">{errors.description}</p>}</div>
-        <div className="mr-form__field">
-          <InfoDisclosure id="category-price-help" title="Unit price" text="Plain decimal, up to 12 integer and 6 source fractional digits. Rounded half-up to two places when saved (1.005 → 1.01). Rounded maximum 999999999999.99.">
-            <label className="mr-form__label" htmlFor="category-price">Unit price *</label>
-          </InfoDisclosure>
-          <input id="category-price" className="mr-form__control" inputMode="decimal" value={values.unit_price} onChange={(event) => update('unit_price', event.target.value)} onBlur={() => { try { update('unit_price', catalogueRate(values.unit_price)); } catch { /* Preserve invalid or unfinished drafts. */ } }} aria-invalid={Boolean(errors.unit_price)} aria-describedby={errors.unit_price ? 'category-price-error' : undefined} data-testid="input-category-price" />
-          {errors.unit_price && <p id="category-price-error" className="mr-form__error" role="alert">{errors.unit_price}</p>}
-        </div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-status">Status *</label><select id="category-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-category-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
       </div>
     </div>
@@ -117,7 +108,7 @@ export default function ProductCategoryFormPage({ id }) {
     if (!id) {
       const result = await listProductCategories({ query: normalizeName(values.name), status: 'all', limit: 100, offset: 0 });
       const same = result.items.find((row) => normalizeName(row.name).toLowerCase() === normalizeName(values.name).toLowerCase());
-      if (same) throw new Error(`A category with this name is already saved: ${same.name}; ${same.unit_price}; ${same.description}; ${same.status}. Your draft is retained. Return to the list and inspect it instead of creating a duplicate.`);
+      if (same) throw new Error(`A category with this name is already saved: ${same.name}; ${same.description}; ${same.status}. Your draft is retained. Return to the list and inspect it instead of creating a duplicate.`);
       if (result.filtered > 100) throw new Error('More than 100 matches. Inspect the list before retrying.');
       return null;
     }
@@ -133,7 +124,7 @@ export default function ProductCategoryFormPage({ id }) {
   }
   const title = id ? 'Edit category' : 'Add category';
   return <AdminLayout title={title}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory / Product Category Master</p><h1>{title}</h1><p className="admin-page-head__description">Manage a shared category’s name, description, exact price and availability.</p></div><button className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to categories</button></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory / Product Category Master</p><h1>{title}</h1><p className="admin-page-head__description">Manage a shared category’s name, description and availability.</p></div><button className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to categories</button></div>
     {loading ? <p role="status">Loading category…</p> : error || (id && !record) ? <section className="admin-panel" role="alert"><h2>Product category could not be loaded</h2><p>{error || 'This category may have been deleted.'}</p><button className="admin-button" onClick={() => setRevision((value) => value + 1)}>Retry</button></section> : <section className="admin-panel" aria-label={title}><CategoryForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(LIST)} onRefresh={refresh} /></section>}
   </AdminLayout>;
 }

@@ -223,7 +223,7 @@ export interface AllergenEdit {
    * @maxLength 200
    */
   name: string;
-  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it. */
   selling_price?: string | null;
   status: AllergenEditStatus;
   storage_location_id: string;
@@ -260,7 +260,7 @@ export interface AllergenFields {
    * @maxLength 200
    */
   name: string;
-  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it. */
   selling_price?: string | null;
   status: AllergenFieldsStatus;
   storage_location_id: string;
@@ -341,7 +341,7 @@ export interface AllergenResponse {
    * @maxLength 200
    */
   name: string;
-  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it. */
   selling_price?: string | null;
   status: AllergenResponseStatus;
   storage_location_id: string;
@@ -1099,7 +1099,7 @@ export interface DilutionMaterialSetup {
    * @maxLength 200
    */
   name: string;
-  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it. */
   selling_price?: string | null;
   status: DilutionMaterialSetupStatus;
   storage_location_id: string;
@@ -10049,11 +10049,10 @@ export interface ProductCategoryEdit {
   name: string;
   status: ProductCategoryEditStatus;
   /**
-   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
-   * @minLength 1
+   * Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.
    * @maxLength 64
    */
-  unit_price: string;
+  unit_price?: string;
 }
 
 export type ProductCategoryFieldsStatus =
@@ -10074,11 +10073,10 @@ export interface ProductCategoryFields {
   name: string;
   status: ProductCategoryFieldsStatus;
   /**
-   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
-   * @minLength 1
+   * Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.
    * @maxLength 64
    */
-  unit_price: string;
+  unit_price?: string;
 }
 
 export interface ProductCategoryImportResult {
@@ -10115,7 +10113,7 @@ export interface ProductCategoryResponse {
   name: string;
   status: ProductCategoryResponseStatus;
   /**
-   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
+   * Saved catalogue price, returned with exactly two fractional digits.
    * @minLength 1
    * @maxLength 64
    */

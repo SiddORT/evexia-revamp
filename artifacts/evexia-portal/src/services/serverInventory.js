@@ -107,10 +107,10 @@ const cell = (value) => {
   return `"${safe.replaceAll('"', '""')}"`;
 };
 export function exportStockCSV(rows, { asOf, coverage }, preferences) {
-  const header = ['Product ID', 'Item type', 'Product', 'Concentration', 'Category', 'Catalogue selling price (INR)', 'Displayed physical quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings', 'Usable quantity', 'Unknown-expiry opening quantity (not usable)', 'Displayed physical Unallocated quantity', 'Quantity scope'];
-  const records = rows.map((r) => [r.productId, r.itemKind === 'combo' ? 'Assembled combo' : 'Individual allergen', r.name, r.concentration, r.category, r.sellingPrice ?? '', r.physicalQuantity, r.unit, r.state, asOf,
+  const header = ['Product ID', 'Item type', 'Product', 'Concentration', 'Category', 'Displayed physical quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings', 'Usable quantity', 'Unknown-expiry opening quantity (not usable)', 'Displayed physical Unallocated quantity', 'Quantity scope'];
+  const records = rows.map((r) => [r.productId, r.itemKind === 'combo' ? 'Assembled combo' : 'Individual allergen', r.name, r.concentration, r.category, r.physicalQuantity, r.unit, r.state, asOf,
     coverage?.sales || 'unavailable', coverage?.openings || 'outside coverage', r.quantity, r.unknownExpiryOpeningQuantity, r.physicalUnallocatedQuantity, STOCK_QUANTITY_SCOPE]);
-  return '\uFEFF' + presentExportTable(header, records, { timestampColumns: [9] }, preferences)
+  return '\uFEFF' + presentExportTable(header, records, { timestampColumns: [8] }, preferences)
     .map((c) => c.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 

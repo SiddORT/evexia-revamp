@@ -17,7 +17,7 @@ class AllergenFields(MasterWriteFields):
     name: str = Field(min_length=1, max_length=200)
     category_id: uuid.UUID
     storage_location_id: uuid.UUID
-    selling_price: str | None = Field(default=None, max_length=64, description="Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.")
+    selling_price: str | None = Field(default=None, max_length=64, description="Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.")
     gst: str = Field(min_length=1, max_length=64, description="Original percentage 0–100, up to six source places; half-up rounded and returned with two places.")
     hsn_code: str | None = Field(default=None, pattern=r"^[0-9]{1,16}$", description="Saved HSN snapshot. Required on ordinary creates; historical nulls remain readable.")
     concentration: str = Field(min_length=1, max_length=200)

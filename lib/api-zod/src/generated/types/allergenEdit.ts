@@ -31,7 +31,7 @@ export interface AllergenEdit {
    * @maxLength 200
    */
   name: string;
-  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it. */
   selling_price?: string | null;
   status: AllergenEditStatus;
   storage_location_id: string;

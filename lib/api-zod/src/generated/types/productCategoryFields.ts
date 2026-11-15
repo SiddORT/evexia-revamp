@@ -17,9 +17,8 @@ export interface ProductCategoryFields {
   name: string;
   status: ProductCategoryFieldsStatus;
   /**
-   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
-   * @minLength 1
+   * Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.
    * @maxLength 64
    */
-  unit_price: string;
+  unit_price?: string;
 }

@@ -744,7 +744,7 @@
                 "type": "null"
               }
             ],
-            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
             "title": "Selling Price"
           },
           "status": {
@@ -841,7 +841,7 @@
                 "type": "null"
               }
             ],
-            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
             "title": "Selling Price"
           },
           "status": {
@@ -1174,7 +1174,7 @@
                 "type": "null"
               }
             ],
-            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
             "title": "Selling Price"
           },
           "status": {
@@ -3106,7 +3106,7 @@
                 "type": "null"
               }
             ],
-            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
             "title": "Selling Price"
           },
           "status": {
@@ -26143,9 +26143,8 @@
             "type": "string"
           },
           "unit_price": {
-            "description": "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+            "description": "Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.",
             "maxLength": 64,
-            "minLength": 1,
             "title": "Unit Price",
             "type": "string"
           }
@@ -26153,7 +26152,6 @@
         "required": [
           "expected_version",
           "name",
-          "unit_price",
           "status"
         ],
         "title": "ProductCategoryEdit",
@@ -26183,16 +26181,14 @@
             "type": "string"
           },
           "unit_price": {
-            "description": "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+            "description": "Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.",
             "maxLength": 64,
-            "minLength": 1,
             "title": "Unit Price",
             "type": "string"
           }
         },
         "required": [
           "name",
-          "unit_price",
           "status"
         ],
         "title": "ProductCategoryFields",
@@ -26326,7 +26322,7 @@
             "type": "string"
           },
           "unit_price": {
-            "description": "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+            "description": "Saved catalogue price, returned with exactly two fractional digits.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Unit Price",

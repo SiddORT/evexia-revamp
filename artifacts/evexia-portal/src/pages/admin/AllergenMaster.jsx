@@ -13,7 +13,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useServerAllergens from '../../hooks/useServerAllergens.js';
-import { exportAllergens, downloadAllergenFile, validatePriceBounds } from '../../services/serverAllergens.js';
+import { exportAllergens, downloadAllergenFile } from '../../services/serverAllergens.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../allergen.css';
@@ -32,14 +32,10 @@ export default function AllergenMaster() {
   const [categoryId, setCategoryId] = useState('');
   const [locationId, setLocationId] = useState('');
   const [mix, setMix] = useState('all');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
   const filterDisclosure = useRef(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const priceErrors = validatePriceBounds(minPrice.trim(), maxPrice.trim());
-  const invalid = Boolean(priceErrors.min || priceErrors.max);
-  const filters = { query: search.trim(), status, categoryId, locationId, mix, minPrice: minPrice.trim(), maxPrice: maxPrice.trim(), invalid };
+  const filters = { query: search.trim(), status, categoryId, locationId, mix };
   const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, remove, changeStatus } = useServerAllergens(filters, page, pageSize);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -49,13 +45,9 @@ export default function AllergenMaster() {
   const [blocked, setBlocked] = useState(false);
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
-  const hasFilters = Boolean(search || status !== 'all' || categoryId || locationId || mix !== 'all' || minPrice || maxPrice);
-  const activeFilters = [search.trim() && 'search', status !== 'all' && 'status', mix !== 'all' && 'mix', categoryId && 'category', locationId && 'storage location', minPrice && 'minimum price', maxPrice && 'maximum price'].filter(Boolean);
-  const filterFeedback = [invalid ? 'Price bounds need correction' : loading ? 'Loading products…' : error ? 'Product counts unavailable' : hasFilters ? `${filtered} matching` : '', activeFilters.length > 0 ? `${activeFilters.join(', ')} applied` : ''].filter(Boolean).join(' · ');
-  function correctPriceBounds() {
-    filterDisclosure.current.open = true;
-    document.getElementById(priceErrors.min ? 'allergen-min-price' : 'allergen-max-price')?.focus();
-  }
+  const hasFilters = Boolean(search || status !== 'all' || categoryId || locationId || mix !== 'all');
+  const activeFilters = [search.trim() && 'search', status !== 'all' && 'status', mix !== 'all' && 'mix', categoryId && 'category', locationId && 'storage location'].filter(Boolean);
+  const filterFeedback = [loading ? 'Loading products…' : error ? 'Product counts unavailable' : hasFilters ? `${filtered} matching` : '', activeFilters.length > 0 ? `${activeFilters.join(', ')} applied` : ''].filter(Boolean).join(' · ');
   useEffect(() => {
     alive.current = true;
     return () => { alive.current = false; controller.current?.abort(); };
@@ -64,9 +56,9 @@ export default function AllergenMaster() {
     if (new URLSearchParams(window.location.search).get('saved')) window.history.replaceState(null, '', LIST_PATH);
   }, []);
   const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
-  useEffect(() => { if (!loading && !error && !invalid && page > pageCount) setPage(pageCount); }, [loading, error, invalid, page, pageCount]);
+  useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
   const reset = (setter) => (event) => { setter(event.target.value); setPage(1); };
-  function clearFilters() { setSearch(''); setStatus('all'); setCategoryId(''); setLocationId(''); setMix('all'); setMinPrice(''); setMaxPrice(''); setPage(1); }
+  function clearFilters() { setSearch(''); setStatus('all'); setCategoryId(''); setLocationId(''); setMix('all'); setPage(1); }
   function requestAction(record, type) { clearFeedback(); setActionError(''); setBlocked(false); setConfirming({ record, type }); }
   async function confirmAction() {
     const guard = reportingIdentityGuard();
@@ -78,15 +70,13 @@ export default function AllergenMaster() {
     else { setActionError(result.error); setBlocked(/stale|conflict/.test(result.code || '') || Boolean(result.ambiguous) || result.code === 'not_found'); }
   }
   async function exportVisible(format) {
-    if (error || loading || invalid || busy.current) return;
+    if (error || loading || busy.current) return;
     busy.current = true; setActionError(''); setExporting(true);
     const guard = reportingIdentityGuard();
     controller.current = new AbortController();
     const params = { query: filters.query, status, mix };
     if (categoryId) params.category_id = categoryId;
     if (locationId) params.storage_location_id = locationId;
-    if (filters.minPrice) params.min_price = filters.minPrice;
-    if (filters.maxPrice) params.max_price = filters.maxPrice;
     try {
       const blob = await exportAllergens(params, format, controller.current.signal);
       guard();
@@ -110,7 +100,6 @@ export default function AllergenMaster() {
     { key: 'serial', label: 'Sr No', render: (_r, index) => index + 1 },
     { key: 'name', label: 'Product name', render: (r) => <><strong className="admin-allergen-name" data-testid={`text-allergen-name-${r.id}`}>{r.name}</strong>{r.inventoryOnly && <span className="imm-cell-sub">Dilution material · inventory/pricing only</span>}</> },
     { key: 'category', label: 'Category', render: (r) => refName(r.category_name, r.category_status) },
-    { key: 'price', label: 'Selling price', render: (r) => <span className="admin-allergen-number">{dash(r.selling_price)}</span> },
     { key: 'gst', label: 'GST (%)', render: (r) => <span className="admin-allergen-number">{r.gst}</span> },
     { key: 'hsn', label: 'HSN code', render: (r) => <span className="admin-allergen-number" data-testid={`text-allergen-hsn-${r.id}`}>{dash(r.hsn_code)}</span> },
     { key: 'location', label: 'Storage location', render: (r) => refName(r.storage_location_name, r.storage_location_status) },
@@ -129,7 +118,7 @@ export default function AllergenMaster() {
         <button type="button" disabled={!can.import} className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/allergen')} data-testid="button-import-allergens"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
-            <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || loading || Boolean(error) || invalid} aria-disabled={exporting || undefined} data-testid="button-export-allergens"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+            <button type="button" className="admin-button admin-button--secondary" disabled={!can.export || loading || Boolean(error)} aria-disabled={exporting || undefined} data-testid="button-export-allergens"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Allergen export format">
@@ -160,13 +149,10 @@ export default function AllergenMaster() {
         <div className="admin-filter"><label htmlFor="allergen-filter-mix">Mix / No Mix</label><AllergenSearchableSelect id="allergen-filter-mix" label="Mix / No Mix" value={mix} testId="select-filter-mix" options={[{ value: 'all', label: 'All' }, { value: 'mix', label: 'Mix' }, { value: 'no_mix', label: 'No Mix' }]} onChange={(value) => { setMix(value || 'all'); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="allergen-filter-category">Product category</label><AllergenRefPicker id="allergen-filter-category" kind="categories" label="Product category" value={categoryId} includeUnusable allLabel="All categories" className="admin-select" testId="select-filter-category" onChange={(id) => { setCategoryId(id); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="allergen-filter-location">Storage location</label><AllergenRefPicker id="allergen-filter-location" kind="locations" label="Storage location" value={locationId} includeUnusable allLabel="All locations" className="admin-select" testId="select-filter-location" onChange={(id) => { setLocationId(id); setPage(1); }} /></div>
-        <div className="admin-filter"><label htmlFor="allergen-min-price">Minimum price</label><input id="allergen-min-price" className="admin-select" inputMode="decimal" value={minPrice} onChange={reset(setMinPrice)} aria-invalid={Boolean(priceErrors.min)} aria-describedby={priceErrors.min ? 'allergen-min-price-error' : undefined} data-testid="input-min-price" />{priceErrors.min && <p id="allergen-min-price-error" className="admin-allergen-filter-error" role="alert">{priceErrors.min}</p>}</div>
-        <div className="admin-filter"><label htmlFor="allergen-max-price">Maximum price</label><input id="allergen-max-price" className="admin-select" inputMode="decimal" value={maxPrice} onChange={reset(setMaxPrice)} aria-invalid={Boolean(priceErrors.max)} aria-describedby={priceErrors.max ? 'allergen-max-price-error' : undefined} data-testid="input-max-price" />{priceErrors.max && <p id="allergen-max-price-error" className="admin-allergen-filter-error" role="alert">{priceErrors.max}</p>}</div>
           </div>
         </details>
       </div>
-      {invalid ? <div className="admin-empty" role="status"><strong>Fix the price bounds</strong><p>Results are not loaded until minimum and maximum price are valid.</p><p className="admin-allergen-filter-error">{[priceErrors.min, priceErrors.max].filter(Boolean).join(' ')}</p><button type="button" className="admin-button admin-button--secondary" onClick={correctPriceBounds} data-testid="button-correct-allergen-prices">Open filters to correct prices</button></div>
-        : loading ? <p className="admin-empty" role="status">Loading shared allergen products…</p>
+      {loading ? <p className="admin-empty" role="status">Loading shared allergen products…</p>
         : error ? <div className="admin-empty" role="alert"><strong>Allergen products could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={retry}>Try again</button></div> : <>
           {records.length ? <>
             <div className="admin-allergen-desktop"><DataTable columns={columns} rows={records} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Allergen records" /></div>
@@ -174,7 +160,7 @@ export default function AllergenMaster() {
               <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2 data-testid={`text-allergen-name-${r.id}`}>{r.name}</h2></div><StatusBadge status={r.status} id={`m-${r.id}`} kind="allergen" /></div>
               <p>{r.code || 'Not assigned'} · {refName(r.category_name, r.category_status)} · {refName(r.storage_location_name, r.storage_location_status)}</p>
                {r.inventoryOnly && <p>Dilution material · inventory/pricing only</p>}
-               <p>Price {dash(r.selling_price)} · GST {r.gst}% · HSN {dash(r.hsn_code)} · {r.concentration} · Low stock alert (ml) {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
+               <p>GST {r.gst}% · HSN {dash(r.hsn_code)} · {r.concentration} · Low stock alert (ml) {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
               <dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}
             </article>)}</div></>
             : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p></div>}

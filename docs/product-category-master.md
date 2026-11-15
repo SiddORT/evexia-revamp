@@ -1,5 +1,24 @@
 # Product Category Master
 
+## Hidden catalogue prices
+
+Unit Price is no longer presented in category forms, lists, compact cards,
+search guidance or conflict summaries. The portal omits it from ordinary
+create/edit payloads. An omitted or blank new price uses the existing non-null
+column's zero value; an omitted or blank edit preserves the exact stored price.
+Explicit supplied prices still receive the existing validation and rounding.
+Read responses and protected history retain the field. No column, saved value,
+historical migration or downstream financial calculation is changed.
+
+Count-tariff controls no longer show category-price suggestions or copy them into
+new drafts. Counts without saved tariffs start blank and require explicit amounts;
+saved tariffs/history and existing orders are retained unchanged.
+
+Verification of this change was limited to source/diff review and offline
+contract generation. No tests, builds, typechecks, runtime/browser probes,
+service starts/restarts, migrations, release checks or deployment were run.
+Runtime behavior remains unverified.
+
 ## Scope and rollout
 
 This is an empty, shared FastAPI/PostgreSQL directory. The protected system
@@ -50,7 +69,7 @@ bearer/session transport, and return no-store responses.
 | `GET /export?format=csv\|xlsx` | All filtered matches, not just the page |
 
 Create/edit business fields are `name`, optional `description` (default empty),
-`unit_price` and `status` (`active`/`inactive`). Text is trimmed and whitespace
+optional `unit_price` and `status` (`active`/`inactive`). Text is trimmed and whitespace
 normalized; name is 1–200 characters, description 0–2,000, unsafe control/
 surrogate characters rejected. Names are case-insensitively live-unique including
 inactive rows using the same PostgreSQL lower/btrim/whitespace normalization for
@@ -66,7 +85,7 @@ NUMERIC with explicit range/two-place CHECKs, preventing coercion before validat
 Plain decimal strings only (bounded to 64 input characters); signs, exponents,
 commas, non-finite numbers, negatives, overflow and over-precision are rejected
 before rounding. Canonical strings always contain exactly two fractional digits.
-XLSX samples/exports store prices as text. Numeric XLSX
+XLSX samples retain an optional price column; record exports omit it. Numeric XLSX
 prices are recovered from the validated original XML decimal lexeme, not
 openpyxl's binary-float conversion; producer scientific notation is accepted
 only when its exact numeric amount fits the same precision/range limits.
@@ -93,8 +112,9 @@ names may be reused for new rows. No trash, restore or permanent-delete API/UI.
 ## Query and failure recovery
 
 List/export share literal case-insensitive `query` (up to 200 characters) across
-name, description and decimal price, `status=all|active|inactive`, and inclusive
-`min_price`/`max_price`. Either price bound may be omitted or blank; `"0"` is
+name and description, `status=all|active|inactive`, and inclusive API-only
+`min_price`/`max_price` for existing consumers. The portal has no price filters.
+Either API price bound may be omitted or blank; `"0"` is
 a real bound. Bounds use the same exact decimal validation; minimum above
 maximum returns a useful 422 error. Filters precede counts and pagination.
 Ordering is `created_at DESC, id DESC`, limit 1–100, offset 0–1,000,000.
@@ -114,23 +134,35 @@ mount, explicit refresh and window focus.
 
 ## Transfer schemas, safety and download evidence
 
-Exact supported legacy header order:
+Sample header order (Unit Price is optional; the sample leaves it blank):
 
 ```text
 Product Category Name,Description,Unit Price,Status
 ```
 
-Exact current header order:
+Earlier supported full export header order:
 
 ```text
 Product Category Name,Description,Unit Price,Status,Created By,Created At,Updated By,Updated At
 ```
 
-No alternate, identity, ID, version or deletion columns. Incoming audit strings
+Current record exports omit the price header and value:
+
+```text
+Product Category Name,Description,Status,Created By,Created At,Updated By,Updated At
+```
+
+CSV and XLSX imports accept all three layouts above, plus the three-column
+`Product Category Name,Description,Status` layout. Blank/omitted prices create
+with zero, never a price-required error. Keep remaining headers in order.
+The downloadable Excel sample also annotates Unit Price as optional in a header
+comment; the CSV sample and download guidance show the same blank optional input.
+
+No identity, ID, version or deletion columns are accepted. Incoming audit strings
 are ignored; imports always assign the authenticated importer/current server
 time. Old/current backups round-trip into an empty live collection without
 historical author restoration. Spreadsheet-safe exports prefix formula-like
-text and leading apostrophes; only current eight-column export imports decode
+text and leading apostrophes; seven- and eight-column audit export imports decode
 that documented escaping. Text/formulas are never evaluated or fetched.
 
 Review/commit accept raw `application/octet-stream` or exactly one multipart

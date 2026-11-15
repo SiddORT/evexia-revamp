@@ -1,5 +1,5 @@
 from decimal import Decimal
-from sqlalchemy import func, select, or_, cast, String
+from sqlalchemy import func, select, or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import utcnow
 from app.db.models import AuditEvent
@@ -56,8 +56,7 @@ def predicates(query="", status="all", min_price=None, max_price=None):
     if term:
         term = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         result.append(or_(ProductCategory.name.ilike("%" + term + "%", escape="\\"),
-                          ProductCategory.description.ilike("%" + term + "%", escape="\\"),
-                          cast(ProductCategory.unit_price, String).ilike("%" + term + "%", escape="\\")))
+                          ProductCategory.description.ilike("%" + term + "%", escape="\\")))
     if status != "all":
         result.append(ProductCategory.status == status)
     if low is not None:
@@ -139,7 +138,9 @@ def mutate(db, actor, record_id, body, operation):
             if operation == "edit":
                 row.name = body.name
                 row.description = body.description
-                row.unit_price = Decimal(body.unit_price)
+                # Hidden form fields must not rewrite historical saved prices.
+                if "unit_price" in body.model_fields_set:
+                    row.unit_price = Decimal(body.unit_price)
         row.version += 1
         row.updated_at, row.updated_by = now, current.user.id
         audit(db, current, row, operation)

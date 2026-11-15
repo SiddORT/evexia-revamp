@@ -135,3 +135,4 @@
 - [Opening-only activation](opening-only-activation.md) — opening correction approval does not activate unrelated staged low-stock or designation branches.
 - [Applicable GST scope](applicable-gst-scope.md) — effective-date policy governs Kits first pricing only; preserve saved taxes/totals and explicit legacy provenance.
 - [Immunotherapy tariff meaning](immunotherapy-tariff-policy.md) — total suborder MRP and per-allergen clinical quantities have independent meanings and change authority.
+- [Hidden master prices](hidden-master-prices.md) — hide catalogue prices without erasing saved values; retain optional import inputs and independent financial prices.

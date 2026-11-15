@@ -46,7 +46,7 @@ export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = fal
   if (nameError) e.name = nameError;
   if (!v.category_id) e.category_id = 'Select a product category.';
   if (!v.storage_location_id) e.storage_location_id = 'Select a storage location.';
-  const price = v.selling_price.trim();
+  const price = v.selling_price?.trim() || '';
   if (price) { try { catalogueRate(price); } catch { e.selling_price = 'Use up to 12 integer and 6 source decimal digits; rounded maximum 999999999999.99.'; } }
   const gst = v.gst.trim();
   if (!gst) e.gst = 'GST is required.'; else if (!/^(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?$/.test(gst) || compareDecimal(gst, '100') > 0) e.gst = 'GST must be between 0 and 100 with up to 6 decimals.';
@@ -65,4 +65,4 @@ export function validateAllergen(v, { dilutionSetup = false, inventoryOnly = fal
   if ((dilutionSetup || inventoryOnly) && v.mix !== true) e.mix = 'Dilution must remain Mix.';
   return e;
 }
-export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, hsn_code: String(v.hsn_code ?? '').trim() || null, status: v.status, mix: v.mix });
+export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, ...(v.selling_price === undefined ? {} : { selling_price: v.selling_price?.trim() ? catalogueRate(v.selling_price) : null }), gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, hsn_code: String(v.hsn_code ?? '').trim() || null, status: v.status, mix: v.mix });

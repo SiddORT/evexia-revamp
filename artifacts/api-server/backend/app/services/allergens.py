@@ -285,6 +285,8 @@ def mutate(db, actor, record_id, body, operation):
                                         422, "allergen_threshold_required")
                 snapshots = validate_references(db, body, row)
                 for field, value in assignments(body).items():
+                    if field == "selling_price" and field not in body.model_fields_set:
+                        continue
                     setattr(row, field, value)
                 for field, value in snapshots.items():
                     setattr(row, field, value)

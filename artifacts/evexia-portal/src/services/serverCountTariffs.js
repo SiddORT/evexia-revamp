@@ -19,7 +19,7 @@ export async function loadCountTariffs(id, signal) {
       || !Number.isInteger(value.categoryVersion) || value.categoryVersion < 1
       || (value.suggestedUnitPrice !== null && (typeof value.suggestedUnitPrice !== 'string' || catalogueRate(value.suggestedUnitPrice) !== value.suggestedUnitPrice))
       || (value.suggestedUnitPrice === null && typeof value.suggestionError !== 'string')
-      || !Array.isArray(value.history)) throw new MalformedResponseError('tariff history and Unit Price suggestion');
+      || !Array.isArray(value.history)) throw new MalformedResponseError('tariff history');
   value.history.forEach((row) => checked(row, id));
   if (new Set(value.history.map((r) => `${r.allergenCount}:${r.effectiveFrom}`)).size !== value.history.length
       || new Set(value.history.map((r) => r.id)).size !== value.history.length) throw new MalformedResponseError('tariff history');

@@ -5,7 +5,7 @@ import { validDate } from '../../services/serverPricingRules.js';
 
 const initial = (value) => Object.fromEntries([1, 2, 3].map((count) => {
   const rows = value.history.filter((r) => r.allergenCount === count).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
-  return [count, { totalMrp: rows[0]?.totalMrp ?? value.suggestedUnitPrice ?? '', effectiveFrom: '' }];
+  return [count, { totalMrp: rows[0]?.totalMrp ?? '', effectiveFrom: '' }];
 }));
 export default function useCountTariffs(categoryId, enabled, owner, { pricingOnly = false } = {}) {
   const [saved, setSaved] = useState(null);

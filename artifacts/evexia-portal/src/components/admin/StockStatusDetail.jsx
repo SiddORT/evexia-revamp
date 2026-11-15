@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import TablePagination from './TablePagination.jsx';
 import ComboProvenance from './ComboProvenance.jsx';
-import { dayEndExclusiveISO, dayStartISO, formatPrice, stockHistory } from '../../services/serverInventory.js';
+import { dayEndExclusiveISO, dayStartISO, stockHistory } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import { useResourceActions } from '../../auth/useMasterActions.js';
 import { groupStockLots, hasRemainingQuantity } from '../../services/stockLotPresentation.js';
@@ -51,7 +51,7 @@ export default function StockStatusDetail({ row, asOf, coverage }) {
       <div><dt>Unallocated (included in displayed physical quantity)</dt><dd>{row.physicalUnallocatedQuantity} {row.unit}</dd></div>
     </dl>
     <p className="mr-form__hint">{STOCK_QUANTITY_SCOPE}</p>
-    <details className="stock-detail__evidence"><summary>Product reference &amp; catalogue details</summary><dl className="stock-detail__meta"><div><dt>Product reference</dt><dd>{row.productId}</dd></div><div><dt>Catalogue selling price</dt><dd>{formatPrice(row.sellingPrice)}</dd></div></dl></details>
+    <details className="stock-detail__evidence"><summary>Product reference</summary><dl className="stock-detail__meta"><div><dt>Product reference</dt><dd>{row.productId}</dd></div></dl></details>
     {coverage && <details className="stock-detail__evidence"><summary>Stock snapshot coverage</summary><p>{coverage.contract}</p><p>Openings: {coverage.openings || 'Coverage unavailable'}</p><p>Sales: {coverage.sales || 'Coverage unavailable'}</p><p>History date filters do not change the current on-hand quantity above.</p></details>}
     <h2 className="stock-section-title">Lots on hand</h2>
     <div className="stock-lots">

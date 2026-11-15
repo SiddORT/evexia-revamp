@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "gst-kits", "count-tariffs", "combination-pricing"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -160,6 +160,9 @@ def main() -> None:
                         (path == "/v1/admin/languages" or path.startswith("/v1/admin/languages/")))
                     or (args.scope == "hsn-allergens" and
                         (path == "/v1/admin/hsn" or path.startswith("/v1/admin/hsn/")
+                         or path == "/v1/admin/allergens" or path.startswith("/v1/admin/allergens/")))
+                    or (args.scope == "catalogue-prices" and
+                        (path == "/v1/admin/product-categories" or path.startswith("/v1/admin/product-categories/")
                          or path == "/v1/admin/allergens" or path.startswith("/v1/admin/allergens/")))
                     or (args.scope == "count-tariffs" and path.startswith("/v1/admin/pricing-rules/count-tariffs"))
                     or (args.scope == "combination-pricing" and path.startswith("/v1/admin/pricing-rules/combinations/"))
@@ -185,7 +188,8 @@ def main() -> None:
         collect(selected)
         schema_updates = {}
         for name in needed:
-            prefixes = (("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
+            prefixes = (("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
+                        else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("Language",) if args.scope == "languages"
                         else ("Combination",) if args.scope == "combination-pricing"
                         else ("GST", "Kits") if args.scope == "gst-kits" else ("LowStock",))

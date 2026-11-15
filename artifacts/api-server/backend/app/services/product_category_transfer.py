@@ -9,6 +9,7 @@ import zipfile
 from decimal import Decimal, InvalidOperation
 from defusedxml import ElementTree
 from openpyxl import Workbook
+from openpyxl.comments import Comment
 from pydantic import ValidationError
 from sqlalchemy import Text, cast, func, select
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -24,6 +25,8 @@ MAX_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 1000
 EXPORT_LIMIT = 5000
 HEADERS = ["Product Category Name", "Description", "Unit Price", "Status", "Created By", "Created At", "Updated By", "Updated At"]
+EXPORT_HEADERS = [header for header in HEADERS if header != "Unit Price"]
+IMPORT_LAYOUTS = (HEADERS[:4], HEADERS, EXPORT_HEADERS[:3], EXPORT_HEADERS)
 
 
 def invalid(message):
@@ -33,6 +36,9 @@ def invalid(message):
 def exact_workbook_rows(data):
     # First enforce the shared archive/XML/cell/formula/link safety boundary.
     rows = workbook_rows(data, max_columns=8)
+    # Column C is Status in price-free files, never a monetary cell.
+    if not rows or "Unit Price" not in rows[0]:
+        return rows
     # openpyxl converts numeric cells to binary floats. Recover ONLY prices from
     # their original validated XML decimal lexemes, never from those floats.
     try:
@@ -88,14 +94,16 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] not in (HEADERS[:4], HEADERS):
-        invalid("Use exact Product Category Name,Description,Unit Price,Status headers or the eight-column audit export schema.")
+    if not rows or rows[0] not in IMPORT_LAYOUTS:
+        invalid("Use exact sample or export headers. Unit Price is optional; audit columns may be appended in their original order.")
+    headers = rows[0]
     width = len(rows[0])
     reviewed = []
     for number, cells in enumerate(rows[1:], 2):
         errors = [] if len(cells) == width else ["Row must match the header column count."]
-        values = [cells[index].strip() if len(cells) > index else "" for index in range(4)]
-        if width == 8:
+        by_header = {header: cells[index].strip() if index < len(cells) else "" for index, header in enumerate(headers)}
+        values = [by_header.get(header, "") for header in HEADERS[:4]]
+        if headers in (HEADERS, EXPORT_HEADERS):
             for index in (0, 1):
                 value = values[index]
                 if value.startswith("'") and (value[1:].startswith("'") or UNSAFE.match(value[1:])):
@@ -114,7 +122,7 @@ def parse(data, filename):
 
 
 def review_digest(actor, data, filename):
-    message = "\0".join(("product_category:half-up-cents", str(actor.user.id), actor.session_id, filename,
+    message = "\0".join(("product_category:optional-price-v1", str(actor.user.id), actor.session_id, filename,
                          hashlib.sha256(data).hexdigest())).encode()
     return hmac.new(get_settings().signing_key.encode(), message, hashlib.sha256).hexdigest()
 
@@ -155,7 +163,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     return product_categories.transaction(db, work)
 
 
-def encode(rows, format, sheet_title="ProductCategorys"):
+def encode(rows, format, sheet_title="ProductCategorys", optional_price=None):
     if format == "csv":
         output = io.StringIO()
         csv.writer(output).writerows(rows)
@@ -168,6 +176,11 @@ def encode(rows, format, sheet_title="ProductCategorys"):
             book.active.append(row)
             for cell in book.active[book.active.max_row]:
                 cell.data_type = "s"
+        if optional_price:
+            label, note = optional_price
+            for cell in book.active[1]:
+                if cell.value == label:
+                    cell.comment = Comment(note, "EVEXIA")
         book.save(output)
         return output.getvalue()
     finally:
@@ -175,7 +188,8 @@ def encode(rows, format, sheet_title="ProductCategorys"):
 
 
 def sample(format):
-    return encode([HEADERS[:4], ["Diagnostic reagents", "", "125.50", "active"]], format)
+    return encode([HEADERS[:4], ["Diagnostic reagents", "", "", "active"]], format,
+                  optional_price=("Unit Price", "Optional. Leave blank or omit this column to create with zero. Valid supplied prices are retained."))
 
 
 def format_price(value):
@@ -189,11 +203,11 @@ def export(db, actor, query, status, format, min_price=None, max_price=None):
         records = list(db.scalars(select(ProductCategory).where(*product_categories.predicates(query, status, min_price, max_price))
                                   .order_by(ProductCategory.created_at.desc(), ProductCategory.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:
-            raise product_categories.ProductCategoryError("Export exceeds 5,000 matching records. Narrow name/description/price/status filters.", 422, "product_category_export_limit")
-        rows = [HEADERS]
+            raise product_categories.ProductCategoryError("Export exceeds 5,000 matching records. Narrow name/description/status filters.", 422, "product_category_export_limit")
+        rows = [EXPORT_HEADERS]
         for row in records:
             record = product_categories.projection(db, row)
-            rows.append([safe_text(row.name), safe_text(row.description), format_price(row.unit_price), row.status,
+            rows.append([safe_text(row.name), safe_text(row.description), row.status,
                          safe_text(record["createdBy"]), row.created_at.isoformat(),
                          safe_text(record["updatedBy"]), row.updated_at.isoformat()])
         db.commit()

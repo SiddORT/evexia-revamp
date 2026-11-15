@@ -2953,7 +2953,7 @@ export const ListAllergensResponse = zod.object({
         ])
         .optional()
         .describe(
-          "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+          "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
         ),
       status: zod.enum(["active", "inactive"]),
       storage_location_id: zod.string().uuid(),
@@ -3007,7 +3007,7 @@ export const CreateAllergenBody = zod.object({
     .union([zod.string().max(createAllergenBodySellingPriceOneMax), zod.null()])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3067,7 +3067,7 @@ export const CreateAllergenResponse = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3300,7 +3300,7 @@ export const SetupDilutionMaterialBody = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3360,7 +3360,7 @@ export const SetupDilutionMaterialResponse = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3425,7 +3425,7 @@ export const GetAllergenResponse = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3501,7 +3501,7 @@ export const DeleteAllergenResponse = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3554,7 +3554,7 @@ export const EditAllergenBody = zod.object({
     .union([zod.string().max(editAllergenBodySellingPriceOneMax), zod.null()])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3606,7 +3606,7 @@ export const EditAllergenResponse = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -3683,7 +3683,7 @@ export const SetAllergenStatusResponse = zod.object({
     ])
     .optional()
     .describe(
-      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. Omitted creates default to null; omitted edits preserve the saved price. Explicit null clears it.",
     ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
@@ -33051,7 +33051,7 @@ export const ListProductCategoriesResponse = zod.object({
         .min(1)
         .max(listProductCategoriesResponseItemsItemUnitPriceMax)
         .describe(
-          "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+          "Saved catalogue price, returned with exactly two fractional digits.",
         ),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
@@ -33077,10 +33077,10 @@ export const CreateProductCategoryBody = zod.object({
   status: zod.enum(["active", "inactive"]),
   unit_price: zod
     .string()
-    .min(1)
     .max(createProductCategoryBodyUnitPriceMax)
+    .optional()
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.",
     ),
 });
 
@@ -33101,7 +33101,7 @@ export const CreateProductCategoryResponse = zod.object({
     .min(1)
     .max(createProductCategoryResponseUnitPriceMax)
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Saved catalogue price, returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -33250,7 +33250,7 @@ export const GetProductCategoryResponse = zod.object({
     .min(1)
     .max(getProductCategoryResponseUnitPriceMax)
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Saved catalogue price, returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -33285,7 +33285,7 @@ export const DeleteProductCategoryResponse = zod.object({
     .min(1)
     .max(deleteProductCategoryResponseUnitPriceMax)
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Saved catalogue price, returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -33311,10 +33311,10 @@ export const EditProductCategoryBody = zod.object({
   status: zod.enum(["active", "inactive"]),
   unit_price: zod
     .string()
-    .min(1)
     .max(editProductCategoryBodyUnitPriceMax)
+    .optional()
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Optional on writes; omitted or blank creates use zero. Omitted or blank edits preserve the saved price. Supplied decimals accept six source places, round half-up to two places, maximum 999999999999.99.",
     ),
 });
 
@@ -33335,7 +33335,7 @@ export const EditProductCategoryResponse = zod.object({
     .min(1)
     .max(editProductCategoryResponseUnitPriceMax)
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Saved catalogue price, returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -33371,7 +33371,7 @@ export const SetProductCategoryStatusResponse = zod.object({
     .min(1)
     .max(setProductCategoryStatusResponseUnitPriceMax)
     .describe(
-      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
+      "Saved catalogue price, returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),

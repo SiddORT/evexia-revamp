@@ -6,7 +6,6 @@ import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen, setupDilutionMaterial } from '../../services/serverAllergens.js';
-import { catalogueRate } from '../../services/rates.js';
 import { findHsnMappings, lookupAllergenHsn, normalGst } from '../../services/serverHsn.js';
 import { ALLERGEN_CONCENTRATIONS } from '../../services/allergenConcentrations.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
@@ -14,10 +13,10 @@ import '../../mr.css';
 import '../../allergen.css';
 
 const LIST = '/admin/masters/allergens';
-const empty = () => ({ name: '', category_id: '', storage_location_id: '', selling_price: '', gst: '', concentration: '', threshold_limit: '', hsn_code: '', status: 'active', mix: false });
-const fromRecord = (r) => ({ name: r.name, category_id: r.category_id, storage_location_id: r.storage_location_id, selling_price: r.selling_price ?? '', gst: r.gst, concentration: r.concentration, threshold_limit: r.threshold_limit ?? '', hsn_code: r.hsn_code ?? '', status: r.status, mix: r.inventoryOnly === true || r.mix === true });
+const empty = () => ({ name: '', category_id: '', storage_location_id: '', gst: '', concentration: '', threshold_limit: '', hsn_code: '', status: 'active', mix: false });
+const fromRecord = (r) => ({ name: r.name, category_id: r.category_id, storage_location_id: r.storage_location_id, gst: r.gst, concentration: r.concentration, threshold_limit: r.threshold_limit ?? '', hsn_code: r.hsn_code ?? '', status: r.status, mix: r.inventoryOnly === true || r.mix === true });
 const norm = (v) => v.trim().replace(/\s+/g, ' ').toLowerCase();
-const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; HSN ${r.hsn_code ?? 'none'}; ${r.concentration}; low stock alert ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
+const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; GST ${r.gst}; HSN ${r.hsn_code ?? 'none'}; ${r.concentration}; low stock alert ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
 
 function AllergenForm({ record, onSave, onCancel, onRefresh }) {
   const [dilutionSetup, setDilutionSetup] = useState(false);
@@ -144,12 +143,11 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
     const fieldLabel = <label className="mr-form__label" htmlFor={`allergen-${name}`}>{label} {optional ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>;
     return <div className="mr-form__field">
     {info ? <InfoDisclosure id={`allergen-${name}-help`} title={label} text={info} testId={`button-allergen-${name}-info`}>{fieldLabel}</InfoDisclosure> : fieldLabel}
-    <input id={`allergen-${name}`} className="mr-form__control" inputMode={numeric ? 'decimal' : undefined} maxLength={max} value={values[name]} onChange={(e) => update(name, e.target.value)} onBlur={() => { if (['selling_price', 'gst'].includes(name) && values[name]) { try { update(name, catalogueRate(values[name], name === 'gst')); } catch { /* Preserve invalid drafts for correction. */ } } }} aria-invalid={Boolean(errors[name])} aria-describedby={[hint && `allergen-${name}-hint`, errors[name] && `allergen-${name}-error`].filter(Boolean).join(' ') || undefined} data-testid={`input-allergen-${name}`} />
+    <input id={`allergen-${name}`} className="mr-form__control" inputMode={numeric ? 'decimal' : undefined} maxLength={max} value={values[name]} onChange={(e) => update(name, e.target.value)} aria-invalid={Boolean(errors[name])} aria-describedby={[hint && `allergen-${name}-hint`, errors[name] && `allergen-${name}-error`].filter(Boolean).join(' ') || undefined} data-testid={`input-allergen-${name}`} />
     {hint && <p id={`allergen-${name}-hint`} className="mr-form__hint">{hint}</p>}
     {err(name)}
   </div>;
   };
-  const decimalHint = 'Plain decimal, up to 12 integer and 6 source fractional digits. Rounded half-up to two places on save (1.005 → 1.01); rounded maximum 999999999999.99.';
   return <form className="admin-allergen-form" onSubmit={submit} noValidate>
     <div className="admin-allergen-form__intro"><div><h2>Product details</h2><p>Fields marked * are required. Records are shared on the server.</p></div><FlaskConical size={21} aria-hidden="true" /></div>
     <div className="mr-form__body">
@@ -159,7 +157,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
           if (event.target.checked) setValues((current) => ({ ...current, mix: true }));
           setErrors({});
         }} /> Explicitly create and bind the dummy Dilution material</label>
-        {dilutionSetup && <p className="mr-form__hint">Creates a separate inventory/pricing material, not a clinical allergen. Enter its name, real category and storage location, required master description and GST explicitly. Use Active and blank selling price. Dilution is always Mix. An optional low stock alert in ml may be entered, including zero; blank disables alerts. Nothing is inferred or seeded; configure actual cutoff rates later in Pricing Rules. An existing similarly named record will never be overwritten.</p>}
+        {dilutionSetup && <p className="mr-form__hint">Creates a separate inventory/pricing material, not a clinical allergen. Enter its name, real category and storage location, required master description and GST explicitly. Use Active. Dilution is always Mix. An optional low stock alert in ml may be entered, including zero; blank disables alerts. Nothing is inferred or seeded; configure actual cutoff rates later in Pricing Rules. An existing similarly named record will never be overwritten.</p>}
       </div>}
       {record?.inventoryOnly && <p className="mr-form__hint">Bound Dilution material — inventory and Pricing Rules only; excluded from clinical allergen selection.</p>}
       {serverError && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reconcile} data-testid="button-reconcile-allergen"><RefreshCw size={16} aria-hidden="true" /> Review current server details (keep draft)</button></div>}
@@ -173,7 +171,6 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
           <AllergenRefPicker id="allergen-location" kind="locations" label="Storage location" value={values.storage_location_id} disabled={pending} describedBy={errors.storage_location_id ? 'allergen-storage_location_id-error' : undefined} invalid={Boolean(errors.storage_location_id)} testId="select-allergen-location"
             retained={record ? { id: record.storage_location_id, name: record.storage_location_name, status: record.storage_location_status } : null} onChange={(id) => update('storage_location_id', id)} />
           {err('storage_location_id')}</div>
-        {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint, hint: dilutionSetup ? 'Must be blank for Dilution setup. Configure actual cutoff rates later in Pricing Rules.' : undefined })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-gst">GST (%) <span className="mr-form__required">*</span></label>
           <input id="allergen-gst" className="mr-form__control" inputMode="decimal" list="allergen-hsn-gst-choices" value={values.gst} onChange={(e) => { lookupSeq.current += 1; update('gst', e.target.value); void lookup({ query: e.target.value }); }} onBlur={() => { const n = normalGst(values.gst); if (n !== null && n !== values.gst) update('gst', n); void gstBlur(n); }} aria-invalid={Boolean(errors.gst)} aria-describedby={errors.gst ? 'allergen-gst-error' : 'allergen-gst-hint'} data-testid="input-allergen-gst" />
           <datalist id="allergen-hsn-gst-choices">{[...new Set(choices.map((c) => String(c.gst)))].map((g) => <option key={g} value={g} />)}</datalist>

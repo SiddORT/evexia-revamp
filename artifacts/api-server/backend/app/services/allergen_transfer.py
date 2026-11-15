@@ -30,13 +30,19 @@ PREVIOUS_HEADERS = ["Product Name", "Category", "Selling Price", "GST", "Storage
            "Concentration", "Threshold limit", "Status", "Mix / No Mix",
            "Created By", "Created At", "Updated By", "Updated At"]
 HEADERS = PREVIOUS_HEADERS[:9] + ["HSN code"] + PREVIOUS_HEADERS[9:]
+EXPORT_HEADERS = [header for header in HEADERS if header != "Selling Price"]
 LEGACY = PREVIOUS_HEADERS[:7] + ["HSN code", "Status", "Allergens / No Mix"]
+LEGACY_PRICE_FREE = [header for header in LEGACY if header != "Selling Price"]
+IMPORT_LAYOUTS = (HEADERS[:10], HEADERS, PREVIOUS_HEADERS[:9], PREVIOUS_HEADERS, LEGACY,
+                  EXPORT_HEADERS[:9], EXPORT_HEADERS,
+                  [header for header in PREVIOUS_HEADERS[:9] if header != "Selling Price"],
+                  [header for header in PREVIOUS_HEADERS if header != "Selling Price"], LEGACY_PRICE_FREE)
 ROW_FIELDS = ("name", "category_name", "selling_price", "gst", "storage_location_name",
               "concentration", "threshold_limit", "status", "mix", "hsn_code")
 
 
-def encode(rows, format):
-    return encode_master(rows, format, sheet_title="Allergens")
+def encode(rows, format, optional_price=None):
+    return encode_master(rows, format, sheet_title="Allergens", optional_price=optional_price)
 
 
 def invalid(message):
@@ -58,18 +64,26 @@ def exact_workbook_rows(data, *, max_columns=14, numeric_columns=None):
             if not path.startswith("xl/worksheets/"):
                 invalid("Unsupported worksheet location.")
             root = ElementTree.fromstring(archive.read(path))
-            columns = numeric_columns if numeric_columns is not None else {"C": 2, "D": 3, "G": 6}
+            # Resolve optional-column shifts by header, not fixed letters.
+            headers = rows[0] if rows else []
+            columns = numeric_columns if numeric_columns is not None else {
+                chr(65 + index): index for index, header in enumerate(headers)
+                if header in ("Selling Price", "GST", "Threshold limit")
+            }
+            hsn_index = headers.index("HSN code") if "HSN code" in headers else None
             for cell in root.iter():
                 if cell.tag.rsplit("}", 1)[-1] != "c" or cell.attrib.get("t", "n") != "n":
                     continue
                 coordinate = cell.attrib.get("r", "")
                 # Codes are identifiers, not numbers. A numeric Excel cell
                 # cannot prove its leading zeros; require an explicit text cell.
-                if (numeric_columns is None and coordinate.startswith("J") and coordinate[1:].isdigit()
-                        and int(coordinate[1:]) > 1 and rows and rows[0] in (HEADERS[:10], HEADERS)):
+                if (numeric_columns is None and hsn_index is not None
+                        and coordinate[:1] == chr(65 + hsn_index) and coordinate[1:].isdigit()
+                        and int(coordinate[1:]) > 1 and headers in IMPORT_LAYOUTS
+                        and headers not in (LEGACY, LEGACY_PRICE_FREE)):
                     index = int(coordinate[1:]) - 1
-                    if index < len(rows) and len(rows[index]) > 9:
-                        rows[index][9] = "HSN must be a text cell"
+                    if index < len(rows) and len(rows[index]) > hsn_index:
+                        rows[index][hsn_index] = "HSN must be a text cell"
                     continue
                 if coordinate[:1] not in columns or not coordinate[1:].isdigit():
                     continue
@@ -115,10 +129,9 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] not in (HEADERS[:10], HEADERS, PREVIOUS_HEADERS[:9], PREVIOUS_HEADERS, LEGACY):
-        invalid("Use the current ten-column sample or fourteen-column export, or an exact previously exported header layout.")
-    legacy = rows[0] == LEGACY
-    current_layout = rows[0] in (HEADERS[:10], HEADERS)
+    if not rows or rows[0] not in IMPORT_LAYOUTS:
+        invalid("Use the sample or export headers, with optional Selling Price, or an exact previously supported header layout.")
+    legacy = rows[0] in (LEGACY, LEGACY_PRICE_FREE)
     if legacy and not csv_file:
         invalid("The obsolete HSN / Allergens layout is supported only for legacy CSV backups.")
     width = len(rows[0])
@@ -126,13 +139,11 @@ def parse(data, filename):
     for number, cells in enumerate(rows[1:], 2):
         errors = [] if len(cells) == width else ["Row must match the header column count."]
         values = [(cells[index].strip() if index < len(cells) else "") for index in range(width)]
-        if legacy:
-            # Obsolete HSN is only a candidate: resolve() must validate it
-            # against the live mapping and its supplied GST before reuse.
-            candidate = values.pop(7)
-            values = values[:9] + [candidate]
-        elif not current_layout:
-            values = values[:9] + [""]
+        by_header = dict(zip(rows[0], values))
+        # Legacy HSN is only a candidate; resolve() still validates its mapping.
+        # Header mapping also keeps Status/GST/HSN correct without a price column.
+        values = [by_header.get("Allergens / No Mix" if legacy and header == "Mix / No Mix" else header, "")
+                  for header in HEADERS[:10]]
         values = values[:10]
         values.extend([""] * (10 - len(values)))
         for index in (0, 1, 4, 5):
@@ -228,7 +239,7 @@ def review_digest(actor, data, filename, snapshots):
     # An intentionally short, stateless review lease: no file bytes saved.
     # References, actor and refresh session are bound, not merely file bytes.
     bucket = int(utcnow().timestamp()) // REVIEW_SECONDS
-    message = "\0".join(("allergen:hsn-required-v1", str(actor.user.id), actor.session_id, str(bucket), filename,
+    message = "\0".join(("allergen:optional-price-v1", str(actor.user.id), actor.session_id, str(bucket), filename,
                          hashlib.sha256(data).hexdigest(), *snapshots)).encode()
     return hmac.new(get_settings().signing_key.encode(), message, hashlib.sha256).hexdigest()
 
@@ -267,9 +278,10 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 def sample(format):
     # Deliberately not local sample references. Operators replace these labels
     # with names from their active shared directories before review.
-    return encode([HEADERS[:10], ["Diagnostic reagent", "Your active category", "125.50", "12.00",
+    return encode([HEADERS[:10], ["Diagnostic reagent", "Your active category", "", "12.00",
                                  "Your active location", "10 mg/mL", "0", "active", "Mix",
-                                 "Your saved HSN code"]], format)
+                                 "Your saved HSN code"]], format,
+                  optional_price=("Selling Price", "Optional. Leave blank or omit this column to create with no selling price. Valid supplied prices are retained."))
 
 
 @present_export
@@ -280,10 +292,10 @@ def export(db, actor, query="", status="all", format="csv", **filters):
                                   .order_by(AllergenProduct.created_at.desc(), AllergenProduct.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:
             raise allergens.AllergenError("Export exceeds 5,000 matching records. Narrow your search and filters.", 422, "allergen_export_limit")
-        rows = [HEADERS]
+        rows = [EXPORT_HEADERS]
         for row in records:
             record = allergens.projection(db, row)
-            rows.append([safe_text(row.name), safe_text(record["category_name"]), record["selling_price"] or "",
+            rows.append([safe_text(row.name), safe_text(record["category_name"]),
                          record["gst"], safe_text(record["storage_location_name"]), safe_text(row.concentration),
                          record["threshold_limit"] or "", row.status, "Mix" if row.mix else "No Mix", row.hsn_code or "",
                          safe_text(record["createdBy"]), row.created_at.isoformat(),

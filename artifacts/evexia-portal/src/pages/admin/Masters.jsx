@@ -48,7 +48,7 @@ export default function Masters() {
         </Link>
         <Link href="/admin/masters/product-categories" className="admin-master-link" data-testid="link-master-product-categories">
           <span className="admin-master-link__icon"><Boxes size={20} aria-hidden="true" /></span>
-          <span className="admin-master-link__text"><strong>Product Category Master</strong><small>Manage category names, descriptions, prices and status in this browser.</small></span>
+          <span className="admin-master-link__text"><strong>Product Category Master</strong><small>Manage category names, descriptions and status.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/storage-locations" className="admin-master-link" data-testid="link-master-storage-locations">

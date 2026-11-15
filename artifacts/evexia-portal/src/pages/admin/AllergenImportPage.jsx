@@ -143,10 +143,10 @@ export default function AllergenImportPage() {
           <h2 id="excel-sample-title">Download sample Excel</h2>
           <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{ALLERGEN_COLUMNS.map(([, label]) => label).join(' · ')}</span>
-            <strong>Current backup schema (CSV or Excel)</strong><span>The same ten columns, followed by Created By · Created At · Updated By · Updated At (14 columns)</span>
+            <strong>Current record export (CSV or Excel)</strong><span>The sample columns without Selling Price, followed by Created By · Created At · Updated By · Updated At (13 columns). Price-free files with or without these audit columns are accepted.</span>
             <strong>Earlier files still recognized for review</strong><span>Prior 9-column samples and 13-column backups without HSN are recognized, but missing HSN or thresholds produce row errors. Add explicit values before importing new products.</span>
           </div>
-          <p>GST must originally be 0 to 100. Selling price is optional. Prices/GST accept up to six source decimals and round half-up to two places; review shows the values that will be saved. Rounded price maximum 999999999999.99. Keep long prices as Excel text. Low-stock thresholds in ml are required for every imported new product; zero is valid. HSN code is required, digits only (leading zeros kept), must be an Excel text cell, and must match an active HSN mapping for the row's GST. The obsolete legacy HSN column is accepted only after this same authoritative validation.</p>
+          <p>GST must originally be 0 to 100. Selling Price remains an optional sample column: leave its cell blank or omit the entire column for no saved selling price. Earlier samples and exports with supplied prices are still accepted. Prices/GST accept up to six source decimals and round half-up to two places; review shows the values that will be saved. Rounded price maximum 999999999999.99. Keep long prices as Excel text. Low-stock thresholds in ml are required for every imported new product; zero is valid. HSN code is required, digits only (leading zeros kept), must be an Excel text cell, and must match an active HSN mapping for the row's GST. The obsolete legacy HSN column is accepted only after this same authoritative validation.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>
@@ -157,7 +157,7 @@ export default function AllergenImportPage() {
           <span className="excel-import__number">02</span>
           <div className="excel-import__icon"><Upload size={23} aria-hidden="true" /></div>
           <h2 id="excel-upload-title">Upload &amp; review</h2>
-          <p>Choose CSV or .xlsx, up to 2 MiB and 1,000 records. All rows must be valid. Product names must be unique among non-deleted products. Category and Storage Location must match one active shared record. Mix imports as Mix (true) or No Mix (false); a legacy HSN column is ignored. Create-only: no upserts or partial imports.</p>
+          <p>Choose CSV or .xlsx, up to 2 MiB and 1,000 records. All rows must be valid. Product names must be unique among non-deleted products. Category and Storage Location must match one active shared record. Mix imports as Mix (true) or No Mix (false); legacy HSN values require the same active mapping validation. Create-only: no upserts or partial imports.</p>
           <p>No ID, version or deletion columns, .xls, .xlsm, formulas, macros, external links or encrypted archives.</p>
           <label className="excel-import__picker">
             <FileSpreadsheet size={19} aria-hidden="true" /><span>{file ? file.name : 'Choose CSV or Excel file'}</span>

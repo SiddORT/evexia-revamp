@@ -86,7 +86,6 @@ export default function ProductCategoryMaster() {
     { key: 'serial', label: 'Sr No', render: (_record, index) => index + 1 },
     { key: 'name', label: 'Category name', render: (record) => <strong>{record.name}</strong> },
     { key: 'description', label: 'Description', render: (record) => <span className="admin-category-description">{record.description || '—'}</span> },
-    { key: 'unit_price', label: 'Unit price', render: (record) => <span className="admin-category-price">{record.unit_price}</span> },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
     { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
@@ -117,14 +116,14 @@ export default function ProductCategoryMaster() {
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Product category list">
       <div className="admin-toolbar master-filter-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
-        <label className="admin-search"><Search size={16} /><span className="sr-only">Search categories by name, description or price</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search category, description or price" /></label>
+        <label className="admin-search"><Search size={16} /><span className="sr-only">Search categories by name or description</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search category or description" /></label>
         <div className="admin-filter"><label htmlFor="hq-filter">Status</label><select id="hq-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div><MasterFilterReset disabled={!search && filter === 'all'} onClick={() => { setSearch(''); setFilter('all'); setPage(1); }} /></div>
       {loading ? <p className="admin-empty" role="status">Loading shared categories…</p> : error ? <div className="admin-empty" role="alert"><strong>ProductCategories could not be loaded</strong><p>{error}</p><button className="admin-button" onClick={retry}>Try again</button></div> : <>
         {records.length ? cardView ? <div className="admin-zone-cards" role="list" aria-label="Product category records">{records.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id}>
           <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
-          <p>{record.description || 'No description'}</p><p>Unit price: <strong>{record.unit_price}</strong></p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}
-        </article>)}</div> : <DataTable columns={columns} rows={records} rowOffset={(page - 1) * pageSize} rowKey={(record) => record.id} /> : <div className="admin-empty"><strong>{total ? 'No matching categories' : 'No categories yet'}</strong><p>{total ? 'Try another name, description, price or status filter.' : 'Add your first shared category.'}</p></div>}
+          <p>{record.description || 'No description'}</p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}
+        </article>)}</div> : <DataTable columns={columns} rows={records} rowOffset={(page - 1) * pageSize} rowKey={(record) => record.id} /> : <div className="admin-empty"><strong>{total ? 'No matching categories' : 'No categories yet'}</strong><p>{total ? 'Try another name, description or status filter.' : 'Add your first shared category.'}</p></div>}
         <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="categories" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-category-count" />
       </>}
     </section>
