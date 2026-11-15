@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
 import TerritoryMultiSelect from './TerritoryMultiSelect.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
-import { COVERAGE_LABEL, coverageScopeOf, mrTerritoryChoices } from '../../services/serverMRs.js';
+import { mrTerritoryChoices } from '../../services/serverMRs.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const choiceDisabled = (item, saved) => item.deleted || (item.status !== 'active' && item.id !== saved);
@@ -26,11 +26,9 @@ export default function MRCoverageFields({ mr, values, patch, errors, disabled, 
   busyRef.current = onBusyChange;
   useEffect(() => { busyRef.current?.(unsettled); }, [unsettled]);
   useEffect(() => () => busyRef.current?.(false), []);
-  const unreviewed = values.coverageScope === null;
   const savedZones = mr?.assignedZones?.length ? mr.assignedZones : (mr?.zoneIds || []).map((id) => ({ id, name: id === mr?.zoneId ? mr.zoneName : '' }));
   const savedHQs = mr?.assignedHeadquarters?.length ? mr.assignedHeadquarters
     : mr?.hq ? [{ id: mr.hq, name: mr.hqName }] : [];
-  const scope = coverageScopeOf(values);
   const zoneReq = (kind, params, signal) => mrTerritoryChoices('zones', params, signal);
   const hqReq = (kind, params, signal) => mrTerritoryChoices('headquarters', { ...params, zoneId: values.zoneId }, signal);
   const areaReq = (kind, params, signal) => mrTerritoryChoices('areas', { ...params, zoneId: values.zoneId, hqIds: values.hqIds }, signal);
@@ -106,16 +104,6 @@ export default function MRCoverageFields({ mr, values, patch, errors, disabled, 
           invalid={Boolean(errors.areaIds)} emptyGuidance="No Areas in the selected HQs." />
         {errors.areaIds && <p className="mr-form__error" role="alert">{errors.areaIds}</p>}
       </div>
-    </div>
-    <div className={`territory-summary territory-summary--${scope}`} role="status" aria-live="polite" data-testid="text-mr-coverage-summary">
-      <span className="territory-summary__label">Responsibility</span>
-      <strong>{unreviewed ? 'Scope not reviewed' : !values.zoneId ? 'Not defined' : unsettled ? 'Not confirmed' : COVERAGE_LABEL[scope]}</strong>
-      <span>{unreviewed ? 'The controls show saved locations only. Unrelated edits retain the saved responsibility; changing territory defines explicit coverage when you save.'
-        : unsettled ? ((hqState === 'error' || areaState === 'error') ? 'HQ or Area choices could not be loaded. Retry them before saving; scope is never inferred from a failed load.' : 'Loading HQ and Area choices. Saving waits until they load.')
-        : !values.zoneId ? 'Choose a Zone to define responsibility.'
-        : scope === 'zone' ? 'Every HQ and Area in the selected Zone. No HQs or Areas are selected, deliberately.'
-          : scope === 'hq' ? `All Areas within ${plural(values.hqIds.length, 'selected HQ')}.`
-            : `Only ${plural(values.areaIds.length, 'selected Area')}. Selected HQs without a chosen Area grant no whole-HQ responsibility.`}</span>
     </div>
   </div>;
 }
