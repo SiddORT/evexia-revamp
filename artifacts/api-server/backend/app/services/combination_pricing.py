@@ -4,7 +4,7 @@ import json
 import math
 import uuid
 from itertools import combinations
-from sqlalchemy import select, func, text, or_
+from sqlalchemy import select, func, text, or_, tuple_
 from app.core.security import utcnow
 from app.db.allergen_models import AllergenProduct as Allergen, ImmunotherapyDilutionMaterial
 from app.db.product_category_models import ProductCategory
@@ -86,6 +86,8 @@ def scope(db, body):
     # snapshot as well as locking the chosen rows. Row locks alone miss phantoms.
     # These reads follow the shared policy/configuration/actor lock order.
     db.execute(text("LOCK TABLE allergen_products, product_categories, immunotherapy_dilution_material IN SHARE MODE"))
+    if body.categoryScope == "all":
+        return all_category_scope(db, body)
     category = db.scalar(select(ProductCategory).where(ProductCategory.id == body.categoryId).with_for_update())
     if not category or category.deleted_at or category.status != "active":
         fail("Choose an active saved Product Category.")
@@ -104,14 +106,58 @@ def scope(db, body):
     groups = {",".join(str(r.id) for r in group): list(group) for group in combinations(pool, body.size)}
     binding = db.scalar(select(ImmunotherapyDilutionMaterial.product_id))
     token = digest([str(category.id), category.version, str(binding), [member(r) for r in rows]])
-    return category, groups, token
+    return {category.id: category}, groups, token, [dict(categoryId=str(category.id),
+        categoryName=category.name, eligibleMembers=len(pool), ruleCount=count, skipped=not count)]
+
+
+def all_category_scope(db, body):
+    # Keep the existing limits for the WHOLE request, including skipped categories.
+    # A bounded catalogue read is rejected, never treated as a complete prefix.
+    instruction = "Use single-category entry and a smaller allergen subset. Nothing was truncated or saved partially."
+    cats = list(db.scalars(select(ProductCategory).where(
+        ProductCategory.deleted_at.is_(None), ProductCategory.status == "active")
+        .order_by(ProductCategory.id).limit(MAX_MEMBERS + 1).with_for_update()))
+    if len(cats) > MAX_MEMBERS:
+        fail(f"All Categories exceeds {MAX_MEMBERS} active categories. {instruction}", "bound", 422)
+    rows = list(db.scalars(select(Allergen).where(
+        Allergen.category_id.in_([c.id for c in cats]), Allergen.deleted_at.is_(None),
+        Allergen.status == "active",
+        ~Allergen.id.in_(select(ImmunotherapyDilutionMaterial.product_id)))
+        .order_by(Allergen.category_id, Allergen.id).limit(MAX_MEMBERS + 1).with_for_update()))
+    if len(rows) > MAX_MEMBERS:
+        fail(f"All Categories exceeds {MAX_MEMBERS} eligible catalogue members. {instruction}", "bound", 422)
+    members = {c.id: [] for c in cats}
+    for row in rows:
+        members[row.category_id].append(row)
+    groups, summaries, evidence = {}, [], []
+    for category in cats:
+        category_rows = members[category.id]
+        pool = [r for r in category_rows if r.mix]
+        count = math.comb(len(pool), body.size) if len(pool) >= body.size else 0
+        if len(groups) + count > MAX_ROWS:
+            fail(f"All Categories exceeds the {MAX_ROWS}-rule atomic request limit. {instruction}", "bound", 422)
+        for group in combinations(pool, body.size):
+            groups[f'{category.id}:' + ",".join(str(r.id) for r in group)] = list(group)
+        summaries.append(dict(categoryId=str(category.id), categoryName=category.name,
+            eligibleMembers=len(pool), ruleCount=count, skipped=not count))
+        evidence.append([str(category.id), category.version, category.name, category.status,
+                         [member(r) for r in category_rows]])
+    binding = db.scalar(select(ImmunotherapyDilutionMaterial.product_id))
+    return {c.id: c for c in cats}, groups, digest(["all", body.dosage, body.size, str(binding), evidence]), summaries
+
+
+def target_key(body, category_id, member_key):
+    return f"{category_id}:{member_key}" if body.categoryScope == "all" else member_key
 
 
 def latest_rows(db, body, groups):
-    return {r.member_key: r for r in db.scalars(select(Tariff).where(
-        Tariff.category_id == body.categoryId, Tariff.dosage == body.dosage,
-        Tariff.member_key.in_(list(groups))).distinct(Tariff.member_key).order_by(
-            Tariff.member_key, Tariff.version.desc()))}
+    if not groups:
+        return {}
+    identities = [(group[0].category_id, key.split(":")[-1]) for key, group in groups.items()]
+    return {target_key(body, r.category_id, r.member_key): r for r in db.scalars(select(Tariff).where(
+        tuple_(Tariff.category_id, Tariff.member_key).in_(identities),
+        Tariff.dosage == body.dosage).distinct(Tariff.category_id, Tariff.member_key).order_by(
+            Tariff.category_id, Tariff.member_key, Tariff.version.desc()))}
 
 
 def version(rows):
@@ -141,16 +187,19 @@ def project(row, crypto):
 
 def generate(db, actor, body):
     def work(_, crypto):
-        _, groups, token = scope(db, body)
+        cats, groups, token, summaries = scope(db, body)
         saved = latest_rows(db, body, groups)
         query = body.query.strip().casefold()
         matches = [(key, group) for key, group in groups.items()
-                   if not query or any(query in r.name.casefold() for r in group)]
-        return dict(categoryId=str(body.categoryId), dosage=body.dosage, size=body.size,
+                   if not query or query in cats[group[0].category_id].name.casefold()
+                   or any(query in r.name.casefold() for r in group)]
+        return dict(categoryId=str(body.categoryId) if body.categoryId else None,
+            categoryScope=body.categoryScope, categories=summaries, dosage=body.dosage, size=body.size,
             eligibilityVersion=token, scopeVersion=version(saved), scopeTotal=len(groups), scopeKeys=list(groups),
             rowVersions={key: saved[key].version if key in saved else 0 for key in groups},
             total=len(matches), offset=body.offset, limit=body.limit,
-            items=[dict(key=key, members=[member(r) for r in group],
+            items=[dict(key=key, categoryId=str(group[0].category_id),
+                        categoryName=cats[group[0].category_id].name, members=[member(r) for r in group],
                         latest=project(saved[key], crypto) if key in saved else None)
                    for key, group in matches[body.offset:body.offset + body.limit]])
     return transaction(db, actor, work)
@@ -170,8 +219,13 @@ def history(db, actor, category_id, dosage, member_key, offset, limit):
 
 def save(db, actor, body):
     def work(current, crypto):
+        # Preserve the canonical body of pre-existing single-category requests.
+        # Adding an opt-in scope must not invalidate an unresolved older retry.
+        request_body = body.model_dump(mode="json", exclude={"idempotencyKey"})
+        if body.categoryScope == "single":
+            request_body.pop("categoryScope")
         request = dict(operation="append-combination-prices",
-                       body=body.model_dump(mode="json", exclude={"idempotencyKey"}))
+                       body=request_body)
         prior = db.get(PricingRuleRequest, body.idempotencyKey)
         if prior:
             if prior.actor_id != current.user.id:
@@ -189,7 +243,7 @@ def save(db, actor, body):
             return result
 
         try:
-            category, groups, token = scope(db, body)
+            cats, groups, token, _ = scope(db, body)
             saved = latest_rows(db, body, groups)
             if token != body.eligibilityVersion or version(saved) != body.scopeVersion:
                 fail("Masters or saved rates changed. Reload and compare your retained draft before saving.", "stale")
@@ -200,9 +254,11 @@ def save(db, actor, body):
             amounts.update(edits)
             if not amounts:
                 fail("Enter at least one explicit rate. Blank is not zero.", "empty")
-            conflict = db.scalar(select(Tariff.id).where(Tariff.category_id == category.id,
-                Tariff.dosage == body.dosage, Tariff.member_key.in_(list(amounts)),
-                Tariff.effective_from == body.effectiveFrom).limit(1))
+            # Check every category before adding any row to this transaction.
+            conflict = db.scalar(select(Tariff.id).where(
+                tuple_(Tariff.category_id, Tariff.member_key).in_([
+                    (groups[key][0].category_id, key.split(":")[-1]) for key in amounts]),
+                Tariff.dosage == body.dosage, Tariff.effective_from == body.effectiveFrom).limit(1))
             if conflict:
                 fail("At least one combination already has a revision on this date. Nothing was saved; choose a different date.", "date")
         except PricingRuleError as error:
@@ -213,8 +269,9 @@ def save(db, actor, body):
         new_keys = []
         now = utcnow()
         for key, amount in amounts.items():
+            category = cats[groups[key][0].category_id]
             row = Tariff(id=uuid.uuid4(), category_id=category.id, dosage=body.dosage,
-                member_key=key, effective_from=body.effectiveFrom,
+                member_key=key.split(":")[-1], effective_from=body.effectiveFrom,
                 version=saved[key].version + 1 if key in saved else 1,
                 actor_id=current.user.id, recorded_at=now)
             row.payload_ciphertext = crypto.seal(row.id, "it-combination-tariff",
@@ -223,9 +280,10 @@ def save(db, actor, body):
             if key not in saved:
                 new_keys.append(row)
             result.append(project(row, crypto))
-        db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
-            request_id=db.info.get("request_id"), action="it_combination_prices_added",
-            resource_type="product_category", resource_id=category.id, outcome="success"))
+        for category_id in sorted({groups[key][0].category_id for key in amounts}):
+            db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
+                request_id=db.info.get("request_id"), action="it_combination_prices_added",
+                resource_type="product_category", resource_id=category_id, outcome="success"))
         db.flush()
         # Initialize only genuinely new keys. A rate revision for an existing
         # inactive key must never touch or reset its independent status.
@@ -234,7 +292,8 @@ def save(db, actor, body):
                 dosage=row.dosage, member_key=row.member_key, version=1, status="active",
                 revision_id=row.id, actor_id=current.user.id, recorded_at=now))
         db.flush()
-        return outcome(response=dict(requestId=str(body.idempotencyKey), categoryId=str(category.id),
+        return outcome(response=dict(requestId=str(body.idempotencyKey),
+            categoryId=str(body.categoryId) if body.categoryId else None, categoryScope=body.categoryScope,
             dosage=body.dosage, effectiveFrom=body.effectiveFrom.isoformat(), saved=result,
             eligibilityVersion=body.eligibilityVersion, scopeVersion=body.scopeVersion))
     result = transaction(db, actor, work)

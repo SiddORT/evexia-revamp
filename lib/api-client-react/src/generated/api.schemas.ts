@@ -14223,7 +14223,8 @@ export const CombinationGenerateDosage = {
 
 export interface CombinationGenerate {
   allergenIds?: string[] | null;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryScope?: "single" | "all";
   dosage: CombinationGenerateDosage;
   /**
    * @minimum 1
@@ -14302,13 +14303,25 @@ export const CombinationPageDosage = {
 export type CombinationPageRowVersions = { [key: string]: number };
 
 export interface CombinationRow {
+  categoryId: string;
+  categoryName: string;
   key: string;
   latest: CombinationRevision | null;
   members: CombinationMember[];
 }
 
-export interface CombinationPage {
+export interface CombinationCategoryScope {
   categoryId: string;
+  categoryName: string;
+  eligibleMembers: number;
+  ruleCount: number;
+  skipped: boolean;
+}
+
+export interface CombinationPage {
+  categoryId: string | null;
+  categoryScope: "single" | "all";
+  categories: CombinationCategoryScope[];
   dosage: CombinationPageDosage;
   eligibilityVersion: string;
   items: CombinationRow[];
@@ -14339,7 +14352,8 @@ export const CombinationResultDosage = {
 } as const;
 
 export interface CombinationResult {
-  categoryId: string;
+  categoryId: string | null;
+  categoryScope?: "single" | "all";
   dosage: CombinationResultDosage;
   effectiveFrom: string;
   eligibilityVersion: string;
@@ -14366,7 +14380,8 @@ export const CombinationSaveDosage = {
 
 export interface CombinationSave {
   allergenIds?: string[] | null;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryScope?: "single" | "all";
   copyRate?: string | null;
   dosage: CombinationSaveDosage;
   /** @maxItems 1000 */

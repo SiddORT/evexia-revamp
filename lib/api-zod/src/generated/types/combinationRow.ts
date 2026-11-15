@@ -9,6 +9,8 @@ import type { CombinationMember } from "./combinationMember";
 import type { CombinationRevision } from "./combinationRevision";
 
 export interface CombinationRow {
+  categoryId: string;
+  categoryName: string;
   key: string;
   latest: CombinationRevision | null;
   members: CombinationMember[];

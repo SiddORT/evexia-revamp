@@ -8,9 +8,12 @@
 import type { CombinationPageDosage } from "./combinationPageDosage";
 import type { CombinationPageRowVersions } from "./combinationPageRowVersions";
 import type { CombinationRow } from "./combinationRow";
+import type { CombinationCategoryScope } from "./combinationCategoryScope";
 
 export interface CombinationPage {
-  categoryId: string;
+  categoryId: string | null;
+  categoryScope: "single" | "all";
+  categories: CombinationCategoryScope[];
   dosage: CombinationPageDosage;
   eligibilityVersion: string;
   items: CombinationRow[];

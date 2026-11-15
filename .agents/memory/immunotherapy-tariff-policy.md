@@ -24,3 +24,14 @@ clinical settings or changing their persistence.
 
 **How to apply:** MRP loading, editing and navigation guards must not depend on
 quantity services. Keep legacy INR/ml evidence read-only and distinct from MRP.
+
+All Categories pricing means one-time bulk configuration of combinations
+**within each category**, never cross-category mixtures or a global fallback.
+Future categories/allergens are not automatically covered.
+
+**Why:** The user approved this interpretation and explicitly withheld approval
+to activate these records in current order quotation or reprice saved orders.
+
+**How to apply:** Keep saved identities category-specific and require another
+explicit configuration save for new catalogue members. Do not infer quotation
+activation from approval of the bulk-entry workflow.

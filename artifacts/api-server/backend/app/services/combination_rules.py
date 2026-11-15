@@ -145,7 +145,7 @@ def change_status(db, actor, record_id, body):
                 fail("The rule already has this status. Refresh records.", "stale")
             if body.status == "active":
                 # Reactivation never restores deleted/ineligible catalogue data.
-                _, groups, _ = scope(db, CombinationScope(categoryId=row.category_id, dosage=row.dosage,
+                _, groups, _, _ = scope(db, CombinationScope(categoryId=row.category_id, dosage=row.dosage,
                       size=len(row.member_key.split(",")),
                       allergenIds=[uuid.UUID(id) for id in row.member_key.split(",")]))
                 if row.member_key not in groups:

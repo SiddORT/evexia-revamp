@@ -35798,7 +35798,13 @@
           "categoryId": {
             "format": "uuid",
             "title": "Categoryid",
-            "type": "string"
+            "type": ["string", "null"]
+          },
+          "categoryScope": {
+            "type": "string",
+            "enum": ["single", "all"],
+            "default": "single",
+            "description": "All requires null categoryId/allergenIds and size 2 or 3; resolves the complete active catalogue, not search matches."
           },
           "dosage": {
             "enum": [
@@ -35844,7 +35850,6 @@
           }
         },
         "required": [
-          "categoryId",
           "dosage",
           "size"
         ],
@@ -35910,13 +35915,33 @@
         "title": "CombinationMember",
         "type": "object"
       },
+      "CombinationCategoryScope": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "categoryId": { "type": "string", "format": "uuid" },
+          "categoryName": { "type": "string" },
+          "eligibleMembers": { "type": "integer" },
+          "ruleCount": { "type": "integer" },
+          "skipped": { "type": "boolean" }
+        },
+        "required": ["categoryId", "categoryName", "eligibleMembers", "ruleCount", "skipped"]
+      },
       "CombinationPage": {
         "additionalProperties": false,
         "properties": {
           "categoryId": {
             "format": "uuid",
             "title": "Categoryid",
-            "type": "string"
+            "type": ["string", "null"]
+          },
+          "categoryScope": {
+            "type": "string",
+            "enum": ["single", "all"]
+          },
+          "categories": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CombinationCategoryScope" }
           },
           "dosage": {
             "enum": [
@@ -35986,6 +36011,8 @@
         },
         "required": [
           "categoryId",
+          "categoryScope",
+          "categories",
           "dosage",
           "size",
           "eligibilityVersion",
@@ -36007,7 +36034,12 @@
           "categoryId": {
             "format": "uuid",
             "title": "Categoryid",
-            "type": "string"
+            "type": ["string", "null"]
+          },
+          "categoryScope": {
+            "type": "string",
+            "enum": ["single", "all"],
+            "default": "single"
           },
           "dosage": {
             "enum": [
@@ -36156,6 +36188,8 @@
       "CombinationRow": {
         "additionalProperties": false,
         "properties": {
+          "categoryId": { "type": "string", "format": "uuid" },
+          "categoryName": { "type": "string" },
           "key": {
             "title": "Key",
             "type": "string"
@@ -36179,6 +36213,8 @@
           }
         },
         "required": [
+          "categoryId",
+          "categoryName",
           "key",
           "members",
           "latest"
@@ -36208,7 +36244,13 @@
           "categoryId": {
             "format": "uuid",
             "title": "Categoryid",
-            "type": "string"
+            "type": ["string", "null"]
+          },
+          "categoryScope": {
+            "type": "string",
+            "enum": ["single", "all"],
+            "default": "single",
+            "description": "All requires null categoryId/allergenIds, size 2 or 3, a common copyRate, and no edits. Whole request limited to 500 catalogue members and 1000 rules. Revalidates full scope and saves atomically."
           },
           "copyRate": {
             "anyOf": [
@@ -36275,7 +36317,6 @@
           }
         },
         "required": [
-          "categoryId",
           "dosage",
           "size",
           "eligibilityVersion",

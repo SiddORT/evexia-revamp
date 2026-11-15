@@ -17,11 +17,21 @@ class Strict(BaseModel):
 
 
 class CombinationScope(Strict):
-    categoryId: uuid.UUID
+    categoryId: uuid.UUID | None = None
+    categoryScope: Literal["single", "all"] = "single"
     dosage: Dosage
     size: int = Field(strict=True, ge=1, le=3)
     # null means all eligible saved allergens, never the visible search results.
     allergenIds: list[uuid.UUID] | None = Field(default=None, max_length=MAX_MEMBERS)
+
+    @model_validator(mode="after")
+    def category_scope(self):
+        if self.categoryScope == "all":
+            if self.categoryId is not None or self.allergenIds is not None or self.size not in (2, 3):
+                raise ValueError("All Categories requires pairs/triples and the complete catalogue, without a category or subset")
+        elif self.categoryId is None:
+            raise ValueError("Choose one category")
+        return self
 
     @field_validator("allergenIds")
     @classmethod
@@ -67,6 +77,12 @@ class CombinationSave(CombinationScope):
     edits: list[CombinationEdit] = Field(default_factory=list, max_length=MAX_ROWS)
     idempotencyKey: uuid.UUID
 
+    @model_validator(mode="after")
+    def common_all_category_price(self):
+        if self.categoryScope == "all" and (self.copyRate is None or self.edits):
+            raise ValueError("All Categories requires one common explicit MRP and no individual edits")
+        return self
+
     @field_validator("copyRate", mode="before")
     @classmethod
     def copy_money(cls, value):
@@ -103,12 +119,24 @@ class CombinationRevision(Strict):
 
 class CombinationRow(Strict):
     key: str
+    categoryId: uuid.UUID
+    categoryName: str
     members: list[CombinationMember]
     latest: CombinationRevision | None
 
 
-class CombinationPage(Strict):
+class CombinationCategoryScope(Strict):
     categoryId: uuid.UUID
+    categoryName: str
+    eligibleMembers: int
+    ruleCount: int
+    skipped: bool
+
+
+class CombinationPage(Strict):
+    categoryId: uuid.UUID | None
+    categoryScope: Literal["single", "all"]
+    categories: list[CombinationCategoryScope]
     dosage: Dosage
     size: int
     eligibilityVersion: str
@@ -124,7 +152,8 @@ class CombinationPage(Strict):
 
 class CombinationResult(Strict):
     requestId: uuid.UUID
-    categoryId: uuid.UUID
+    categoryId: uuid.UUID | None
+    categoryScope: Literal["single", "all"] = "single"
     dosage: Dosage
     effectiveFrom: date
     eligibilityVersion: str

@@ -9,7 +9,8 @@ import type { CombinationResultDosage } from "./combinationResultDosage";
 import type { CombinationRevision } from "./combinationRevision";
 
 export interface CombinationResult {
-  categoryId: string;
+  categoryId: string | null;
+  categoryScope?: "single" | "all";
   dosage: CombinationResultDosage;
   effectiveFrom: Date;
   eligibilityVersion: string;

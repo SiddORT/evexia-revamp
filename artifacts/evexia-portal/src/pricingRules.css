@@ -204,6 +204,10 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 }
 
 /* Compact entry modes and chosen-only rates; never affect other masters. */
+.pricing-rule-entry .pricing-all-category-review { min-width: 0; font-size: .8125rem; }
+.pricing-rule-entry .pricing-category-scope-list { display: grid; gap: 6px; max-height: 16rem; overflow-y: auto; overscroll-behavior: contain; margin: 8px 0 0; padding: 3px; list-style: none; }
+.pricing-rule-entry .pricing-category-scope-list li { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; padding: 8px; border: 1px solid var(--admin-border); border-radius: 8px; }
+.pricing-rule-entry .pricing-category-scope-list span { color: var(--admin-text-soft); }
 .pricing-saved-panel .pricing-status-filter { position: relative; gap: 0; }
 .pricing-combination-allergens .pricing-policy-controls { gap: 8px; align-items: center; }
 .pricing-combination-allergens .admin-search { flex: 1 1 14rem; max-width: 26rem; }

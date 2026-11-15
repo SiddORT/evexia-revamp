@@ -29,7 +29,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
     setView({ query: '', offset: 0, limit: 25 });
     return () => { seq.current++; };
   }, [identity]);
-  const scopeId = scope?.categoryId;
+  const scopeId = scope?.categoryScope === 'all' ? 'all' : scope?.categoryId;
   useEffect(() => {
     if (!scopeId) { active.current = false; setBusy(false); return undefined; }
     const ctl = new AbortController();
@@ -49,7 +49,9 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
         setPage({ ...value, identity });
       } catch (cause) {
         if (!ctl.signal.aborted && sequence === seq.current) {
-          setError(`${cause.message} If the scope is too large, use Clear and choose a smaller allergen subset (at most 500 selected members and 1,000 eligible combinations per save).`);
+          setError(`${cause.message} ${scope?.categoryScope === 'all'
+            ? 'If All Categories exceeds the complete-request limits, use single-category entry with a smaller subset.'
+            : 'If the scope is too large, use Clear and choose a smaller allergen subset (at most 500 selected members and 1,000 eligible combinations per save).'}`);
           setPage(null);
         }
       } finally {

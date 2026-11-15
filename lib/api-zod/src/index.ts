@@ -87,6 +87,7 @@ export * from "./generated/types/gSTOpeningBaseline";
 export * from "./generated/types/gSTPeriod";
 export * from "./generated/types/combinationAllergenPage";
 export * from "./generated/types/combinationCategoryPage";
+export * from "./generated/types/combinationCategoryScope";
 export * from "./generated/types/combinationEdit";
 export * from "./generated/types/combinationGenerate";
 export * from "./generated/types/combinationGenerateDosage";

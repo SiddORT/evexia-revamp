@@ -9,7 +9,8 @@ import type { CombinationGenerateDosage } from "./combinationGenerateDosage";
 
 export interface CombinationGenerate {
   allergenIds?: string[] | null;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryScope?: "single" | "all";
   dosage: CombinationGenerateDosage;
   /**
    * @minimum 1

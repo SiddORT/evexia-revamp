@@ -10,7 +10,8 @@ import type { CombinationSaveDosage } from "./combinationSaveDosage";
 
 export interface CombinationSave {
   allergenIds?: string[] | null;
-  categoryId: string;
+  categoryId?: string | null;
+  categoryScope?: "single" | "all";
   copyRate?: string | null;
   dosage: CombinationSaveDosage;
   /** @maxItems 1000 */

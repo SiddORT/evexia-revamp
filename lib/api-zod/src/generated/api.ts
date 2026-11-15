@@ -50333,7 +50333,8 @@ export const GenerateCombinationPricingRowsBody = zod.object({
       zod.null(),
     ])
     .optional(),
-  categoryId: zod.string().uuid(),
+  categoryId: zod.string().uuid().nullable().optional(),
+  categoryScope: zod.enum(["single", "all"]).default("single"),
   dosage: zod.enum([
     "PD",
     "DD",
@@ -50373,7 +50374,15 @@ export const generateCombinationPricingRowsResponseItemsItemLatestOneTotalMrpReg
   new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
 
 export const GenerateCombinationPricingRowsResponse = zod.object({
-  categoryId: zod.string().uuid(),
+  categoryId: zod.string().uuid().nullable(),
+  categoryScope: zod.enum(["single", "all"]),
+  categories: zod.array(zod.object({
+    categoryId: zod.string().uuid(),
+    categoryName: zod.string(),
+    eligibleMembers: zod.number().int(),
+    ruleCount: zod.number().int(),
+    skipped: zod.boolean(),
+  })),
   dosage: zod.enum([
     "PD",
     "DD",
@@ -50389,6 +50398,8 @@ export const GenerateCombinationPricingRowsResponse = zod.object({
   eligibilityVersion: zod.string(),
   items: zod.array(
     zod.object({
+      categoryId: zod.string().uuid(),
+      categoryName: zod.string(),
       key: zod.string(),
       latest: zod.union([
         zod.object({
@@ -50560,7 +50571,8 @@ export const SaveCombinationPricingBatchBody = zod.object({
       zod.null(),
     ])
     .optional(),
-  categoryId: zod.string().uuid(),
+  categoryId: zod.string().uuid().nullable().optional(),
+  categoryScope: zod.enum(["single", "all"]).default("single"),
   copyRate: zod
     .union([
       zod
@@ -50612,7 +50624,8 @@ export const saveCombinationPricingBatchResponseSavedItemTotalMrpRegExp =
   new RegExp("^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$");
 
 export const SaveCombinationPricingBatchResponse = zod.object({
-  categoryId: zod.string().uuid(),
+  categoryId: zod.string().uuid().nullable(),
+  categoryScope: zod.enum(["single", "all"]).default("single"),
   dosage: zod.enum([
     "PD",
     "DD",
