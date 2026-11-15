@@ -157,21 +157,21 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
 .pricing-saved-panel small { display: block; color: var(--admin-text-soft); }
 .pricing-saved-actions { display: flex; flex-wrap: wrap; gap: 6px; min-width: 12rem; }
 .pricing-saved-panel :is(button, select, input):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
-.pricing-combination-workspace { gap: 14px; }
-.pricing-combination-controls { display: grid; grid-template-columns: minmax(16rem, 2fr) minmax(7rem, .7fr) minmax(12rem, 1fr); gap: 12px 16px; align-items: end; }
+.pricing-combination-workspace { gap: 12px; }
+.pricing-combination-controls { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, .7fr) minmax(0, 1fr); gap: 10px 14px; align-items: end; }
 .pricing-combination-controls .mr-form__field,
 .pricing-combination-batch .mr-form__field { min-width: 0; display: grid; gap: 6px; }
-.pricing-combination-allergens { margin: 0; min-width: 0; border: 1px solid var(--admin-border); border-radius: 9px; padding: 12px; display: grid; gap: 12px; }
+.pricing-combination-allergens { margin: 0; min-width: 0; border: 1px solid var(--admin-border); border-radius: 9px; padding: 10px; display: grid; gap: 10px; }
 .pricing-combination-allergens legend { padding-inline: 6px; font-weight: 600; font-size: .875rem; }
 .pricing-combination-allergens p { margin: 0; font-size: .8125rem; color: var(--admin-text-soft); line-height: 1.5; }
-.pricing-combination-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; max-height: 280px; overflow-y: auto; overscroll-behavior: contain; padding: 3px; }
+.pricing-combination-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; max-height: 220px; overflow-y: auto; overscroll-behavior: contain; padding: 3px; }
 .pricing-combination-choices label { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding-block: 5px; font-size: .875rem; color: var(--admin-text); }
 .pricing-combination-choices input { flex: none; accent-color: var(--admin-accent); }
 .pricing-combination-choices span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .pricing-combination-choices small { flex: none; color: var(--admin-text-soft); }
 .pricing-combination-editor { display: grid; gap: 12px; min-width: 0; }
 .pricing-combination-editor > p { margin: 0; font-size: .8125rem; color: var(--admin-text-soft); line-height: 1.5; }
-.pricing-combination-batch { display: grid; grid-template-columns: minmax(10rem, 16rem) auto minmax(10rem, 14rem); align-items: end; justify-content: start; gap: 12px; }
+.pricing-combination-batch { display: grid; grid-template-columns: repeat(2, minmax(0, 16rem)); align-items: end; justify-content: start; gap: 12px; }
 .pricing-combination-workspace .admin-table { min-width: 780px; }
 .pricing-combination-workspace .admin-table th:first-child { width: 5rem; }
 .pricing-combination-workspace .admin-table th:nth-child(2) { width: 38%; }
@@ -197,10 +197,30 @@ html:has(.pricing-rules-page), body:has(.pricing-rules-page) { min-width: 0; }
   .pricing-combination-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pricing-combination-controls .pricing-category-field { grid-column: 1 / -1; }
   .pricing-combination-batch { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .pricing-combination-batch > .mr-form__field:last-child { grid-column: 1 / -1; max-width: 16rem; }
 }
 @media (max-width: 600px) {
   .pricing-combination-controls, .pricing-combination-choices, .pricing-combination-batch { grid-template-columns: minmax(0, 1fr); }
-  .pricing-combination-batch > .mr-form__field:last-child { max-width: none; }
   .pricing-combination-workspace { padding: 14px; }
+}
+
+/* Compact entry modes and chosen-only rates; never affect other masters. */
+.pricing-saved-panel .pricing-status-filter { position: relative; gap: 0; }
+.pricing-combination-allergens .pricing-policy-controls { gap: 8px; align-items: center; }
+.pricing-combination-allergens .admin-search { flex: 1 1 14rem; max-width: 26rem; }
+.pricing-combination-workspace .admin-search input { box-sizing: border-box; padding-inline: 11px; font: inherit; font-size: .875rem; }
+.pricing-combination-workspace .pricing-entry-modes { display: flex; flex-wrap: wrap; gap: 8px 20px; min-width: 0; margin: 0; padding: 10px; border: 1px solid var(--admin-border); border-radius: 9px; }
+.pricing-entry-modes legend { padding-inline: 6px; font-size: .875rem; font-weight: 600; }
+.pricing-entry-modes label { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; }
+.pricing-entry-modes input, .pricing-chosen-members input { flex: none; accent-color: var(--admin-accent); }
+.pricing-combination-editor .pricing-target-summary { padding: 10px 12px; border-radius: 8px; background: var(--admin-state-soft); color: var(--admin-text); }
+.pricing-chosen-list { display: grid; gap: 8px; min-width: 0; max-height: 30rem; overflow-y: auto; overscroll-behavior: contain; padding: 3px; }
+.pricing-chosen-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 10rem) auto; align-items: center; gap: 10px 14px; padding: 10px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-surface); color: var(--admin-text); }
+.pricing-chosen-members { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: .875rem; line-height: 1.5; }
+.pricing-chosen-members span { min-width: 0; overflow-wrap: anywhere; }
+.pricing-chosen-rate { position: relative; display: grid; gap: 5px; min-width: 0; font-size: .8125rem; }
+.pricing-chosen-rate input { width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  .pricing-chosen-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .pricing-chosen-row > .admin-button { justify-self: start; }
+  .pricing-combination-allergens .admin-search { max-width: none; flex-basis: 100%; }
 }

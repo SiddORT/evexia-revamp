@@ -7,9 +7,6 @@ import StatusBadge from './StatusBadge.jsx';
 import MasterFilterReset from './MasterFilterReset.jsx';
 import ConfirmationDialog from './ConfirmationDialog.jsx';
 import CombinationPricingHistory from './CombinationPricingHistory.jsx';
-import CountTariffEvidence from './CountTariffEvidence.jsx';
-import usePricingCategories from './usePricingCategories.js';
-import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
@@ -37,7 +34,6 @@ export default function SavedPricingRules() {
   const [blocked, setBlocked] = useState(false);
   const [actionError, setActionError] = useState('');
   const [notice, setNotice] = useState('');
-  const [countOpen, setCountOpen] = useState(false);
   const action = useRef({ busy: false, attempt: null });
   const alive = useRef(true);
   const controller = useRef(null);
@@ -138,7 +134,7 @@ export default function SavedPricingRules() {
           <span className="pricing-sr-only">Search saved categories, allergens or dosage</span>
           <input type="search" maxLength={100} value={query} disabled={locked} placeholder="Search category, allergens or dosage"
             onChange={(e) => filter(() => setQuery(e.target.value))} /></label>
-          <div className="admin-filter"><label htmlFor="pricing-status">Status</label>
+          <div className="admin-filter pricing-status-filter"><label className="pricing-sr-only" htmlFor="pricing-status">Status</label>
             <select id="pricing-status" className="admin-select" value={status} disabled={locked} onChange={(e) => filter(() => setStatus(e.target.value))}>
               <option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option>
             </select></div></div>
@@ -155,9 +151,6 @@ export default function SavedPricingRules() {
             onPageSizeChange={(n) => filter(() => setPageSize(n))} />}
         </>}
     </section>
-    <details className="admin-panel pricing-legacy-disclosure" onToggle={(e) => setCountOpen(e.currentTarget.open)}><summary>Historical category/count tariffs · read-only</summary>
-      {countOpen && <CountEvidencePicker />}
-    </details>
     {history && <CombinationPricingHistory categoryId={history.latest.categoryId} dosage={history.latest.dosage}
       memberKey={history.latest.memberIds.join(',')} ruleId={history.latest.id}
       returnFocusRef={historyTrigger} onClose={() => setHistory(null)} />}
@@ -168,17 +161,3 @@ export default function SavedPricingRules() {
   </>;
 }
 
-function CountEvidencePicker() {
-  const categories = usePricingCategories();
-  const [category, setCategory] = useState(null);
-  return <div className="pricing-policy-workspace">
-    <AllergenSearchableSelect id="pricing-count-evidence-category" label="Historical tariff category"
-      value={category?.id || ''} selectedLabel={category?.name}
-      options={categories.items.map((c) => ({ value: c.id, label: c.name }))}
-      onChange={(id) => setCategory(categories.items.find((c) => c.id === id) || null)}
-      placeholder="Choose a category for read-only count history" onSearch={categories.search}
-      loading={categories.busy} error={categories.error} onRetry={() => categories.search(categories.query, true)}
-      hasMore={categories.nextOffset !== null} onMore={categories.more} />
-    {category && <CountTariffEvidence key={category.id} categoryId={category.id} />}
-  </div>;
-}
