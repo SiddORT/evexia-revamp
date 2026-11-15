@@ -7,7 +7,7 @@ import MRFormCombobox from './MRFormCombobox.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
-import { emptyMRValues, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
+import { coverageScopeOf, emptyMRValues, lookupPincode, mrAssignmentWarnings, mrTerritoryChanged, MR_FIELDS as FIELDS, payloadFromValues, savedMRTerritory, validateMRValues } from '../../services/serverMRs.js';
 import '../../mr.css';
 import { initialCredentials } from '../../services/initialCredentials.js';
 import { presentMasterFailure } from '../../services/masterValidation.js';
@@ -49,6 +49,14 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
       }
       return next;
     });
+    setSaveError('');
+  }
+  function patchCoverage(patch) {
+    setValues((current) => {
+      const next = { ...current, ...patch };
+      return { ...next, coverageScope: mrTerritoryChanged(next, mr) ? coverageScopeOf(next) : (mr.coverageScope ?? null) };
+    });
+    setErrors((current) => ({ ...current, zoneId: undefined, hq: undefined, hqIds: undefined, areaIds: undefined }));
     setSaveError('');
   }
   useEffect(() => {
@@ -206,7 +214,10 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     event.preventDefault();
     if (saving || coveragePending) return;
     const cleaned = { ...Object.fromEntries(FIELDS.map((key) => [key, key === 'zoneIds' ? [...values[key]] : values[key].trim()])),
-      coverageScope: values.coverageScope, hqIds: [...values.hqIds], areaIds: [...values.areaIds] };
+      coverageScope: values.coverageScope, hqIds: [...values.hqIds], areaIds: [...values.areaIds],
+      // Editor projections must not rewrite historical assignments on an
+      // unrelated save (including all saved Zones and null scope).
+      ...(mr && !mrTerritoryChanged(values, mr) ? savedMRTerritory(mr) : {}) };
     const nextErrors = validateMRValues(cleaned, {
       creating: !mr, password: credentials?.password || '', confirm: credentials?.confirmPassword || '',
     });
@@ -244,7 +255,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
             data-testid={`tab-mr-${tab.id}`}>{tab.label}{tab.fields.some((key) => errors[key]) && <span className="mr-form__tab-error" aria-label="Contains errors">!</span>}</button>)}
         </div>
         <div className="mr-form__body">
-          {(mr?.assignmentWarnings || []).map((warning, index) => <p key={index} className="mr-form__notice" role="status" data-testid="warning-mr-assignment">{String(warning?.message || warning)}</p>)}
+          {mrAssignmentWarnings(mr).map((warning, index) => <p key={index} className="mr-form__notice" role="status" data-testid="warning-mr-assignment">{String(warning?.message || warning)}</p>)}
           {saveError && <div className="mr-form__notice mr-form__notice--error" role="alert" data-testid="error-mr-save"><p>{saveError}</p><p>If the outcome is uncertain, refresh to check the saved record before trying again. Refreshing discards changes on this page.</p><button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-mr-save">Refresh records</button></div>}
 
           <section className="mr-form__section" id="mr-panel-identity" role="tabpanel" aria-labelledby="mr-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
@@ -272,7 +283,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           <section className="mr-form__section" id="mr-panel-assignment" role="tabpanel" aria-labelledby="mr-tab-assignment" tabIndex={0} hidden={activeTab !== 'assignment'}>
             <div className="mr-form__section-head"><h3 id="mr-assignment-title" className="mr-form__section-title">Assignment & work</h3></div>
             <div className="mr-form__grid">
-              <MRCoverageFields mr={mr} values={values} patch={patchAddress} errors={errors} disabled={saving} onBusyChange={setCoveragePending} />
+              <MRCoverageFields mr={mr} values={values} patch={patchCoverage} errors={errors} disabled={saving} onBusyChange={setCoveragePending} />
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
               {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}

@@ -28,6 +28,9 @@ export const mrTerritoryChoices = (kind, { query = '', limit = 100, offset = 0, 
   mrRequest('/territory-choices', { params: clean({ kind, query: query || undefined, limit: Math.min(limit, 100), offset, include_saved: includeSaved, zone_id: zoneId, hq_ids: hqIds?.length ? hqIds.join(',') : undefined }), signal });
 export const COVERAGE_LABEL = { zone: 'Entire Zone', hq: 'Entire selected HQs', area: 'Selected Areas only' };
 export const coverageScopeOf = (values) => values.areaIds?.length ? 'area' : values.hqIds?.length ? 'hq' : 'zone';
+// Hide only the retired territory notice, not lifecycle or manager warnings.
+export const mrAssignmentWarnings = (mr) => (mr?.assignmentWarnings || []).filter((warning) =>
+  String(warning?.message || warning) !== 'Legacy territory: responsibility has not been reviewed. Missing HQ/Area collections do not authorize broad coverage.');
 export const generateMRUsername = (signal) => mrRequest('/username', { signal });
 export const lookupPincode = (pin, signal, action = 'add') => mrRequest(`/postal/${pin}`, { signal, params: { action } });
 export const createMR = (values, initialPassword) => {
@@ -49,7 +52,7 @@ export function downloadMRFile(blob, format, sample = false) {
 }
 
 export function emptyMRValues(mr) {
-  return { ...territoryValues(mr), ...Object.fromEntries(MR_FIELDS.map((key) => [key,
+  return { ...Object.fromEntries(MR_FIELDS.map((key) => [key,
     key === 'zoneIds' ? [...(mr?.zoneIds || (mr?.zoneId ? [mr.zoneId] : []))]
       : key === 'dialCountry' ? (mr?.dialCountry || 'IN')
       : key === 'contactRequirement' ? (mr?.contactRequirement || 'required')
@@ -58,17 +61,37 @@ export function emptyMRValues(mr) {
       : key === 'paymentLimit' ? (mr ? String(mr.paymentLimit ?? '0.00') : '')
       : key === 'doctorDaysLimit' ? (mr ? String(mr.doctorDaysLimit ?? 0) : '')
       : key === 'dateOfJoining' ? String(mr?.[key] ?? '').slice(0, 10)
-      : String(mr?.[key] ?? '')])) };
+      : String(mr?.[key] ?? '')])), ...territoryValues(mr) };
 }
 
-// New MRs default to explicit scope with deliberately empty HQs/Areas. Saved
-// records keep coverageScope null (legacy) until the user explicitly adopts.
+export function savedMRTerritory(mr) {
+  return {
+    coverageScope: mr.coverageScope ?? null,
+    zoneId: String(mr.zoneId ?? ''),
+    zoneIds: [...(mr.zoneIds || (mr.zoneId ? [mr.zoneId] : []))],
+    hq: String(mr.hq ?? ''),
+    hqIds: [...(mr.hqIds || [])],
+    areaIds: [...(mr.areaIds || [])],
+  };
+}
+
+// Presentation only: never choose one of several saved Zones, and show the
+// saved scalar HQ without converting its unreviewed scope into responsibility.
 function territoryValues(mr) {
+  const saved = mr ? savedMRTerritory(mr) : null;
   return {
     coverageScope: mr ? (mr.coverageScope ?? null) : 'zone',
-    hqIds: [...(mr?.hqIds || [])],
+    zoneId: saved?.zoneIds.length === 1 ? saved.zoneIds[0] : '',
+    hqIds: [...(mr?.hqIds?.length ? mr.hqIds : mr?.coverageScope == null && mr?.hq ? [mr.hq] : [])],
     areaIds: [...(mr?.areaIds || [])],
   };
+}
+
+export function mrTerritoryChanged(values, mr) {
+  if (!mr) return true;
+  const initial = territoryValues(mr);
+  const sameIds = (left, right) => left.length === right.length && left.every((id) => right.includes(id));
+  return values.zoneId !== initial.zoneId || !sameIds(values.hqIds, initial.hqIds) || !sameIds(values.areaIds, initial.areaIds);
 }
 
 function istToday() {

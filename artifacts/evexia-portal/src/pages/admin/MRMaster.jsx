@@ -18,7 +18,7 @@ import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
 import useDirectoryContinuation from '../../hooks/useDirectoryContinuation.js';
-import { deleteMR, downloadMRFile, exportMRs, listMRs, resetMRPassword, statusMR } from '../../services/serverMRs.js';
+import { deleteMR, downloadMRFile, exportMRs, listMRs, mrAssignmentWarnings, resetMRPassword, statusMR } from '../../services/serverMRs.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
@@ -29,7 +29,7 @@ const zoneLabels = (record) => record.assignedZones?.length
   ? record.assignedZones.map((zone) => `${zone.name}${zone.id === record.zoneId ? ' (primary)' : ''}${zone.deleted ? ' (deleted)' : zone.status === 'inactive' ? ' (inactive)' : ''}`).join(', ')
   : record.zoneName;
 const names = (rows = []) => rows.map((row) => `${row.name}${row.deleted ? ' (deleted)' : row.status === 'inactive' ? ' (inactive)' : ''}`).join(', ');
-const coverage = (record) => record.coverageScope == null ? `Legacy: ${record.hqName || 'no HQ'} / ${zoneLabels(record) || 'no Zone'}`
+const coverage = (record) => record.coverageScope == null ? `Saved Zones: ${zoneLabels(record) || 'none'} · Saved HQs: ${names(record.assignedHeadquarters) || record.hqName || 'none'} · Saved Areas: ${names(record.assignedAreas) || 'none'} · Scope not reviewed`
   : record.coverageScope === 'zone' ? `${record.zoneName} · Entire Zone`
     : record.coverageScope === 'hq' ? `${record.zoneName} · Entire HQs: ${names(record.assignedHeadquarters)}`
       : `${record.zoneName} · HQs: ${names(record.assignedHeadquarters)} · Selected Areas only: ${names(record.assignedAreas)}`;
@@ -155,7 +155,10 @@ export default function MRMaster() {
     ]} />;
   }
   const address = (r) => <span className="admin-mr-address">{[r.addressLine1, r.addressLine2, r.landmark, `${r.city}, ${r.state} ${r.pincode}`, r.country].filter(Boolean).join(' · ')}</span>;
-  const warn = (r) => (r.assignmentWarnings?.length ? <small className="admin-record-missing">{r.assignmentWarnings.map((w) => String(w?.message || w)).join(' ')}</small> : null);
+  const warn = (r) => {
+    const warnings = mrAssignmentWarnings(r);
+    return warnings.length ? <small className="admin-record-missing">{warnings.map((w) => String(w?.message || w)).join(' ')}</small> : null;
+  };
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => (page - 1) * pageSize + index + 1 },
     { key: 'details', label: 'Employee details', render: (r) => details(r) },
