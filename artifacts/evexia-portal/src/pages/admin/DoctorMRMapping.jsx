@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { History, MapPin, RefreshCw, Shuffle, Waypoints } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Filter, History, MapPin, RefreshCw, Shuffle, Waypoints } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -15,6 +15,24 @@ import '../../doctor-mr-mapping.css';
 const EMPTY = { area: '', areaUnset: false, hq: '', zone: '', status: 'all', mr: '', doctor: '' };
 const TABS = [{ id: 'doctor', label: 'Doctor-wise' }, { id: 'mr', label: 'MR-wise' }];
 const RECONCILE = 'The result of the last save is uncertain or records changed. Reload the current records and review the Doctor’s assignment history before saving again. Your draft is kept.';
+
+function MRMappingGroup({ group, selection, children }) {
+  const [expanded, setExpanded] = useState(false);
+  const id = useId();
+  return <section className="doctor-mapping__group" aria-labelledby={`${id}-title`} data-testid={`group-mr-${group.id}`}>
+    <header className="doctor-mapping__group-head">
+      <div className="doctor-mapping__group-heading">
+        <h2><button type="button" id={`${id}-title`} className="doctor-mapping__group-toggle" aria-expanded={expanded} aria-controls={`${id}-doctors`} aria-describedby={`${id}-description`}
+          onClick={() => setExpanded((old) => !old)} data-testid={`button-toggle-mapping-group-${group.id}`}>
+          <span className={group.id === 'missing' ? 'admin-record-missing' : ''}>{group.name}</span><ChevronDown size={18} aria-hidden="true" />
+        </button></h2>
+        <p id={`${id}-description`} className="doctor-mapping__hint">{group.mrStatus ? `MR status: ${group.mrStatus} · ` : ''}HQ: {group.hq || '—'} · Zones: {group.zones.length ? group.zones.join(', ') : '—'} · {group.rows.length} Doctor{group.rows.length === 1 ? '' : 's'} on this page</p>
+      </div>
+      {selection}
+    </header>
+    <div id={`${id}-doctors`} hidden={!expanded}>{children}</div>
+  </section>;
+}
 
 export default function DoctorMRMapping() {
   const can = useMasterActions('doctor');
@@ -58,7 +76,8 @@ export default function DoctorMRMapping() {
   const hydrateMRs = (items) => setMrs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))]);
   const pageCount = Math.max(1, Math.ceil(data.filtered / limit));
   const set = (patch) => { setFilters((old) => ({ ...old, ...patch })); setPage(1); setSelected([]); };
-  const hasFilters = JSON.stringify(filters) !== JSON.stringify(EMPTY);
+  const activeFilterCount = [filters.area || filters.areaUnset, filters.hq, filters.zone, filters.status !== 'all', filters.mr, filters.doctor].filter(Boolean).length;
+  const hasFilters = activeFilterCount > 0;
   const reload = () => { setRevision((n) => n + 1); setReconcile(false); setActionError(''); };
   const selectedRows = data.items.filter((row) => selected.includes(row.id));
   const toggle = (id, on) => setSelected((old) => on ? [...new Set([...old, id])] : old.filter((value) => value !== id));
@@ -133,6 +152,8 @@ export default function DoctorMRMapping() {
         {reconcile && <div className="doctor-mapping__reconcile"><button type="button" className="admin-button admin-button--secondary" onClick={reload} data-testid="button-reconcile">I will review — reload current records</button></div>}</div>}
 
       <section className="admin-panel doctor-mapping__filters" aria-label="Mapping filters">
+        <details className="doctor-master__filters">
+          <summary data-testid="button-toggle-mapping-filters"><Filter size={15} aria-hidden="true" /> Filter records{hasFilters && ` · ${activeFilterCount} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
         <div className="doctor-mapping__filter-grid">
           <div className="admin-filter"><MappingReferenceSelect refKind="area" id="mapping-filter-area" label="Doctor Area" value={filters.area} onChange={(area) => set({ area, areaUnset: false })} />
             <label className="doctor-mapping__inline"><input type="checkbox" checked={filters.areaUnset} onChange={(event) => set({ areaUnset: event.target.checked, area: '' })} data-testid="checkbox-filter-area-unset" /> Only Doctors with Area not set</label></div>
@@ -143,8 +164,8 @@ export default function DoctorMRMapping() {
           <div className="admin-filter"><DoctorMRSelect id="mapping-filter-mr" label="Current MR" labelClassName="doctor-mapping__label" required={false} value={filters.mr} onHydrate={hydrateMRs} onChange={(mr) => set({ mr })} testId="select-mapping-mr" /></div>
           <div className="admin-filter"><MappingReferenceSelect refKind="doctor" id="mapping-filter-doctor" label="Doctor" value={filters.doctor} onChange={(doctor) => set({ doctor })} /></div>
         </div>
-        <div className="doctor-mapping__filter-foot"><p className="doctor-mapping__hint">Doctor Area is the Doctor’s saved catalogue Area — not a postal address or coverage permission. HQ and Zone filters use the current MR’s geography; Zone matches any Zone the MR belongs to.</p>
-          <MasterFilterReset disabled={!hasFilters} onClick={() => set(EMPTY)} testId="button-reset-mapping-filters" /></div>
+        </details>
+        <MasterFilterReset disabled={!hasFilters} onClick={() => set(EMPTY)} testId="button-reset-mapping-filters" />
       </section>
 
       <section className="admin-panel" aria-label="Doctor MR mappings">
@@ -170,13 +191,10 @@ export default function DoctorMRMapping() {
                     {groups.map((group) => {
                       const ids = group.rows.map((row) => row.id);
                       const all = ids.every((id) => selected.includes(id));
-                      return <section key={group.id} className="doctor-mapping__group" aria-labelledby={`group-${group.id}`} data-testid={`group-mr-${group.id}`}>
-                        <header className="doctor-mapping__group-head"><div><h2 id={`group-${group.id}`} className={group.id === 'missing' ? 'admin-record-missing' : ''}>{group.name}</h2>
-                          <p className="doctor-mapping__hint">{group.mrStatus ? `MR status: ${group.mrStatus} · ` : ''}HQ: {group.hq || '—'} · Zones: {group.zones.length ? group.zones.join(', ') : '—'} · {group.rows.length} on this page</p></div>
-                          {can.edit && <label className="doctor-mapping__inline"><input type="checkbox" checked={all} disabled={locked} onChange={(event) => setSelected((old) => event.target.checked ? [...new Set([...old, ...ids])] : old.filter((id) => !ids.includes(id)))} data-testid={`checkbox-group-${group.id}`} /> Select group on this page</label>}</header>
+                      return <MRMappingGroup key={group.id} group={group} selection={can.edit && <label className="doctor-mapping__inline"><input type="checkbox" checked={all} disabled={locked} aria-label={`Select group on this page: ${group.name}`} onChange={(event) => setSelected((old) => event.target.checked ? [...new Set([...old, ...ids])] : old.filter((id) => !ids.includes(id)))} data-testid={`checkbox-group-${group.id}`} /> Select group on this page</label>}>
                         <ul className="doctor-mapping__group-list">{group.rows.map((row) => <li key={row.id} className="doctor-mapping__group-row">
                           <span>{check(row)}</span>{doctorCell(row)}<span data-label="Doctor Area">{areaCell(row)}</span><StatusBadge status={row.status} id={row.id} kind="mapping-group" />{rowActions(row)}</li>)}</ul>
-                      </section>;
+                      </MRMappingGroup>;
                     })}</div>}
         </div>
         {!data.error && !data.loading && <TablePagination page={page} pageSize={limit} pageCount={pageCount} filtered={data.filtered} total={data.total} label="Doctors" onPageChange={(n) => { setPage(n); setSelected([]); }} onPageSizeChange={(n) => { setPageSize(Math.min(n, 100)); setPage(1); setSelected([]); }} testId="text-mapping-count" />}

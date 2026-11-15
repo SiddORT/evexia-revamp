@@ -8,6 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import http from 'node:http';
 import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
 
 const root = process.cwd();
 const portal = path.join(root, 'artifacts/evexia-portal');
@@ -24,7 +25,7 @@ const uid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const mrs = [1, 2].map((n) => ({ id: uid(n), name: `${long} MR ${n}`, userId: `MR-00${n}`,
   zoneId: uid(20), zoneName: `${long} Zone`, status: 'active', usable: true, deleted: false }));
 const items = [3, 4, 5].map((n) => ({ id: uid(n), name: `${long} Doctor ${n}`, doctorNumber: `DOC-000${n}`,
-  mrId: uid(1), mrName: mrs[0].name, mrUserId: mrs[0].userId, mrStatus: 'active', version: 1,
+  mrId: mrs[n === 5 ? 1 : 0].id, mrName: mrs[n === 5 ? 1 : 0].name, mrUserId: mrs[n === 5 ? 1 : 0].userId, mrStatus: 'active', version: 1,
   areaId: n === 3 ? null : uid(40), areaVersion: 1, areaName: n === 3 ? '' : `${long} Area`,
   areaHeadquarterName: long, headquarterName: `${long} HQ`, zoneNames: [`${long} Zone`, 'Secondary Zone'],
   status: n === 5 ? 'inactive' : 'active', assignmentWarnings: [] }));
@@ -33,8 +34,13 @@ const items=${JSON.stringify(items)}, mrs=${JSON.stringify(mrs)};
 const mode=()=>new URLSearchParams(location.search).get('state');
 const wait=()=>new Promise(r=>setTimeout(r,60));
 export async function listDoctorMappings(params) { if(mode()==='loading')return new Promise(()=>{});
+  (window.__mappingInspectionRequests ||= []).push(params);
   await wait(); if(mode()==='error')throw Error('Synthetic read error. Retry preserves filters.');
-  return {items:mode()==='empty'?[]:items,total:3,filtered:mode()==='empty'?0:3,limit:25,offset:0}; }
+  const matching=mode()==='empty'?[]:items.filter(r=>
+    (!params.area_id || (params.area_id==='unset'?!r.areaId:r.areaId===params.area_id)) &&
+    (!params.mr_id || r.mrId===params.mr_id) && (!params.doctor_id || r.id===params.doctor_id) &&
+    (params.status==='all' || r.status===params.status));
+  return {items:matching.slice(params.offset,params.offset+params.limit),total:3,filtered:matching.length,limit:params.limit,offset:params.offset}; }
 export async function doctorMappingReferences(kind,params) { await wait(); return {items:kind==='doctor'
   ?items.map(r=>({...r,userId:r.doctorNumber,usable:true,deleted:false}))
   :[{id:'${uid(40)}',name:'${long} Area / Parent HQ',userId:'',status:'active',usable:true,deleted:false}],total:1,limit:50,offset:0}; }
@@ -136,30 +142,102 @@ try {
             return r ? { left: r.left, right: r.right, bottom: r.bottom, top: r.top } : null; })(),
         }));
         records.push({ width, theme, appearance, surface, ...geometry });
-        await page.screenshot({ path: path.join(out, `${width}-${theme}-${appearance}-${surface}.png`), fullPage: true });
+        await page.screenshot({ path: path.join(out, `${width}-${theme}-${appearance}-${surface}.png`) });
       }
       await measure('doctor');
+      const filterToggle = page.getByTestId('button-toggle-mapping-filters');
+      const filterDetails = page.locator('.doctor-mapping__filters details');
+      assert.equal(await filterDetails.getAttribute('open'), null);
+      // Real Tab entry, rather than programmatic focus, checks keyboard focus styles.
+      for (let i = 0; i < 80 && !await filterToggle.evaluate((e) => e === document.activeElement); i++) await page.keyboard.press('Tab');
+      assert.ok(await filterToggle.evaluate((e) => e === document.activeElement && getComputedStyle(e).outlineStyle !== 'none'));
+      await page.keyboard.press('Enter');
+      assert.notEqual(await filterDetails.getAttribute('open'), null);
+      await measure('filters-open');
+      await page.getByTestId('select-mapping-status').selectOption('active');
+      await page.getByTestId('text-mapping-count').filter({ hasText: 'of 2 Doctors' }).waitFor();
+      await filterToggle.click();
+      assert.match(await filterToggle.innerText(), /1 active/);
+      assert.equal(await page.getByTestId('button-reset-mapping-filters').isVisible(), true);
+      await page.getByTestId('button-reset-mapping-filters').click();
+      await page.getByTestId('text-mapping-count').filter({ hasText: 'of 3 Doctors' }).waitFor();
       await page.getByRole('tab', { name: 'MR-wise' }).click();
-      await measure('mr');
-      await page.getByRole('tab', { name: 'Doctor-wise' }).click();
-      await page.getByTestId('button-transfer-' + uid(3)).click();
+      const group1 = page.getByTestId('button-toggle-mapping-group-' + uid(1));
+      const group2 = page.getByTestId('button-toggle-mapping-group-' + uid(2));
+      assert.equal(await group1.getAttribute('aria-expanded'), 'false');
+      assert.equal(await group2.getAttribute('aria-expanded'), 'false');
+      assert.equal(await page.getByTestId('button-history-' + uid(3)).isVisible(), false);
+      await measure('mr-collapsed');
+      await page.getByTestId('checkbox-group-' + uid(1)).check();
+      assert.equal(await group1.getAttribute('aria-expanded'), 'false');
+      assert.match(await page.getByTestId('text-mapping-selected').innerText(), /2 selected/);
+      await page.getByTestId('checkbox-group-' + uid(1)).focus();
+      await page.keyboard.press('Shift+Tab');
+      assert.ok(await group1.evaluate((e) => e === document.activeElement && getComputedStyle(e).outlineStyle !== 'none'));
+      await page.keyboard.press('Space');
+      assert.equal(await group1.getAttribute('aria-expanded'), 'true');
+      assert.equal(await group2.getAttribute('aria-expanded'), 'false');
+      await group2.click();
+      assert.equal(await group1.getAttribute('aria-expanded'), 'true');
+      await measure('mr-expanded');
+      await group1.click();
+      assert.match(await page.getByTestId('text-mapping-selected').innerText(), /2 selected/);
+      const beforeDisclosure = await page.evaluate(() => window.__mappingInspectionRequests.length);
+      await filterToggle.click();
+      await filterToggle.click();
+      assert.equal(await page.evaluate(() => window.__mappingInspectionRequests.length), beforeDisclosure);
+      assert.match(await page.getByTestId('text-mapping-selected').innerText(), /2 selected/);
+      await page.getByTestId('button-transfer-selected').click();
+      assert.equal(await page.locator('[data-testid^="row-transfer-"]').count(), 2);
       await page.getByRole('combobox', { name: 'New MR', exact: true }).click();
       await page.getByRole('option').filter({ hasText: 'MR-002' }).click();
-      await page.getByTestId('input-mapping-transfer-reason').fill('MR no longer covers this Area. ' + long.repeat(6));
-      await measure('transfer');
-      await page.keyboard.press('Tab');
-      const trapped = await page.evaluate(() => !!document.activeElement.closest('[role="dialog"]'));
-      records.push({ width, theme, appearance, surface: 'dialog-keyboard', trapped });
+      await page.getByTestId('input-mapping-transfer-reason').fill('Synthetic inspection only; no write is allowed.');
+      assert.equal(await page.getByTestId('button-confirm-transfer').isEnabled(), false);
+      await page.getByTestId('checkbox-transfer-reviewed').check();
+      assert.equal(await page.getByTestId('button-confirm-transfer').isEnabled(), true);
       await page.keyboard.press('Escape');
-      records.push({ width, theme, appearance, surface: 'focus-return',
-        restored: await page.getByTestId('button-transfer-' + uid(3)).evaluate((e) => e === document.activeElement) });
-      await page.getByTestId('button-area-' + uid(3)).click();
-      await measure('area');
-      await page.keyboard.press('Escape');
-      await page.getByTestId('button-history-' + uid(3)).click();
-      await page.getByTestId('list-assignment-history').waitFor();
-      await measure('history');
-      await page.keyboard.press('Escape');
+      assert.ok(await page.getByTestId('button-transfer-selected').evaluate((e) => e === document.activeElement));
+      await page.getByTestId('button-clear-mapping-selection').click();
+      assert.equal(await page.getByTestId('text-mapping-selected').count(), 0);
+      // Inspect all six filter controls in both presentations using read-only fixtures.
+      if (width === 390 && theme === 'classic' && appearance === 'light') {
+        for (const view of ['doctor', 'mr']) {
+          await page.getByTestId('tab-mapping-' + view).click();
+          await filterToggle.click();
+          for (const [label, key, expected] of [
+            ['Doctor Area', 'area_id', uid(40)], ['Current MR HQ', 'headquarter_id', uid(40)],
+            ['Current MR Zone', 'zone_id', uid(40)], ['Current MR', 'mr_id', uid(1)], ['Doctor', 'doctor_id', uid(4)],
+          ]) {
+            await page.getByRole('combobox', { name: label, exact: true }).click();
+            await page.getByRole('option').filter({ hasText: label === 'Doctor' ? 'Doctor 4' : label === 'Current MR' ? 'MR-001' : 'Area / Parent HQ' }).click();
+            await page.waitForFunction(({ key, expected }) => window.__mappingInspectionRequests.at(-1)?.[key] === expected, { key, expected });
+          }
+          await page.getByTestId('select-mapping-status').selectOption('active');
+          await page.getByTestId('text-mapping-count').filter({ hasText: 'of 1 Doctors' }).waitFor();
+          await filterToggle.click();
+          assert.match(await filterToggle.innerText(), /6 active/);
+          await filterToggle.click();
+          await page.getByTestId('checkbox-filter-area-unset').check();
+          await page.waitForFunction(() => window.__mappingInspectionRequests.at(-1)?.area_id === 'unset');
+          await page.getByTestId('button-reset-mapping-filters').click();
+          await page.getByTestId('text-mapping-count').filter({ hasText: 'of 3 Doctors' }).waitFor();
+          assert.equal(await page.getByTestId('checkbox-filter-area-unset').isChecked(), false);
+          assert.equal(await page.getByTestId('select-mapping-status').inputValue(), 'all');
+          await filterToggle.click();
+        }
+        await page.getByRole('combobox', { name: 'Rows per page' }).selectOption('2');
+        await page.getByRole('button', { name: 'Next page', exact: true }).click();
+        await page.getByTestId('text-mapping-count').filter({ hasText: '3–3' }).waitFor();
+        await page.getByTestId('checkbox-group-' + uid(2)).check();
+        await filterToggle.click();
+        await filterToggle.click();
+        assert.match(await page.getByTestId('text-mapping-count').innerText(), /3–3/);
+        assert.match(await page.getByTestId('text-mapping-selected').innerText(), /1 selected/);
+        await page.getByRole('button', { name: 'Previous page', exact: true }).click();
+        await page.getByTestId('text-mapping-count').filter({ hasText: '1–2' }).waitFor();
+        assert.equal(await page.getByTestId('text-mapping-selected').count(), 0);
+        assert.equal(await page.getByTestId('checkbox-group-' + uid(1)).isChecked(), false);
+      }
       if (theme === 'classic' && appearance === 'light') {
         for (const state of ['empty', 'loading', 'error']) {
           await page.goto(`${origin}/admin/masters/doctor-mr-mapping?state=${state}`);
