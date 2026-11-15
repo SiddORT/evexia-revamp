@@ -1152,7 +1152,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const settlementVerification = resource === 'settlements' && /^\/transactions\/[0-9a-f-]{36}\/verify$/.test(path);
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
     || (writing && path !== '' && path !== '/count-tariffs' && !['/combinations/generate', '/combinations/save'].includes(path) && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
-    || (!writing && (path.endsWith('/edit') || path === '/count-tariffs' || ['/combinations/generate', '/combinations/save'].includes(path)))) {
+    || (!writing && (path.endsWith('/edit') || path === '/count-tariffs' || ['/combinations/generate', '/combinations/save'].includes(path))))) {
     throw new SessionError('Unsupported Pricing Rules configuration operation.');
   }
   if (resource === 'settlements' && writing !== (path === '/transactions' || settlementVerification)) {
