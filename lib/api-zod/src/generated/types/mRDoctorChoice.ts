@@ -8,7 +8,9 @@
 import type { MRDoctorChoiceStatus } from "./mRDoctorChoiceStatus";
 
 export interface MRDoctorChoice {
+  areaName?: string;
   doctorNumber: string;
+  hqName?: string;
   id: string;
   name: string;
   registrationNumber: string;

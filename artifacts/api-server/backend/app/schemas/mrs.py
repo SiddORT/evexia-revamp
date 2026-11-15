@@ -23,7 +23,10 @@ class MRFields(MasterWriteFields):
     userId: str = Field(min_length=3, max_length=32, pattern=r"^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$")
     email: str = Field(default="", max_length=320)
     contactRequirement: Literal["required", "optional"] = "required"
-    hq: uuid.UUID
+    hq: uuid.UUID | None = None
+    coverageScope: Literal["zone", "hq", "area"] | None = None
+    hqIds: list[uuid.UUID] | None = Field(default=None, max_length=1000)
+    areaIds: list[uuid.UUID] | None = Field(default=None, max_length=10000)
     zoneId: uuid.UUID
     zoneIds: list[uuid.UUID] | None = Field(default=None, min_length=1, max_length=10000)
     employeeCode: str = Field(min_length=1, max_length=64)
@@ -155,6 +158,8 @@ class MRDirectoryResponse(MRFields):
     master_read = True
     zoneIds: list[uuid.UUID]
     assignedZones: list["MRChoice"]
+    assignedHeadquarters: list["MRChoice"] = Field(default_factory=list)
+    assignedAreas: list["MRChoice"] = Field(default_factory=list)
     designationName: str = Field(json_schema_extra={"readOnly": True})
     id: uuid.UUID
     version: int
@@ -188,6 +193,7 @@ class MRPage(SearchSection):
 
 
 class MRChoice(BaseModel):
+    headquarterId: uuid.UUID | None = None
     userId: str | None = None
     id: uuid.UUID
     name: str
@@ -202,6 +208,8 @@ class MRDoctorChoice(BaseModel):
     registrationNumber: str
     status: Literal["active", "inactive"]
     zoneName: str
+    hqName: str = ""
+    areaName: str = ""
 
 
 class MRDoctorPage(BaseModel):

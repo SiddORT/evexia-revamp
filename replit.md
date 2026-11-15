@@ -175,6 +175,15 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+MR and Doctor territory responsibility uses explicit reviewed MR scope (whole
+Zone, whole selected HQs, or selected Areas only) and one exact Doctor
+Zone/HQ/Area. Missing legacy collections never imply broad responsibility.
+Territory affects assignment eligibility, not Doctor visibility; MR ownership
+and historical Patients/orders remain intact. Forward `0106` and its DDL-free
+staged join are prepared but unapplied here. No regression/release checks,
+workflow starts, runtime/browser probes or live writes were run for this work.
+See `docs/territory-assignments.md`.
+
 Pricing Rules now uses the protected **Combination Pricing Master**: Product
 Category → saved eligible allergens with read-only Mix/No Mix → canonical
 PD/DD/B1–B8 dosage → individual/pair/triple. Specific member/dosage rates are

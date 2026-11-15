@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Copy, Eye, EyeOff } from 'lucide-react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
-import MRZoneMultiSelect from './MRZoneMultiSelect.jsx';
+import MRCoverageFields from './MRCoverageFields.jsx';
 import MRFormCombobox from './MRFormCombobox.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
@@ -15,10 +15,10 @@ import { presentMasterFailure } from '../../services/masterValidation.js';
 const OPTIONAL = new Set(['phone', 'email', 'reportingManagerId', 'reportingStaffId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
   { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'password', 'confirmPassword'] },
-  { id: 'assignment', label: 'Assignment & work', fields: ['zoneId', 'zoneIds', 'hq', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
+  { id: 'assignment', label: 'Assignment & work', fields: ['zoneId', 'zoneIds', 'hq', 'hqIds', 'areaIds', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
-const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)].filter((key) => key !== 'contactRequirement');
+const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6, 8), 'hqIds', 'areaIds', ...FIELDS.slice(8)].filter((key) => key !== 'contactRequirement');
 const STATUS_CHOICES = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
@@ -31,8 +31,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [zonesPending, setZonesPending] = useState(false);
-  const warnings = { deleted: [] };
+  const [coveragePending, setCoveragePending] = useState(false);
   const [activeTab, setActiveTab] = useState('identity');
   const formRef = useRef(null);
   const tabRefs = useRef([]);
@@ -205,13 +204,13 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (saving || zonesPending) return;
-    const cleaned = Object.fromEntries(FIELDS.map((key) => [key, key === 'zoneIds' ? [...values[key]] : values[key].trim()]));
+    if (saving || coveragePending) return;
+    const cleaned = { ...Object.fromEntries(FIELDS.map((key) => [key, key === 'zoneIds' ? [...values[key]] : values[key].trim()])),
+      coverageScope: values.coverageScope, hqIds: [...values.hqIds], areaIds: [...values.areaIds] };
     const nextErrors = validateMRValues(cleaned, {
       creating: !mr, password: credentials?.password || '', confirm: credentials?.confirmPassword || '',
     });
     if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
-    if (mr && warnings.deleted.length) nextErrors.zoneId = nextErrors.zoneId || '';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       const first = ORDER.find((key) => nextErrors[key]);
@@ -273,11 +272,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           <section className="mr-form__section" id="mr-panel-assignment" role="tabpanel" aria-labelledby="mr-tab-assignment" tabIndex={0} hidden={activeTab !== 'assignment'}>
             <div className="mr-form__section-head"><h3 id="mr-assignment-title" className="mr-form__section-title">Assignment & work</h3></div>
             <div className="mr-form__grid">
-              {renderField('zoneId', 'Assigned zone', { info: 'Select one or more zones. Primary remains unchanged while selected and is the single zone shown in Doctor, Patient and Sales Target. Saved inactive zones may be kept; remove deleted zones explicitly. Select all adds every currently active saved zone, not future zones.', customControl: <MRZoneMultiSelect id="mr-zoneId" values={values.zoneIds} primary={values.zoneId}
-                savedChoices={mr?.assignedZones || (mr?.zoneId ? [{ id: mr.zoneId, name: mr.zoneName }] : [])}
-                onChange={(zoneIds) => patchAddress({ zoneIds, zoneId: zoneIds.includes(mr?.zoneId) ? mr.zoneId : zoneIds.includes(values.zoneId) ? values.zoneId : zoneIds[0] || '' })}
-                onBusyChange={setZonesPending} disabled={saving} invalid={Boolean(errors.zoneId)} describedBy={errors.zoneId ? 'mr-zoneId-error' : undefined} /> })}
-               {renderField('hq', 'HQ', { customControl: <MRReferenceSelect id="mr-hq" kind="headquarters" label="HQ" value={values.hq} savedName={mr?.hqName} onChange={(v) => change('hq', v)} placeholder="Select a headquarter" invalid={Boolean(errors.hq)} describedBy={errors.hq ? 'mr-hq-error' : undefined} required emptyGuidance="No headquarters exist yet. Add one in Headquarter Master first." /> })}
+              <MRCoverageFields mr={mr} values={values} patch={patchAddress} errors={errors} disabled={saving} onBusyChange={setCoveragePending} />
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
               {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}
@@ -310,7 +305,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         <div className="mr-form__footer">
           <div className="mr-form__actions">
             <button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-mr">Cancel</button>
-            <button type="submit" className="admin-button" disabled={saving || zonesPending} data-testid="button-save-mr">{saving ? 'Saving…' : mr ? 'Save changes' : 'Add MR and create login'}</button>
+            <button type="submit" className="admin-button" disabled={saving || coveragePending} data-testid="button-save-mr">{saving ? 'Saving…' : mr ? 'Save changes' : 'Add MR and create login'}</button>
           </div>
         </div>
       </form>

@@ -8,6 +8,7 @@
 
 export interface MRChoice {
   deleted?: boolean;
+  headquarterId?: string | null;
   id: string;
   name: string;
   status: string;

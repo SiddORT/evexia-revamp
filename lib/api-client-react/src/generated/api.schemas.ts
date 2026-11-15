@@ -1531,6 +1531,7 @@ export interface DoctorEdit {
   addressLine2?: string;
   /** @maxLength 20 */
   alternatePhone?: string;
+  areaId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -1559,6 +1560,7 @@ export interface DoctorEdit {
   expected_version: number;
   /** @maxLength 20 */
   gstNumber?: string;
+  hqId?: string | null;
   invoiceType?: DoctorEditInvoiceType;
   /**
    * @minLength 1
@@ -1597,6 +1599,7 @@ export interface DoctorEdit {
    */
   state: string;
   status?: DoctorEditStatus;
+  zoneId?: string | null;
 }
 
 export type DoctorFieldsContactRequirement =
@@ -1884,6 +1887,7 @@ export interface DoctorFields {
   addressLine2?: string;
   /** @maxLength 20 */
   alternatePhone?: string;
+  areaId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -1910,6 +1914,7 @@ export interface DoctorFields {
   email?: string;
   /** @maxLength 20 */
   gstNumber?: string;
+  hqId?: string | null;
   invoiceType?: DoctorFieldsInvoiceType;
   /**
    * @minLength 1
@@ -1948,6 +1953,7 @@ export interface DoctorFields {
    */
   state: string;
   status?: DoctorFieldsStatus;
+  zoneId?: string | null;
 }
 
 export type DoctorFiltersHeadquartersItem = { [key: string]: string };
@@ -2268,6 +2274,8 @@ export interface DoctorResponse {
   addressLine2?: string;
   /** @maxLength 20 */
   alternatePhone?: string;
+  areaId?: string | null;
+  areaName?: string;
   assignmentWarnings: string[];
   /**
    * @minLength 1
@@ -2298,6 +2306,8 @@ export interface DoctorResponse {
   email?: string;
   /** @maxLength 20 */
   gstNumber?: string;
+  hqId?: string | null;
+  hqName?: string;
   id: string;
   invoiceType?: DoctorResponseInvoiceType;
   /**
@@ -5682,6 +5692,7 @@ export interface LupinUploadCancellation {
 
 export interface MRChoice {
   deleted?: boolean;
+  headquarterId?: string | null;
   id: string;
   name: string;
   status: string;
@@ -5723,6 +5734,15 @@ export type MRCreateContactRequirement =
 export const MRCreateContactRequirement = {
   required: "required",
   optional: "optional",
+} as const;
+
+export type MRCreateCoverageScope =
+  (typeof MRCreateCoverageScope)[keyof typeof MRCreateCoverageScope] | null;
+
+export const MRCreateCoverageScope = {
+  zone: "zone",
+  hq: "hq",
+  area: "area",
 } as const;
 
 export type MRCreateDialCountry =
@@ -5992,6 +6012,7 @@ export interface MRCreate {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  areaIds?: string[] | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -6003,6 +6024,7 @@ export interface MRCreate {
    * @maxLength 100
    */
   country: string;
+  coverageScope?: MRCreateCoverageScope;
   dateOfJoining: string;
   designation_id: string;
   dialCountry?: MRCreateDialCountry;
@@ -6018,7 +6040,8 @@ export interface MRCreate {
    * @maxLength 64
    */
   employeeCode: string;
-  hq: string;
+  hq?: string | null;
+  hqIds?: string[] | null;
   initialPassword?: string | null;
   /**
    * @minLength 1
@@ -6059,6 +6082,16 @@ export type MRDirectoryResponseContactRequirement =
 export const MRDirectoryResponseContactRequirement = {
   required: "required",
   optional: "optional",
+} as const;
+
+export type MRDirectoryResponseCoverageScope =
+  | (typeof MRDirectoryResponseCoverageScope)[keyof typeof MRDirectoryResponseCoverageScope]
+  | null;
+
+export const MRDirectoryResponseCoverageScope = {
+  zone: "zone",
+  hq: "hq",
+  area: "area",
 } as const;
 
 export type MRDirectoryResponseDialCountry =
@@ -6328,6 +6361,9 @@ export interface MRDirectoryResponse {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  areaIds?: string[] | null;
+  assignedAreas?: MRChoice[];
+  assignedHeadquarters?: MRChoice[];
   assignedZones: MRChoice[];
   assignmentWarnings: string[];
   /**
@@ -6341,6 +6377,7 @@ export interface MRDirectoryResponse {
    * @maxLength 100
    */
   country: string;
+  coverageScope?: MRDirectoryResponseCoverageScope;
   createdAt: string;
   createdBy: string;
   dateOfJoining: string;
@@ -6359,7 +6396,8 @@ export interface MRDirectoryResponse {
    * @maxLength 64
    */
   employeeCode: string;
-  hq: string;
+  hq?: string | null;
+  hqIds?: string[] | null;
   hqName: string;
   id: string;
   /**
@@ -6416,7 +6454,9 @@ export const MRDoctorChoiceStatus = {
 } as const;
 
 export interface MRDoctorChoice {
+  areaName?: string;
   doctorNumber: string;
+  hqName?: string;
   id: string;
   name: string;
   registrationNumber: string;
@@ -6822,6 +6862,8 @@ export interface MRDoctorRead {
   addressLine1: string;
   addressLine2: string;
   alternatePhoneDisplay: string;
+  areaId?: string | null;
+  areaName?: string;
   assignmentWarnings: string[];
   city: string;
   clinicName: string;
@@ -6836,6 +6878,8 @@ export interface MRDoctorRead {
   drugLicenceNumber: string;
   emailDisplay: string;
   gstNumber: string;
+  hqId?: string | null;
+  hqName?: string;
   id: string;
   invoiceType: MRDoctorReadInvoiceType;
   landmark: string;
@@ -6884,6 +6928,15 @@ export type MREditContactRequirement =
 export const MREditContactRequirement = {
   required: "required",
   optional: "optional",
+} as const;
+
+export type MREditCoverageScope =
+  (typeof MREditCoverageScope)[keyof typeof MREditCoverageScope] | null;
+
+export const MREditCoverageScope = {
+  zone: "zone",
+  hq: "hq",
+  area: "area",
 } as const;
 
 export type MREditDialCountry =
@@ -7152,6 +7205,7 @@ export interface MREdit {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  areaIds?: string[] | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -7163,6 +7217,7 @@ export interface MREdit {
    * @maxLength 100
    */
   country: string;
+  coverageScope?: MREditCoverageScope;
   dateOfJoining: string;
   designation_id: string;
   dialCountry?: MREditDialCountry;
@@ -7180,7 +7235,8 @@ export interface MREdit {
   employeeCode: string;
   /** @minimum 1 */
   expected_version: number;
-  hq: string;
+  hq?: string | null;
+  hqIds?: string[] | null;
   /**
    * @minLength 1
    * @maxLength 200
@@ -11082,7 +11138,7 @@ export interface RoleVersion {
 
 export interface SalesTargetMRChoice {
   employeeCode: string;
-  headquarterId: string;
+  headquarterId: string | null;
   headquarterName: string;
   id: string;
   name: string;
@@ -11200,7 +11256,7 @@ export interface SalesTargetResponse {
    * @maximum 9999
    */
   endYear: number;
-  headquarterId: string;
+  headquarterId: string | null;
   headquarterName: string;
   id: string;
   mrId: string;
@@ -14848,6 +14904,10 @@ export type ListDoctorMRChoicesParams = {
   offset?: number;
   include_saved?: string | null;
   cursor?: string | null;
+  zone_id?: string | null;
+  hq_id?: string | null;
+  area_id?: string | null;
+  assignment_only?: boolean;
 };
 
 export type DownloadDoctorSampleParams = {
@@ -18187,3 +18247,69 @@ export type GetCombinationRuleStatusHistoryParams = {
    */
   limit?: number;
 };
+
+export type ListDoctorTerritoryChoicesParams = {
+  kind: ListDoctorTerritoryChoicesKind;
+  zone_id?: string | null;
+  /**
+   * @maxLength 37000
+   */
+  hq_ids?: string;
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_saved?: string | null;
+};
+
+export type ListDoctorTerritoryChoicesKind =
+  (typeof ListDoctorTerritoryChoicesKind)[keyof typeof ListDoctorTerritoryChoicesKind];
+
+export const ListDoctorTerritoryChoicesKind = {
+  zones: "zones",
+  headquarters: "headquarters",
+  areas: "areas",
+} as const;
+
+export type ListMRTerritoryChoicesParams = {
+  kind: ListMRTerritoryChoicesKind;
+  zone_id?: string | null;
+  /**
+   * @maxLength 37000
+   */
+  hq_ids?: string;
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_saved?: string | null;
+};
+
+export type ListMRTerritoryChoicesKind =
+  (typeof ListMRTerritoryChoicesKind)[keyof typeof ListMRTerritoryChoicesKind];
+
+export const ListMRTerritoryChoicesKind = {
+  zones: "zones",
+  headquarters: "headquarters",
+  areas: "areas",
+} as const;

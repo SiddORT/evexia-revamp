@@ -22,6 +22,8 @@ export interface MRDoctorRead {
   addressLine1: string;
   addressLine2: string;
   alternatePhoneDisplay: string;
+  areaId?: string | null;
+  areaName?: string;
   assignmentWarnings: string[];
   city: string;
   clinicName: string;
@@ -36,6 +38,8 @@ export interface MRDoctorRead {
   drugLicenceNumber: string;
   emailDisplay: string;
   gstNumber: string;
+  hqId?: string | null;
+  hqName?: string;
   id: string;
   invoiceType: MRDoctorReadInvoiceType;
   landmark: string;

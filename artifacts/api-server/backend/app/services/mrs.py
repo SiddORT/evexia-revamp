@@ -195,13 +195,17 @@ def projection_context(db, rows, manager_accounts=False):
 def projection(db, row, context=None):
     context = projection_context(db, [row]) if context is None else context
     username = context["accounts"][row.id].username
-    hq = context["headquarters"][row.hq]
+    hq = context["headquarters"].get(row.hq)
     designation = context["designations"][row.designation_id]
     manager = context["managers"].get(row.reportingManagerId)
     staff_manager = context["staff_managers"].get(row.reportingStaffId)
     created_by = context["labels"].get(row.created_by, "Backend user")
     updated_by = context["labels"].get(row.updated_by, "Backend user")
     warnings = []
+    from app.services import territories
+    from app.db.headquarter_models import HeadquarterArea
+    if row.coverageScope is None:
+        warnings.append("Legacy territory: responsibility has not been reviewed. Missing HQ/Area collections do not authorize broad coverage.")
     members = context["assignments"][row.id]
     assigned = [dict(id=member.zone_id, name=member.zone_name,
                      status=context["zones"][member.zone_id].status,
@@ -219,6 +223,8 @@ def projection(db, row, context=None):
     values["zoneIds"] = [member.zone_id for member in members]
     return dict(**values, userId=username, id=row.id, version=row.version,
                 assignedZones=assigned,
+                assignedHeadquarters=territories.labels(db, Headquarter, row.hqIds),
+                assignedAreas=territories.labels(db, HeadquarterArea, row.areaIds),
                 hqName=row.hq_name, zoneName=row.zone_name, designationName=designation.name,
                 reportingManagerName=row.reporting_manager_name or "", assignmentWarnings=warnings,
                 reportingStaffName=row.reporting_staff_name or "",
@@ -321,13 +327,17 @@ def associated_doctors(db, actor, record_id, limit, offset):
     def work():
         authorize(db, actor, lock=False)
         row = find(db, record_id)
-        zone = db.get(Zone, row.zoneId)
         clauses = [DoctorDirectory.mrId == row.id, DoctorDirectory.deleted_at.is_(None)]
         count = db.scalar(select(func.count()).select_from(DoctorDirectory).where(*clauses))
         rows = db.scalars(select(DoctorDirectory).where(*clauses)
                           .order_by(DoctorDirectory.id).limit(limit).offset(offset))
+        from app.db.headquarter_models import HeadquarterArea
+        def location_label(model, key):
+            target = db.get(model, key) if key else None
+            return target.name if target else ""
         result = dict(items=[dict(id=item.id, name=item.name, doctorNumber=item.doctorNumber, registrationNumber=item.registrationNumber,
-                                  status=item.status, zoneName=zone.name if zone and not zone.deleted_at else "")
+                                  status=item.status, zoneName=location_label(Zone, item.zoneId),
+                                  hqName=location_label(Headquarter, item.hqId), areaName=location_label(HeadquarterArea, item.areaId))
                              for item in rows], total=count, filtered=count, limit=limit, offset=offset)
         db.commit()
         return result
@@ -428,6 +438,8 @@ def graph_lock(db):
 
 
 def validate_assignments(db, body, existing=None, batch=None):
+    from app.services.territories import mr_scope
+    scope, _, _ = mr_scope(db, body, existing)
     if body.reportingStaffId and body.reportingManagerId:
         raise MRError("Choose a Staff manager or retain the legacy MR assignment, not both.",
                       422, "mr_assignment")
@@ -447,7 +459,7 @@ def validate_assignments(db, body, existing=None, batch=None):
                       409, "mr_assignment")
     if target.status != "active" and (existing is None or existing.designation_id != target.id):
         raise MRError("New designation assignments must be active.", 409, "mr_assignment")
-    for field, model, title in (("hq", Headquarter, "Headquarter"),):
+    for field, model, title in (() if scope else (("hq", Headquarter, "Headquarter"),)):
         target = db.get(model, getattr(body, field))
         if not target or target.deleted_at:
             raise MRError(f"{title} is missing or deleted. Set up an active {title.lower()} and explicitly select it.", 409, "mr_assignment")
@@ -564,7 +576,12 @@ def insert(db, actor, body, prepared, profile_id=None):
     db.add(profile)
     db.flush()
     ids, primary, _ = selected_zones(db, body)
+    from app.services.territories import mr_scope
+    scope, hqs, areas = mr_scope(db, body)
     values = body.model_dump(exclude={"userId", "initialPassword", "expected_version", "zoneIds"})
+    values.update(coverageScope=scope, hqIds=hqs, areaIds=areas)
+    if scope:
+        values["hq"] = hqs[0] if hqs else None
     values["zoneId"] = primary
     now = utcnow()
     row = MRDirectory(id=profile.id, **values, created_by=actor.user.id, updated_by=actor.user.id,
@@ -577,6 +594,8 @@ def insert(db, actor, body, prepared, profile_id=None):
 
 
 def create(db, actor, body):
+    if body.coverageScope is None:
+        raise MRError("Review one Zone and explicitly choose the MR responsibility scope.", 422, "mr_assignment")
     # Fail fast before expensive hashing, then revalidate all conflicts afterwards.
     def preflight():
         authorize(db, actor, provision=True)
@@ -646,12 +665,21 @@ def mutate(db, actor, record_id, body, operation):
                 # Retain exact historical casing as well as the reservation.
                 edit_body = edit_body.model_copy(update={"userId": user.username})
             previous = {field: getattr(row, field) for field in ("hq", "zoneId", "reportingManagerId", "reportingStaffId")}
+            from app.services.territories import mr_scope
+            scope, hqs, areas = mr_scope(db, edit_body, row)
+            if row.coverageScope is None and scope is None:
+                old_ids = [member.zone_id for member in zone_members(db, [row])[row.id]]
+                if edit_body.zoneId != row.zoneId or (edit_body.zoneIds is not None and edit_body.zoneIds != old_ids) or edit_body.hq != row.hq:
+                    raise MRError("Explicitly review and adopt territory responsibility before changing legacy Zone/HQ assignments.", 409, "mr_assignment")
             validate_assignments(db, edit_body, row)
             ids, primary, saved = selected_zones(db, edit_body, row)
             identifiers_available(db, edit_body, user.id, row.id)
             revoke = user.username != edit_body.userId or (user.email or "") != edit_body.email or row.status != edit_body.status
-            for key, value in edit_body.model_dump(exclude={"expected_version", "userId", "zoneIds", "zoneId"}).items():
+            for key, value in edit_body.model_dump(exclude={"expected_version", "userId", "zoneIds", "zoneId", "coverageScope", "hqIds", "areaIds"}).items():
                 setattr(row, key, value)
+            row.coverageScope, row.hqIds, row.areaIds = scope, hqs, areas
+            if scope:
+                row.hq = hqs[0] if hqs else None
             row.zoneId = primary
             from app.services.reference_snapshots import capture_mr
             capture_mr(db, row, previous)

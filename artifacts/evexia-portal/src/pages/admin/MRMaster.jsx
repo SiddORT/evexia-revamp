@@ -28,6 +28,11 @@ const STATUS_OPTIONS = [{ value: 'active', label: 'Active' }, { value: 'inactive
 const zoneLabels = (record) => record.assignedZones?.length
   ? record.assignedZones.map((zone) => `${zone.name}${zone.id === record.zoneId ? ' (primary)' : ''}${zone.deleted ? ' (deleted)' : zone.status === 'inactive' ? ' (inactive)' : ''}`).join(', ')
   : record.zoneName;
+const names = (rows = []) => rows.map((row) => `${row.name}${row.deleted ? ' (deleted)' : row.status === 'inactive' ? ' (inactive)' : ''}`).join(', ');
+const coverage = (record) => record.coverageScope == null ? `Legacy: ${record.hqName || 'no HQ'} / ${zoneLabels(record) || 'no Zone'}`
+  : record.coverageScope === 'zone' ? `${record.zoneName} · Entire Zone`
+    : record.coverageScope === 'hq' ? `${record.zoneName} · Entire HQs: ${names(record.assignedHeadquarters)}`
+      : `${record.zoneName} · HQs: ${names(record.assignedHeadquarters)} · Selected Areas only: ${names(record.assignedAreas)}`;
 function auditDetails(name, value) {
   return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formatAdminTimestamp(value)}</time></span>;
 }
@@ -157,7 +162,7 @@ export default function MRMaster() {
     { key: 'address', label: 'Address', render: address },
     { key: 'designationName', label: 'Designation', render: (r) => r.designationName },
     { key: 'manager', label: 'Reporting manager', render: (r) => r.reportingStaffName || (r.reportingManagerName ? `${r.reportingManagerName} (legacy MR)` : '—') },
-    { key: 'zone', label: 'HQ / zones', render: (r) => <span>{r.hqName} / {zoneLabels(r)}{warn(r)}</span> },
+    { key: 'zone', label: 'Coverage', render: (r) => <span>{coverage(r)}{warn(r)}</span> },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="mr" /> },
     { key: 'created', label: 'Created details', render: (r) => auditDetails(r.createdBy, r.createdAt) },
     { key: 'updated', label: 'Updated details', render: (r) => auditDetails(r.updatedBy, r.updatedAt) },
@@ -199,7 +204,7 @@ export default function MRMaster() {
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="MR records" testIdPrefix="mr" /></div>
           <div className="admin-mr-mobile" role="list" aria-label="MR records">{data.items.map((r) => <article className="admin-record-card" role="listitem" key={r.id} data-testid={`card-mr-${r.id}`}>
             <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.designationName}</small></div><StatusBadge status={r.status} id={r.id} kind="mr" /></div>
-            <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingStaffName || (r.reportingManagerName ? `${r.reportingManagerName} (legacy MR)` : '—')}</dd></div><div><dt>HQ / zones</dt><dd>{r.hqName} / {zoneLabels(r)}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
+            <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingStaffName || (r.reportingManagerName ? `${r.reportingManagerName} (legacy MR)` : '—')}</dd></div><div><dt>Coverage</dt><dd>{coverage(r)}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
             {actions(r, true)}</article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{data.total ? 'No matching MRs' : 'No MR records yet'}</strong><p>{data.total ? 'Try different search or filters.' : 'Add an MR, or import a file. Headquarters and zones must exist first.'}</p></div>}
         {data.partial ? <DirectorySearchStatus count={data.items.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={loading} onNext={() => continuation.next(data)} onRestart={() => { continuation.restart(); setRevision((n) => n + 1); }} /> : <TablePagination {...pagination} filtered={data.filtered} total={data.total} label={data.total === 1 ? 'MR' : 'MRs'} onPageChange={setPage} onPageSizeChange={pagination.setPageSize} testId="text-mr-count" />}

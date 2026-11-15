@@ -300,6 +300,7 @@ import type {
   ListDesignationsParams,
   ListDoctorDirectoryParams,
   ListDoctorMRChoicesParams,
+  ListDoctorTerritoryChoicesParams,
   ListDownloadLogsParams,
   ListHeadquarterZoneChoicesParams,
   ListHeadquartersParams,
@@ -320,6 +321,7 @@ import type {
   ListMRDirectoryParams,
   ListMRDoctorSavedOrdersParams,
   ListMRReferenceChoicesParams,
+  ListMRTerritoryChoicesParams,
   ListOpeningBalancesParams,
   ListOpeningStockParams,
   ListOrderDraftsParams,
@@ -50073,6 +50075,215 @@ export function useGetCombinationRuleStatusHistory<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListDoctorTerritoryChoicesUrl = (
+  params: ListDoctorTerritoryChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/territory-choices?${stringifiedParams}`
+    : `/api/v1/admin/doctors/territory-choices`;
+};
+
+/**
+ * @summary Territory References
+ */
+export const listDoctorTerritoryChoices = async (
+  params: ListDoctorTerritoryChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRChoices> => {
+  return customFetch<MRChoices>(getListDoctorTerritoryChoicesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDoctorTerritoryChoicesQueryKey = (
+  params?: ListDoctorTerritoryChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/territory-choices`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDoctorTerritoryChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDoctorTerritoryChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListDoctorTerritoryChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorTerritoryChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDoctorTerritoryChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDoctorTerritoryChoices>>
+  > = ({ signal }) =>
+    listDoctorTerritoryChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDoctorTerritoryChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDoctorTerritoryChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDoctorTerritoryChoices>>
+>;
+export type ListDoctorTerritoryChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Territory References
+ */
+
+export function useListDoctorTerritoryChoices<
+  TData = Awaited<ReturnType<typeof listDoctorTerritoryChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListDoctorTerritoryChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorTerritoryChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDoctorTerritoryChoicesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListMRTerritoryChoicesUrl = (
+  params: ListMRTerritoryChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/territory-choices?${stringifiedParams}`
+    : `/api/v1/admin/mrs/territory-choices`;
+};
+
+/**
+ * @summary Territory References
+ */
+export const listMRTerritoryChoices = async (
+  params: ListMRTerritoryChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRChoices> => {
+  return customFetch<MRChoices>(getListMRTerritoryChoicesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMRTerritoryChoicesQueryKey = (
+  params?: ListMRTerritoryChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/mrs/territory-choices`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListMRTerritoryChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMRTerritoryChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListMRTerritoryChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRTerritoryChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMRTerritoryChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMRTerritoryChoices>>
+  > = ({ signal }) =>
+    listMRTerritoryChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMRTerritoryChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMRTerritoryChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMRTerritoryChoices>>
+>;
+export type ListMRTerritoryChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Territory References
+ */
+
+export function useListMRTerritoryChoices<
+  TData = Awaited<ReturnType<typeof listMRTerritoryChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListMRTerritoryChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRTerritoryChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMRTerritoryChoicesQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

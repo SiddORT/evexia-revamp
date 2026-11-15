@@ -10,6 +10,9 @@ from app.db.models import Timestamps
 class DoctorDirectory(Timestamps, Base):
     __tablename__ = "doctor_directory"
     __table_args__ = (
+        CheckConstraint('("zoneId" IS NULL AND "hqId" IS NULL AND "areaId" IS NULL) OR '
+                        '("zoneId" IS NOT NULL AND "hqId" IS NOT NULL AND "areaId" IS NOT NULL)',
+                        name="ck_doctor_location_complete"),
         CheckConstraint("version >= 1", name="ck_doctor_version"),
         CheckConstraint("status IN ('active','inactive')", name="ck_doctor_status"),
         CheckConstraint("verification IN ('verified','unverified')", name="ck_doctor_verification"),
@@ -22,6 +25,9 @@ class DoctorDirectory(Timestamps, Base):
     contactRequirement: Mapped[str] = mapped_column(String(8))
     registrationNumber: Mapped[str] = mapped_column(String(100))
     mrId: Mapped[uuid.UUID] = mapped_column(ForeignKey("mr_directory.id"), index=True)
+    zoneId: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("zones.id"), index=True)
+    hqId: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("headquarters.id"), index=True)
+    areaId: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("headquarter_areas.id"), index=True)
     invoiceType: Mapped[str] = mapped_column(String(6))
     orderDiscount: Mapped[Decimal] = mapped_column(Numeric(5, 2))
     daysLimit: Mapped[int] = mapped_column(Integer)

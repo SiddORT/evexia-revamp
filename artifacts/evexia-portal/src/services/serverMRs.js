@@ -23,6 +23,11 @@ export const resolveMRAccount = (username, signal) => mrRequest(`/account/${user
 export const resolveCreatedMR = (employeeCode, signal) => mrRequest('/created', { params: { employee_code: employeeCode }, signal });
 export const mrReferences = (kind, { query = '', limit = 100, offset = 0, cursor, includeSaved, activeOnly } = {}, signal) =>
    mrRequest('/references', { params: clean({ kind, query, limit, offset, cursor, include_saved: includeSaved, active_only: activeOnly }), signal });
+// Strictly parent-scoped MR coverage choices: kind zones | headquarters | areas.
+export const mrTerritoryChoices = (kind, { query = '', limit = 100, offset = 0, includeSaved, zoneId, hqIds } = {}, signal) =>
+  mrRequest('/territory-choices', { params: clean({ kind, query: query || undefined, limit: Math.min(limit, 100), offset, include_saved: includeSaved, zone_id: zoneId, hq_ids: hqIds?.length ? hqIds.join(',') : undefined }), signal });
+export const COVERAGE_LABEL = { zone: 'Entire Zone', hq: 'Entire selected HQs', area: 'Selected Areas only' };
+export const coverageScopeOf = (values) => values.areaIds?.length ? 'area' : values.hqIds?.length ? 'hq' : 'zone';
 export const generateMRUsername = (signal) => mrRequest('/username', { signal });
 export const lookupPincode = (pin, signal, action = 'add') => mrRequest(`/postal/${pin}`, { signal, params: { action } });
 export const createMR = (values, initialPassword) => {
@@ -44,7 +49,7 @@ export function downloadMRFile(blob, format, sample = false) {
 }
 
 export function emptyMRValues(mr) {
-  return Object.fromEntries(MR_FIELDS.map((key) => [key,
+  return { ...territoryValues(mr), ...Object.fromEntries(MR_FIELDS.map((key) => [key,
     key === 'zoneIds' ? [...(mr?.zoneIds || (mr?.zoneId ? [mr.zoneId] : []))]
       : key === 'dialCountry' ? (mr?.dialCountry || 'IN')
       : key === 'contactRequirement' ? (mr?.contactRequirement || 'required')
@@ -53,7 +58,17 @@ export function emptyMRValues(mr) {
       : key === 'paymentLimit' ? (mr ? String(mr.paymentLimit ?? '0.00') : '')
       : key === 'doctorDaysLimit' ? (mr ? String(mr.doctorDaysLimit ?? 0) : '')
       : key === 'dateOfJoining' ? String(mr?.[key] ?? '').slice(0, 10)
-      : String(mr?.[key] ?? '')]));
+      : String(mr?.[key] ?? '')])) };
+}
+
+// New MRs default to explicit scope with deliberately empty HQs/Areas. Saved
+// records keep coverageScope null (legacy) until the user explicitly adopts.
+function territoryValues(mr) {
+  return {
+    coverageScope: mr ? (mr.coverageScope ?? null) : 'zone',
+    hqIds: [...(mr?.hqIds || [])],
+    areaIds: [...(mr?.areaIds || [])],
+  };
 }
 
 function istToday() {
@@ -63,18 +78,24 @@ function istToday() {
 export function validateMRValues(values, { creating, password = '', confirm = '' } = {}) {
   values = normalizedValues(values);
   const errors = {};
-  const required = ['name', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
+  const explicit = values.coverageScope !== null;
+  const required = ['name', ...(explicit ? [] : ['hq']), 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
   if (!creating) required.push('userId');
   if (!values.phone && !values.email) {
     errors.phone = errors.email = 'Enter either a phone number or an email address.';
   }
   required.forEach((key) => { if (!values[key].trim()) errors[key] = 'This field is required.'; });
-  if (!values.zoneIds.length || values.zoneIds.length > 10000 || values.zoneIds.some((id) => !UUID_PATTERN.test(id))) errors.zoneId = 'Select between 1 and 10,000 saved zones.';
+  if (explicit) {
+    if (!values.zoneId) errors.zoneId = 'Select exactly one Zone.';
+    if (values.hqIds.some((id) => !UUID_PATTERN.test(id)) || new Set(values.hqIds).size !== values.hqIds.length) errors.hqIds = 'Select distinct saved headquarters.';
+    if (values.areaIds.some((id) => !UUID_PATTERN.test(id)) || new Set(values.areaIds).size !== values.areaIds.length) errors.areaIds = 'Select distinct saved areas.';
+    if (values.areaIds.length && !values.hqIds.length) errors.areaIds = 'Areas require at least one selected HQ.';
+  } else if (!values.zoneIds.length || values.zoneIds.length > 10000 || values.zoneIds.some((id) => !UUID_PATTERN.test(id))) errors.zoneId = 'Select between 1 and 10,000 saved zones.';
   for (const [key, max] of Object.entries(MAX_LENGTH)) if (textLength(values[key]) > max) errors[key] = `Use at most ${max} characters.`;
-  for (const key of MR_FIELDS) if (key !== 'name' && /\p{C}/u.test(values[key])) errors[key] = 'Control and invisible characters are not permitted.';
+  for (const key of MR_FIELDS) if (key !== 'name' && key !== 'zoneIds' && /\p{C}/u.test(values[key])) errors[key] = 'Control and invisible characters are not permitted.';
   const nameError = masterNameError(values.name, 'MR name', { personal: true });
   if (nameError) errors.name = nameError;
-  if (new Set(values.zoneIds).size !== values.zoneIds.length || !values.zoneIds.includes(values.zoneId)) errors.zoneId = 'Select distinct zones and include the primary zone.';
+  if (!explicit && (new Set(values.zoneIds).size !== values.zoneIds.length || !values.zoneIds.includes(values.zoneId))) errors.zoneId = 'Select distinct zones and include the primary zone.';
    if (!dialCountry(values.dialCountry)) errors.dialCountry = 'Choose a supported phone country.';
    if (values.phone && normalizePhone(values.phone, values.dialCountry, 'mr') === null) errors.phone = 'Enter a valid phone number for the selected country.';
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
@@ -109,6 +130,10 @@ export function payloadFromValues(values) {
     reportingStaffId: trimmed.reportingStaffId || null,
     paymentLimit: trimmed.paymentLimit === '' ? '0.00' : /^\d{1,9}(?:\.\d{1,2})?$/.test(trimmed.paymentLimit) ? roundRate(trimmed.paymentLimit) : trimmed.paymentLimit,
     doctorDaysLimit: trimmed.doctorDaysLimit === '' ? 0 : Number(trimmed.doctorDaysLimit),
+    ...(trimmed.coverageScope === null
+      // Legacy: preserve scope=null and every saved zone; never collapse.
+      ? { coverageScope: null, hqIds: trimmed.hqIds, areaIds: trimmed.areaIds, hq: trimmed.hq || null }
+      : { coverageScope: coverageScopeOf(trimmed), zoneIds: [trimmed.zoneId], hqIds: trimmed.hqIds, areaIds: trimmed.areaIds, hq: trimmed.hqIds[0] || null }),
   };
 }
 
@@ -119,5 +144,8 @@ function normalizedValues(values) {
   normalized.name = normalizeMasterName(normalized.name);
   normalized.email = normalized.email.toLowerCase();
   normalized.dialCountry = String(values.dialCountry || 'IN');
+  normalized.coverageScope = values.coverageScope === undefined ? null : values.coverageScope;
+  normalized.hqIds = [...(values.hqIds || [])];
+  normalized.areaIds = [...(values.areaIds || [])];
   return normalized;
 }

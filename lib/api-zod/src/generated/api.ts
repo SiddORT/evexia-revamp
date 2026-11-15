@@ -243,6 +243,7 @@ export const listDoctorMRChoicesQueryLimitMax = 100;
 export const listDoctorMRChoicesQueryOffsetDefault = 0;
 export const listDoctorMRChoicesQueryOffsetMin = 0;
 export const listDoctorMRChoicesQueryOffsetMax = 1000000;
+export const listDoctorMRChoicesQueryAssignmentOnlyDefault = false;
 export const listDoctorMRChoicesResponsePartialDefault = false;
 export const listDoctorMRChoicesResponseScannedDefault = 0;
 export const listDoctorMRChoicesResponseScannedMin = 0;
@@ -1427,6 +1428,9 @@ export const listMRDirectoryQueryCursorOneMax = 128;
 export const listMRDirectoryQueryZoneIdsMax = 370000;
 export const listMRDirectoryResponseItemsItemAddressLine1Max = 300;
 export const listMRDirectoryResponseItemsItemAddressLine2Max = 300;
+export const listMRDirectoryResponseItemsItemAreaIdsOneMax = 10000;
+export const listMRDirectoryResponseItemsItemAssignedAreasItemDeletedDefault = false;
+export const listMRDirectoryResponseItemsItemAssignedHeadquartersItemDeletedDefault = false;
 export const listMRDirectoryResponseItemsItemAssignedZonesItemDeletedDefault = false;
 export const listMRDirectoryResponseItemsItemCityMax = 100;
 export const listMRDirectoryResponseItemsItemCountryMax = 100;
@@ -1435,6 +1439,7 @@ export const listMRDirectoryResponseItemsItemDoctorDaysLimitMin = 0;
 export const listMRDirectoryResponseItemsItemDoctorDaysLimitMax = 3650;
 export const listMRDirectoryResponseItemsItemEmailMax = 320;
 export const listMRDirectoryResponseItemsItemEmployeeCodeMax = 64;
+export const listMRDirectoryResponseItemsItemHqIdsOneMax = 1000;
 export const listMRDirectoryResponseItemsItemLandmarkMax = 200;
 export const listMRDirectoryResponseItemsItemNameMax = 200;
 export const listMRDirectoryResponseItemsItemPhoneMax = 20;
@@ -1447,6 +1452,7 @@ export const listMRDirectoryResponseScannedMin = 0;
 export const listMRDirectoryResponseScannedMax = 500;
 export const createMRDirectoryBodyAddressLine1Max = 300;
 export const createMRDirectoryBodyAddressLine2Max = 300;
+export const createMRDirectoryBodyAreaIdsOneMax = 10000;
 export const createMRDirectoryBodyCityMax = 100;
 export const createMRDirectoryBodyCountryMax = 100;
 export const createMRDirectoryBodyDoctorDaysLimitDefault = 0;
@@ -1454,6 +1460,7 @@ export const createMRDirectoryBodyDoctorDaysLimitMin = 0;
 export const createMRDirectoryBodyDoctorDaysLimitMax = 3650;
 export const createMRDirectoryBodyEmailMax = 320;
 export const createMRDirectoryBodyEmployeeCodeMax = 64;
+export const createMRDirectoryBodyHqIdsOneMax = 1000;
 export const createMRDirectoryBodyInitialPasswordOneMin = 12;
 export const createMRDirectoryBodyInitialPasswordOneMax = 128;
 export const createMRDirectoryBodyLandmarkMax = 200;
@@ -1465,6 +1472,9 @@ export const createMRDirectoryBodyStateMax = 100;
 export const createMRDirectoryBodyZoneIdsOneMax = 10000;
 export const createMRDirectoryResponseRecordAddressLine1Max = 300;
 export const createMRDirectoryResponseRecordAddressLine2Max = 300;
+export const createMRDirectoryResponseRecordAreaIdsOneMax = 10000;
+export const createMRDirectoryResponseRecordAssignedAreasItemDeletedDefault = false;
+export const createMRDirectoryResponseRecordAssignedHeadquartersItemDeletedDefault = false;
 export const createMRDirectoryResponseRecordAssignedZonesItemDeletedDefault = false;
 export const createMRDirectoryResponseRecordCityMax = 100;
 export const createMRDirectoryResponseRecordCountryMax = 100;
@@ -1473,6 +1483,7 @@ export const createMRDirectoryResponseRecordDoctorDaysLimitMin = 0;
 export const createMRDirectoryResponseRecordDoctorDaysLimitMax = 3650;
 export const createMRDirectoryResponseRecordEmailMax = 320;
 export const createMRDirectoryResponseRecordEmployeeCodeMax = 64;
+export const createMRDirectoryResponseRecordHqIdsOneMax = 1000;
 export const createMRDirectoryResponseRecordLandmarkMax = 200;
 export const createMRDirectoryResponseRecordNameMax = 200;
 export const createMRDirectoryResponseRecordPhoneMax = 20;
@@ -1481,6 +1492,9 @@ export const createMRDirectoryResponseRecordUserIdMin = 3;
 export const createMRDirectoryResponseRecordUserIdMax = 32;
 export const resolveMRAccountResponseAddressLine1Max = 300;
 export const resolveMRAccountResponseAddressLine2Max = 300;
+export const resolveMRAccountResponseAreaIdsOneMax = 10000;
+export const resolveMRAccountResponseAssignedAreasItemDeletedDefault = false;
+export const resolveMRAccountResponseAssignedHeadquartersItemDeletedDefault = false;
 export const resolveMRAccountResponseAssignedZonesItemDeletedDefault = false;
 export const resolveMRAccountResponseCityMax = 100;
 export const resolveMRAccountResponseCountryMax = 100;
@@ -1489,6 +1503,7 @@ export const resolveMRAccountResponseDoctorDaysLimitMin = 0;
 export const resolveMRAccountResponseDoctorDaysLimitMax = 3650;
 export const resolveMRAccountResponseEmailMax = 320;
 export const resolveMRAccountResponseEmployeeCodeMax = 64;
+export const resolveMRAccountResponseHqIdsOneMax = 1000;
 export const resolveMRAccountResponseLandmarkMax = 200;
 export const resolveMRAccountResponseNameMax = 200;
 export const resolveMRAccountResponsePhoneMax = 20;
@@ -1498,6 +1513,9 @@ export const resolveMRAccountResponseUserIdMax = 32;
 export const resolveCreatedMRQueryEmployeeCodeMax = 64;
 export const resolveCreatedMRResponseAddressLine1Max = 300;
 export const resolveCreatedMRResponseAddressLine2Max = 300;
+export const resolveCreatedMRResponseAreaIdsOneMax = 10000;
+export const resolveCreatedMRResponseAssignedAreasItemDeletedDefault = false;
+export const resolveCreatedMRResponseAssignedHeadquartersItemDeletedDefault = false;
 export const resolveCreatedMRResponseAssignedZonesItemDeletedDefault = false;
 export const resolveCreatedMRResponseCityMax = 100;
 export const resolveCreatedMRResponseCountryMax = 100;
@@ -1506,6 +1524,7 @@ export const resolveCreatedMRResponseDoctorDaysLimitMin = 0;
 export const resolveCreatedMRResponseDoctorDaysLimitMax = 3650;
 export const resolveCreatedMRResponseEmailMax = 320;
 export const resolveCreatedMRResponseEmployeeCodeMax = 64;
+export const resolveCreatedMRResponseHqIdsOneMax = 1000;
 export const resolveCreatedMRResponseLandmarkMax = 200;
 export const resolveCreatedMRResponseNameMax = 200;
 export const resolveCreatedMRResponsePhoneMax = 20;
@@ -1530,6 +1549,9 @@ export const listMRReferenceChoicesResponseScannedMin = 0;
 export const listMRReferenceChoicesResponseScannedMax = 500;
 export const getMRDirectoryResponseAddressLine1Max = 300;
 export const getMRDirectoryResponseAddressLine2Max = 300;
+export const getMRDirectoryResponseAreaIdsOneMax = 10000;
+export const getMRDirectoryResponseAssignedAreasItemDeletedDefault = false;
+export const getMRDirectoryResponseAssignedHeadquartersItemDeletedDefault = false;
 export const getMRDirectoryResponseAssignedZonesItemDeletedDefault = false;
 export const getMRDirectoryResponseCityMax = 100;
 export const getMRDirectoryResponseCountryMax = 100;
@@ -1538,6 +1560,7 @@ export const getMRDirectoryResponseDoctorDaysLimitMin = 0;
 export const getMRDirectoryResponseDoctorDaysLimitMax = 3650;
 export const getMRDirectoryResponseEmailMax = 320;
 export const getMRDirectoryResponseEmployeeCodeMax = 64;
+export const getMRDirectoryResponseHqIdsOneMax = 1000;
 export const getMRDirectoryResponseLandmarkMax = 200;
 export const getMRDirectoryResponseNameMax = 200;
 export const getMRDirectoryResponsePhoneMax = 20;
@@ -1546,6 +1569,9 @@ export const getMRDirectoryResponseUserIdMin = 3;
 export const getMRDirectoryResponseUserIdMax = 32;
 export const setMRContactRequirementResponseAddressLine1Max = 300;
 export const setMRContactRequirementResponseAddressLine2Max = 300;
+export const setMRContactRequirementResponseAreaIdsOneMax = 10000;
+export const setMRContactRequirementResponseAssignedAreasItemDeletedDefault = false;
+export const setMRContactRequirementResponseAssignedHeadquartersItemDeletedDefault = false;
 export const setMRContactRequirementResponseAssignedZonesItemDeletedDefault = false;
 export const setMRContactRequirementResponseCityMax = 100;
 export const setMRContactRequirementResponseCountryMax = 100;
@@ -1554,6 +1580,7 @@ export const setMRContactRequirementResponseDoctorDaysLimitMin = 0;
 export const setMRContactRequirementResponseDoctorDaysLimitMax = 3650;
 export const setMRContactRequirementResponseEmailMax = 320;
 export const setMRContactRequirementResponseEmployeeCodeMax = 64;
+export const setMRContactRequirementResponseHqIdsOneMax = 1000;
 export const setMRContactRequirementResponseLandmarkMax = 200;
 export const setMRContactRequirementResponseNameMax = 200;
 export const setMRContactRequirementResponsePhoneMax = 20;
@@ -1562,6 +1589,9 @@ export const setMRContactRequirementResponseUserIdMin = 3;
 export const setMRContactRequirementResponseUserIdMax = 32;
 export const deleteMRDirectoryResponseAddressLine1Max = 300;
 export const deleteMRDirectoryResponseAddressLine2Max = 300;
+export const deleteMRDirectoryResponseAreaIdsOneMax = 10000;
+export const deleteMRDirectoryResponseAssignedAreasItemDeletedDefault = false;
+export const deleteMRDirectoryResponseAssignedHeadquartersItemDeletedDefault = false;
 export const deleteMRDirectoryResponseAssignedZonesItemDeletedDefault = false;
 export const deleteMRDirectoryResponseCityMax = 100;
 export const deleteMRDirectoryResponseCountryMax = 100;
@@ -1570,6 +1600,7 @@ export const deleteMRDirectoryResponseDoctorDaysLimitMin = 0;
 export const deleteMRDirectoryResponseDoctorDaysLimitMax = 3650;
 export const deleteMRDirectoryResponseEmailMax = 320;
 export const deleteMRDirectoryResponseEmployeeCodeMax = 64;
+export const deleteMRDirectoryResponseHqIdsOneMax = 1000;
 export const deleteMRDirectoryResponseLandmarkMax = 200;
 export const deleteMRDirectoryResponseNameMax = 200;
 export const deleteMRDirectoryResponsePhoneMax = 20;
@@ -1583,6 +1614,7 @@ export const listMRAssociatedDoctorChoicesQueryOffsetMin = 0;
 export const listMRAssociatedDoctorChoicesQueryOffsetMax = 1000000;
 export const editMRDirectoryBodyAddressLine1Max = 300;
 export const editMRDirectoryBodyAddressLine2Max = 300;
+export const editMRDirectoryBodyAreaIdsOneMax = 10000;
 export const editMRDirectoryBodyCityMax = 100;
 export const editMRDirectoryBodyCountryMax = 100;
 export const editMRDirectoryBodyDoctorDaysLimitDefault = 0;
@@ -1590,6 +1622,7 @@ export const editMRDirectoryBodyDoctorDaysLimitMin = 0;
 export const editMRDirectoryBodyDoctorDaysLimitMax = 3650;
 export const editMRDirectoryBodyEmailMax = 320;
 export const editMRDirectoryBodyEmployeeCodeMax = 64;
+export const editMRDirectoryBodyHqIdsOneMax = 1000;
 export const editMRDirectoryBodyLandmarkMax = 200;
 export const editMRDirectoryBodyNameMax = 200;
 export const editMRDirectoryBodyPaymentLimitOneMin = 0;
@@ -1601,6 +1634,9 @@ export const editMRDirectoryBodyUserIdMax = 32;
 export const editMRDirectoryBodyZoneIdsOneMax = 10000;
 export const editMRDirectoryResponseAddressLine1Max = 300;
 export const editMRDirectoryResponseAddressLine2Max = 300;
+export const editMRDirectoryResponseAreaIdsOneMax = 10000;
+export const editMRDirectoryResponseAssignedAreasItemDeletedDefault = false;
+export const editMRDirectoryResponseAssignedHeadquartersItemDeletedDefault = false;
 export const editMRDirectoryResponseAssignedZonesItemDeletedDefault = false;
 export const editMRDirectoryResponseCityMax = 100;
 export const editMRDirectoryResponseCountryMax = 100;
@@ -1609,6 +1645,7 @@ export const editMRDirectoryResponseDoctorDaysLimitMin = 0;
 export const editMRDirectoryResponseDoctorDaysLimitMax = 3650;
 export const editMRDirectoryResponseEmailMax = 320;
 export const editMRDirectoryResponseEmployeeCodeMax = 64;
+export const editMRDirectoryResponseHqIdsOneMax = 1000;
 export const editMRDirectoryResponseLandmarkMax = 200;
 export const editMRDirectoryResponseNameMax = 200;
 export const editMRDirectoryResponsePhoneMax = 20;
@@ -1617,6 +1654,9 @@ export const editMRDirectoryResponseUserIdMin = 3;
 export const editMRDirectoryResponseUserIdMax = 32;
 export const resetMRPasswordResponseRecordAddressLine1Max = 300;
 export const resetMRPasswordResponseRecordAddressLine2Max = 300;
+export const resetMRPasswordResponseRecordAreaIdsOneMax = 10000;
+export const resetMRPasswordResponseRecordAssignedAreasItemDeletedDefault = false;
+export const resetMRPasswordResponseRecordAssignedHeadquartersItemDeletedDefault = false;
 export const resetMRPasswordResponseRecordAssignedZonesItemDeletedDefault = false;
 export const resetMRPasswordResponseRecordCityMax = 100;
 export const resetMRPasswordResponseRecordCountryMax = 100;
@@ -1625,6 +1665,7 @@ export const resetMRPasswordResponseRecordDoctorDaysLimitMin = 0;
 export const resetMRPasswordResponseRecordDoctorDaysLimitMax = 3650;
 export const resetMRPasswordResponseRecordEmailMax = 320;
 export const resetMRPasswordResponseRecordEmployeeCodeMax = 64;
+export const resetMRPasswordResponseRecordHqIdsOneMax = 1000;
 export const resetMRPasswordResponseRecordLandmarkMax = 200;
 export const resetMRPasswordResponseRecordNameMax = 200;
 export const resetMRPasswordResponseRecordPhoneMax = 20;
@@ -1633,6 +1674,9 @@ export const resetMRPasswordResponseRecordUserIdMin = 3;
 export const resetMRPasswordResponseRecordUserIdMax = 32;
 export const setMRDirectoryStatusResponseAddressLine1Max = 300;
 export const setMRDirectoryStatusResponseAddressLine2Max = 300;
+export const setMRDirectoryStatusResponseAreaIdsOneMax = 10000;
+export const setMRDirectoryStatusResponseAssignedAreasItemDeletedDefault = false;
+export const setMRDirectoryStatusResponseAssignedHeadquartersItemDeletedDefault = false;
 export const setMRDirectoryStatusResponseAssignedZonesItemDeletedDefault = false;
 export const setMRDirectoryStatusResponseCityMax = 100;
 export const setMRDirectoryStatusResponseCountryMax = 100;
@@ -1641,6 +1685,7 @@ export const setMRDirectoryStatusResponseDoctorDaysLimitMin = 0;
 export const setMRDirectoryStatusResponseDoctorDaysLimitMax = 3650;
 export const setMRDirectoryStatusResponseEmailMax = 320;
 export const setMRDirectoryStatusResponseEmployeeCodeMax = 64;
+export const setMRDirectoryStatusResponseHqIdsOneMax = 1000;
 export const setMRDirectoryStatusResponseLandmarkMax = 200;
 export const setMRDirectoryStatusResponseNameMax = 200;
 export const setMRDirectoryStatusResponsePhoneMax = 20;
@@ -2847,6 +2892,30 @@ export const getCombinationRuleStatusHistoryQueryOffsetMin = 0;
 export const getCombinationRuleStatusHistoryQueryOffsetMax = 1000000;
 export const getCombinationRuleStatusHistoryQueryLimitDefault = 25;
 export const getCombinationRuleStatusHistoryQueryLimitMax = 100;
+export const listDoctorTerritoryChoicesQueryHqIdsMax = 37000;
+export const listDoctorTerritoryChoicesQueryQueryMax = 200;
+export const listDoctorTerritoryChoicesQueryLimitDefault = 100;
+export const listDoctorTerritoryChoicesQueryLimitMax = 100;
+export const listDoctorTerritoryChoicesQueryOffsetDefault = 0;
+export const listDoctorTerritoryChoicesQueryOffsetMin = 0;
+export const listDoctorTerritoryChoicesQueryOffsetMax = 1000000;
+export const listDoctorTerritoryChoicesResponseItemsItemDeletedDefault = false;
+export const listDoctorTerritoryChoicesResponsePartialDefault = false;
+export const listDoctorTerritoryChoicesResponseScannedDefault = 0;
+export const listDoctorTerritoryChoicesResponseScannedMin = 0;
+export const listDoctorTerritoryChoicesResponseScannedMax = 500;
+export const listMRTerritoryChoicesQueryHqIdsMax = 37000;
+export const listMRTerritoryChoicesQueryQueryMax = 200;
+export const listMRTerritoryChoicesQueryLimitDefault = 100;
+export const listMRTerritoryChoicesQueryLimitMax = 100;
+export const listMRTerritoryChoicesQueryOffsetDefault = 0;
+export const listMRTerritoryChoicesQueryOffsetMin = 0;
+export const listMRTerritoryChoicesQueryOffsetMax = 1000000;
+export const listMRTerritoryChoicesResponseItemsItemDeletedDefault = false;
+export const listMRTerritoryChoicesResponsePartialDefault = false;
+export const listMRTerritoryChoicesResponseScannedDefault = 0;
+export const listMRTerritoryChoicesResponseScannedMin = 0;
+export const listMRTerritoryChoicesResponseScannedMax = 500;
 
 /**
  * @summary <Lambda>
@@ -4467,6 +4536,8 @@ export const listDoctorDirectoryResponseOneItemsItemAddressLine2Default = ``;
 
 export const listDoctorDirectoryResponseOneItemsItemAlternatePhoneDefault = ``;
 
+export const listDoctorDirectoryResponseOneItemsItemAreaNameDefault = ``;
+
 export const listDoctorDirectoryResponseOneItemsItemClinicNameDefault = ``;
 
 export const listDoctorDirectoryResponseOneItemsItemContactRequirementDefault = `optional`;
@@ -4478,6 +4549,7 @@ export const listDoctorDirectoryResponseOneItemsItemEmailDefault = ``;
 
 export const listDoctorDirectoryResponseOneItemsItemGstNumberDefault = ``;
 
+export const listDoctorDirectoryResponseOneItemsItemHqNameDefault = ``;
 export const listDoctorDirectoryResponseOneItemsItemInvoiceTypeDefault = `normal`;
 
 export const listDoctorDirectoryResponseOneItemsItemOrderDiscountDefault = `0.00`;
@@ -4492,6 +4564,8 @@ export const listDoctorDirectoryResponseOneItemsItemPhoneDefault = ``;
 
 export const listDoctorDirectoryResponseOneItemsItemStatusDefault = `active`;
 
+export const listDoctorDirectoryResponseTwoItemsItemAreaNameDefault = ``;
+export const listDoctorDirectoryResponseTwoItemsItemHqNameDefault = ``;
 export const listDoctorDirectoryResponseTwoItemsItemOrderDiscountRegExp =
   new RegExp("^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$");
 export const listDoctorDirectoryResponseTwoItemsItemPaymentLimitRegExp =
@@ -4516,6 +4590,10 @@ export const ListDoctorDirectoryResponse = zod.union([
           .default(
             listDoctorDirectoryResponseOneItemsItemAlternatePhoneDefault,
           ),
+        areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        areaName: zod
+          .string()
+          .default(listDoctorDirectoryResponseOneItemsItemAreaNameDefault),
         assignmentWarnings: zod.array(zod.string()),
         city: zod
           .string()
@@ -4807,6 +4885,10 @@ export const ListDoctorDirectoryResponse = zod.union([
           .string()
           .max(listDoctorDirectoryResponseOneItemsItemGstNumberMax)
           .default(listDoctorDirectoryResponseOneItemsItemGstNumberDefault),
+        hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        hqName: zod
+          .string()
+          .default(listDoctorDirectoryResponseOneItemsItemHqNameDefault),
         id: zod.string().uuid(),
         invoiceType: zod
           .enum(["normal", "gst"])
@@ -4886,6 +4968,10 @@ export const ListDoctorDirectoryResponse = zod.union([
           addressLine1: zod.string(),
           addressLine2: zod.string(),
           alternatePhoneDisplay: zod.string(),
+          areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          areaName: zod
+            .string()
+            .default(listDoctorDirectoryResponseTwoItemsItemAreaNameDefault),
           assignmentWarnings: zod.array(zod.string()),
           city: zod.string(),
           clinicName: zod.string(),
@@ -5146,6 +5232,10 @@ export const ListDoctorDirectoryResponse = zod.union([
           drugLicenceNumber: zod.string(),
           emailDisplay: zod.string(),
           gstNumber: zod.string(),
+          hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          hqName: zod
+            .string()
+            .default(listDoctorDirectoryResponseTwoItemsItemHqNameDefault),
           id: zod.string().uuid(),
           invoiceType: zod.enum(["normal", "gst"]),
           landmark: zod.string(),
@@ -5278,6 +5368,7 @@ export const CreateDoctorDirectoryBody = zod.object({
     .string()
     .max(createDoctorDirectoryBodyAlternatePhoneMax)
     .default(createDoctorDirectoryBodyAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   city: zod.string().min(1).max(createDoctorDirectoryBodyCityMax),
   clinicName: zod
     .string()
@@ -5555,6 +5646,7 @@ export const CreateDoctorDirectoryBody = zod.object({
     .string()
     .max(createDoctorDirectoryBodyGstNumberMax)
     .default(createDoctorDirectoryBodyGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   invoiceType: zod
     .enum(["normal", "gst"])
     .default(createDoctorDirectoryBodyInvoiceTypeDefault),
@@ -5590,11 +5682,14 @@ export const CreateDoctorDirectoryBody = zod.object({
   status: zod
     .enum(["active", "inactive"])
     .default(createDoctorDirectoryBodyStatusDefault),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]).optional(),
 });
 
 export const createDoctorDirectoryResponseOneAddressLine2Default = ``;
 
 export const createDoctorDirectoryResponseOneAlternatePhoneDefault = ``;
+
+export const createDoctorDirectoryResponseOneAreaNameDefault = ``;
 
 export const createDoctorDirectoryResponseOneClinicNameDefault = ``;
 
@@ -5607,6 +5702,7 @@ export const createDoctorDirectoryResponseOneEmailDefault = ``;
 
 export const createDoctorDirectoryResponseOneGstNumberDefault = ``;
 
+export const createDoctorDirectoryResponseOneHqNameDefault = ``;
 export const createDoctorDirectoryResponseOneInvoiceTypeDefault = `normal`;
 
 export const createDoctorDirectoryResponseOneOrderDiscountDefault = `0.00`;
@@ -5620,6 +5716,8 @@ export const createDoctorDirectoryResponseOnePaymentLimitRegExp = new RegExp(
 export const createDoctorDirectoryResponseOnePhoneDefault = ``;
 
 export const createDoctorDirectoryResponseOneStatusDefault = `active`;
+export const createDoctorDirectoryResponseTwoAreaNameDefault = ``;
+export const createDoctorDirectoryResponseTwoHqNameDefault = ``;
 export const createDoctorDirectoryResponseTwoOrderDiscountRegExp = new RegExp(
   "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
 );
@@ -5641,6 +5739,10 @@ export const CreateDoctorDirectoryResponse = zod.union([
       .string()
       .max(createDoctorDirectoryResponseOneAlternatePhoneMax)
       .default(createDoctorDirectoryResponseOneAlternatePhoneDefault),
+    areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    areaName: zod
+      .string()
+      .default(createDoctorDirectoryResponseOneAreaNameDefault),
     assignmentWarnings: zod.array(zod.string()),
     city: zod.string().min(1).max(createDoctorDirectoryResponseOneCityMax),
     clinicName: zod
@@ -5925,6 +6027,8 @@ export const CreateDoctorDirectoryResponse = zod.union([
       .string()
       .max(createDoctorDirectoryResponseOneGstNumberMax)
       .default(createDoctorDirectoryResponseOneGstNumberDefault),
+    hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    hqName: zod.string().default(createDoctorDirectoryResponseOneHqNameDefault),
     id: zod.string().uuid(),
     invoiceType: zod
       .enum(["normal", "gst"])
@@ -5980,6 +6084,10 @@ export const CreateDoctorDirectoryResponse = zod.union([
       addressLine1: zod.string(),
       addressLine2: zod.string(),
       alternatePhoneDisplay: zod.string(),
+      areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      areaName: zod
+        .string()
+        .default(createDoctorDirectoryResponseTwoAreaNameDefault),
       assignmentWarnings: zod.array(zod.string()),
       city: zod.string(),
       clinicName: zod.string(),
@@ -6240,6 +6348,10 @@ export const CreateDoctorDirectoryResponse = zod.union([
       drugLicenceNumber: zod.string(),
       emailDisplay: zod.string(),
       gstNumber: zod.string(),
+      hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      hqName: zod
+        .string()
+        .default(createDoctorDirectoryResponseTwoHqNameDefault),
       id: zod.string().uuid(),
       invoiceType: zod.enum(["normal", "gst"]),
       landmark: zod.string(),
@@ -6335,6 +6447,8 @@ export const bulkDoctorDirectoryResponseAddressLine2Default = ``;
 
 export const bulkDoctorDirectoryResponseAlternatePhoneDefault = ``;
 
+export const bulkDoctorDirectoryResponseAreaNameDefault = ``;
+
 export const bulkDoctorDirectoryResponseClinicNameDefault = ``;
 
 export const bulkDoctorDirectoryResponseContactRequirementDefault = `optional`;
@@ -6346,6 +6460,7 @@ export const bulkDoctorDirectoryResponseEmailDefault = ``;
 
 export const bulkDoctorDirectoryResponseGstNumberDefault = ``;
 
+export const bulkDoctorDirectoryResponseHqNameDefault = ``;
 export const bulkDoctorDirectoryResponseInvoiceTypeDefault = `normal`;
 
 export const bulkDoctorDirectoryResponseOrderDiscountDefault = `0.00`;
@@ -6373,6 +6488,8 @@ export const BulkDoctorDirectoryResponseItem = zod.object({
     .string()
     .max(bulkDoctorDirectoryResponseAlternatePhoneMax)
     .default(bulkDoctorDirectoryResponseAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  areaName: zod.string().default(bulkDoctorDirectoryResponseAreaNameDefault),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(bulkDoctorDirectoryResponseCityMax),
   clinicName: zod
@@ -6654,6 +6771,8 @@ export const BulkDoctorDirectoryResponseItem = zod.object({
     .string()
     .max(bulkDoctorDirectoryResponseGstNumberMax)
     .default(bulkDoctorDirectoryResponseGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqName: zod.string().default(bulkDoctorDirectoryResponseHqNameDefault),
   id: zod.string().uuid(),
   invoiceType: zod
     .enum(["normal", "gst"])
@@ -6861,6 +6980,12 @@ export const ListDoctorMRChoicesQueryParams = zod.object({
     .default(listDoctorMRChoicesQueryOffsetDefault),
   include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  zone_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  hq_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  area_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  assignment_only: zod.coerce
+    .boolean()
+    .default(listDoctorMRChoicesQueryAssignmentOnlyDefault),
 });
 
 export const ListDoctorMRChoicesResponse = zod.object({
@@ -6920,6 +7045,8 @@ export const getDoctorDirectoryResponseOneAddressLine2Default = ``;
 
 export const getDoctorDirectoryResponseOneAlternatePhoneDefault = ``;
 
+export const getDoctorDirectoryResponseOneAreaNameDefault = ``;
+
 export const getDoctorDirectoryResponseOneClinicNameDefault = ``;
 
 export const getDoctorDirectoryResponseOneContactRequirementDefault = `optional`;
@@ -6931,6 +7058,7 @@ export const getDoctorDirectoryResponseOneEmailDefault = ``;
 
 export const getDoctorDirectoryResponseOneGstNumberDefault = ``;
 
+export const getDoctorDirectoryResponseOneHqNameDefault = ``;
 export const getDoctorDirectoryResponseOneInvoiceTypeDefault = `normal`;
 
 export const getDoctorDirectoryResponseOneOrderDiscountDefault = `0.00`;
@@ -6944,6 +7072,8 @@ export const getDoctorDirectoryResponseOnePaymentLimitRegExp = new RegExp(
 export const getDoctorDirectoryResponseOnePhoneDefault = ``;
 
 export const getDoctorDirectoryResponseOneStatusDefault = `active`;
+export const getDoctorDirectoryResponseTwoAreaNameDefault = ``;
+export const getDoctorDirectoryResponseTwoHqNameDefault = ``;
 export const getDoctorDirectoryResponseTwoOrderDiscountRegExp = new RegExp(
   "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
 );
@@ -6965,6 +7095,10 @@ export const GetDoctorDirectoryResponse = zod.union([
       .string()
       .max(getDoctorDirectoryResponseOneAlternatePhoneMax)
       .default(getDoctorDirectoryResponseOneAlternatePhoneDefault),
+    areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    areaName: zod
+      .string()
+      .default(getDoctorDirectoryResponseOneAreaNameDefault),
     assignmentWarnings: zod.array(zod.string()),
     city: zod.string().min(1).max(getDoctorDirectoryResponseOneCityMax),
     clinicName: zod
@@ -7246,6 +7380,8 @@ export const GetDoctorDirectoryResponse = zod.union([
       .string()
       .max(getDoctorDirectoryResponseOneGstNumberMax)
       .default(getDoctorDirectoryResponseOneGstNumberDefault),
+    hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    hqName: zod.string().default(getDoctorDirectoryResponseOneHqNameDefault),
     id: zod.string().uuid(),
     invoiceType: zod
       .enum(["normal", "gst"])
@@ -7298,6 +7434,10 @@ export const GetDoctorDirectoryResponse = zod.union([
       addressLine1: zod.string(),
       addressLine2: zod.string(),
       alternatePhoneDisplay: zod.string(),
+      areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      areaName: zod
+        .string()
+        .default(getDoctorDirectoryResponseTwoAreaNameDefault),
       assignmentWarnings: zod.array(zod.string()),
       city: zod.string(),
       clinicName: zod.string(),
@@ -7558,6 +7698,8 @@ export const GetDoctorDirectoryResponse = zod.union([
       drugLicenceNumber: zod.string(),
       emailDisplay: zod.string(),
       gstNumber: zod.string(),
+      hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      hqName: zod.string().default(getDoctorDirectoryResponseTwoHqNameDefault),
       id: zod.string().uuid(),
       invoiceType: zod.enum(["normal", "gst"]),
       landmark: zod.string(),
@@ -7644,6 +7786,8 @@ export const setDoctorContactRequirementResponseAddressLine2Default = ``;
 
 export const setDoctorContactRequirementResponseAlternatePhoneDefault = ``;
 
+export const setDoctorContactRequirementResponseAreaNameDefault = ``;
+
 export const setDoctorContactRequirementResponseClinicNameDefault = ``;
 
 export const setDoctorContactRequirementResponseContactRequirementDefault = `optional`;
@@ -7655,6 +7799,7 @@ export const setDoctorContactRequirementResponseEmailDefault = ``;
 
 export const setDoctorContactRequirementResponseGstNumberDefault = ``;
 
+export const setDoctorContactRequirementResponseHqNameDefault = ``;
 export const setDoctorContactRequirementResponseInvoiceTypeDefault = `normal`;
 
 export const setDoctorContactRequirementResponseOrderDiscountDefault = `0.00`;
@@ -7681,6 +7826,10 @@ export const SetDoctorContactRequirementResponse = zod.object({
     .string()
     .max(setDoctorContactRequirementResponseAlternatePhoneMax)
     .default(setDoctorContactRequirementResponseAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  areaName: zod
+    .string()
+    .default(setDoctorContactRequirementResponseAreaNameDefault),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(setDoctorContactRequirementResponseCityMax),
   clinicName: zod
@@ -7965,6 +8114,10 @@ export const SetDoctorContactRequirementResponse = zod.object({
     .string()
     .max(setDoctorContactRequirementResponseGstNumberMax)
     .default(setDoctorContactRequirementResponseGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqName: zod
+    .string()
+    .default(setDoctorContactRequirementResponseHqNameDefault),
   id: zod.string().uuid(),
   invoiceType: zod
     .enum(["normal", "gst"])
@@ -8033,6 +8186,8 @@ export const deleteDoctorDirectoryResponseAddressLine2Default = ``;
 
 export const deleteDoctorDirectoryResponseAlternatePhoneDefault = ``;
 
+export const deleteDoctorDirectoryResponseAreaNameDefault = ``;
+
 export const deleteDoctorDirectoryResponseClinicNameDefault = ``;
 
 export const deleteDoctorDirectoryResponseContactRequirementDefault = `optional`;
@@ -8044,6 +8199,7 @@ export const deleteDoctorDirectoryResponseEmailDefault = ``;
 
 export const deleteDoctorDirectoryResponseGstNumberDefault = ``;
 
+export const deleteDoctorDirectoryResponseHqNameDefault = ``;
 export const deleteDoctorDirectoryResponseInvoiceTypeDefault = `normal`;
 
 export const deleteDoctorDirectoryResponseOrderDiscountDefault = `0.00`;
@@ -8071,6 +8227,8 @@ export const DeleteDoctorDirectoryResponse = zod.object({
     .string()
     .max(deleteDoctorDirectoryResponseAlternatePhoneMax)
     .default(deleteDoctorDirectoryResponseAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  areaName: zod.string().default(deleteDoctorDirectoryResponseAreaNameDefault),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(deleteDoctorDirectoryResponseCityMax),
   clinicName: zod
@@ -8352,6 +8510,8 @@ export const DeleteDoctorDirectoryResponse = zod.object({
     .string()
     .max(deleteDoctorDirectoryResponseGstNumberMax)
     .default(deleteDoctorDirectoryResponseGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqName: zod.string().default(deleteDoctorDirectoryResponseHqNameDefault),
   id: zod.string().uuid(),
   invoiceType: zod
     .enum(["normal", "gst"])
@@ -8440,6 +8600,7 @@ export const EditDoctorDirectoryBody = zod.object({
     .string()
     .max(editDoctorDirectoryBodyAlternatePhoneMax)
     .default(editDoctorDirectoryBodyAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   city: zod.string().min(1).max(editDoctorDirectoryBodyCityMax),
   clinicName: zod
     .string()
@@ -8718,6 +8879,7 @@ export const EditDoctorDirectoryBody = zod.object({
     .string()
     .max(editDoctorDirectoryBodyGstNumberMax)
     .default(editDoctorDirectoryBodyGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   invoiceType: zod
     .enum(["normal", "gst"])
     .default(editDoctorDirectoryBodyInvoiceTypeDefault),
@@ -8753,11 +8915,14 @@ export const EditDoctorDirectoryBody = zod.object({
   status: zod
     .enum(["active", "inactive"])
     .default(editDoctorDirectoryBodyStatusDefault),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]).optional(),
 });
 
 export const editDoctorDirectoryResponseAddressLine2Default = ``;
 
 export const editDoctorDirectoryResponseAlternatePhoneDefault = ``;
+
+export const editDoctorDirectoryResponseAreaNameDefault = ``;
 
 export const editDoctorDirectoryResponseClinicNameDefault = ``;
 
@@ -8770,6 +8935,7 @@ export const editDoctorDirectoryResponseEmailDefault = ``;
 
 export const editDoctorDirectoryResponseGstNumberDefault = ``;
 
+export const editDoctorDirectoryResponseHqNameDefault = ``;
 export const editDoctorDirectoryResponseInvoiceTypeDefault = `normal`;
 
 export const editDoctorDirectoryResponseOrderDiscountDefault = `0.00`;
@@ -8797,6 +8963,8 @@ export const EditDoctorDirectoryResponse = zod.object({
     .string()
     .max(editDoctorDirectoryResponseAlternatePhoneMax)
     .default(editDoctorDirectoryResponseAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  areaName: zod.string().default(editDoctorDirectoryResponseAreaNameDefault),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(editDoctorDirectoryResponseCityMax),
   clinicName: zod
@@ -9078,6 +9246,8 @@ export const EditDoctorDirectoryResponse = zod.object({
     .string()
     .max(editDoctorDirectoryResponseGstNumberMax)
     .default(editDoctorDirectoryResponseGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqName: zod.string().default(editDoctorDirectoryResponseHqNameDefault),
   id: zod.string().uuid(),
   invoiceType: zod
     .enum(["normal", "gst"])
@@ -9189,6 +9359,8 @@ export const setDoctorDirectoryStatusResponseAddressLine2Default = ``;
 
 export const setDoctorDirectoryStatusResponseAlternatePhoneDefault = ``;
 
+export const setDoctorDirectoryStatusResponseAreaNameDefault = ``;
+
 export const setDoctorDirectoryStatusResponseClinicNameDefault = ``;
 
 export const setDoctorDirectoryStatusResponseContactRequirementDefault = `optional`;
@@ -9200,6 +9372,7 @@ export const setDoctorDirectoryStatusResponseEmailDefault = ``;
 
 export const setDoctorDirectoryStatusResponseGstNumberDefault = ``;
 
+export const setDoctorDirectoryStatusResponseHqNameDefault = ``;
 export const setDoctorDirectoryStatusResponseInvoiceTypeDefault = `normal`;
 
 export const setDoctorDirectoryStatusResponseOrderDiscountDefault = `0.00`;
@@ -9227,6 +9400,10 @@ export const SetDoctorDirectoryStatusResponse = zod.object({
     .string()
     .max(setDoctorDirectoryStatusResponseAlternatePhoneMax)
     .default(setDoctorDirectoryStatusResponseAlternatePhoneDefault),
+  areaId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  areaName: zod
+    .string()
+    .default(setDoctorDirectoryStatusResponseAreaNameDefault),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(setDoctorDirectoryStatusResponseCityMax),
   clinicName: zod
@@ -9508,6 +9685,8 @@ export const SetDoctorDirectoryStatusResponse = zod.object({
     .string()
     .max(setDoctorDirectoryStatusResponseGstNumberMax)
     .default(setDoctorDirectoryStatusResponseGstNumberDefault),
+  hqId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqName: zod.string().default(setDoctorDirectoryStatusResponseHqNameDefault),
   id: zod.string().uuid(),
   invoiceType: zod
     .enum(["normal", "gst"])
@@ -23429,6 +23608,50 @@ export const ListMRDirectoryResponse = zod.object({
         .string()
         .max(listMRDirectoryResponseItemsItemAddressLine2Max)
         .default(listMRDirectoryResponseItemsItemAddressLine2Default),
+      areaIds: zod
+        .union([
+          zod
+            .array(zod.string().uuid())
+            .max(listMRDirectoryResponseItemsItemAreaIdsOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      assignedAreas: zod
+        .array(
+          zod.object({
+            deleted: zod
+              .boolean()
+              .default(
+                listMRDirectoryResponseItemsItemAssignedAreasItemDeletedDefault,
+              ),
+            headquarterId: zod
+              .union([zod.string().uuid(), zod.null()])
+              .optional(),
+            id: zod.string().uuid(),
+            name: zod.string(),
+            status: zod.string(),
+            userId: zod.union([zod.string(), zod.null()]).optional(),
+          }),
+        )
+        .optional(),
+      assignedHeadquarters: zod
+        .array(
+          zod.object({
+            deleted: zod
+              .boolean()
+              .default(
+                listMRDirectoryResponseItemsItemAssignedHeadquartersItemDeletedDefault,
+              ),
+            headquarterId: zod
+              .union([zod.string().uuid(), zod.null()])
+              .optional(),
+            id: zod.string().uuid(),
+            name: zod.string(),
+            status: zod.string(),
+            userId: zod.union([zod.string(), zod.null()]).optional(),
+          }),
+        )
+        .optional(),
       assignedZones: zod.array(
         zod.object({
           deleted: zod
@@ -23436,6 +23659,9 @@ export const ListMRDirectoryResponse = zod.object({
             .default(
               listMRDirectoryResponseItemsItemAssignedZonesItemDeletedDefault,
             ),
+          headquarterId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
           id: zod.string().uuid(),
           name: zod.string(),
           status: zod.string(),
@@ -23451,6 +23677,9 @@ export const ListMRDirectoryResponse = zod.object({
         .string()
         .min(1)
         .max(listMRDirectoryResponseItemsItemCountryMax),
+      coverageScope: zod
+        .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+        .optional(),
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
       dateOfJoining: zod.coerce.date(),
@@ -23719,7 +23948,15 @@ export const ListMRDirectoryResponse = zod.object({
         .string()
         .min(1)
         .max(listMRDirectoryResponseItemsItemEmployeeCodeMax),
-      hq: zod.string().uuid(),
+      hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      hqIds: zod
+        .union([
+          zod
+            .array(zod.string().uuid())
+            .max(listMRDirectoryResponseItemsItemHqIdsOneMax),
+          zod.null(),
+        ])
+        .optional(),
       hqName: zod.string(),
       id: zod.string().uuid(),
       landmark: zod
@@ -23802,11 +24039,20 @@ export const CreateMRDirectoryBody = zod.object({
     .string()
     .max(createMRDirectoryBodyAddressLine2Max)
     .default(createMRDirectoryBodyAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(createMRDirectoryBodyAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   city: zod.string().min(1).max(createMRDirectoryBodyCityMax),
   contactRequirement: zod
     .enum(["required", "optional"])
     .default(createMRDirectoryBodyContactRequirementDefault),
   country: zod.string().min(1).max(createMRDirectoryBodyCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   dateOfJoining: zod.coerce.date(),
   designation_id: zod.string().uuid(),
   dialCountry: zod
@@ -24069,7 +24315,13 @@ export const CreateMRDirectoryBody = zod.object({
     .max(createMRDirectoryBodyEmailMax)
     .default(createMRDirectoryBodyEmailDefault),
   employeeCode: zod.string().min(1).max(createMRDirectoryBodyEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(createMRDirectoryBodyHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   initialPassword: zod
     .union([
       zod
@@ -24149,6 +24401,50 @@ export const CreateMRDirectoryResponse = zod.object({
       .string()
       .max(createMRDirectoryResponseRecordAddressLine2Max)
       .default(createMRDirectoryResponseRecordAddressLine2Default),
+    areaIds: zod
+      .union([
+        zod
+          .array(zod.string().uuid())
+          .max(createMRDirectoryResponseRecordAreaIdsOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    assignedAreas: zod
+      .array(
+        zod.object({
+          deleted: zod
+            .boolean()
+            .default(
+              createMRDirectoryResponseRecordAssignedAreasItemDeletedDefault,
+            ),
+          headquarterId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.string(),
+          userId: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+      )
+      .optional(),
+    assignedHeadquarters: zod
+      .array(
+        zod.object({
+          deleted: zod
+            .boolean()
+            .default(
+              createMRDirectoryResponseRecordAssignedHeadquartersItemDeletedDefault,
+            ),
+          headquarterId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.string(),
+          userId: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+      )
+      .optional(),
     assignedZones: zod.array(
       zod.object({
         deleted: zod
@@ -24156,6 +24452,7 @@ export const CreateMRDirectoryResponse = zod.object({
           .default(
             createMRDirectoryResponseRecordAssignedZonesItemDeletedDefault,
           ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         id: zod.string().uuid(),
         name: zod.string(),
         status: zod.string(),
@@ -24168,6 +24465,9 @@ export const CreateMRDirectoryResponse = zod.object({
       .enum(["required", "optional"])
       .default(createMRDirectoryResponseRecordContactRequirementDefault),
     country: zod.string().min(1).max(createMRDirectoryResponseRecordCountryMax),
+    coverageScope: zod
+      .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+      .optional(),
     createdAt: zod.coerce.date(),
     createdBy: zod.string(),
     dateOfJoining: zod.coerce.date(),
@@ -24436,7 +24736,15 @@ export const CreateMRDirectoryResponse = zod.object({
       .string()
       .min(1)
       .max(createMRDirectoryResponseRecordEmployeeCodeMax),
-    hq: zod.string().uuid(),
+    hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    hqIds: zod
+      .union([
+        zod
+          .array(zod.string().uuid())
+          .max(createMRDirectoryResponseRecordHqIdsOneMax),
+        zod.null(),
+      ])
+      .optional(),
     hqName: zod.string(),
     id: zod.string().uuid(),
     landmark: zod
@@ -24518,11 +24826,48 @@ export const ResolveMRAccountResponse = zod.object({
     .string()
     .max(resolveMRAccountResponseAddressLine2Max)
     .default(resolveMRAccountResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(resolveMRAccountResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(resolveMRAccountResponseAssignedAreasItemDeletedDefault),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            resolveMRAccountResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
         .boolean()
         .default(resolveMRAccountResponseAssignedZonesItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -24535,6 +24880,9 @@ export const ResolveMRAccountResponse = zod.object({
     .enum(["required", "optional"])
     .default(resolveMRAccountResponseContactRequirementDefault),
   country: zod.string().min(1).max(resolveMRAccountResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -24803,7 +25151,13 @@ export const ResolveMRAccountResponse = zod.object({
     .string()
     .min(1)
     .max(resolveMRAccountResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(resolveMRAccountResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(resolveMRAccountResponseLandmarkMax),
@@ -24881,11 +25235,48 @@ export const ResolveCreatedMRResponse = zod.object({
     .string()
     .max(resolveCreatedMRResponseAddressLine2Max)
     .default(resolveCreatedMRResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(resolveCreatedMRResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(resolveCreatedMRResponseAssignedAreasItemDeletedDefault),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            resolveCreatedMRResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
         .boolean()
         .default(resolveCreatedMRResponseAssignedZonesItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -24898,6 +25289,9 @@ export const ResolveCreatedMRResponse = zod.object({
     .enum(["required", "optional"])
     .default(resolveCreatedMRResponseContactRequirementDefault),
   country: zod.string().min(1).max(resolveCreatedMRResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -25166,7 +25560,13 @@ export const ResolveCreatedMRResponse = zod.object({
     .string()
     .min(1)
     .max(resolveCreatedMRResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(resolveCreatedMRResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(resolveCreatedMRResponseLandmarkMax),
@@ -25356,6 +25756,7 @@ export const ListMRReferenceChoicesResponse = zod.object({
       deleted: zod
         .boolean()
         .default(listMRReferenceChoicesResponseItemsItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -25435,11 +25836,48 @@ export const GetMRDirectoryResponse = zod.object({
     .string()
     .max(getMRDirectoryResponseAddressLine2Max)
     .default(getMRDirectoryResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(getMRDirectoryResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(getMRDirectoryResponseAssignedAreasItemDeletedDefault),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            getMRDirectoryResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
         .boolean()
         .default(getMRDirectoryResponseAssignedZonesItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -25452,6 +25890,9 @@ export const GetMRDirectoryResponse = zod.object({
     .enum(["required", "optional"])
     .default(getMRDirectoryResponseContactRequirementDefault),
   country: zod.string().min(1).max(getMRDirectoryResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -25717,7 +26158,13 @@ export const GetMRDirectoryResponse = zod.object({
     .max(getMRDirectoryResponseEmailMax)
     .default(getMRDirectoryResponseEmailDefault),
   employeeCode: zod.string().min(1).max(getMRDirectoryResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(getMRDirectoryResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(getMRDirectoryResponseLandmarkMax),
@@ -25796,6 +26243,46 @@ export const SetMRContactRequirementResponse = zod.object({
     .string()
     .max(setMRContactRequirementResponseAddressLine2Max)
     .default(setMRContactRequirementResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(setMRContactRequirementResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            setMRContactRequirementResponseAssignedAreasItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            setMRContactRequirementResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
@@ -25803,6 +26290,7 @@ export const SetMRContactRequirementResponse = zod.object({
         .default(
           setMRContactRequirementResponseAssignedZonesItemDeletedDefault,
         ),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -25815,6 +26303,9 @@ export const SetMRContactRequirementResponse = zod.object({
     .enum(["required", "optional"])
     .default(setMRContactRequirementResponseContactRequirementDefault),
   country: zod.string().min(1).max(setMRContactRequirementResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -26083,7 +26574,15 @@ export const SetMRContactRequirementResponse = zod.object({
     .string()
     .min(1)
     .max(setMRContactRequirementResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(setMRContactRequirementResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(setMRContactRequirementResponseLandmarkMax),
@@ -26161,11 +26660,50 @@ export const DeleteMRDirectoryResponse = zod.object({
     .string()
     .max(deleteMRDirectoryResponseAddressLine2Max)
     .default(deleteMRDirectoryResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(deleteMRDirectoryResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(deleteMRDirectoryResponseAssignedAreasItemDeletedDefault),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            deleteMRDirectoryResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
         .boolean()
         .default(deleteMRDirectoryResponseAssignedZonesItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -26178,6 +26716,9 @@ export const DeleteMRDirectoryResponse = zod.object({
     .enum(["required", "optional"])
     .default(deleteMRDirectoryResponseContactRequirementDefault),
   country: zod.string().min(1).max(deleteMRDirectoryResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -26446,7 +26987,13 @@ export const DeleteMRDirectoryResponse = zod.object({
     .string()
     .min(1)
     .max(deleteMRDirectoryResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(deleteMRDirectoryResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(deleteMRDirectoryResponseLandmarkMax),
@@ -26503,11 +27050,20 @@ export const ListMRAssociatedDoctorChoicesQueryParams = zod.object({
     .default(listMRAssociatedDoctorChoicesQueryOffsetDefault),
 });
 
+export const listMRAssociatedDoctorChoicesResponseItemsItemAreaNameDefault = ``;
+export const listMRAssociatedDoctorChoicesResponseItemsItemHqNameDefault = ``;
+
 export const ListMRAssociatedDoctorChoicesResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      areaName: zod
+        .string()
+        .default(listMRAssociatedDoctorChoicesResponseItemsItemAreaNameDefault),
       doctorNumber: zod.string(),
+      hqName: zod
+        .string()
+        .default(listMRAssociatedDoctorChoicesResponseItemsItemHqNameDefault),
       id: zod.string().uuid(),
       name: zod.string(),
       registrationNumber: zod.string(),
@@ -26553,11 +27109,20 @@ export const EditMRDirectoryBody = zod.object({
     .string()
     .max(editMRDirectoryBodyAddressLine2Max)
     .default(editMRDirectoryBodyAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(editMRDirectoryBodyAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   city: zod.string().min(1).max(editMRDirectoryBodyCityMax),
   contactRequirement: zod
     .enum(["required", "optional"])
     .default(editMRDirectoryBodyContactRequirementDefault),
   country: zod.string().min(1).max(editMRDirectoryBodyCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   dateOfJoining: zod.coerce.date(),
   designation_id: zod.string().uuid(),
   dialCountry: zod
@@ -26821,7 +27386,13 @@ export const EditMRDirectoryBody = zod.object({
     .default(editMRDirectoryBodyEmailDefault),
   employeeCode: zod.string().min(1).max(editMRDirectoryBodyEmployeeCodeMax),
   expected_version: zod.number().int().min(1),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(editMRDirectoryBodyHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   landmark: zod.string().min(1).max(editMRDirectoryBodyLandmarkMax),
   name: zod.string().min(1).max(editMRDirectoryBodyNameMax),
   paymentLimit: zod
@@ -26888,11 +27459,48 @@ export const EditMRDirectoryResponse = zod.object({
     .string()
     .max(editMRDirectoryResponseAddressLine2Max)
     .default(editMRDirectoryResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(editMRDirectoryResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(editMRDirectoryResponseAssignedAreasItemDeletedDefault),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            editMRDirectoryResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
         .boolean()
         .default(editMRDirectoryResponseAssignedZonesItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -26905,6 +27513,9 @@ export const EditMRDirectoryResponse = zod.object({
     .enum(["required", "optional"])
     .default(editMRDirectoryResponseContactRequirementDefault),
   country: zod.string().min(1).max(editMRDirectoryResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -27170,7 +27781,13 @@ export const EditMRDirectoryResponse = zod.object({
     .max(editMRDirectoryResponseEmailMax)
     .default(editMRDirectoryResponseEmailDefault),
   employeeCode: zod.string().min(1).max(editMRDirectoryResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod.array(zod.string().uuid()).max(editMRDirectoryResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(editMRDirectoryResponseLandmarkMax),
@@ -27253,6 +27870,50 @@ export const ResetMRPasswordResponse = zod.object({
       .string()
       .max(resetMRPasswordResponseRecordAddressLine2Max)
       .default(resetMRPasswordResponseRecordAddressLine2Default),
+    areaIds: zod
+      .union([
+        zod
+          .array(zod.string().uuid())
+          .max(resetMRPasswordResponseRecordAreaIdsOneMax),
+        zod.null(),
+      ])
+      .optional(),
+    assignedAreas: zod
+      .array(
+        zod.object({
+          deleted: zod
+            .boolean()
+            .default(
+              resetMRPasswordResponseRecordAssignedAreasItemDeletedDefault,
+            ),
+          headquarterId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.string(),
+          userId: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+      )
+      .optional(),
+    assignedHeadquarters: zod
+      .array(
+        zod.object({
+          deleted: zod
+            .boolean()
+            .default(
+              resetMRPasswordResponseRecordAssignedHeadquartersItemDeletedDefault,
+            ),
+          headquarterId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.string(),
+          userId: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+      )
+      .optional(),
     assignedZones: zod.array(
       zod.object({
         deleted: zod
@@ -27260,6 +27921,7 @@ export const ResetMRPasswordResponse = zod.object({
           .default(
             resetMRPasswordResponseRecordAssignedZonesItemDeletedDefault,
           ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         id: zod.string().uuid(),
         name: zod.string(),
         status: zod.string(),
@@ -27272,6 +27934,9 @@ export const ResetMRPasswordResponse = zod.object({
       .enum(["required", "optional"])
       .default(resetMRPasswordResponseRecordContactRequirementDefault),
     country: zod.string().min(1).max(resetMRPasswordResponseRecordCountryMax),
+    coverageScope: zod
+      .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+      .optional(),
     createdAt: zod.coerce.date(),
     createdBy: zod.string(),
     dateOfJoining: zod.coerce.date(),
@@ -27540,7 +28205,15 @@ export const ResetMRPasswordResponse = zod.object({
       .string()
       .min(1)
       .max(resetMRPasswordResponseRecordEmployeeCodeMax),
-    hq: zod.string().uuid(),
+    hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    hqIds: zod
+      .union([
+        zod
+          .array(zod.string().uuid())
+          .max(resetMRPasswordResponseRecordHqIdsOneMax),
+        zod.null(),
+      ])
+      .optional(),
     hqName: zod.string(),
     id: zod.string().uuid(),
     landmark: zod.string().min(1).max(resetMRPasswordResponseRecordLandmarkMax),
@@ -27620,11 +28293,50 @@ export const SetMRDirectoryStatusResponse = zod.object({
     .string()
     .max(setMRDirectoryStatusResponseAddressLine2Max)
     .default(setMRDirectoryStatusResponseAddressLine2Default),
+  areaIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(setMRDirectoryStatusResponseAreaIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  assignedAreas: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(setMRDirectoryStatusResponseAssignedAreasItemDeletedDefault),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
+  assignedHeadquarters: zod
+    .array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            setMRDirectoryStatusResponseAssignedHeadquartersItemDeletedDefault,
+          ),
+        headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+    )
+    .optional(),
   assignedZones: zod.array(
     zod.object({
       deleted: zod
         .boolean()
         .default(setMRDirectoryStatusResponseAssignedZonesItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
@@ -27637,6 +28349,9 @@ export const SetMRDirectoryStatusResponse = zod.object({
     .enum(["required", "optional"])
     .default(setMRDirectoryStatusResponseContactRequirementDefault),
   country: zod.string().min(1).max(setMRDirectoryStatusResponseCountryMax),
+  coverageScope: zod
+    .union([zod.enum(["zone", "hq", "area"]), zod.null()])
+    .optional(),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
@@ -27905,7 +28620,15 @@ export const SetMRDirectoryStatusResponse = zod.object({
     .string()
     .min(1)
     .max(setMRDirectoryStatusResponseEmployeeCodeMax),
-  hq: zod.string().uuid(),
+  hq: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  hqIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .max(setMRDirectoryStatusResponseHqIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
   hqName: zod.string(),
   id: zod.string().uuid(),
   landmark: zod.string().min(1).max(setMRDirectoryStatusResponseLandmarkMax),
@@ -39767,7 +40490,7 @@ export const ListSalesTargetsResponse = zod.object({
         .int()
         .min(listSalesTargetsResponseItemsItemEndYearMin)
         .max(listSalesTargetsResponseItemsItemEndYearMax),
-      headquarterId: zod.string().uuid(),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]),
       headquarterName: zod.string(),
       id: zod.string().uuid(),
       mrId: zod.string().uuid(),
@@ -39847,7 +40570,7 @@ export const CreateSalesTargetResponse = zod.object({
     .int()
     .min(createSalesTargetResponseEndYearMin)
     .max(createSalesTargetResponseEndYearMax),
-  headquarterId: zod.string().uuid(),
+  headquarterId: zod.union([zod.string().uuid(), zod.null()]),
   headquarterName: zod.string(),
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
@@ -39915,7 +40638,7 @@ export const GetSalesTargetChoicesResponse = zod.object({
   mrs: zod.array(
     zod.object({
       employeeCode: zod.string(),
-      headquarterId: zod.string().uuid(),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]),
       headquarterName: zod.string(),
       id: zod.string().uuid(),
       name: zod.string(),
@@ -40088,7 +40811,7 @@ export const GetSalesTargetResponse = zod.object({
     .int()
     .min(getSalesTargetResponseEndYearMin)
     .max(getSalesTargetResponseEndYearMax),
-  headquarterId: zod.string().uuid(),
+  headquarterId: zod.union([zod.string().uuid(), zod.null()]),
   headquarterName: zod.string(),
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
@@ -40132,7 +40855,7 @@ export const DeleteSalesTargetResponse = zod.object({
     .int()
     .min(deleteSalesTargetResponseEndYearMin)
     .max(deleteSalesTargetResponseEndYearMax),
-  headquarterId: zod.string().uuid(),
+  headquarterId: zod.union([zod.string().uuid(), zod.null()]),
   headquarterName: zod.string(),
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
@@ -40196,7 +40919,7 @@ export const EditSalesTargetResponse = zod.object({
     .int()
     .min(editSalesTargetResponseEndYearMin)
     .max(editSalesTargetResponseEndYearMax),
-  headquarterId: zod.string().uuid(),
+  headquarterId: zod.union([zod.string().uuid(), zod.null()]),
   headquarterName: zod.string(),
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
@@ -40241,7 +40964,7 @@ export const SetSalesTargetStatusResponse = zod.object({
     .int()
     .min(setSalesTargetStatusResponseEndYearMin)
     .max(setSalesTargetStatusResponseEndYearMax),
-  headquarterId: zod.string().uuid(),
+  headquarterId: zod.union([zod.string().uuid(), zod.null()]),
   headquarterName: zod.string(),
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
@@ -50108,4 +50831,126 @@ export const GetCombinationRuleStatusHistoryResponse = zod.object({
     }),
   ),
   nextOffset: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Territory References
+ */
+export const listDoctorTerritoryChoicesQueryHqIdsDefault = ``;
+
+export const listDoctorTerritoryChoicesQueryQueryDefault = ``;
+
+export const ListDoctorTerritoryChoicesQueryParams = zod.object({
+  kind: zod.enum(["zones", "headquarters", "areas"]),
+  zone_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  hq_ids: zod.coerce
+    .string()
+    .max(listDoctorTerritoryChoicesQueryHqIdsMax)
+    .default(listDoctorTerritoryChoicesQueryHqIdsDefault),
+  query: zod.coerce
+    .string()
+    .max(listDoctorTerritoryChoicesQueryQueryMax)
+    .default(listDoctorTerritoryChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listDoctorTerritoryChoicesQueryLimitMax)
+    .default(listDoctorTerritoryChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listDoctorTerritoryChoicesQueryOffsetMin)
+    .max(listDoctorTerritoryChoicesQueryOffsetMax)
+    .default(listDoctorTerritoryChoicesQueryOffsetDefault),
+  include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const ListDoctorTerritoryChoicesResponse = zod.object({
+  catalogueVersion: zod.union([zod.string(), zod.null()]).optional(),
+  items: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(listDoctorTerritoryChoicesResponseItemsItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
+  offset: zod.number().int(),
+  partial: zod
+    .boolean()
+    .default(listDoctorTerritoryChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listDoctorTerritoryChoicesResponseScannedMin)
+    .max(listDoctorTerritoryChoicesResponseScannedMax)
+    .default(listDoctorTerritoryChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
+});
+
+/**
+ * @summary Territory References
+ */
+export const listMRTerritoryChoicesQueryHqIdsDefault = ``;
+
+export const listMRTerritoryChoicesQueryQueryDefault = ``;
+
+export const ListMRTerritoryChoicesQueryParams = zod.object({
+  kind: zod.enum(["zones", "headquarters", "areas"]),
+  zone_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  hq_ids: zod.coerce
+    .string()
+    .max(listMRTerritoryChoicesQueryHqIdsMax)
+    .default(listMRTerritoryChoicesQueryHqIdsDefault),
+  query: zod.coerce
+    .string()
+    .max(listMRTerritoryChoicesQueryQueryMax)
+    .default(listMRTerritoryChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listMRTerritoryChoicesQueryLimitMax)
+    .default(listMRTerritoryChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listMRTerritoryChoicesQueryOffsetMin)
+    .max(listMRTerritoryChoicesQueryOffsetMax)
+    .default(listMRTerritoryChoicesQueryOffsetDefault),
+  include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const ListMRTerritoryChoicesResponse = zod.object({
+  catalogueVersion: zod.union([zod.string(), zod.null()]).optional(),
+  items: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(listMRTerritoryChoicesResponseItemsItemDeletedDefault),
+      headquarterId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
+  offset: zod.number().int(),
+  partial: zod.boolean().default(listMRTerritoryChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listMRTerritoryChoicesResponseScannedMin)
+    .max(listMRTerritoryChoicesResponseScannedMax)
+    .default(listMRTerritoryChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
 });

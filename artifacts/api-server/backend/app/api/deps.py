@@ -139,7 +139,7 @@ def master_router(resource) -> Callable:
                   "create": "add", "edit": "edit", "status": "edit", "contact": "edit",
                   "delete": "delete", "bulk": "edit", "export": "export",
                   "sample": "import", "review": "import", "commit": "import",
-                  "username": "add", "references": None, "choices": None}
+                  "username": "add", "references": None, "choices": None, "territory_references": None}
     def check(request: Request, identity: Identity = Depends(current_identity)) -> Identity:
         name = request.scope["endpoint"].__name__
         # Protected sibling operations (e.g. Language history) remain singleton-only.

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { MRCreateContactRequirement } from "./mRCreateContactRequirement";
+import type { MRCreateCoverageScope } from "./mRCreateCoverageScope";
 import type { MRCreateDialCountry } from "./mRCreateDialCountry";
 import type { MRCreateStatus } from "./mRCreateStatus";
 
@@ -17,6 +18,7 @@ export interface MRCreate {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  areaIds?: string[] | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -28,6 +30,7 @@ export interface MRCreate {
    * @maxLength 100
    */
   country: string;
+  coverageScope?: MRCreateCoverageScope;
   dateOfJoining: Date;
   designation_id: string;
   dialCountry?: MRCreateDialCountry;
@@ -43,7 +46,8 @@ export interface MRCreate {
    * @maxLength 64
    */
   employeeCode: string;
-  hq: string;
+  hq?: string | null;
+  hqIds?: string[] | null;
   initialPassword?: string | null;
   /**
    * @minLength 1

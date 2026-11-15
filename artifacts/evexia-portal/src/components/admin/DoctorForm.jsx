@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import DoctorMRSelect from './DoctorMRSelect.jsx';
+import MRReferenceSelect from './MRReferenceSelect.jsx';
+import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
-import { lookupDoctorPIN } from '../../services/serverDoctors.js';
+import { doctorTerritoryChoices, lookupDoctorPIN } from '../../services/serverDoctors.js';
 import { discountRate, roundRate } from '../../services/rates.js';
 import { masterNameError, masterLengthErrors, normalizeMasterName, presentMasterFailure } from '../../services/masterValidation.js';
 import '../../doctor-form.css';
+import './territory.css';
 
 const FIELDS = [
   'name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'dateOfJoining',
-  'registrationNumber', 'qualification', 'clinicName', 'mrId', 'invoiceType',
+  'registrationNumber', 'qualification', 'clinicName', 'zoneId', 'hqId', 'areaId', 'mrId', 'invoiceType',
   'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit',
   'status', 'addressLine1', 'addressLine2', 'landmark', 'pincode', 'country', 'state', 'city', 'contactRequirement',
 ];
@@ -23,7 +26,7 @@ const REQUIRED = new Set([
 ]);
 const TABS = [
   { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'dateOfJoining', 'registrationNumber', 'qualification'] },
-  { id: 'clinic', label: 'Clinic & assignment', fields: ['clinicName', 'mrId', 'status'] },
+  { id: 'clinic', label: 'Clinic & assignment', fields: ['clinicName', 'zoneId', 'hqId', 'areaId', 'mrId', 'status'] },
   { id: 'commercial', label: 'Commercial details', fields: ['invoiceType', 'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'] },
 ];
@@ -109,9 +112,46 @@ function validate(values) {
   return errors;
 }
 
+const LOCATION = ['zoneId', 'hqId', 'areaId'];
+const territoryDisabled = (item, saved) => item.deleted || (item.status !== 'active' && item.id !== saved);
+
 export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = null, onDraftChange, blocked = false, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => ({ ...initialValues(doctor), ...(fixedMR ? { mrId: String(fixedMR.id) } : {}) }));
   const [hydratedMRs, setHydratedMRs] = useState([]);
+  const confirm = usePlatformConfirm();
+  const savedLocation = LOCATION.map((key) => String(doctor?.[key] ?? ''));
+  const locationChanged = LOCATION.some((key, index) => values[key] !== savedLocation[index]);
+  const legacyLocation = Boolean(doctor) && savedLocation.some((value) => !value);
+  const locationRequired = !doctor || locationChanged || (!fixedMR && values.mrId !== String(doctor?.mrId ?? ''));
+  const locationComplete = LOCATION.every((key) => values[key]);
+  async function changeLevel(key, next) {
+    if (next === values[key]) return;
+    const descendants = LOCATION.slice(LOCATION.indexOf(key) + 1).filter((child) => values[child]);
+    const owner = !fixedMR && values.mrId;
+    if (descendants.length || owner) {
+      const parts = [...descendants.map((child) => child === 'hqId' ? 'HQ' : 'Area'), ...(owner ? ['assigned MR'] : [])];
+      const ok = await confirm(`Changing the ${key === 'zoneId' ? 'Zone' : key === 'hqId' ? 'HQ' : 'Area'} clears the selected ${parts.join(', ')} because ${parts.length === 1 ? 'it' : 'they'} may no longer match this location. Cancel keeps every current selection.`, { actionLabel: 'Change and clear' });
+      if (!ok) return;
+    }
+    const patch = { [key]: next };
+    for (const child of LOCATION.slice(LOCATION.indexOf(key) + 1)) patch[child] = '';
+    if (!fixedMR) patch.mrId = '';
+    patchAddress(patch);
+  }
+  const zoneReq = (_, params, signal) => doctorTerritoryChoices('zones', params, signal);
+  const hqReq = (_, params, signal) => doctorTerritoryChoices('headquarters', { ...params, zoneId: values.zoneId }, signal);
+  const areaReq = (_, params, signal) => doctorTerritoryChoices('areas', { ...params, zoneId: values.zoneId, hqIds: [values.hqId] }, signal);
+  function renderLevel(key, label, kind, request, parentReady, savedName, hint) {
+    return <div className="doctor-form__field" key={key}>
+      <label className="doctor-form__label" htmlFor={`doctor-${key}`}>{label} {locationRequired && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
+      <MRReferenceSelect key={`${key}-${values.zoneId}-${key === 'areaId' ? values.hqId : ''}`} id={`doctor-${key}`} name={key} kind={kind} label={label} value={values[key]}
+        savedName={values[key] === String(doctor?.[key] ?? '') ? savedName : undefined} onChange={(next) => changeLevel(key, next)}
+        requestChoices={request} placeholder={parentReady ? `Select ${label}` : hint} required disabled={!parentReady || saving || blocked}
+        isDisabled={territoryDisabled} invalid={Boolean(errors[key])} describedBy={errors[key] ? `doctor-${key}-error` : undefined}
+        emptyGuidance={`No ${label} choices are available here.`} testId={`select-doctor-${key}`} />
+      {errors[key] && <p id={`doctor-${key}-error`} className="doctor-form__error" role="alert">{errors[key]}</p>}
+    </div>;
+  }
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -215,6 +255,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
     cleaned.name = normalizeMasterName(values.name);
     const nextErrors = validate(cleaned);
     if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
+    if (locationRequired) for (const key of LOCATION) if (!cleaned[key]) nextErrors[key] = 'Choose the complete Zone, HQ and Area for this assignment.';
     if (cleaned.mrId && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId || (!selectedMR.usable && cleaned.mrId !== doctor?.mrId))) nextErrors.mrId = 'Select an active server MR with a usable Zone.';
     const normalizedReg = cleaned.registrationNumber.toLocaleLowerCase();
     if (normalizedReg && records.some((record) => String(record.id) !== String(doctor?.id) && String(record.registrationNumber).toLocaleLowerCase() === normalizedReg)) {
@@ -233,6 +274,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
     try {
       const result = await onSave({
         ...cleaned,
+        zoneId: cleaned.zoneId || null, hqId: cleaned.hqId || null, areaId: cleaned.areaId || null,
         phone: cleaned.phone ? normalizePhone(cleaned.phone, cleaned.dialCountry) : '',
         alternatePhone: cleaned.alternatePhone ? normalizePhone(cleaned.alternatePhone, cleaned.dialCountry) : '',
         orderDiscount: cleaned.orderDiscount === '' ? '0.00' : discountRate(cleaned.orderDiscount),
@@ -297,11 +339,22 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Clinic & assignment</h3></div>
         <div className="doctor-form__grid">
           {renderField('clinicName', 'Clinic Name', { placeholder: 'Clinic name' })}
-           <div className="doctor-form__field doctor-form__field--assignment">{fixedMR ? <><label className="doctor-form__label" htmlFor="doctor-mrId">Assigned MR</label><input id="doctor-mrId" name="mrId" className="doctor-form__control" value={fixedMR.name} readOnly /><p className="doctor-form__hint">Fixed to your authenticated MR account. Assignment is enforced by the server.</p></> : <DoctorMRSelect labelClassName="doctor-form__label" value={values.mrId} savedName={doctor?.mrName}
+          <div className="doctor-form__field doctor-form__field--wide territory-panel" data-testid="doctor-location">
+            <p className="territory-panel__eyebrow">Exact Doctor location</p>
+            {legacyLocation && !locationChanged && <p className="doctor-form__notice" role="status" data-testid="notice-doctor-legacy-location">This saved Doctor has no complete Zone, HQ and Area. Unrelated edits keep it as is; nothing is derived from the address or assigned MR. Changing the MR requires choosing the full location.</p>}
+            <div className="territory-panel__grid">
+              {renderLevel('zoneId', 'Zone', 'zones', zoneReq, true, doctor?.zoneName, '')}
+              {renderLevel('hqId', 'HQ', 'headquarters', hqReq, Boolean(values.zoneId), doctor?.hqName, 'Choose a Zone first')}
+              {renderLevel('areaId', 'Area', 'areas', areaReq, Boolean(values.hqId), doctor?.areaName, 'Choose an HQ first')}
+            </div>
+          </div>
+           <div className="doctor-form__field doctor-form__field--assignment">{fixedMR ? <><label className="doctor-form__label" htmlFor="doctor-mrId">Assigned MR</label><input id="doctor-mrId" name="mrId" className="doctor-form__control" value={fixedMR.name} readOnly /><p className="doctor-form__hint">Fixed to your authenticated MR account and kept on save. Choose a location your coverage includes.</p>{locationChanged && <p className="doctor-form__notice" role="status">The server rejects this save if your coverage does not include the chosen Zone, HQ and Area. Ownership is never changed for you.</p>}</> : <DoctorMRSelect labelClassName="doctor-form__label" value={values.mrId} savedName={doctor?.mrName}
+            location={{ zoneId: values.zoneId, hqId: values.hqId, areaId: values.areaId }} disabled={saving || blocked}
             onHydrate={(items) => setHydratedMRs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))])}
              onChange={(value) => setValues((old) => ({ ...old, mrId: value }))} error={errors.mrId} />}
             {errors.mrId && <p className="doctor-form__error" role="alert">{errors.mrId}</p>}
-            {selectedMR && <p className="doctor-form__hint">Derived Zone: {selectedMR.zoneName || 'Missing Zone'}. Zone is controlled by MR Master.</p>}
+            {!fixedMR && !locationComplete && <p className="doctor-form__hint">Choose Zone, HQ and Area to see every active MR responsible for that exact location.</p>}
+            {!fixedMR && locationComplete && <p className="doctor-form__hint">Eligible: MRs covering the entire Zone, the entire HQ, or this Area explicitly. No MR is chosen for you.</p>}
           </div>
           {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
         </div>

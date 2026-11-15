@@ -3,6 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from app.db.base import Base
 from app.db.models import Timestamps
 
@@ -23,10 +24,20 @@ class MRDirectory(Timestamps, Base):
         CheckConstraint('"reportingManagerId" IS NULL OR "reportingStaffId" IS NULL',
                         name="ck_mr_manager_kind"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_mr_directory_deletion"),
+        CheckConstraint("""
+            ("coverageScope" IS NULL AND cardinality("hqIds")=0 AND cardinality("areaIds")=0)
+            OR ("coverageScope" IS NOT NULL AND (
+              ("coverageScope"='zone' AND hq IS NULL AND cardinality("hqIds")=0 AND cardinality("areaIds")=0)
+              OR ("coverageScope"='hq' AND hq IS NOT NULL AND hq="hqIds"[1] AND cardinality("hqIds")>0 AND cardinality("areaIds")=0)
+              OR ("coverageScope"='area' AND hq IS NOT NULL AND hq="hqIds"[1] AND cardinality("hqIds")>0 AND cardinality("areaIds")>0)))
+        """, name="ck_mr_coverage_shape"),
     )
     id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mr_profiles.id"), primary_key=True)
     contactRequirement: Mapped[str] = mapped_column(String(8))
-    hq: Mapped[uuid.UUID] = mapped_column(ForeignKey("headquarters.id"), index=True)
+    hq: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("headquarters.id"), index=True)
+    coverageScope: Mapped[str | None] = mapped_column(String(4))
+    hqIds: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list, server_default="{}", nullable=False)
+    areaIds: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list, server_default="{}", nullable=False)
     zoneId: Mapped[uuid.UUID] = mapped_column(ForeignKey("zones.id"), index=True)
     hq_name: Mapped[str] = mapped_column(String(200), nullable=False)
     zone_name: Mapped[str] = mapped_column(String(200), nullable=False)

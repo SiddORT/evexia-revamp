@@ -28,6 +28,9 @@ class DoctorFields(MasterWriteFields):
     qualification: str = Field(min_length=1, max_length=200)
     clinicName: str = Field(default="", max_length=200)
     mrId: uuid.UUID
+    zoneId: uuid.UUID | None = None
+    hqId: uuid.UUID | None = None
+    areaId: uuid.UUID | None = None
     invoiceType: Literal["normal", "gst"] = "normal"
     gstNumber: str = Field(default="", max_length=20)
     drugLicenceNumber: str = Field(default="", max_length=100)
@@ -178,6 +181,8 @@ class DoctorResponse(DoctorFields):
     mrUserId: str
     zoneId: uuid.UUID | None
     zoneName: str
+    hqName: str = ""
+    areaName: str = ""
     assignmentWarnings: list[str]
     createdBy: str
     updatedBy: str
@@ -244,6 +249,10 @@ class MRDoctorRead(BaseModel):
     mrUserId: str
     zoneId: uuid.UUID | None
     zoneName: str
+    hqId: uuid.UUID | None = None
+    areaId: uuid.UUID | None = None
+    hqName: str = ""
+    areaName: str = ""
     invoiceType: Literal["normal", "gst"]
     gstNumber: str
     drugLicenceNumber: str

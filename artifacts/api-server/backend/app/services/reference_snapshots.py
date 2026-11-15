@@ -22,7 +22,7 @@ def capture_mr(db, row, previous=None):
     from app.db.mr_models import MRDirectory
     for field, saved, model in (("hq", "hq_name", Headquarter), ("zoneId", "zone_name", Zone)):
         if previous is None or previous[field] != getattr(row, field):
-            setattr(row, saved, referenced(db, model, getattr(row, field)).name)
+            setattr(row, saved, referenced(db, model, getattr(row, field)).name if getattr(row, field) else "")
     if previous is None or previous["reportingManagerId"] != row.reportingManagerId:
         row.reporting_manager_name = (
             referenced(db, MRDirectory, row.reportingManagerId).name if row.reportingManagerId else None)

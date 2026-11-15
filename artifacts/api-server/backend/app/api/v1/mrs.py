@@ -62,6 +62,21 @@ def username(actor=Depends(manager), db: Session = Depends(get_db)):
     return mrs.username(db, actor)
 
 
+@router.get("/territory-choices", response_model=MRChoices, operation_id="listMRTerritoryChoices")
+def territory_references(kind: Literal["zones", "headquarters", "areas"],
+                         zone_id: uuid.UUID | None = None, hq_ids: str = Query("", max_length=37000),
+                         query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
+                         offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
+                         actor=Depends(manager), db: Session = Depends(get_db)):
+    from app.services import territories
+    def work():
+        mrs.authorize(db, actor, lock=False)
+        result = territories.choices(db, kind, zone_id, hq_ids, query, limit, offset, include_saved)
+        db.commit()
+        return result
+    return mrs.transaction(db, work)
+
+
 @router.get("/postal/{pin}", response_model=PostalResponse, operation_id="lookupMRPincode")
 def postal(pin: str, action: Literal["add", "edit"] = "add",
            actor=Depends(require_master("mr")), db: Session = Depends(get_db)):

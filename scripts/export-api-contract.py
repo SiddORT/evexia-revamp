@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "territories"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -154,7 +154,10 @@ def main() -> None:
         original = (args.base_contract or args.output).read_text(encoding="utf-8")
         existing = json.loads(original)
         selected = {path: item for path, item in contract["paths"].items()
-                    if (args.scope == "low-stock" and
+                    if (args.scope == "territories" and
+                        (path == "/v1/admin/mrs" or path.startswith("/v1/admin/mrs/")
+                         or path == "/v1/admin/doctors" or path.startswith("/v1/admin/doctors/")))
+                    or (args.scope == "low-stock" and
                         (path.startswith("/v1/admin/low-stock-settings") or path.endswith("/low-stock-alerts")))
                     or (args.scope == "languages" and
                         (path == "/v1/admin/languages" or path.startswith("/v1/admin/languages/")))
@@ -190,11 +193,19 @@ def main() -> None:
         for name in needed:
             prefixes = (("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
+                        else ("MR", "Doctor") if args.scope == "territories"
                         else ("Language",) if args.scope == "languages"
                         else ("Combination",) if args.scope == "combination-pricing"
                         else ("GST", "Kits") if args.scope == "gst-kits" else ("LowStock",))
             if name.startswith(prefixes) or name not in existing["components"]["schemas"]:
                 schema_updates[name] = contract["components"]["schemas"][name]
+        if args.scope == "territories":
+            # Nullable compatibility HQ projection must not hide saved targets
+            # after an MR explicitly adopts whole-Zone responsibility.
+            for name in ("SalesTargetResponse", "SalesTargetMRChoice"):
+                value = json.loads(json.dumps(existing["components"]["schemas"][name]))
+                value["properties"]["headquarterId"] = contract["components"]["schemas"][name]["properties"]["headquarterId"]
+                schema_updates[name] = value
         # Preserve handwritten contract formatting and unrelated refinements,
         # not just their parsed values. Only scoped member values are replaced.
         decoder = json.JSONDecoder()

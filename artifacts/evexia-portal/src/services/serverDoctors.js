@@ -7,6 +7,10 @@ export const getDoctor = (id, signal) => doctorRequest(`/${id}`, { signal });
 export const getDoctorOrders = (id, params, signal) => doctorRequest(`/${id}/orders`, { params: clean(params), signal });
 export const doctorFilters = (signal) => doctorRequest('/filters', { signal });
 export const doctorMRChoices = (params, signal) => doctorRequest('/references', { params: clean(params), signal });
+// Exact Doctor location reference choices (zones / headquarters / areas), strictly
+// parent-scoped by the server including saved-selection hydration.
+export const doctorTerritoryChoices = (kind, { query = '', limit = 100, offset = 0, includeSaved, zoneId, hqIds } = {}, signal) =>
+  doctorRequest('/territory-choices', { params: clean({ kind, query: query || undefined, limit: Math.min(limit, 100), offset, include_saved: includeSaved, zone_id: zoneId, hq_ids: hqIds?.length ? hqIds.join(',') : undefined }), signal });
 // Initial section plus saved-selection hydration only. The UI explicitly
 // searches/continues choices; never traverse the complete directory silently.
 export async function allDoctorMRChoices(signal, saved) {

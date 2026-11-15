@@ -57,7 +57,7 @@ class SalesTargetResponse(SalesTargetFields):
     employeeCode: str
     zoneId: uuid.UUID
     zoneName: str
-    headquarterId: uuid.UUID
+    headquarterId: uuid.UUID | None
     headquarterName: str
     annualTotal: str
     createdBy: str
@@ -90,7 +90,7 @@ class SalesTargetMRChoice(BaseModel):
     employeeCode: str
     zoneId: uuid.UUID
     zoneName: str
-    headquarterId: uuid.UUID
+    headquarterId: uuid.UUID | None
     headquarterName: str
 
 

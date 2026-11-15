@@ -1,5 +1,5 @@
 """Singleton-only Doctor directory. Reuse MR's graph lock and identity boundary."""
-from sqlalchemy import false, func, or_, select, text
+from sqlalchemy import and_, false, func, or_, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import utcnow
 from app.db.doctor_models import DoctorDirectory as Doctor
@@ -83,14 +83,23 @@ def assignment_warnings(mr, zone):
 
 def projection(db, row, context=None):
     mr = context["mrs"].get(row.mrId) if context is not None else db.get(MRDirectory, row.mrId)
-    zone = (context["zones"].get(mr.zoneId) if context is not None else db.get(Zone, mr.zoneId)) if mr and not mr.deleted_at else None
+    zone = db.get(Zone, row.zoneId) if row.zoneId else None
     warnings = assignment_warnings(mr, zone)
+    from app.services import territories
+    from app.db.headquarter_models import HeadquarterArea
+    hq = db.get(Headquarter, row.hqId) if row.hqId else None
+    area = db.get(HeadquarterArea, row.areaId) if row.areaId else None
+    if not all((row.zoneId, row.hqId, row.areaId)):
+        warnings.append("Legacy Doctor location is incomplete; no Zone, HQ or Area has been inferred. Review location before changing assignment.")
+    elif not territories.location(db, row.zoneId, row.hqId, row.areaId) or not db.scalar(
+            select(MRDirectory.id).where(MRDirectory.id == row.mrId, territories.eligibility(row.zoneId, row.hqId, row.areaId))):
+        warnings.append("Saved location or responsible MR is no longer eligible. Retain unchanged history or explicitly resolve the assignment.")
     return dict(**{key: getattr(row, key) for key in DoctorFields.model_fields},
                 id=row.id, doctorNumber=row.doctorNumber, version=row.version, verification=row.verification,
                 mrName=mr.name if mr and not mr.deleted_at else "",
                 mrUserId=(context["mrLabels"] if context is not None else mrs.account_labels(db, [mr.id])).get(mr.id, "") if mr and not mr.deleted_at else "",
-                zoneId=zone.id if zone and not zone.deleted_at else None,
                  zoneName=zone.name if zone and not zone.deleted_at else "",
+                hqName=hq.name if hq else "", areaName=area.name if area else "",
                 assignmentWarnings=warnings, createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
@@ -107,7 +116,7 @@ def read_projection(db, actor, row, context=None):
     return result
 
 
-def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retained_assignments=False):
+def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retained_assignments=False, exact_location=False):
     # Only historical relationship queries opt in. Live masters, actions,
     # exports and assignment choices always use the tombstone-excluding default.
     clauses = [] if retained_assignments else [Doctor.deleted_at.is_(None)]
@@ -120,8 +129,14 @@ def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retain
     if mr_id:
         clauses.append(Doctor.mrId.not_in(live_mrs) if mr_id == "missing" else Doctor.mrId == mr_id)
     if zone_id:
-        clauses.append(Doctor.mrId.not_in(usable_zone_mrs) if zone_id == "missing"
-                       else Doctor.mrId.in_(usable_zone_mrs.where(MRDirectory.zoneId == zone_id)))
+        legacy = (Doctor.mrId.not_in(usable_zone_mrs) if zone_id == "missing"
+                  else Doctor.mrId.in_(usable_zone_mrs.where(MRDirectory.zoneId == zone_id)))
+        if exact_location:
+            saved = (Doctor.zoneId.not_in(select(Zone.id).where(Zone.deleted_at.is_(None)))
+                     if zone_id == "missing" else Doctor.zoneId == zone_id)
+            clauses.append(or_(saved, and_(Doctor.zoneId.is_(None), legacy)))
+        else:
+            clauses.append(legacy)
     if state:
         clauses.append(Doctor.state_index == encrypted.crypto().doctor_state_index(state))
     return clauses
@@ -141,17 +156,19 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", l
         scope = owned_clauses(current)
         # MR filters describe saved assignments, including secondary zones.
         # Keep the shared ownership predicate and writable choices unchanged.
-        clauses = predicates("", status, "" if current.role == "mr" else zone_id, mr_id, state) + scope
+        clauses = predicates("", status, "" if current.role == "mr" else zone_id, mr_id, state, exact_location=True) + scope
         if current.role == "mr" and zone_id == "missing":
             clauses.append(false())  # MR filters never offer missing/other assignments.
         elif current.role == "mr" and zone_id:
             members = select(MRZoneAssignment.mr_id).join(Zone, Zone.id == MRZoneAssignment.zone_id).where(
                 MRZoneAssignment.zone_id == zone_id, Zone.deleted_at.is_(None))
-            clauses.append(Doctor.mrId.in_(members))
+            clauses.append(or_(Doctor.zoneId == zone_id,
+                               and_(Doctor.zoneId.is_(None), Doctor.mrId.in_(members))))
         if headquarter_id:
             assigned = select(MRDirectory.id).join(Headquarter, Headquarter.id == MRDirectory.hq).where(
                 MRDirectory.deleted_at.is_(None), Headquarter.deleted_at.is_(None), MRDirectory.hq == headquarter_id)
-            clauses.append(Doctor.mrId.in_(assigned))
+            clauses.append(or_(Doctor.hqId == headquarter_id,
+                               and_(Doctor.hqId.is_(None), Doctor.mrId.in_(assigned))))
         total = db.scalar(select(func.count()).select_from(Doctor).where(Doctor.deleted_at.is_(None), *scope))
         meta = {}
         if query.strip():
@@ -196,17 +213,17 @@ def detail(db, actor, record_id):
     return transaction(db, work)
 
 
-def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor=None):
+def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor=None, zone_id=None, hq_id=None, area_id=None, assignment_only=False):
     def work():
         current = authorize(db, actor, lock=False)
-        if current.role == "mr":
-            mr, zone = assignment(db, current.mr.id)
-            result = dict(items=[dict(id=mr.id, name=mr.name, userId=current.user.username or "",
-                status=mr.status, deleted=False, zoneId=zone.id, zoneName=zone.name,
-                zoneStatus=zone.status, usable=True)], total=1, limit=limit, offset=0)
+        from app.services import territories
+        scoped = assignment_only or any((zone_id, hq_id, area_id))
+        if scoped and not territories.location(db, zone_id, hq_id, area_id):
             db.commit()
-            return result
-        clauses = [MRDirectory.deleted_at.is_(None)]
+            return dict(items=[], total=0, limit=limit, offset=offset)
+        clauses = [territories.eligibility(zone_id, hq_id, area_id)] if scoped else [MRDirectory.deleted_at.is_(None)]
+        if current.role == "mr":
+            clauses.append(MRDirectory.id == current.mr.id)
         if query:
             rows, meta = encrypted.scan(db, MRDirectory, clauses, None, limit=limit, cursor=cursor,
                 prepare=lambda rows: mrs.identity_matcher(db, query, rows))
@@ -215,7 +232,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
             total = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
             rows = list(db.scalars(select(MRDirectory).where(*clauses).order_by(MRDirectory.id).limit(limit).offset(offset)))
             meta = {}
-        saved = db.get(MRDirectory, include_saved) if include_saved else None
+        saved = db.scalar(select(MRDirectory).where(*clauses, MRDirectory.id == include_saved)) if include_saved else None
         if saved and saved not in rows:
             rows.append(saved)
         items = []
@@ -247,7 +264,7 @@ def filters(db, actor):
         headquarters = []
         if current.role == "mr":
             mr = db.get(MRDirectory, current.mr.id)
-            hq = db.get(Headquarter, mr.hq)
+            hq = db.get(Headquarter, mr.hq) if mr.hq else None
             if hq and not hq.deleted_at:
                 headquarters.append(dict(id=str(hq.id), name=hq.name))
         result = dict(zones=[dict(id=str(zone.id), name=zone.name, status=zone.status) for zone in zones],
@@ -291,6 +308,8 @@ def create(db, actor, body):
         mrs.graph_lock(db)
         assigned = body.model_copy(update={"mrId": current.mr.id}) if current.role == "mr" else body
         assignment(db, assigned.mrId)
+        from app.services.territories import validate_doctor
+        validate_doctor(db, assigned)
         unique(db, assigned.registrationNumber)
         result = read_projection(db, current, insert(db, current, assigned))
         db.commit()
@@ -306,12 +325,17 @@ def mutate(db, actor, record_id, body, operation):
         if row.version != body.expected_version:
             raise DoctorError("Doctor changed. Your draft was not saved. Refresh to review the latest version.", 409, "doctor_stale")
         if operation == "edit":
-            assignment(db, body.mrId, row)
+            from app.services.territories import validate_doctor
+            # Older clients omit additive location fields: never erase them.
+            body_values = {k: getattr(row, k) for k in ("zoneId", "hqId", "areaId") if k not in body.model_fields_set}
+            edited = body.model_copy(update=body_values)
+            validate_doctor(db, edited, row)
+            assignment(db, edited.mrId, row)
             unique(db, body.registrationNumber, row.id)
             if body.mrId != row.mrId:
                 from app.services.patients import shift_doctors
                 shift_doctors(db, current, [(row, body.mrId)])
-            for key, value in body.model_dump(exclude={"expected_version"}).items():
+            for key, value in edited.model_dump(exclude={"expected_version"}).items():
                 setattr(row, key, value)
         elif operation == "status":
             row.status = body.status
@@ -343,6 +367,9 @@ def bulk(db, actor, body):
                 raise DoctorError("A selected doctor changed. Nothing was saved. Refresh and select again.", 409, "doctor_stale")
             assignment(db, body.mrId if body.operation == "shift" else row.mrId,
                        None if body.operation == "shift" else row)
+            if body.operation == "shift":
+                from app.services.territories import validate_doctor
+                validate_doctor(db, row, row, mr_id=body.mrId)
             rows.append(row)
         now = utcnow()
         if body.operation == "shift":

@@ -50,6 +50,11 @@ MULTI_EXPORT_HEADERS = HEADERS + ["Reporting Manager Name"]
 COLUMNS = COLUMNS + [("reportingStaffId", "Reporting Staff ID")]
 HEADERS = [title for _, title in COLUMNS]
 EXPORT_HEADERS = HEADERS + ["Reporting Manager Name", "Reporting Staff Name"]
+PRE_TERRITORY_HEADERS = list(HEADERS)
+PRE_TERRITORY_EXPORT_HEADERS = list(EXPORT_HEADERS)
+COLUMNS += [("coverageScope", "Coverage Scope"), ("hqIds", "Headquarter IDs JSON"), ("areaIds", "Area IDs JSON")]
+HEADERS = [title for _, title in COLUMNS]
+EXPORT_HEADERS = HEADERS + ["Reporting Manager Name", "Reporting Staff Name"]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
 LEGACY = [title for title in OLD_HEADERS if title != "Contact Requirement"]
 
@@ -119,6 +124,8 @@ def parse(data, filename):
                                   SINGLE_HEADERS + ["Reporting Manager Name"], SINGLE_HEADERS + ["Reporting Manager Name"] + AUDIT,
                                   MULTI_HEADERS, MULTI_HEADERS + AUDIT,
                                   MULTI_EXPORT_HEADERS, MULTI_EXPORT_HEADERS + AUDIT,
+                                  PRE_TERRITORY_HEADERS, PRE_TERRITORY_HEADERS + AUDIT,
+                                  PRE_TERRITORY_EXPORT_HEADERS, PRE_TERRITORY_EXPORT_HEADERS + AUDIT,
                                   EXPORT_HEADERS, EXPORT_HEADERS + AUDIT):
         invalid("Use the current MR schema or a previously exported MR backup. Password, identity-link, version, deletion and unknown columns are forbidden. The reduced six-column mock template is not a backup.")
     header = rows[0]
@@ -136,6 +143,15 @@ def parse(data, filename):
         if "Assigned Zones JSON" in header and not values["zoneIds"]:
             errors.append("Assigned Zones JSON is required in the multi-zone schema; use a nonempty JSON array.")
         values["contactRequirement"] = (values["contactRequirement"] or "required").lower()
+        values["coverageScope"] = values["coverageScope"] or None
+        for key in ("hqIds", "areaIds"):
+            try:
+                values[key] = json.loads(values[key] or "[]")
+                if not isinstance(values[key], list):
+                    raise ValueError()
+            except (ValueError, TypeError):
+                errors.append(f"{key} must be a JSON array of saved UUIDs.")
+                values[key] = []
         values["dialCountry"] = (values["dialCountry"] or "IN").upper()
         values["status"] = values["status"].lower()
         if values["doctorDaysLimit"]:
@@ -224,7 +240,7 @@ def review_state(db, parsed):
         errors = list(row["errors"])
         values = dict(source)
         try:
-            values["hq"] = resolve_catalog(db, Headquarter, values["hq"], "HQ")
+            values["hq"] = resolve_catalog(db, Headquarter, values["hq"], "HQ") if values["hq"] else None
             values["zoneId"] = resolve_catalog(db, Zone, values["zoneId"], "Assigned Zone")
             encoded_zones = values.get("zoneIds", "")
             if encoded_zones:
@@ -282,12 +298,18 @@ def review_state(db, parsed):
         # Assignment versions bind review to the actual resolved server catalogue.
         refs = []
         for model, target in ((Headquarter, body.hq), *((Zone, key) for key in (body.zoneIds or [body.zoneId])),
+                              *((Headquarter, key) for key in (body.hqIds or [])),
                               (Designation, body.designation_id), (MRDirectory, body.reportingManagerId),
                               (mrs.StaffProfile, body.reportingStaffId)):
             if target and (model is not MRDirectory or target not in bodies):
                 entry = db.get(model, target)
                 refs.append((str(target), entry.version if entry else None,
                              entry.status if entry else None, bool(entry.deleted_at) if entry else None))
+        from app.db.headquarter_models import HeadquarterArea
+        for key in body.areaIds or []:
+            entry = db.get(HeadquarterArea, key)
+            refs.append((str(key), str(entry.headquarter_id), entry.name, entry.code,
+                         str(entry.updated_at), bool(entry.deleted_at)) if entry else (str(key), None))
         snapshot.append((str(record_id), body.model_dump(mode="json"), refs))
     return reviewed, bodies, snapshot
 
@@ -377,7 +399,7 @@ def encode(rows, format, audit=False, snapshots=False):
 def sample(format):
     # Explicit fictional labels are not silently created: operators replace them.
     values = dict(employeeCode="MR-001", name="Example MR", phone="9876543210", dialCountry="IN", userId="example.mr",
-                  email="", contactRequirement="optional", hq="Replace with active HQ",
+                  email="", contactRequirement="optional", hq="", coverageScope="zone", hqIds="[]", areaIds="[]",
                   zoneId="Replace with active Zone", zoneIds='["Replace with active Zone"]', dateOfJoining=date.today().isoformat(),
                   designation_id="Replace with active catalogue Designation name or UUID", reportingManagerId="", reportingStaffId="", paymentLimit="0.00",
                   doctorDaysLimit="0", status="inactive", addressLine1="Example address", addressLine2="",
@@ -417,6 +439,9 @@ def export(db, actor, query, status, zone_id, hq_id, format):
             # UUIDs avoid delimiter/name ambiguity and preserve tombstone identity.
             values["zoneId"] = str(record.zoneId)
             values["zoneIds"] = json.dumps([str(key) for key in values["zoneIds"]], separators=(",", ":"))
+            values["coverageScope"] = record.coverageScope or ""
+            for key in ("hqIds", "areaIds"):
+                values[key] = json.dumps([str(v) for v in getattr(record, key)], separators=(",", ":"))
             values["designation_id"] = values["designationName"]
             if record.reportingManagerId:
                 values["reportingManagerId"] = "user:" + context["accounts"][record.reportingManagerId].username

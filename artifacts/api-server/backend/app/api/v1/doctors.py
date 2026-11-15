@@ -17,14 +17,14 @@ from app.schemas.doctors import (
 from app.services import doctors, doctor_transfer, mrs
 from app.services.designations import DesignationError
 from app.services.downloads import server_record
-from app.schemas.mrs import PostalResponse
+from app.schemas.mrs import PostalResponse, MRChoices
 from app.services import mr_postal
 
 router = APIRouter(prefix="/admin/doctors", tags=["Doctor Master"])
 def manager(request: Request, identity=Depends(current_identity)):
     operations = {"listing": None, "detail": None, "orders": None, "filters": None, "references": None,
                   "create": "add", "sample": "import", "review": "import",
-                  "commit": "import", "export": "export", "postal": "add"}
+                  "commit": "import", "export": "export", "postal": "add", "territory_references": None}
     name = request.scope["endpoint"].__name__
     if identity.role == "mr":
         if identity.mr is not None and name in operations:
@@ -72,8 +72,25 @@ def create(body: DoctorFields, actor=Depends(manager), db: Session = Depends(get
 def references(query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
                cursor: uuid.UUID | None = None,
+               zone_id: uuid.UUID | None = None, hq_id: uuid.UUID | None = None, area_id: uuid.UUID | None = None,
+               assignment_only: bool = False,
                actor=Depends(manager), db: Session = Depends(get_db)):
-    return doctors.choices(db, actor, query, limit, offset, include_saved, cursor)
+    return doctors.choices(db, actor, query, limit, offset, include_saved, cursor, zone_id, hq_id, area_id, assignment_only)
+
+
+@router.get("/territory-choices", response_model=MRChoices, operation_id="listDoctorTerritoryChoices")
+def territory_references(kind: Literal["zones", "headquarters", "areas"],
+                         zone_id: uuid.UUID | None = None, hq_ids: str = Query("", max_length=37000),
+                         query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
+                         offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
+                         actor=Depends(manager), db: Session = Depends(get_db)):
+    from app.services import territories
+    def work():
+        doctors.authorize(db, actor, lock=False)
+        result = territories.choices(db, kind, zone_id, hq_ids, query, limit, offset, include_saved)
+        db.commit()
+        return result
+    return doctors.transaction(db, work)
 
 
 @router.get("/filters", response_model=DoctorFilters, operation_id="getDoctorFilterChoices")

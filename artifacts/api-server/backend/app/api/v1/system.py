@@ -48,6 +48,8 @@ def readiness(db: Session = Depends(get_db)):
             accepted.append(["0105_combination_staged_merge"])
         if SCHEMA_REVISION == "0106_combination_rule_status":
             accepted.append(["0107_combination_status_merge"])
+        if SCHEMA_REVISION == "0106_territory_assignments":
+            accepted.append(["0107_territory_staged_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -61,6 +63,10 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0106_territory_assignments"], ["0107_territory_staged_merge"]):
+            db.execute(text('SELECT "coverageScope","hqIds","areaIds" FROM mr_directory LIMIT 0'))
+            db.execute(text('SELECT "zoneId","hqId","areaId" FROM doctor_directory LIMIT 0'))
+            revisions = ["0107_combination_status_merge"] if revisions == ["0107_territory_staged_merge"] else ["0106_combination_rule_status"]
         staged_tariff_merge = revisions in (["0103_tariff_staged_merge"], ["0105_combination_staged_merge"], ["0107_combination_status_merge"])
         if revisions in (["0106_combination_rule_status"], ["0107_combination_status_merge"]):
             from app.services.combination_rules import ready as combination_rules_ready

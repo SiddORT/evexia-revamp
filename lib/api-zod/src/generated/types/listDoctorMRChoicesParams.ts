@@ -23,4 +23,8 @@ export type ListDoctorMRChoicesParams = {
   offset?: number;
   include_saved?: string | null;
   cursor?: string | null;
+  zone_id?: string | null;
+  hq_id?: string | null;
+  area_id?: string | null;
+  assignment_only?: boolean;
 };

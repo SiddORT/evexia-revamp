@@ -17,7 +17,7 @@ export interface SalesTargetResponse {
    * @maximum 9999
    */
   endYear: number;
-  headquarterId: string;
+  headquarterId: string | null;
   headquarterName: string;
   id: string;
   mrId: string;

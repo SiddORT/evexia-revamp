@@ -133,7 +133,7 @@ export function DoctorDetailView({ doctor }) {
   const addrParts = [['Address line 1', doctor.addressLine1], ['Address line 2', doctor.addressLine2], ['Landmark', doctor.landmark], ['City', doctor.city], ['State', doctor.state], ['Pincode', doctor.pincode], ['Country', doctor.country]];
   const shown = addrParts.filter(([, v]) => String(v ?? '').trim());
   return <div className="mrw-do-detail">
-    <Section title="Identity and clinic"><Fields rows={[['Doctor number', doctor.doctorNumber], ['Registration number', doctor.registrationNumber], ['Qualification', doctor.qualification], ['Clinic', doctor.clinicName], ['Date of joining', doctor.dateOfJoining], ['Assigned MR', doctor.mrName], ['Zone', doctor.zoneName], ['Status', doctor.status], ['Verification', doctor.verification]]} /></Section>
+    <Section title="Identity and clinic"><Fields rows={[['Doctor number', doctor.doctorNumber], ['Registration number', doctor.registrationNumber], ['Qualification', doctor.qualification], ['Clinic', doctor.clinicName], ['Date of joining', doctor.dateOfJoining], ['Assigned MR', doctor.mrName], ['Zone', doctor.zoneId ? doctor.zoneName : 'Not set (legacy record)'], ['HQ', doctor.hqName || 'Not set'], ['Area', doctor.areaName || 'Not set'], ['Status', doctor.status], ['Verification', doctor.verification]]} /></Section>
     <Section title="Location">
       {shown.length ? <Fields rows={shown} /> : <p className="mrw-notice">No address available.</p>}
     </Section>

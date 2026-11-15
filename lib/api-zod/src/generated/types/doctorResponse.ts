@@ -21,6 +21,8 @@ export interface DoctorResponse {
   addressLine2?: string;
   /** @maxLength 20 */
   alternatePhone?: string;
+  areaId?: string | null;
+  areaName?: string;
   assignmentWarnings: string[];
   /**
    * @minLength 1
@@ -51,6 +53,8 @@ export interface DoctorResponse {
   email?: string;
   /** @maxLength 20 */
   gstNumber?: string;
+  hqId?: string | null;
+  hqName?: string;
   id: string;
   invoiceType?: DoctorResponseInvoiceType;
   /**

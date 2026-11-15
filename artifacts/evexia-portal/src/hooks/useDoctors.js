@@ -63,7 +63,11 @@ export default function useDoctors(params = {}, detailId = null) {
       return { success: true, record: result };
     } catch (cause) {
       try { guard(); } catch { return { success: false, error: 'Session changed.' }; }
-      if (alive.current && (cause.status === 409 || cause.ambiguous)) setState((old) => ({ ...old, error: `${cause.message} Review current records before retrying; your draft is preserved.` }));
+      // Authoritative territory rejections roll back before any mutation.
+      // Let the user resolve the location/MR without discarding the draft;
+      // stale versions and uncertain outcomes still require reconciliation.
+      const rejectedAssignment = cause.status === 409 && ['mr_assignment', 'doctor_assignment'].includes(cause.code);
+      if (alive.current && !rejectedAssignment && (cause.status === 409 || cause.ambiguous)) setState((old) => ({ ...old, error: `${cause.message} Review current records before retrying; your draft is preserved.` }));
       return { success: false, error: cause.message, fields: cause.fields };
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }

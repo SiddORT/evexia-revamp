@@ -20,6 +20,7 @@ export interface DoctorFields {
   addressLine2?: string;
   /** @maxLength 20 */
   alternatePhone?: string;
+  areaId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -46,6 +47,7 @@ export interface DoctorFields {
   email?: string;
   /** @maxLength 20 */
   gstNumber?: string;
+  hqId?: string | null;
   invoiceType?: DoctorFieldsInvoiceType;
   /**
    * @minLength 1
@@ -84,4 +86,5 @@ export interface DoctorFields {
    */
   state: string;
   status?: DoctorFieldsStatus;
+  zoneId?: string | null;
 }

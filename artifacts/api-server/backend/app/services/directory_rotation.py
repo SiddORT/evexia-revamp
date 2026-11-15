@@ -56,7 +56,9 @@ def _maintenance_revision(db):
     # Preserve exactly 0096's locks, fields and retained order inventories.
     # Do not admit the staged merge or arbitrary later schemas.
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status") else revision
+    if revision in ("0105_combination_staged_merge", "0107_combination_status_merge", "0107_territory_staged_merge"):
+        return "0097_hsn_staged_merge"
+    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status", "0106_territory_assignments") else revision
 
 
 class RotationError(Exception):
@@ -106,8 +108,14 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
-    if revisions == ["0106_combination_rule_status"]:
+    if revisions in (["0106_territory_assignments"], ["0107_territory_staged_merge"]):
+        revisions = ["0107_combination_status_merge"] if revisions == ["0107_territory_staged_merge"] else ["0106_combination_rule_status"]
+    staged_status = revisions == ["0107_combination_status_merge"]
+    if revisions in (["0106_combination_rule_status"], ["0107_combination_status_merge"]):
         db.execute(text(f"LOCK TABLE it_combination_rule_status IN {mode} MODE NOWAIT"))
+        revisions = ["0105_combination_staged_merge"] if staged_status else ["0104_combination_pricing"]
+    staged_combination = revisions == ["0105_combination_staged_merge"]
+    if staged_combination:
         revisions = ["0104_combination_pricing"]
     if revisions == ["0104_combination_pricing"]:
         # Independent PR-key evidence; it adds no Directory-encrypted fields.
@@ -121,7 +129,7 @@ def _lock(db, exclusive=False):
         db.execute(text(f"LOCK TABLE gst_policy_revisions IN {mode} MODE NOWAIT"))
         revisions = ["0098_opening_corrections"]
     if revisions == ["0098_opening_corrections"]:
-        revisions = ["0096_hsn_master"]
+        revisions = ["0097_hsn_staged_merge"] if staged_combination else ["0096_hsn_master"]
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
     if revisions in (["0096_hsn_master"], ["0097_hsn_staged_merge"]):

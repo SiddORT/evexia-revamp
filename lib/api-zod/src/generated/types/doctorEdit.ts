@@ -20,6 +20,7 @@ export interface DoctorEdit {
   addressLine2?: string;
   /** @maxLength 20 */
   alternatePhone?: string;
+  areaId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -48,6 +49,7 @@ export interface DoctorEdit {
   expected_version: number;
   /** @maxLength 20 */
   gstNumber?: string;
+  hqId?: string | null;
   invoiceType?: DoctorEditInvoiceType;
   /**
    * @minLength 1
@@ -86,4 +88,5 @@ export interface DoctorEdit {
    */
   state: string;
   status?: DoctorEditStatus;
+  zoneId?: string | null;
 }

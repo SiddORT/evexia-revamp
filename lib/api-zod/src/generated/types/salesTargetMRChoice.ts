@@ -8,7 +8,7 @@
 
 export interface SalesTargetMRChoice {
   employeeCode: string;
-  headquarterId: string;
+  headquarterId: string | null;
   headquarterName: string;
   id: string;
   name: string;

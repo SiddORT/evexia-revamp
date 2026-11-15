@@ -42,6 +42,15 @@ HEADERS = [title for _, title in COLUMNS]
 OLD_CURRENT_HEADERS = HEADERS + ["MR Name"]
 CURRENT_COLUMNS = COLUMNS + [("mrName", "MR Name"), ("doctorNumber", "Doctor Number")]
 CURRENT_HEADERS = [title for _, title in CURRENT_COLUMNS]
+PRE_TERRITORY_CURRENT_HEADERS = list(CURRENT_HEADERS)
+PRE_TERRITORY_HEADERS = list(HEADERS)
+PRE_TERRITORY_OLD_CURRENT_HEADERS = list(OLD_CURRENT_HEADERS)
+PRE_TERRITORY_LEGACY = [title for title in HEADERS if title != "Contact Requirement"]
+COLUMNS += [("zoneId", "Territory Zone ID"), ("hqId", "Territory HQ ID"), ("areaId", "Territory Area ID"),
+            ("locationIntent", "Location Intent")]
+HEADERS = [title for _, title in COLUMNS]
+CURRENT_COLUMNS = COLUMNS + [("mrName", "MR Name"), ("doctorNumber", "Doctor Number")]
+CURRENT_HEADERS = [title for _, title in CURRENT_COLUMNS]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
 LEGACY = [title for title in HEADERS if title != "Contact Requirement"]
 from app.schemas.phone import DIAL
@@ -104,7 +113,9 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 CSV and genuine XLSX are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] not in (HEADERS, HEADERS + AUDIT, LEGACY, LEGACY + AUDIT, OLD_CURRENT_HEADERS, OLD_CURRENT_HEADERS + AUDIT, CURRENT_HEADERS, CURRENT_HEADERS + AUDIT):
+    supported = (HEADERS, CURRENT_HEADERS, PRE_TERRITORY_CURRENT_HEADERS, PRE_TERRITORY_HEADERS,
+                 PRE_TERRITORY_OLD_CURRENT_HEADERS, PRE_TERRITORY_LEGACY)
+    if not rows or rows[0] not in tuple(h + suffix for h in supported for suffix in ([], AUDIT)):
         invalid("Use the full Doctor sample/export columns in their original order. Older full CSVs without Contact Requirement default to optional. Reduced mock templates, credentials, local IDs and unknown columns are not supported.")
     if len(rows) < 2:
         invalid("At least one doctor is required.")
@@ -121,6 +132,16 @@ def parse(data, filename):
                 value = value[1:]
             values[key] = value
         values["contactRequirement"] = (values["contactRequirement"] or "optional").lower()
+        historical = "Location Intent" not in rows[0]
+        intent = values.pop("locationIntent")
+        if historical:
+            intent = "legacy"
+        if intent not in ("legacy", "reviewed"):
+            errors.append("Location Intent must be reviewed or legacy.")
+        for key in ("zoneId", "hqId", "areaId"):
+            values[key] = values[key] or None
+        if intent == "legacy" and any(values[key] for key in ("zoneId", "hqId", "areaId")):
+            errors.append("Legacy location cannot contain partially adopted location fields; use reviewed with a complete location.")
         values["verification"] = (values["verification"] or "verified").lower()
         for key in ("status", "invoiceType"):
             values[key] = values[key].lower()
@@ -132,7 +153,7 @@ def parse(data, filename):
             errors.append("Days Limit must be a bounded nonnegative whole number.")
             days = "0"
         values["daysLimit"] = int(days)
-        parsed.append(dict(row=number, values=values, errors=errors))
+        parsed.append(dict(row=number, values=values, errors=errors, legacy_location=intent == "legacy"))
     return parsed
 
 
@@ -163,7 +184,9 @@ def review_state(db, parsed, actor):
             body = DoctorFields(**values)
             commercial = {key: format(getattr(body, key), ".2f") for key in commercial}
             mr, zone = doctors.assignment(db, body.mrId)
-            if actor.role != "mr" and supplied_zone and supplied_zone.lower() != zone.name.lower():
+            from app.services.territories import validate_doctor
+            validate_doctor(db, body, legacy_import=row["legacy_location"])
+            if actor.role != "mr" and row["legacy_location"] and supplied_zone and supplied_zone.lower() != zone.name.lower():
                 errors.append("Zone does not match the assigned server MR. Zone is derived, not writable.")
             doctors.unique(db, body.registrationNumber)
             key = body.registrationNumber.lower()
@@ -239,6 +262,8 @@ def sample(format):
                   invoiceType="normal", orderDiscount="0.00", daysLimit="0", paymentLimit="0.00",
                   status="active", verification="verified", addressLine1="Example Clinic Road",
                   landmark="Example landmark", pincode="110001", country="India", state="Delhi", city="Delhi")
+    values.update(locationIntent="reviewed", zoneId="Replace with saved Zone UUID",
+                  hqId="Replace with saved HQ UUID", areaId="Replace with saved Area UUID")
     return encode([[values[key] for key, _ in COLUMNS]], format)
 
 
@@ -246,7 +271,7 @@ def sample(format):
 def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", format="csv"):
     def work():
         current = doctors.authorize(db, actor, "export", lock=False)
-        clauses = doctors.predicates("", status, zone_id, mr_id, state) + doctors.owned_clauses(current)
+        clauses = doctors.predicates("", status, zone_id, mr_id, state, exact_location=True) + doctors.owned_clauses(current)
         count = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
         if not query.strip() and count > EXPORT_LIMIT:
             raise doctors.DoctorError("More than 5,000 doctors match. Narrow the filters.", 409, "doctor_export_limit")
@@ -259,6 +284,7 @@ def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", fo
         context = doctor_context(db, [row.id for row in rows])
         for row in rows:
             values = doctors.projection(db, row, context)
+            values["locationIntent"] = "reviewed" if row.areaId else "legacy"
             if current.role == "mr":
                 from app.services.person_contacts import person
                 values = person(values)

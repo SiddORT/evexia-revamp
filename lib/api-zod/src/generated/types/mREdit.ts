@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { MREditContactRequirement } from "./mREditContactRequirement";
+import type { MREditCoverageScope } from "./mREditCoverageScope";
 import type { MREditDialCountry } from "./mREditDialCountry";
 import type { MREditStatus } from "./mREditStatus";
 
@@ -17,6 +18,7 @@ export interface MREdit {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  areaIds?: string[] | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -28,6 +30,7 @@ export interface MREdit {
    * @maxLength 100
    */
   country: string;
+  coverageScope?: MREditCoverageScope;
   dateOfJoining: Date;
   designation_id: string;
   dialCountry?: MREditDialCountry;
@@ -45,7 +48,8 @@ export interface MREdit {
   employeeCode: string;
   /** @minimum 1 */
   expected_version: number;
-  hq: string;
+  hq?: string | null;
+  hqIds?: string[] | null;
   /**
    * @minLength 1
    * @maxLength 200

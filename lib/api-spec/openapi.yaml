@@ -3512,6 +3512,18 @@
             "title": "Alternatephone",
             "type": "string"
           },
+          "areaId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaid"
+          },
           "city": {
             "maxLength": 100,
             "minLength": 1,
@@ -3833,6 +3845,18 @@
             "title": "Gstnumber",
             "type": "string"
           },
+          "hqId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqid"
+          },
           "invoiceType": {
             "default": "normal",
             "enum": [
@@ -3928,6 +3952,18 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "zoneId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoneid"
           }
         },
         "required": [
@@ -3966,6 +4002,18 @@
             "maxLength": 20,
             "title": "Alternatephone",
             "type": "string"
+          },
+          "areaId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaid"
           },
           "city": {
             "maxLength": 100,
@@ -4283,6 +4331,18 @@
             "title": "Gstnumber",
             "type": "string"
           },
+          "hqId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqid"
+          },
           "invoiceType": {
             "default": "normal",
             "enum": [
@@ -4378,6 +4438,18 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "zoneId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoneid"
           }
         },
         "required": [
@@ -4581,6 +4653,23 @@
             "default": "",
             "maxLength": 20,
             "title": "Alternatephone",
+            "type": "string"
+          },
+          "areaId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaid"
+          },
+          "areaName": {
+            "default": "",
+            "title": "Areaname",
             "type": "string"
           },
           "assignmentWarnings": {
@@ -4919,6 +5008,23 @@
             "title": "Gstnumber",
             "type": "string"
           },
+          "hqId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqid"
+          },
+          "hqName": {
+            "default": "",
+            "title": "Hqname",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5053,6 +5159,7 @@
           "registrationNumber",
           "qualification",
           "mrId",
+          "zoneId",
           "pincode",
           "addressLine1",
           "landmark",
@@ -5065,7 +5172,6 @@
           "verification",
           "mrName",
           "mrUserId",
-          "zoneId",
           "zoneName",
           "assignmentWarnings",
           "createdBy",
@@ -15767,6 +15873,18 @@
             "title": "Deleted",
             "type": "boolean"
           },
+          "headquarterId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headquarterid"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -15911,6 +16029,22 @@
             "title": "Addressline2",
             "type": "string"
           },
+          "areaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaids"
+          },
           "city": {
             "maxLength": 100,
             "minLength": 1,
@@ -15931,6 +16065,22 @@
             "minLength": 1,
             "title": "Country",
             "type": "string"
+          },
+          "coverageScope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "zone",
+                  "hq",
+                  "area"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coveragescope"
           },
           "dateOfJoining": {
             "format": "date",
@@ -16214,9 +16364,32 @@
             "type": "string"
           },
           "hq": {
-            "format": "uuid",
-            "title": "Hq",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hq"
+          },
+          "hqIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqids"
           },
           "initialPassword": {
             "anyOf": [
@@ -16337,7 +16510,6 @@
         },
         "required": [
           "name",
-          "hq",
           "zoneId",
           "employeeCode",
           "dateOfJoining",
@@ -16402,6 +16574,36 @@
             "title": "Addressline2",
             "type": "string"
           },
+          "areaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaids"
+          },
+          "assignedAreas": {
+            "items": {
+              "$ref": "#/components/schemas/MRChoice"
+            },
+            "title": "Assignedareas",
+            "type": "array"
+          },
+          "assignedHeadquarters": {
+            "items": {
+              "$ref": "#/components/schemas/MRChoice"
+            },
+            "title": "Assignedheadquarters",
+            "type": "array"
+          },
           "assignedZones": {
             "items": {
               "$ref": "#/components/schemas/MRChoice"
@@ -16436,6 +16638,22 @@
             "minLength": 1,
             "title": "Country",
             "type": "string"
+          },
+          "coverageScope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "zone",
+                  "hq",
+                  "area"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coveragescope"
           },
           "createdAt": {
             "format": "date-time",
@@ -16733,9 +16951,32 @@
             "type": "string"
           },
           "hq": {
-            "format": "uuid",
-            "title": "Hq",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hq"
+          },
+          "hqIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqids"
           },
           "hqName": {
             "title": "Hqname",
@@ -16863,7 +17104,6 @@
         "required": [
           "name",
           "userId",
-          "hq",
           "zoneId",
           "zoneIds",
           "employeeCode",
@@ -16894,8 +17134,18 @@
       },
       "MRDoctorChoice": {
         "properties": {
+          "areaName": {
+            "default": "",
+            "title": "Areaname",
+            "type": "string"
+          },
           "doctorNumber": {
             "title": "Doctornumber",
+            "type": "string"
+          },
+          "hqName": {
+            "default": "",
+            "title": "Hqname",
             "type": "string"
           },
           "id": {
@@ -17247,6 +17497,23 @@
             "title": "Alternatephonedisplay",
             "type": "string"
           },
+          "areaId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaid"
+          },
+          "areaName": {
+            "default": "",
+            "title": "Areaname",
+            "type": "string"
+          },
           "assignmentWarnings": {
             "items": {
               "type": "string"
@@ -17566,6 +17833,23 @@
             "title": "Gstnumber",
             "type": "string"
           },
+          "hqId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqid"
+          },
+          "hqName": {
+            "default": "",
+            "title": "Hqname",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -17811,6 +18095,22 @@
             "title": "Addressline2",
             "type": "string"
           },
+          "areaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Areaids"
+          },
           "city": {
             "maxLength": 100,
             "minLength": 1,
@@ -17831,6 +18131,22 @@
             "minLength": 1,
             "title": "Country",
             "type": "string"
+          },
+          "coverageScope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "zone",
+                  "hq",
+                  "area"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coveragescope"
           },
           "dateOfJoining": {
             "format": "date",
@@ -18119,9 +18435,32 @@
             "type": "integer"
           },
           "hq": {
-            "format": "uuid",
-            "title": "Hq",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hq"
+          },
+          "hqIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hqids"
           },
           "landmark": {
             "maxLength": 200,
@@ -18232,7 +18571,6 @@
         "required": [
           "name",
           "userId",
-          "hq",
           "zoneId",
           "employeeCode",
           "dateOfJoining",
@@ -29230,9 +29568,16 @@
             "type": "string"
           },
           "headquarterId": {
-            "format": "uuid",
-            "title": "Headquarterid",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headquarterid"
           },
           "headquarterName": {
             "title": "Headquartername",
@@ -29371,9 +29716,16 @@
             "type": "integer"
           },
           "headquarterId": {
-            "format": "uuid",
-            "title": "Headquarterid",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headquarterid"
           },
           "headquarterName": {
             "title": "Headquartername",
@@ -50009,6 +50361,67 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hq_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hq Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "area_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Area Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assignment_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Assignment Only",
+              "type": "boolean"
             }
           }
         ],
@@ -173247,6 +173660,724 @@
         "summary": "Combination Rule Status History",
         "tags": [
           "IT Pricing Rules"
+        ]
+      }
+    },
+    "/v1/admin/doctors/territory-choices": {
+      "get": {
+        "operationId": "listDoctorTerritoryChoices",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "zones",
+                "headquarters",
+                "areas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hq_ids",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 37000,
+              "title": "Hq Ids",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Query",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_saved",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Include Saved"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MRChoices"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Territory References",
+        "tags": [
+          "Doctor Master"
+        ]
+      }
+    },
+    "/v1/admin/mrs/territory-choices": {
+      "get": {
+        "operationId": "listMRTerritoryChoices",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "zones",
+                "headquarters",
+                "areas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hq_ids",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 37000,
+              "title": "Hq Ids",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Query",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_saved",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Include Saved"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MRChoices"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Territory References",
+        "tags": [
+          "MR Master"
         ]
       }
     }

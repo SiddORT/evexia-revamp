@@ -7,6 +7,7 @@
  */
 import type { MRChoice } from "./mRChoice";
 import type { MRDirectoryResponseContactRequirement } from "./mRDirectoryResponseContactRequirement";
+import type { MRDirectoryResponseCoverageScope } from "./mRDirectoryResponseCoverageScope";
 import type { MRDirectoryResponseDialCountry } from "./mRDirectoryResponseDialCountry";
 import type { MRDirectoryResponseStatus } from "./mRDirectoryResponseStatus";
 
@@ -18,6 +19,9 @@ export interface MRDirectoryResponse {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  areaIds?: string[] | null;
+  assignedAreas?: MRChoice[];
+  assignedHeadquarters?: MRChoice[];
   assignedZones: MRChoice[];
   assignmentWarnings: string[];
   /**
@@ -31,6 +35,7 @@ export interface MRDirectoryResponse {
    * @maxLength 100
    */
   country: string;
+  coverageScope?: MRDirectoryResponseCoverageScope;
   createdAt: Date;
   createdBy: string;
   dateOfJoining: Date;
@@ -49,7 +54,8 @@ export interface MRDirectoryResponse {
    * @maxLength 64
    */
   employeeCode: string;
-  hq: string;
+  hq?: string | null;
+  hqIds?: string[] | null;
   hqName: string;
   id: string;
   /**

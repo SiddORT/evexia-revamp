@@ -60,6 +60,9 @@ def reference(db, mr_id, lock=False):
     # Hold all relationships through commit so concurrent soft deletion/changes cannot invalidate a save.
     related = []
     for model, record_id, title in ((Zone, mr.zoneId, "Zone"), (Headquarter, mr.hq, "Headquarter")):
+        if model is Headquarter and record_id is None and mr.coverageScope == "zone":
+            related.append(None)
+            continue
         query = select(model).where(model.id == record_id).execution_options(populate_existing=True)
         if lock:
             query = query.with_for_update()
@@ -75,10 +78,10 @@ def projection(db, row, related=None):
     if related is None:
         # Single-record mutation/detail paths retain their existing locks.
         mr = db.get(MRDirectory, row.mrId)
-        zone, hq = db.get(Zone, mr.zoneId), db.get(Headquarter, mr.hq)
+        zone, hq = db.get(Zone, mr.zoneId), db.get(Headquarter, mr.hq) if mr.hq else None
         from app.services.mrs import account_labels
         related = dict(mrName=mr.name, mrUserId=account_labels(db, [mr.id]).get(mr.id, ""), employeeCode=mr.employeeCode, zoneId=mr.zoneId,
-                       zoneName=zone.name, headquarterId=mr.hq, headquarterName=hq.name,
+                       zoneName=zone.name, headquarterId=mr.hq, headquarterName=hq.name if hq else "",
                        createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by))
     fields = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     fields.update({key: format(getattr(row, key), ".2f") for key in QUARTERS})
@@ -105,7 +108,7 @@ def projections(db, query):
         case((updater.is_protected_system_admin.is_(True), "Super Admin"),
              else_="Backend user").label("updatedBy"),
     ).join(MRDirectory, MRDirectory.id == SalesTarget.mrId).join(
-        Zone, Zone.id == MRDirectory.zoneId).join(Headquarter, Headquarter.id == MRDirectory.hq
+        Zone, Zone.id == MRDirectory.zoneId).outerjoin(Headquarter, Headquarter.id == MRDirectory.hq
     ).outerjoin(creator, creator.id == SalesTarget.created_by).outerjoin(
         updater, updater.id == SalesTarget.updated_by)
     from app.services.mrs import account_labels
@@ -114,6 +117,7 @@ def projections(db, query):
     result = []
     for values in values_rows:
         related = dict(values)
+        related["headquarterName"] = related["headquarterName"] or ""
         row = related.pop("SalesTarget")
         related["mrUserId"] = login_labels.get(related["_mrAadId"], "")
         related["mrName"] = encrypted.crypto().decrypt(
@@ -178,7 +182,8 @@ def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, curs
         authorize(db, actor)
         filters = [MRDirectory.deleted_at.is_(None),
                    MRDirectory.zoneId.in_(select(Zone.id).where(Zone.deleted_at.is_(None))),
-                   MRDirectory.hq.in_(select(Headquarter.id).where(Headquarter.deleted_at.is_(None)))]
+                   or_(MRDirectory.hq.in_(select(Headquarter.id).where(Headquarter.deleted_at.is_(None))),
+                       (MRDirectory.hq.is_(None) & (MRDirectory.coverageScope == "zone")))]
         if zoneId:
             filters.append(MRDirectory.zoneId == zoneId)
         if query.strip():
@@ -202,7 +207,7 @@ def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, curs
         login_labels = account_labels(db, [mr.id for mr in mrs])
         result = dict(mrs=[dict(id=mr.id, name=mr.name, userId=login_labels.get(mr.id, ""), employeeCode=mr.employeeCode, zoneId=mr.zoneId,
                                 zoneName=zone_labels[mr.zoneId].name, headquarterId=mr.hq,
-                                headquarterName=hq_labels[mr.hq].name) for mr in mrs],
+                                headquarterName=hq_labels[mr.hq].name if mr.hq in hq_labels else "") for mr in mrs],
                       zones=[dict(id=z.id, name=z.name) for z in zones], years=sorted(years, reverse=True),
                       total=None if query.strip() else db.scalar(select(func.count()).select_from(MRDirectory).where(*filters)),
                       limit=limit, offset=offset,

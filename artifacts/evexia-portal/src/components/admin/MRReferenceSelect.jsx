@@ -7,7 +7,7 @@ import '../../mr.css';
 const choiceLabel = (item) => `${item.name}${item.userId ? ` · User ID: ${item.userId}` : ''}${item.status === 'inactive' ? ' (inactive)' : ''}${item.deleted ? ' (deleted)' : ''}`;
 
 // Server search/paging stays separate from the form's selected ID and label.
-export default function MRReferenceSelect({ id, kind, label, value, savedName, onChange, placeholder, invalid, describedBy, excludeId, emptyGuidance, required, requestChoices = mrReferences, onHydrate, testId }) {
+export default function MRReferenceSelect({ id, kind, label, value, savedName, onChange, placeholder, invalid, describedBy, excludeId, emptyGuidance, required, requestChoices = mrReferences, onHydrate, testId, disabled = false, isDisabled, name, onStateChange }) {
   const [query, setQuery] = useState('');
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -89,15 +89,18 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
   const visible = state === 'ready' ? items.filter((item) => item.id !== excludeId
     && (item.id !== value || !query.trim() || choiceLabel(item).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))) : [];
   const choices = visible.map((item) => ({ value: item.id, label: choiceLabel(item),
-    disabled: ['designations', 'staff'].includes(kind) && (item.deleted || (item.status !== 'active' && item.id !== savedRef.current)) }));
+    disabled: isDisabled ? isDisabled(item, savedRef.current) : ['designations', 'staff'].includes(kind) && (item.deleted || (item.status !== 'active' && item.id !== savedRef.current)) }));
   if (!required) choices.unshift({ value: '', label: placeholder });
   const chosen = items.find((item) => item.id === value) || (selected?.id === value ? selected : null);
-  return <MRFormCombobox id={id} label={label} value={value}
+  const stateRef = useRef(onStateChange);
+  stateRef.current = onStateChange;
+  useEffect(() => { stateRef.current?.(state); }, [state]);
+  return <MRFormCombobox id={id} name={name} label={label} value={value}
     selectedLabel={value ? (chosen ? choiceLabel(chosen) : savedName || 'Saved choice') : ''}
     choices={choices} onChange={(next) => {
       setSelected(items.find((item) => item.id === next) || null); onChange(next);
-    }} onSearch={search} onDismiss={() => { invalidate(); }}
-    placeholder={placeholder} invalid={invalid} describedBy={describedBy} required={required}
+    }} onSearch={search}
+    placeholder={placeholder} disabled={disabled} invalid={invalid} describedBy={describedBy} required={required}
     loading={state === 'loading'} testId={testId || `select-mr-${kind}`}
     feedback={state === 'loading' ? 'Loading choices…' : state === 'error' ? `Choices could not be loaded. ${error}`
       : error ? `More choices could not be loaded. ${error}`
