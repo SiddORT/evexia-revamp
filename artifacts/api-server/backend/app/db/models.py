@@ -213,6 +213,7 @@ from app.db import immunotherapy_extract_models as _immunotherapy_extract_models
 from app.db import gst_settings_models as _gst_settings_models  # noqa: E402,F401
 from app.db import invoice_settings_models as _invoice_settings_models  # noqa: E402,F401
 from app.db import kits_models as _kits_models  # noqa: E402,F401
+from app.db import free_kit_models as _free_kit_models  # noqa: E402,F401
 from app.db import spt_models as _spt_models  # noqa: E402,F401
 from app.db import procurement_document_models as _procurement_document_models  # noqa: E402,F401
 from app.db import lupin_models as _lupin_models  # noqa: E402,F401

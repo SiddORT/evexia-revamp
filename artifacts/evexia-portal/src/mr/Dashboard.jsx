@@ -195,7 +195,7 @@ export default function Dashboard() {
             {d.recent.length === 0 ? <Empty title="No orders in this period" text="Create an order or choose another period." to="/mr/orders" action="Go to orders" /> :
               <ul className="mrd-recent">{d.recent.slice(0, d.recentLimit).map((o) => <li key={o.key}>
                 <Link href={ORDER_LINKS[o.kind]} data-testid={`link-recent-${o.key}`}>
-                  <span className="mrd-recent__main"><strong>{o.number}</strong><small>{KIND_LABELS[o.kind]} · {date(o.date)}</small></span>
+                  <span className="mrd-recent__main"><strong>{o.number}</strong><small>{o.classification === 'Free kit' ? 'Free kit' : KIND_LABELS[o.kind]} · {date(o.date)}</small></span>
                   <span className={`mrd-status mrd-status--${slug(o.status)}`}>{o.status}</span>
                 </Link></li>)}</ul>}
           </section>

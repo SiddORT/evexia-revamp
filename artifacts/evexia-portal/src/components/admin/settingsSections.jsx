@@ -5,12 +5,14 @@ import MessageTemplateSettings from './MessageTemplateSettings.jsx';
 import RoleUrlSettings from './RoleUrlSettings.jsx';
 import BatchNumberSettings from './BatchNumberSettings.jsx';
 import GSTSettings from './GSTSettings.jsx';
+import FreeKitSettings from './FreeKitSettings.jsx';
 import InvoiceDetailsSettings from './InvoiceDetailsSettings.jsx';
 import LowStockSettings from './LowStockSettings.jsx';
 import ImmunotherapyExtractSettings from './ImmunotherapyExtractSettings.jsx';
 import { BasicSettings, AppearanceSettings } from './SettingsPanels.jsx';
 
 export const SETTINGS_SECTIONS = [
+  { id: 'free-kit-limits', label: 'Free KIT Order Limits', Icon: Hash, superAdminOnly: true, description: 'Independent Per MR and Per Doctor order caps by Financial year or Month.', keywords: ['free', 'kit', 'limits', 'quota', 'mr', 'doctor', 'month', 'financial', 'year'], Component: FreeKitSettings },
   { id: 'basic', label: 'General', Icon: Clock, description: 'Date format, time zone and clock display.', keywords: ['basic', 'date', 'clock', 'time', 'zone', 'format', 'timestamp'], Component: BasicSettings },
   { id: 'ui', label: 'Appearance', Icon: Palette, description: 'Light or Dark appearance and Classic or Modern theme.', keywords: ['ui', 'theme', 'appearance', 'light', 'dark', 'classic', 'modern', 'colors'], Component: AppearanceSettings },
   { id: 'templates', label: 'Templates', Icon: FileText, description: 'Independent browser-local defaults for PO invoice, PR receipt, Box labels, Bottle labels, Instructions, Abroad letter, Shipping address, Immunotherapy order invoice and MR invoice. Labels, Immunotherapy and MR invoice documents are Settings samples only.', keywords: ['templates', 'mr', 'modern', 'professional', 'classic', 'reference', 'invoice', 'po', 'pr', 'receipt', 'pdf', 'document', 'default', 'box', 'bottle', 'label', 'vial', 'browser', 'local', 'instructions', 'abroad', 'letter', 'shipping', 'address', 'immunotherapy', 'order', 'sample', 'double', 'dilution'], Component: POTemplateSettings },

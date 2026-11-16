@@ -1,3 +1,11 @@
+# Explicit free KIT exclusion
+
+Orders permanently classified **Free kit** have no payable obligation and do
+not enter Accounts, receipt allocation, credits, invoice references/IRNs,
+pending-pricing exposure or Doctor balances. No money or historical flag is
+rewritten. See [Free KIT Order Limits](free-kit-limits.md). Source-only work;
+runtime and persistence were not verified.
+
 # MR Accounts and Super Admin Settlements
 
 ## Access and starting point

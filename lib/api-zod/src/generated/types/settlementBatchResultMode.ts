@@ -6,13 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementBatchResultMode = typeof SettlementBatchResultMode[keyof typeof SettlementBatchResultMode];
+export type SettlementBatchResultMode =
+  (typeof SettlementBatchResultMode)[keyof typeof SettlementBatchResultMode];
 
 export const SettlementBatchResultMode = {
-  Cash: 'Cash',
-  UPI: 'UPI',
-  Bank_transfer: 'Bank transfer',
-  Cheque: 'Cheque',
-  Card: 'Card',
-  Other: 'Other',
+  Cash: "Cash",
+  UPI: "UPI",
+  Bank_transfer: "Bank transfer",
+  Cheque: "Cheque",
+  Card: "Card",
+  Other: "Other",
 } as const;

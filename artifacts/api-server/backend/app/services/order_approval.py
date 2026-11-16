@@ -10,6 +10,9 @@ from app.services.immunotherapy import ImmError
 def editable(kind, previous):
     if not previous:
         return previous is None
+    from app.services.free_kits import is_free
+    if kind == "kits" and is_free(previous):
+        return False
     if previous.get("approval"):
         return False
     if previous["status"] == "Rejected":
@@ -19,6 +22,10 @@ def editable(kind, previous):
 
 
 def pending(kind, previous):
+    from app.services.free_kits import is_free
+    if kind == "kits" and is_free(previous):
+        return (previous["status"] == "Confirmed" and not previous.get("approval")
+                and not previous.get("rejection") and not previous.get("reviewDecision"))
     return bool(previous and editable(kind, previous) and previous["status"] == ("Saved" if kind == "spt" else "Confirmed"))
 
 
@@ -173,7 +180,9 @@ def eligibility(kind, previous):
     reason = ""
     if reviewable:
         try:
-            saved_pricing(kind, previous)
+            from app.services.free_kits import is_free
+            if not (kind == "kits" and is_free(previous)):
+                saved_pricing(kind, previous)
         except (ValueError, KeyError, TypeError, ArithmeticError, ImmError):
             reason = ("Save suborder-MRP pricing, valid composition, extract and dilution for every allergen, and a verified patient prescription before approving. Reopen Edit order."
                       if kind == "immunotherapy" else
@@ -212,7 +221,8 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                     message = ("Enter a plain-text decision reason of 1–2000 characters." if decision == "reject"
                                else "Enter a plain-text approval note of up to 2000 characters, or leave it blank.")
                     raise ImmError(message, 422, "order_decision_reason") from None
-                if decision == "approve" and row.mr_id:
+                from app.services.free_kits import is_free
+                if decision == "approve" and row.mr_id and not (kind == "kits" and is_free(previous)):
                     from app.services.order_financial_review import review
                     financial = review(db, keys, kind, row, previous, previous)
                     if body.financialReviewToken != financial["token"]:
@@ -242,7 +252,8 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                     raise ImmError("A verified attachment is required before approval.", 422, "order_approval")
                 # Retained historical identities remain valid, but revoked or
                 # unverified file records cannot become new approval evidence.
-                service.resolved(db, current, keys, contract.model_validate(values), previous)
+                service.resolved(db, current, keys, contract.model_validate(values), previous,
+                                 **({"approval_validation": True} if kind == "kits" else {}))
             snapshot = service.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
             if decision == "approve" and kind == "immunotherapy":
                 from app.services.immunotherapy_consumption import consume

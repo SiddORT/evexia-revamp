@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { FreeKitEvidence } from "./freeKitEvidence";
 import type { GSTEvidence } from "./gSTEvidence";
 import type { KitsConfiguration } from "./kitsConfiguration";
 import type { KitsContribution } from "./kitsContribution";
@@ -46,6 +47,7 @@ export interface KitsRecord {
   doctorId: string;
   financialContribution?: KitsContribution | null;
   financialHistory?: KitsRecordFinancialHistoryItem[];
+  freeKit?: FreeKitEvidence | null;
   gstEvidence?: GSTEvidence | null;
   id: string;
   irn?: OrderIRN | null;

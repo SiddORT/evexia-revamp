@@ -102,7 +102,7 @@ export default function Targets() {
               {!data.complete ? ' Unavailable contribution amounts mean the period aggregate is incomplete.' : ''}</caption>
             <thead><tr>{['Order number', 'Type', 'Saved order date', 'Status', 'Saved sales amount', 'Target contribution'].map((label) => <th scope="col" key={label}>{label}</th>)}</tr></thead>
             <tbody>{data.items.map((row) => <tr key={row.key}>
-              {[row.number, KINDS[row.kind], date(row.date), row.status, salesMoney(row.amount), row.contribution == null ? 'Unavailable' : `${row.contribution}%`].map((v, i) =>
+              {[row.number, row.classification === 'Free kit' ? 'Free kit' : KINDS[row.kind], date(row.date), row.status, row.classification === 'Free kit' ? 'No charge' : salesMoney(row.amount), row.classification === 'Free kit' ? 'Excluded' : row.contribution == null ? 'Unavailable' : `${row.contribution}%`].map((v, i) =>
                 <td key={i}><span className="mrw-sales-label" aria-hidden="true">{['Order', 'Type', 'Order date', 'Status', 'Sales', 'Contribution'][i]}</span><span>{v}</span></td>)}
             </tr>)}</tbody>
           </table>

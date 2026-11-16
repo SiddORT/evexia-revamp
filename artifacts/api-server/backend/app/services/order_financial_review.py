@@ -12,6 +12,9 @@ DEFERRED = frozenset({"kits", "spt", "lupin"})
 
 def pending_pricing(label, saved, status):
     """Only deliberate, undecided absence is pending; damaged pricing is not."""
+    from app.services.free_kits import is_free
+    if label == "Kit" and is_free(saved):
+        return False
     if status not in {"Confirmed", "Saved", "Draft", "Rejected"} or saved.get("approval"):
         return False
     if label == "Kit":
@@ -54,6 +57,9 @@ def obligations(db, keys, mr_id, *, exclude=None, doctor_id=None):
     candidates, scope, scanned = [], defaultdict(list), 0
     for label, source in SOURCES.items():
         clauses = [source.Order.mr_id == mr_id]
+        if label == "Kit":
+            from app.services.free_kits import chargeable_clause
+            clauses.append(chargeable_clause(source.Order))
         if doctor_id:
             clauses.append(source.Order.doctor_id == doctor_id)
         rows = list(db.scalars(select(source.Order).where(*clauses).order_by(source.Order.id)
@@ -72,6 +78,9 @@ def obligations(db, keys, mr_id, *, exclude=None, doctor_id=None):
     result, pending = [], []
     for label, source, row in candidates:
         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+        from app.services.free_kits import is_free
+        if label == "Kit" and is_free(saved):
+            continue
         paid = sum((settlements.exact(r["amount"]) for r in receipts[(label, row.id)]), settlements.ZERO)
         credit = settlements.credited(receipts, label, row.id)
         total = settlements.saved_total(label, saved)
@@ -123,6 +132,8 @@ def submission(db, keys, kind, data, *, row=None):
 
 
 def review(db, keys, kind, row, data, previous):
+    from app.services.free_kits import protect_financial
+    protect_financial(kind, data)
     from app.services.order_eligibility import LABELS, proposed_total
     business_date = today()
     if not row.mr_id:

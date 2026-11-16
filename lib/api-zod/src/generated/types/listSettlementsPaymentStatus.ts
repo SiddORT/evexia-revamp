@@ -6,13 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ListSettlementsPaymentStatus = typeof ListSettlementsPaymentStatus[keyof typeof ListSettlementsPaymentStatus];
+export type ListSettlementsPaymentStatus =
+  (typeof ListSettlementsPaymentStatus)[keyof typeof ListSettlementsPaymentStatus];
 
 export const ListSettlementsPaymentStatus = {
-  All: 'All',
-  Unpaid: 'Unpaid',
-  Part_paid: 'Part paid',
-  Paid: 'Paid',
-  Unavailable: 'Unavailable',
-  Pending_pricing: 'Pending pricing',
+  All: "All",
+  Unpaid: "Unpaid",
+  Part_paid: "Part paid",
+  Paid: "Paid",
+  Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;

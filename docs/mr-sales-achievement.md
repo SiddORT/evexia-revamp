@@ -1,3 +1,11 @@
+# Free KIT achievement exclusion
+
+Explicitly classified **Free kit** orders contribute nothing to achievement.
+Normal approved KIT orders continue to use saved **Business Parking**, not
+invoice totals or discount-derived contribution snapshots. Operational rows
+remain identifiable as free; absence of pricing never implies free.
+See [Free KIT Order Limits](free-kit-limits.md). Runtime remains unverified.
+
 # MR sales achievement
 
 ## KIT achievement authority

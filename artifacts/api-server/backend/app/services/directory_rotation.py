@@ -56,9 +56,9 @@ def _maintenance_revision(db):
     # Preserve exactly 0096's locks, fields and retained order inventories.
     # Do not admit the staged merge or arbitrary later schemas.
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    if revision == "0112_settlement_credits":
+    if revision in ("0112_settlement_credits", "0114_free_kit_limits"):
         return "0096_hsn_master"
-    if revision == "0113_credits_staged_merge":
+    if revision in ("0113_credits_staged_merge", "0115_free_kit_staged_merge"):
         return "0097_hsn_staged_merge"
     if revision in ("0105_combination_staged_merge", "0107_combination_status_merge", "0107_territory_staged_merge", "0109_mapping_staged_merge"):
         return "0097_hsn_staged_merge"
@@ -114,6 +114,11 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if revisions in (["0114_free_kit_limits"], ["0115_free_kit_staged_merge"]):
+        from app.services.free_kits import ready as free_kits_ready
+        free_kits_ready(db)
+        db.execute(text(f"LOCK TABLE free_kit_policy,free_kit_use IN {mode} MODE NOWAIT"))
+        revisions = ["0113_credits_staged_merge"] if revisions == ["0115_free_kit_staged_merge"] else ["0112_settlement_credits"]
     if revisions in (["0112_settlement_credits"], ["0113_credits_staged_merge"]):
         from app.services.credit_notes import ready as credits_ready
         credits_ready(db)
@@ -385,7 +390,7 @@ def _inventory(db, crypto, digest_key):
             cursor = rows[-1]["id"]
         counts[name] = count
     patient = tables["patient_directory"]
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge", "0110_retire_legacy_pricing", "0111_pricing_retirement_merge", "0112_settlement_credits", "0113_credits_staged_merge"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge", "0110_retire_legacy_pricing", "0111_pricing_retirement_merge", "0112_settlement_credits", "0113_credits_staged_merge", "0114_free_kit_limits", "0115_free_kit_staged_merge"):
         # Immutable archive: authenticate and report original-key usage, but do
         # not include it in mutable rotation batches or historical field lists.
         cursor, count = None, 0
@@ -411,7 +416,7 @@ def _inventory(db, crypto, digest_key):
             count += len(rows)
             cursor = rows[-1]["id"]
         counts["doctor_assignment_events"] = count
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0112_settlement_credits", "0113_credits_staged_merge"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0112_settlement_credits", "0113_credits_staged_merge", "0114_free_kit_limits", "0115_free_kit_staged_merge"):
         # Original keys remain required for these immutable financial archives.
         # Authenticate/count them, never send them through mutable rotation.
         from app.db.credit_note_models import CreditNote, CreditReversal, CreditRequest

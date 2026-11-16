@@ -6,12 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementRecordPaymentStatus = typeof SettlementRecordPaymentStatus[keyof typeof SettlementRecordPaymentStatus];
+export type SettlementRecordPaymentStatus =
+  (typeof SettlementRecordPaymentStatus)[keyof typeof SettlementRecordPaymentStatus];
 
 export const SettlementRecordPaymentStatus = {
-  Unpaid: 'Unpaid',
-  Part_paid: 'Part paid',
-  Paid: 'Paid',
-  Unavailable: 'Unavailable',
-  Pending_pricing: 'Pending pricing',
+  Unpaid: "Unpaid",
+  Part_paid: "Part paid",
+  Paid: "Paid",
+  Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;

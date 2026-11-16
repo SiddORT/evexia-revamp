@@ -192,6 +192,8 @@ def audit(db, current, identity, action, now):
 def create(db, actor, body):
     def attempt(current, keys):
         row, saved, record = current_record(db, keys, body.kind, body.id, lock=True)
+        from app.services.free_kits import protect_financial
+        protect_financial(body.kind, saved)
         if (row.version != body.expected_version or record["paid"] != body.expected_paid
                 or record["credited"] != body.expected_credited):
             ledger.fail("The order's financial position changed. Refresh before preparing a new credit.",

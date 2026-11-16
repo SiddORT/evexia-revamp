@@ -111,12 +111,12 @@ function ShipmentsPage() {
   const columns = [
     { key: 'serial', label: 'Sr. No.', render: (_r, index) => index + 1 },
     { key: 'order', label: 'Order / Type', render: (r) => <><strong className="shipment-mono" data-testid={`text-order-${r.key}`}>{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)}</span><span className={`shipment-type shipment-type--${r.type.toLowerCase()}`}>{TYPE_LABELS[r.type] || r.type}</span></> },
-    { key: 'value', label: 'Value', render: (r) => r.value != null ? <span className="shipment-mono">{r.value}</span> : NA },
+    { key: 'value', label: 'Value', render: (r) => r.paymentStatus === 'Free kit' ? 'Free kit · No charge' : r.value != null ? <span className="shipment-mono">{r.value}</span> : NA },
     { key: 'doctor', label: 'Doctor', render: (r) => r.doctor ?? NA },
     { key: 'mr', label: 'MR', render: (r) => r.mr ?? NA },
     { key: 'patient', label: 'Patient', render: patients },
     { key: 'courier', label: 'Shipment', render: courier },
-    { key: 'status', label: 'Status', render: (r) => <><StatusPill status={r.status} /><span className="shipment-sub">Legacy pay flag: {r.paymentStatus ?? 'Unavailable'}</span></> },
+    { key: 'status', label: 'Status', render: (r) => <><StatusPill status={r.status} /><span className="shipment-sub">{r.paymentStatus === 'Free kit' ? 'Free kit' : `Legacy pay flag: ${r.paymentStatus ?? 'Unavailable'}`}</span></> },
     { key: 'act', label: 'Action', render: (r) => <div className="shipment-actions">{viewBtn(r)}<Actions row={r} onAction={onAction} /></div> },
   ];
 
@@ -158,8 +158,8 @@ function ShipmentsPage() {
               : result.items.map((r) => <li key={r.key} className="shipment-card" data-testid={`card-shipment-${r.key}`}>
                 <div className="shipment-card__head"><div><strong className="shipment-mono">{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)} · {TYPE_LABELS[r.type] || r.type}</span></div><StatusPill status={r.status} /></div>
                 <dl className="shipment-card__facts">
-                  <div><dt>Value</dt><dd>{r.value ?? NA}</dd></div>
-                  <div><dt>Legacy payment flag</dt><dd>{r.paymentStatus ?? NA}</dd></div>
+                  <div><dt>Value</dt><dd>{r.paymentStatus === 'Free kit' ? 'Free kit · No charge' : r.value ?? NA}</dd></div>
+                  <div><dt>{r.paymentStatus === 'Free kit' ? 'Classification' : 'Legacy payment flag'}</dt><dd>{r.paymentStatus ?? NA}</dd></div>
                   <div><dt>Doctor</dt><dd>{r.doctor ?? NA}</dd></div>
                   <div><dt>MR</dt><dd>{r.mr ?? NA}</dd></div>
                   <div><dt>Patient</dt><dd>{patients(r)}</dd></div>

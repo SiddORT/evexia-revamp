@@ -5,13 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { CreditRecord } from "./creditRecord";
 import type { SettlementPerson } from "./settlementPerson";
 import type { SettlementRecordKind } from "./settlementRecordKind";
 import type { SettlementRecordPaymentStatus } from "./settlementRecordPaymentStatus";
 import type { SettlementRecordVerification } from "./settlementRecordVerification";
 import type { SettlementTransaction } from "./settlementTransaction";
-
-import type { CreditRecord } from "./creditRecord";
 
 export interface SettlementRecord {
   balance: string | null;

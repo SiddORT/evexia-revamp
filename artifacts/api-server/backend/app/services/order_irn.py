@@ -11,6 +11,9 @@ def permitted(actor, kind):
 
 def eligible(row, saved):
     """Require genuine approval evidence AND a compatible saved lifecycle."""
+    from app.services.free_kits import is_free
+    if is_free(saved):
+        return False
     from app.services.order_lifecycle import status
     approval = saved.get("approval")
     if not isinstance(approval, dict) or saved.get("rejection") or saved.get("reviewDecision") == "Rejected":

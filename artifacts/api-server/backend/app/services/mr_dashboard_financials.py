@@ -39,8 +39,9 @@ def financial_cards(db, mr_id, start, end):
             model = source.Order
             # Own saved orders, including Doctor-less Kits-to-MR. No current
             # Doctor assignment or receipt-date filter participates in scope.
+            from app.services.free_kits import chargeable_clause
             clauses = (model.mr_id == mr_id, model.date >= start, model.date <= end,
-                       model.status != "Draft")
+                       model.status != "Draft", chargeable_clause(model))
             count = db.scalar(select(func.count()).select_from(model).where(*clauses))
             if count > settlements.SCAN_LIMIT:
                 raise ImmError("Financial period exceeds the safe reporting size.",
@@ -67,6 +68,9 @@ def financial_cards(db, mr_id, start, end):
                         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
                     except EVIDENCE_ERRORS:
                         saved = None
+                    from app.services.free_kits import is_free
+                    if saved is not None and is_free(saved):
+                        continue
                     # Keep only minimal monetary evidence for the later debt
                     # pass, not thousands of protected decrypted snapshots.
                     invoice, pricing_state = None, "unavailable"

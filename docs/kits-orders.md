@@ -1,3 +1,11 @@
+# Free KIT Order Limits
+
+Protected saved-order Free kit classification, independent MR/Doctor caps,
+irreversible editing restrictions and financial exclusions are documented in
+[Free KIT Order Limits](free-kit-limits.md). This explicit classification is
+separate from unpriced normal orders and supersedes older pricing-only approval
+requirements for free orders only. Prepared source; runtime remains unverified.
+
 # Kits & Consumables saved orders
 
 ## Applicable GST source update

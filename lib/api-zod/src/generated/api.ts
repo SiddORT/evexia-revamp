@@ -6,145 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import * as zod from "zod";
-export const listImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const createImmunotherapyOrderResponseIrnCanRecordDefault = false;
-export const exportImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const commitImmunotherapyImportResponseOrdersItemIrnCanRecordDefault = false;
-export const getImmunotherapyOrderResponseIrnCanRecordDefault = false;
-export const approveImmunotherapyOrderResponseIrnCanRecordDefault = false;
-export const editImmunotherapyOrderResponseIrnCanRecordDefault = false;
-export const rejectImmunotherapyOrderResponseIrnCanRecordDefault = false;
-export const resubmitImmunotherapyOrderResponseIrnCanRecordDefault = false;
-export const listKitsOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const createKitsOrderResponseIrnCanRecordDefault = false;
-export const exportKitsOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const commitKitsImportResponseOrdersItemIrnCanRecordDefault = false;
-export const getKitsOrderResponseIrnCanRecordDefault = false;
-export const approveKitsOrderResponseIrnCanRecordDefault = false;
-export const updateKitsOrderResponseIrnCanRecordDefault = false;
-export const rejectKitsOrderResponseIrnCanRecordDefault = false;
-export const resubmitKitsOrderResponseIrnCanRecordDefault = false;
-export const listLupinOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const createLupinOrderResponseIrnCanRecordDefault = false;
-export const exportLupinOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const commitLupinImportResponseOrdersItemIrnCanRecordDefault = false;
-export const getLupinOrderResponseIrnCanRecordDefault = false;
-export const approveLupinOrderResponseIrnCanRecordDefault = false;
-export const updateLupinOrderResponseIrnCanRecordDefault = false;
-export const rejectLupinOrderResponseIrnCanRecordDefault = false;
-export const resubmitLupinOrderResponseIrnCanRecordDefault = false;
-export const submitOrderDraftResponseOneIrnCanRecordDefault = false;
-export const submitOrderDraftResponseTwoIrnCanRecordDefault = false;
-export const submitOrderDraftResponseThreeIrnCanRecordDefault = false;
-export const listSptOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const createSptOrderResponseIrnCanRecordDefault = false;
-export const exportSptOrdersResponseItemsItemIrnCanRecordDefault = false;
-export const commitSptImportResponseOrdersItemIrnCanRecordDefault = false;
-export const getSptOrderResponseIrnCanRecordDefault = false;
-export const approveSptOrderResponseIrnCanRecordDefault = false;
-export const editSptDraftResponseIrnCanRecordDefault = false;
-export const rejectSptOrderResponseIrnCanRecordDefault = false;
-export const resubmitSptOrderResponseIrnCanRecordDefault = false;
-export const recordImmunotherapyIRNBodyNumberMax = 256;
-export const recordImmunotherapyIRNResponseCorrectionSavedDefault = false;
-export const recordImmunotherapyIRNResponseIrnCanRecordDefault = false;
-export const recordImmunotherapyIRNResponseMrEditableDefault = false;
-export const recordImmunotherapyIRNResponsePricingNeedsReviewDefault = false;
-export const recordKitsIRNBodyNumberMax = 256;
-export const recordKitsIRNResponseApplicatorsMax = 12;
-export const recordKitsIRNResponseAttachmentIdsMax = 10;
-export const recordKitsIRNResponseBusinessParkingOneMax = 32;
-export const recordKitsIRNResponseCorrectionSavedDefault = false;
-export const recordKitsIRNResponseIrnCanRecordDefault = false;
-export const recordKitsIRNResponseKitCustomMax = 32;
-export const recordKitsIRNResponseKitQuantityMax = 12;
-export const recordKitsIRNResponseKitVolumeMax = 32;
-export const recordKitsIRNResponseLancetsMax = 12;
-export const recordKitsIRNResponseMrEditableDefault = false;
-export const recordKitsIRNResponseOtherAddressCityMax = 200;
-export const recordKitsIRNResponseOtherAddressCountryMax = 200;
-export const recordKitsIRNResponseOtherAddressLandmarkMax = 1000;
-export const recordKitsIRNResponseOtherAddressLine1Max = 1000;
-export const recordKitsIRNResponseOtherAddressLine2Max = 1000;
-export const recordKitsIRNResponseOtherAddressPincodeMax = 32;
-export const recordKitsIRNResponseOtherAddressStateMax = 200;
-export const recordKitsIRNResponseOtherNameMax = 200;
-export const recordKitsIRNResponseOtherPhoneMax = 25;
-export const recordKitsIRNResponsePoNumberOneMax = 200;
-export const recordKitsIRNResponsePricingOneApplicatorsRateOneMax = 32;
-export const recordKitsIRNResponsePricingOneDiscountValueMax = 32;
-export const recordKitsIRNResponsePricingOneForwardingChargesMax = 32;
-export const recordKitsIRNResponsePricingOneKitRateOneMax = 32;
-export const recordKitsIRNResponsePricingOneLancetsRateOneMax = 32;
-export const recordKitsIRNResponsePricingOneTrayRateOneMax = 32;
-export const recordKitsIRNResponsePricingNeedsReviewDefault = false;
-export const recordKitsIRNResponseRemarksMax = 4000;
-export const recordKitsIRNResponseTrayMax = 12;
-export const recordLupinIRNBodyNumberMax = 256;
-export const recordLupinIRNResponseAttachmentIdsMax = 10;
-export const recordLupinIRNResponseCorrectionSavedDefault = false;
-export const recordLupinIRNResponseIrnCanRecordDefault = false;
-export const recordLupinIRNResponseMrEditableDefault = false;
-export const recordLupinIRNResponsePatientCountMax = 1000000;
-export const recordLupinIRNResponsePatientIdsMax = 200;
-export const recordLupinIRNResponsePriceOneMax = 32;
-export const recordLupinIRNResponsePricingNeedsReviewDefault = false;
-export const recordLupinIRNResponseRemarksMax = 4000;
-export const recordSptIRNBodyNumberMax = 256;
-export const recordSptIRNResponseCorrectionSavedDefault = false;
-export const recordSptIRNResponseIrnCanRecordDefault = false;
-export const recordSptIRNResponseMrEditableDefault = false;
-export const recordSptIRNResponsePricingNeedsReviewDefault = false;
-export const recordImmunotherapyIRNResponsePricingBasisDefault = `legacy_bottle_mrp`;
-export const recordKitsIRNResponseApplicatorsDefault = ``;
-export const recordKitsIRNResponseKitCustomDefault = ``;
-export const recordKitsIRNResponseKitProductDefault = ``;
-export const recordKitsIRNResponseKitQuantityDefault = ``;
-export const recordKitsIRNResponseKitVolumeDefault = ``;
-export const recordKitsIRNResponseLancetsDefault = ``;
-export const recordKitsIRNResponseOrderForDefault = `doctor`;
-export const recordKitsIRNResponseOtherAddressCityDefault = ``;
-export const recordKitsIRNResponseOtherAddressCountryDefault = ``;
-export const recordKitsIRNResponseOtherAddressLandmarkDefault = ``;
-export const recordKitsIRNResponseOtherAddressLine1Default = ``;
-export const recordKitsIRNResponseOtherAddressLine2Default = ``;
-export const recordKitsIRNResponseOtherAddressPincodeDefault = ``;
-export const recordKitsIRNResponseOtherAddressStateDefault = ``;
-export const recordKitsIRNResponseOtherNameDefault = ``;
-export const recordKitsIRNResponseOtherPhoneDefault = ``;
-export const recordKitsIRNResponsePaymentStatusDefault = `Unpaid`;
-export const recordKitsIRNResponseRemarksDefault = ``;
-export const recordKitsIRNResponseShippingDefault = `doctor`;
-export const recordKitsIRNResponseStatusDefault = `Confirmed`;
-export const recordKitsIRNResponseTrayDefault = ``;
-export const recordLupinIRNResponsePaymentStatusDefault = `Unpaid`;
-export const recordLupinIRNResponseRemarksDefault = ``;
-export const recordLupinIRNResponseStatusDefault = `Confirmed`;
 
-
-export const listSettlementsResponseItemsItemCreditsItemDoctorOneContactsMaskedDefault = false;
-export const listSettlementsResponseItemsItemCreditsItemMrOneContactsMaskedDefault = false;
-export const settlementOrderHistoryResponseCreditsItemDoctorOneContactsMaskedDefault = false;
-export const settlementOrderHistoryResponseCreditsItemMrOneContactsMaskedDefault = false;
-export const verifySettlementTransactionResponseCreditsItemDoctorOneContactsMaskedDefault = false;
-export const verifySettlementTransactionResponseCreditsItemMrOneContactsMaskedDefault = false;
-export const listSettlementCreditNotesQuerySearchMax = 100;
-export const listSettlementCreditNotesQueryOffsetDefault = 0;
-export const listSettlementCreditNotesQueryOffsetMin = 0;
-export const listSettlementCreditNotesQueryOffsetMax = 20000;
-export const listSettlementCreditNotesQueryLimitDefault = 25;
-export const listSettlementCreditNotesQueryLimitMax = 100;
-export const listSettlementCreditNotesResponseItemsItemDoctorOneContactsMaskedDefault = false;
-export const listSettlementCreditNotesResponseItemsItemMrOneContactsMaskedDefault = false;
-export const createSettlementCreditNoteBodyInvoiceReferenceMax = 100;
-export const createSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
-export const createSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
-export const getSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
-export const getSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
-export const revertSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
-export const revertSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
-export const reconcileSettlementCreditNoteResponseNoteOneDoctorOneContactsMaskedDefault = false;
-export const reconcileSettlementCreditNoteResponseNoteOneMrOneContactsMaskedDefault = false;
 export const listAllergensQueryQueryMax = 200;
 export const listAllergensQueryMinPriceOneMax = 64;
 export const listAllergensQueryMaxPriceOneMax = 64;
@@ -593,6 +455,7 @@ export const listImmunotherapyOrdersQuerySearchMax = 200;
 export const listImmunotherapyOrdersQueryLimitDefault = 25;
 export const listImmunotherapyOrdersQueryLimitMax = 100;
 export const listImmunotherapyOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const listImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const listImmunotherapyOrdersResponseItemsItemMrEditableDefault = false;
 export const listImmunotherapyOrdersResponseItemsItemPricingNeedsReviewDefault = false;
 export const createImmunotherapyOrderBodyAttachmentIdsMax = 10;
@@ -603,6 +466,7 @@ export const createImmunotherapyOrderBodyPoNumberOneMax = 100;
 export const createImmunotherapyOrderBodyRefreshQuoteDefault = false;
 export const createImmunotherapyOrderBodyRemarksMax = 4000;
 export const createImmunotherapyOrderResponseCorrectionSavedDefault = false;
+export const createImmunotherapyOrderResponseIrnCanRecordDefault = false;
 export const createImmunotherapyOrderResponseMrEditableDefault = false;
 export const createImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const previewImmunotherapyEligibilityBodyResubmitDefault = false;
@@ -618,6 +482,7 @@ export const previewImmunotherapyEligibilityBodyValuesTwoReasonOneMax = 2000;
 export const previewImmunotherapyEligibilityResponseReplayDefault = false;
 export const exportImmunotherapyOrdersQuerySearchMax = 200;
 export const exportImmunotherapyOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const exportImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const exportImmunotherapyOrdersResponseItemsItemMrEditableDefault = false;
 export const exportImmunotherapyOrdersResponseItemsItemPricingNeedsReviewDefault = false;
 export const commitImmunotherapyImportBodyConfirmUpdatesDefault = false;
@@ -630,6 +495,7 @@ export const commitImmunotherapyImportBodyEntriesItemValuesRefreshQuoteDefault =
 export const commitImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
 export const commitImmunotherapyImportBodyEntriesMax = 500;
 export const commitImmunotherapyImportResponseOrdersItemCorrectionSavedDefault = false;
+export const commitImmunotherapyImportResponseOrdersItemIrnCanRecordDefault = false;
 export const commitImmunotherapyImportResponseOrdersItemMrEditableDefault = false;
 export const commitImmunotherapyImportResponseOrdersItemPricingNeedsReviewDefault = false;
 export const reviewImmunotherapyImportBodyConfirmUpdatesDefault = false;
@@ -662,11 +528,13 @@ export const immunotherapyReferencesQuerySearchMax = 200;
 export const immunotherapyReferencesQueryLimitDefault = 25;
 export const immunotherapyReferencesQueryLimitMax = 100;
 export const getImmunotherapyOrderResponseCorrectionSavedDefault = false;
+export const getImmunotherapyOrderResponseIrnCanRecordDefault = false;
 export const getImmunotherapyOrderResponseMrEditableDefault = false;
 export const getImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const approveImmunotherapyOrderBodyFinancialReviewTokenOneMax = 256;
 export const approveImmunotherapyOrderBodyReasonOneMax = 2000;
 export const approveImmunotherapyOrderResponseCorrectionSavedDefault = false;
+export const approveImmunotherapyOrderResponseIrnCanRecordDefault = false;
 export const approveImmunotherapyOrderResponseMrEditableDefault = false;
 export const approveImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const editImmunotherapyOrderBodyAttachmentIdsMax = 10;
@@ -677,16 +545,19 @@ export const editImmunotherapyOrderBodyPoNumberOneMax = 100;
 export const editImmunotherapyOrderBodyRefreshQuoteDefault = false;
 export const editImmunotherapyOrderBodyRemarksMax = 4000;
 export const editImmunotherapyOrderResponseCorrectionSavedDefault = false;
+export const editImmunotherapyOrderResponseIrnCanRecordDefault = false;
 export const editImmunotherapyOrderResponseMrEditableDefault = false;
 export const editImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const rejectImmunotherapyOrderBodyFinancialReviewTokenOneMax = 256;
 export const rejectImmunotherapyOrderBodyReasonMax = 2000;
 export const rejectImmunotherapyOrderResponseCorrectionSavedDefault = false;
+export const rejectImmunotherapyOrderResponseIrnCanRecordDefault = false;
 export const rejectImmunotherapyOrderResponseMrEditableDefault = false;
 export const rejectImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const resubmitImmunotherapyOrderBodyFinancialReviewTokenOneMax = 256;
 export const resubmitImmunotherapyOrderBodyReasonOneMax = 2000;
 export const resubmitImmunotherapyOrderResponseCorrectionSavedDefault = false;
+export const resubmitImmunotherapyOrderResponseIrnCanRecordDefault = false;
 export const resubmitImmunotherapyOrderResponseMrEditableDefault = false;
 export const resubmitImmunotherapyOrderResponsePricingNeedsReviewDefault = false;
 export const listInHouseStockQueryQueryMax = 200;
@@ -959,6 +830,7 @@ export const listKitsOrdersResponseItemsItemApplicatorsMax = 12;
 export const listKitsOrdersResponseItemsItemAttachmentIdsMax = 10;
 export const listKitsOrdersResponseItemsItemBusinessParkingOneMax = 32;
 export const listKitsOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const listKitsOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const listKitsOrdersResponseItemsItemKitCustomMax = 32;
 export const listKitsOrdersResponseItemsItemKitQuantityMax = 12;
 export const listKitsOrdersResponseItemsItemKitVolumeMax = 32;
@@ -1012,6 +884,7 @@ export const createKitsOrderResponseApplicatorsMax = 12;
 export const createKitsOrderResponseAttachmentIdsMax = 10;
 export const createKitsOrderResponseBusinessParkingOneMax = 32;
 export const createKitsOrderResponseCorrectionSavedDefault = false;
+export const createKitsOrderResponseIrnCanRecordDefault = false;
 export const createKitsOrderResponseKitCustomMax = 32;
 export const createKitsOrderResponseKitQuantityMax = 12;
 export const createKitsOrderResponseKitVolumeMax = 32;
@@ -1095,6 +968,7 @@ export const exportKitsOrdersResponseItemsItemApplicatorsMax = 12;
 export const exportKitsOrdersResponseItemsItemAttachmentIdsMax = 10;
 export const exportKitsOrdersResponseItemsItemBusinessParkingOneMax = 32;
 export const exportKitsOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const exportKitsOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const exportKitsOrdersResponseItemsItemKitCustomMax = 32;
 export const exportKitsOrdersResponseItemsItemKitQuantityMax = 12;
 export const exportKitsOrdersResponseItemsItemKitVolumeMax = 32;
@@ -1152,6 +1026,7 @@ export const commitKitsImportResponseOrdersItemApplicatorsMax = 12;
 export const commitKitsImportResponseOrdersItemAttachmentIdsMax = 10;
 export const commitKitsImportResponseOrdersItemBusinessParkingOneMax = 32;
 export const commitKitsImportResponseOrdersItemCorrectionSavedDefault = false;
+export const commitKitsImportResponseOrdersItemIrnCanRecordDefault = false;
 export const commitKitsImportResponseOrdersItemKitCustomMax = 32;
 export const commitKitsImportResponseOrdersItemKitQuantityMax = 12;
 export const commitKitsImportResponseOrdersItemKitVolumeMax = 32;
@@ -1212,6 +1087,7 @@ export const getKitsOrderResponseApplicatorsMax = 12;
 export const getKitsOrderResponseAttachmentIdsMax = 10;
 export const getKitsOrderResponseBusinessParkingOneMax = 32;
 export const getKitsOrderResponseCorrectionSavedDefault = false;
+export const getKitsOrderResponseIrnCanRecordDefault = false;
 export const getKitsOrderResponseKitCustomMax = 32;
 export const getKitsOrderResponseKitQuantityMax = 12;
 export const getKitsOrderResponseKitVolumeMax = 32;
@@ -1242,6 +1118,7 @@ export const approveKitsOrderResponseApplicatorsMax = 12;
 export const approveKitsOrderResponseAttachmentIdsMax = 10;
 export const approveKitsOrderResponseBusinessParkingOneMax = 32;
 export const approveKitsOrderResponseCorrectionSavedDefault = false;
+export const approveKitsOrderResponseIrnCanRecordDefault = false;
 export const approveKitsOrderResponseKitCustomMax = 32;
 export const approveKitsOrderResponseKitQuantityMax = 12;
 export const approveKitsOrderResponseKitVolumeMax = 32;
@@ -1295,6 +1172,7 @@ export const updateKitsOrderResponseApplicatorsMax = 12;
 export const updateKitsOrderResponseAttachmentIdsMax = 10;
 export const updateKitsOrderResponseBusinessParkingOneMax = 32;
 export const updateKitsOrderResponseCorrectionSavedDefault = false;
+export const updateKitsOrderResponseIrnCanRecordDefault = false;
 export const updateKitsOrderResponseKitCustomMax = 32;
 export const updateKitsOrderResponseKitQuantityMax = 12;
 export const updateKitsOrderResponseKitVolumeMax = 32;
@@ -1325,6 +1203,7 @@ export const rejectKitsOrderResponseApplicatorsMax = 12;
 export const rejectKitsOrderResponseAttachmentIdsMax = 10;
 export const rejectKitsOrderResponseBusinessParkingOneMax = 32;
 export const rejectKitsOrderResponseCorrectionSavedDefault = false;
+export const rejectKitsOrderResponseIrnCanRecordDefault = false;
 export const rejectKitsOrderResponseKitCustomMax = 32;
 export const rejectKitsOrderResponseKitQuantityMax = 12;
 export const rejectKitsOrderResponseKitVolumeMax = 32;
@@ -1355,6 +1234,7 @@ export const resubmitKitsOrderResponseApplicatorsMax = 12;
 export const resubmitKitsOrderResponseAttachmentIdsMax = 10;
 export const resubmitKitsOrderResponseBusinessParkingOneMax = 32;
 export const resubmitKitsOrderResponseCorrectionSavedDefault = false;
+export const resubmitKitsOrderResponseIrnCanRecordDefault = false;
 export const resubmitKitsOrderResponseKitCustomMax = 32;
 export const resubmitKitsOrderResponseKitQuantityMax = 12;
 export const resubmitKitsOrderResponseKitVolumeMax = 32;
@@ -1431,6 +1311,7 @@ export const listLupinOrdersQueryLimitMax = 100;
 export const listLupinOrdersQuerySearchMax = 200;
 export const listLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
 export const listLupinOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const listLupinOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const listLupinOrdersResponseItemsItemMrEditableDefault = false;
 export const listLupinOrdersResponseItemsItemPatientCountMax = 1000000;
 export const listLupinOrdersResponseItemsItemPatientIdsMax = 200;
@@ -1444,6 +1325,7 @@ export const createLupinOrderBodyPriceOneMax = 32;
 export const createLupinOrderBodyRemarksMax = 4000;
 export const createLupinOrderResponseAttachmentIdsMax = 10;
 export const createLupinOrderResponseCorrectionSavedDefault = false;
+export const createLupinOrderResponseIrnCanRecordDefault = false;
 export const createLupinOrderResponseMrEditableDefault = false;
 export const createLupinOrderResponsePatientCountMax = 1000000;
 export const createLupinOrderResponsePatientIdsMax = 200;
@@ -1467,6 +1349,7 @@ export const previewLupinEligibilityResponseReplayDefault = false;
 export const exportLupinOrdersQuerySearchMax = 200;
 export const exportLupinOrdersResponseItemsItemAttachmentIdsMax = 10;
 export const exportLupinOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const exportLupinOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const exportLupinOrdersResponseItemsItemMrEditableDefault = false;
 export const exportLupinOrdersResponseItemsItemPatientCountMax = 1000000;
 export const exportLupinOrdersResponseItemsItemPatientIdsMax = 200;
@@ -1484,6 +1367,7 @@ export const commitLupinImportBodyEntriesMax = 500;
 export const commitLupinImportBodyReviewTokenMax = 256;
 export const commitLupinImportResponseOrdersItemAttachmentIdsMax = 10;
 export const commitLupinImportResponseOrdersItemCorrectionSavedDefault = false;
+export const commitLupinImportResponseOrdersItemIrnCanRecordDefault = false;
 export const commitLupinImportResponseOrdersItemMrEditableDefault = false;
 export const commitLupinImportResponseOrdersItemPatientCountMax = 1000000;
 export const commitLupinImportResponseOrdersItemPatientIdsMax = 200;
@@ -1504,6 +1388,7 @@ export const lupinReferencesQueryLimitDefault = 25;
 export const lupinReferencesQueryLimitMax = 100;
 export const getLupinOrderResponseAttachmentIdsMax = 10;
 export const getLupinOrderResponseCorrectionSavedDefault = false;
+export const getLupinOrderResponseIrnCanRecordDefault = false;
 export const getLupinOrderResponseMrEditableDefault = false;
 export const getLupinOrderResponsePatientCountMax = 1000000;
 export const getLupinOrderResponsePatientIdsMax = 200;
@@ -1514,6 +1399,7 @@ export const approveLupinOrderBodyFinancialReviewTokenOneMax = 256;
 export const approveLupinOrderBodyReasonOneMax = 2000;
 export const approveLupinOrderResponseAttachmentIdsMax = 10;
 export const approveLupinOrderResponseCorrectionSavedDefault = false;
+export const approveLupinOrderResponseIrnCanRecordDefault = false;
 export const approveLupinOrderResponseMrEditableDefault = false;
 export const approveLupinOrderResponsePatientCountMax = 1000000;
 export const approveLupinOrderResponsePatientIdsMax = 200;
@@ -1527,6 +1413,7 @@ export const updateLupinOrderBodyPriceOneMax = 32;
 export const updateLupinOrderBodyRemarksMax = 4000;
 export const updateLupinOrderResponseAttachmentIdsMax = 10;
 export const updateLupinOrderResponseCorrectionSavedDefault = false;
+export const updateLupinOrderResponseIrnCanRecordDefault = false;
 export const updateLupinOrderResponseMrEditableDefault = false;
 export const updateLupinOrderResponsePatientCountMax = 1000000;
 export const updateLupinOrderResponsePatientIdsMax = 200;
@@ -1537,6 +1424,7 @@ export const rejectLupinOrderBodyFinancialReviewTokenOneMax = 256;
 export const rejectLupinOrderBodyReasonMax = 2000;
 export const rejectLupinOrderResponseAttachmentIdsMax = 10;
 export const rejectLupinOrderResponseCorrectionSavedDefault = false;
+export const rejectLupinOrderResponseIrnCanRecordDefault = false;
 export const rejectLupinOrderResponseMrEditableDefault = false;
 export const rejectLupinOrderResponsePatientCountMax = 1000000;
 export const rejectLupinOrderResponsePatientIdsMax = 200;
@@ -1547,6 +1435,7 @@ export const resubmitLupinOrderBodyFinancialReviewTokenOneMax = 256;
 export const resubmitLupinOrderBodyReasonOneMax = 2000;
 export const resubmitLupinOrderResponseAttachmentIdsMax = 10;
 export const resubmitLupinOrderResponseCorrectionSavedDefault = false;
+export const resubmitLupinOrderResponseIrnCanRecordDefault = false;
 export const resubmitLupinOrderResponseMrEditableDefault = false;
 export const resubmitLupinOrderResponsePatientCountMax = 1000000;
 export const resubmitLupinOrderResponsePatientIdsMax = 200;
@@ -1920,12 +1809,14 @@ export const getOpeningStockResponseUnitRateMax = 64;
 export const listOrderDraftsQueryLimitDefault = 25;
 export const listOrderDraftsQueryLimitMax = 50;
 export const submitOrderDraftResponseOneCorrectionSavedDefault = false;
+export const submitOrderDraftResponseOneIrnCanRecordDefault = false;
 export const submitOrderDraftResponseOneMrEditableDefault = false;
 export const submitOrderDraftResponseOnePricingNeedsReviewDefault = false;
 export const submitOrderDraftResponseTwoApplicatorsMax = 12;
 export const submitOrderDraftResponseTwoAttachmentIdsMax = 10;
 export const submitOrderDraftResponseTwoBusinessParkingOneMax = 32;
 export const submitOrderDraftResponseTwoCorrectionSavedDefault = false;
+export const submitOrderDraftResponseTwoIrnCanRecordDefault = false;
 export const submitOrderDraftResponseTwoKitCustomMax = 32;
 export const submitOrderDraftResponseTwoKitQuantityMax = 12;
 export const submitOrderDraftResponseTwoKitVolumeMax = 32;
@@ -1952,6 +1843,7 @@ export const submitOrderDraftResponseTwoRemarksMax = 4000;
 export const submitOrderDraftResponseTwoTrayMax = 12;
 export const submitOrderDraftResponseThreeAttachmentIdsMax = 10;
 export const submitOrderDraftResponseThreeCorrectionSavedDefault = false;
+export const submitOrderDraftResponseThreeIrnCanRecordDefault = false;
 export const submitOrderDraftResponseThreeMrEditableDefault = false;
 export const submitOrderDraftResponseThreePatientCountMax = 1000000;
 export const submitOrderDraftResponseThreePatientIdsMax = 200;
@@ -2560,9 +2452,13 @@ export const listSettlementsQueryOffsetMin = 0;
 export const listSettlementsQueryOffsetMax = 20000;
 export const listSettlementsQueryLimitDefault = 25;
 export const listSettlementsQueryLimitMax = 100;
+export const listSettlementsResponseItemsItemCreditsItemDoctorOneContactsMaskedDefault = false;
+export const listSettlementsResponseItemsItemCreditsItemMrOneContactsMaskedDefault = false;
 export const listSettlementsResponseItemsItemDoctorOneContactsMaskedDefault = false;
 export const listSettlementsResponseItemsItemMrOneContactsMaskedDefault = false;
 export const listSettlementsResponseItemsItemPatientsItemContactsMaskedDefault = false;
+export const settlementOrderHistoryResponseCreditsItemDoctorOneContactsMaskedDefault = false;
+export const settlementOrderHistoryResponseCreditsItemMrOneContactsMaskedDefault = false;
 export const settlementOrderHistoryResponseDoctorOneContactsMaskedDefault = false;
 export const settlementOrderHistoryResponseMrOneContactsMaskedDefault = false;
 export const settlementOrderHistoryResponsePatientsItemContactsMaskedDefault = false;
@@ -2574,6 +2470,8 @@ export const settlementReferencesQueryLimitDefault = 25;
 export const settlementReferencesQueryLimitMax = 100;
 export const recordSettlementBodyEntriesMax = 100;
 export const recordSettlementBodyReferenceOneMax = 100;
+export const verifySettlementTransactionResponseCreditsItemDoctorOneContactsMaskedDefault = false;
+export const verifySettlementTransactionResponseCreditsItemMrOneContactsMaskedDefault = false;
 export const verifySettlementTransactionResponseDoctorOneContactsMaskedDefault = false;
 export const verifySettlementTransactionResponseMrOneContactsMaskedDefault = false;
 export const verifySettlementTransactionResponsePatientsItemContactsMaskedDefault = false;
@@ -2595,12 +2493,14 @@ export const listSptOrdersQueryLimitDefault = 25;
 export const listSptOrdersQueryLimitMax = 100;
 export const listSptOrdersQuerySearchMax = 200;
 export const listSptOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const listSptOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const listSptOrdersResponseItemsItemMrEditableDefault = false;
 export const listSptOrdersResponseItemsItemPricingNeedsReviewDefault = false;
 export const createSptOrderBodyPatientsItemAmountMax = 16;
 export const createSptOrderBodyPatientsMax = 200;
 export const createSptOrderBodyRemarksMax = 4000;
 export const createSptOrderResponseCorrectionSavedDefault = false;
+export const createSptOrderResponseIrnCanRecordDefault = false;
 export const createSptOrderResponseMrEditableDefault = false;
 export const createSptOrderResponsePricingNeedsReviewDefault = false;
 export const previewSptEligibilityBodyResubmitDefault = false;
@@ -2612,6 +2512,7 @@ export const previewSptEligibilityBodyValuesTwoReasonOneMax = 2000;
 export const previewSptEligibilityResponseReplayDefault = false;
 export const exportSptOrdersQuerySearchMax = 200;
 export const exportSptOrdersResponseItemsItemCorrectionSavedDefault = false;
+export const exportSptOrdersResponseItemsItemIrnCanRecordDefault = false;
 export const exportSptOrdersResponseItemsItemMrEditableDefault = false;
 export const exportSptOrdersResponseItemsItemPricingNeedsReviewDefault = false;
 export const commitSptImportBodyConfirmUpdatesDefault = false;
@@ -2622,6 +2523,7 @@ export const commitSptImportBodyEntriesItemValuesRemarksMax = 4000;
 export const commitSptImportBodyEntriesMax = 500;
 export const commitSptImportBodyReviewTokenMax = 256;
 export const commitSptImportResponseOrdersItemCorrectionSavedDefault = false;
+export const commitSptImportResponseOrdersItemIrnCanRecordDefault = false;
 export const commitSptImportResponseOrdersItemMrEditableDefault = false;
 export const commitSptImportResponseOrdersItemPricingNeedsReviewDefault = false;
 export const reviewSptImportBodyConfirmUpdatesDefault = false;
@@ -2638,27 +2540,32 @@ export const sptReferencesQuerySearchMax = 200;
 export const sptReferencesQueryLimitDefault = 25;
 export const sptReferencesQueryLimitMax = 100;
 export const getSptOrderResponseCorrectionSavedDefault = false;
+export const getSptOrderResponseIrnCanRecordDefault = false;
 export const getSptOrderResponseMrEditableDefault = false;
 export const getSptOrderResponsePricingNeedsReviewDefault = false;
 export const approveSptOrderBodyFinancialReviewTokenOneMax = 256;
 export const approveSptOrderBodyReasonOneMax = 2000;
 export const approveSptOrderResponseCorrectionSavedDefault = false;
+export const approveSptOrderResponseIrnCanRecordDefault = false;
 export const approveSptOrderResponseMrEditableDefault = false;
 export const approveSptOrderResponsePricingNeedsReviewDefault = false;
 export const editSptDraftBodyPatientsItemAmountMax = 16;
 export const editSptDraftBodyPatientsMax = 200;
 export const editSptDraftBodyRemarksMax = 4000;
 export const editSptDraftResponseCorrectionSavedDefault = false;
+export const editSptDraftResponseIrnCanRecordDefault = false;
 export const editSptDraftResponseMrEditableDefault = false;
 export const editSptDraftResponsePricingNeedsReviewDefault = false;
 export const rejectSptOrderBodyFinancialReviewTokenOneMax = 256;
 export const rejectSptOrderBodyReasonMax = 2000;
 export const rejectSptOrderResponseCorrectionSavedDefault = false;
+export const rejectSptOrderResponseIrnCanRecordDefault = false;
 export const rejectSptOrderResponseMrEditableDefault = false;
 export const rejectSptOrderResponsePricingNeedsReviewDefault = false;
 export const resubmitSptOrderBodyFinancialReviewTokenOneMax = 256;
 export const resubmitSptOrderBodyReasonOneMax = 2000;
 export const resubmitSptOrderResponseCorrectionSavedDefault = false;
+export const resubmitSptOrderResponseIrnCanRecordDefault = false;
 export const resubmitSptOrderResponseMrEditableDefault = false;
 export const resubmitSptOrderResponsePricingNeedsReviewDefault = false;
 export const listStaffQueryLimitDefault = 20;
@@ -3094,326 +3001,122 @@ export const getMrFinancialSummaryQueryOffsetDefault = 0;
 export const getMrFinancialSummaryQueryOffsetMin = 0;
 export const getMrFinancialSummaryQueryLimitDefault = 25;
 export const getMrFinancialSummaryQueryLimitMax = 100;
-
-export const recordSettlementBodyEntriesItemExpectedCreditedDefault = `0.00`;
-
-export const listSettlementCreditNotesQuerySearchDefault = ``;
-
-export const ListSettlementCreditNotesQueryParams = zod.object({
-  date_from: zod.union([zod.date(), zod.null()]).optional(),
-  date_to: zod.union([zod.date(), zod.null()]).optional(),
-  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  search: zod.coerce
-    .string()
-    .max(listSettlementCreditNotesQuerySearchMax)
-    .default(listSettlementCreditNotesQuerySearchDefault),
-  offset: zod.coerce
-    .number()
-    .int()
-    .min(listSettlementCreditNotesQueryOffsetMin)
-    .max(listSettlementCreditNotesQueryOffsetMax)
-    .default(listSettlementCreditNotesQueryOffsetDefault),
-  limit: zod.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(listSettlementCreditNotesQueryLimitMax)
-    .default(listSettlementCreditNotesQueryLimitDefault),
-});
-
-export const ListSettlementCreditNotesResponse = zod.object({
-  items: zod.array(
-    zod.object({
-      actorId: zod.string(),
-      amount: zod.string(),
-      canRevert: zod.boolean(),
-      createdAt: zod.string(),
-      date: zod.string(),
-      doctor: zod.union([
-        zod.object({
-          code: zod.union([zod.string(), zod.null()]).optional(),
-          contactsMasked: zod
-            .boolean()
-            .default(
-              listSettlementCreditNotesResponseItemsItemDoctorOneContactsMaskedDefault,
-            ),
-          email: zod.union([zod.string(), zod.null()]).optional(),
-          id: zod.union([zod.string(), zod.null()]).optional(),
-          name: zod.union([zod.string(), zod.null()]).optional(),
-          phone: zod.union([zod.string(), zod.null()]).optional(),
-          qualification: zod.union([zod.string(), zod.null()]).optional(),
-        }),
-        zod.null(),
-      ]),
-      id: zod.string(),
-      invoiceReference: zod.string(),
-      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
-      mr: zod.union([
-        zod.object({
-          code: zod.union([zod.string(), zod.null()]).optional(),
-          contactsMasked: zod
-            .boolean()
-            .default(
-              listSettlementCreditNotesResponseItemsItemMrOneContactsMaskedDefault,
-            ),
-          email: zod.union([zod.string(), zod.null()]).optional(),
-          id: zod.union([zod.string(), zod.null()]).optional(),
-          name: zod.union([zod.string(), zod.null()]).optional(),
-          phone: zod.union([zod.string(), zod.null()]).optional(),
-          qualification: zod.union([zod.string(), zod.null()]).optional(),
-        }),
-        zod.null(),
-      ]),
-      number: zod.string(),
-      orderDate: zod.string(),
-      orderId: zod.string(),
-      orderNumber: zod.string(),
-      revertedAt: zod.union([zod.string(), zod.null()]),
-      revertedBy: zod.union([zod.string(), zod.null()]),
-      status: zod.enum(["Active", "Reverted"]),
-    }),
-  ),
-  limit: zod.number().int(),
-  offset: zod.number().int(),
-  total: zod.number().int(),
-});
-
-export const createSettlementCreditNoteBodyAmountRegExp = new RegExp(
-  "^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$",
-);
-
-export const createSettlementCreditNoteBodyInvoiceReferenceRegExp = new RegExp(
-  "^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$",
-);
-
-export const CreateSettlementCreditNoteBody = zod.object({
-  amount: zod.string().regex(createSettlementCreditNoteBodyAmountRegExp),
-  expected_credited: zod.string(),
-  expected_paid: zod.string(),
-  expected_version: zod.number().int().min(1),
-  id: zod.string().uuid(),
-  idempotency_key: zod.string().uuid(),
-  invoice_reference: zod
-    .string()
-    .max(createSettlementCreditNoteBodyInvoiceReferenceMax)
-    .regex(createSettlementCreditNoteBodyInvoiceReferenceRegExp),
-  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
-});
-
-export const CreateSettlementCreditNoteResponse = zod.object({
-  actorId: zod.string(),
-  amount: zod.string(),
-  canRevert: zod.boolean(),
-  createdAt: zod.string(),
-  date: zod.string(),
-  doctor: zod.union([
-    zod.object({
-      code: zod.union([zod.string(), zod.null()]).optional(),
-      contactsMasked: zod
-        .boolean()
-        .default(
-          createSettlementCreditNoteResponseDoctorOneContactsMaskedDefault,
-        ),
-      email: zod.union([zod.string(), zod.null()]).optional(),
-      id: zod.union([zod.string(), zod.null()]).optional(),
-      name: zod.union([zod.string(), zod.null()]).optional(),
-      phone: zod.union([zod.string(), zod.null()]).optional(),
-      qualification: zod.union([zod.string(), zod.null()]).optional(),
-    }),
-    zod.null(),
-  ]),
-  id: zod.string(),
-  invoiceReference: zod.string(),
-  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
-  mr: zod.union([
-    zod.object({
-      code: zod.union([zod.string(), zod.null()]).optional(),
-      contactsMasked: zod
-        .boolean()
-        .default(createSettlementCreditNoteResponseMrOneContactsMaskedDefault),
-      email: zod.union([zod.string(), zod.null()]).optional(),
-      id: zod.union([zod.string(), zod.null()]).optional(),
-      name: zod.union([zod.string(), zod.null()]).optional(),
-      phone: zod.union([zod.string(), zod.null()]).optional(),
-      qualification: zod.union([zod.string(), zod.null()]).optional(),
-    }),
-    zod.null(),
-  ]),
-  number: zod.string(),
-  orderDate: zod.string(),
-  orderId: zod.string(),
-  orderNumber: zod.string(),
-  revertedAt: zod.union([zod.string(), zod.null()]),
-  revertedBy: zod.union([zod.string(), zod.null()]),
-  status: zod.enum(["Active", "Reverted"]),
-});
-
-export const GetSettlementCreditNoteParams = zod.object({
-  identity: zod.coerce.string().uuid(),
-});
-
-export const GetSettlementCreditNoteResponse = zod.object({
-  actorId: zod.string(),
-  amount: zod.string(),
-  canRevert: zod.boolean(),
-  createdAt: zod.string(),
-  date: zod.string(),
-  doctor: zod.union([
-    zod.object({
-      code: zod.union([zod.string(), zod.null()]).optional(),
-      contactsMasked: zod
-        .boolean()
-        .default(getSettlementCreditNoteResponseDoctorOneContactsMaskedDefault),
-      email: zod.union([zod.string(), zod.null()]).optional(),
-      id: zod.union([zod.string(), zod.null()]).optional(),
-      name: zod.union([zod.string(), zod.null()]).optional(),
-      phone: zod.union([zod.string(), zod.null()]).optional(),
-      qualification: zod.union([zod.string(), zod.null()]).optional(),
-    }),
-    zod.null(),
-  ]),
-  id: zod.string(),
-  invoiceReference: zod.string(),
-  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
-  mr: zod.union([
-    zod.object({
-      code: zod.union([zod.string(), zod.null()]).optional(),
-      contactsMasked: zod
-        .boolean()
-        .default(getSettlementCreditNoteResponseMrOneContactsMaskedDefault),
-      email: zod.union([zod.string(), zod.null()]).optional(),
-      id: zod.union([zod.string(), zod.null()]).optional(),
-      name: zod.union([zod.string(), zod.null()]).optional(),
-      phone: zod.union([zod.string(), zod.null()]).optional(),
-      qualification: zod.union([zod.string(), zod.null()]).optional(),
-    }),
-    zod.null(),
-  ]),
-  number: zod.string(),
-  orderDate: zod.string(),
-  orderId: zod.string(),
-  orderNumber: zod.string(),
-  revertedAt: zod.union([zod.string(), zod.null()]),
-  revertedBy: zod.union([zod.string(), zod.null()]),
-  status: zod.enum(["Active", "Reverted"]),
-});
-
-export const RevertSettlementCreditNoteParams = zod.object({
-  identity: zod.coerce.string().uuid(),
-});
-
-export const RevertSettlementCreditNoteBody = zod.object({
-  idempotency_key: zod.string().uuid(),
-});
-
-export const RevertSettlementCreditNoteResponse = zod.object({
-  actorId: zod.string(),
-  amount: zod.string(),
-  canRevert: zod.boolean(),
-  createdAt: zod.string(),
-  date: zod.string(),
-  doctor: zod.union([
-    zod.object({
-      code: zod.union([zod.string(), zod.null()]).optional(),
-      contactsMasked: zod
-        .boolean()
-        .default(
-          revertSettlementCreditNoteResponseDoctorOneContactsMaskedDefault,
-        ),
-      email: zod.union([zod.string(), zod.null()]).optional(),
-      id: zod.union([zod.string(), zod.null()]).optional(),
-      name: zod.union([zod.string(), zod.null()]).optional(),
-      phone: zod.union([zod.string(), zod.null()]).optional(),
-      qualification: zod.union([zod.string(), zod.null()]).optional(),
-    }),
-    zod.null(),
-  ]),
-  id: zod.string(),
-  invoiceReference: zod.string(),
-  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
-  mr: zod.union([
-    zod.object({
-      code: zod.union([zod.string(), zod.null()]).optional(),
-      contactsMasked: zod
-        .boolean()
-        .default(revertSettlementCreditNoteResponseMrOneContactsMaskedDefault),
-      email: zod.union([zod.string(), zod.null()]).optional(),
-      id: zod.union([zod.string(), zod.null()]).optional(),
-      name: zod.union([zod.string(), zod.null()]).optional(),
-      phone: zod.union([zod.string(), zod.null()]).optional(),
-      qualification: zod.union([zod.string(), zod.null()]).optional(),
-    }),
-    zod.null(),
-  ]),
-  number: zod.string(),
-  orderDate: zod.string(),
-  orderId: zod.string(),
-  orderNumber: zod.string(),
-  revertedAt: zod.union([zod.string(), zod.null()]),
-  revertedBy: zod.union([zod.string(), zod.null()]),
-  status: zod.enum(["Active", "Reverted"]),
-});
-
-export const ReconcileSettlementCreditNoteParams = zod.object({
-  key: zod.coerce.string().uuid(),
-});
-
-export const ReconcileSettlementCreditNoteResponse = zod.object({
-  note: zod.union([
-    zod.object({
-      actorId: zod.string(),
-      amount: zod.string(),
-      canRevert: zod.boolean(),
-      createdAt: zod.string(),
-      date: zod.string(),
-      doctor: zod.union([
-        zod.object({
-          code: zod.union([zod.string(), zod.null()]).optional(),
-          contactsMasked: zod
-            .boolean()
-            .default(
-              reconcileSettlementCreditNoteResponseNoteOneDoctorOneContactsMaskedDefault,
-            ),
-          email: zod.union([zod.string(), zod.null()]).optional(),
-          id: zod.union([zod.string(), zod.null()]).optional(),
-          name: zod.union([zod.string(), zod.null()]).optional(),
-          phone: zod.union([zod.string(), zod.null()]).optional(),
-          qualification: zod.union([zod.string(), zod.null()]).optional(),
-        }),
-        zod.null(),
-      ]),
-      id: zod.string(),
-      invoiceReference: zod.string(),
-      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
-      mr: zod.union([
-        zod.object({
-          code: zod.union([zod.string(), zod.null()]).optional(),
-          contactsMasked: zod
-            .boolean()
-            .default(
-              reconcileSettlementCreditNoteResponseNoteOneMrOneContactsMaskedDefault,
-            ),
-          email: zod.union([zod.string(), zod.null()]).optional(),
-          id: zod.union([zod.string(), zod.null()]).optional(),
-          name: zod.union([zod.string(), zod.null()]).optional(),
-          phone: zod.union([zod.string(), zod.null()]).optional(),
-          qualification: zod.union([zod.string(), zod.null()]).optional(),
-        }),
-        zod.null(),
-      ]),
-      number: zod.string(),
-      orderDate: zod.string(),
-      orderId: zod.string(),
-      orderNumber: zod.string(),
-      revertedAt: zod.union([zod.string(), zod.null()]),
-      revertedBy: zod.union([zod.string(), zod.null()]),
-      status: zod.enum(["Active", "Reverted"]),
-    }),
-    zod.null(),
-  ]),
-  rejection: zod.union([zod.record(zod.string(), zod.string()), zod.null()]),
-  status: zod.enum(["committed", "absent", "rejected"]),
-});
+export const listSettlementCreditNotesQuerySearchMax = 100;
+export const listSettlementCreditNotesQueryOffsetDefault = 0;
+export const listSettlementCreditNotesQueryOffsetMin = 0;
+export const listSettlementCreditNotesQueryOffsetMax = 20000;
+export const listSettlementCreditNotesQueryLimitDefault = 25;
+export const listSettlementCreditNotesQueryLimitMax = 100;
+export const listSettlementCreditNotesResponseItemsItemDoctorOneContactsMaskedDefault = false;
+export const listSettlementCreditNotesResponseItemsItemMrOneContactsMaskedDefault = false;
+export const createSettlementCreditNoteBodyInvoiceReferenceMax = 100;
+export const createSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
+export const createSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
+export const getSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
+export const getSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
+export const revertSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
+export const revertSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
+export const reconcileSettlementCreditNoteResponseNoteOneDoctorOneContactsMaskedDefault = false;
+export const reconcileSettlementCreditNoteResponseNoteOneMrOneContactsMaskedDefault = false;
+export const mrDashboardQueryStartYearOneMax = 9998;
+export const mrDoctorPaymentsQuerySearchMax = 100;
+export const mrDoctorPaymentsQueryOffsetDefault = 0;
+export const mrDoctorPaymentsQueryOffsetMin = 0;
+export const mrDoctorPaymentsQueryOffsetMax = 20000;
+export const mrDoctorPaymentsQueryLimitDefault = 25;
+export const mrDoctorPaymentsQueryLimitMax = 100;
+export const recordImmunotherapyIRNBodyNumberMax = 256;
+export const recordImmunotherapyIRNResponseCorrectionSavedDefault = false;
+export const recordImmunotherapyIRNResponseIrnCanRecordDefault = false;
+export const recordImmunotherapyIRNResponseMrEditableDefault = false;
+export const recordImmunotherapyIRNResponsePricingNeedsReviewDefault = false;
+export const recordKitsIRNBodyNumberMax = 256;
+export const recordKitsIRNResponseApplicatorsMax = 12;
+export const recordKitsIRNResponseAttachmentIdsMax = 10;
+export const recordKitsIRNResponseBusinessParkingOneMax = 32;
+export const recordKitsIRNResponseCorrectionSavedDefault = false;
+export const recordKitsIRNResponseIrnCanRecordDefault = false;
+export const recordKitsIRNResponseKitCustomMax = 32;
+export const recordKitsIRNResponseKitQuantityMax = 12;
+export const recordKitsIRNResponseKitVolumeMax = 32;
+export const recordKitsIRNResponseLancetsMax = 12;
+export const recordKitsIRNResponseMrEditableDefault = false;
+export const recordKitsIRNResponseOtherAddressCityMax = 200;
+export const recordKitsIRNResponseOtherAddressCountryMax = 200;
+export const recordKitsIRNResponseOtherAddressLandmarkMax = 1000;
+export const recordKitsIRNResponseOtherAddressLine1Max = 1000;
+export const recordKitsIRNResponseOtherAddressLine2Max = 1000;
+export const recordKitsIRNResponseOtherAddressPincodeMax = 32;
+export const recordKitsIRNResponseOtherAddressStateMax = 200;
+export const recordKitsIRNResponseOtherNameMax = 200;
+export const recordKitsIRNResponseOtherPhoneMax = 25;
+export const recordKitsIRNResponsePoNumberOneMax = 200;
+export const recordKitsIRNResponsePricingOneApplicatorsRateOneMax = 32;
+export const recordKitsIRNResponsePricingOneDiscountValueMax = 32;
+export const recordKitsIRNResponsePricingOneForwardingChargesMax = 32;
+export const recordKitsIRNResponsePricingOneKitRateOneMax = 32;
+export const recordKitsIRNResponsePricingOneLancetsRateOneMax = 32;
+export const recordKitsIRNResponsePricingOneTrayRateOneMax = 32;
+export const recordKitsIRNResponsePricingNeedsReviewDefault = false;
+export const recordKitsIRNResponseRemarksMax = 4000;
+export const recordKitsIRNResponseTrayMax = 12;
+export const recordLupinIRNBodyNumberMax = 256;
+export const recordLupinIRNResponseAttachmentIdsMax = 10;
+export const recordLupinIRNResponseCorrectionSavedDefault = false;
+export const recordLupinIRNResponseIrnCanRecordDefault = false;
+export const recordLupinIRNResponseMrEditableDefault = false;
+export const recordLupinIRNResponsePatientCountMax = 1000000;
+export const recordLupinIRNResponsePatientIdsMax = 200;
+export const recordLupinIRNResponsePriceOneMax = 32;
+export const recordLupinIRNResponsePricingNeedsReviewDefault = false;
+export const recordLupinIRNResponseRemarksMax = 4000;
+export const recordSptIRNBodyNumberMax = 256;
+export const recordSptIRNResponseCorrectionSavedDefault = false;
+export const recordSptIRNResponseIrnCanRecordDefault = false;
+export const recordSptIRNResponseMrEditableDefault = false;
+export const recordSptIRNResponsePricingNeedsReviewDefault = false;
+export const getFreeKitSettingsResponseCapsOneDoctorCapMin = 0;
+export const getFreeKitSettingsResponseCapsOneDoctorCapMax = 2147483647;
+export const getFreeKitSettingsResponseCapsOneMrCapMin = 0;
+export const getFreeKitSettingsResponseCapsOneMrCapMax = 2147483647;
+export const saveFreeKitSettingsBodyDoctorCapMin = 0;
+export const saveFreeKitSettingsBodyDoctorCapMax = 2147483647;
+export const saveFreeKitSettingsBodyExpectedVersionMin = 0;
+export const saveFreeKitSettingsBodyMrCapMin = 0;
+export const saveFreeKitSettingsBodyMrCapMax = 2147483647;
+export const saveFreeKitSettingsResponseCapsOneDoctorCapMin = 0;
+export const saveFreeKitSettingsResponseCapsOneDoctorCapMax = 2147483647;
+export const saveFreeKitSettingsResponseCapsOneMrCapMin = 0;
+export const saveFreeKitSettingsResponseCapsOneMrCapMax = 2147483647;
+export const markFreeKitResponseApplicatorsMax = 12;
+export const markFreeKitResponseAttachmentIdsMax = 10;
+export const markFreeKitResponseBusinessParkingOneMax = 32;
+export const markFreeKitResponseCorrectionSavedDefault = false;
+export const markFreeKitResponseIrnCanRecordDefault = false;
+export const markFreeKitResponseKitCustomMax = 32;
+export const markFreeKitResponseKitQuantityMax = 12;
+export const markFreeKitResponseKitVolumeMax = 32;
+export const markFreeKitResponseLancetsMax = 12;
+export const markFreeKitResponseMrEditableDefault = false;
+export const markFreeKitResponseOtherAddressCityMax = 200;
+export const markFreeKitResponseOtherAddressCountryMax = 200;
+export const markFreeKitResponseOtherAddressLandmarkMax = 1000;
+export const markFreeKitResponseOtherAddressLine1Max = 1000;
+export const markFreeKitResponseOtherAddressLine2Max = 1000;
+export const markFreeKitResponseOtherAddressPincodeMax = 32;
+export const markFreeKitResponseOtherAddressStateMax = 200;
+export const markFreeKitResponseOtherNameMax = 200;
+export const markFreeKitResponseOtherPhoneMax = 25;
+export const markFreeKitResponsePoNumberOneMax = 200;
+export const markFreeKitResponsePricingOneApplicatorsRateOneMax = 32;
+export const markFreeKitResponsePricingOneDiscountValueMax = 32;
+export const markFreeKitResponsePricingOneForwardingChargesMax = 32;
+export const markFreeKitResponsePricingOneKitRateOneMax = 32;
+export const markFreeKitResponsePricingOneLancetsRateOneMax = 32;
+export const markFreeKitResponsePricingOneTrayRateOneMax = 32;
+export const markFreeKitResponsePricingNeedsReviewDefault = false;
+export const markFreeKitResponseRemarksMax = 4000;
+export const markFreeKitResponseTrayMax = 12;
 
 /**
  * @summary <Lambda>
@@ -18155,6 +17858,7 @@ export const ListKitsOrdersQueryParams = zod.object({
         "Unavailable",
         "Partial",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -18168,6 +17872,9 @@ export const ListKitsOrdersQueryParams = zod.object({
 });
 
 export const listKitsOrdersResponseItemsItemApplicatorsDefault = ``;
+
+export const listKitsOrdersResponseItemsItemFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const listKitsOrdersResponseItemsItemFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
 
 export const listKitsOrdersResponseItemsItemKitCustomDefault = ``;
 
@@ -18273,6 +17980,47 @@ export const ListKitsOrdersResponse = zod.object({
       financialHistory: zod
         .array(zod.record(zod.string(), zod.unknown()))
         .optional(),
+      freeKit: zod
+        .union([
+          zod.object({
+            actorId: zod.string().uuid(),
+            classification: zod.literal("Free kit"),
+            doctor: zod.object({
+              cap: zod.number().int(),
+              dateFrom: zod.string(),
+              dateTo: zod.string(),
+              period: zod.enum(["financial_year", "month"]),
+              remaining: zod.number().int(),
+              timezone: zod
+                .literal("Asia/Kolkata")
+                .default(
+                  listKitsOrdersResponseItemsItemFreeKitOneDoctorTimezoneDefault,
+                ),
+              used: zod.number().int(),
+            }),
+            doctorId: zod.string().uuid(),
+            markedAt: zod.string(),
+            mr: zod.object({
+              cap: zod.number().int(),
+              dateFrom: zod.string(),
+              dateTo: zod.string(),
+              period: zod.enum(["financial_year", "month"]),
+              remaining: zod.number().int(),
+              timezone: zod
+                .literal("Asia/Kolkata")
+                .default(
+                  listKitsOrdersResponseItemsItemFreeKitOneMrTimezoneDefault,
+                ),
+              used: zod.number().int(),
+            }),
+            mrId: zod.string().uuid(),
+            orderDate: zod.string(),
+            orderVersion: zod.number().int(),
+            policyVersion: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gstEvidence: zod
         .union([
           zod.object({
@@ -18340,6 +18088,7 @@ export const ListKitsOrdersResponse = zod.object({
             "Part paid",
             "Unavailable",
             "Pending pricing",
+            "Free kit",
           ]),
           zod.null(),
         ])
@@ -18750,6 +18499,9 @@ export const CreateKitsOrderBody = zod.object({
 
 export const createKitsOrderResponseApplicatorsDefault = ``;
 
+export const createKitsOrderResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const createKitsOrderResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const createKitsOrderResponseKitCustomDefault = ``;
 
 export const createKitsOrderResponseKitProductDefault = ``;
@@ -18846,6 +18598,43 @@ export const CreateKitsOrderResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(createKitsOrderResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(createKitsOrderResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -18913,6 +18702,7 @@ export const CreateKitsOrderResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -19745,6 +19535,7 @@ export const ExportKitsOrdersQueryParams = zod.object({
         "Unavailable",
         "Partial",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -19758,6 +19549,9 @@ export const ExportKitsOrdersQueryParams = zod.object({
 });
 
 export const exportKitsOrdersResponseItemsItemApplicatorsDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const exportKitsOrdersResponseItemsItemFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
 
 export const exportKitsOrdersResponseItemsItemKitCustomDefault = ``;
 
@@ -19863,6 +19657,47 @@ export const ExportKitsOrdersResponse = zod.object({
       financialHistory: zod
         .array(zod.record(zod.string(), zod.unknown()))
         .optional(),
+      freeKit: zod
+        .union([
+          zod.object({
+            actorId: zod.string().uuid(),
+            classification: zod.literal("Free kit"),
+            doctor: zod.object({
+              cap: zod.number().int(),
+              dateFrom: zod.string(),
+              dateTo: zod.string(),
+              period: zod.enum(["financial_year", "month"]),
+              remaining: zod.number().int(),
+              timezone: zod
+                .literal("Asia/Kolkata")
+                .default(
+                  exportKitsOrdersResponseItemsItemFreeKitOneDoctorTimezoneDefault,
+                ),
+              used: zod.number().int(),
+            }),
+            doctorId: zod.string().uuid(),
+            markedAt: zod.string(),
+            mr: zod.object({
+              cap: zod.number().int(),
+              dateFrom: zod.string(),
+              dateTo: zod.string(),
+              period: zod.enum(["financial_year", "month"]),
+              remaining: zod.number().int(),
+              timezone: zod
+                .literal("Asia/Kolkata")
+                .default(
+                  exportKitsOrdersResponseItemsItemFreeKitOneMrTimezoneDefault,
+                ),
+              used: zod.number().int(),
+            }),
+            mrId: zod.string().uuid(),
+            orderDate: zod.string(),
+            orderVersion: zod.number().int(),
+            policyVersion: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gstEvidence: zod
         .union([
           zod.object({
@@ -19930,6 +19765,7 @@ export const ExportKitsOrdersResponse = zod.object({
             "Part paid",
             "Unavailable",
             "Pending pricing",
+            "Free kit",
           ]),
           zod.null(),
         ])
@@ -20434,6 +20270,9 @@ export const CommitKitsImportBody = zod.object({
 
 export const commitKitsImportResponseOrdersItemApplicatorsDefault = ``;
 
+export const commitKitsImportResponseOrdersItemFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const commitKitsImportResponseOrdersItemFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const commitKitsImportResponseOrdersItemKitCustomDefault = ``;
 
 export const commitKitsImportResponseOrdersItemKitProductDefault = ``;
@@ -20537,6 +20376,47 @@ export const CommitKitsImportResponse = zod.object({
       financialHistory: zod
         .array(zod.record(zod.string(), zod.unknown()))
         .optional(),
+      freeKit: zod
+        .union([
+          zod.object({
+            actorId: zod.string().uuid(),
+            classification: zod.literal("Free kit"),
+            doctor: zod.object({
+              cap: zod.number().int(),
+              dateFrom: zod.string(),
+              dateTo: zod.string(),
+              period: zod.enum(["financial_year", "month"]),
+              remaining: zod.number().int(),
+              timezone: zod
+                .literal("Asia/Kolkata")
+                .default(
+                  commitKitsImportResponseOrdersItemFreeKitOneDoctorTimezoneDefault,
+                ),
+              used: zod.number().int(),
+            }),
+            doctorId: zod.string().uuid(),
+            markedAt: zod.string(),
+            mr: zod.object({
+              cap: zod.number().int(),
+              dateFrom: zod.string(),
+              dateTo: zod.string(),
+              period: zod.enum(["financial_year", "month"]),
+              remaining: zod.number().int(),
+              timezone: zod
+                .literal("Asia/Kolkata")
+                .default(
+                  commitKitsImportResponseOrdersItemFreeKitOneMrTimezoneDefault,
+                ),
+              used: zod.number().int(),
+            }),
+            mrId: zod.string().uuid(),
+            orderDate: zod.string(),
+            orderVersion: zod.number().int(),
+            policyVersion: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gstEvidence: zod
         .union([
           zod.object({
@@ -20604,6 +20484,7 @@ export const CommitKitsImportResponse = zod.object({
             "Part paid",
             "Unavailable",
             "Pending pricing",
+            "Free kit",
           ]),
           zod.null(),
         ])
@@ -21165,6 +21046,9 @@ export const GetKitsOrderParams = zod.object({
 
 export const getKitsOrderResponseApplicatorsDefault = ``;
 
+export const getKitsOrderResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const getKitsOrderResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const getKitsOrderResponseKitCustomDefault = ``;
 
 export const getKitsOrderResponseKitProductDefault = ``;
@@ -21261,6 +21145,43 @@ export const GetKitsOrderResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(getKitsOrderResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(getKitsOrderResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -21326,6 +21247,7 @@ export const GetKitsOrderResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -21509,6 +21431,9 @@ export const ApproveKitsOrderBody = zod.object({
 
 export const approveKitsOrderResponseApplicatorsDefault = ``;
 
+export const approveKitsOrderResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const approveKitsOrderResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const approveKitsOrderResponseKitCustomDefault = ``;
 
 export const approveKitsOrderResponseKitProductDefault = ``;
@@ -21605,6 +21530,43 @@ export const ApproveKitsOrderResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(approveKitsOrderResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(approveKitsOrderResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -21672,6 +21634,7 @@ export const ApproveKitsOrderResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -22055,6 +22018,9 @@ export const UpdateKitsOrderBody = zod.object({
 
 export const updateKitsOrderResponseApplicatorsDefault = ``;
 
+export const updateKitsOrderResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const updateKitsOrderResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const updateKitsOrderResponseKitCustomDefault = ``;
 
 export const updateKitsOrderResponseKitProductDefault = ``;
@@ -22151,6 +22117,43 @@ export const UpdateKitsOrderResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(updateKitsOrderResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(updateKitsOrderResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -22218,6 +22221,7 @@ export const UpdateKitsOrderResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -22404,6 +22408,9 @@ export const RejectKitsOrderBody = zod.object({
 
 export const rejectKitsOrderResponseApplicatorsDefault = ``;
 
+export const rejectKitsOrderResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const rejectKitsOrderResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const rejectKitsOrderResponseKitCustomDefault = ``;
 
 export const rejectKitsOrderResponseKitProductDefault = ``;
@@ -22500,6 +22507,43 @@ export const RejectKitsOrderResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(rejectKitsOrderResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(rejectKitsOrderResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -22567,6 +22611,7 @@ export const RejectKitsOrderResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -22755,6 +22800,9 @@ export const ResubmitKitsOrderBody = zod.object({
 
 export const resubmitKitsOrderResponseApplicatorsDefault = ``;
 
+export const resubmitKitsOrderResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const resubmitKitsOrderResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const resubmitKitsOrderResponseKitCustomDefault = ``;
 
 export const resubmitKitsOrderResponseKitProductDefault = ``;
@@ -22851,6 +22899,43 @@ export const ResubmitKitsOrderResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(resubmitKitsOrderResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(resubmitKitsOrderResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -22918,6 +23003,7 @@ export const ResubmitKitsOrderResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -31551,6 +31637,9 @@ export const submitOrderDraftResponseOnePricingBasisDefault = `legacy_bottle_mrp
 
 export const submitOrderDraftResponseTwoApplicatorsDefault = ``;
 
+export const submitOrderDraftResponseTwoFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const submitOrderDraftResponseTwoFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const submitOrderDraftResponseTwoKitCustomDefault = ``;
 
 export const submitOrderDraftResponseTwoKitProductDefault = ``;
@@ -31745,6 +31834,45 @@ export const SubmitOrderDraftResponse = zod.union([
     financialHistory: zod
       .array(zod.record(zod.string(), zod.unknown()))
       .optional(),
+    freeKit: zod
+      .union([
+        zod.object({
+          actorId: zod.string().uuid(),
+          classification: zod.literal("Free kit"),
+          doctor: zod.object({
+            cap: zod.number().int(),
+            dateFrom: zod.string(),
+            dateTo: zod.string(),
+            period: zod.enum(["financial_year", "month"]),
+            remaining: zod.number().int(),
+            timezone: zod
+              .literal("Asia/Kolkata")
+              .default(
+                submitOrderDraftResponseTwoFreeKitOneDoctorTimezoneDefault,
+              ),
+            used: zod.number().int(),
+          }),
+          doctorId: zod.string().uuid(),
+          markedAt: zod.string(),
+          mr: zod.object({
+            cap: zod.number().int(),
+            dateFrom: zod.string(),
+            dateTo: zod.string(),
+            period: zod.enum(["financial_year", "month"]),
+            remaining: zod.number().int(),
+            timezone: zod
+              .literal("Asia/Kolkata")
+              .default(submitOrderDraftResponseTwoFreeKitOneMrTimezoneDefault),
+            used: zod.number().int(),
+          }),
+          mrId: zod.string().uuid(),
+          orderDate: zod.string(),
+          orderVersion: zod.number().int(),
+          policyVersion: zod.number().int(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
     gstEvidence: zod
       .union([
         zod.object({
@@ -31812,6 +31940,7 @@ export const SubmitOrderDraftResponse = zod.union([
           "Part paid",
           "Unavailable",
           "Pending pricing",
+          "Free kit",
         ]),
         zod.null(),
       ])
@@ -42913,6 +43042,7 @@ export const ReconcileSettlementResponse = zod.object({
 export const recordSettlementBodyEntriesItemAmountRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,2})?$",
 );
+export const recordSettlementBodyEntriesItemExpectedCreditedDefault = `0.00`;
 export const recordSettlementBodyEntriesItemExpectedPaidRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,2})?$",
 );
@@ -51561,6 +51691,9 @@ export const MrSalesAchievementResponse = zod.object({
   items: zod.array(
     zod.object({
       amount: zod.union([zod.string(), zod.null()]),
+      classification: zod
+        .union([zod.literal("Free kit"), zod.null()])
+        .optional(),
       contribution: zod.union([zod.string(), zod.null()]),
       date: zod.string(),
       key: zod.string(),
@@ -53907,6 +54040,548 @@ export const GetSptFinancialReviewResponse = zod.object({
   version: zod.number().int(),
 });
 
+/**
+ * @summary Credit Listing
+ */
+export const listSettlementCreditNotesQuerySearchDefault = ``;
+
+export const ListSettlementCreditNotesQueryParams = zod.object({
+  date_from: zod.union([zod.date(), zod.null()]).optional(),
+  date_to: zod.union([zod.date(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  search: zod.coerce
+    .string()
+    .max(listSettlementCreditNotesQuerySearchMax)
+    .default(listSettlementCreditNotesQuerySearchDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listSettlementCreditNotesQueryOffsetMin)
+    .max(listSettlementCreditNotesQueryOffsetMax)
+    .default(listSettlementCreditNotesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listSettlementCreditNotesQueryLimitMax)
+    .default(listSettlementCreditNotesQueryLimitDefault),
+});
+
+export const ListSettlementCreditNotesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      canRevert: zod.boolean(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementCreditNotesResponseItemsItemDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      invoiceReference: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementCreditNotesResponseItemsItemMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      orderDate: zod.string(),
+      orderId: zod.string(),
+      orderNumber: zod.string(),
+      revertedAt: zod.union([zod.string(), zod.null()]),
+      revertedBy: zod.union([zod.string(), zod.null()]),
+      status: zod.enum(["Active", "Reverted"]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Credit Create
+ */
+export const createSettlementCreditNoteBodyAmountRegExp = new RegExp(
+  "^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$",
+);
+
+export const createSettlementCreditNoteBodyInvoiceReferenceRegExp = new RegExp(
+  "^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$",
+);
+
+export const CreateSettlementCreditNoteBody = zod.object({
+  amount: zod.string().regex(createSettlementCreditNoteBodyAmountRegExp),
+  expected_credited: zod.string(),
+  expected_paid: zod.string(),
+  expected_version: zod.number().int().min(1),
+  id: zod.string().uuid(),
+  idempotency_key: zod.string().uuid(),
+  invoice_reference: zod
+    .string()
+    .max(createSettlementCreditNoteBodyInvoiceReferenceMax)
+    .regex(createSettlementCreditNoteBodyInvoiceReferenceRegExp),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+});
+
+export const CreateSettlementCreditNoteResponse = zod.object({
+  actorId: zod.string(),
+  amount: zod.string(),
+  canRevert: zod.boolean(),
+  createdAt: zod.string(),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          createSettlementCreditNoteResponseDoctorOneContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  invoiceReference: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(createSettlementCreditNoteResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  orderDate: zod.string(),
+  orderId: zod.string(),
+  orderNumber: zod.string(),
+  revertedAt: zod.union([zod.string(), zod.null()]),
+  revertedBy: zod.union([zod.string(), zod.null()]),
+  status: zod.enum(["Active", "Reverted"]),
+});
+
+/**
+ * @summary Credit Detail
+ */
+export const GetSettlementCreditNoteParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const GetSettlementCreditNoteResponse = zod.object({
+  actorId: zod.string(),
+  amount: zod.string(),
+  canRevert: zod.boolean(),
+  createdAt: zod.string(),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(getSettlementCreditNoteResponseDoctorOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  invoiceReference: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(getSettlementCreditNoteResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  orderDate: zod.string(),
+  orderId: zod.string(),
+  orderNumber: zod.string(),
+  revertedAt: zod.union([zod.string(), zod.null()]),
+  revertedBy: zod.union([zod.string(), zod.null()]),
+  status: zod.enum(["Active", "Reverted"]),
+});
+
+/**
+ * @summary Credit Revert
+ */
+export const RevertSettlementCreditNoteParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const RevertSettlementCreditNoteBody = zod.object({
+  idempotency_key: zod.string().uuid(),
+});
+
+export const RevertSettlementCreditNoteResponse = zod.object({
+  actorId: zod.string(),
+  amount: zod.string(),
+  canRevert: zod.boolean(),
+  createdAt: zod.string(),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          revertSettlementCreditNoteResponseDoctorOneContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  invoiceReference: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(revertSettlementCreditNoteResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  orderDate: zod.string(),
+  orderId: zod.string(),
+  orderNumber: zod.string(),
+  revertedAt: zod.union([zod.string(), zod.null()]),
+  revertedBy: zod.union([zod.string(), zod.null()]),
+  status: zod.enum(["Active", "Reverted"]),
+});
+
+/**
+ * @summary Credit Reconcile
+ */
+export const ReconcileSettlementCreditNoteParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const ReconcileSettlementCreditNoteResponse = zod.object({
+  note: zod.union([
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      canRevert: zod.boolean(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              reconcileSettlementCreditNoteResponseNoteOneDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      invoiceReference: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              reconcileSettlementCreditNoteResponseNoteOneMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      orderDate: zod.string(),
+      orderId: zod.string(),
+      orderNumber: zod.string(),
+      revertedAt: zod.union([zod.string(), zod.null()]),
+      revertedBy: zod.union([zod.string(), zod.null()]),
+      status: zod.enum(["Active", "Reverted"]),
+    }),
+    zod.null(),
+  ]),
+  rejection: zod.union([zod.record(zod.string(), zod.string()), zod.null()]),
+  status: zod.enum(["committed", "absent", "rejected"]),
+});
+
+/**
+ * @summary Dashboard
+ */
+
+export const mrDashboardQueryPeriodDefault = `all`;
+
+export const MrDashboardQueryParams = zod.object({
+  start_year: zod
+    .union([
+      zod.coerce.number().int().min(1).max(mrDashboardQueryStartYearOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  period: zod
+    .enum(["all", "Q1", "Q2", "Q3", "Q4"])
+    .default(mrDashboardQueryPeriodDefault),
+});
+
+export const MrDashboardResponse = zod.object({
+  annual: zod.object({
+    complete: zod.boolean(),
+    dateFrom: zod.string(),
+    dateTo: zod.string(),
+    knownSales: zod.string(),
+    percentage: zod.union([zod.string(), zod.null()]),
+    period: zod.enum(["all", "Q1", "Q2", "Q3", "Q4"]),
+    remaining: zod.union([zod.string(), zod.null()]),
+    target: zod.union([zod.string(), zod.null()]),
+    targetState: zod.enum(["active", "missing", "inactive", "deleted"]),
+    total: zod.number().int(),
+    unavailableOrders: zod.number().int(),
+  }),
+  currentYear: zod.number().int(),
+  dateFrom: zod.string(),
+  dateTo: zod.string(),
+  directory: zod.object({
+    doctors: zod.number().int(),
+    patients: zod.number().int(),
+  }),
+  financial: zod.object({
+    contributions: zod.array(
+      zod.object({
+        kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+        state: zod.enum(["configured", "unconfigured"]),
+        totals: zod.union([
+          zod.object({
+            actualSales: zod.object({
+              amount: zod.union([zod.string(), zod.null()]),
+              complete: zod.boolean(),
+            }),
+            dueAmount: zod.object({
+              amount: zod.union([zod.string(), zod.null()]),
+              complete: zod.boolean(),
+            }),
+            grossSales: zod.object({
+              amount: zod.union([zod.string(), zod.null()]),
+              complete: zod.boolean(),
+            }),
+            totalSales: zod.object({
+              amount: zod.union([zod.string(), zod.null()]),
+              complete: zod.boolean(),
+            }),
+          }),
+          zod.null(),
+        ]),
+      }),
+    ),
+    scope: zod.literal("configured-subtotal"),
+    totals: zod.object({
+      actualSales: zod.object({
+        amount: zod.union([zod.string(), zod.null()]),
+        complete: zod.boolean(),
+      }),
+      dueAmount: zod.object({
+        amount: zod.union([zod.string(), zod.null()]),
+        complete: zod.boolean(),
+      }),
+      grossSales: zod.object({
+        amount: zod.union([zod.string(), zod.null()]),
+        complete: zod.boolean(),
+      }),
+      totalSales: zod.object({
+        amount: zod.union([zod.string(), zod.null()]),
+        complete: zod.boolean(),
+      }),
+    }),
+  }),
+  monthly: zod.array(
+    zod.object({
+      amount: zod.union([zod.string(), zod.null()]),
+      knownSales: zod.string(),
+      month: zod.string(),
+      unavailableOrders: zod.number().int(),
+    }),
+  ),
+  mrId: zod.string(),
+  orders: zod.object({
+    byType: zod.array(
+      zod.object({
+        count: zod.number().int(),
+        kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+        percentage: zod.string(),
+      }),
+    ),
+    label: zod.string(),
+    total: zod.number().int(),
+  }),
+  period: zod.enum(["all", "Q1", "Q2", "Q3", "Q4"]),
+  quarters: zod.array(
+    zod.object({
+      complete: zod.boolean(),
+      dateFrom: zod.string(),
+      dateTo: zod.string(),
+      knownSales: zod.string(),
+      percentage: zod.union([zod.string(), zod.null()]),
+      period: zod.enum(["all", "Q1", "Q2", "Q3", "Q4"]),
+      remaining: zod.union([zod.string(), zod.null()]),
+      target: zod.union([zod.string(), zod.null()]),
+      targetState: zod.enum(["active", "missing", "inactive", "deleted"]),
+      total: zod.number().int(),
+      unavailableOrders: zod.number().int(),
+    }),
+  ),
+  recent: zod.array(
+    zod.object({
+      classification: zod
+        .union([zod.literal("Free kit"), zod.null()])
+        .optional(),
+      date: zod.string(),
+      key: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      number: zod.string(),
+      status: zod.enum([
+        "Pending",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+    }),
+  ),
+  recentLimit: zod.number().int(),
+  startYear: zod.number().int(),
+  statuses: zod.array(
+    zod.object({
+      byType: zod.array(
+        zod.object({
+          count: zod.number().int(),
+          kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+          percentage: zod.string(),
+        }),
+      ),
+      label: zod.string(),
+      total: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Doctor Payments
+ */
+export const mrDoctorPaymentsQuerySearchDefault = ``;
+
+export const MrDoctorPaymentsQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(mrDoctorPaymentsQuerySearchMax)
+    .default(mrDoctorPaymentsQuerySearchDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(mrDoctorPaymentsQueryOffsetMin)
+    .max(mrDoctorPaymentsQueryOffsetMax)
+    .default(mrDoctorPaymentsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(mrDoctorPaymentsQueryLimitMax)
+    .default(mrDoctorPaymentsQueryLimitDefault),
+});
+
+export const MrDoctorPaymentsResponse = zod.object({
+  businessDate: zod.string(),
+  doctorDaysLimit: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      daysRemaining: zod.union([zod.number().int(), zod.null()]),
+      doctorId: zod.string(),
+      doctorName: zod.string(),
+      due: zod.union([zod.string(), zod.null()]),
+      knownDue: zod.string(),
+      oldestUnpaidAgeDays: zod.union([zod.number().int(), zod.null()]),
+      oldestUnpaidDate: zod.union([zod.string(), zod.null()]),
+      overdueDays: zod.union([zod.number().int(), zod.null()]),
+      pendingPricingOrders: zod.number().int(),
+      received: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  mrId: zod.string(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Record Irn
+ */
 export const RecordImmunotherapyIRNParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
@@ -54020,6 +54695,9 @@ export const RecordKitsIRNBody = zod.object({
 
 export const recordKitsIRNResponseApplicatorsDefault = ``;
 
+export const recordKitsIRNResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const recordKitsIRNResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
 export const recordKitsIRNResponseKitCustomDefault = ``;
 
 export const recordKitsIRNResponseKitProductDefault = ``;
@@ -54116,6 +54794,43 @@ export const RecordKitsIRNResponse = zod.object({
   financialHistory: zod
     .array(zod.record(zod.string(), zod.unknown()))
     .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(recordKitsIRNResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(recordKitsIRNResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -54181,6 +54896,7 @@ export const RecordKitsIRNResponse = zod.object({
         "Part paid",
         "Unavailable",
         "Pending pricing",
+        "Free kit",
       ]),
       zod.null(),
     ])
@@ -54525,5 +55241,506 @@ export const RecordSptIRNResponse = zod.object({
     "Rejected",
   ]),
   total: zod.union([zod.string(), zod.null()]),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Free Kit Settings
+ */
+
+export const GetFreeKitSettingsResponse = zod.object({
+  caps: zod.union([
+    zod.object({
+      doctorCap: zod
+        .number()
+        .int()
+        .min(getFreeKitSettingsResponseCapsOneDoctorCapMin)
+        .max(getFreeKitSettingsResponseCapsOneDoctorCapMax),
+      doctorPeriod: zod.enum(["financial_year", "month"]),
+      mrCap: zod
+        .number()
+        .int()
+        .min(getFreeKitSettingsResponseCapsOneMrCapMin)
+        .max(getFreeKitSettingsResponseCapsOneMrCapMax),
+      mrPeriod: zod.enum(["financial_year", "month"]),
+    }),
+    zod.null(),
+  ]),
+  configured: zod.boolean(),
+  confirmedRequest: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  recordedAt: zod.union([zod.string(), zod.null()]).optional(),
+  recordedBy: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Save Free Kit Settings
+ */
+
+export const SaveFreeKitSettingsBody = zod.object({
+  doctorCap: zod
+    .number()
+    .int()
+    .min(saveFreeKitSettingsBodyDoctorCapMin)
+    .max(saveFreeKitSettingsBodyDoctorCapMax),
+  doctorPeriod: zod.enum(["financial_year", "month"]),
+  expected_version: zod
+    .number()
+    .int()
+    .min(saveFreeKitSettingsBodyExpectedVersionMin),
+  idempotencyKey: zod.string().uuid(),
+  mrCap: zod
+    .number()
+    .int()
+    .min(saveFreeKitSettingsBodyMrCapMin)
+    .max(saveFreeKitSettingsBodyMrCapMax),
+  mrPeriod: zod.enum(["financial_year", "month"]),
+});
+
+export const SaveFreeKitSettingsResponse = zod.object({
+  caps: zod.union([
+    zod.object({
+      doctorCap: zod
+        .number()
+        .int()
+        .min(saveFreeKitSettingsResponseCapsOneDoctorCapMin)
+        .max(saveFreeKitSettingsResponseCapsOneDoctorCapMax),
+      doctorPeriod: zod.enum(["financial_year", "month"]),
+      mrCap: zod
+        .number()
+        .int()
+        .min(saveFreeKitSettingsResponseCapsOneMrCapMin)
+        .max(saveFreeKitSettingsResponseCapsOneMrCapMax),
+      mrPeriod: zod.enum(["financial_year", "month"]),
+    }),
+    zod.null(),
+  ]),
+  configured: zod.boolean(),
+  confirmedRequest: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  recordedAt: zod.union([zod.string(), zod.null()]).optional(),
+  recordedBy: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Free Kit Preview
+ */
+export const PreviewFreeKitParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const previewFreeKitResponseDoctorOneTimezoneDefault = `Asia/Kolkata`;
+export const previewFreeKitResponseMrOneTimezoneDefault = `Asia/Kolkata`;
+
+export const PreviewFreeKitResponse = zod.object({
+  doctor: zod.union([
+    zod.object({
+      cap: zod.number().int(),
+      dateFrom: zod.string(),
+      dateTo: zod.string(),
+      period: zod.enum(["financial_year", "month"]),
+      remaining: zod.number().int(),
+      timezone: zod
+        .literal("Asia/Kolkata")
+        .default(previewFreeKitResponseDoctorOneTimezoneDefault),
+      used: zod.number().int(),
+    }),
+    zod.null(),
+  ]),
+  eligible: zod.boolean(),
+  mr: zod.union([
+    zod.object({
+      cap: zod.number().int(),
+      dateFrom: zod.string(),
+      dateTo: zod.string(),
+      period: zod.enum(["financial_year", "month"]),
+      remaining: zod.number().int(),
+      timezone: zod
+        .literal("Asia/Kolkata")
+        .default(previewFreeKitResponseMrOneTimezoneDefault),
+      used: zod.number().int(),
+    }),
+    zod.null(),
+  ]),
+  orderVersion: zod.number().int(),
+  reason: zod.string(),
+  settingsVersion: zod.number().int(),
+});
+
+/**
+ * @summary Mark Free Kit
+ */
+export const MarkFreeKitParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const MarkFreeKitBody = zod.object({
+  confirmPermanent: zod.literal(true),
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  settingsVersion: zod.number().int().min(1),
+});
+
+export const markFreeKitResponseApplicatorsDefault = ``;
+
+export const markFreeKitResponseFreeKitOneDoctorTimezoneDefault = `Asia/Kolkata`;
+export const markFreeKitResponseFreeKitOneMrTimezoneDefault = `Asia/Kolkata`;
+
+export const markFreeKitResponseKitCustomDefault = ``;
+
+export const markFreeKitResponseKitProductDefault = ``;
+export const markFreeKitResponseKitQuantityDefault = ``;
+
+export const markFreeKitResponseKitVolumeDefault = ``;
+
+export const markFreeKitResponseLancetsDefault = ``;
+
+export const markFreeKitResponseOrderForDefault = `doctor`;
+export const markFreeKitResponseOtherAddressCityDefault = ``;
+
+export const markFreeKitResponseOtherAddressCountryDefault = ``;
+
+export const markFreeKitResponseOtherAddressLandmarkDefault = ``;
+
+export const markFreeKitResponseOtherAddressLine1Default = ``;
+
+export const markFreeKitResponseOtherAddressLine2Default = ``;
+
+export const markFreeKitResponseOtherAddressPincodeDefault = ``;
+
+export const markFreeKitResponseOtherAddressStateDefault = ``;
+
+export const markFreeKitResponseOtherNameDefault = ``;
+
+export const markFreeKitResponseOtherPhoneDefault = ``;
+
+export const markFreeKitResponsePaymentStatusDefault = `Unpaid`;
+
+export const markFreeKitResponseRemarksDefault = ``;
+
+export const markFreeKitResponseShippingDefault = `doctor`;
+export const markFreeKitResponseStatusDefault = `Confirmed`;
+export const markFreeKitResponseTrayDefault = ``;
+
+export const MarkFreeKitResponse = zod.object({
+  applicators: zod
+    .string()
+    .max(markFreeKitResponseApplicatorsMax)
+    .default(markFreeKitResponseApplicatorsDefault),
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(markFreeKitResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  billing: zod.record(zod.string(), zod.unknown()),
+  businessParking: zod
+    .union([
+      zod.string().max(markFreeKitResponseBusinessParkingOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  correctionSaved: zod
+    .boolean()
+    .default(markFreeKitResponseCorrectionSavedDefault),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
+  freeKit: zod
+    .union([
+      zod.object({
+        actorId: zod.string().uuid(),
+        classification: zod.literal("Free kit"),
+        doctor: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(markFreeKitResponseFreeKitOneDoctorTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        doctorId: zod.string().uuid(),
+        markedAt: zod.string(),
+        mr: zod.object({
+          cap: zod.number().int(),
+          dateFrom: zod.string(),
+          dateTo: zod.string(),
+          period: zod.enum(["financial_year", "month"]),
+          remaining: zod.number().int(),
+          timezone: zod
+            .literal("Asia/Kolkata")
+            .default(markFreeKitResponseFreeKitOneMrTimezoneDefault),
+          used: zod.number().int(),
+        }),
+        mrId: zod.string().uuid(),
+        orderDate: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(markFreeKitResponseIrnCanRecordDefault),
+  kit: zod
+    .object({
+      custom: zod
+        .string()
+        .max(markFreeKitResponseKitCustomMax)
+        .default(markFreeKitResponseKitCustomDefault),
+      product: zod
+        .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+        .default(markFreeKitResponseKitProductDefault),
+      quantity: zod
+        .string()
+        .max(markFreeKitResponseKitQuantityMax)
+        .default(markFreeKitResponseKitQuantityDefault),
+      volume: zod
+        .string()
+        .max(markFreeKitResponseKitVolumeMax)
+        .default(markFreeKitResponseKitVolumeDefault),
+    })
+    .optional(),
+  lancets: zod
+    .string()
+    .max(markFreeKitResponseLancetsMax)
+    .default(markFreeKitResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum([
+        "Unpaid",
+        "Paid",
+        "Part paid",
+        "Unavailable",
+        "Pending pricing",
+        "Free kit",
+      ]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrEditable: zod.boolean().default(markFreeKitResponseMrEditableDefault),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  orderFor: zod
+    .enum(["doctor", "mr"])
+    .default(markFreeKitResponseOrderForDefault),
+  other: zod
+    .object({
+      address: zod
+        .object({
+          city: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressCityMax)
+            .default(markFreeKitResponseOtherAddressCityDefault),
+          country: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressCountryMax)
+            .default(markFreeKitResponseOtherAddressCountryDefault),
+          landmark: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressLandmarkMax)
+            .default(markFreeKitResponseOtherAddressLandmarkDefault),
+          line1: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressLine1Max)
+            .default(markFreeKitResponseOtherAddressLine1Default),
+          line2: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressLine2Max)
+            .default(markFreeKitResponseOtherAddressLine2Default),
+          pincode: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressPincodeMax)
+            .default(markFreeKitResponseOtherAddressPincodeDefault),
+          state: zod
+            .string()
+            .max(markFreeKitResponseOtherAddressStateMax)
+            .default(markFreeKitResponseOtherAddressStateDefault),
+        })
+        .optional(),
+      name: zod
+        .string()
+        .max(markFreeKitResponseOtherNameMax)
+        .default(markFreeKitResponseOtherNameDefault),
+      phone: zod
+        .string()
+        .max(markFreeKitResponseOtherPhoneMax)
+        .default(markFreeKitResponseOtherPhoneDefault),
+    })
+    .optional(),
+  patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(markFreeKitResponsePaymentStatusDefault),
+  poNumber: zod
+    .union([zod.string().max(markFreeKitResponsePoNumberOneMax), zod.null()])
+    .optional(),
+  pricing: zod
+    .union([
+      zod.object({
+        applicatorsRate: zod
+          .union([
+            zod
+              .string()
+              .max(markFreeKitResponsePricingOneApplicatorsRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        discountAmount: zod.string(),
+        discountType: zod.enum(["percent", "inr"]),
+        discountValue: zod
+          .string()
+          .max(markFreeKitResponsePricingOneDiscountValueMax),
+        discounted: zod.string(),
+        forwardingCharges: zod
+          .string()
+          .max(markFreeKitResponsePricingOneForwardingChargesMax),
+        gross: zod.string(),
+        gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
+        kitRate: zod
+          .union([
+            zod.string().max(markFreeKitResponsePricingOneKitRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        lancetsRate: zod
+          .union([
+            zod.string().max(markFreeKitResponsePricingOneLancetsRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        lineAmounts: zod.record(zod.string(), zod.string()),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
+        taxable: zod.string(),
+        total: zod.string(),
+        trayRate: zod
+          .union([
+            zod.string().max(markFreeKitResponsePricingOneTrayRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  pricingNeedsReview: zod
+    .boolean()
+    .default(markFreeKitResponsePricingNeedsReviewDefault),
+  pricingState: zod.union([zod.string(), zod.null()]).optional(),
+  recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod
+    .string()
+    .max(markFreeKitResponseRemarksMax)
+    .default(markFreeKitResponseRemarksDefault),
+  reviewDecision: zod.union([zod.string(), zod.null()]).optional(),
+  reviewHistory: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  shipping: zod
+    .enum(["doctor", "mr", "other"])
+    .default(markFreeKitResponseShippingDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(markFreeKitResponseStatusDefault),
+  tray: zod
+    .string()
+    .max(markFreeKitResponseTrayMax)
+    .default(markFreeKitResponseTrayDefault),
   version: zod.number().int(),
 });

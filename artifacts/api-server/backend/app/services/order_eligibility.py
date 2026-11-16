@@ -109,6 +109,9 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     # omit old, pending, delivered or returned unpaid obligations.
     for label, source in SOURCES.items():
         clauses = [source.Order.mr_id == identity]
+        if label == "Kit":
+            from app.services.free_kits import chargeable_clause
+            clauses.append(chargeable_clause(source.Order))
         if not limit and not governed_it:
             clauses.append(source.Order.doctor_id == doctor_id)
         rows = list(db.scalars(select(source.Order).where(*clauses).order_by(source.Order.id)
@@ -154,6 +157,9 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
 
     def remaining(label, saved, saved_row):
         nonlocal exposure_complete, doctor_complete
+        from app.services.free_kits import is_free
+        if label == "Kit" and is_free(saved):
+            return settlements.ZERO
         total = settlements.saved_total(label, saved)
         if total is None:
             if not governed_it or limit or (days and str(saved_row.doctor_id) == str(doctor_id)):

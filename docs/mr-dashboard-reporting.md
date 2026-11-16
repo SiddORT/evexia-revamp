@@ -1,3 +1,12 @@
+# Free KIT financial boundary
+
+Explicit **Free kit** orders remain in operational totals/statuses and are
+labelled in recent orders. They add nothing to financial cards, achievement,
+pending-pricing counts, debt or completeness failures. Normal KIT financial
+definitions, including saved Business Parking achievement and the distinct
+unpaid-plus-unverified Due Amount, remain unchanged.
+See [Free KIT Order Limits](free-kit-limits.md). Runtime remains unverified.
+
 # MR dashboard organization and Doctor payments
 
 ## Delivered source

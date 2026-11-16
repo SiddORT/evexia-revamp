@@ -6,10 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementRecordVerification = typeof SettlementRecordVerification[keyof typeof SettlementRecordVerification];
+export type SettlementRecordVerification =
+  (typeof SettlementRecordVerification)[keyof typeof SettlementRecordVerification];
 
 export const SettlementRecordVerification = {
-  No_transactions: 'No transactions',
-  Not_verified: 'Not verified',
-  Verified: 'Verified',
+  No_transactions: "No transactions",
+  Not_verified: "Not verified",
+  Verified: "Verified",
 } as const;

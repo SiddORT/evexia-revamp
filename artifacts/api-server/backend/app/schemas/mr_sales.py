@@ -12,6 +12,7 @@ class MRSalesYears(BaseModel):
 
 
 class MRSalesOrder(BaseModel):
+    classification: Literal["Free kit"] | None = None
     key: str
     number: str
     kind: Literal["IT", "Kit", "SPT", "Lupin"]

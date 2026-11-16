@@ -31,6 +31,8 @@ def readiness(db: Session = Depends(get_db)):
         # automatic upgrade target. It alters no identity/directory contracts.
         # Do not carry this predecessor exception into an unrelated future pin.
         accepted = [[SCHEMA_REVISION]]
+        if SCHEMA_REVISION == "0114_free_kit_limits":
+            accepted.append(["0115_free_kit_staged_merge"])
         if SCHEMA_REVISION == "0041_location_geography":
             accepted.append(["0042_rate_hundredths"])
         if SCHEMA_REVISION == "0043_email_templates":
@@ -69,6 +71,10 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0114_free_kit_limits"], ["0115_free_kit_staged_merge"]):
+            from app.services.free_kits import ready as free_kits_ready
+            free_kits_ready(db)
+            revisions = ["0113_credits_staged_merge"] if revisions == ["0115_free_kit_staged_merge"] else ["0112_settlement_credits"]
         if revisions in (["0112_settlement_credits"], ["0113_credits_staged_merge"]):
             from app.services.credit_notes import ready as credits_ready
             credits_ready(db)

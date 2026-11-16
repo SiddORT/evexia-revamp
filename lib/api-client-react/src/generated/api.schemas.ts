@@ -5,119 +5,6 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
-export type CreditRecordKind =
-  (typeof CreditRecordKind)[keyof typeof CreditRecordKind];
-
-export const CreditRecordKind = {
-  IT: "IT",
-  Kit: "Kit",
-  SPT: "SPT",
-  Lupin: "Lupin",
-} as const;
-
-export type CreditRecordStatus =
-  (typeof CreditRecordStatus)[keyof typeof CreditRecordStatus];
-
-export const CreditRecordStatus = {
-  Active: "Active",
-  Reverted: "Reverted",
-} as const;
-
-export interface CreditRecord {
-  actorId: string;
-  amount: string;
-  canRevert: boolean;
-  createdAt: string;
-  date: string;
-  doctor: SettlementPerson | null;
-  id: string;
-  invoiceReference: string;
-  kind: CreditRecordKind;
-  mr: SettlementPerson | null;
-  number: string;
-  orderDate: string;
-  orderId: string;
-  orderNumber: string;
-  revertedAt: string | null;
-  revertedBy: string | null;
-  status: CreditRecordStatus;
-}
-
-export type CreditInputKind =
-  (typeof CreditInputKind)[keyof typeof CreditInputKind];
-
-export const CreditInputKind = {
-  IT: "IT",
-  Kit: "Kit",
-  SPT: "SPT",
-  Lupin: "Lupin",
-} as const;
-
-export interface CreditInput {
-  /** @pattern ^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$ */
-  amount: string;
-  expected_credited: string;
-  expected_paid: string;
-  /** @minimum 1 */
-  expected_version: number;
-  id: string;
-  idempotency_key: string;
-  /**
-   * @maxLength 100
-   * @pattern ^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$
-   */
-  invoice_reference: string;
-  kind: CreditInputKind;
-}
-
-export interface CreditPage {
-  items: CreditRecord[];
-  limit: number;
-  offset: number;
-  total: number;
-}
-
-export type CreditReconciliationRejection = { [key: string]: string } | null;
-
-export type CreditReconciliationStatus =
-  (typeof CreditReconciliationStatus)[keyof typeof CreditReconciliationStatus];
-
-export const CreditReconciliationStatus = {
-  committed: "committed",
-  absent: "absent",
-  rejected: "rejected",
-} as const;
-
-export interface CreditReconciliation {
-  note: CreditRecord | null;
-  rejection: CreditReconciliationRejection;
-  status: CreditReconciliationStatus;
-}
-
-export interface CreditRevertInput {
-  idempotency_key: string;
-}
-
-export type ListSettlementCreditNotesParams = {
-  date_from?: string | null;
-  date_to?: string | null;
-  mr_id?: string | null;
-  /**
-   * @maxLength 100
-   */
-  search?: string;
-  /**
-   * @minimum 0
-   * @maximum 20000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-};
-
 export interface LedgerLocation {
   id: string;
   name: string;
@@ -3813,6 +3700,13 @@ export interface ImmImport {
   reviewToken?: string;
 }
 
+export interface OrderIRN {
+  number: string;
+  recordVersion: number;
+  recordedAt: string;
+  recordedBy: string;
+}
+
 export type ImmRecordPricingBasis =
   (typeof ImmRecordPricingBasis)[keyof typeof ImmRecordPricingBasis];
 
@@ -4886,6 +4780,37 @@ export interface KitsContribution {
   unavailableReason?: string | null;
 }
 
+export type FreeKitWindowPeriod =
+  (typeof FreeKitWindowPeriod)[keyof typeof FreeKitWindowPeriod];
+
+export const FreeKitWindowPeriod = {
+  financial_year: "financial_year",
+  month: "month",
+} as const;
+
+export interface FreeKitWindow {
+  cap: number;
+  dateFrom: string;
+  dateTo: string;
+  period: FreeKitWindowPeriod;
+  remaining: number;
+  timezone?: "Asia/Kolkata";
+  used: number;
+}
+
+export interface FreeKitEvidence {
+  actorId: string;
+  classification: "Free kit";
+  doctor: FreeKitWindow;
+  doctorId: string;
+  markedAt: string;
+  mr: FreeKitWindow;
+  mrId: string;
+  orderDate: string;
+  orderVersion: number;
+  policyVersion: number;
+}
+
 /**
  * Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.
  */
@@ -4899,6 +4824,7 @@ export const KitsRecordLedgerPaymentStatus = {
   Part_paid: "Part paid",
   Unavailable: "Unavailable",
   Pending_pricing: "Pending pricing",
+  Free_kit: "Free kit",
 } as const;
 
 export type KitsRecordOrderFor =
@@ -5011,6 +4937,7 @@ export interface KitsRecord {
   doctorId: string;
   financialContribution?: KitsContribution | null;
   financialHistory?: KitsRecordFinancialHistoryItem[];
+  freeKit?: FreeKitEvidence | null;
   gstEvidence?: GSTEvidence | null;
   id: string;
   irn?: OrderIRN | null;
@@ -7466,6 +7393,7 @@ export const MRSalesOrderStatus = {
 
 export interface MRSalesOrder {
   amount: string | null;
+  classification?: "Free kit" | null;
   contribution: string | null;
   date: string;
   key: string;
@@ -11618,6 +11546,44 @@ export interface SettlementPerson {
   qualification?: string | null;
 }
 
+export type CreditRecordKind =
+  (typeof CreditRecordKind)[keyof typeof CreditRecordKind];
+
+export const CreditRecordKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type CreditRecordStatus =
+  (typeof CreditRecordStatus)[keyof typeof CreditRecordStatus];
+
+export const CreditRecordStatus = {
+  Active: "Active",
+  Reverted: "Reverted",
+} as const;
+
+export interface CreditRecord {
+  actorId: string;
+  amount: string;
+  canRevert: boolean;
+  createdAt: string;
+  date: string;
+  doctor: SettlementPerson | null;
+  id: string;
+  invoiceReference: string;
+  kind: CreditRecordKind;
+  mr: SettlementPerson | null;
+  number: string;
+  orderDate: string;
+  orderId: string;
+  orderNumber: string;
+  revertedAt: string | null;
+  revertedBy: string | null;
+  status: CreditRecordStatus;
+}
+
 export type SettlementRecordKind =
   (typeof SettlementRecordKind)[keyof typeof SettlementRecordKind];
 
@@ -14736,6 +14702,358 @@ export interface MRFinancialSummary {
   total: number;
 }
 
+export type CreditInputKind =
+  (typeof CreditInputKind)[keyof typeof CreditInputKind];
+
+export const CreditInputKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export interface CreditInput {
+  /** @pattern ^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$ */
+  amount: string;
+  expected_credited: string;
+  expected_paid: string;
+  /** @minimum 1 */
+  expected_version: number;
+  id: string;
+  idempotency_key: string;
+  /**
+   * @maxLength 100
+   * @pattern ^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$
+   */
+  invoice_reference: string;
+  kind: CreditInputKind;
+}
+
+export interface CreditPage {
+  items: CreditRecord[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type CreditReconciliationRejection = { [key: string]: string } | null;
+
+export type CreditReconciliationStatus =
+  (typeof CreditReconciliationStatus)[keyof typeof CreditReconciliationStatus];
+
+export const CreditReconciliationStatus = {
+  committed: "committed",
+  absent: "absent",
+  rejected: "rejected",
+} as const;
+
+export interface CreditReconciliation {
+  note: CreditRecord | null;
+  rejection: CreditReconciliationRejection;
+  status: CreditReconciliationStatus;
+}
+
+export interface CreditRevertInput {
+  idempotency_key: string;
+}
+
+export type MRDashboardAchievementPeriod =
+  (typeof MRDashboardAchievementPeriod)[keyof typeof MRDashboardAchievementPeriod];
+
+export const MRDashboardAchievementPeriod = {
+  all: "all",
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+} as const;
+
+export type MRDashboardAchievementTargetState =
+  (typeof MRDashboardAchievementTargetState)[keyof typeof MRDashboardAchievementTargetState];
+
+export const MRDashboardAchievementTargetState = {
+  active: "active",
+  missing: "missing",
+  inactive: "inactive",
+  deleted: "deleted",
+} as const;
+
+export interface MRDashboardAchievement {
+  complete: boolean;
+  dateFrom: string;
+  dateTo: string;
+  knownSales: string;
+  percentage: string | null;
+  period: MRDashboardAchievementPeriod;
+  remaining: string | null;
+  target: string | null;
+  targetState: MRDashboardAchievementTargetState;
+  total: number;
+  unavailableOrders: number;
+}
+
+export type MRDashboardTypeCountKind =
+  (typeof MRDashboardTypeCountKind)[keyof typeof MRDashboardTypeCountKind];
+
+export const MRDashboardTypeCountKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export interface MRDashboardTypeCount {
+  count: number;
+  kind: MRDashboardTypeCountKind;
+  percentage: string;
+}
+
+export interface MRDashboardCount {
+  byType: MRDashboardTypeCount[];
+  label: string;
+  total: number;
+}
+
+export interface MRDashboardDirectory {
+  doctors: number;
+  patients: number;
+}
+
+export interface MRDashboardMonth {
+  amount: string | null;
+  knownSales: string;
+  month: string;
+  unavailableOrders: number;
+}
+
+export type MRDashboardRecentOrderKind =
+  (typeof MRDashboardRecentOrderKind)[keyof typeof MRDashboardRecentOrderKind];
+
+export const MRDashboardRecentOrderKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type MRDashboardRecentOrderStatus =
+  (typeof MRDashboardRecentOrderStatus)[keyof typeof MRDashboardRecentOrderStatus];
+
+export const MRDashboardRecentOrderStatus = {
+  Pending: "Pending",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface MRDashboardRecentOrder {
+  classification?: "Free kit" | null;
+  date: string;
+  key: string;
+  kind: MRDashboardRecentOrderKind;
+  number: string;
+  status: MRDashboardRecentOrderStatus;
+}
+
+export type MRDashboardReportPeriod =
+  (typeof MRDashboardReportPeriod)[keyof typeof MRDashboardReportPeriod];
+
+export const MRDashboardReportPeriod = {
+  all: "all",
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+} as const;
+
+export type MRDashboardFinancialContributionKind =
+  (typeof MRDashboardFinancialContributionKind)[keyof typeof MRDashboardFinancialContributionKind];
+
+export const MRDashboardFinancialContributionKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type MRDashboardFinancialContributionState =
+  (typeof MRDashboardFinancialContributionState)[keyof typeof MRDashboardFinancialContributionState];
+
+export const MRDashboardFinancialContributionState = {
+  configured: "configured",
+  unconfigured: "unconfigured",
+} as const;
+
+export interface MRDashboardFinancialMetric {
+  amount: string | null;
+  complete: boolean;
+}
+
+export interface MRDashboardFinancialAmounts {
+  actualSales: MRDashboardFinancialMetric;
+  dueAmount: MRDashboardFinancialMetric;
+  grossSales: MRDashboardFinancialMetric;
+  totalSales: MRDashboardFinancialMetric;
+}
+
+export interface MRDashboardFinancialContribution {
+  kind: MRDashboardFinancialContributionKind;
+  state: MRDashboardFinancialContributionState;
+  totals: MRDashboardFinancialAmounts | null;
+}
+
+export interface MRDashboardFinancial {
+  contributions: MRDashboardFinancialContribution[];
+  scope: "configured-subtotal";
+  totals: MRDashboardFinancialAmounts;
+}
+
+export interface MRDashboardReport {
+  annual: MRDashboardAchievement;
+  currentYear: number;
+  dateFrom: string;
+  dateTo: string;
+  directory: MRDashboardDirectory;
+  financial: MRDashboardFinancial;
+  monthly: MRDashboardMonth[];
+  mrId: string;
+  orders: MRDashboardCount;
+  period: MRDashboardReportPeriod;
+  quarters: MRDashboardAchievement[];
+  recent: MRDashboardRecentOrder[];
+  recentLimit: number;
+  startYear: number;
+  statuses: MRDashboardCount[];
+}
+
+export interface MRDoctorPayment {
+  daysRemaining: number | null;
+  doctorId: string;
+  doctorName: string;
+  due: string | null;
+  knownDue: string;
+  oldestUnpaidAgeDays: number | null;
+  oldestUnpaidDate: string | null;
+  overdueDays: number | null;
+  pendingPricingOrders: number;
+  received: string;
+}
+
+export interface MRDoctorPaymentsPage {
+  businessDate: string;
+  doctorDaysLimit: number;
+  items: MRDoctorPayment[];
+  limit: number;
+  mrId: string;
+  offset: number;
+  total: number;
+}
+
+export interface OrderIRNInput {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minLength 1
+   * @maxLength 256
+   */
+  number: string;
+}
+
+export type FreeKitCapsDoctorPeriod =
+  (typeof FreeKitCapsDoctorPeriod)[keyof typeof FreeKitCapsDoctorPeriod];
+
+export const FreeKitCapsDoctorPeriod = {
+  financial_year: "financial_year",
+  month: "month",
+} as const;
+
+export type FreeKitCapsMrPeriod =
+  (typeof FreeKitCapsMrPeriod)[keyof typeof FreeKitCapsMrPeriod];
+
+export const FreeKitCapsMrPeriod = {
+  financial_year: "financial_year",
+  month: "month",
+} as const;
+
+export interface FreeKitCaps {
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  doctorCap: number;
+  doctorPeriod: FreeKitCapsDoctorPeriod;
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  mrCap: number;
+  mrPeriod: FreeKitCapsMrPeriod;
+}
+
+export interface FreeKitMark {
+  confirmPermanent: true;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /** @minimum 1 */
+  settingsVersion: number;
+}
+
+export interface FreeKitPreview {
+  doctor: FreeKitWindow | null;
+  eligible: boolean;
+  mr: FreeKitWindow | null;
+  orderVersion: number;
+  reason: string;
+  settingsVersion: number;
+}
+
+export interface FreeKitSettingsView {
+  caps: FreeKitCaps | null;
+  configured: boolean;
+  confirmedRequest?: string | null;
+  recordedAt?: string | null;
+  recordedBy?: string | null;
+  version: number;
+}
+
+export type FreeKitSettingsWriteDoctorPeriod =
+  (typeof FreeKitSettingsWriteDoctorPeriod)[keyof typeof FreeKitSettingsWriteDoctorPeriod];
+
+export const FreeKitSettingsWriteDoctorPeriod = {
+  financial_year: "financial_year",
+  month: "month",
+} as const;
+
+export type FreeKitSettingsWriteMrPeriod =
+  (typeof FreeKitSettingsWriteMrPeriod)[keyof typeof FreeKitSettingsWriteMrPeriod];
+
+export const FreeKitSettingsWriteMrPeriod = {
+  financial_year: "financial_year",
+  month: "month",
+} as const;
+
+export interface FreeKitSettingsWrite {
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  doctorCap: number;
+  doctorPeriod: FreeKitSettingsWriteDoctorPeriod;
+  /** @minimum 0 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  mrCap: number;
+  mrPeriod: FreeKitSettingsWriteMrPeriod;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -15788,6 +16106,7 @@ export const ListKitsOrdersPaymentStatus = {
   Unavailable: "Unavailable",
   Partial: "Partial",
   Pending_pricing: "Pending pricing",
+  Free_kit: "Free kit",
 } as const;
 
 export type ListKitsOrdersOrderFor =
@@ -15840,6 +16159,7 @@ export const ExportKitsOrdersPaymentStatus = {
   Unavailable: "Unavailable",
   Partial: "Partial",
   Pending_pricing: "Pending pricing",
+  Free_kit: "Free kit",
 } as const;
 
 export type ExportKitsOrdersOrderFor =
@@ -18665,20 +18985,55 @@ export type GetMrFinancialSummaryParams = {
   limit?: number;
 };
 
-export interface OrderIRN {
-  number: string;
-  recordVersion: number;
-  recordedAt: string;
-  recordedBy: string;
-}
-
-export interface OrderIRNInput {
-  /** @minimum 1 */
-  expected_version: number;
-  idempotencyKey: string;
+export type ListSettlementCreditNotesParams = {
+  date_from?: string | null;
+  date_to?: string | null;
+  mr_id?: string | null;
   /**
-   * @minLength 1
-   * @maxLength 256
+   * @maxLength 100
    */
-  number: string;
-}
+  search?: string;
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type MrDashboardParams = {
+  start_year?: number | null;
+  period?: MrDashboardPeriod;
+};
+
+export type MrDashboardPeriod =
+  (typeof MrDashboardPeriod)[keyof typeof MrDashboardPeriod];
+
+export const MrDashboardPeriod = {
+  all: "all",
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+} as const;
+
+export type MrDoctorPaymentsParams = {
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};

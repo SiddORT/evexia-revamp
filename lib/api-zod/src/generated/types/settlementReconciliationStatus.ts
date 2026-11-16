@@ -6,10 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementReconciliationStatus = typeof SettlementReconciliationStatus[keyof typeof SettlementReconciliationStatus];
+export type SettlementReconciliationStatus =
+  (typeof SettlementReconciliationStatus)[keyof typeof SettlementReconciliationStatus];
 
 export const SettlementReconciliationStatus = {
-  committed: 'committed',
-  absent: 'absent',
-  rejected: 'rejected',
+  committed: "committed",
+  absent: "absent",
+  rejected: "rejected",
 } as const;

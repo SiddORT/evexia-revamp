@@ -41,6 +41,14 @@ def with_status(db, keys, records, *, budget=None):
     credits = history(db, keys, {"Kit": identities})
     result = []
     for record, identity in zip(records, identities):
+        from app.services.free_kits import is_free
+        if is_free(record):
+            if paid[identity] or credits[("Kit", identity)]:
+                fail("Free kit has conflicting financial history. Ask Admin to investigate.",
+                     503, "free_kit_evidence")
+            result.append({**record, "ledgerPaymentStatus": "Free kit",
+                           "ledgerCredited": None, "ledgerPaid": None})
+            continue
         credit = active_total(credits[("Kit", identity)])
         total = saved_total("Kit", record)
         state = payment_position(total, paid[identity], credit)

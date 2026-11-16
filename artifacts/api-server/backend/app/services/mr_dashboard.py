@@ -84,11 +84,15 @@ def report(db, actor, start_year=None, period="all"):
                 label = presented_status(saved_status)
                 counts[kind] += total
                 status_counts[label][kind] += total
-            rows = db.execute(select(model.id, model.number, model.date, model.status).where(
+            rows = db.execute(select(model.id, model.number, model.date, model.status, model.snapshot_ciphertext).where(
                 *clauses).order_by(model.date.desc(), model.id.desc()).limit(RECENT_LIMIT))
-            recent.extend(dict(key=f"{kind}:{row.id}", number=row.number, kind=kind,
-                               date=row.date.isoformat(), status=presented_status(row.status))
-                          for row in rows)
+            with crypto_scope(db) as keys:
+                for row in rows:
+                    from app.services.free_kits import is_free
+                    free = kind == "Kit" and is_free(SOURCES[kind].unseal(keys, "orders", row.id, row.snapshot_ciphertext))
+                    recent.append(dict(key=f"{kind}:{row.id}", number=row.number, kind=kind,
+                        classification="Free kit" if free else None,
+                        date=row.date.isoformat(), status=presented_status(row.status)))
         recent.sort(key=lambda row: (row["date"], row["key"]), reverse=True)
 
         target_row, target_state = mr_sales.target_for_year(db, mr_id, year)
@@ -101,6 +105,9 @@ def report(db, actor, start_year=None, period="all"):
             model = source.Order
             clauses = (model.mr_id == mr_id, model.date >= full_start, model.date <= full_end,
                        model.status.in_(mr_sales.APPROVED))
+            if kind == "Kit":
+                from app.services.free_kits import chargeable_clause
+                clauses += (chargeable_clause(model),)
             scanned += db.scalar(select(func.count()).select_from(model).where(*clauses))
             if scanned > mr_sales.SCAN_LIMIT:
                 raise ImmError("Full-year achievement exceeds the safe 20,000-order limit. "

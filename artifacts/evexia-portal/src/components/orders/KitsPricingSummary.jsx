@@ -32,6 +32,7 @@ function AdditionalInformation({ order, compact = false }) {
 }
 
 export default function KitsPricingSummary({ order, compact = false, hideSavedContributionNotes = false }) {
+  if (order?.freeKit?.classification === 'Free kit') return <div className="kpr"><strong>Free kit</strong><p>No charge, invoice or financial contribution. Editing and pricing are permanently locked.</p></div>;
   const p = order?.pricing;
   const k = order?.kit || {};
   if (!p) return <div className="kpr kpr-empty" data-testid="kits-pricing-unpriced">

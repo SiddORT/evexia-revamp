@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["mr-dashboard", "low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits", "order-irns"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["free-kits", "mr-dashboard", "low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits", "order-irns"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -172,7 +172,9 @@ def main() -> None:
             args.output.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             return
         selected = {path: item for path, item in contract["paths"].items()
-                    if (args.scope == "mr-dashboard" and path in (
+                    if (args.scope == "free-kits" and path.startswith("/v1/admin/kits-orders/") and
+                        (path.endswith("/free-kit-settings") or path.endswith("/free-kit-preview") or path.endswith("/mark-free-kit")))
+                    or (args.scope == "mr-dashboard" and path in (
                         "/v1/mr/sales-achievement/dashboard", "/v1/mr/sales-achievement/doctor-payments"))
                     or (args.scope == "order-irns" and path.endswith("/irn") and
                         any(path.startswith(f"/v1/admin/{kind}-orders/") for kind in
@@ -220,6 +222,8 @@ def main() -> None:
                     collect(item)
 
         collect(selected)
+        if args.scope == "free-kits":
+            collect(contract["components"]["schemas"]["KitsRecord"]["properties"]["freeKit"])
         if args.scope == "settlement-credits":
             for name in ("FinancialReview", "KitsRecord"):
                 # Only new response members; retain all unrelated refinements.
@@ -230,7 +234,7 @@ def main() -> None:
             # Response-only addition: retain every existing route and unrelated
             # refined schema. Collect only the new response field dependencies.
             collect(contract["components"]["schemas"]["KitsRecord"]["properties"]["financialContribution"])
-        if args.scope == "deferred-order-review":
+        if args.scope in ("deferred-order-review", "free-kits"):
             # Kits payment filters are inline query schemas. Keep every other
             # reviewed query/response property byte-equivalent after JSON parsing.
             for path in ("/v1/admin/kits-orders", "/v1/admin/kits-orders/export"):
@@ -242,6 +246,10 @@ def main() -> None:
                 selected[path] = item
         schema_updates = {}
         deferred_fields = {
+            "KitsRecord": ("freeKit", "ledgerPaymentStatus"),
+            "MRSalesOrder": ("classification",),
+            "MRDashboardRecentOrder": ("classification",),
+        } if args.scope == "free-kits" else {
             name: ("irn", "irnCanRecord") for name in ("KitsRecord", "SptRecord", "LupinRecord", "ImmRecord")
         } if args.scope == "order-irns" else {
             "DoctorChoice": ("doctorDaysLimit",),
@@ -285,7 +293,7 @@ def main() -> None:
                     saved.pop("required", None)
                 schema_updates[name] = saved
                 continue
-            prefixes = (() if args.scope in ("deferred-order-review", "settlement-credits", "order-irns") else ("UnifiedDraft",) if args.scope == "unified-drafts"
+            prefixes = (() if args.scope in ("free-kits", "deferred-order-review", "settlement-credits", "order-irns") else ("UnifiedDraft",) if args.scope == "unified-drafts"
                         else ("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("MR", "Doctor") if args.scope == "territories"

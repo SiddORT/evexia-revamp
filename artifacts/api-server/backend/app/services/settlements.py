@@ -70,6 +70,9 @@ def fmt(value):
 
 
 def saved_total(kind, saved):
+    from app.services.free_kits import is_free
+    if kind == "Kit" and is_free(saved):
+        return None  # No payable amount; never a fabricated zero-price invoice.
     if kind in {"SPT", "Lupin"} and saved.get("pricingState") == "Pending pricing" and saved.get("total") is not None:
         fail("Pending-pricing evidence conflicts with the saved total.", 503, "settlement_saved_value")
     if kind == "IT":
@@ -197,6 +200,9 @@ def candidate_orders(db, *, kind="All", order_from=None, order_to=None, all_save
         model = source.Order
         # Approved is the legacy persisted spelling of the same approved stage.
         clauses = [model.status != "Draft", *mr_orders.scope(db, model)]
+        if label == "Kit":
+            from app.services.free_kits import chargeable_clause
+            clauses.append(chargeable_clause(model))
         if payable_only:
             clauses.append(model.status.in_(PAYABLE_STAGES))
         elif not all_saved and order_status == "All":
@@ -244,6 +250,9 @@ def listing(db, actor, *, kind="All", order_from=None, order_to=None,
             if doctor_id and row.doctor_id != doctor_id or mr_id and row.mr_id != mr_id:
                 continue
             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+            from app.services.free_kits import is_free
+            if label == "Kit" and is_free(saved):
+                continue
             record = projection(label, row, saved, receipts[(label, row.id)],
                                 credits=receipts.credits[(label, row.id)], mr_scope=current.role == "mr")
             if payable_only and not record["payable"]:
@@ -335,6 +344,8 @@ def order_history(db, actor, kind, identity):
     def work(current, keys):
         source, row = owned_order(db, kind, identity)
         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+        from app.services.free_kits import protect_financial
+        protect_financial(kind, saved)
         receipts = history(db, keys, {kind: [row.id]})
         return projection(kind, row, saved, receipts[(kind, row.id)],
                           credits=receipts.credits[(kind, row.id)], mr_scope=current.role == "mr")
@@ -403,6 +414,8 @@ def post(db, actor, body):
             if row.version != item.expected_version:
                 fail("An order changed. Refresh the listing before preparing a new transaction.", 409, "settlement_stale")
             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+            from app.services.free_kits import protect_financial
+            protect_financial(item.kind, saved)
             total = saved_total(item.kind, saved)
             if total is None:
                 fail("This order has no authoritative saved total and cannot receive payment.", 409, "settlement_unpriced")

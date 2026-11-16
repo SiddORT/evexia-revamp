@@ -16,6 +16,7 @@ import OrderApproval from '../../components/orders/OrderApproval.jsx';
 import EffectiveDoctorDays from '../../components/orders/EffectiveDoctorDays.jsx';
 import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
 import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
+import FreeKitAction from '../../components/orders/FreeKitAction.jsx';
 
 const LABELS = { orderFor: 'Order for', doctorId: 'Doctor', mrId: 'MR', products: 'Products', 'kit-product': 'Kit product', 'kit-custom': 'Custom value', 'kit-volume': 'Kit volume', 'kit-quantity': 'Kit quantity', lancets: 'Lancets', applicators: 'Applicators', tray: 'Tray', shipping: 'Shipping', 'other-name': 'Recipient name', 'other-phone': 'Recipient phone', 'other-line1': 'Address line 1', 'other-country': 'Country', 'other-state': 'State', 'other-city': 'City', 'other-pincode': 'Pincode', attachments: 'Attachments' };
 const Err = ({ id, text }) => (text ? <p className="kits-error" id={id} role="alert">{text}</p> : null);
@@ -45,6 +46,7 @@ export default function KitsOrderFormPage({ id, mode = 'view' }) {
       <h1>{loading ? 'Loading saved order…' : 'Order not available'}</h1>{error && <p role="alert">{error}</p>}
       {!loading && <button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button>}
       <Link href={BASE} className="admin-button">Back to orders</Link></div></div></AdminLayout>;
+    if (mode === 'edit' && order.freeKit) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><h1>Free kit</h1><p>Editing and pricing are permanently locked.</p><Link href={`${BASE}/${order.id}`}>View saved order</Link></div></AdminLayout>;
     return mode === 'edit' ? <KitsOrderEditor order={order} /> : <Summary order={order} />;
   }
   return <DraftEntry kind="kits">{(draft) => <Form draft={draft} />}</DraftEntry>;
@@ -71,12 +73,14 @@ function Summary({ order: initialOrder }) {
       <div className="kits-main">
         {can.protected && <section className="admin-panel kits-panel" aria-labelledby="kits-s-pricing">
           <div className="kits-saved__section-head"><h2 id="kits-s-pricing">Order items and pricing</h2>
-            {can.edit && <Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link>}</div>
+            {can.edit && !order.freeKit && <Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link>}</div>
           <KitsPricingSummary order={order} compact={portal !== 'mr'} hideSavedContributionNotes={portal === 'admin'} />
         </section>}
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
           {portal === 'mr' && can.edit && order.mrEditable && <div className="kits-saved__actions"><Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link></div>}
           <OrderApproval kind="kits" order={order} request={request} onApproved={setOrder} />
+          <FreeKitAction order={order} onSaved={setOrder} />
+          {order.freeKit && <p role="status"><strong>Free kit</strong> · No charge. Permanently locked for ordinary editing and pricing.</p>}
           <dl className="kits-facts" data-testid="kits-summary-items">
             <div><dt>Summary</dt><dd>{productSummary(order)}</dd></div>
             <div><dt>Order for</dt><dd>{order.orderFor === 'mr' ? `MR: ${mr?.name || '-'}` : `Doctor: ${doctor?.name || '-'}`}</dd></div>

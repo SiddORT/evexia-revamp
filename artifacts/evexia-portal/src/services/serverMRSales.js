@@ -47,6 +47,7 @@ export async function getMRSales({ year, period, offset, limit, mrId, signal }) 
       || typeof row.number !== 'string' || !row.number.trim()
       || !DAY.test(row.date) || row.date < dates[0] || row.date > dates[1]
       || !['In process', 'Shipped', 'Delivered'].includes(row.status)
+      || (row.classification != null && (row.classification !== 'Free kit' || row.kind !== 'Kit' || row.amount !== '0.00'))
       || !(row.amount === null || (typeof row.amount === 'string' && MONEY.test(row.amount)))
       || row.contribution !== (row.amount == null ? null : ratio(row.amount, page.target))) fail();
     seen.add(row.key);

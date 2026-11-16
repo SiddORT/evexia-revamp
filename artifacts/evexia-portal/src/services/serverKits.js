@@ -81,10 +81,11 @@ export async function loadKitsGST(recordId, signal) {
 }
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
-export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Part paid', 'Unavailable', 'Pending pricing']);
+export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Part paid', 'Unavailable', 'Pending pricing', 'Free kit']);
 // Never fall back to the legacy paymentStatus used by protected saves/imports.
 // Ledger label; credit-settled orders are never shown as cash Paid.
 export function paymentStatusLabel(order) {
+  if (order?.freeKit?.classification === 'Free kit') return 'Free kit';
   const status = order?.ledgerPaymentStatus;
   if (!PAYMENT_STATUSES.includes(status)) return 'Unavailable';
   const raw = order?.ledgerCredited;

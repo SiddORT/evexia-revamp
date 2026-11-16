@@ -17,4 +17,5 @@ export const ExportKitsOrdersPaymentStatus = {
   Unavailable: "Unavailable",
   Partial: "Partial",
   Pending_pricing: "Pending pricing",
+  Free_kit: "Free kit",
 } as const;

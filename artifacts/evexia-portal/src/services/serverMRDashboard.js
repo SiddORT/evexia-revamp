@@ -118,6 +118,7 @@ export async function getMRDashboard({ year, period = 'all', mrId, signal }) {
     || data.recent.length !== Math.min(data.orders.total, data.recentLimit)) fail();
   const seen = new Set();
   data.recent.forEach((row, i) => {
+    if (row?.classification != null && (row.classification !== 'Free kit' || row.kind !== 'Kit')) fail();
     if (!row || typeof row.key !== 'string' || !KEY.test(row.key)
       || !KINDS.includes(row.kind) || !row.key.startsWith(`${row.kind}:`) || seen.has(row.key)
       || typeof row.number !== 'string' || !row.number.trim() || row.number.length > 48

@@ -11,9 +11,9 @@ from app.schemas.kits_contributions import KitsContribution
 from app.schemas.immunotherapy import Strict, Status, ImmReferencePage, ImmImportReview, ImmUploadPolicy
 
 Payment = Literal["Unpaid", "Paid", "Partial"]
-LedgerPayment = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Pending pricing"]
+LedgerPayment = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Pending pricing", "Free kit"]
 # Keep old bookmarked Partial filters compatible, but use Accounts terminology.
-PaymentFilter = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Partial", "Pending pricing"]
+PaymentFilter = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Partial", "Pending pricing", "Free kit"]
 
 
 class KitsAddress(Strict):
@@ -121,9 +121,11 @@ class KitsImport(Strict):
 
 
 from app.schemas.order_irn import OrderIRN
+from app.schemas.free_kits import FreeKitEvidence
 
 
 class KitsRecord(KitsInput):
+    freeKit: FreeKitEvidence | None = None
     irn: OrderIRN | None = None
     irnCanRecord: bool = False
     ledgerCredited: str | None = Field(default=None, description="Read-only active non-cash credits, independent of legacy flags.")

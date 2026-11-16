@@ -59,12 +59,14 @@ export function createKitsTransferAdapter(filters, onSaved) {
           if (firstContext && firstContext !== JSON.stringify(context)) throw new Error('Keep one date context throughout the file.');
           firstContext = JSON.stringify(context);
           const date = parseDate(rawDate, context), details = safeJson(rawDetails, 'Order details');
+          if (details.freeKit) throw new Error('Free kit classification is server-owned. Free orders cannot be imported, copied or updated; view the saved operational order.');
           safeJson(rawPatient, 'Historical patient snapshot'); // Informational only; never create a master.
           if (!UUID.test(details.doctorId) || [details.mrId, details.patientId].some((v) => v && !UUID.test(v))) throw new Error('Use real Doctor/MR/Patient UUIDs; optional IDs may be empty.');
           let previous = null;
           if (id) {
             if (!UUID.test(id)) throw new Error('Use a real saved order ID.');
             previous = await request(`/${id}`);
+            if (previous.freeKit) throw new Error('Free kit orders are permanently locked; imports cannot change them.');
             if (number !== previous.number || details.version !== previous.version) throw new Error('Updates require the current saved ID, number and version.');
             if (date !== previous.date) throw new Error('Saved order date is immutable.');
           } else if (number) throw new Error('Leave new order numbers blank; the server assigns them.');

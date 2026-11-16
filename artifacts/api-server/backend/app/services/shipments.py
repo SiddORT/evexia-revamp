@@ -55,6 +55,8 @@ def address_text(value):
 
 def projection(kind, row, saved):
     """Never resolve historical fields from current directory records."""
+    from app.services.free_kits import is_free
+    free = kind == "Kit" and is_free(saved)
     shipping = saved.get("shipment") or {}
     recipient = saved.get("recipient")
     if not recipient and kind == "IT":
@@ -65,7 +67,7 @@ def projection(kind, row, saved):
         minor = saved.get("totalMinor")
         price = format(Decimal(minor) / 100, ".2f") if minor is not None else None
     # Amounts are saved exact decimal text, never recalculated using current rates.
-    value = str(price) if price is not None else None
+    value = str(price) if price is not None and not free else None
     def name(key):
         person = saved.get(key)
         return person.get("name") or None if isinstance(person, dict) else None
@@ -86,7 +88,7 @@ def projection(kind, row, saved):
         expectedDeliveryDate=shipping.get("expectedDeliveryDate"),
         actualDeliveryDate=shipping.get("actualDeliveryDate"), shippedAt=shipping.get("shippedAt"),
         status="In process" if row.status == "Approved" else row.status,
-        paymentStatus=getattr(row, "payment_status", None))
+        paymentStatus="Free kit" if free else getattr(row, "payment_status", None))
     return ShipmentRecord.model_validate(result).model_dump(mode="json")
 
 

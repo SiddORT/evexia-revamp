@@ -36,9 +36,11 @@ def report(db, actor, *, search="", offset=0, limit=25):
             # Filter ownership and current Doctor assignment in SQL, before any
             # decryption. MR-supply orders, drafts and other MRs never enter.
             for kind, source in SOURCES.items():
+                from app.services.free_kits import chargeable_clause
                 rows = list(db.scalars(select(source.Order).where(
                     source.Order.mr_id == current.mr.id,
                     source.Order.doctor_id.in_(identities),
+                    *([chargeable_clause(source.Order)] if kind == "Kit" else []),
                     source.Order.status != "Draft").order_by(source.Order.id)
                     .limit(settlements.SCAN_LIMIT + 1)))
                 if len(candidates) + len(rows) > settlements.SCAN_LIMIT:
@@ -53,6 +55,9 @@ def report(db, actor, *, search="", offset=0, limit=25):
                                         pending=0, oldest=None) for identity in identities}
             for kind, source, row in candidates:
                 saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+                from app.services.free_kits import is_free
+                if kind == "Kit" and is_free(saved):
+                    continue
                 paid = sum((settlements.exact(item["amount"])
                             for item in receipts[(kind, row.id)]), settlements.ZERO)
                 credit = settlements.credited(receipts, kind, row.id)

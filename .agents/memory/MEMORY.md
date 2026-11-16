@@ -144,3 +144,4 @@
 - [MR dashboard reporting](mr-dashboard-reporting-policy.md) — all-date own-Doctor balances include both unpaid age and remaining days; reporting does not change financial policy.
 - [Order IRN scope](order-irn-scope.md) — save-only metadata for four approved sales families; live invoice actions and issued-invoice display remain deferred.
 - [Shared MR financial cards](mr-shared-financial-policy.md) — KIT-only configured contributions to shared cards; dashboard Due is unpaid plus unverified, not ledger balance.
+- [Free KIT policy](free-kit-policy.md) — permanent protected saved-order classification; independent MR/Doctor count periods and no financial contribution or quota refund.

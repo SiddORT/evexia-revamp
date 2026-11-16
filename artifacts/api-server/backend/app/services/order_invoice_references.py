@@ -37,6 +37,9 @@ def _stamp(value):
 
 def validate(kind, row, saved):
     """Authenticate linkage and derivation; absence is not issuance authority."""
+    from app.services.free_kits import is_free
+    if kind == "Kit" and is_free(saved):
+        raise ValueError("Free kits have no financial invoice reference")
     authority = saved.get(KEY)
     if not isinstance(authority, dict) or set(authority) != {
         "schema", "kind", "orderId", "orderNumber", "orderDate", "reference",
@@ -79,6 +82,9 @@ def _authority(kind, row, *, provenance, recorded_at, approval_version):
 
 def assign(kind, row, snapshot, *, recorded_at):
     """Only the successful explicit approval calls this, before its commit."""
+    from app.services.free_kits import is_free
+    if kind == "Kit" and is_free(snapshot):
+        return
     from app.services.immunotherapy import ImmError
     try:
         if KEY in snapshot:
@@ -106,6 +112,9 @@ def preserve(data, saved):
 
 def historical_basis(row, saved):
     """Supported legacy status/evidence only; never fabricate a decision event."""
+    from app.services.free_kits import is_free
+    if is_free(saved):
+        return None
     from app.services.order_lifecycle import status
     if not isinstance(saved, dict):
         raise ValueError("Unreadable saved order")

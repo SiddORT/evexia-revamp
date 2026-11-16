@@ -6,7 +6,7 @@ Only saved canonical monetary snapshots are inspected, never master prices.
 import re
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from app.db.immunotherapy_models import ImmunotherapyOrder
 from app.db.kits_models import KitsOrder
@@ -72,6 +72,7 @@ def summaries(db, actor, doctor_ids):
         balanceAvailability="not_tracked", domains=[],
     ) for identity in doctor_ids}
     queries = []
+    financial_candidates = {identity: 0 for identity in doctor_ids}
     for kind, model, service, pending in DOMAINS:
         clauses = [model.doctor_id.in_(doctor_ids), *scope(db, model)]
         # SPT's Draft is an incomplete persisted editor, not a saved order.
@@ -79,7 +80,12 @@ def summaries(db, actor, doctor_ids):
             clauses.append(model.status == "Saved")
         columns = [model.doctor_id, model.status]
         if kind in {"kits", "lupin"}:
-            columns.append(model.payment_status)
+            if kind == "kits":
+                from app.db.free_kit_models import FreeKitUse
+                columns.append(case((model.id.in_(select(FreeKitUse.order_id)), "Free kit"),
+                                    else_=model.payment_status))
+            else:
+                columns.append(model.payment_status)
         grouped = db.execute(select(*columns, func.count()).where(*clauses).group_by(*columns))
         counts = {identity: dict(kind=kind, orderCount=0,
                                 pendingFulfillment=None if pending is None else 0)
@@ -94,15 +100,20 @@ def summaries(db, actor, doctor_ids):
             elif status in pending:
                 total["pendingFulfillment"] += count
                 counts[identity]["pendingFulfillment"] += count
-            flag = row[2].lower() if kind in {"kits", "lupin"} else "notTracked"
+            flag = ("notTracked" if row[2] == "Free kit" else row[2].lower()) if kind in {"kits", "lupin"} else "notTracked"
             total["paymentFlags"][flag] += count
+            if kind != "kits" or row[2] != "Free kit":
+                financial_candidates[identity] += count
         for identity in doctor_ids:
             result[identity]["domains"].append(counts[identity])
+        if kind == "kits":
+            from app.services.free_kits import chargeable_clause
+            clauses.append(chargeable_clause(model))
         queries.append((kind, model, service, clauses))
 
     # One global budget prevents page-size-dependent fan-out. No prefix sum is
     # presented as complete if the page's monetary inspection cannot finish.
-    if sum(item["orderCount"] for item in result.values()) > MAX_SNAPSHOTS:
+    if sum(financial_candidates.values()) > MAX_SNAPSHOTS:
         for item in result.values():
             if item["orderCount"]:
                 unavailable(item, "scan_limit")
@@ -128,6 +139,9 @@ def summaries(db, actor, doctor_ids):
                         continue
                     try:
                         snapshot = service.unseal(keys, "orders", identity, ciphertext)
+                        from app.services.free_kits import is_free
+                        if kind == "kits" and is_free(snapshot):
+                            continue
                         amount = minor_value(kind, snapshot)
                         if amount is None:
                             item["unpricedOrders"] += 1
@@ -141,7 +155,7 @@ def summaries(db, actor, doctor_ids):
             if item["orderCount"]:
                 unavailable(item, "snapshot_unreadable")
     for identity, item in result.items():
-        if item["valueAvailability"] == "available" and seen[identity] != item["orderCount"]:
+        if item["valueAvailability"] == "available" and seen[identity] != financial_candidates[identity]:
             unavailable(item, "scope_changed")
     return result
 

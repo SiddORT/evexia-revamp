@@ -10,6 +10,7 @@ import type { MRSalesOrderStatus } from "./mRSalesOrderStatus";
 
 export interface MRSalesOrder {
   amount: string | null;
+  classification?: "Free kit" | null;
   contribution: string | null;
   date: string;
   key: string;

@@ -37,6 +37,7 @@ class MRDashboardMonth(BaseModel):
 
 
 class MRDashboardRecentOrder(BaseModel):
+    classification: Literal["Free kit"] | None = None
     key: str
     number: str
     kind: Literal["IT", "Kit", "SPT", "Lupin"]

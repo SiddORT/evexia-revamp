@@ -26,13 +26,35 @@ from app.services.order_approval import approve as approve_order, resubmit as re
 from app.schemas.gst_settings import GSTEvidence
 from app.schemas.order_irn import OrderIRNInput
 from app.services.order_irn import record as record_order_irn
+from app.schemas.free_kits import FreeKitMark, FreeKitPreview, FreeKitSettingsWrite, FreeKitSettingsView
+from app.services import free_kits
 
 router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
     dependencies=[Depends(operation_router("kits", {
         "listing": None, "detail": None, "references": None, "export": "export",
         "review": "import", "commit": "import", "create": "add",
         "policy": "upload_attachment", "upload": "upload_attachment",
-    }, allow_mr=True))])
+    }, allow_mr=True, protected_operations=("free_kit_settings", "save_free_kit_settings", "free_kit_preview", "mark_free_kit")))])
+
+
+@router.get("/free-kit-settings", response_model=FreeKitSettingsView, operation_id="getFreeKitSettings")
+def free_kit_settings(actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return free_kits.settings(db, actor)
+
+
+@router.post("/free-kit-settings", response_model=FreeKitSettingsView, operation_id="saveFreeKitSettings")
+def save_free_kit_settings(body: FreeKitSettingsWrite, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return free_kits.settings(db, actor, body)
+
+
+@router.get("/{record_id}/free-kit-preview", response_model=FreeKitPreview, operation_id="previewFreeKit")
+def free_kit_preview(record_id: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return free_kits.action(db, actor, record_id)
+
+
+@router.post("/{record_id}/mark-free-kit", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="markFreeKit")
+def mark_free_kit(record_id: uuid.UUID, body: FreeKitMark, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return free_kits.action(db, actor, record_id, body)
 
 
 @router.get("/gst-evidence", response_model=GSTEvidence, operation_id="getKitsGSTEvidence")

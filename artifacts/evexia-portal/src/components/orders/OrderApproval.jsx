@@ -22,14 +22,15 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
   const [financialRevision, setFinancialRevision] = useState(0);
   const compact = kind === 'kits' && portal !== 'mr';
   const deferred = ['kits', 'spt', 'lupin'].includes(kind);
-  const reviewRequired = deferred && Boolean(order.mrId);
+  const freeKit = kind === 'kits' && order.freeKit?.classification === 'Free kit';
+  const reviewRequired = deferred && Boolean(order.mrId) && !freeKit;
   const submission = useRef(null), sending = useRef(false);
   const decisionFocus = useRef(null);
   // Kits/Lupin decisions are protected operations, not assignable Edit grants.
   const permitted = portal !== 'mr' && (['kits', 'lupin'].includes(kind) ? can.protected : can.edit);
   const eligibility = order.decisionEligibility;
   const eligible = Boolean(eligibility?.canReject);
-  const pricingReady = !compact || Boolean(order.pricing && eligibility?.canApprove);
+  const pricingReady = freeKit || !compact || Boolean(order.pricing && eligibility?.canApprove);
   const currentFinancial = !compact ? financial
     : financial?.orderId === order.id && financial?.version === order.version
       && financial.reviewValues === '' ? financial : null;
@@ -121,7 +122,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
     {!busy && !uncertain && (!compact || conflict || error) && <a className="admin-button admin-button--secondary" href={`/${portal}/orders/${kind === 'kits' ? 'kits-consumables' : kind}/${order.id}`} target="_blank" rel="noopener noreferrer">
       Open latest saved view separately
     </a>}
-    {portal === 'mr' && order.status === 'Rejected' && <>
+    {portal === 'mr' && order.status === 'Rejected' && !freeKit && <>
       {!order.correctionSaved && <p>Open Edit order and save your corrections before resubmitting.</p>}
       {dirty && <p>Save corrections before resubmitting. Unsaved changes are not submitted.</p>}
       <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || !resubmittable}
@@ -130,7 +131,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
     {error && <p role="alert">{error}{uncertain && ' Keep this page open and retry the unchanged decision. Do not start a different decision.'}</p>}
     {conflict && <p role="status">{conflict}</p>}
     {confirmReject && <ImmDialog title="Reject order?" eyebrow={order.number}
-      description="Reject the saved submission and return it to its owning MR for corrections. Pricing is not required. Nothing changes until you confirm."
+      description={freeKit ? 'Reject this saved Free kit with a reason. It remains permanently locked and its quota slots are not refunded. Nothing changes until you confirm.' : 'Reject the saved submission and return it to its owning MR for corrections. Pricing is not required. Nothing changes until you confirm.'}
       onClose={() => { if (!busy && !uncertain) setConfirmReject(false); }} className="order-approval__dialog" returnFocusRef={decisionFocus}>
       {error && <p role="alert">{error}</p>}
       {conflict && <p role="status">{conflict}</p>}

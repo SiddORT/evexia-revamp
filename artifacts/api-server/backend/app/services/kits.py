@@ -209,7 +209,8 @@ def project(keys, row):
     value = public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext))
     from app.services.order_irn import projection
     value.update(projection(row, value))
-    value["pricingState"] = ("Pending pricing" if value.get("pricing") is None
+    from app.services.free_kits import is_free
+    value["pricingState"] = ("Free kit" if is_free(value) else "Pending pricing" if value.get("pricing") is None
                              else "Needs pricing review" if value.get("pricingNeedsReview") else "Priced")
     from app.services.order_lifecycle import status
     from app.services.order_approval import eligibility
@@ -220,7 +221,11 @@ def project(keys, row):
             "number": row.number, "date": row.date.isoformat(), "version": row.version}
 
 
-def resolved(db, actor, keys, body, previous=None):
+def resolved(db, actor, keys, body, previous=None, *, approval_validation=False):
+    # Includes reviewed imports and Admin writers, not just MR permission checks.
+    from app.services.free_kits import protect_edit
+    if not approval_validation:
+        protect_edit(previous)
     if body.status != (previous["status"] if previous else "Confirmed"):
         raise ImmError("Use the explicit Approve order or Reject order action; ordinary saves/imports cannot change decisions.", 422, "kits_decision")
     if body.paymentStatus != (previous["paymentStatus"] if previous else "Unpaid"):

@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0112_settlement_credits",
-  "policy_sha256": "58518f5b2e53d04f805c703b988eaa8465df4678f020642fe83c94ac76f9b38c",
+  "target": "0114_free_kit_limits",
+  "policy_sha256": "f71aa073c2746baedf6a891cc9eb9e490e4be659420c4867c175dde878fd4cab",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -128,7 +128,9 @@
     "0110_retire_legacy_pricing": "3238afef8b9c640db5262de5c48725e266650832f90b8038d18629ed0441831b",
     "0111_pricing_retirement_merge": "93c1654f849ca597e5a37c28fcfa1cced69d620f6dda105f542151ea5290fc03",
     "0112_settlement_credits": "ce20951199f2b290b78f7752906f2f78f1ad8e1b804816cb91db8d4d4dae0893",
-    "0113_credits_staged_merge": "3d413f0b6cc52055ac6650d9d9e421dc9f790941494eb791c4deeb2ede39397b"
+    "0113_credits_staged_merge": "3d413f0b6cc52055ac6650d9d9e421dc9f790941494eb791c4deeb2ede39397b",
+    "0114_free_kit_limits": "835d449a3cb590d1179415f3e695d2112509a8c20cfb6f5f521ca45468f0cd96",
+    "0115_free_kit_staged_merge": "22f42d67f78a8ca03d950e01a609194d7e793948ed904bd8776aaf3c9b3c9755"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

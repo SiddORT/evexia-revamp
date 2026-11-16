@@ -52,6 +52,9 @@ def target_for_year(db, mr_id, year):
 def achievement_amount(kind, saved):
     """KIT alone uses independent saved Parking, never invoice/contribution facts."""
     if kind == "Kit":
+        from app.services.free_kits import is_free
+        if is_free(saved):
+            return ZERO  # Achievement exclusion, not an invoice or pricing snapshot.
         from app.services.settlements import exact
         parking = saved.get("businessParking")
         return None if parking is None else exact(parking)
@@ -112,6 +115,9 @@ def reporting(db, actor, start_year=None, period="all", offset=0, limit=25):
             model = source.Order
             clauses = (model.mr_id == current.mr.id, model.date >= start, model.date <= end,
                        model.status.in_(APPROVED))
+            if kind == "Kit":
+                from app.services.free_kits import chargeable_clause
+                clauses += (chargeable_clause(model),)
             scanned += db.scalar(select(func.count()).select_from(model).where(*clauses))
             if scanned > SCAN_LIMIT:
                 raise ImmError("This period exceeds the safe 20,000-order reporting limit. Select a quarter; no partial achievement is shown.",
@@ -131,8 +137,11 @@ def reporting(db, actor, start_year=None, period="all", offset=0, limit=25):
                     if len(items) >= SCAN_LIMIT:
                         raise ImmError("This period exceeds the safe reporting limit. Select a quarter.",
                                        422, "mr_sales_limit")
+                    free = False
                     try:
                         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+                        from app.services.free_kits import is_free
+                        free = kind == "Kit" and is_free(saved)
                         amount = achievement_amount(kind, saved)
                     except (DirectoryCryptoError, ImmError, ValueError, KeyError, TypeError, AttributeError, ArithmeticError):
                         # Per-order unreadable prices stay visible, never zero.
@@ -142,6 +151,7 @@ def reporting(db, actor, start_year=None, period="all", offset=0, limit=25):
                     else:
                         known += amount
                     items.append(dict(key=f"{kind}:{row.id}", number=row.number, kind=kind,
+                                      classification="Free kit" if free else None,
                                       date=row.date.isoformat(), status=status(row.status),
                                       amount=fmt(amount) if amount is not None else None,
                                       contribution=percentage(amount, target) if amount is not None else None))
