@@ -1143,7 +1143,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
   const kitsFinancialRead = resource === 'kits-orders'
     && /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/financial-review$/i.test(path);
-  if ((!allowed.test(path) && !combinationOperation && !eligibilityPreview && !kitsFinancialRead)
+  // Exact MR-self summary only; never admit payloads, transfers or write methods.
+  const mrFinancialSummaryRead = resource === 'spt-orders' && path === '/mr-financial-summary';
+  if ((!allowed.test(path) && !combinationOperation && !eligibilityPreview && !kitsFinancialRead && !mrFinancialSummaryRead)
+      || (mrFinancialSummaryRead && (body !== undefined || file !== undefined
+        || (download !== undefined && download !== false) || (method !== undefined && method !== 'GET')))
       || (kitsFinancialRead && (body !== undefined || file !== undefined || download || method !== undefined))
       || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
     throw new SessionError(resource === 'pricing-rules'
@@ -1155,7 +1159,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   }
   const uid = '[0-9a-f-]{36}';
   const methodRoutes = { PUT: new RegExp(`^/${uid}$`, 'i'), PATCH: new RegExp(`^/${uid}/status$`, 'i'), DELETE: new RegExp(`^/${uid}$`, 'i') };
-  if (method !== undefined && !unifiedDraftRead && (resource !== 'products' || !methodRoutes[method]?.test(path) || body === undefined)) {
+  if (method !== undefined && !unifiedDraftRead && !mrFinancialSummaryRead && (resource !== 'products' || !methodRoutes[method]?.test(path) || body === undefined)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
@@ -1199,6 +1203,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
+    }
+    if (mrFinancialSummaryRead && (state.user?.identity_kind !== 'mr' || !state.user?.mr_id)) {
+      throw new SessionError('Financial restrictions require your saved MR identity.', 403);
     }
     if (resource === 'pricing-rules' && !isSuperAdminIdentity(state.user)) {
       throw new SessionError('Pricing Rules require the protected Super Admin.', 403);

@@ -26,6 +26,34 @@ not Admin's broader Patient directory or historical order participants.
 
 ## Read-only contract
 
+### Existing financial-restrictions summary
+
+The separate restrictions section uses the existing MR-self
+`GET /api/v1/admin/spt-orders/mr-financial-summary` endpoint, not the reporting
+endpoint below. Its authenticated transport permits this exact SPT path with
+an omitted method or explicit `GET`, no body or file, and no download mode
+(`download` omitted or `false`). Other resources, sibling paths and write-method
+variants gain no access. A saved MR identity is required; existing session
+renewal, identity/generation checks and caller cancellation remain in place.
+
+The component requests 25 Doctors per page using `offset` and `limit`, passes its
+abort signal and rejects stale results after refresh, paging or session changes.
+It displays saved payment/day limits and the business evaluation date separately
+from the four undefined financial cards. Refresh retries the read. Valid empty
+and disabled responses retain their distinct messages; failures remain
+unavailable, never zero balances or an assertion that no restrictions exist.
+The backend still revalidates the active MR and scopes obligations and currently
+assigned Doctors to that MR; financial policy and pending-pricing semantics
+are unchanged.
+
+This transport repair was reviewed through source and diff inspection only.
+No tests, builds, typechecks, regression/release/completion-validation wrappers,
+browser/runtime probes, managed workflows, service starts/restarts, migrations,
+live business writes or deployments were performed. The live data outcome
+remains unverified.
+
+### Dashboard reporting
+
 `GET /api/v1/mr/sales-achievement/dashboard`
 
 - Inputs: optional `start_year` (1–9998; server's current Kolkata financial year
