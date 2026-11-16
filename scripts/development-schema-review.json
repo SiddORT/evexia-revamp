@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0108_doctor_mr_mapping",
-  "policy_sha256": "a84e1245232f84e6b48d7c114786d935bdffcb15179690b94d4d2c8be89f92a8",
+  "target": "0110_retire_legacy_pricing",
+  "policy_sha256": "3a085eaf5bcd3e3cecf48ed22ea4bf8020c6087b84093b7add85677b8a42a92f",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -124,7 +124,9 @@
     "0107_combination_status_merge": "106fe01ee4e773aeb8f70f0bea45a6bfcd27da4769f22d1e05925a7ca350dab2",
     "0107_territory_staged_merge": "de71cec6fbd7b69c6639e3037c58a053ca3d31a2989af55c1690d40040361b4c",
     "0108_doctor_mr_mapping": "99c69161d856979317259c012c3424be08b32252327ec1b97223f5b1cc2109e2",
-    "0109_mapping_staged_merge": "5770120232126bea4e423c0032ebffac45b5fdf1f81fccb8522a397ab5edf812"
+    "0109_mapping_staged_merge": "5770120232126bea4e423c0032ebffac45b5fdf1f81fccb8522a397ab5edf812",
+    "0110_retire_legacy_pricing": "3238afef8b9c640db5262de5c48725e266650832f90b8038d18629ed0441831b",
+    "0111_pricing_retirement_merge": "93c1654f849ca597e5a37c28fcfa1cced69d620f6dda105f542151ea5290fc03"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

@@ -5,12 +5,13 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { CombinationResultCategoryScope } from "./combinationResultCategoryScope";
 import type { CombinationResultDosage } from "./combinationResultDosage";
 import type { CombinationRevision } from "./combinationRevision";
 
 export interface CombinationResult {
   categoryId: string | null;
-  categoryScope?: "single" | "all";
+  categoryScope?: CombinationResultCategoryScope;
   dosage: CombinationResultDosage;
   effectiveFrom: Date;
   eligibilityVersion: string;

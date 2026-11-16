@@ -5,17 +5,13 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { CombinationGenerateCategoryScope } from "./combinationGenerateCategoryScope";
 import type { CombinationGenerateDosage } from "./combinationGenerateDosage";
 
 export interface CombinationGenerate {
   allergenIds?: string[] | null;
   categoryId?: string | null;
-  /**
-   * All requires null categoryId/allergenIds and size 1, 2 or 3.
-   * Size 1 includes eligible Mix and No Mix allergens; sizes 2 and 3
-   * include only category-local Mix combinations, never search matches alone.
-   */
-  categoryScope?: "single" | "all";
+  categoryScope?: CombinationGenerateCategoryScope;
   dosage: CombinationGenerateDosage;
   /**
    * @minimum 1

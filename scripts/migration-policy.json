@@ -2,6 +2,8 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0110_retire_legacy_pricing": "automatic",
+    "0111_pricing_retirement_merge": "automatic",
     "0106_territory_assignments": "automatic",
     "0107_territory_staged_merge": "automatic",
     "0108_doctor_mr_mapping": "automatic",

@@ -4,7 +4,7 @@ from sqlalchemy import select, text, func, and_
 from sqlalchemy.orm import aliased
 from app.core.security import utcnow
 from app.db.models import AuditEvent
-from app.db.pricing_rule_models import CombinationTariff as Tariff, CombinationRuleStatus as Status, PricingRuleRequest
+from app.db.pricing_rule_models import CombinationTariff as Tariff, CombinationRuleStatus as Status, CombinationRequest
 from app.schemas.combination_pricing import CombinationScope
 from app.services.pricing_rules import transaction, PricingRuleError
 from app.services.combination_pricing import fail, project, scope
@@ -119,7 +119,7 @@ def change_status(db, actor, record_id, body):
     def work(current, crypto):
         request = dict(operation="combination-rule-status", revisionId=str(record_id),
                        body=body.model_dump(mode="json", exclude={"idempotencyKey"}))
-        prior = db.get(PricingRuleRequest, body.idempotencyKey)
+        prior = db.get(CombinationRequest, body.idempotencyKey)
         if prior:
             if prior.actor_id != current.user.id:
                 fail("Request key belongs to another owner.", "request_conflict")
@@ -129,7 +129,7 @@ def change_status(db, actor, record_id, body):
             return previous
 
         def outcome(**value):
-            db.add(PricingRuleRequest(key=body.idempotencyKey, actor_id=current.user.id,
+            db.add(CombinationRequest(key=body.idempotencyKey, actor_id=current.user.id,
                 payload_ciphertext=crypto.seal(body.idempotencyKey, "it-pricing-request", dict(request=request, **value))))
             db.flush()
             return value

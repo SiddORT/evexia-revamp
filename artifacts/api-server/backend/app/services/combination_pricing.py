@@ -1,4 +1,4 @@
-"""Bounded, atomic, protected configuration. Never called from order quotation."""
+"""Bounded protected configuration and exact saved combination quotation."""
 import hashlib
 import json
 import math
@@ -8,7 +8,7 @@ from sqlalchemy import select, func, text, or_, tuple_
 from app.core.security import utcnow
 from app.db.allergen_models import AllergenProduct as Allergen, ImmunotherapyDilutionMaterial
 from app.db.product_category_models import ProductCategory
-from app.db.pricing_rule_models import CombinationTariff as Tariff, CategoryCountTariff, PricingRuleRequest, CombinationRuleStatus
+from app.db.pricing_rule_models import CombinationTariff as Tariff, CombinationRequest, CombinationRuleStatus
 from app.db.models import AuditEvent
 from app.schemas.combination_pricing import MAX_MEMBERS, MAX_ROWS, CombinationRevision
 from app.services.pricing_rules import transaction, PricingRuleError
@@ -60,8 +60,7 @@ def eligible(db, category_id):
 def categories(db, actor, query, offset, limit):
     def work(_, crypto):
         stmt = select(ProductCategory).where(or_(ProductCategory.deleted_at.is_(None),
-            ProductCategory.id.in_(select(Tariff.category_id)),
-            ProductCategory.id.in_(select(CategoryCountTariff.category_id))))
+            ProductCategory.id.in_(select(Tariff.category_id))))
         if query.strip():
             stmt = stmt.where(ProductCategory.name.icontains(query.strip(), autoescape=True))
         rows = list(db.scalars(stmt.order_by(ProductCategory.name, ProductCategory.id).offset(offset).limit(limit + 1)))
@@ -228,7 +227,7 @@ def save(db, actor, body):
             request_body.pop("categoryScope")
         request = dict(operation="append-combination-prices",
                        body=request_body)
-        prior = db.get(PricingRuleRequest, body.idempotencyKey)
+        prior = db.get(CombinationRequest, body.idempotencyKey)
         if prior:
             if prior.actor_id != current.user.id:
                 fail("Request key belongs to another owner.", "request_conflict")
@@ -238,7 +237,7 @@ def save(db, actor, body):
             return previous
 
         def outcome(**result):
-            db.add(PricingRuleRequest(key=body.idempotencyKey, actor_id=current.user.id,
+            db.add(CombinationRequest(key=body.idempotencyKey, actor_id=current.user.id,
                 payload_ciphertext=crypto.seal(body.idempotencyKey, "it-pricing-request",
                                               dict(request=request, **result))))
             db.flush()

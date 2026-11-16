@@ -1,4 +1,4 @@
-"""Configuration only. No clinical quantity or order quotation contract."""
+"""Explicit combination MRP configuration, independent of clinical quantities."""
 import re
 import uuid
 from datetime import date, datetime

@@ -4389,91 +4389,10 @@ export interface InvoiceSettingsWrite {
   request_id: string;
 }
 
-export interface ItPricingAllergenReference {
-  categoryId: string;
-  id: string;
-  name: string;
-  savedCategoryId?: string | null;
-  status: string;
-}
-
 export interface ItPricingReference {
   id: string;
   name: string;
   status: string;
-}
-
-export interface ItPricingReferencePage {
-  catalogueVersion: string;
-  items: (ItPricingAllergenReference | ItPricingReference)[];
-  limit: number;
-  offset: number;
-  total: number;
-}
-
-export type ItPricingRuleEditAllergenCategoryIds = {
-  [key: string]: string;
-} | null;
-
-export interface ItPricingRuleEdit {
-  /** @maxLength 64 */
-  afterRate: string;
-  allergenCategoryIds?: ItPricingRuleEditAllergenCategoryIds;
-  /**
-   * @minItems 1
-   * @maxItems 100
-   */
-  allergenIds: string[];
-  /** @maxLength 64 */
-  beforeRate: string;
-  categoryId?: string | null;
-  categoryIds?: string[] | null;
-  cutoff: string;
-  /**
-   * @minimum 1
-   * @maximum 2147483646
-   */
-  expected_version: number;
-  idempotencyKey: string;
-}
-
-export type ItPricingRuleInputAllergenCategoryIds = {
-  [key: string]: string;
-} | null;
-
-export interface ItPricingRuleInput {
-  /** @maxLength 64 */
-  afterRate: string;
-  allergenCategoryIds?: ItPricingRuleInputAllergenCategoryIds;
-  /**
-   * @minItems 1
-   * @maxItems 100
-   */
-  allergenIds: string[];
-  /** @maxLength 64 */
-  beforeRate: string;
-  categoryId?: string | null;
-  categoryIds?: string[] | null;
-  cutoff: string;
-  idempotencyKey: string;
-}
-
-export interface ItPricingRuleSaved {
-  afterRate: string;
-  allergens: ItPricingAllergenReference[];
-  beforeRate: string;
-  categories: ItPricingReference[];
-  category: ItPricingReference;
-  cutoff: string;
-  id: string;
-  version: number;
-}
-
-export interface ItPricingRulePage {
-  items: ItPricingRuleSaved[];
-  limit: number;
-  offset: number;
-  total: number;
 }
 
 export interface KitsAddress {
@@ -14130,49 +14049,6 @@ export interface GSTHistoryPage {
   next_before_version: number | null;
 }
 
-export interface CategoryCountTariffCategoryPage {
-  items: ItPricingReference[];
-  nextOffset: number | null;
-}
-
-export interface CategoryCountTariffInput {
-  /**
-   * @minimum 1
-   * @maximum 3
-   */
-  allergenCount: number;
-  categoryId: string;
-  effectiveFrom: string;
-  /**
-   * @minimum 0
-   * @maximum 2147483646
-   */
-  expected_version: number;
-  idempotencyKey: string;
-  /** @maxLength 64 */
-  totalMrp: string;
-}
-
-export interface CategoryCountTariffSaved {
-  actorId: string;
-  allergenCount: number;
-  categoryId: string;
-  effectiveFrom: string;
-  id: string;
-  recordedAt: string;
-  totalMrp: string;
-  version: number;
-}
-
-export interface CategoryCountTariffView {
-  categoryId: string;
-  categoryName: string;
-  categoryVersion: number;
-  history: CategoryCountTariffSaved[];
-  suggestedUnitPrice: string | null;
-  suggestionError?: string | null;
-}
-
 export interface CombinationMember {
   id: string;
   mix: boolean;
@@ -14205,6 +14081,14 @@ export interface CombinationEdit {
   totalMrp: string;
 }
 
+export type CombinationGenerateCategoryScope =
+  (typeof CombinationGenerateCategoryScope)[keyof typeof CombinationGenerateCategoryScope];
+
+export const CombinationGenerateCategoryScope = {
+  single: "single",
+  all: "all",
+} as const;
+
 export type CombinationGenerateDosage =
   (typeof CombinationGenerateDosage)[keyof typeof CombinationGenerateDosage];
 
@@ -14224,12 +14108,7 @@ export const CombinationGenerateDosage = {
 export interface CombinationGenerate {
   allergenIds?: string[] | null;
   categoryId?: string | null;
-  /**
-   * All requires null categoryId/allergenIds and size 1, 2 or 3.
-   * Size 1 includes eligible Mix and No Mix allergens; sizes 2 and 3
-   * include only category-local Mix combinations, never search matches alone.
-   */
-  categoryScope?: "single" | "all";
+  categoryScope?: CombinationGenerateCategoryScope;
   dosage: CombinationGenerateDosage;
   /**
    * @minimum 1
@@ -14289,6 +14168,22 @@ export interface CombinationHistory {
   nextOffset: number | null;
 }
 
+export interface CombinationCategoryScope {
+  categoryId: string;
+  categoryName: string;
+  eligibleMembers: number;
+  ruleCount: number;
+  skipped: boolean;
+}
+
+export type CombinationPageCategoryScope =
+  (typeof CombinationPageCategoryScope)[keyof typeof CombinationPageCategoryScope];
+
+export const CombinationPageCategoryScope = {
+  single: "single",
+  all: "all",
+} as const;
+
 export type CombinationPageDosage =
   (typeof CombinationPageDosage)[keyof typeof CombinationPageDosage];
 
@@ -14315,18 +14210,10 @@ export interface CombinationRow {
   members: CombinationMember[];
 }
 
-export interface CombinationCategoryScope {
-  categoryId: string;
-  categoryName: string;
-  eligibleMembers: number;
-  ruleCount: number;
-  skipped: boolean;
-}
-
 export interface CombinationPage {
-  categoryId: string | null;
-  categoryScope: "single" | "all";
   categories: CombinationCategoryScope[];
+  categoryId: string | null;
+  categoryScope: CombinationPageCategoryScope;
   dosage: CombinationPageDosage;
   eligibilityVersion: string;
   items: CombinationRow[];
@@ -14339,6 +14226,14 @@ export interface CombinationPage {
   size: number;
   total: number;
 }
+
+export type CombinationResultCategoryScope =
+  (typeof CombinationResultCategoryScope)[keyof typeof CombinationResultCategoryScope];
+
+export const CombinationResultCategoryScope = {
+  single: "single",
+  all: "all",
+} as const;
 
 export type CombinationResultDosage =
   (typeof CombinationResultDosage)[keyof typeof CombinationResultDosage];
@@ -14358,7 +14253,7 @@ export const CombinationResultDosage = {
 
 export interface CombinationResult {
   categoryId: string | null;
-  categoryScope?: "single" | "all";
+  categoryScope?: CombinationResultCategoryScope;
   dosage: CombinationResultDosage;
   effectiveFrom: string;
   eligibilityVersion: string;
@@ -14366,6 +14261,14 @@ export interface CombinationResult {
   saved: CombinationRevision[];
   scopeVersion: string;
 }
+
+export type CombinationSaveCategoryScope =
+  (typeof CombinationSaveCategoryScope)[keyof typeof CombinationSaveCategoryScope];
+
+export const CombinationSaveCategoryScope = {
+  single: "single",
+  all: "all",
+} as const;
 
 export type CombinationSaveDosage =
   (typeof CombinationSaveDosage)[keyof typeof CombinationSaveDosage];
@@ -14386,13 +14289,7 @@ export const CombinationSaveDosage = {
 export interface CombinationSave {
   allergenIds?: string[] | null;
   categoryId?: string | null;
-  /**
-   * All requires the complete catalogue, a common copyRate and no edits.
-   * Size 1 prices Mix and No Mix singletons independently of Mix pairs/triples.
-   * One-time selected dosage/date only; capped at 500 categories,
-   * 500 catalogue members and 1000 rules, saved atomically.
-   */
-  categoryScope?: "single" | "all";
+  categoryScope?: CombinationSaveCategoryScope;
   copyRate?: string | null;
   dosage: CombinationSaveDosage;
   /** @maxItems 1000 */
@@ -16409,42 +16306,6 @@ export const DownloadPatientSampleFormat = {
   xlsx: "xlsx",
 } as const;
 
-export type ListItPricingRulesParams = {
-  /**
-   * @minimum 0
-   * @maximum 1000000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  /**
-   * @maxLength 100
-   */
-  query?: string;
-};
-
-export type GetItPricingRuleReferencesParams = {
-  /**
-   * @maxLength 200
-   */
-  query?: string;
-  categoryId?: string | null;
-  /**
-   * @minimum 0
-   * @maximum 1000000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  categoryIds?: string[] | null;
-};
-
 export type ListProductCategoriesParams = {
   /**
    * @maxLength 200
@@ -18231,24 +18092,6 @@ export type GetGSTHistoryParams = {
 export type GetKitsGSTEvidenceParams = {
   record_id?: string | null;
   order_date?: string | null;
-};
-
-export type ListCategoryCountTariffCategoriesParams = {
-  /**
-   * @maxLength 100
-   */
-  query?: string;
-  /**
-   * @minimum 0
-   * @maximum 1000000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  savedOnly?: boolean;
 };
 
 export type ListCombinationPricingAllergensParams = {

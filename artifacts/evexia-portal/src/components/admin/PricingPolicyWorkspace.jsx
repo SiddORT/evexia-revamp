@@ -5,7 +5,6 @@ import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
 import useCombinationPricing from './useCombinationPricing.js';
 import usePricingCategories from './usePricingCategories.js';
 import CombinationPricingHistory from './CombinationPricingHistory.jsx';
-import CountTariffEvidence from './CountTariffEvidence.jsx';
 import { formatAdminDate, useAdminPreferences } from './adminPreferences.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
@@ -39,7 +38,6 @@ export default function PricingPolicyWorkspace({ record }) {
   const mode = editing ? 'exact' : allCategories ? 'all' : size === 1 ? 'individual' : combinationMode;
   const [localError, setLocalError] = useState('');
   const [history, setHistory] = useState(null);
-  const [countOpen, setCountOpen] = useState(false);
   const historyTrigger = useRef(null);
   const pendingFocus = useRef(null);
   const wasWorking = useRef(false);
@@ -403,10 +401,6 @@ export default function PricingPolicyWorkspace({ record }) {
             <button type="button" className="admin-button admin-button--secondary" disabled={disabled}
               onClick={(e) => showHistory(row.key, e.currentTarget)}>History: {row.members.map((m) => m.name).join(' + ')}</button>
           </li>)}</ul>
-        </details>}
-        {!allCategories && <details className="pricing-count-history" onToggle={(e) => setCountOpen(e.currentTarget.open)}>
-        <summary>Historical category/count tariffs · read-only</summary>
-        {countOpen && <CountTariffEvidence key={category.id} categoryId={category.id} />}
         </details>}
       </details>}
     </section>

@@ -58,7 +58,9 @@ def _maintenance_revision(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision in ("0105_combination_staged_merge", "0107_combination_status_merge", "0107_territory_staged_merge", "0109_mapping_staged_merge"):
         return "0097_hsn_staged_merge"
-    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status", "0106_territory_assignments", "0108_doctor_mr_mapping") else revision
+    if revision == "0111_pricing_retirement_merge":
+        return "0097_hsn_staged_merge"
+    return "0096_hsn_master" if revision in ("0098_opening_corrections", "0100_applicable_gst", "0102_category_count_tariffs", "0104_combination_pricing", "0106_combination_rule_status", "0106_territory_assignments", "0108_doctor_mr_mapping", "0110_retire_legacy_pricing") else revision
 
 
 class RotationError(Exception):
@@ -108,6 +110,12 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    retired_pricing = revisions in (["0110_retire_legacy_pricing"], ["0111_pricing_retirement_merge"])
+    if retired_pricing:
+        from app.services.combination_order_pricing import ready as pricing_ready
+        pricing_ready(db)
+        db.execute(text(f"LOCK TABLE it_combination_requests IN {mode} MODE NOWAIT"))
+        revisions = ["0109_mapping_staged_merge"] if revisions == ["0111_pricing_retirement_merge"] else ["0108_doctor_mr_mapping"]
     if revisions in (["0108_doctor_mr_mapping"], ["0109_mapping_staged_merge"]):
         from app.services.doctor_mapping import ready as mapping_ready
         mapping_ready(db)
@@ -128,7 +136,8 @@ def _lock(db, exclusive=False):
         revisions = ["0102_category_count_tariffs"]
     if revisions == ["0102_category_count_tariffs"]:
         # Tariff amounts use immutable PR-key envelopes, not Directory keys.
-        db.execute(text(f"LOCK TABLE it_category_count_tariffs IN {mode} MODE NOWAIT"))
+        if not retired_pricing:
+            db.execute(text(f"LOCK TABLE it_category_count_tariffs IN {mode} MODE NOWAIT"))
         revisions = ["0100_applicable_gst"]
     if revisions == ["0100_applicable_gst"]:
         db.execute(text(f"LOCK TABLE gst_policy_revisions IN {mode} MODE NOWAIT"))
@@ -175,15 +184,17 @@ def _lock(db, exclusive=False):
         db.execute(text(f"LOCK TABLE gst_settings IN {mode} MODE NOWAIT"))
         revisions = ["0087_pricing_rule_categories"]
     if revisions == ["0087_pricing_rule_categories"]:
-        db.execute(text(f"LOCK TABLE it_pricing_rule_categories IN {mode} MODE NOWAIT"))
+        if not retired_pricing:
+            db.execute(text(f"LOCK TABLE it_pricing_rule_categories IN {mode} MODE NOWAIT"))
         revisions = ["0086_immunotherapy_extract"]
     if revisions == ["0086_immunotherapy_extract"]:
         db.execute(text(f"LOCK TABLE immunotherapy_extract_settings IN {mode} MODE NOWAIT"))
         revisions = ["0086_it_pricing_rules"]
     if revisions == ["0086_it_pricing_rules"]:
         # Independent PR-key encrypted configuration; retain predecessor locks.
-        db.execute(text(f"LOCK TABLE it_pricing_rules,it_pricing_rule_targets,"
-                        f"it_pricing_rule_requests IN {mode} MODE NOWAIT"))
+        if not retired_pricing:
+            db.execute(text(f"LOCK TABLE it_pricing_rules,it_pricing_rule_targets,"
+                            f"it_pricing_rule_requests IN {mode} MODE NOWAIT"))
         revisions = ["0085_placement_email_details"]
     if revisions == ["0085_placement_email_details"]:
         revisions = ["0084_allergen_expiry"]
@@ -364,7 +375,7 @@ def _inventory(db, crypto, digest_key):
             cursor = rows[-1]["id"]
         counts[name] = count
     patient = tables["patient_directory"]
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge", "0110_retire_legacy_pricing", "0111_pricing_retirement_merge"):
         # Immutable archive: authenticate and report original-key usage, but do
         # not include it in mutable rotation batches or historical field lists.
         cursor, count = None, 0

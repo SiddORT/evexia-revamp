@@ -5,7 +5,8 @@ POLICY = "mr_category_mix_v1"
 
 
 def governed(previous):
-    return bool(previous and any(g.get("compositionPolicy") == POLICY for g in previous["groups"]))
+    return bool(previous and (previous.get("pricingPolicy") == "configured_combination_mrp_v1"
+                             or any(g.get("compositionPolicy") == POLICY for g in previous["groups"])))
 
 
 def metadata(row):
@@ -43,9 +44,11 @@ def retain_basis(groups, previous, masters, error):
     old = {g["id"]: g for g in previous["groups"]}
     for group in groups:
         saved = old.get(group["id"])
-        if not saved or saved.get("compositionPolicy") != POLICY:
+        if not saved or (saved.get("compositionPolicy") != POLICY
+                         and previous.get("pricingPolicy") != "configured_combination_mrp_v1"):
             raise error("Retain saved grouped SUB identities.", 409, "imm_suborder")
-        group["compositionPolicy"] = POLICY
+        if saved.get("compositionPolicy") == POLICY:
+            group["compositionPolicy"] = POLICY
         old_items = {i["allergenId"]: i for i in saved["items"]}
         for item in group["items"]:
             retained = old_items.get(item["allergenId"])

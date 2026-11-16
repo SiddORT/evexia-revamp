@@ -1,5 +1,10 @@
 # Current configuration: Combination Pricing Master
 
+> The old material/count APIs and tables are now retired by the new
+> `0110_retire_legacy_pricing` migration. The sections below document the previous
+> implementation only. See [Legacy pricing retirement](pricing-retirement.md)
+> for the approved combination quotation path and retained order snapshots.
+
 See [Combination Pricing Master](combination-pricing.md) for the protected
 category → saved allergens → canonical dosage → size workspace. Its explicit
 Total Suborder MRP rates are configuration-only and require separate approval

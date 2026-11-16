@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "territories", "doctor-mapping"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -168,7 +168,7 @@ def main() -> None:
                         (path == "/v1/admin/product-categories" or path.startswith("/v1/admin/product-categories/")
                          or path == "/v1/admin/allergens" or path.startswith("/v1/admin/allergens/")))
                     or (args.scope == "count-tariffs" and path.startswith("/v1/admin/pricing-rules/count-tariffs"))
-                    or (args.scope == "combination-pricing" and path.startswith("/v1/admin/pricing-rules/combinations/"))
+                    or (args.scope in ("combination-pricing", "pricing-retirement") and path.startswith("/v1/admin/pricing-rules/combinations/"))
                     or (args.scope == "doctor-mapping" and
                         (path == "/v1/admin/doctors" or path.startswith("/v1/admin/doctors/")))
                     or (args.scope == "gst-kits" and
@@ -197,7 +197,7 @@ def main() -> None:
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("MR", "Doctor") if args.scope == "territories"
                         else ("Language",) if args.scope == "languages"
-                        else ("Combination",) if args.scope == "combination-pricing"
+                        else ("Combination",) if args.scope in ("combination-pricing", "pricing-retirement")
                         else ("GST", "Kits") if args.scope == "gst-kits" else ("LowStock",))
             if name.startswith(prefixes) or name not in existing["components"]["schemas"]:
                 schema_updates[name] = contract["components"]["schemas"][name]
@@ -255,7 +255,29 @@ def main() -> None:
                 source = source[:begin] + value + source[end:]
             return source
 
-        content = merge(original, ["components", "schemas"], schema_updates)
+        def remove_members(source, keys, names):
+            start = source.index("{")
+            for key in keys:
+                entries, _ = members(source, start)
+                start = entries[key][0]
+            entries, end = members(source, start)
+            fragments, previous = [], start
+            for name, (_, value_end) in entries.items():
+                if name not in names:
+                    fragments.append(source[previous + 1:value_end])
+                previous = value_end
+            return source[:start + 1] + ",".join(fragments) + source[previous:end] + source[end:]
+
+        content = original
+        if args.scope == "pricing-retirement":
+            prefix = "/v1/admin/pricing-rules"
+            removed = {p for p in existing["paths"] if (p == prefix or p.startswith(prefix + "/"))
+                       and not p.startswith(prefix + "/combinations/")}
+            content = remove_members(content, ["paths"], removed)
+            obsolete = ("ItPricingRule", "ItPricingAllergenReference", "ItPricingReferencePage", "CategoryCountTariff")
+            removed = {n for n in existing["components"]["schemas"] if n.startswith(obsolete)}
+            content = remove_members(content, ["components", "schemas"], removed)
+        content = merge(content, ["components", "schemas"], schema_updates)
         content = merge(content, ["paths"], selected)
     else:
         content = json.dumps(contract, ensure_ascii=False, indent=2, sort_keys=True) + "\n"

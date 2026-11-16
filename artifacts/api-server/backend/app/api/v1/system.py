@@ -52,6 +52,8 @@ def readiness(db: Session = Depends(get_db)):
             accepted.append(["0107_territory_staged_merge"])
         if SCHEMA_REVISION == "0108_doctor_mr_mapping":
             accepted.append(["0109_mapping_staged_merge"])
+        if SCHEMA_REVISION == "0110_retire_legacy_pricing":
+            accepted.append(["0111_pricing_retirement_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -65,6 +67,11 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        retired_pricing = revisions in (["0110_retire_legacy_pricing"], ["0111_pricing_retirement_merge"])
+        if retired_pricing:
+            from app.services.combination_order_pricing import ready as pricing_ready
+            pricing_ready(db)
+            revisions = ["0109_mapping_staged_merge"] if revisions == ["0111_pricing_retirement_merge"] else ["0108_doctor_mr_mapping"]
         if revisions in (["0108_doctor_mr_mapping"], ["0109_mapping_staged_merge"]):
             from app.services.doctor_mapping import ready as mapping_ready
             mapping_ready(db)
@@ -83,8 +90,8 @@ def readiness(db: Session = Depends(get_db)):
             combination_ready(db)
             revisions = ["0103_tariff_staged_merge"] if staged_tariff_merge else ["0102_category_count_tariffs"]
         if revisions in (["0102_category_count_tariffs"], ["0103_tariff_staged_merge"]):
-            from app.services.category_count_tariffs import ready as tariff_ready
-            tariff_ready(db)
+            if not retired_pricing:
+                raise RuntimeError("Retired pricing runtime requires the coordinated retirement migration")
             revisions = ["0100_applicable_gst"]
         if revisions == ["0100_applicable_gst"]:
             from app.services.gst_settings import ready as gst_ready
@@ -191,16 +198,14 @@ def readiness(db: Session = Depends(get_db)):
             db.execute(text("SELECT id,version,cutoff_date,before_rate,on_after_rate FROM gst_settings LIMIT 0"))
             revisions = ["0087_pricing_rule_categories"]
         if revisions == ["0087_pricing_rule_categories"]:
-            db.execute(text("SELECT rule_id,category_id FROM it_pricing_rule_categories LIMIT 0"))
-            db.execute(text("SELECT category_id FROM it_pricing_rule_targets LIMIT 0"))
+            if not retired_pricing:
+                raise RuntimeError("Legacy pricing schema is not supported by this runtime")
             revisions = ["0086_immunotherapy_extract"]
         if revisions == ["0086_immunotherapy_extract"]:
             db.execute(text("SELECT category_id,version,payload_ciphertext FROM immunotherapy_extract_settings LIMIT 0"))
             revisions = ["0086_it_pricing_rules"]
         if revisions == ["0086_it_pricing_rules"]:
-            db.execute(text("SELECT id,category_id,version,payload_ciphertext,created_by,updated_by,created_at,updated_at FROM it_pricing_rules LIMIT 0"))
-            db.execute(text("SELECT rule_id,allergen_id FROM it_pricing_rule_targets LIMIT 0"))
-            db.execute(text("SELECT key,actor_id,payload_ciphertext FROM it_pricing_rule_requests LIMIT 0"))
+            db.execute(text("SELECT key,actor_id,payload_ciphertext FROM it_combination_requests LIMIT 0"))
             from app.services.purchase_received_crypto import ReceiptCrypto
             ReceiptCrypto(get_settings())
             revisions = ["0085_placement_email_details"]

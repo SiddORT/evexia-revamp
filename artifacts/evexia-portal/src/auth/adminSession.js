@@ -1092,8 +1092,6 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const draftResource = /^order-drafts\/(?:immunotherapy|kits|lupin)$/.test(resource);
   const draftKind = draftResource ? resource.split('/')[1] : null;
   const draftSubmission = draftResource && path.endsWith('/submit');
-  const tariffOperation = resource === 'pricing-rules'
-    && /^\/count-tariffs(?:\/(?:categories|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))?$/.test(path);
   const combinationOperation = resource === 'pricing-rules'
     && /^\/combinations\/(?:categories|generate|save|rules(?:\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\/(?:status|status-history))?)?|(?:allergens|history)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(path);
   const combinationStatus = combinationOperation && path.endsWith('/status');
@@ -1102,7 +1100,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const allowed = draftResource
     ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
     : resource === 'pricing-rules'
-    ? /^(?:|\/references\/(?:categories|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    ? /(?!)/
     : resource === 'gst-settings'
     ? /^(?:|\/history)$/
     : resource === 'low-stock-settings'
@@ -1137,7 +1135,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const lupinDecision = resource === 'lupin-orders'
     && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path);
   const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
-  if ((!allowed.test(path) && !tariffOperation && !combinationOperation && !eligibilityPreview) || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
+  if ((!allowed.test(path) && !combinationOperation && !eligibilityPreview) || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
     throw new SessionError(resource === 'pricing-rules'
       ? 'Unsupported Pricing Rules configuration operation.' : 'Unsupported purchase order operation.');
   }
@@ -1160,8 +1158,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   }
   const settlementVerification = resource === 'settlements' && /^\/transactions\/[0-9a-f-]{36}\/verify$/.test(path);
   if (resource === 'pricing-rules' && (file !== undefined || download || method !== undefined
-    || (writing && path !== '' && path !== '/count-tariffs' && !combinationStatus && !['/combinations/generate', '/combinations/save'].includes(path) && !/^\/[0-9a-f-]{36}\/edit$/i.test(path))
-    || (!writing && (combinationStatus || path.endsWith('/edit') || path === '/count-tariffs' || ['/combinations/generate', '/combinations/save'].includes(path))))) {
+    || writing !== (combinationStatus || ['/combinations/generate', '/combinations/save'].includes(path)))) {
     throw new SessionError('Unsupported Pricing Rules configuration operation.');
   }
   if (resource === 'settlements' && writing !== (path === '/transactions' || settlementVerification)) {
@@ -1222,7 +1219,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const downloadGuard = download ? reportingIdentityGuard() : null;
   const form = file === undefined ? null : new FormData();
   if (form) form.append('file', file);
-  const pricingChoices = resource === 'pricing-rules' && (path.startsWith('/references/') || path === '/count-tariffs/categories');
+  const pricingChoices = resource === 'pricing-rules' && (path === '/combinations/categories' || path.startsWith('/combinations/allergens/'));
   const pricingReadLabel = pricingChoices ? path.endsWith('/allergens') ? 'Allergen choices' : 'Category choices' : 'Pricing Rules';
   const pricingReadAction = pricingChoices ? 'Retry choices; your selections are retained.' : 'Retry loading Pricing Rules.';
   const uncertain = (reason = 'delivery') => {
@@ -1315,12 +1312,6 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : combinationOperation ? typeof data?.error?.message === 'string' && /^combination_/.test(data?.error?.code || '')
           ? data.error.message
           : 'Combination pricing is unavailable or the request is invalid. Review the category, canonical dosage, selected members and explicit two-decimal rates. Prepared API/schema activation may be required. Your draft is retained.'
-        : tariffOperation ? typeof data?.error?.message === 'string' && /^it_tariff_/.test(data?.error?.code || '')
-          ? data.error.message
-          : response.status === 422 ? 'Check the saved category, allergen count (1, 2 or 3), nonnegative total suborder MRP and explicit Effective From date. Your edits are preserved.'
-          : 'Category/count MRP request failed. Your edits are preserved; retry the same submission if its save is unconfirmed.'
-        : typeof data?.error?.message === 'string' && (response.status !== 422 || /^pricing_rule_/.test(data?.error?.code || '')) ? data.error.message
-        : response.status === 422 ? 'Check the category, active matching allergens, real cutoff date, and both required nonnegative INR prices (up to 12 integer and 6 source decimal places).'
         : 'Pricing Rules request failed. Your editor is preserved.'
       : gstSettingsOperation
       ? response.status === 403 ? 'GST Settings require the protected Super Admin.'
@@ -1337,7 +1328,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
-    if (resource === 'pricing-rules' && (combinationStatus || ['/count-tariffs', '/combinations/save'].includes(path))) {
+    if (resource === 'pricing-rules' && (combinationStatus || path === '/combinations/save')) {
       error.terminal = response.status >= 400 && response.status < 500
         && response.headers.get('X-IT-Tariff-Outcome') === 'rejected';
     }
@@ -1382,11 +1373,6 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     }
     throw error;
   }
-  if (tariffOperation) {
-    // serverCountTariffs validates category pages, history and the exact saved
-    // append against its frozen request. Never parse these as legacy rules or POs.
-    return data;
-  }
   if (invoiceSettingsOperation) {
     // The focused Invoice Details adapter validates its own settings/history/QR
     // contracts. These are never PurchaseOrder records or generic local actions.
@@ -1403,11 +1389,6 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     // The bounded generation POST is read-only; saves return a batch envelope.
     // The specific service checks every response against its frozen request.
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw uncertain('response');
-  } else if (mutation && resource === 'pricing-rules') {
-    // This is a PricingRule, not a PurchaseOrder (no number or lines).
-    // serverPricingRules.savePricingRule strictly parses the rule and confirms
-    // exact submitted categories, saved target membership, rates, date and version.
-    if (!data?.id || !Number.isSafeInteger(data.version) || data.version < 1) throw uncertain('response');
   } else if (mutation && gstSettingsOperation) {
     // A confirmed retry can load a later schedule, but must identify this
     // exact immutable request and its original committed revision.

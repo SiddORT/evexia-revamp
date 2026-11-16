@@ -9,13 +9,13 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import get_settings
 from app.db.allergen_models import AllergenProduct, ImmunotherapyDilutionMaterial
 from app.db.product_category_models import ProductCategory
-from app.db.pricing_rule_models import PricingRule, PricingRuleTarget, PricingRuleCategory
 from app.services.immunotherapy import ImmError, encode
 from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 
 POLICY = "configured_material_ml_v1"
 from app.schemas.category_count_tariffs import POLICY as COUNT_POLICY
-POLICIES = (POLICY, COUNT_POLICY)
+from app.services.combination_order_pricing import POLICY as COMBINATION_POLICY
+POLICIES = (POLICY, COUNT_POLICY, COMBINATION_POLICY)
 
 
 def configuration_locks(db):
@@ -49,13 +49,12 @@ def digest(value):
     return hashlib.sha256(encode(value).encode()).hexdigest()
 
 
-def quote(db, keys, data, effective_date, policy=COUNT_POLICY, preserve_quantities=False):
+def quote(db, keys, data, effective_date, policy=COMBINATION_POLICY, preserve_quantities=False):
     from app.services.directory_inventory import DirectoryCryptoError
     try:
-        if policy == COUNT_POLICY:
-            from app.services.immunotherapy_count_pricing import quote as count_quote
-            return count_quote(db, keys, data, effective_date, preserve_quantities=preserve_quantities)
-        return _quote(db, keys, data, effective_date)
+        # Historical policies remain snapshot readers only, never live fallbacks.
+        from app.services.immunotherapy_count_pricing import quote as combination_quote
+        return combination_quote(db, keys, data, effective_date, preserve_quantities=preserve_quantities)
     except SQLAlchemyError:
         raise ImmError("Pricing/quantity settings storage is unavailable. No price was substituted and no order was placed. Keep your draft and retry.",
                        503, "imm_quote_storage") from None
@@ -64,107 +63,13 @@ def quote(db, keys, data, effective_date, policy=COUNT_POLICY, preserve_quantiti
                        503, "imm_quote_unreadable") from None
 
 
-def _quote(db, keys, data, effective_date):
-    """Read-only: no IDs, ledger, drafts, notifications or persisted assignments."""
-    from app.services.immunotherapy_extract import assign
-    from app.schemas.rates import rate
-    from app.services.inventory import quantity
-    assign(db, keys, data["groups"], data["dosage"])
-    material_id = dilution_id(db)
-    if not material_id:
-        raise ImmError("Dilution material is not configured. Protected Admin must explicitly set it up in Allergen Master using real category/storage references, then save its Pricing Rule.",
-                       409, "imm_dilution_missing")
-    ids = {uuid.UUID(i["allergenId"]) for g in data["groups"] for i in g["items"]} | {material_id}
-    masters = {a.id: a for a in db.scalars(select(AllergenProduct).where(AllergenProduct.id.in_(ids)).order_by(AllergenProduct.id).with_for_update())}
-    if len(masters) != len(ids) or any(a.deleted_at or a.status != "active" for a in masters.values()):
-        raise ImmError("A selected pricing material is missing or inactive. Review the saved allergens and Dilution material.", 409, "imm_price_material")
-    cats = {a.category_id for a in masters.values()}
-    categories = {c.id: c for c in db.scalars(select(ProductCategory).where(ProductCategory.id.in_(cats)))}
-    if len(categories) != len(cats) or any(c.deleted_at or c.status != "active" for c in categories.values()):
-        raise ImmError("A pricing material's category is unavailable. Admin must review its category and Pricing Rule.", 409, "imm_price_category")
-    targets = {t.allergen_id: t for t in db.scalars(select(PricingRuleTarget).where(PricingRuleTarget.allergen_id.in_(ids)))}
-    crypto = ReceiptCrypto(get_settings())
-    selected, missing = {}, []
-    for identity in sorted(ids):
-        master, target = masters[identity], targets.get(identity)
-        label = f"{master.name} ({'Dilution; ' if identity == material_id else ''}category {categories[master.category_id].name}; order date {effective_date.isoformat()})"
-        if not target or target.category_id != master.category_id:
-            missing.append(label)
-            continue
-        row = db.get(PricingRule, target.rule_id)
-        if row is None or db.get(PricingRuleCategory, (target.rule_id, master.category_id)) is None:
-            missing.append(label)
-            continue
-        try:
-            saved = crypto.open(row.id, "it-pricing-rule", row.payload_ciphertext)
-            cutoff = date.fromisoformat(saved["cutoff"])
-            branch = "before" if effective_date < cutoff else "onOrAfter"
-            raw = saved.get("beforeRate" if branch == "before" else "afterRate")
-            if raw is None:
-                missing.append(label)
-                continue
-            selected_rate = rate(raw)
-        except (PRError, ValueError, KeyError, TypeError):
-            raise ImmError(f"Pricing Rule for {label} is unreadable. Admin must review the saved rule; no price fallback was used.",
-                           503, "imm_price_unreadable") from None
-        selected[identity] = dict(materialId=str(identity), name=master.name, categoryId=str(master.category_id),
-            categoryName=categories[master.category_id].name, ruleId=str(row.id), ruleVersion=row.version,
-            cutoff=cutoff.isoformat(), branch=branch, ratePerMl=selected_rate)
-    if missing:
-        raise ImmError("Missing applicable Pricing Rules/rates or stale category mappings: " + "; ".join(missing) +
-                       ". Admin must explicitly save current category/material selections and rates (an entered zero rate is allowed).",
-                       409, "imm_price_missing")
-    quantities_missing = []
-    for group in data["groups"]:
-        for item in group["items"]:
-            master = masters[uuid.UUID(item["allergenId"])]
-            assignment = item["clinicalAssignment"]
-            if assignment["categoryId"] != str(master.category_id):
-                raise ImmError(f"{master.name} changed category. Review the composition and category quantity settings before quoting again.",
-                               409, "imm_price_category")
-            for field in ("extract", "dilution"):
-                if item.get(field) is None:
-                    quantities_missing.append(f"{master.name}: {field} ml, category {categories[master.category_id].name}, dosage {data['dosage']}, bottle size {len(group['items'])}, rank {assignment['rank']}")
-                else:
-                    quantity(item[field])
-    if quantities_missing:
-        raise ImmError("Missing configured quantities: " + "; ".join(quantities_missing) +
-                       ". Admin must enter the actual ml in Extract & Dilution settings; zero has not been assumed.",
-                       409, "imm_quantity_missing")
-    components, total = [], Decimal(0)
-    with localcontext() as context:
-        context.prec = 48
-        for group in data["groups"]:
-            charges, dilution_ml = [], Decimal(0)
-            for item in group["items"]:
-                rule = selected[uuid.UUID(item["allergenId"])]
-                ml = Decimal(item["extract"])
-                amount = (ml * Decimal(rule["ratePerMl"])).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
-                charges.append(dict(**rule, kind="extract", quantityMl=format(ml, ".2f"), amount=format(amount, ".2f")))
-                dilution_ml += Decimal(item["dilution"])
-            rule = selected[material_id]
-            amount = (dilution_ml * Decimal(rule["ratePerMl"])).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
-            charges.append(dict(**rule, kind="dilution", quantityMl=format(dilution_ml, ".2f"), amount=format(amount, ".2f")))
-            subtotal = sum((Decimal(c["amount"]) for c in charges), Decimal(0))
-            group["mrp"] = format(subtotal, ".2f")
-            components.append(dict(amount=group["mrp"], components=charges))
-            total += subtotal
-    if total > Decimal("100000000"):
-        raise ImmError("Order value exceeds ₹10 crore.", 422, "imm_total")
-    evidence = dict(policy=POLICY, orderDate=effective_date.isoformat(), unit="ml",
-                    basis=basis(data), groups=components, totalMinor=int(total * 100))
-    data.update(pricingPolicy=POLICY, pricingEvidence=evidence, totalMinor=evidence["totalMinor"],
-                pricingNeedsReview=False, materialConsumption=None)
-    return evidence
-
-
 def retain(data, previous, *, correction_actor=None):
     """No silently stale price after changes, and no implicit historical adoption."""
     if not previous or previous.get("pricingPolicy") not in POLICIES:
         return
     for key in ("pricingPolicy", "pricingEvidence", "materialConsumption"):
         data[key] = deepcopy(previous.get(key))
-    if previous.get("pricingPolicy") == COUNT_POLICY and correction_actor is not None:
+    if previous.get("pricingPolicy") in (COUNT_POLICY, COMBINATION_POLICY) and correction_actor is not None:
         from app.services.immunotherapy_count_pricing import retain_quantity_correction
         retain_quantity_correction(data, previous, correction_actor)
         # The correction helper only accepts the same saved clinical/pricing
@@ -191,11 +96,10 @@ def require_confirmation(data, effective_date, actor_id, financial, submitted):
 
 
 def prepare_quote(db, keys, data, body, effective_date, previous):
-    from app.services.mr_orders import scope_identity
-    fresh = not previous and bool(scope_identity(db))
+    fresh = not previous
     if fresh or body.refreshQuote:
-        count_refresh = bool(previous and previous.get("pricingPolicy") == COUNT_POLICY)
-        quote(db, keys, data, effective_date, policy=previous.get("pricingPolicy") if previous else COUNT_POLICY,
+        count_refresh = bool(previous and previous.get("pricingPolicy") in POLICIES)
+        quote(db, keys, data, effective_date, policy=COMBINATION_POLICY,
               preserve_quantities=count_refresh)
         if count_refresh:
             data["pricingEvidence"]["previousQuote"] = deepcopy(previous["pricingEvidence"])
@@ -205,7 +109,7 @@ def prepare_quote(db, keys, data, body, effective_date, previous):
 
 def validate_saved(data):
     """Approval uses immutable saved evidence, not today's rates/settings."""
-    if data.get("pricingPolicy") == COUNT_POLICY:
+    if data.get("pricingPolicy") in (COUNT_POLICY, COMBINATION_POLICY):
         from app.services.immunotherapy_count_pricing import validate_saved as validate_count
         return validate_count(data)
     evidence = data["pricingEvidence"]

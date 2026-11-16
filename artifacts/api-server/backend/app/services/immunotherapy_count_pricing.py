@@ -1,4 +1,4 @@
-"""Total header MRP once; ml evidence remains independent inventory authority."""
+"""Total header MRP once; retains validation of historical count-price snapshots."""
 import uuid
 from decimal import Decimal
 from sqlalchemy import select
@@ -9,7 +9,7 @@ from app.schemas.category_count_tariffs import POLICY
 from app.services.immunotherapy import ImmError
 from app.services.immunotherapy_grouping import validate
 from app.services.purchase_received_crypto import ReceiptCrypto
-from app.services.category_count_tariffs import applicable
+from app.services.combination_order_pricing import applicable, POLICY as COMBINATION_POLICY
 from copy import deepcopy
 
 
@@ -18,6 +18,21 @@ def quote(db, keys, data, effective_date, *, preserve_quantities=False):
     from app.services.immunotherapy_material_pricing import basis, dilution_id
     from app.services.pricing_rules import PricingRuleError
     from app.services.inventory import quantity
+    # Admin-created and pre-policy orders may not yet have grouping snapshots.
+    # Resolve missing metadata only for the explicit new/refresh quote; never
+    # regroup children or rewrite historical saved evidence.
+    missing = {uuid.UUID(i["allergenId"]) for g in data["groups"] for i in g["items"]
+               if not i.get("groupingBasis")}
+    if missing:
+        current = {str(a.id): a for a in db.scalars(select(AllergenProduct).where(
+            AllergenProduct.id.in_(missing)).order_by(AllergenProduct.id).with_for_update())}
+        for group in data["groups"]:
+            for item in group["items"]:
+                if not item.get("groupingBasis"):
+                    master = current.get(item["allergenId"])
+                    if master is None or master.deleted_at or master.status != "active":
+                        raise ImmError("A selected clinical allergen is unavailable.", 409, "imm_price_material")
+                    item["groupingBasis"] = dict(categoryId=str(master.category_id), mix=master.mix)
     for group in data["groups"]:
         validate(group, ImmError)
     if not preserve_quantities:
@@ -68,7 +83,7 @@ def quote(db, keys, data, effective_date, *, preserve_quantities=False):
         components.append(dict(materialId=str(material_id), name=masters[material_id].name,
                                kind="dilution", quantityMl=format(dilution_ml, ".2f")))
         try:
-            tariff = applicable(db, crypto, category_id, len(group["items"]), effective_date)
+            tariff = applicable(db, crypto, category_id, data["dosage"], group["items"], effective_date)
         except PricingRuleError as error:
             raise ImmError(error.message, error.status, error.code) from None
         group["mrp"] = tariff["totalMrp"]
@@ -77,9 +92,10 @@ def quote(db, keys, data, effective_date, *, preserve_quantities=False):
         total_minor += int(Decimal(tariff["totalMrp"]) * 100)
     if total_minor > 10000000000:
         raise ImmError("Order value exceeds ₹10 crore.", 422, "imm_total")
-    evidence = dict(policy=POLICY, orderDate=effective_date.isoformat(), basis=basis(data),
+    evidence = dict(policy=COMBINATION_POLICY, orderDate=effective_date.isoformat(), basis=basis(data),
                     groups=priced_groups, totalMinor=total_minor, unit="total_suborder_mrp")
-    data.update(pricingPolicy=POLICY, pricingEvidence=evidence, totalMinor=total_minor,
+    from app.services.immunotherapy_pricing import SUBORDER_BASIS
+    data.update(pricingBasis=SUBORDER_BASIS, pricingPolicy=COMBINATION_POLICY, pricingEvidence=evidence, totalMinor=total_minor,
                 pricingNeedsReview=False, materialConsumption=None)
     return evidence
 
@@ -89,7 +105,8 @@ def validate_saved(data):
     from app.schemas.rates import rate
     from datetime import date
     evidence = data["pricingEvidence"]
-    if (evidence["policy"] != POLICY or evidence["basis"] != basis(data)
+    if (evidence["policy"] not in (POLICY, COMBINATION_POLICY)
+            or evidence["policy"] != data["pricingPolicy"] or evidence["basis"] != basis(data)
             or evidence["totalMinor"] != data["totalMinor"]
             or len(evidence["groups"]) != len(data["groups"])):
         raise ValueError("Saved category/count quote differs")
@@ -100,8 +117,17 @@ def validate_saved(data):
         tariff = priced["tariff"]
         uuid.UUID(tariff["id"])
         uuid.UUID(tariff["actorId"])
+        if evidence["policy"] == COMBINATION_POLICY:
+            from app.schemas.combination_pricing import CombinationRevision
+            CombinationRevision.model_validate({k: v for k, v in tariff.items() if k != "statusVersion"})
+            if (tariff["dosage"] != data["dosage"]
+                    or tariff["memberIds"] != sorted(i["allergenId"] for i in group["items"])
+                    or [m["id"] for m in tariff["members"]] != tariff["memberIds"]
+                    or type(tariff.get("statusVersion")) is not int or tariff["statusVersion"] < 1):
+                raise ValueError("Saved combination selection differs")
+        elif tariff["allergenCount"] != len(group["items"]):
+            raise ValueError("Saved count differs")
         if (tariff["categoryId"] != group["items"][0]["groupingBasis"]["categoryId"]
-                or tariff["allergenCount"] != len(group["items"])
                 or type(tariff["version"]) is not int or tariff["version"] < 1
                 or date.fromisoformat(tariff["effectiveFrom"]) > effective_date
                 or rate(tariff["totalMrp"]) != tariff["totalMrp"]

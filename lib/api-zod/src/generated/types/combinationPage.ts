@@ -5,15 +5,16 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { CombinationCategoryScope } from "./combinationCategoryScope";
+import type { CombinationPageCategoryScope } from "./combinationPageCategoryScope";
 import type { CombinationPageDosage } from "./combinationPageDosage";
 import type { CombinationPageRowVersions } from "./combinationPageRowVersions";
 import type { CombinationRow } from "./combinationRow";
-import type { CombinationCategoryScope } from "./combinationCategoryScope";
 
 export interface CombinationPage {
-  categoryId: string | null;
-  categoryScope: "single" | "all";
   categories: CombinationCategoryScope[];
+  categoryId: string | null;
+  categoryScope: CombinationPageCategoryScope;
   dosage: CombinationPageDosage;
   eligibilityVersion: string;
   items: CombinationRow[];

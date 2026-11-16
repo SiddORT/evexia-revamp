@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0108_doctor_mr_mapping"
+  "schema": "0110_retire_legacy_pricing"
 }

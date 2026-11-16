@@ -411,7 +411,7 @@ function Editor({ order, mode, draft }) {
       {hasUnsavedDraftChanges && <p className="imm-editor-draft-notices__unsaved" role="status">Unsaved changes — use Save as Draft again to keep these edits after leaving.</p>}
     </section>}
     <dl className="imm-facts"><div><dt>Order Batch No</dt><dd>{orderBatchLabel(order)}</dd></div></dl>
-    {['configured_material_ml_v1', 'category_count_total_mrp_v1'].includes(order?.pricingPolicy) && <>
+    {['configured_material_ml_v1', 'category_count_total_mrp_v1', 'configured_combination_mrp_v1'].includes(order?.pricingPolicy) && <>
       <MaterialPricingEvidence order={order} mr={mrPortal} />
       {!readOnly && <label className="imm-hint"><input type="checkbox" checked={Boolean(v.refreshQuote)} disabled={Boolean(pending) || uncertain}
         onChange={(event) => setV((current) => ({ ...current, refreshQuote: event.target.checked }))} />

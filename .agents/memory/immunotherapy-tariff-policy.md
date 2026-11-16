@@ -48,3 +48,15 @@ additive formulas or order-consumer activation.
 
 **How to apply:** Never derive combination totals from individual prices or
 expand a singleton save to other dosages, future records or saved orders.
+
+The user subsequently approved **using new combination pricing for order
+placement** while removing the old pricing APIs and database structure.
+This supersedes the earlier configuration-only activation restriction above.
+
+**Why:** On being told that removing the old structure would otherwise break
+order placement, the user explicitly selected “Use new combination pricing.”
+
+**How to apply:** New quotations require an active, exact category/dosage/member
+combination with a rate applicable on the saved order date. No count, singleton,
+catalogue or per-ml fallback. Preserve historical order financial/quantity
+snapshots and shared retry protection; removal does not authorize repricing them.

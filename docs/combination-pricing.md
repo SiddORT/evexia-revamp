@@ -57,6 +57,11 @@ rates. Count evidence is available read-only for the selected category; legacy
 material evidence stays a secondary read-only disclosure with its truthful INR/ml
 units. The Settings Extract & Dilution editor retains its own authority.
 
+> **Superseded activation boundary:** The user subsequently approved combination
+> pricing for order placement and retirement of the old material/count structure.
+> See [Legacy pricing retirement](pricing-retirement.md). Configuration-only
+> restrictions above and below describe the earlier rollout, not the new runtime.
+
 ## Identity, eligibility and exact money
 
 A new key is Product Category UUID + canonical dosage PD, DD or B1–B8 + sorted
