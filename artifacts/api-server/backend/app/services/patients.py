@@ -67,7 +67,7 @@ def doctor_context(db, ids):
     ).where(Doctor.id.in_(keys)))
     mr_rows = mrs._bulk(db, (row.mrId for row in doctor_rows.values()), lambda keys: select(
         MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status, MRDirectory.deleted_at, MRDirectory.zoneId,
-        MRDirectory.hq
+        MRDirectory.hq, MRDirectory.doctorDaysLimit
     ).where(MRDirectory.id.in_(keys)))
     zone_rows = mrs._bulk(db, (row.zoneId for row in mr_rows.values() if not row.deleted_at), lambda keys: select(
         Zone.id, Zone.name, Zone.status, Zone.deleted_at
