@@ -83,6 +83,12 @@ export function summarize(orders, financialYear = '') {
   const sales = counted.reduce((s, o) => s + o.amount, 0);
   const actual = counted.reduce((s, o) => s + o.received, 0);
   const statusCounts = Object.fromEntries(ORDER_STATUSES.map((st) => [st, orders.filter((o) => o.status === st).length]));
+  const breakdown = (rows) => ORDER_TYPES.map((type) => {
+    const count = rows.filter((o) => o.type === type).length;
+    return { type, count, percentage: rows.length ? count / rows.length * 100 : 0 };
+  });
+  const orderBreakdown = breakdown(orders);
+  const statusBreakdowns = Object.fromEntries(ORDER_STATUSES.map((st) => [st, breakdown(orders.filter((o) => o.status === st))]));
   const byType = ORDER_TYPES.map((type) => {
     const rows = counted.filter((o) => o.type === type);
     return { type, orders: orders.filter((o) => o.type === type).length, sales: rows.reduce((s, o) => s + o.amount, 0), achieved: rows.reduce((s, o) => s + o.received, 0) };
@@ -99,7 +105,7 @@ export function summarize(orders, financialYear = '') {
     .filter((mr) => mr.due > 0).sort((a, b) => b.due - a.due);
   const immuno = orders.filter((o) => o.type === 'Immunotherapy');
   return {
-    total: orders.length, gross, sales, actual, due: sales - actual, statusCounts, byType, monthly, mrDue,
+    total: orders.length, gross, sales, actual, due: sales - actual, statusCounts, orderBreakdown, statusBreakdowns, byType, monthly, mrDue,
     primary: immuno.filter((o) => o.dose === 'Primary').length, booster: immuno.filter((o) => o.dose === 'Booster').length,
   };
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { BadgeIndianRupee, Boxes, CheckCircle2, ChevronDown, CircleSlash, ClipboardList, FlaskConical, Info, Loader, PackageCheck, RotateCcw, Search, Stethoscope, Truck, Undo2, UserRound, Users, Wallet, Receipt, SearchX } from 'lucide-react';
 import SearchableSelect from '../SearchableSelect.jsx';
 import { OrderTypeDonut, MonthlyTrend } from './DashboardCharts.jsx';
+import OrderCountCard from './OrderCountCard.jsx';
 import { FINANCIAL_YEARS, INITIAL_FILTERS, MRS, ORDER_STATUSES, ORDER_TYPES, SAMPLE_DIRECTORY, ZONES, filterOrders, formatCount, formatINR, summarize } from './dashboardFixtures.js';
 import './dashboard.css';
 
@@ -87,7 +88,9 @@ export default function DashboardContent() {
             <Metric icon={Wallet} label="Actual Sales" value={formatINR(data.actual)} note="Fictional amount marked received" testId="card-actual-sales" />
             <Metric icon={ClipboardList} label="Due Amount" value={formatINR(data.due)} note="Total Sales minus Actual Sales" testId="card-due-amount" />
           </div>
-          <h2 className="dash-group__title">Sample scope totals <small>(not affected by filters)</small></h2>
+        </section>
+        <section aria-labelledby="dash-directory" className="dash-group">
+          <h2 id="dash-directory" className="dash-group__title">Sample scope totals <small>(not affected by filters)</small></h2>
           <div className="dash-grid">
             <Metric tone="directory" icon={Boxes} label="Total Products" value={formatCount(SAMPLE_DIRECTORY.products)} testId="card-total-products" />
             <Metric tone="directory" icon={UserRound} label="Total Patients" value={formatCount(SAMPLE_DIRECTORY.patients)} testId="card-total-patients" />
@@ -98,8 +101,8 @@ export default function DashboardContent() {
         <section aria-labelledby="dash-status" className="dash-group">
           <h2 id="dash-status" className="dash-group__title">Order status</h2>
           <div className="dash-grid dash-grid--status">
-            <Metric tone="status" icon={ClipboardList} label="Total Orders" value={formatCount(data.total)} testId="card-total-orders" />
-            {ORDER_STATUSES.map((st) => <Metric key={st} tone={st === 'Rejected' || st === 'Returned' ? 'alert' : 'status'} icon={STATUS_ICONS[st]} label={st} value={formatCount(data.statusCounts[st])} testId={`card-status-${st.toLowerCase().replace(' ', '-')}`} />)}
+            <OrderCountCard icon={ClipboardList} label="Total Orders" total={data.total} breakdown={data.orderBreakdown} testId="card-total-orders" />
+            {ORDER_STATUSES.map((st) => <OrderCountCard key={st} tone={st === 'Rejected' || st === 'Returned' ? 'alert' : 'status'} icon={STATUS_ICONS[st]} label={st} total={data.statusCounts[st]} breakdown={data.statusBreakdowns[st]} testId={`card-status-${st.toLowerCase().replace(' ', '-')}`} />)}
           </div>
         </section>
       </div>
@@ -131,7 +134,7 @@ export default function DashboardContent() {
           </div>
         </section>
 
-        <section className="admin-panel dash-panel" aria-labelledby="dash-dose">
+        <section className="admin-panel dash-panel dash-panel--dose" aria-labelledby="dash-dose">
           <header className="dash-panel__head"><h2 id="dash-dose">Immunotherapy doses</h2><small>Immunotherapy orders only</small></header>
           <div className="dash-doses">
             <Metric tone="directory" icon={FlaskConical} label="Primary Dose" value={formatCount(data.primary)} testId="card-primary-dose" />
