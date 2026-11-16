@@ -111,9 +111,45 @@
 .settle-txlist__side { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
 .settle-txlist__side .admin-button { display: inline-flex; align-items: center; gap: 6px; }
 .settle-confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .85rem; }
-.settle-history-sum { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+/* History only: do not inherit the listing's horizontal money rows. */
+.admin-dialog.settle-history-dialog { box-sizing: border-box; width: min(700px, 100%); max-width: 700px; min-width: 0; overflow-wrap: anywhere; }
+.settle-history-dialog .admin-dialog__top > .admin-icon-button { flex: none; }
+.settle-history-dialog .admin-dialog__description { margin-bottom: 20px; }
+.settle-history-dialog .settle-history-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; min-width: 0; margin: 0; }
+.settle-history-dialog .settle-history-sum > div { min-width: 0; padding: 14px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-state-link); }
+.settle-history-dialog .settle-history-sum dt { margin-bottom: 8px; color: var(--admin-text-soft); font-size: 12px; }
+.settle-history-dialog .settle-history-sum dd { margin: 0; font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 1rem; font-weight: 700; }
+.settle-history-dialog .settle-history-sum .settle-na { font-family: var(--font-sans); font-size: .85rem; font-weight: 400; }
+.settle-history-dialog .settle-history-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 16px 0 20px; line-height: 1.5; }
+.settle-history-dialog .settle-history-status__label { color: var(--admin-text-soft); font-size: 12px; }
+.settle-history-dialog .settle-pill { max-width: 100%; box-sizing: border-box; white-space: normal; }
+.settle-history-dialog .settle-txlist { gap: 12px; }
+.settle-history-dialog .settle-txlist > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 14px 20px; padding: 16px; }
+.settle-history-dialog .settle-txlist__main { gap: 6px; line-height: 1.5; }
+.settle-history-dialog .settle-txlist__main > strong { font-size: 1rem; }
+.settle-history-dialog .settle-txlist__side { min-width: 0; flex-direction: column; align-items: flex-end; gap: 10px; }
+.settle-history-dialog .settle-confirm { grid-column: 1 / -1; display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--admin-border); line-height: 1.5; }
+.settle-history-dialog .settle-confirm p { margin: 0; }
+.settle-history-dialog .settle-confirm__actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.settle-history-dialog .admin-button { max-width: 100%; white-space: normal; padding: 8px 15px; }
+.settle-history-dialog .settle-msg .kits-link { display: block; margin-top: 8px; }
+@media (max-width: 540px) {
+  .settle-history-dialog .settle-history-sum { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .settle-history-dialog .settle-txlist > li { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .settle-history-dialog .settle-txlist__side { flex-direction: row; align-items: center; justify-content: flex-start; }
+  .settle-history-dialog .settle-confirm__actions { justify-content: flex-start; }
+}
 .settle-filter-disclosure--mr { flex: 1 0 100%; margin: 0 0 14px; }
 .settle-filter-disclosure--mr[open] > summary { border-bottom: 1px solid var(--settle-line); background: var(--admin-state-hover); }
+.settle-filter-disclosure--admin[open] > summary { border-bottom: 1px solid var(--settle-line); }
+.settle-filter-disclosure--admin > summary { overflow-wrap: anywhere; }
+.settle-filter-disclosure--admin .settle-filters__search,
+.settle-filter-disclosure--admin .settle-filters__actions { grid-column: 1 / -1; }
+.settle-filter-disclosure--admin .settle-search input { width: 100%; padding: 9px 0; border: 0; background: transparent; }
+.settle-filter-disclosure--admin .settle-search svg { flex: none; }
+.settle-filter-disclosure--admin fieldset,
+.settle-filter-disclosure--admin fieldset label { min-width: 0; }
+.settle-filter-disclosure--admin .settle-filters__actions { flex-wrap: wrap; }
 /* Size this form by the dialog's content width, not the surrounding page. */
 .settle-dialog--payment { box-sizing: border-box; width: min(980px, 100%); min-width: 0; }
 .settle-dialog--payment .settle-form { min-width: 0; container-type: inline-size; container-name: settle-payment; }

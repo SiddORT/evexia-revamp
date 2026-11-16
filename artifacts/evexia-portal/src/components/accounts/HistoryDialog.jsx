@@ -57,12 +57,16 @@ export default function HistoryDialog({ row, date, canVerify, onClose, onChanged
       <button type="button" className="admin-button admin-button--secondary" onClick={() => { setRecord(null); setRevision((n) => n + 1); }} data-testid="button-retry-history">Retry</button></div>
       : !record ? <div className="settle-skeleton" aria-busy="true" aria-label="Loading transactions">{[0, 1, 2].map((i) => <div key={i}><span /><span /><span /><span /></div>)}</div>
         : <>
-          <dl className="settle-money settle-history-sum">
+          <dl className="settle-history-sum">
             <div><dt>Total</dt><dd>{record.total != null ? inr(record.total) : <span className="settle-na">{record.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
             <div><dt>Paid</dt><dd>{inr(record.paid)}</dd></div>
             <div><dt>Balance</dt><dd>{record.balance != null ? inr(record.balance) : <span className="settle-na">{record.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
-            <div><dt>Status</dt><dd><VerifyPill value={record.verification} />{tx.length > 0 && record.verification !== 'Verified' && <span className="settle-sub" data-testid="text-verified-count">{verifiedCount} of {tx.length} verified</span>}</dd></div>
           </dl>
+          <div className="settle-history-status">
+            <span className="settle-history-status__label">Verification status</span>
+            <VerifyPill value={record.verification} />
+            {tx.length > 0 && record.verification !== 'Verified' && <span className="settle-sub" data-testid="text-verified-count">{verifiedCount} of {tx.length} verified</span>}
+          </div>
           {notice && <p className="admin-feedback admin-feedback--success" role="status" data-testid="status-verify-notice">{notice}</p>}
           {verifyError && <div className="settle-msg settle-msg--warn" role="alert">{verifyError}
             <button type="button" className="kits-link" onClick={() => { setVerifyError(''); setRevision((n) => n + 1); }} data-testid="button-reload-history">Reload history</button></div>}
@@ -77,14 +81,17 @@ export default function HistoryDialog({ row, date, canVerify, onClose, onChanged
               </div>
               <div className="settle-txlist__side">
                 <VerifyPill value={t.verification} />
-                {canVerify && t.verification !== 'Verified' && (confirmId === t.id
-                  ? <div className="settle-confirm" role="group" aria-label="Confirm verification">
-                    <span>Verify this {inr(t.amount)} entry? This cannot be reversed.</span>
+                {canVerify && t.verification !== 'Verified' && confirmId !== t.id
+                  && <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busyId)} onClick={() => { setVerifyError(''); setConfirmId(t.id); }} data-testid={`button-verify-${t.id}`}><ShieldCheck size={15} aria-hidden="true" />Verify</button>}
+              </div>
+              {canVerify && t.verification !== 'Verified' && confirmId === t.id
+                && <div className="settle-confirm" role="group" aria-label="Confirm verification">
+                  <p>Verify this {inr(t.amount)} entry? This cannot be reversed.</p>
+                  <div className="settle-confirm__actions">
                     <button type="button" className="admin-button admin-button--secondary" disabled={busyId === t.id} onClick={() => setConfirmId(null)} data-testid={`button-cancel-verify-${t.id}`}>Cancel</button>
                     <button type="button" className="admin-button" disabled={busyId === t.id} onClick={() => verify(t)} data-testid={`button-confirm-verify-${t.id}`}>{busyId === t.id ? 'Verifying…' : 'Confirm verify'}</button>
                   </div>
-                  : <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busyId)} onClick={() => { setVerifyError(''); setConfirmId(t.id); }} data-testid={`button-verify-${t.id}`}><ShieldCheck size={15} aria-hidden="true" />Verify</button>)}
-              </div>
+                </div>}
             </li>)}</ul>}
         </>}
   </Dialog>;

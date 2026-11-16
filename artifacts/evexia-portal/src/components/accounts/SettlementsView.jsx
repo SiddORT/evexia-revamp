@@ -89,7 +89,7 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
       : draft.payment_from && draft.payment_to && draft.payment_from > draft.payment_to ? 'payment' : '';
     if (invalidRange) {
       setFilterError(`${invalidRange === 'order' ? 'Order' : 'Payment'} date From must be on or before To.`);
-      if (canPost && filterDisclosure.current) {
+      if (filterDisclosure.current) {
         filterDisclosure.current.open = true;
         requestAnimationFrame(() => filterDisclosure.current?.querySelector(`[data-testid="input-${invalidRange}-from"]`)?.focus());
       }
@@ -131,12 +131,12 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     aria-label={`View transactions for ${r.number}`} data-testid={`button-history-${r.key}`}><History size={15} aria-hidden="true" />{r.transactions.length ? `Transactions (${r.transactions.length})` : 'View transactions'}</button>;
 
   const paymentFilters = <>
-    <div className={canPost ? 'kits-field' : 'settle-toolbar__select'}>{canPost && <span>Payment status</span>}<SearchableSelect id="settle-pay-status" label="Payment status" value={draft.payment_status} options={PAY_OPTIONS} onChange={(v) => set({ payment_status: v || 'All' })} placeholder="All payment statuses" viewportMenu /></div>
-    <div className={canPost ? 'kits-field' : 'settle-toolbar__select'}>{canPost && <span>Verification</span>}<SearchableSelect id="settle-verification" label="Verification" value={draft.verification} options={VERIFICATION_OPTIONS} onChange={(v) => set({ verification: v || 'All' })} placeholder="All verification" viewportMenu /></div>
+    <div className="kits-field"><span>Payment status</span><SearchableSelect id="settle-pay-status" label="Payment status" value={draft.payment_status} options={PAY_OPTIONS} onChange={(v) => set({ payment_status: v || 'All' })} placeholder="All payment statuses" viewportMenu /></div>
+    <div className="kits-field"><span>Verification</span><SearchableSelect id="settle-verification" label="Verification" value={draft.verification} options={VERIFICATION_OPTIONS} onChange={(v) => set({ verification: v || 'All' })} placeholder="All verification" viewportMenu /></div>
   </>;
   const orderFilters = <>
-    <fieldset aria-describedby={canPost && filterError.startsWith('Order') ? 'settle-filter-error' : undefined}><legend>Order date</legend>
-      <label>From<input type="date" value={draft.order_from} max={draft.order_to || undefined} aria-invalid={canPost && filterError.startsWith('Order') || undefined} aria-describedby={canPost && filterError.startsWith('Order') ? 'settle-filter-error' : undefined} onChange={(e) => set({ order_from: e.target.value })} data-testid="input-order-from" /></label>
+    <fieldset aria-describedby={filterError.startsWith('Order') ? 'settle-filter-error' : undefined}><legend>Order date</legend>
+      <label>From<input type="date" value={draft.order_from} max={draft.order_to || undefined} aria-invalid={filterError.startsWith('Order') || undefined} aria-describedby={filterError.startsWith('Order') ? 'settle-filter-error' : undefined} onChange={(e) => set({ order_from: e.target.value })} data-testid="input-order-from" /></label>
       <label>To<input type="date" value={draft.order_to} min={draft.order_from || undefined} onChange={(e) => set({ order_to: e.target.value })} data-testid="input-order-to" /></label>
     </fieldset>
     <KitsReferenceSelect kind="doctors" id="settle-doctor" label="Doctor" value={draft.doctor_id} requester={referenceRequester} fieldClass="kits-field settle-ref"
@@ -145,8 +145,8 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     <div className="kits-field"><span>Order status</span><SearchableSelect id="settle-order-status" label="Order status" value={draft.order_status} options={statusOptions} onChange={(v) => set({ order_status: v || 'All' })} placeholder="All order statuses" viewportMenu /></div>
   </>;
   const additionalFilters = <>
-    <fieldset aria-describedby={canPost && filterError.startsWith('Payment') ? 'settle-filter-error' : undefined}><legend>Payment date</legend>
-      <label>From<input type="date" value={draft.payment_from} max={draft.payment_to || undefined} aria-invalid={canPost && filterError.startsWith('Payment') || undefined} aria-describedby={canPost && filterError.startsWith('Payment') ? 'settle-filter-error' : undefined} onChange={(e) => set({ payment_from: e.target.value })} data-testid="input-payment-from" /></label>
+    <fieldset aria-describedby={filterError.startsWith('Payment') ? 'settle-filter-error' : undefined}><legend>Payment date</legend>
+      <label>From<input type="date" value={draft.payment_from} max={draft.payment_to || undefined} aria-invalid={filterError.startsWith('Payment') || undefined} aria-describedby={filterError.startsWith('Payment') ? 'settle-filter-error' : undefined} onChange={(e) => set({ payment_from: e.target.value })} data-testid="input-payment-from" /></label>
       <label>To<input type="date" value={draft.payment_to} min={draft.payment_from || undefined} onChange={(e) => set({ payment_to: e.target.value })} data-testid="input-payment-to" /></label>
     </fieldset>
     {canPost
@@ -156,6 +156,12 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     <KitsReferenceSelect kind="patients" id="settle-patient" label="Patient" value={draft.patient_id} requester={referenceRequester} fieldClass="kits-field settle-ref"
       historicalPerson={people.patient} onChange={(v) => set({ patient_id: v })} onPerson={(p) => setPeople((o) => ({ ...o, patient: p }))} />
   </>;
+
+  const searchFilter = <div className="settle-search">
+    <Search size={15} aria-hidden="true" />
+    <input type="search" value={draft.search} maxLength={100} placeholder="Search order number, doctor or patient" aria-label="Search orders"
+      onChange={(e) => set({ search: e.target.value })} data-testid="input-search-settlements" />
+  </div>;
 
   return <div className="settle">
     <div className="admin-page-head">
@@ -177,30 +183,24 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     {notice && <div className="admin-feedback admin-feedback--success" role="status" data-testid="status-settlement-notice">{notice}</div>}
 
     <section className="admin-panel settle-panel" aria-label="Accounts">
-      <form className="settle-toolbar" noValidate onSubmit={apply}>
-        <div className="settle-search">
-          <Search size={15} aria-hidden="true" />
-          <input type="search" value={draft.search} maxLength={100} placeholder="Search order number, doctor or patient" aria-label="Search orders"
-            onChange={(e) => set({ search: e.target.value })} data-testid="input-search-settlements" />
-        </div>
-        {!canPost && paymentFilters}
+      {canPost ? <form className="settle-toolbar" noValidate onSubmit={apply}>
+        {searchFilter}
         <button type="submit" className="admin-button" data-testid="button-apply-settlements">Apply</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="button-reset-settlements">Reset</button>
-        {!canPost && <div className="settle-filters settle-primary-filters">{orderFilters}</div>}
-        {canPost && <details ref={filterDisclosure} className="settle-filter-disclosure settle-filter-disclosure--mr">
+        <details ref={filterDisclosure} className="settle-filter-disclosure settle-filter-disclosure--mr">
           <summary data-testid="button-toggle-settlement-filters"><Filter size={15} aria-hidden="true" />Filter records{filterCount > 0 && ` · ${filterCount} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
           <div className="settle-filters">{paymentFilters}{orderFilters}{additionalFilters}</div>
-        </details>}
+        </details>
       </form>
-      {!canPost && <details className="settle-filter-disclosure">
-        <summary data-testid="button-toggle-settlement-filters"><Filter size={15} aria-hidden="true" />More filters{filterCount > 0 && ` · ${filterCount} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
+      : <details ref={filterDisclosure} className="settle-filter-disclosure settle-filter-disclosure--admin">
+        <summary data-testid="button-toggle-settlement-filters"><Filter size={15} aria-hidden="true" />Filter records · {filterCount} active<ChevronDown size={15} aria-hidden="true" /></summary>
         <form className="settle-filters" noValidate onSubmit={apply}>
-          {additionalFilters}
+          <div className="kits-field settle-filters__search"><span>Search orders</span>{searchFilter}</div>
+          {paymentFilters}{orderFilters}{additionalFilters}
           <div className="settle-filters__actions">
-            <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="button-reset-settlements-more">Reset</button>
-            <button type="submit" className="admin-button" data-testid="button-apply-settlements-more">Apply filters</button>
+            <button type="submit" className="admin-button" data-testid="button-apply-settlements">Apply</button>
+            <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="button-reset-settlements">Reset</button>
           </div>
-          {filterError && <p className="settle-err" role="alert">{filterError}</p>}
           <p className="settle-sub settle-filters__hint">Date ranges include both ends. Payment date matches recorded payments only, so orders without payments are excluded when it is set.</p>
         </form>
       </details>}
