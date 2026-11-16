@@ -36,7 +36,9 @@ def with_status(db, keys, records, *, budget=None):
             paid[entry.order_id] += amount
     finally:
         rows.close()
-    return [{**record, "ledgerPaymentStatus": payment_position(saved_total("Kit", record), paid[identity])}
+    from app.services.order_financial_review import pending_pricing
+    return [{**record, "ledgerPaymentStatus": "Pending pricing" if saved_total("Kit", record) is None and not paid[identity]
+             and pending_pricing("Kit", record, record["status"]) else payment_position(saved_total("Kit", record), paid[identity])}
             for record, identity in zip(records, identities)]
 
 

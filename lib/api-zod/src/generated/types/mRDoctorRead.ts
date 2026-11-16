@@ -32,7 +32,7 @@ export interface MRDoctorRead {
   createdAt: Date;
   createdBy: string;
   dateOfJoining: Date | null;
-  daysLimit: number;
+  daysLimit: number | null;
   dialCountry: MRDoctorReadDialCountry;
   doctorNumber: string;
   drugLicenceNumber: string;

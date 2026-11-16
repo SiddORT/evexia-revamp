@@ -14,4 +14,5 @@ export const SettlementRecordPaymentStatus = {
   Part_paid: "Part paid",
   Paid: "Paid",
   Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;

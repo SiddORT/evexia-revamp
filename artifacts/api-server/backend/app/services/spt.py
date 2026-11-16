@@ -76,6 +76,7 @@ def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    value.setdefault("pricingState", "Priced" if value.get("total") is not None else "Unavailable")
     from app.services.order_approval import eligibility
     from app.services.order_lifecycle import status
     value["status"] = status(row.status)
@@ -148,11 +149,14 @@ def resolve(db, keys, body, previous, order_date):
                 if not assigned or assigned.mrId != body.mrId:
                     raise ImmError("Patient and MR must match the current Doctor assignment.", 422, "spt_relationship")
         data["amount"] = format(Decimal(p.amount), ".2f") if p.amount else ""
+        if retained and retained.get("amount") not in ("", None) and not p.amount:
+            raise ImmError("Saved patient pricing cannot be cleared; enter valid reviewed pricing.", 422, "order_pricing")
         if scope_identity(db) and retained and previous["status"] != "Draft" and data["amount"] != retained["amount"]:
             raise ImmError("Retain saved pricing for existing patients; Admin must review repricing.", 403, "order_pricing")
         total += Decimal(p.amount or "0")
         value["patients"].append(data)
-    value["total"] = format(total, ".2f")
+    value["total"] = format(total, ".2f") if body.patients and all(p.amount != "" for p in body.patients) else None
+    value["pricingState"] = "Pending pricing" if value["total"] is None else "Priced"
     return value
 
 
@@ -262,7 +266,7 @@ def detail(db, actor, identity):
 def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
     if kind != "patients":
         result = master_references(db, actor, kind, search, cursor, limit, selected, resource="spt")
-        result["items"] = [{k: p[k] for k in ("id", "name", "mrId", "doctorNumber", "employeeCode") if k in p} for p in result["items"]]
+        result["items"] = [{k: p[k] for k in ("id", "name", "mrId", "doctorNumber", "employeeCode", "doctorDaysLimit") if k in p} for p in result["items"]]
         return result
     def work(a, keys):
         # A single ordered bounded stream across both directories; no unbounded

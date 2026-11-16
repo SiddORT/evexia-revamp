@@ -8,6 +8,7 @@ export function reviewLabel(order) {
 export default function OrderReviewStatus({ order }) {
   return <div className="order-review-status">
     <p role="status">{reviewLabel(order)}</p>
+    {order.pricingState === 'Pending pricing' && <p>Pending pricing · amount not recorded. Not a payment or approval.</p>}
     {order.status === 'Rejected' && <div>
       <strong>Rejection reason</strong>
       <p className="order-review-reason">{order.rejection?.reason || 'Reason unavailable for this historical rejection.'}</p>
@@ -17,7 +18,7 @@ export default function OrderReviewStatus({ order }) {
       <ol>{order.reviewHistory.map((entry, index) => <li key={index}>
         {entry.decision === 'approve' ? 'Approved' : entry.decision === 'resubmit' ? 'Resubmitted for review' : 'Rejected'}
         {entry.at ? ` · ${entry.at}` : entry.rejectedAt ? ` · ${entry.rejectedAt}` : ' · Date unavailable'}
-        {entry.decision === 'reject' && <p className="order-review-reason">{entry.reason || 'Reason unavailable for this historical rejection.'}</p>}
+        {(entry.reason || entry.decision === 'reject') && <p className="order-review-reason">{entry.reason || 'Reason unavailable for this historical rejection.'}</p>}
       </li>)}</ol>
     </details>}
   </div>;

@@ -40,11 +40,7 @@ export interface DoctorResponse {
   createdAt: Date;
   createdBy: string;
   dateOfJoining?: Date | null;
-  /**
-   * @minimum 0
-   * @maximum 2147483647
-   */
-  daysLimit?: number;
+  daysLimit?: number | null;
   dialCountry?: DoctorResponseDialCountry;
   doctorNumber: string;
   /** @maxLength 100 */

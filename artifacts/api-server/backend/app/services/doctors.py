@@ -97,7 +97,7 @@ def projection(db, row, context=None):
     mr_hq = db.get(Headquarter, mr.hq) if mr and mr.hq else None
     zone_names = list(db.scalars(select(Zone.name).join(MRZoneAssignment, MRZoneAssignment.zone_id == Zone.id).where(
         MRZoneAssignment.mr_id == row.mrId, Zone.deleted_at.is_(None)).order_by(Zone.name)))
-    return dict(**{key: getattr(row, key) for key in DoctorFields.model_fields},
+    return dict(**{key: (mr.doctorDaysLimit if mr and not mr.deleted_at else None) if key == "daysLimit" else getattr(row, key) for key in DoctorFields.model_fields},
                 id=row.id, doctorNumber=row.doctorNumber, version=row.version, verification=row.verification,
                 areaVersion=row.areaVersion, areaHeadquarterName=hq.name if hq else "",
                 mrStatus=mr.status if mr and not mr.deleted_at else "missing",
@@ -247,7 +247,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
         labels = mrs.account_labels(db, [row.id for row in rows])
         for row in rows:
             zone = db.get(Zone, row.zoneId)
-            items.append(dict(id=row.id, name=row.name, userId=labels.get(row.id, ""), status=row.status, deleted=bool(row.deleted_at),
+            items.append(dict(id=row.id, name=row.name, doctorDaysLimit=row.doctorDaysLimit, userId=labels.get(row.id, ""), status=row.status, deleted=bool(row.deleted_at),
                               zoneId=zone.id if zone and not zone.deleted_at else None,
                               zoneName=zone.name if zone and not zone.deleted_at else "",
                                zoneStatus=zone.status if zone and not zone.deleted_at else None,
@@ -304,7 +304,8 @@ def insert(db, actor, body, verification="verified"):
     from app.services import doctor_mapping
     doctor_mapping.validate_area(db, body.areaId)
     now = utcnow()
-    row = Doctor(**body.model_dump(), doctorNumber=allocate(db, "doctor"), verification=verification, version=1,
+    # Legacy storage is retained as historical data, never a writable override.
+    row = Doctor(**(body.model_dump() | {"daysLimit": 0}), doctorNumber=allocate(db, "doctor"), verification=verification, version=1,
                  created_by=actor.user.id, updated_by=actor.user.id, created_at=now, updated_at=now)
     db.add(row)
     db.flush()
@@ -351,7 +352,7 @@ def mutate(db, actor, record_id, body, operation):
                     body.expected_area_version, destination=edited.mrId)
             if body.mrId != row.mrId:
                 doctor_mapping.transfer(db, current, [row], body.mrId, body.assignmentReason)
-            for key, value in edited.model_dump(exclude={"expected_version", "assignmentReason", "expected_area_version", "areaReason", "areaId"}).items():
+            for key, value in edited.model_dump(exclude={"daysLimit", "expected_version", "assignmentReason", "expected_area_version", "areaReason", "areaId"}).items():
                 setattr(row, key, value)
         elif operation == "status":
             row.status = body.status

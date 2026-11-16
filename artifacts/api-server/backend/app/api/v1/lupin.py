@@ -38,8 +38,14 @@ def filters(search: str = Query("", max_length=200), status: LupinStatus | None 
         doctor_id=doctor_id, mr_id=mr_id, patient_id=patient_id, from_date=from_date, to_date=to_date)
 
 
-from app.schemas.order_eligibility import LupinEligibilityInput, EligibilityPreview
+from app.schemas.order_eligibility import LupinEligibilityInput, EligibilityPreview, FinancialReview
 from app.services.order_eligibility import preview as eligibility_preview
+from app.services.order_financial_review import saved_review
+
+
+@router.get("/{record_id}/financial-review", response_model=FinancialReview, operation_id="getLupinFinancialReview")
+def financial_review(record_id: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return saved_review(db, actor, record_id, "lupin")
 
 
 @router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewLupinEligibility")

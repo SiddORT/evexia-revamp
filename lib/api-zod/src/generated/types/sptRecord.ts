@@ -33,12 +33,13 @@ export interface SptRecord {
   number: string;
   patients: SptPatientSnapshot[];
   pricingNeedsReview?: boolean;
+  pricingState?: string | null;
   rejection?: SptRecordRejection;
   remarks: string;
   reviewDecision?: string | null;
   reviewHistory?: SptRecordReviewHistoryItem[];
   sourceId: string;
   status: SptRecordStatus;
-  total: string;
+  total: string | null;
   version: number;
 }

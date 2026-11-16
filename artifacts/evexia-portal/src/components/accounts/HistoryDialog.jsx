@@ -58,9 +58,9 @@ export default function HistoryDialog({ row, date, canVerify, onClose, onChanged
       : !record ? <div className="settle-skeleton" aria-busy="true" aria-label="Loading transactions">{[0, 1, 2].map((i) => <div key={i}><span /><span /><span /><span /></div>)}</div>
         : <>
           <dl className="settle-money settle-history-sum">
-            <div><dt>Total</dt><dd>{record.total != null ? inr(record.total) : <span className="settle-na">Unavailable</span>}</dd></div>
+            <div><dt>Total</dt><dd>{record.total != null ? inr(record.total) : <span className="settle-na">{record.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
             <div><dt>Paid</dt><dd>{inr(record.paid)}</dd></div>
-            <div><dt>Balance</dt><dd>{record.balance != null ? inr(record.balance) : <span className="settle-na">Unavailable</span>}</dd></div>
+            <div><dt>Balance</dt><dd>{record.balance != null ? inr(record.balance) : <span className="settle-na">{record.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
             <div><dt>Status</dt><dd><VerifyPill value={record.verification} />{tx.length > 0 && record.verification !== 'Verified' && <span className="settle-sub" data-testid="text-verified-count">{verifiedCount} of {tx.length} verified</span>}</dd></div>
           </dl>
           {notice && <p className="admin-feedback admin-feedback--success" role="status" data-testid="status-verify-notice">{notice}</p>}

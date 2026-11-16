@@ -9,6 +9,7 @@ import useOrderDraftNavigation from '../../components/orders/useOrderDraftNaviga
 import '../../sptOrders.css';
 import '../../orderEntry.css';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
+import EffectiveDoctorDays from '../../components/orders/EffectiveDoctorDays.jsx';
 
 function Shell({ children, entry = false }) {
   return <AdminLayout title="SPT"><div className={`spt spt-form${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
@@ -82,7 +83,7 @@ function OrderForm({ order, mode }) {
       } else {
         initialDraft.current = JSON.stringify({ doctorId: result.doctorId || '', mrId: result.mrId || '', patients: result.patients, remarks: result.remarks });
         setRecord(result); setDecisionRecord(result); setPatients(result.patients);
-        setSuccess(`${result.number} ${result.status === 'Draft' ? 'saved as Draft' : 'saved'}. Total INR ${result.total}.`);
+        setSuccess(`${result.number} ${result.status === 'Draft' ? 'saved as Draft' : 'saved'}. ${result.total == null ? 'Pending pricing — not approved.' : `Total INR ${result.total}.`}`);
       }
     } catch (error) {
       // A pre-send/session failure on a retry cannot prove what happened to
@@ -147,7 +148,7 @@ function OrderForm({ order, mode }) {
         <div>
           <p className="admin-page-head__eyebrow">Orders / SPT</p>
           <h1>{readOnly ? `View ${record.number}` : record ? `Edit ${record.number}` : 'Add Order'}</h1>
-          <p className="admin-page-head__description">{readOnly ? 'Saved order details.' : mr ? 'Your MR is fixed. Choose Doctor and patients, then enter amounts.' : 'Choose Doctor, MR and patients, then enter amounts.'}</p>
+          <p className="admin-page-head__description">{readOnly ? 'Saved order details.' : 'Choose Doctor and patients. Amounts may be left blank for Admin pricing; submission is not approval. Partial pricing is not a zero total.'}</p>
         </div>
         <div className="spt-form-head__actions">
           <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-spt-back"><ArrowLeft size={16} aria-hidden="true" />All orders</Link>
@@ -155,7 +156,9 @@ function OrderForm({ order, mode }) {
         </div>
       </div>
       {success && <p className="spt-notice" role="status">{success}</p>}
+      {mrPortal && !readOnly && <EffectiveDoctorDays doctorId={doctorId} request={request} />}
       {record && <OrderApproval kind="spt" order={decisionRecord} request={request}
+        proposedValues={orderInput(values, record.status)}
         dirty={!readOnly && initialDraft.current !== JSON.stringify(values)} blocked={busy || uncertain}
         onLockChange={setReviewBusy} onApproved={(saved) => {
           setDecisionRecord(saved);
@@ -228,7 +231,7 @@ function OrderForm({ order, mode }) {
           empty={<div className="spt-empty"><strong>No patients added</strong><p>{readOnly ? 'This order has no patients.' : mrPortal ? 'Select an existing patient above.' : 'Select an existing patient above, or register an SPT patient.'}</p></div>} />
         </div>
         {patients.length > 0 && <div className="spt-total">
-          <span>{readOnly ? 'Saved total' : 'Entry total'}</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">{readOnly ? `INR ${record.total}` : money(total)}</span></div>}
+          <span>{readOnly ? 'Saved total' : 'Entry total'}</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">{readOnly ? record.total == null ? 'Pending pricing' : `INR ${record.total}` : money(total)}</span></div>}
       </section>
 
       <section className="spt-card" aria-labelledby="spt-h-remarks">

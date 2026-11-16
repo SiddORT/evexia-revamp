@@ -63,7 +63,7 @@ export default function SptOrders() {
     { key: 'doctor', label: 'Doctor', render: (o) => o.doctorName || 'Not chosen' },
     { key: 'mr', label: 'MR', render: (o) => o.mrName || 'Not chosen' },
     { key: 'count', label: 'Patients', render: (o) => o.patients.length },
-    { key: 'total', label: 'Total (INR)', render: (o) => <span className="spt-num">{o.total}</span> },
+    { key: 'total', label: 'Total (INR)', render: (o) => <span className="spt-num">{o.total ?? 'Pending pricing'}</span> },
     { key: 'status', label: 'Status', render: (o) => <span className={`admin-badge${o.status === 'Draft' ? ' admin-badge--inactive' : ''}`}>{reviewLabel(o)}</span> },
     { key: 'action', label: 'Action', render: (o) => <div className="spt-actions"><Link className="admin-icon-button order-view-action" href={`${BASE}/${o.id}`} aria-label={`View ${o.number}`} data-testid={`link-spt-open-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className={o.status === 'Draft' ? 'admin-button admin-button--secondary' : 'admin-icon-button order-view-action'} aria-label={`${o.status === 'Draft' ? 'Resume draft' : 'Edit'} ${o.number}`}><Pencil size={16} aria-hidden="true" />{o.status === 'Draft' && 'Resume draft'}</Link>}</div> },
   ];

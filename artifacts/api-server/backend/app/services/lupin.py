@@ -34,7 +34,7 @@ def authorize(db, actor, action=None):
 def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
     actor = authorize(db, actor)
     result = supply_references(db, actor, kind, search, cursor, limit, selected, resource="lupin")
-    result["items"] = [{k: p[k] for k in ("id", "name", "doctorId", "mrId") if k in p}
+    result["items"] = [{k: p[k] for k in ("id", "name", "doctorId", "mrId", "doctorDaysLimit") if k in p}
                        for p in result["items"]]
     return result
 
@@ -93,6 +93,7 @@ def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    value.setdefault("pricingState", "Priced" if value.get("total") is not None else "Unavailable")
     from app.services.order_lifecycle import status
     from app.services.order_approval import eligibility
     value["status"] = status(row.status)
@@ -124,12 +125,15 @@ def resolved(db, actor, keys, body, previous=None):
         identity = getattr(body, field)
         value[key] = previous[key] if previous and previous[field] == str(identity) else person(eligible(db, kind, identity))
     value["patients"] = [old_patients.get(str(p)) or person(eligible(db, "patients", p)) for p in body.patientIds]
-    value["price"] = format(Decimal(body.price), ".2f")
+    value["price"] = format(Decimal(body.price), ".2f") if body.price is not None else None
+    if previous and previous.get("price") is not None and body.price is None:
+        raise ImmError("Saved per-test pricing cannot be cleared; enter valid reviewed pricing.", 422, "order_pricing")
     if scope_identity(db) and previous:
-        if Decimal(body.price) != Decimal(previous["price"]):
+        if value["price"] != previous["price"]:
             raise ImmError("MR corrections must retain the saved Admin price.", 403, "order_pricing")
         value["price"] = previous["price"]
-    value["total"] = format(Decimal(body.patientCount) * Decimal(body.price), ".2f")
+    value["total"] = format(Decimal(body.patientCount) * Decimal(body.price), ".2f") if body.price is not None else None
+    value["pricingState"] = "Pending pricing" if value["total"] is None else "Priced"
     previous_files = {a["id"]: a for a in previous["attachments"]} if previous else {}
     value["attachments"] = []
     for identity in sorted(body.attachmentIds):

@@ -22,8 +22,7 @@ export interface LupinInput {
   /** @maxItems 200 */
   patientIds?: string[];
   paymentStatus?: LupinInputPaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinInputStatus;

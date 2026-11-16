@@ -13,6 +13,7 @@ import { request, blankOrder, totalMinor, money, amountMoney, validateAttachment
 import '../../lupinOrders.css';
 import '../../orderEntry.css';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
+import EffectiveDoctorDays from '../../components/orders/EffectiveDoctorDays.jsx';
 import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
 
 const Err = ({ id, text }) => text ? <p className="lupin-error" id={id} role="alert">{text}</p> : null;
@@ -182,7 +183,7 @@ function Form({ order: initialOrder, draft }) {
       if (!v.doctorId) errs.doctorId = 'Choose a real eligible Doctor.';
       if (!v.mrId) errs.mrId = 'Choose the Doctor’s assigned MR.';
       if (!/^\d{1,7}$/.test(v.patientCount) || Number(v.patientCount) < 1 || Number(v.patientCount) > 1000000) errs.patientCount = 'Enter a whole count from 1 to 1,000,000.';
-      if (totalMinor(v.patientCount, v.price) === null && !errs.patientCount) errs.price = 'Enter positive INR text with up to nine whole digits and two decimal places.';
+      if (v.price && totalMinor(v.patientCount, v.price) === null && !errs.patientCount) errs.price = 'Enter positive INR text with up to nine whole digits and two decimal places, or leave blank for Admin pricing.';
       if (!v.attachments.length) errs.attachments = 'Select at least one private attachment.';
       if (fileMsg) errs.attachments = 'Rejected files were not selected. Dismiss the file error or choose valid files before saving.';
       if (v.remarks.length > 4000) errs.remarks = 'Use at most 4,000 characters.';
@@ -247,13 +248,15 @@ function Form({ order: initialOrder, draft }) {
     setLinked((current) => [...current, person]); setPatientChoice('');
   };
   const field = (key, label, props = {}) => <div className="lupin-field"><label htmlFor={`lupin-${key}`}>{label} <span aria-hidden="true">*</span></label>
-    <input id={`lupin-${key}`} value={v[key]} onChange={(e) => set({ [key]: e.target.value })} required aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `lupin-${key}-err` : undefined} data-testid={`input-lupin-${key}`} {...props} />
+    <input id={`lupin-${key}`} value={v[key] ?? ''} onChange={(e) => set({ [key]: e.target.value })} required={key !== 'price'} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `lupin-${key}-err` : undefined} data-testid={`input-lupin-${key}`} {...props} />
     <Err id={`lupin-${key}-err`} text={errors[key]} /></div>;
   return <AdminLayout title="LUPIN"><form className="lupin order-entry lupin-entry" onSubmit={save} noValidate aria-label={order ? 'Edit Lupin Order' : 'Add Lupin Order'}>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>{order ? `Edit ${order.number}` : 'Add Lupin Order'}</h1></div></div>
     {!eligible && <p role="alert">This order cannot be edited. Saved details remain viewable; any mounted draft is preserved.</p>}
+    {mr && <EffectiveDoctorDays doctorId={v.doctorId} request={request} />}
     {policyError && <p role="alert">{policyError} <button type="button" className="lupin-link" onClick={() => setPolicyRevision((n) => n + 1)}>Retry upload policy</button></p>}
     {order && <OrderApproval kind="lupin" order={decisionRecord} request={request}
+      proposedValues={orderInput(v)}
       dirty={JSON.stringify(v) !== initial.current || uploads.current.size > 0}
       blocked={busy || uncertain || ownerChanged} onLockChange={setReviewBusy} onApproved={(saved) => {
         setDecisionRecord(saved);
@@ -278,7 +281,7 @@ function Form({ order: initialOrder, draft }) {
           {field('price', 'Price (per Test, INR)', { inputMode: 'decimal', maxLength: 32, readOnly: Boolean(mr && order) })}
           <div className="lupin-field"><label htmlFor="lupin-total">Total Amount (₹)</label><input id="lupin-total" readOnly value={money(totalMinor(v.patientCount, v.price))} aria-live="polite" data-testid="lupin-total" /></div>
         </div>
-        <p className="lupin-hint">Enter the patient count manually for pricing. Optional links never calculate, restrict or replace it. The server calculates the saved total.</p>
+        <p className="lupin-hint">Enter the patient count manually. Price may be left blank for Admin pricing; this is not a zero total or approval. Optional patient links never calculate or replace the count.</p>
       </section>
       <section className="admin-panel lupin-section"><h2>Linked Patients (optional)</h2>
         <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-patient" kind="patients" label="Find an existing Patient" value={patientChoice} onChange={setPatientChoice} onPerson={addPatient} disabled={locked || !v.doctorId} />

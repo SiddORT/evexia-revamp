@@ -9,7 +9,7 @@ import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
-import { doctorTerritoryChoices, lookupDoctorPIN, setDoctorArea } from '../../services/serverDoctors.js';
+import { doctorMRChoices, doctorTerritoryChoices, lookupDoctorPIN, setDoctorArea } from '../../services/serverDoctors.js';
 import { discountRate, roundRate } from '../../services/rates.js';
 import { masterNameError, masterLengthErrors, normalizeMasterName, presentMasterFailure } from '../../services/masterValidation.js';
 import '../../doctor-form.css';
@@ -36,7 +36,7 @@ const TABS = [
 const FIELD_INFO = {
   orderDiscount: 'Original percentage must be 0 to 100. Up to six source decimal places are rounded half-up to two when saved (1.005 → 1.01).',
   phone: 'Select the phone country and enter its national number. The selection is saved and also applies to the alternate phone.',
-  daysLimit: 'Doctor Master setting only; not enforced for MR placement. MR orders use the owning MR’s Doctor Days Limit, measured from each saved order date while a positive balance remains.',
+  daysLimit: 'Inherited from the currently assigned MR’s Doctor Days Limit. A positive unpaid balance blocks a new order when its saved order age reaches this limit. Zero disables this restriction. Change the setting in MR Master, not here.',
   paymentLimit: 'Doctor Master setting only; not an additional MR credit limit or fallback. MR placement uses the owning MR’s Payment Limit across all four real order types.',
   gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
   pincode: 'A six-digit Indian PIN fills country, state and city when exactly one place matches. Multiple places require selection. District is used as city when no city is returned. Other countries use the geography catalogue.',
@@ -121,6 +121,24 @@ const territoryDisabled = (item, saved) => item.deleted || (item.status !== 'act
 export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = null, onDraftChange, blocked = false, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => ({ ...initialValues(doctor), ...(fixedMR ? { mrId: String(fixedMR.id) } : {}) }));
   const [hydratedMRs, setHydratedMRs] = useState([]);
+  const [inheritedPolicy, setInheritedPolicy] = useState(null);
+  const [policyRevision, setPolicyRevision] = useState(0);
+  useEffect(() => {
+    if (!values.mrId) return undefined;
+    const controller = new AbortController();
+    setInheritedPolicy(null);
+    doctorMRChoices({ include_saved: values.mrId, limit: 1 }, controller.signal).then((result) => {
+      const selected = result.items.find((item) => item.id === values.mrId);
+      if (!controller.signal.aborted) setInheritedPolicy({ mrId: values.mrId, days: selected?.doctorDaysLimit });
+    }).catch(() => { if (!controller.signal.aborted) setInheritedPolicy({ mrId: values.mrId, days: null }); });
+    return () => controller.abort();
+  }, [values.mrId, policyRevision]);
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) setPolicyRevision((n) => n + 1); };
+    const timer = window.setInterval(refresh, 45000);
+    window.addEventListener('focus', refresh);
+    return () => { clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, []);
   const confirm = usePlatformConfirm();
   const savedLocation = LOCATION.map((key) => String(doctor?.[key] ?? ''));
   const locationChanged = LOCATION.some((key, index) => values[key] !== savedLocation[index]);
@@ -308,7 +326,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
         phone: cleaned.phone ? normalizePhone(cleaned.phone, cleaned.dialCountry) : '',
         alternatePhone: cleaned.alternatePhone ? normalizePhone(cleaned.alternatePhone, cleaned.dialCountry) : '',
         orderDiscount: cleaned.orderDiscount === '' ? '0.00' : discountRate(cleaned.orderDiscount),
-        daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
+        // Compatibility field is ignored by the server; never create an override.
+        daysLimit: 0,
         paymentLimit: cleaned.paymentLimit === '' ? '0.00' : roundRate(cleaned.paymentLimit),
         ...(doctor ? { ...(mrChanged ? { assignmentReason } : {}), expected_area_version: savedArea.areaVersion, areaReason } : {}),
       });
@@ -325,7 +344,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
 
   return <form className="doctor-form" ref={formRef} onSubmit={handleSubmit} noValidate data-testid="form-doctor">
     <div className="doctor-form__about"><InfoDisclosure id="doctor-form-about" title="this Doctor form"
-      text="Doctor records are shared server records. Adding or editing a doctor does not create a login account. Commercial limits are saved settings only; no payment ledger or order enforcement is connected."
+      text="Doctor records are shared server records. Adding or editing a doctor does not create a login account. Doctor Days Limit is inherited from the current assigned MR and enforced against prior positive unpaid balances at the saved-order age limit. Other Doctor commercial values do not create payments or independent MR placement limits."
       testId="button-doctor-form-info"><strong>About this form</strong></InfoDisclosure></div>
     <div className="doctor-form__tabs" role="tablist" aria-label="Doctor profile sections">
       {TABS.map((tab, index) => <button key={tab.id} ref={(node) => { tabRefs.current[index] = node; }} type="button"
@@ -413,7 +432,14 @@ export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = n
            {renderField('gstNumber', 'GST Number', { placeholder: values.invoiceType === 'gst' ? 'GSTIN' : 'Optional' })}
           {renderField('drugLicenceNumber', 'Drug Licence No.', { placeholder: 'Drug licence number' })}
           {renderField('orderDiscount', 'Order Discount (in %)', { type: 'text', placeholder: '0.00', inputMode: 'decimal' })}
-          {renderField('daysLimit', 'Days Limit', { type: 'number', min: '0', step: '1', placeholder: '0', inputMode: 'numeric' })}
+          <div className="doctor-form__field">
+            <label className="doctor-form__label" htmlFor="doctor-daysLimit">Effective Doctor Days Limit</label>
+            <input id="doctor-daysLimit" className="doctor-form__control" readOnly
+              value={inheritedPolicy?.mrId !== values.mrId || inheritedPolicy.days == null ? 'Unavailable — refresh the assigned MR setting' : `${inheritedPolicy.days} days`}
+              aria-describedby="doctor-daysLimit-help" />
+            <p id="doctor-daysLimit-help" className="doctor-form__hint">{FIELD_INFO.daysLimit}</p>
+            <button type="button" className="admin-button admin-button--secondary" disabled={!values.mrId} onClick={() => setPolicyRevision((n) => n + 1)}>Refresh inherited setting</button>
+          </div>
           {renderField('paymentLimit', 'Payment Limit', { type: 'number', min: '0', step: '0.01', placeholder: '0', inputMode: 'decimal' })}
         </div>
       </section>

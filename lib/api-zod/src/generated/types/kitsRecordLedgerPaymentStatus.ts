@@ -18,4 +18,5 @@ export const KitsRecordLedgerPaymentStatus = {
   Paid: "Paid",
   Part_paid: "Part paid",
   Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;

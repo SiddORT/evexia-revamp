@@ -10,9 +10,9 @@ from app.schemas.gst_settings import GSTEvidence
 from app.schemas.immunotherapy import Strict, Status, ImmReferencePage, ImmImportReview, ImmUploadPolicy
 
 Payment = Literal["Unpaid", "Paid", "Partial"]
-LedgerPayment = Literal["Unpaid", "Paid", "Part paid", "Unavailable"]
+LedgerPayment = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Pending pricing"]
 # Keep old bookmarked Partial filters compatible, but use Accounts terminology.
-PaymentFilter = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Partial"]
+PaymentFilter = Literal["Unpaid", "Paid", "Part paid", "Unavailable", "Partial", "Pending pricing"]
 
 
 class KitsAddress(Strict):
@@ -120,6 +120,7 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    pricingState: str | None = None
     ledgerPaymentStatus: LedgerPayment | None = Field(
         default=None, description="Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.")
     reviewHistory: list[dict] = Field(default_factory=list)

@@ -70,12 +70,14 @@ def preserve(actor, kind, data, previous):
 
 def record_decision(snapshot, actor, decision, version, reason=None):
     entry = {"decision": decision, "version": version, "actor": str(actor.user.id), "at": utcnow().isoformat()}
+    if reason:
+        entry["reason"] = reason
     if decision == "reject":
         entry["reason"] = reason
         snapshot["rejection"] = {"rejectedBy": entry["actor"], "rejectedAt": entry["at"], "reason": reason}
         snapshot["approval"] = None
     else:
-        snapshot["approval"] = {"approvedBy": entry["actor"], "approvedAt": entry["at"]}
+        snapshot["approval"] = {"approvedBy": entry["actor"], "approvedAt": entry["at"], **({"reason": reason} if reason else {})}
         snapshot["rejection"] = None
     snapshot["reviewDecision"] = "Approved" if decision == "approve" else "Rejected"
     snapshot["reviewHistory"] = [*snapshot.get("reviewHistory", []), entry]
@@ -84,8 +86,11 @@ def record_decision(snapshot, actor, decision, version, reason=None):
 
 def export_safe(value):
     """Reasons/history are private detail data, never implicit transfer fields."""
-    return {k: v for k, v in value.items() if k not in {
+    result = {k: v for k, v in value.items() if k not in {
         "rejection", "reviewHistory", "correctionSaved", "pricingNeedsReview"}}
+    if isinstance(result.get("approval"), dict):
+        result["approval"] = {key: item for key, item in result["approval"].items() if key != "reason"}
+    return result
 
 
 def imm_values(previous):
@@ -124,6 +129,8 @@ def saved_pricing(kind, previous):
             raise ValueError("Stale saved total")
         return
     if kind == "spt":
+        if not previous["patients"] or any(p.get("amount") in ("", None) for p in previous["patients"]):
+            raise ValueError("Missing patient pricing")
         from app.schemas.spt import SptInput
         SptInput.model_validate({key: previous[key] for key in ("doctorId", "mrId", "remarks", "status")}
             | {"patients": [{k: p[k] for k in ("id", "source", "amount")} for p in previous["patients"]]})
@@ -146,6 +153,8 @@ def saved_pricing(kind, previous):
         if calculate(body, price, raw["taxPercentage"], raw.get("gstPolicy")) != {k: v for k, v in raw.items() if k != "gstPolicy" or v is not None}:
             raise ValueError("Stale supply pricing")
     else:
+        if body.price is None:
+            raise ValueError("Missing test pricing")
         if Decimal(previous["total"]) != Decimal(body.patientCount) * Decimal(body.price):
             raise ValueError("Stale count pricing")
         if not values["attachmentIds"]:
@@ -187,6 +196,18 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                 raise ImmError(available["approvalUnavailable"], 409, "order_approval")
             if decision == "approve" and not available["canApprove"]:
                 raise ImmError(available["approvalUnavailable"], 422, "order_pricing")
+            if kind in {"kits", "spt", "lupin"}:
+                from app.schemas.order_approval import OrderRejection
+                try:
+                    decision_reason = OrderRejection.model_validate(body.model_dump()).reason
+                except ValueError:
+                    raise ImmError("Enter a plain-text decision reason of 1–2000 characters.", 422, "order_decision_reason") from None
+                if decision == "approve" and row.mr_id:
+                    from app.services.order_financial_review import review
+                    financial = review(db, keys, kind, row, previous, previous)
+                    if body.financialReviewToken != financial["token"]:
+                        raise ImmError("Financial evidence changed or was not reviewed. Refresh financial review before approving this saved version.",
+                                       409, "order_financial_review_stale")
             # Validate the complete saved submission, not Admin-supplied replacements.
             if decision == "approve" and kind == "immunotherapy":
                 # Inventory writers take this lock before material/location rows.
@@ -220,7 +241,7 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                 from app.schemas.order_approval import OrderRejection
                 body_reason = OrderRejection.model_validate(body.model_dump()).reason
             else:
-                body_reason = None
+                body_reason = decision_reason if kind in {"kits", "spt", "lupin"} else None
             record_decision(snapshot, current, decision, row.version + 1, body_reason)
             snapshot["status"] = row.status = "In process" if decision == "approve" else "Rejected"
             row.version += 1
@@ -235,7 +256,7 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
                  f"decision:{row.version}")
             return service.project(keys, row)
         return service.idempotent(db, current, keys, body.idempotencyKey,
-            {"operation": decision, "id": str(identity), "body": body.model_dump(mode="json")}, write)
+            {"operation": decision, "id": str(identity), "body": body.model_dump(mode="json", exclude_unset=True)}, write)
     # Lupin has no assignable Edit action. Its transaction still locks policy,
     # financial eligibility and identity; work requires the revalidated protected
     # Super Admin before reading an order or recovering a prior decision.
@@ -311,5 +332,5 @@ def resubmit(db, actor, identity, body, kind):
             emit(db, keys, kind, row, "order_resubmitted", f"resubmit:{row.version}")
             return service.project(keys, row)
         return service.idempotent(db, current, keys, body.idempotencyKey,
-            {"operation": "resubmit", "id": str(identity), "body": body.model_dump(mode="json")}, write)
+            {"operation": "resubmit", "id": str(identity), "body": body.model_dump(mode="json", exclude_unset=True)}, write)
     return service.transaction(db, actor, work, action="edit")

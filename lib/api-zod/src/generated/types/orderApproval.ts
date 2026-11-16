@@ -9,5 +9,7 @@
 export interface OrderApproval {
   /** @minimum 1 */
   expected_version: number;
+  financialReviewToken?: string | null;
   idempotencyKey: string;
+  reason?: string | null;
 }

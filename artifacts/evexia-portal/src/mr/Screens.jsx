@@ -11,6 +11,7 @@ import { ADMIN_APPEARANCES, ADMIN_THEMES } from '../components/admin/adminTheme.
 import { Empty, Head, useDate, useWs } from './common.jsx';
 import { useSalesAchievement } from './useSalesAchievement.js';
 import { SalesSummary, SalesRules } from './SalesAchievement.jsx';
+import FinancialRestrictions from './FinancialRestrictions.jsx';
 export { default as Targets } from './SalesAchievement.jsx';
 
 export function Dashboard() {
@@ -29,6 +30,7 @@ export function Dashboard() {
     </section>
     <SalesSummary report={report} percentageTestId="text-sales-percentage" />
     <SalesRules />
+    <FinancialRestrictions />
     <div className="mrw-actions">
       <Link href="/mr/doctors/new" className="admin-button" data-testid="link-shortcut-onboard"><UserPlus size={16} aria-hidden="true" /> Add live Doctor</Link>
       <Link href="/mr/orders" className="admin-button" data-testid="link-shortcut-order"><FilePlus2 size={16} aria-hidden="true" /> Live orders</Link>

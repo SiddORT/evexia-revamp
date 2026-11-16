@@ -192,6 +192,7 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  FinancialReview,
   GSTEvidence,
   GSTHistoryPage,
   GSTSettingsView,
@@ -207,6 +208,7 @@ import type {
   GetInventoryStockHistoryParams,
   GetKitsGSTEvidenceParams,
   GetLanguageHistoryParams,
+  GetMrFinancialSummaryParams,
   GetOpeningStockItemsParams,
   GetPurchaseOrderChangesParams,
   GetPurchaseOrderDocumentParams,
@@ -386,6 +388,7 @@ import type {
   MRDoctorRead,
   MRDoctorReadPage,
   MREdit,
+  MRFinancialSummary,
   MRImportResult,
   MRPage,
   MRResponse,
@@ -49956,6 +49959,379 @@ export function useListUnifiedOrderDrafts<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListUnifiedOrderDraftsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetKitsFinancialReviewUrl = (recordId: string) => {
+  return `/api/v1/admin/kits-orders/${recordId}/financial-review`;
+};
+
+/**
+ * @summary Financial Review
+ */
+export const getKitsFinancialReview = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FinancialReview> => {
+  return customFetch<FinancialReview>(getGetKitsFinancialReviewUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetKitsFinancialReviewQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/kits-orders/${recordId}/financial-review`] as const;
+};
+
+export const getGetKitsFinancialReviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getKitsFinancialReview>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKitsFinancialReview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetKitsFinancialReviewQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getKitsFinancialReview>>
+  > = ({ signal }) =>
+    getKitsFinancialReview(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getKitsFinancialReview>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetKitsFinancialReviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getKitsFinancialReview>>
+>;
+export type GetKitsFinancialReviewQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Financial Review
+ */
+
+export function useGetKitsFinancialReview<
+  TData = Awaited<ReturnType<typeof getKitsFinancialReview>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKitsFinancialReview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetKitsFinancialReviewQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetLupinFinancialReviewUrl = (recordId: string) => {
+  return `/api/v1/admin/lupin-orders/${recordId}/financial-review`;
+};
+
+/**
+ * @summary Financial Review
+ */
+export const getLupinFinancialReview = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FinancialReview> => {
+  return customFetch<FinancialReview>(getGetLupinFinancialReviewUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLupinFinancialReviewQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/lupin-orders/${recordId}/financial-review`] as const;
+};
+
+export const getGetLupinFinancialReviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLupinFinancialReview>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLupinFinancialReview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLupinFinancialReviewQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLupinFinancialReview>>
+  > = ({ signal }) =>
+    getLupinFinancialReview(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLupinFinancialReview>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLupinFinancialReviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLupinFinancialReview>>
+>;
+export type GetLupinFinancialReviewQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Financial Review
+ */
+
+export function useGetLupinFinancialReview<
+  TData = Awaited<ReturnType<typeof getLupinFinancialReview>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLupinFinancialReview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLupinFinancialReviewQueryOptions(
+    recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetMrFinancialSummaryUrl = (
+  params?: GetMrFinancialSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/spt-orders/mr-financial-summary?${stringifiedParams}`
+    : `/api/v1/admin/spt-orders/mr-financial-summary`;
+};
+
+/**
+ * @summary Mr Financial Summary
+ */
+export const getMrFinancialSummary = async (
+  params?: GetMrFinancialSummaryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRFinancialSummary> => {
+  return customFetch<MRFinancialSummary>(getGetMrFinancialSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMrFinancialSummaryQueryKey = (
+  params?: GetMrFinancialSummaryParams,
+) => {
+  return [
+    `/api/v1/admin/spt-orders/mr-financial-summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetMrFinancialSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMrFinancialSummary>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetMrFinancialSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMrFinancialSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMrFinancialSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMrFinancialSummary>>
+  > = ({ signal }) =>
+    getMrFinancialSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMrFinancialSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMrFinancialSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMrFinancialSummary>>
+>;
+export type GetMrFinancialSummaryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Mr Financial Summary
+ */
+
+export function useGetMrFinancialSummary<
+  TData = Awaited<ReturnType<typeof getMrFinancialSummary>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetMrFinancialSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMrFinancialSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMrFinancialSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetSptFinancialReviewUrl = (recordId: string) => {
+  return `/api/v1/admin/spt-orders/${recordId}/financial-review`;
+};
+
+/**
+ * @summary Financial Review
+ */
+export const getSptFinancialReview = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FinancialReview> => {
+  return customFetch<FinancialReview>(getGetSptFinancialReviewUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSptFinancialReviewQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/spt-orders/${recordId}/financial-review`] as const;
+};
+
+export const getGetSptFinancialReviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSptFinancialReview>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSptFinancialReview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSptFinancialReviewQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSptFinancialReview>>
+  > = ({ signal }) =>
+    getSptFinancialReview(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSptFinancialReview>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSptFinancialReviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSptFinancialReview>>
+>;
+export type GetSptFinancialReviewQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Financial Review
+ */
+
+export function useGetSptFinancialReview<
+  TData = Awaited<ReturnType<typeof getSptFinancialReview>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSptFinancialReview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSptFinancialReviewQueryOptions(recordId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

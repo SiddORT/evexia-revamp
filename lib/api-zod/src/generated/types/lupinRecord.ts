@@ -43,15 +43,15 @@ export interface LupinRecord {
   patientIds?: string[];
   patients: LupinRecordPatientsItem[];
   paymentStatus?: LupinRecordPaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   pricingNeedsReview?: boolean;
+  pricingState?: string | null;
   rejection?: LupinRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
   reviewDecision?: string | null;
   reviewHistory?: LupinRecordReviewHistoryItem[];
   status?: LupinRecordStatus;
-  total: string;
+  total: string | null;
   version: number;
 }

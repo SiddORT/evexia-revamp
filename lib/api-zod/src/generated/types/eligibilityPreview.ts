@@ -8,12 +8,14 @@
 import type { AllergenStockAdvice } from "./allergenStockAdvice";
 import type { EligibilityPreviewPriceQuote } from "./eligibilityPreviewPriceQuote";
 import type { EligibilityReason } from "./eligibilityReason";
+import type { FinancialReview } from "./financialReview";
 
 export interface EligibilityPreview {
   businessDate?: string | null;
   doctorDaysLimit?: number | null;
   doctorPendingBalance?: string | null;
   eligible: boolean;
+  financialReview?: FinancialReview | null;
   oldestDoctorUnpaidAgeDays?: number | null;
   oldestDoctorUnpaidDate?: string | null;
   outstanding?: string | null;

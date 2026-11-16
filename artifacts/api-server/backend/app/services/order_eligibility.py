@@ -84,12 +84,16 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
         return result
     if data["status"] not in ACTIVE:
         unavailable("The proposed order's financial status is unavailable.")
+    if kind in {"kits", "spt", "lupin"}:
+        from app.services.order_financial_review import submission
+        return submission(db, keys, kind, data, row=row)
     settings = db.scalar(select(MRDirectory).where(MRDirectory.id == identity)
                          .execution_options(populate_existing=True))
     if not settings or settings.deleted_at or settings.status != "active":
         unavailable("Your current saved MR settings are unavailable.")
     limit = settlements.exact(settings.paymentLimit)
-    days = settings.doctorDaysLimit
+    from app.services.order_financial_review import effective_days
+    _, days = effective_days(db, data["doctorId"])
     if isinstance(days, bool) or not isinstance(days, int) or not 0 <= days <= 3650:
         unavailable("Your saved MR Doctor Days Limit is unreadable.")
     result.update(paymentLimit=settlements.fmt(limit), doctorDaysLimit=days)
@@ -166,7 +170,7 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     def aged(balance, date, selected):
         if days and selected and balance > 0:
             age = (business_date - date).days
-            if age > days:
+            if age >= days:
                 overdue.append((age, balance))
 
     for label, source, saved_row in candidates:
@@ -265,7 +269,8 @@ def preview(db, actor, kind, body):
     service = services[kind]
 
     def work(current, keys):
-        if not scope_identity(db) and not (kind == "immunotherapy" and getattr(body.values, "refreshQuote", False)):
+        admin_review = not scope_identity(db) and kind in {"kits", "spt", "lupin"} and body.orderId and not body.resubmit
+        if not scope_identity(db) and not admin_review and not (kind == "immunotherapy" and getattr(body.values, "refreshQuote", False)):
             raise ImmError("Eligibility advice is limited to the signed-in MR.", 403, "access_denied")
         # Do not retroactively reject or re-warn an already committed request.
         # The write endpoint alone verifies and replays its original payload.
@@ -299,6 +304,12 @@ def preview(db, actor, kind, body):
             from app.services.immunotherapy_material_pricing import prepare_quote
             quoted = prepare_quote(db, keys, data, values, row.date if row else values.orderDate or today(), previous)
         result = evaluate(db, keys, kind, data, row=row, order_date=getattr(values, "orderDate", None), previous=previous)
+        if admin_review:
+            from app.services.order_financial_review import review
+            from app.services.capability_policy import is_super_admin, allowed
+            if kind in {"kits", "lupin"} and not is_super_admin(current) or kind == "spt" and not allowed(current, "spt", "edit"):
+                raise ImmError("Admin pricing access is required.", 403, "access_denied")
+            result["financialReview"] = review(db, keys, kind, row, data, previous)
         if quoted:
             from app.services.immunotherapy_material_pricing import token
             result["quoteToken"] = token(data, row.date if row else values.orderDate or today(), current.user.id, dict(result))

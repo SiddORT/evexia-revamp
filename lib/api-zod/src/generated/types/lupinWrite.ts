@@ -23,8 +23,7 @@ export interface LupinWrite {
   /** @maxItems 200 */
   patientIds?: string[];
   paymentStatus?: LupinWritePaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinWriteStatus;

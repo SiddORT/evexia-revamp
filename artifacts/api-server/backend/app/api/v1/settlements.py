@@ -25,7 +25,7 @@ def listing(kind: Literal["All", "IT", "Kit", "SPT", "Lupin"] = "All",
             search: str = Query("", max_length=100),
             order_status: Literal["All", "Confirmed", "Saved", "Approved", "In process", "Shipped",
                                   "Delivered", "Returned", "Rejected", "Cancelled"] = "All",
-            payment_status: Literal["All", "Unpaid", "Part paid", "Paid", "Unavailable"] = "All",
+            payment_status: Literal["All", "Unpaid", "Part paid", "Paid", "Unavailable", "Pending pricing"] = "All",
             payable_only: bool = False,
             offset: int = Query(0, ge=0, le=20000), limit: int = Query(25, ge=1, le=100),
             actor=Depends(current_identity), db: Session = Depends(get_db)):

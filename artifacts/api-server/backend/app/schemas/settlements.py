@@ -104,7 +104,7 @@ class SettlementRecord(BaseModel):
     version: int
     status: str
     payable: bool
-    paymentStatus: Literal["Unpaid", "Part paid", "Paid", "Unavailable"]
+    paymentStatus: Literal["Unpaid", "Part paid", "Paid", "Unavailable", "Pending pricing"]
     doctor: SettlementPerson | None
     mr: SettlementPerson | None
     patients: list[SettlementPerson]

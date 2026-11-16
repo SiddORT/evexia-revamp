@@ -2,18 +2,25 @@
 name: MR eligibility policy
 description: Confirmed financial configuration ownership, date basis and advisory inventory scope.
 ---
-MR order eligibility uses the MR's unpaid exposure plus the proposed order
-against MR Payment Limit, and the MR's Doctor Days Limit for unpaid obligations
-of the selected Doctor. Each zero setting independently means no restriction.
-Doctor Master settings are not additional limits or fallback values. Days start
-at the saved order date while a positive balance remains; equality with either
-limit is allowed except for the separately authorized new configured-price MR
-Immunotherapy workflow, whose positive payment limit uses strict `<`. Allergen
+Kits, SPT and Lupin may be submitted without an amount for Admin review.
+Their amount-limit decision belongs to explicit Admin pricing/review, not MR
+submission: reaching or exceeding the amount limit is a truthful warning,
+not automatic rejection. Missing pricing is not a zero total or receipt.
+The current assigned MR's Doctor Days Limit is the single effective days
+setting for every assigned Doctor; Doctor Master inherits it read-only.
+Reassignment changes the effective setting, not historical ownership or payments.
+No Doctor override or separate MR-wide payment-days field is authorized.
+Each zero setting independently means no restriction. Days start at the saved
+order date while a positive balance remains; reaching the effective days limit
+blocks new MR orders for that Doctor. The separately authorized configured-price
+MR Immunotherapy workflow retains its existing quote and amount policy, whose
+positive payment limit uses strict `<`. Allergen
 stock warnings stay advisory at placement; that supported IT workflow consumes
 saved Extract and Dilution ml only on explicit Admin approval.
 
-**Why:** The user explicitly confirmed these choices, including the order-date
-basis, rather than Doctor Master limits or blocking inventory rules.
+**Why:** The user's final instruction superseded their preceding Doctor-specific
+selection and moved the three deferred-pricing workflows' amount decision to
+Admin while retaining saved-order-date aging and committed settlement evidence.
 
 **How to apply:** Preserve these business boundaries in future order, settlement
 and configuration changes. Unknown financial evidence is not a zero balance;

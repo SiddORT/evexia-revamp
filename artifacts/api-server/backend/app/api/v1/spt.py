@@ -19,6 +19,7 @@ router = APIRouter(prefix="/admin/spt-orders", tags=["spt"],
         "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
         "register": ("add", "import"),
         "resubmit": "edit",
+        "financial_review": "edit", "eligibility": "edit",
     }, allow_mr=True))])
 
 
@@ -29,8 +30,20 @@ def filters(search: str = Query("", max_length=200), status: ReadStatus | None =
         patient_id=patient_id, from_date=from_date, to_date=to_date)
 
 
-from app.schemas.order_eligibility import SptEligibilityInput, EligibilityPreview
+from app.schemas.order_eligibility import SptEligibilityInput, EligibilityPreview, FinancialReview, MRFinancialSummary
 from app.services.order_eligibility import preview as eligibility_preview
+from app.services.order_financial_review import saved_review, dashboard
+
+
+@router.get("/mr-financial-summary", response_model=MRFinancialSummary, operation_id="getMrFinancialSummary")
+def mr_financial_summary(offset: int = Query(0, ge=0), limit: int = Query(25, ge=1, le=100),
+                         actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return dashboard(db, actor, offset=offset, limit=limit)
+
+
+@router.get("/{record_id}/financial-review", response_model=FinancialReview, operation_id="getSptFinancialReview")
+def financial_review(record_id: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return saved_review(db, actor, record_id, "spt")
 
 
 @router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewSptEligibility")

@@ -61,6 +61,7 @@ export interface KitsRecord {
   poNumber?: string | null;
   pricing?: KitsPricingSnapshot | null;
   pricingNeedsReview?: boolean;
+  pricingState?: string | null;
   recipient: KitsRecordRecipient;
   rejection?: KitsRecordRejection;
   /** @maxLength 4000 */

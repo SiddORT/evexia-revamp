@@ -123,9 +123,9 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     {!r.payable && r.balance != null && r.balance !== '0.00' && <span className="settle-sub">{canPost && ['Confirmed', 'Saved'].includes(r.status) ? 'Admin approval required before payment' : 'Not payable at this status'}</span>}</>;
   const patientsCell = (r) => r.patients?.length ? <ul className="settle-people">{r.patients.map((p, i) => <li key={p.id || i}><Person p={p} /></li>)}</ul> : NA;
   const money = (r) => <dl className="settle-money">
-    <div><dt>Total</dt><dd>{r.total != null ? inr(r.total) : <span className="settle-na">Unavailable</span>}</dd></div>
+    <div><dt>Total</dt><dd>{r.total != null ? inr(r.total) : <span className="settle-na">{r.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
     <div><dt>Paid</dt><dd>{inr(r.paid)}</dd></div>
-    <div><dt>Balance</dt><dd className={r.payable ? 'settle-due' : ''}>{r.balance != null ? inr(r.balance) : <span className="settle-na">Unavailable</span>}</dd></div>
+    <div><dt>Balance</dt><dd className={r.payable ? 'settle-due' : ''}>{r.balance != null ? inr(r.balance) : <span className="settle-na">{r.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
   </dl>;
   const action = (r) => <button type="button" className="admin-button admin-button--secondary settle-action" onClick={(e) => openHistory(r, e.currentTarget)}
     aria-label={`View transactions for ${r.number}`} data-testid={`button-history-${r.key}`}><History size={15} aria-hidden="true" />{r.transactions.length ? `Transactions (${r.transactions.length})` : 'View transactions'}</button>;

@@ -19,7 +19,7 @@ const validPerson = (p) => p === null || (p && typeof p === 'object' && !Array.i
 export const VERIFY_LABEL = { 'No transactions': 'No transactions', 'Not verified': 'Unverified', Verified: 'Verified' };
 export const verifyLabel = (v) => VERIFY_LABEL[v] || v || 'No transactions';
 export const VERIFICATION_OPTIONS = VERIFICATION.map((v) => ({ value: v, label: v === 'All' ? 'All verification' : verifyLabel(v) }));
-export const PAYMENT_STATUSES = ['All', 'Unpaid', 'Part paid', 'Paid', 'Unavailable'];
+export const PAYMENT_STATUSES = ['All', 'Unpaid', 'Part paid', 'Paid', 'Pending pricing', 'Unavailable'];
 // Saved lifecycle statuses offered as filters; the server remains authoritative.
 export const ORDER_STATUSES = ['All', 'Confirmed', 'Saved', 'In process', 'Shipped', 'Delivered', 'Returned', 'Rejected', 'Cancelled'];
 export const BATCH_LIMIT = 100;
@@ -59,6 +59,7 @@ export function validateRecord(r) {
     || (r.total === null ? r.balance !== null : r.balance === null || toPaise(r.total) - paid !== toPaise(r.balance))) failure();
   // A payable record must have a known positive balance.
   if (r.payable && !(r.balance !== null && toPaise(r.balance) > 0n)) failure();
+  if (r.paymentStatus === 'Pending pricing' && (r.total !== null || r.balance !== null || paid !== 0n || r.payable || r.transactions.length)) failure();
   return r;
 }
 

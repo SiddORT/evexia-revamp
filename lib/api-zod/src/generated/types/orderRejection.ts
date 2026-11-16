@@ -9,6 +9,7 @@
 export interface OrderRejection {
   /** @minimum 1 */
   expected_version: number;
+  financialReviewToken?: string | null;
   idempotencyKey: string;
   /**
    * @minLength 1

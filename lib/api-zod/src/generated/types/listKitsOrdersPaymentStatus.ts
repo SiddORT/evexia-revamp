@@ -16,4 +16,5 @@ export const ListKitsOrdersPaymentStatus = {
   Part_paid: "Part paid",
   Unavailable: "Unavailable",
   Partial: "Partial",
+  Pending_pricing: "Pending pricing",
 } as const;

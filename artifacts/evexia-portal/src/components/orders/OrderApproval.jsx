@@ -6,8 +6,9 @@ import { getSession } from '../../auth/adminSession.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderApproval.css';
 import OrderReviewStatus from './OrderReviewStatus.jsx';
+import FinancialReview from './FinancialReview.jsx';
 
-export default function OrderApproval({ kind, order, request, onApproved, dirty = false, blocked = false, onLockChange }) {
+export default function OrderApproval({ kind, order, request, onApproved, dirty = false, blocked = false, onLockChange, proposedValues }) {
   const can = useOrderActions(kind);
   const { portal } = useOrderPortal();
   const { timestamp } = useAdminDateFormatters();
@@ -16,6 +17,9 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
   const [confirmReject, setConfirmReject] = useState(false);
   const [reason, setReason] = useState(''), [ignoreDraft, setIgnoreDraft] = useState(false);
   const [conflict, setConflict] = useState('');
+  const [financial, setFinancial] = useState(null), [approvalReason, setApprovalReason] = useState('');
+  const deferred = ['kits', 'spt', 'lupin'].includes(kind);
+  const reviewRequired = deferred && Boolean(order.mrId);
   const submission = useRef(null), sending = useRef(false);
   const decisionFocus = useRef(null);
   // Kits/Lupin decisions are protected operations, not assignable Edit grants.
@@ -43,7 +47,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
       setError('The signed-in account changed. This account cannot send or recover the original operation.'); return;
     }
     if (!submission.current && (decision === 'resubmit' ? !resubmittable || dirty
-      : decision === 'approve' ? !eligibility?.canApprove || dirty
+      : decision === 'approve' ? !eligibility?.canApprove || dirty || (deferred && !approvalReason.trim()) || (reviewRequired && !financial)
         : !eligibility?.canReject || !reason.trim() || reason.length > 2000 || (dirty && !ignoreDraft))) return;
     if (submission.current && submission.current.owner !== owner) {
       setError('Only the original signed-in account can recover this decision. Keep this page open.'); return;
@@ -51,7 +55,8 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
     sending.current = true; setBusy(true); onLockChange?.(true); setError('');
     if (!submission.current) submission.current = { owner, decision, body: {
       expected_version: order.version, idempotencyKey: crypto.randomUUID(),
-      ...(decision === 'reject' ? { reason: reason.trim() } : {}),
+      ...(decision === 'reject' ? { reason: reason.trim() } : decision === 'approve' && deferred
+        ? { reason: approvalReason.trim(), ...(reviewRequired ? { financialReviewToken: financial.token } : {}) } : {}),
     } };
     const operation = submission.current;
     try {
@@ -68,7 +73,8 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
       setUncertain(keep);
       if (!keep) submission.current = null;
       setError(cause.message || 'Decision was not confirmed.');
-      if (!keep && cause.status === 409 && !/^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(cause.code || '')) {
+      if (cause.code === 'order_financial_review_stale') setFinancial(null);
+      if (!keep && cause.status === 409 && cause.code !== 'order_financial_review_stale' && !/^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(cause.code || '')) {
         setConflict('The saved order changed. Reopen its saved view separately before making a decision.');
         try {
           const current = await request(`/${order.id}`);
@@ -86,11 +92,17 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
         : order.status === 'Draft' ? 'Draft · not submitted'
           : eligible ? 'Submitted · awaiting Admin decision' : 'No recorded approval evidence'}</p>
     {permitted && <>
+      {reviewRequired && eligible && <FinancialReview order={order} request={request}
+        proposedValues={dirty ? proposedValues : null} onEvidence={setFinancial} disabled={busy || uncertain || blocked} />}
       {!eligibility && <p role="status">Decision availability is unavailable. Refresh the saved view; a compatible server/schema is required.</p>}
       {eligibility?.approvalUnavailable && <p role="status">{eligibility.approvalUnavailable}</p>}
       {dirty && <p role="status">Save changes first, then approve the resulting saved version. Rejection can target the saved submission while keeping your unsaved draft here.</p>}
+      {deferred && eligible && <label>Approval reason (required, up to 2,000 characters)
+        <textarea value={approvalReason} maxLength={2000} disabled={busy || uncertain || blocked}
+          onChange={(event) => setApprovalReason(event.target.value)} />
+      </label>}
       <div className="order-approval__actions">
-        <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || (uncertain ? submission.current?.decision !== 'approve' : !eligibility?.canApprove)} onClick={() => decide('approve')}>{busy && submission.current?.decision === 'approve' ? 'Approving…' : uncertain && submission.current?.decision === 'approve' ? 'Retry unchanged approval' : 'Approve order'}</button>
+        <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || (uncertain ? submission.current?.decision !== 'approve' : !eligibility?.canApprove || (deferred && !approvalReason.trim()) || (reviewRequired && !financial))} onClick={() => decide('approve')}>{busy && submission.current?.decision === 'approve' ? 'Approving…' : uncertain && submission.current?.decision === 'approve' ? 'Retry unchanged approval' : 'Approve order'}</button>
         <button type="button" className="admin-button admin-button--danger" disabled={busy || blocked || uncertain || !eligible || Boolean(conflict)} onClick={() => { setReason(''); setIgnoreDraft(false); setConfirmReject(true); }}>Reject order</button>
       </div>
     </>}

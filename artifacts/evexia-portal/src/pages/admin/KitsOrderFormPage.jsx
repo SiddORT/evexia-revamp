@@ -13,6 +13,7 @@ import KitsPricingSummary from '../../components/orders/KitsPricingSummary.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
+import EffectiveDoctorDays from '../../components/orders/EffectiveDoctorDays.jsx';
 import { DraftEntry, usePersistentOrderDraft } from '../../components/orders/PersistentOrderDraft.jsx';
 import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
 
@@ -245,6 +246,7 @@ function Form({ draft }) {
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-people"><h2 id="kits-h-people">Doctor details</h2>
           <div className="kits-grid">
             <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: authenticatedMR?.id || '' }); setMr(authenticatedMR); }} onPerson={setDoctor} />
+            {portal === 'mr' && <EffectiveDoctorDays doctorId={v.doctorId} request={request} />}
             {portal === 'mr' ? <label className="kits-field" htmlFor="kits-mrId">MR (signed-in account)<input id="kits-mrId" readOnly value={authenticatedMR.name} /></label>
               : <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />}
             <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />

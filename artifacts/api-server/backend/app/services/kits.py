@@ -100,7 +100,7 @@ def authorize(db, actor, action=None):
 
 def references(db, actor, kind, search="", cursor=None, limit=25, selected=None, *, resource="kits"):
     result = master_references(db, actor, kind, search, cursor, limit, selected, resource=resource)
-    result["items"] = [{k: p[k] for k in ("id", "name", "phone", "address", "doctorId", "mrId") if k in p}
+    result["items"] = [{k: p[k] for k in ("id", "name", "phone", "address", "doctorId", "mrId", "doctorDaysLimit") if k in p}
                        for p in result["items"]]
     return result
 
@@ -163,6 +163,8 @@ def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
     value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    value["pricingState"] = ("Pending pricing" if value.get("pricing") is None
+                             else "Needs pricing review" if value.get("pricingNeedsReview") else "Priced")
     from app.services.order_lifecycle import status
     from app.services.order_approval import eligibility
     value["status"] = status(row.status)

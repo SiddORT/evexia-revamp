@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -173,6 +173,9 @@ def main() -> None:
             return
         selected = {path: item for path, item in contract["paths"].items()
                     if (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
+                    or (args.scope == "deferred-order-review" and
+                        (path.endswith("/financial-review") or path.endswith("/mr-financial-summary")
+                         or path == "/v1/admin/settlements"))
                     or (args.scope == "territories" and
                         (path == "/v1/admin/mrs" or path.startswith("/v1/admin/mrs/")
                          or path == "/v1/admin/doctors" or path.startswith("/v1/admin/doctors/")))
@@ -210,9 +213,49 @@ def main() -> None:
                     collect(item)
 
         collect(selected)
+        if args.scope == "deferred-order-review":
+            # Kits payment filters are inline query schemas. Keep every other
+            # reviewed query/response property byte-equivalent after JSON parsing.
+            for path in ("/v1/admin/kits-orders", "/v1/admin/kits-orders/export"):
+                item = json.loads(json.dumps(existing["paths"][path]))
+                fresh = contract["paths"][path]["get"]["parameters"]
+                replacement = next(p for p in fresh if p["name"] == "payment_status")
+                item["get"]["parameters"] = [
+                    replacement if p["name"] == "payment_status" else p for p in item["get"]["parameters"]]
+                selected[path] = item
         schema_updates = {}
+        deferred_fields = {
+            "DoctorChoice": ("doctorDaysLimit",),
+            "DoctorResponse": ("daysLimit",), "MRDoctorRead": ("daysLimit",),
+            "KitsRecord": ("pricingState", "ledgerPaymentStatus"),
+            "LupinInput": ("price",), "LupinWrite": ("price",), "LupinUpdate": ("price",),
+            "LupinRecord": ("price", "total", "pricingState"),
+            "SptRecord": ("total", "pricingState"),
+            "OrderApproval": ("reason", "financialReviewToken"),
+            "OrderRejection": ("financialReviewToken",),
+            "EligibilityPreview": ("financialReview",),
+            "SettlementRecord": ("paymentStatus",),
+        } if args.scope == "deferred-order-review" else {}
+        needed.update(deferred_fields)
         for name in needed:
-            prefixes = (("UnifiedDraft",) if args.scope == "unified-drafts"
+            if name in deferred_fields:
+                # Only these additive/nullable fields change. Preserve unrelated
+                # reviewed mapping, upload and approval contract refinements.
+                saved = json.loads(json.dumps(existing["components"]["schemas"][name]))
+                source = contract["components"]["schemas"][name]
+                required = saved.get("required", [])
+                for field in deferred_fields[name]:
+                    saved["properties"][field] = source["properties"][field]
+                    required = [key for key in required if key != field]
+                    if field in source.get("required", []):
+                        required.append(field)
+                if required:
+                    saved["required"] = required
+                else:
+                    saved.pop("required", None)
+                schema_updates[name] = saved
+                continue
+            prefixes = (() if args.scope == "deferred-order-review" else ("UnifiedDraft",) if args.scope == "unified-drafts"
                         else ("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("MR", "Doctor") if args.scope == "territories"

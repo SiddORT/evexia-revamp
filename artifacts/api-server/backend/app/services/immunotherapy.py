@@ -539,6 +539,9 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None,
                 return dict(id=str(row.id), name=row.name, concentration=row.concentration,
                             categoryId=str(row.category_id), mix=row.mix)
             data = person(row, kind)
+            if kind == "doctors":
+                from app.services.order_financial_review import effective_days
+                _, data["doctorDaysLimit"] = effective_days(db, row.id)
             if kind == "patients":
                 owner = db.get(Patient, row.id)
                 if not owner or not owner.is_active:

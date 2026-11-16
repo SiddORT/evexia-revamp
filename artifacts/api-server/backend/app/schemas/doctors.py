@@ -177,6 +177,7 @@ class DoctorBulk(BaseModel):
 
 class DoctorResponse(DoctorFields):
     master_read = True
+    daysLimit: int | None = None
     doctorNumber: str
     id: uuid.UUID
     version: int
@@ -266,7 +267,7 @@ class MRDoctorRead(BaseModel):
     gstNumber: str
     drugLicenceNumber: str
     orderDiscount: Decimal
-    daysLimit: int
+    daysLimit: int | None
     paymentLimit: Decimal
     status: Literal["active", "inactive"]
     verification: Literal["verified", "unverified"]
@@ -310,6 +311,7 @@ class MRDoctorOrderPage(BaseModel):
 
 class DoctorChoice(BaseModel):
     id: uuid.UUID
+    doctorDaysLimit: int
     name: str
     userId: str
     status: str

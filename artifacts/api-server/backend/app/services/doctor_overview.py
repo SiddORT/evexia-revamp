@@ -46,6 +46,10 @@ def minor_value(kind, snapshot):
         amount = price["total"]
     else:
         amount = snapshot["total"]
+        if amount is None:
+            from app.services.order_financial_review import pending_pricing
+            if pending_pricing({"spt": "SPT", "lupin": "Lupin"}[kind], snapshot, snapshot.get("status")):
+                return None
     if not isinstance(amount, str) or not re.fullmatch(r"\d{1,24}\.\d{2}", amount):
         raise ValueError("Invalid saved decimal")
     return int(Decimal(amount) * 100)

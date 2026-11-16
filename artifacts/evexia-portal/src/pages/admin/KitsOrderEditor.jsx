@@ -11,6 +11,7 @@ import { blankPricing, calculateKitsPricing, pricingInput, moneyText, normalizeK
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
+import EffectiveDoctorDays from '../../components/orders/EffectiveDoctorDays.jsx';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 
@@ -147,7 +148,9 @@ export default function KitsOrderEditor({ order: initialOrder }) {
       <p className="admin-page-head__description">Saved date: {date(order.date)}. Historical people, shipping and billing stay as saved unless you change them.</p></div>
       <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     {!protectedOk && <p role="alert" className="kits-error">This order cannot be edited by your account. Your draft is preserved.</p>}
+    {mrPortal && <EffectiveDoctorDays doctorId={v.doctorId} request={request} />}
     <OrderApproval kind="kits" order={decisionRecord} request={request}
+      proposedValues={{ ...orderInput(v), pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}), businessParking: parking, poNumber: po }}
       dirty={files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })}
       blocked={busy || uncertain || done} onLockChange={setReviewBusy} onApproved={(saved) => {
         setDecisionRecord(saved);

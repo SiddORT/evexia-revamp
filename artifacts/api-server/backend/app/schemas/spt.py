@@ -35,8 +35,8 @@ class SptInput(Strict):
     def membership(self):
         if len({p.id for p in self.patients}) != len(self.patients):
             raise ValueError("Each patient may appear only once")
-        if self.status == "Saved" and (not self.doctorId or not self.mrId or not self.patients or any(not p.amount for p in self.patients)):
-            raise ValueError("Save requires Doctor, MR, at least one patient and a valid amount for every patient")
+        if self.status == "Saved" and (not self.doctorId or not self.mrId or not self.patients):
+            raise ValueError("Save requires Doctor, MR and at least one patient")
         return self
 
 
@@ -97,7 +97,8 @@ class SptRecord(Strict):
     patients: list[SptPatientSnapshot]
     remarks: str
     status: ReadStatus
-    total: str
+    total: str | None
+    pricingState: str | None = None
 
 
 class SptPage(Strict):

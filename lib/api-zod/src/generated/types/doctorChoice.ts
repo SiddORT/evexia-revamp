@@ -9,6 +9,7 @@ import type { DoctorChoiceZoneStatus } from "./doctorChoiceZoneStatus";
 
 export interface DoctorChoice {
   deleted: boolean;
+  doctorDaysLimit: number;
   id: string;
   name: string;
   status: string;

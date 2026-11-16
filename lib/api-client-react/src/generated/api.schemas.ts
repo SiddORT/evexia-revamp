@@ -1200,6 +1200,7 @@ export const DoctorChoiceZoneStatus = {
 
 export interface DoctorChoice {
   deleted: boolean;
+  doctorDaysLimit: number;
   id: string;
   name: string;
   status: string;
@@ -2293,11 +2294,7 @@ export interface DoctorResponse {
   createdAt: string;
   createdBy: string;
   dateOfJoining?: string | null;
-  /**
-   * @minimum 0
-   * @maximum 2147483647
-   */
-  daysLimit?: number;
+  daysLimit?: number | null;
   dialCountry?: DoctorResponseDialCountry;
   doctorNumber: string;
   /** @maxLength 100 */
@@ -2646,6 +2643,39 @@ export interface DraftWrite {
 
 export type EligibilityPreviewPriceQuote = { [key: string]: unknown } | null;
 
+export type FinancialReviewAmountLimitState =
+  (typeof FinancialReviewAmountLimitState)[keyof typeof FinancialReviewAmountLimitState];
+
+export const FinancialReviewAmountLimitState = {
+  Pending_pricing: "Pending pricing",
+  Disabled: "Disabled",
+  Exceeded: "Exceeded",
+  Reached: "Reached",
+  Below_limit: "Below limit",
+} as const;
+
+export interface PendingPricingOrder {
+  date: string;
+  id: string;
+  kind: string;
+  number: string;
+}
+
+export interface FinancialReview {
+  amountLimitState: FinancialReviewAmountLimitState;
+  businessDate: string;
+  committedTargetPayments: string;
+  exposureComplete: boolean;
+  orderId: string;
+  outstanding: string;
+  paymentLimit: string;
+  pendingPricingOrders: PendingPricingOrder[];
+  proposedAmount: string | null;
+  resultingExposure: string | null;
+  token: string;
+  version: number;
+}
+
 export interface EligibilityReason {
   ageDays?: number | null;
   balance: string;
@@ -2660,6 +2690,7 @@ export interface EligibilityPreview {
   doctorDaysLimit?: number | null;
   doctorPendingBalance?: string | null;
   eligible: boolean;
+  financialReview?: FinancialReview | null;
   oldestDoctorUnpaidAgeDays?: number | null;
   oldestDoctorUnpaidDate?: string | null;
   outstanding?: string | null;
@@ -3475,7 +3506,9 @@ export interface ImmWrite {
 export interface OrderApproval {
   /** @minimum 1 */
   expected_version: number;
+  financialReviewToken?: string | null;
   idempotencyKey: string;
+  reason?: string | null;
 }
 
 export interface ImmEligibilityInput {
@@ -4708,6 +4741,7 @@ export const KitsRecordLedgerPaymentStatus = {
   Paid: "Paid",
   Part_paid: "Part paid",
   Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;
 
 export type KitsRecordOrderFor =
@@ -4836,6 +4870,7 @@ export interface KitsRecord {
   poNumber?: string | null;
   pricing?: KitsPricingSnapshot | null;
   pricingNeedsReview?: boolean;
+  pricingState?: string | null;
   recipient: KitsRecordRecipient;
   rejection?: KitsRecordRejection;
   /** @maxLength 4000 */
@@ -5409,8 +5444,7 @@ export interface LupinUpdate {
   /** @maxItems 200 */
   patientIds?: string[];
   paymentStatus?: LupinUpdatePaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinUpdateStatus;
@@ -5452,8 +5486,7 @@ export interface LupinWrite {
   /** @maxItems 200 */
   patientIds?: string[];
   paymentStatus?: LupinWritePaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinWriteStatus;
@@ -5500,8 +5533,7 @@ export interface LupinInput {
   /** @maxItems 200 */
   patientIds?: string[];
   paymentStatus?: LupinInputPaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   /** @maxLength 4000 */
   remarks?: string;
   status?: LupinInputStatus;
@@ -5592,16 +5624,16 @@ export interface LupinRecord {
   patientIds?: string[];
   patients: LupinRecordPatientsItem[];
   paymentStatus?: LupinRecordPaymentStatus;
-  /** @maxLength 32 */
-  price: string;
+  price?: string | null;
   pricingNeedsReview?: boolean;
+  pricingState?: string | null;
   rejection?: LupinRecordRejection;
   /** @maxLength 4000 */
   remarks?: string;
   reviewDecision?: string | null;
   reviewHistory?: LupinRecordReviewHistoryItem[];
   status?: LupinRecordStatus;
-  total: string;
+  total: string | null;
   version: number;
 }
 
@@ -6807,7 +6839,7 @@ export interface MRDoctorRead {
   createdAt: string;
   createdBy: string;
   dateOfJoining: string | null;
-  daysLimit: number;
+  daysLimit: number | null;
   dialCountry: MRDoctorReadDialCountry;
   doctorNumber: string;
   drugLicenceNumber: string;
@@ -8227,6 +8259,7 @@ export interface OrderNotificationVersion {
 export interface OrderRejection {
   /** @minimum 1 */
   expected_version: number;
+  financialReviewToken?: string | null;
   idempotencyKey: string;
   /**
    * @minLength 1
@@ -11433,6 +11466,7 @@ export const SettlementRecordPaymentStatus = {
   Part_paid: "Part paid",
   Paid: "Paid",
   Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;
 
 export type SettlementTransactionMode =
@@ -11777,13 +11811,14 @@ export interface SptRecord {
   number: string;
   patients: SptPatientSnapshot[];
   pricingNeedsReview?: boolean;
+  pricingState?: string | null;
   rejection?: SptRecordRejection;
   remarks: string;
   reviewDecision?: string | null;
   reviewHistory?: SptRecordReviewHistoryItem[];
   sourceId: string;
   status: SptRecordStatus;
-  total: string;
+  total: string | null;
   version: number;
 }
 
@@ -14506,6 +14541,26 @@ export interface UnifiedDraftPage {
   scannedCount: number;
 }
 
+export interface BlockedDoctor {
+  doctorDaysLimit: number;
+  doctorId: string;
+  doctorName: string;
+  doctorPendingBalance: string;
+  oldestDoctorUnpaidAgeDays: number;
+  oldestDoctorUnpaidDate: string;
+}
+
+export interface MRFinancialSummary {
+  businessDate: string;
+  doctorDaysLimit: number;
+  items: BlockedDoctor[];
+  limit: number;
+  offset: number;
+  paymentLimit: string;
+  pendingPricingOrders: PendingPricingOrder[];
+  total: number;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -15557,6 +15612,7 @@ export const ListKitsOrdersPaymentStatus = {
   Part_paid: "Part paid",
   Unavailable: "Unavailable",
   Partial: "Partial",
+  Pending_pricing: "Pending pricing",
 } as const;
 
 export type ListKitsOrdersOrderFor =
@@ -15608,6 +15664,7 @@ export const ExportKitsOrdersPaymentStatus = {
   Part_paid: "Part paid",
   Unavailable: "Unavailable",
   Partial: "Partial",
+  Pending_pricing: "Pending pricing",
 } as const;
 
 export type ExportKitsOrdersOrderFor =
@@ -17444,6 +17501,7 @@ export const ListSettlementsPaymentStatus = {
   Part_paid: "Part paid",
   Paid: "Paid",
   Unavailable: "Unavailable",
+  Pending_pricing: "Pending pricing",
 } as const;
 
 export type SettlementReferencesParams = {
@@ -18419,3 +18477,15 @@ export const ListUnifiedOrderDraftsKind = {
   kits: "kits",
   lupin: "lupin",
 } as const;
+
+export type GetMrFinancialSummaryParams = {
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};

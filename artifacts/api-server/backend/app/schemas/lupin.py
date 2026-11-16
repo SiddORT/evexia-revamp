@@ -17,7 +17,7 @@ class LupinInput(Strict):
     mrId: uuid.UUID
     patientIds: list[uuid.UUID] = Field(default_factory=list, max_length=200)
     patientCount: int = Field(ge=1, le=1000000, strict=True)
-    price: str = Field(max_length=32)
+    price: str | None = Field(default=None, max_length=32)
     remarks: str = Field(default="", max_length=4000)
     attachmentIds: list[uuid.UUID] = Field(default_factory=list, max_length=10)
     status: LupinStatus = "Confirmed"
@@ -25,7 +25,7 @@ class LupinInput(Strict):
 
     @model_validator(mode="after")
     def values(self):
-        if not re.fullmatch(r"\d{1,9}(?:\.\d{1,2})?", self.price) or Decimal(self.price) <= 0:
+        if self.price is not None and (not re.fullmatch(r"\d{1,9}(?:\.\d{1,2})?", self.price) or Decimal(self.price) <= 0):
             raise ValueError("Enter a positive exact INR price with at most two decimal places")
         if len(set(self.patientIds)) != len(self.patientIds) or len(set(self.attachmentIds)) != len(self.attachmentIds):
             raise ValueError("Duplicate Patient or attachment references")
@@ -71,7 +71,8 @@ class LupinRecord(LupinInput):
     doctor: dict
     mr: dict
     patients: list[dict]
-    total: str
+    total: str | None
+    pricingState: str | None = None
     attachments: list[dict]
 
 

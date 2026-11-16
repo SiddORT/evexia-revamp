@@ -70,6 +70,8 @@ def fmt(value):
 
 
 def saved_total(kind, saved):
+    if kind in {"SPT", "Lupin"} and saved.get("pricingState") == "Pending pricing" and saved.get("total") is not None:
+        fail("Pending-pricing evidence conflicts with the saved total.", 503, "settlement_saved_value")
     if kind == "IT":
         minor = saved.get("totalMinor")
         if minor is None:
@@ -154,6 +156,9 @@ def projection(kind, row, saved, receipts, *, mr_scope=False):
     total = saved_total(kind, saved)
     paid = sum((exact(item["amount"]) for item in receipts), ZERO)
     payment_status = payment_position(total, paid)
+    from app.services.order_financial_review import pending_pricing
+    if total is None and not paid and pending_pricing(kind, saved, row.status):
+        payment_status = "Pending pricing"
     verification = ("No transactions" if not receipts else
                     "Verified" if all(t["verification"] == "Verified" for t in receipts) else "Not verified")
     return dict(key=f"{kind}:{row.id}", kind=kind, id=str(row.id), number=row.number,

@@ -56,7 +56,50 @@ class AllergenStockAdvice(BaseModel):
     message: str
 
 
+class PendingPricingOrder(BaseModel):
+    kind: str
+    id: str
+    number: str
+    date: str
+
+
+class FinancialReview(BaseModel):
+    orderId: str
+    version: int
+    paymentLimit: str
+    outstanding: str
+    proposedAmount: str | None
+    committedTargetPayments: str
+    resultingExposure: str | None
+    amountLimitState: Literal["Pending pricing", "Disabled", "Exceeded", "Reached", "Below limit"]
+    pendingPricingOrders: list[PendingPricingOrder]
+    exposureComplete: bool
+    businessDate: str
+    token: str
+
+
+class BlockedDoctor(BaseModel):
+    doctorId: str
+    doctorName: str
+    doctorPendingBalance: str
+    oldestDoctorUnpaidDate: str
+    oldestDoctorUnpaidAgeDays: int
+    doctorDaysLimit: int
+
+
+class MRFinancialSummary(BaseModel):
+    paymentLimit: str
+    doctorDaysLimit: int
+    businessDate: str
+    items: list[BlockedDoctor]
+    total: int
+    offset: int
+    limit: int
+    pendingPricingOrders: list[PendingPricingOrder]
+
+
 class EligibilityPreview(BaseModel):
+    financialReview: FinancialReview | None = None
     doctorPendingBalance: str | None = None
     oldestDoctorUnpaidAgeDays: int | None = None
     oldestDoctorUnpaidDate: str | None = None
