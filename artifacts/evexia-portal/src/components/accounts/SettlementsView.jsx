@@ -119,7 +119,7 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
   function openCredit(r, el) { returnRef.current = el; setNotice(''); setCredit(r); }
   function creditDone(note) {
     setCredit(null);
-    setNotice(`Credit note ${note.number} recorded: ${inr(note.amount)} against invoice ${note.invoiceReference} for order ${note.orderNumber}. No cash was recorded.`);
+    setNotice(`Credit note ${note.number} recorded: ${inr(note.amount)} against Invoice number: ${note.invoiceReference} for order ${note.orderNumber}. No cash was recorded.`);
     setRevision((n) => n + 1);
     focusBack(returnRef.current);
   }

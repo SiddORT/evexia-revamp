@@ -1,4 +1,4 @@
-# Settlement credit notes — prepared source only
+# Settlement credit notes
 
 ## Authority and meaning
 
@@ -37,8 +37,11 @@ Failed transactions may leave sequence gaps; reversed numbers are never reused.
 Order UUIDs and existing order numbers are unchanged.
 
 New credits now require a persisted, server-generated order invoice reference.
-The Add credit note dialog displays it as non-editable text and repeats the same
-saved value in confirmation. There is no manual-entry fallback. Missing or
+The Add credit note dialog displays it as non-editable **Invoice number** text and
+repeats the same saved value in confirmation. Opening the dialog first loads a
+fresh authenticated settlement row; an unsuccessful read cannot fall back to
+the listing's stale row. A mounted editor's reviewed/frozen submission remains
+unchanged. There is no manual-entry fallback. Missing or
 unreadable authority is shown as **Unavailable** and blocks Review. Amount drafts,
 current financial eligibility and uncertain-submission freezing are unchanged.
 
@@ -74,8 +77,9 @@ reads, exact request replays, reconciliation and reversals do not require curren
 invoice authority or revalidate historical text against a new order reference.
 No new API field, generated type or validator shape was needed.
 
-See `docs/order-invoice-references.md` for the prepared historical adoption
-procedure and activation prerequisites. This reference authority is not an
+See `docs/order-invoice-references.md` for the historical adoption procedure,
+actual authorized development adoption counts and remaining verification limits.
+This reference authority is not an
 invoice PDF, legal/tax certification, financial recalculation or Settings change.
 
 ## Persistence and concurrency
@@ -149,7 +153,8 @@ scrollable on narrow screens. Owning MR evidence remains in existing Accounts.
 
 ## Delivery limits
 
-This is prepared source, not runtime/schema activation evidence. Only source/
+The original credit-notes implementation was prepared source, not runtime/schema
+activation evidence. Only source/
 diff inspection, offline FastAPI contract export, direct Orval generation,
 scoped generated-declaration retention, generated-source formatting and offline
 source-integrity generation were performed. The public package codegen wrapper
@@ -162,6 +167,12 @@ The supplied screenshot was not available in this task checkout; the requested
 information columns were adapted to existing EVEXIA components without importing
 example data. Visual layout, database DDL/guards, concurrency, encryption round
 trips and authenticated end-to-end behavior remain unverified.
+
+The subsequent authorized invoice-number-only development adoption is documented
+in `docs/order-invoice-references.md`. That operation did not create or reverse
+any credit/cash transactions and did not run the checks or activation steps
+excluded above. The new dialog wording and fresh-read behavior were inspected
+in source only, not observed in a browser.
 
 Out of scope: invoice issuance, refunds, cash payouts, wallets/transfers,
 payment deletion/reversal or verification changes, PDF/print/export, tax

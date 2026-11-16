@@ -1,4 +1,4 @@
-# Order invoice references — prepared source only
+# Order invoice references
 
 ## Scope and authority
 
@@ -27,7 +27,7 @@ This work does not activate any pending schema branch.
 
 ## Historical adoption entry point
 
-Prepared **but not executed**:
+Existing bounded adoption entry point:
 `app.services.order_invoice_references.backfill_page(db, actor, kind, *,
 after=None, limit=100, apply=False)`.
 
@@ -102,7 +102,66 @@ another note or comparing its reference to the new authority. Reversal keeps
 the existing zero-balance rule and does not require the new authority.
 No cash, credit numbering, eligibility, permissions or totals policy changes.
 
-## Source review and handoff limits
+## Authorized development adoption outcome
+
+On 2026-11-16 the explicitly authorized operator operation matched the configured
+database host/port, database name/OID and PostgreSQL cluster identifier against
+`scripts/development-database.json`, with recovery false and application settings
+in development mode. The platform environment label was `production`; it was
+not used to infer the database target. The exact recorded development binding
+was confirmed before authentication and each adoption page. The observed schema
+was `0112_settlement_credits`; no migration or schema activation was performed.
+No API listener was running and none was started.
+
+The operator used the existing password login with inspection credentials,
+required the authenticated protected Super Admin, and passed that real session
+to the existing service transaction for every operation. No actor/session was
+fabricated. The normal login replaced prior sessions for that inspection account;
+the operator session was logged out after the operation.
+
+All cursors were exhausted independently for all four families, first inspecting,
+then applying `backfill_page`, then performing a fresh read-only adoption sweep:
+
+| Family | Adopted | Existing preserved at application | Review required | Not approved | Valid saved authorities confirmed |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Immunotherapy | 1 | 0 | 0 | 1 | 1 |
+| Kits | 2 | 0 | 0 | 0 | 2 |
+| SPT | 1 | 0 | 0 | 0 | 1 |
+| Lupin | 1 | 0 | 0 | 0 | 1 |
+
+The pictured `kit-000002` was found with authoritative saved date **2026-11-16**
+(not the screenshot's stated 18 November) and status **Shipped**. Both fresh
+decryption/authority validation and a separate authenticated settlement
+`order_history` read confirmed **2026-27/000002**, with
+`provenance=historical_adoption`. Its settlement projection was payable with a
+known balance. No credit or cash transaction was submitted. Other families'
+authority confirmation came from the bounded validation sweep, not browser
+observations. Private minimal page reports were retained under the ignored,
+owner-only `.local/invoice-authority-adoption/` directory; they contain no person,
+clinical, financial amount or credential values.
+
+There were no unresolved adoption conflicts or access blockers. Existing credit
+archives were not rewritten; adoption invoked only the existing invoice-authority
+writer. No changes were made to order dates/numbers, approval decisions, saved
+amounts, stock, cash or credits. These are saved development data outcomes, not
+production activation or evidence that the changed UI has been served.
+
+The Add credit note label, explanation and confirmation now say **Invoice number**.
+Opening the dialog first fetches a fresh authenticated settlement history row.
+The editor mounts only after that read succeeds; failures offer explicit retry
+and never enable credit submission using the stale listing row. Once mounted,
+its row and any reviewed/frozen submission are not refreshed underneath it.
+API field names and persisted authority contracts remain unchanged.
+
+Only source/diff inspection and the narrowly authorized authenticated data
+operations above were performed. **No regression/release checks, tests, builds,
+typechecks, completion-validation wrappers, app-preview screenshots, browser
+verification, managed service starts/restarts, migrations or deployment ran.**
+No browser behavior is claimed as observed. The source changes still require
+merge and the normal separately authorized serving lifecycle; no workflow was
+started to activate them.
+
+## Original implementation source-review limits
 
 Source/diff inspection covered the April boundary and numeric lexeme retention,
 approval transaction placement and rollback, retry/current-row behavior, all four
@@ -110,15 +169,17 @@ ordinary/import writers, fulfillment snapshot retention, backfill pagination and
 conflict handling, historical credit replay/reversal, and the dialog's read-only/
 unavailable/confirmation/frozen-request paths.
 
-**No tests, regression/release checks, builds, typechecks, completion-validation
+At that original source-preparation stage, **no tests, regression/release checks,
+builds, typechecks, completion-validation
 wrappers, runtime/browser probes, managed service starts/restarts, live migrations,
 backfill execution, deployment or real business writes were performed.**
 No generated contract changes were necessary because wire shapes did not change.
 No runnable preview was presented as verified.
 
-Before activation, separately authorize runtime verification in an isolated
-environment, inspect/adopt historical records through the bounded procedure,
-review unresolved identities, and confirm all four approval/credit/replay paths.
-References for old approved orders remain unavailable until their explicit
-adoption succeeds. This source preparation neither executes adoption nor
-authorizes production activation or unrelated staged migrations.
+The original implementation handoff required separately authorized runtime
+verification in an isolated environment, historical adoption through the bounded
+procedure, review of unresolved identities, and confirmation of all four
+approval/credit/replay paths.
+That original source preparation did not itself execute adoption or authorize
+production activation or unrelated staged migrations. The subsequent development
+adoption outcome is recorded above; no production activation is authorized.

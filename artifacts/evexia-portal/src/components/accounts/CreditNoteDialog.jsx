@@ -2,11 +2,45 @@ import { useEffect, useRef, useState } from 'react';
 import Dialog from '../admin/Dialog.jsx';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
-import { CREDIT_AMOUNT, SAVED_INVOICE_REFERENCE, KIND_LABEL, confirmCredit, creditEligible, fromPaise, inr, lookupCreditRequest, newIdempotencyKey, postCreditNote, toPaise } from '../../services/serverSettlements.js';
+import { CREDIT_AMOUNT, SAVED_INVOICE_REFERENCE, KIND_LABEL, confirmCredit, creditEligible, fetchHistory, fromPaise, inr, lookupCreditRequest, newIdempotencyKey, postCreditNote, toPaise } from '../../services/serverSettlements.js';
+
+// Load current server authority before mounting the editor. Never refresh or
+// replace the row underneath a reviewed/frozen submission.
+export default function CreditNoteDialog({ row, onClose, onCommitted }) {
+  const [loaded, setLoaded] = useState(null);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    const guard = reportingIdentityGuard();
+    setLoaded(null); setError('');
+    fetchHistory(row.kind, row.id, controller.signal).then((current) => {
+      guard();
+      if (!controller.signal.aborted) setLoaded(current);
+    }).catch((err) => {
+      if (controller.signal.aborted) return;
+      try { guard(); } catch { return; }
+      setError(err.message || 'The current invoice number and balance could not be loaded.');
+    });
+    return () => controller.abort();
+  }, [row.kind, row.id, retry]);
+  if (loaded && loaded.kind === row.kind && loaded.id === row.id) {
+    return <CreditNoteEditor row={loaded} onClose={onClose} onCommitted={onCommitted} />;
+  }
+  return <Dialog eyebrow="Credit note" title={`Order ${row.number}`} className="settle-dialog settle-credit-dialog" onClose={onClose}
+    description="Load the saved invoice number and current balance before preparing a credit."
+    footer={<>
+      <button type="button" className="admin-button admin-button--secondary" onClick={onClose}>Cancel</button>
+      {error && <button type="button" className="admin-button" onClick={() => setRetry((n) => n + 1)}>Retry loading</button>}
+    </>}>
+    {error ? <p className="settle-msg settle-msg--warn" role="alert">{error} No credit was submitted.</p>
+      : <p role="status">Loading saved invoice number and balance…</p>}
+  </Dialog>;
+}
 
 // Super Admin credit note against one settlement row. Draft survives rejection;
 // an uncertain submission stays frozen and only the exact same body may be retried.
-export default function CreditNoteDialog({ row, onClose, onCommitted }) {
+function CreditNoteEditor({ row, onClose, onCommitted }) {
   const authoritative = typeof row.invoiceReference === 'string' && SAVED_INVOICE_REFERENCE.test(row.invoiceReference) ? row.invoiceReference : null;
   const [amount, setAmount] = useState('');
   const [errors, setErrors] = useState({});
@@ -119,9 +153,9 @@ export default function CreditNoteDialog({ row, onClose, onCommitted }) {
       </dl>
       {!eligible && <p className="settle-msg settle-msg--warn" role="alert">This order is not eligible for credit: it needs a known total, a positive balance and a payable stage.</p>}
       <div className="kits-field">
-        <dl><dt>Invoice reference</dt><dd data-testid="text-credit-invoice">{authoritative || 'Unavailable'}</dd></dl>
-        {authoritative ? <span className="settle-sub">Saved server-generated reference; it cannot be changed here.</span>
-          : <p className="settle-msg settle-msg--warn" role="alert">The saved invoice reference is unavailable. A new credit cannot be created. Ask an administrator to review the order reference, then close and reopen this dialog.</p>}
+        <dl><dt>Invoice number</dt><dd data-testid="text-credit-invoice">{authoritative || 'Unavailable'}</dd></dl>
+        {authoritative ? <span className="settle-sub">Saved server-generated invoice number; it cannot be changed here.</span>
+          : <p className="settle-msg settle-msg--warn" role="alert">The saved invoice number is unavailable or requires review. A new credit cannot be created. Ask an administrator to review the saved order authority, then close and reopen this dialog.</p>}
       </div>
       <label className="kits-field"><span>Credit amount (INR)</span>
         <input value={amount} inputMode="decimal" readOnly={locked} maxLength={15} onChange={(e) => { setAmount(e.target.value.trim()); setErrors((x) => ({ ...x, amount: undefined })); }}
@@ -129,7 +163,7 @@ export default function CreditNoteDialog({ row, onClose, onCommitted }) {
         {errors.amount && <span id="credit-amt-err" className="settle-err">{errors.amount}</span>}
       </label>
       {confirming && <div className="settle-total settle-total--confirm" ref={reviewRef} tabIndex={-1} data-testid="text-credit-confirm">
-        <span>Credit against invoice {frozen.current?.invoice_reference}. Balance {inr(row.balance)} becomes {inr(proposed)}.</span><strong>{inr(amountP)}</strong>
+        <span>Credit against Invoice number: {frozen.current?.invoice_reference}. Balance {inr(row.balance)} becomes {inr(proposed)}.</span><strong>{inr(amountP)}</strong>
       </div>}
       {message && <p className={`settle-msg${uncertain ? ' settle-msg--warn' : ''}`} role="alert" data-testid="status-credit">{message}</p>}
     </form>

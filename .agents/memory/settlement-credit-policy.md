@@ -43,5 +43,10 @@ rewriting of credit evidence.
 **How to apply:** Treat historical adoption as distinct from original issuance;
 never invent its date/event. Invoice documents, legal/tax certification,
 financial recalculation, refunds, wallets, notifications and financial-history
-imports remain outside this approval. Source preparation does not authorize
-live adoption, migrations, runtime checks or activation.
+imports remain outside this approval. The user subsequently chose “Save and
+show invoice numbers,” explicitly authorizing bounded historical adoption in
+the current development database only, not production changes, migrations,
+managed workflow starts/restarts, release checks or broad runtime verification.
+Confirm the recorded development target and authenticate a real protected
+Super Admin session before an authorized adoption; source preparation alone
+is not permission to repeat live writes.
