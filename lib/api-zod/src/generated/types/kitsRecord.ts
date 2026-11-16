@@ -27,6 +27,7 @@ import type { KitsRecordRejection } from "./kitsRecordRejection";
 import type { KitsRecordReviewHistoryItem } from "./kitsRecordReviewHistoryItem";
 import type { KitsRecordShipping } from "./kitsRecordShipping";
 import type { KitsRecordStatus } from "./kitsRecordStatus";
+import type { OrderIRN } from "./orderIRN";
 
 export interface KitsRecord {
   /** @maxLength 12 */
@@ -47,6 +48,8 @@ export interface KitsRecord {
   financialHistory?: KitsRecordFinancialHistoryItem[];
   gstEvidence?: GSTEvidence | null;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;

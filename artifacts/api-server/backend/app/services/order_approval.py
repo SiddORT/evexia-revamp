@@ -50,6 +50,11 @@ def evidence(actor):
 def preserve(actor, kind, data, previous, *, saved=None):
     from app.services.order_invoice_references import preserve as preserve_invoice
     preserve_invoice(data, saved)
+    # IRNs cannot be supplied through normal edits/imports. Preserve the raw
+    # encrypted authority, not a redacted or transport-shaped prior projection.
+    data.pop("irn", None)
+    if saved is not None and "irn" in saved:
+        data["irn"] = saved["irn"]
     # Fulfillment is server-owned. Ordinary edits retain, but cannot submit or
     # clear, the encrypted shipping evidence (including older detail revisions).
     for key in ("shipment", "shipmentHistory"):
@@ -89,7 +94,7 @@ def record_decision(snapshot, actor, decision, version, reason=None):
 def export_safe(value):
     """Reasons/history are private detail data, never implicit transfer fields."""
     result = {k: v for k, v in value.items() if k not in {
-        "rejection", "reviewHistory", "correctionSaved", "pricingNeedsReview"}}
+        "rejection", "reviewHistory", "correctionSaved", "pricingNeedsReview", "irn", "irnCanRecord"}}
     if isinstance(result.get("approval"), dict):
         result["approval"] = {key: item for key, item in result["approval"].items() if key != "reason"}
     return result

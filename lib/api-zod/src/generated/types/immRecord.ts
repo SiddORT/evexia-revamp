@@ -22,6 +22,7 @@ import type { ImmRecordRejection } from "./immRecordRejection";
 import type { ImmRecordReviewDecision } from "./immRecordReviewDecision";
 import type { ImmRecordReviewHistoryItem } from "./immRecordReviewHistoryItem";
 import type { ImmRecordStatus } from "./immRecordStatus";
+import type { OrderIRN } from "./orderIRN";
 
 export interface ImmRecord {
   approval?: ImmRecordApproval;
@@ -39,6 +40,8 @@ export interface ImmRecord {
   historicalPricingBasis?: string | null;
   historicalTotalMinor?: number | null;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   materialConsumption?: ImmRecordMaterialConsumption;
   mr: ImmRecordMr;
   mrEditable?: boolean;

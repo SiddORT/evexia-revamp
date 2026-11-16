@@ -1122,13 +1122,13 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     : resource === 'shipments'
     ? /^(?:|\/(?:export|couriers)|\/(?:Kit|IT|Lupin|SPT)\/[0-9a-f-]{36}(?:\/(?:ship|delivery|return))?)$/
     : resource === 'spt-orders'
-    ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
+    ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit|irn))?)$/i
     : resource === 'lupin-orders'
-    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
+    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/attachments\/[0-9a-f-]{36}\/cancel|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit|irn))?)$/i
     : resource === 'immunotherapy-orders'
-    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/patients\/[0-9a-f-]{36}\/next-dosage|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
+    ? /^(?:|\/(?:export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/patients\/[0-9a-f-]{36}\/next-dosage|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit|irn))?)$/i
     : resource === 'kits-orders'
-    ? /^(?:|\/(?:gst-evidence|export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit))?)$/i
+    ? /^(?:|\/(?:gst-evidence|export|policy|patient-registration|patient-languages|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/(?:edit|approve|reject|resubmit|irn))?)$/i
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
@@ -1140,6 +1140,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     && /^\/[0-9a-f-]{36}\/(?:approve|reject|resubmit)$/i.test(path);
   const lupinDecision = resource === 'lupin-orders'
     && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path);
+  const irnWrite = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource)
+    && /^\/[0-9a-f-]{36}\/irn$/i.test(path);
   const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
   const kitsFinancialRead = resource === 'kits-orders'
     && /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/financial-review$/i.test(path);
@@ -1149,7 +1151,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       || (mrFinancialSummaryRead && (body !== undefined || file !== undefined
         || (download !== undefined && download !== false) || (method !== undefined && method !== 'GET')))
       || (kitsFinancialRead && (body !== undefined || file !== undefined || download || method !== undefined))
-      || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
+      || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)
+      || (irnWrite && (body === undefined || file !== undefined || download
+        || (method !== undefined && method !== 'POST')))) {
     throw new SessionError(resource === 'pricing-rules'
       ? 'Unsupported Pricing Rules configuration operation.' : 'Unsupported purchase order operation.');
   }
@@ -1220,6 +1224,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       ? !isSuperAdminIdentity(state.user) : state.user?.identity_kind !== 'mr'
       : !(state.user?.identity_kind === 'mr' || isSuperAdminIdentity(state.user)))) {
       throw new SessionError('Only owning MRs may record payments; only the protected Super Admin may verify recorded entries.', 403);
+    }
+    if (irnWrite && !workflowAllowed(state.user, resource, path, { body, params, method, file })) {
+      throw new SessionError('Order approval access is required to record IRNs.', 403);
     }
     // MR transport bypass applies only to ownership-scoped operations, never
     // Lupin Admin decisions. Recheck on every send/recovery attempt.

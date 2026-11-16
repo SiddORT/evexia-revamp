@@ -118,7 +118,12 @@ class ImmImport(Strict):
     confirmUpdates: bool = False
 
 
+from app.schemas.order_irn import OrderIRN
+
+
 class ImmRecord(BaseModel):
+    irn: OrderIRN | None = None
+    irnCanRecord: bool = False
     pricingPolicy: str | None = None
     pricingEvidence: dict | None = None
     materialConsumption: dict | None = None

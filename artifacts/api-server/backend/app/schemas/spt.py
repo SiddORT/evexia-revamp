@@ -72,7 +72,12 @@ class SptPatientSnapshot(SptPatient):
     amount: str
 
 
+from app.schemas.order_irn import OrderIRN
+
+
 class SptRecord(Strict):
+    irn: OrderIRN | None = None
+    irnCanRecord: bool = False
     draftSavedAt: str | None = None
     reviewHistory: list[dict] = Field(default_factory=list)
     reviewDecision: str | None = None

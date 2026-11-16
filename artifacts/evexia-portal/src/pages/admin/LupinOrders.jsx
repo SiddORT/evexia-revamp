@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { reviewLabel } from '../../components/orders/OrderReviewStatus.jsx';
+import { useOrderIRN } from '../../components/orders/OrderIRN.jsx';
 import { useOrderListFreshness } from '../../services/orderFreshness.js';
 import { Link } from 'wouter';
 import { Eye, Pencil, Plus, Search } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function LupinOrders() {
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   const resetPage = () => { setPage(1); setCursors([null]); };
   const refresh = () => { resetPage(); setRevision((n) => n + 1); };
+  const irn = useOrderIRN('lupin', request, refresh);
   useOrderListFreshness('lupin', refresh);
   const reset = () => { setDraft(EMPTY); setApplied(EMPTY); resetPage(); setRevision((n) => n + 1); };
   const set = (patch) => setDraft((v) => ({ ...v, ...patch }));
@@ -55,7 +57,7 @@ export default function LupinOrders() {
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="lupin-sub">{o.mr.name}</span></> },
     { key: 'status', label: 'Order status', render: (o) => <span className="lupin-pill">{reviewLabel(o)}</span> },
     { key: 'pay', label: 'Payment flag (legacy)', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },
-    { key: 'act', label: 'Action', render: (o) => <div className="lupin-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
+    { key: 'act', label: 'Action', render: (o) => <div className="lupin-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}{irn.action(o)}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);
 
@@ -70,7 +72,7 @@ export default function LupinOrders() {
         </div>
       </div>} />
     <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
-    <section className="admin-panel" aria-label="Lupin orders">
+    <section className="admin-panel" aria-label="Lupin orders" tabIndex={-1}>
       <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         resetTestId="button-lupin-reset" applyTestId="button-lupin-apply"
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
@@ -91,5 +93,6 @@ export default function LupinOrders() {
               filtered={result.filtered} total={result.total} label="orders" testId="text-lupin-count" onPageChange={changePage} onPageSizeChange={(size) => { setPageSize(size); resetPage(); }} />
           </>}
     </section>
+    {irn.dialog}
   </div></AdminLayout>;
 }

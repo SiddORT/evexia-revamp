@@ -3886,6 +3886,8 @@ export interface ImmRecord {
   historicalPricingBasis?: string | null;
   historicalTotalMinor?: number | null;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   materialConsumption?: ImmRecordMaterialConsumption;
   mr: ImmRecordMr;
   mrEditable?: boolean;
@@ -5011,6 +5013,8 @@ export interface KitsRecord {
   financialHistory?: KitsRecordFinancialHistoryItem[];
   gstEvidence?: GSTEvidence | null;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;
@@ -5773,6 +5777,8 @@ export interface LupinRecord {
   doctor: LupinRecordDoctor;
   doctorId: string;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   mr: LupinRecordMr;
   mrEditable?: boolean;
   mrId: string;
@@ -11971,6 +11977,8 @@ export interface SptRecord {
   doctorName: string;
   draftSavedAt?: string | null;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   mr: SptRecordMr;
   mrEditable?: boolean;
   mrId: string | null;
@@ -18656,3 +18664,21 @@ export type GetMrFinancialSummaryParams = {
    */
   limit?: number;
 };
+
+export interface OrderIRN {
+  number: string;
+  recordVersion: number;
+  recordedAt: string;
+  recordedBy: string;
+}
+
+export interface OrderIRNInput {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minLength 1
+   * @maxLength 256
+   */
+  number: string;
+}

@@ -120,7 +120,12 @@ class KitsImport(Strict):
     confirmUpdates: bool = False
 
 
+from app.schemas.order_irn import OrderIRN
+
+
 class KitsRecord(KitsInput):
+    irn: OrderIRN | None = None
+    irnCanRecord: bool = False
     ledgerCredited: str | None = Field(default=None, description="Read-only active non-cash credits, independent of legacy flags.")
     ledgerPaid: str | None = Field(default=None, description="Read-only received money, independent of credits.")
     financialContribution: KitsContribution | None = None

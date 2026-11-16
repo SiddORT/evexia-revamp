@@ -1,5 +1,9 @@
 # Invoice Details and MR invoice templates
 
+The approved-order **Add IRN number** feature saves external metadata only.
+It does not connect this Settings library to live invoices or display IRNs on
+issued invoices. See [Approved order IRNs](order-irns.md) for the save-only scope.
+
 ## Delivery status: source only
 
 This implementation has been read at source level only. The additive

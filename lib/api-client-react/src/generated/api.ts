@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { OrderIRNInput } from "./api.schemas";
 import type {
   MutationFunction,
   QueryFunction,
@@ -50852,3 +50853,472 @@ export function useGetSptFinancialReview<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getRecordImmunotherapyIRNUrl = (recordId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/${recordId}/irn`;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const recordImmunotherapyIRN = async (
+  recordId: string,
+  orderIRNInput: OrderIRNInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord>(getRecordImmunotherapyIRNUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderIRNInput),
+  });
+};
+
+export const getRecordImmunotherapyIRNMutationKey = () =>
+  ["recordImmunotherapyIRN"] as const;
+
+export const getRecordImmunotherapyIRNMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordImmunotherapyIRN>>,
+    TError,
+    RecordImmunotherapyIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordImmunotherapyIRN>>,
+  TError,
+  RecordImmunotherapyIRNMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordImmunotherapyIRNMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordImmunotherapyIRN>>,
+    RecordImmunotherapyIRNMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return recordImmunotherapyIRN(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordImmunotherapyIRNMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordImmunotherapyIRN>>
+>;
+export type RecordImmunotherapyIRNMutationBody = BodyType<OrderIRNInput>;
+export type RecordImmunotherapyIRNMutationError = ErrorType<ErrorEnvelope>;
+export type RecordImmunotherapyIRNMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderIRNInput>;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const useRecordImmunotherapyIRN = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordImmunotherapyIRN>>,
+    TError,
+    RecordImmunotherapyIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordImmunotherapyIRN>>,
+  TError,
+  RecordImmunotherapyIRNMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordImmunotherapyIRNMutationOptions(options));
+};
+
+export const getRecordKitsIRNUrl = (recordId: string) => {
+  return `/api/v1/admin/kits-orders/${recordId}/irn`;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const recordKitsIRN = async (
+  recordId: string,
+  orderIRNInput: OrderIRNInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<KitsRecord>(getRecordKitsIRNUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderIRNInput),
+  });
+};
+
+export const getRecordKitsIRNMutationKey = () => ["recordKitsIRN"] as const;
+
+export const getRecordKitsIRNMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordKitsIRN>>,
+    TError,
+    RecordKitsIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordKitsIRN>>,
+  TError,
+  RecordKitsIRNMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordKitsIRNMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordKitsIRN>>,
+    RecordKitsIRNMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return recordKitsIRN(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordKitsIRNMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordKitsIRN>>
+>;
+export type RecordKitsIRNMutationBody = BodyType<OrderIRNInput>;
+export type RecordKitsIRNMutationError = ErrorType<ErrorEnvelope>;
+export type RecordKitsIRNMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderIRNInput>;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const useRecordKitsIRN = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordKitsIRN>>,
+    TError,
+    RecordKitsIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordKitsIRN>>,
+  TError,
+  RecordKitsIRNMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordKitsIRNMutationOptions(options));
+};
+
+export const getRecordLupinIRNUrl = (recordId: string) => {
+  return `/api/v1/admin/lupin-orders/${recordId}/irn`;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const recordLupinIRN = async (
+  recordId: string,
+  orderIRNInput: OrderIRNInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LupinRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LupinRecord>(getRecordLupinIRNUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderIRNInput),
+  });
+};
+
+export const getRecordLupinIRNMutationKey = () => ["recordLupinIRN"] as const;
+
+export const getRecordLupinIRNMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLupinIRN>>,
+    TError,
+    RecordLupinIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordLupinIRN>>,
+  TError,
+  RecordLupinIRNMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordLupinIRNMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordLupinIRN>>,
+    RecordLupinIRNMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return recordLupinIRN(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordLupinIRNMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordLupinIRN>>
+>;
+export type RecordLupinIRNMutationBody = BodyType<OrderIRNInput>;
+export type RecordLupinIRNMutationError = ErrorType<ErrorEnvelope>;
+export type RecordLupinIRNMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderIRNInput>;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const useRecordLupinIRN = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLupinIRN>>,
+    TError,
+    RecordLupinIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordLupinIRN>>,
+  TError,
+  RecordLupinIRNMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordLupinIRNMutationOptions(options));
+};
+
+export const getRecordSptIRNUrl = (recordId: string) => {
+  return `/api/v1/admin/spt-orders/${recordId}/irn`;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const recordSptIRN = async (
+  recordId: string,
+  orderIRNInput: OrderIRNInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptRecord>(getRecordSptIRNUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(orderIRNInput),
+  });
+};
+
+export const getRecordSptIRNMutationKey = () => ["recordSptIRN"] as const;
+
+export const getRecordSptIRNMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordSptIRN>>,
+    TError,
+    RecordSptIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordSptIRN>>,
+  TError,
+  RecordSptIRNMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordSptIRNMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordSptIRN>>,
+    RecordSptIRNMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return recordSptIRN(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordSptIRNMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordSptIRN>>
+>;
+export type RecordSptIRNMutationBody = BodyType<OrderIRNInput>;
+export type RecordSptIRNMutationError = ErrorType<ErrorEnvelope>;
+export type RecordSptIRNMutationVariables = {
+  recordId: string;
+  data: BodyType<OrderIRNInput>;
+};
+
+/**
+ * @summary Record Irn
+ */
+export const useRecordSptIRN = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordSptIRN>>,
+    TError,
+    RecordSptIRNMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordSptIRN>>,
+  TError,
+  RecordSptIRNMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordSptIRNMutationOptions(options));
+};

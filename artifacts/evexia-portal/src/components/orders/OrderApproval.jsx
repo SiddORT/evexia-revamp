@@ -7,6 +7,7 @@ import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderApproval.css';
 import OrderReviewStatus from './OrderReviewStatus.jsx';
 import FinancialReview from './FinancialReview.jsx';
+import { OrderIRNSummary } from './OrderIRN.jsx';
 
 export default function OrderApproval({ kind, order, request, onApproved, dirty = false, blocked = false, onLockChange, proposedValues, editing = false }) {
   const can = useOrderActions(kind);
@@ -92,6 +93,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
     } finally { sending.current = false; if (alive.current) setBusy(false); }
   }
   return <section className={`order-approval${compact ? ' order-approval--kits' : ''}`} aria-label="Admin order decision" ref={decisionFocus} tabIndex={-1}>
+    <OrderIRNSummary order={order} />
     <OrderReviewStatus order={order} compact={compact} />
     {(!compact || order.approval || order.rejection) && <p>{order.approval
       ? <>Approved{order.approval.approvedAt ? ` · ${timestamp(order.approval.approvedAt)}` : ''}{order.approval.approvedBy ? ` · ${order.approval.approvedBy}` : ''}</>

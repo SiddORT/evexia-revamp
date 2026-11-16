@@ -126,7 +126,7 @@ export async function orderRequest(path, options, resource) {
   if (options?.body && typeof options.body === 'object'
       && (path === '' || /\/(?:edit|resubmit)$/.test(path))) attempted.set(options.body, checked.body);
   const result = await purchaseOrderRequest(path, checked, resource);
-  if (options?.body !== undefined && (path === '' || /\/(?:edit|approve|reject|resubmit)$/.test(path))) {
+  if (options?.body !== undefined && (path === '' || /\/(?:edit|approve|reject|resubmit|irn)$/.test(path))) {
     try { announceOrderChange(resource); }
     catch { console.warn('Live order refresh is unavailable in this browser. Use Refresh saved orders; visible lists also refresh periodically.'); }
   }

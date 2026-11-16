@@ -51,7 +51,8 @@ def transaction(db, actor, work, *, action=None):
             result = work(current, keys)
         from app.services.order_audit import present
         from app.services.order_lifecycle import read_result
-        result = read_result(result)
+        from app.services.order_irn import expose
+        result = expose(current, "spt", read_result(result))
         result = present(db, current, result)
         from app.services.person_contacts import order_result
         result = order_result(current, result)
@@ -77,6 +78,8 @@ def project(keys, row):
     from app.services.order_approval import editable
     from app.services.order_invoice_references import public_snapshot
     value = public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext))
+    from app.services.order_irn import projection
+    value.update(projection(row, value))
     value.setdefault("pricingState", "Priced" if value.get("total") is not None else "Unavailable")
     from app.services.order_approval import eligibility
     from app.services.order_lifecycle import status

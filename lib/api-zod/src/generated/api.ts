@@ -6,6 +6,121 @@
  * OpenAPI spec version: 1.0.0
  */
 import * as zod from "zod";
+export const listImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const createImmunotherapyOrderResponseIrnCanRecordDefault = false;
+export const exportImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const commitImmunotherapyImportResponseOrdersItemIrnCanRecordDefault = false;
+export const getImmunotherapyOrderResponseIrnCanRecordDefault = false;
+export const approveImmunotherapyOrderResponseIrnCanRecordDefault = false;
+export const editImmunotherapyOrderResponseIrnCanRecordDefault = false;
+export const rejectImmunotherapyOrderResponseIrnCanRecordDefault = false;
+export const resubmitImmunotherapyOrderResponseIrnCanRecordDefault = false;
+export const listKitsOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const createKitsOrderResponseIrnCanRecordDefault = false;
+export const exportKitsOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const commitKitsImportResponseOrdersItemIrnCanRecordDefault = false;
+export const getKitsOrderResponseIrnCanRecordDefault = false;
+export const approveKitsOrderResponseIrnCanRecordDefault = false;
+export const updateKitsOrderResponseIrnCanRecordDefault = false;
+export const rejectKitsOrderResponseIrnCanRecordDefault = false;
+export const resubmitKitsOrderResponseIrnCanRecordDefault = false;
+export const listLupinOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const createLupinOrderResponseIrnCanRecordDefault = false;
+export const exportLupinOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const commitLupinImportResponseOrdersItemIrnCanRecordDefault = false;
+export const getLupinOrderResponseIrnCanRecordDefault = false;
+export const approveLupinOrderResponseIrnCanRecordDefault = false;
+export const updateLupinOrderResponseIrnCanRecordDefault = false;
+export const rejectLupinOrderResponseIrnCanRecordDefault = false;
+export const resubmitLupinOrderResponseIrnCanRecordDefault = false;
+export const submitOrderDraftResponseOneIrnCanRecordDefault = false;
+export const submitOrderDraftResponseTwoIrnCanRecordDefault = false;
+export const submitOrderDraftResponseThreeIrnCanRecordDefault = false;
+export const listSptOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const createSptOrderResponseIrnCanRecordDefault = false;
+export const exportSptOrdersResponseItemsItemIrnCanRecordDefault = false;
+export const commitSptImportResponseOrdersItemIrnCanRecordDefault = false;
+export const getSptOrderResponseIrnCanRecordDefault = false;
+export const approveSptOrderResponseIrnCanRecordDefault = false;
+export const editSptDraftResponseIrnCanRecordDefault = false;
+export const rejectSptOrderResponseIrnCanRecordDefault = false;
+export const resubmitSptOrderResponseIrnCanRecordDefault = false;
+export const recordImmunotherapyIRNBodyNumberMax = 256;
+export const recordImmunotherapyIRNResponseCorrectionSavedDefault = false;
+export const recordImmunotherapyIRNResponseIrnCanRecordDefault = false;
+export const recordImmunotherapyIRNResponseMrEditableDefault = false;
+export const recordImmunotherapyIRNResponsePricingNeedsReviewDefault = false;
+export const recordKitsIRNBodyNumberMax = 256;
+export const recordKitsIRNResponseApplicatorsMax = 12;
+export const recordKitsIRNResponseAttachmentIdsMax = 10;
+export const recordKitsIRNResponseBusinessParkingOneMax = 32;
+export const recordKitsIRNResponseCorrectionSavedDefault = false;
+export const recordKitsIRNResponseIrnCanRecordDefault = false;
+export const recordKitsIRNResponseKitCustomMax = 32;
+export const recordKitsIRNResponseKitQuantityMax = 12;
+export const recordKitsIRNResponseKitVolumeMax = 32;
+export const recordKitsIRNResponseLancetsMax = 12;
+export const recordKitsIRNResponseMrEditableDefault = false;
+export const recordKitsIRNResponseOtherAddressCityMax = 200;
+export const recordKitsIRNResponseOtherAddressCountryMax = 200;
+export const recordKitsIRNResponseOtherAddressLandmarkMax = 1000;
+export const recordKitsIRNResponseOtherAddressLine1Max = 1000;
+export const recordKitsIRNResponseOtherAddressLine2Max = 1000;
+export const recordKitsIRNResponseOtherAddressPincodeMax = 32;
+export const recordKitsIRNResponseOtherAddressStateMax = 200;
+export const recordKitsIRNResponseOtherNameMax = 200;
+export const recordKitsIRNResponseOtherPhoneMax = 25;
+export const recordKitsIRNResponsePoNumberOneMax = 200;
+export const recordKitsIRNResponsePricingOneApplicatorsRateOneMax = 32;
+export const recordKitsIRNResponsePricingOneDiscountValueMax = 32;
+export const recordKitsIRNResponsePricingOneForwardingChargesMax = 32;
+export const recordKitsIRNResponsePricingOneKitRateOneMax = 32;
+export const recordKitsIRNResponsePricingOneLancetsRateOneMax = 32;
+export const recordKitsIRNResponsePricingOneTrayRateOneMax = 32;
+export const recordKitsIRNResponsePricingNeedsReviewDefault = false;
+export const recordKitsIRNResponseRemarksMax = 4000;
+export const recordKitsIRNResponseTrayMax = 12;
+export const recordLupinIRNBodyNumberMax = 256;
+export const recordLupinIRNResponseAttachmentIdsMax = 10;
+export const recordLupinIRNResponseCorrectionSavedDefault = false;
+export const recordLupinIRNResponseIrnCanRecordDefault = false;
+export const recordLupinIRNResponseMrEditableDefault = false;
+export const recordLupinIRNResponsePatientCountMax = 1000000;
+export const recordLupinIRNResponsePatientIdsMax = 200;
+export const recordLupinIRNResponsePriceOneMax = 32;
+export const recordLupinIRNResponsePricingNeedsReviewDefault = false;
+export const recordLupinIRNResponseRemarksMax = 4000;
+export const recordSptIRNBodyNumberMax = 256;
+export const recordSptIRNResponseCorrectionSavedDefault = false;
+export const recordSptIRNResponseIrnCanRecordDefault = false;
+export const recordSptIRNResponseMrEditableDefault = false;
+export const recordSptIRNResponsePricingNeedsReviewDefault = false;
+export const recordImmunotherapyIRNResponsePricingBasisDefault = `legacy_bottle_mrp`;
+export const recordKitsIRNResponseApplicatorsDefault = ``;
+export const recordKitsIRNResponseKitCustomDefault = ``;
+export const recordKitsIRNResponseKitProductDefault = ``;
+export const recordKitsIRNResponseKitQuantityDefault = ``;
+export const recordKitsIRNResponseKitVolumeDefault = ``;
+export const recordKitsIRNResponseLancetsDefault = ``;
+export const recordKitsIRNResponseOrderForDefault = `doctor`;
+export const recordKitsIRNResponseOtherAddressCityDefault = ``;
+export const recordKitsIRNResponseOtherAddressCountryDefault = ``;
+export const recordKitsIRNResponseOtherAddressLandmarkDefault = ``;
+export const recordKitsIRNResponseOtherAddressLine1Default = ``;
+export const recordKitsIRNResponseOtherAddressLine2Default = ``;
+export const recordKitsIRNResponseOtherAddressPincodeDefault = ``;
+export const recordKitsIRNResponseOtherAddressStateDefault = ``;
+export const recordKitsIRNResponseOtherNameDefault = ``;
+export const recordKitsIRNResponseOtherPhoneDefault = ``;
+export const recordKitsIRNResponsePaymentStatusDefault = `Unpaid`;
+export const recordKitsIRNResponseRemarksDefault = ``;
+export const recordKitsIRNResponseShippingDefault = `doctor`;
+export const recordKitsIRNResponseStatusDefault = `Confirmed`;
+export const recordKitsIRNResponseTrayDefault = ``;
+export const recordLupinIRNResponsePaymentStatusDefault = `Unpaid`;
+export const recordLupinIRNResponseRemarksDefault = ``;
+export const recordLupinIRNResponseStatusDefault = `Confirmed`;
+
 
 export const listSettlementsResponseItemsItemCreditsItemDoctorOneContactsMaskedDefault = false;
 export const listSettlementsResponseItemsItemCreditsItemMrOneContactsMaskedDefault = false;
@@ -11449,6 +11564,20 @@ export const ListImmunotherapyOrdersResponse = zod.object({
         .union([zod.number().int(), zod.null()])
         .optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(listImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault),
       materialConsumption: zod
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
@@ -11703,6 +11832,20 @@ export const CreateImmunotherapyOrderResponse = zod.object({
   historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
   historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(createImmunotherapyOrderResponseIrnCanRecordDefault),
   materialConsumption: zod
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
@@ -12110,6 +12253,20 @@ export const ExportImmunotherapyOrdersResponse = zod.object({
         .union([zod.number().int(), zod.null()])
         .optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(exportImmunotherapyOrdersResponseItemsItemIrnCanRecordDefault),
       materialConsumption: zod
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
@@ -12402,6 +12559,22 @@ export const CommitImmunotherapyImportResponse = zod.object({
         .union([zod.number().int(), zod.null()])
         .optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(
+          commitImmunotherapyImportResponseOrdersItemIrnCanRecordDefault,
+        ),
       materialConsumption: zod
         .union([zod.record(zod.string(), zod.unknown()), zod.null()])
         .optional(),
@@ -13184,6 +13357,20 @@ export const GetImmunotherapyOrderResponse = zod.object({
   historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
   historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(getImmunotherapyOrderResponseIrnCanRecordDefault),
   materialConsumption: zod
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
@@ -13282,6 +13469,20 @@ export const ApproveImmunotherapyOrderResponse = zod.object({
   historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
   historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(approveImmunotherapyOrderResponseIrnCanRecordDefault),
   materialConsumption: zod
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
@@ -13528,6 +13729,20 @@ export const EditImmunotherapyOrderResponse = zod.object({
   historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
   historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(editImmunotherapyOrderResponseIrnCanRecordDefault),
   materialConsumption: zod
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
@@ -13621,6 +13836,20 @@ export const RejectImmunotherapyOrderResponse = zod.object({
   historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
   historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(rejectImmunotherapyOrderResponseIrnCanRecordDefault),
   materialConsumption: zod
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
@@ -13721,6 +13950,20 @@ export const ResubmitImmunotherapyOrderResponse = zod.object({
   historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
   historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(resubmitImmunotherapyOrderResponseIrnCanRecordDefault),
   materialConsumption: zod
     .union([zod.record(zod.string(), zod.unknown()), zod.null()])
     .optional(),
@@ -18042,6 +18285,20 @@ export const ListKitsOrdersResponse = zod.object({
         ])
         .optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(listKitsOrdersResponseItemsItemIrnCanRecordDefault),
       kit: zod
         .object({
           custom: zod
@@ -18601,6 +18858,20 @@ export const CreateKitsOrderResponse = zod.object({
     ])
     .optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(createKitsOrderResponseIrnCanRecordDefault),
   kit: zod
     .object({
       custom: zod
@@ -19604,6 +19875,20 @@ export const ExportKitsOrdersResponse = zod.object({
         ])
         .optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(exportKitsOrdersResponseItemsItemIrnCanRecordDefault),
       kit: zod
         .object({
           custom: zod
@@ -20264,6 +20549,20 @@ export const CommitKitsImportResponse = zod.object({
         ])
         .optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(commitKitsImportResponseOrdersItemIrnCanRecordDefault),
       kit: zod
         .object({
           custom: zod
@@ -20974,6 +21273,18 @@ export const GetKitsOrderResponse = zod.object({
     ])
     .optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(getKitsOrderResponseIrnCanRecordDefault),
   kit: zod
     .object({
       custom: zod
@@ -21306,6 +21617,20 @@ export const ApproveKitsOrderResponse = zod.object({
     ])
     .optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(approveKitsOrderResponseIrnCanRecordDefault),
   kit: zod
     .object({
       custom: zod
@@ -21838,6 +22163,20 @@ export const UpdateKitsOrderResponse = zod.object({
     ])
     .optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(updateKitsOrderResponseIrnCanRecordDefault),
   kit: zod
     .object({
       custom: zod
@@ -22173,6 +22512,20 @@ export const RejectKitsOrderResponse = zod.object({
     ])
     .optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(rejectKitsOrderResponseIrnCanRecordDefault),
   kit: zod
     .object({
       custom: zod
@@ -22510,6 +22863,20 @@ export const ResubmitKitsOrderResponse = zod.object({
     ])
     .optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(resubmitKitsOrderResponseIrnCanRecordDefault),
   kit: zod
     .object({
       custom: zod
@@ -23298,6 +23665,20 @@ export const ListLupinOrdersResponse = zod.object({
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(listLupinOrdersResponseItemsItemIrnCanRecordDefault),
       mr: zod.record(zod.string(), zod.unknown()),
       mrEditable: zod
         .boolean()
@@ -23435,6 +23816,20 @@ export const CreateLupinOrderResponse = zod.object({
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(createLupinOrderResponseIrnCanRecordDefault),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod.boolean().default(createLupinOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
@@ -23807,6 +24202,20 @@ export const ExportLupinOrdersResponse = zod.object({
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(exportLupinOrdersResponseItemsItemIrnCanRecordDefault),
       mr: zod.record(zod.string(), zod.unknown()),
       mrEditable: zod
         .boolean()
@@ -23982,6 +24391,20 @@ export const CommitLupinImportResponse = zod.object({
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(commitLupinImportResponseOrdersItemIrnCanRecordDefault),
       mr: zod.record(zod.string(), zod.unknown()),
       mrEditable: zod
         .boolean()
@@ -24209,6 +24632,18 @@ export const GetLupinOrderResponse = zod.object({
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(getLupinOrderResponseIrnCanRecordDefault),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod.boolean().default(getLupinOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
@@ -24306,6 +24741,20 @@ export const ApproveLupinOrderResponse = zod.object({
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(approveLupinOrderResponseIrnCanRecordDefault),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod.boolean().default(approveLupinOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
@@ -24436,6 +24885,20 @@ export const UpdateLupinOrderResponse = zod.object({
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(updateLupinOrderResponseIrnCanRecordDefault),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod.boolean().default(updateLupinOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
@@ -24531,6 +24994,20 @@ export const RejectLupinOrderResponse = zod.object({
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(rejectLupinOrderResponseIrnCanRecordDefault),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod.boolean().default(rejectLupinOrderResponseMrEditableDefault),
   mrId: zod.string().uuid(),
@@ -24628,6 +25105,20 @@ export const ResubmitLupinOrderResponse = zod.object({
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(resubmitLupinOrderResponseIrnCanRecordDefault),
   mr: zod.record(zod.string(), zod.unknown()),
   mrEditable: zod
     .boolean()
@@ -31131,6 +31622,20 @@ export const SubmitOrderDraftResponse = zod.union([
       .union([zod.number().int(), zod.null()])
       .optional(),
     id: zod.string().uuid(),
+    irn: zod
+      .union([
+        zod.object({
+          number: zod.string(),
+          recordVersion: zod.number().int(),
+          recordedAt: zod.string(),
+          recordedBy: zod.string().uuid(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    irnCanRecord: zod
+      .boolean()
+      .default(submitOrderDraftResponseOneIrnCanRecordDefault),
     materialConsumption: zod
       .union([zod.record(zod.string(), zod.unknown()), zod.null()])
       .optional(),
@@ -31252,6 +31757,20 @@ export const SubmitOrderDraftResponse = zod.union([
       ])
       .optional(),
     id: zod.string().uuid(),
+    irn: zod
+      .union([
+        zod.object({
+          number: zod.string(),
+          recordVersion: zod.number().int(),
+          recordedAt: zod.string(),
+          recordedBy: zod.string().uuid(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    irnCanRecord: zod
+      .boolean()
+      .default(submitOrderDraftResponseTwoIrnCanRecordDefault),
     kit: zod
       .object({
         custom: zod
@@ -31489,6 +32008,20 @@ export const SubmitOrderDraftResponse = zod.union([
     doctor: zod.record(zod.string(), zod.unknown()),
     doctorId: zod.string().uuid(),
     id: zod.string().uuid(),
+    irn: zod
+      .union([
+        zod.object({
+          number: zod.string(),
+          recordVersion: zod.number().int(),
+          recordedAt: zod.string(),
+          recordedBy: zod.string().uuid(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    irnCanRecord: zod
+      .boolean()
+      .default(submitOrderDraftResponseThreeIrnCanRecordDefault),
     mr: zod.record(zod.string(), zod.unknown()),
     mrEditable: zod
       .boolean()
@@ -42930,6 +43463,20 @@ export const ListSptOrdersResponse = zod.object({
       doctorName: zod.string(),
       draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(listSptOrdersResponseItemsItemIrnCanRecordDefault),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
         .boolean()
@@ -43037,6 +43584,20 @@ export const CreateSptOrderResponse = zod.object({
   doctorName: zod.string(),
   draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(createSptOrderResponseIrnCanRecordDefault),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(createSptOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
@@ -43276,6 +43837,20 @@ export const ExportSptOrdersResponse = zod.object({
       doctorName: zod.string(),
       draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(exportSptOrdersResponseItemsItemIrnCanRecordDefault),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
         .boolean()
@@ -43416,6 +43991,20 @@ export const CommitSptImportResponse = zod.object({
       doctorName: zod.string(),
       draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
+      irn: zod
+        .union([
+          zod.object({
+            number: zod.string(),
+            recordVersion: zod.number().int(),
+            recordedAt: zod.string(),
+            recordedBy: zod.string().uuid(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      irnCanRecord: zod
+        .boolean()
+        .default(commitSptImportResponseOrdersItemIrnCanRecordDefault),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
         .boolean()
@@ -43623,6 +44212,18 @@ export const GetSptOrderResponse = zod.object({
   doctorName: zod.string(),
   draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(getSptOrderResponseIrnCanRecordDefault),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(getSptOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
@@ -43703,6 +44304,20 @@ export const ApproveSptOrderResponse = zod.object({
   doctorName: zod.string(),
   draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(approveSptOrderResponseIrnCanRecordDefault),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(approveSptOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
@@ -43805,6 +44420,18 @@ export const EditSptDraftResponse = zod.object({
   doctorName: zod.string(),
   draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(editSptDraftResponseIrnCanRecordDefault),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(editSptDraftResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
@@ -43883,6 +44510,20 @@ export const RejectSptOrderResponse = zod.object({
   doctorName: zod.string(),
   draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(rejectSptOrderResponseIrnCanRecordDefault),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(rejectSptOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
@@ -43963,6 +44604,20 @@ export const ResubmitSptOrderResponse = zod.object({
   doctorName: zod.string(),
   draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
   id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(resubmitSptOrderResponseIrnCanRecordDefault),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(resubmitSptOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
@@ -53249,5 +53904,626 @@ export const GetSptFinancialReviewResponse = zod.object({
   proposedAmount: zod.union([zod.string(), zod.null()]),
   resultingExposure: zod.union([zod.string(), zod.null()]),
   token: zod.string(),
+  version: zod.number().int(),
+});
+
+export const RecordImmunotherapyIRNParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RecordImmunotherapyIRNBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  number: zod.string().min(1).max(recordImmunotherapyIRNBodyNumberMax),
+});
+
+export const recordImmunotherapyIRNResponsePricingBasisDefault = `legacy_bottle_mrp`;
+
+export const RecordImmunotherapyIRNResponse = zod.object({
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  correctionSaved: zod
+    .boolean()
+    .default(recordImmunotherapyIRNResponseCorrectionSavedDefault),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  dosage: zod.string(),
+  groups: zod.array(zod.record(zod.string(), zod.unknown())),
+  histamine: zod.string(),
+  historicalGroups: zod
+    .union([zod.array(zod.record(zod.string(), zod.unknown())), zod.null()])
+    .optional(),
+  historicalPricingBasis: zod.union([zod.string(), zod.null()]).optional(),
+  historicalTotalMinor: zod.union([zod.number().int(), zod.null()]).optional(),
+  id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(recordImmunotherapyIRNResponseIrnCanRecordDefault),
+  materialConsumption: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrEditable: zod
+    .boolean()
+    .default(recordImmunotherapyIRNResponseMrEditableDefault),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderBatchNo: zod.union([zod.string(), zod.null()]).optional(),
+  patient: zod.record(zod.string(), zod.unknown()),
+  patientId: zod.string().uuid(),
+  poNumber: zod.union([zod.string(), zod.null()]).optional(),
+  pricingBasis: zod
+    .enum(["allergen_rates", "legacy_bottle_mrp", "suborder_mrp_v1"])
+    .default(recordImmunotherapyIRNResponsePricingBasisDefault),
+  pricingEvidence: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  pricingNeedsReview: zod
+    .boolean()
+    .default(recordImmunotherapyIRNResponsePricingNeedsReviewDefault),
+  pricingPolicy: zod.union([zod.string(), zod.null()]).optional(),
+  recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod.string(),
+  reviewDecision: zod
+    .union([zod.enum(["Approved", "Rejected"]), zod.null()])
+    .optional(),
+  reviewHistory: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  saline: zod.string(),
+  shipping: zod.string(),
+  status: zod.enum([
+    "Confirmed",
+    "In process",
+    "Shipped",
+    "Delivered",
+    "Rejected",
+    "Returned",
+  ]),
+  totalMinor: zod.union([zod.number().int(), zod.null()]),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Record Irn
+ */
+export const RecordKitsIRNParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RecordKitsIRNBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  number: zod.string().min(1).max(recordKitsIRNBodyNumberMax),
+});
+
+export const recordKitsIRNResponseApplicatorsDefault = ``;
+
+export const recordKitsIRNResponseKitCustomDefault = ``;
+
+export const recordKitsIRNResponseKitProductDefault = ``;
+export const recordKitsIRNResponseKitQuantityDefault = ``;
+
+export const recordKitsIRNResponseKitVolumeDefault = ``;
+
+export const recordKitsIRNResponseLancetsDefault = ``;
+
+export const recordKitsIRNResponseOrderForDefault = `doctor`;
+export const recordKitsIRNResponseOtherAddressCityDefault = ``;
+
+export const recordKitsIRNResponseOtherAddressCountryDefault = ``;
+
+export const recordKitsIRNResponseOtherAddressLandmarkDefault = ``;
+
+export const recordKitsIRNResponseOtherAddressLine1Default = ``;
+
+export const recordKitsIRNResponseOtherAddressLine2Default = ``;
+
+export const recordKitsIRNResponseOtherAddressPincodeDefault = ``;
+
+export const recordKitsIRNResponseOtherAddressStateDefault = ``;
+
+export const recordKitsIRNResponseOtherNameDefault = ``;
+
+export const recordKitsIRNResponseOtherPhoneDefault = ``;
+
+export const recordKitsIRNResponsePaymentStatusDefault = `Unpaid`;
+
+export const recordKitsIRNResponseRemarksDefault = ``;
+
+export const recordKitsIRNResponseShippingDefault = `doctor`;
+export const recordKitsIRNResponseStatusDefault = `Confirmed`;
+export const recordKitsIRNResponseTrayDefault = ``;
+
+export const RecordKitsIRNResponse = zod.object({
+  applicators: zod
+    .string()
+    .max(recordKitsIRNResponseApplicatorsMax)
+    .default(recordKitsIRNResponseApplicatorsDefault),
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(recordKitsIRNResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  billing: zod.record(zod.string(), zod.unknown()),
+  businessParking: zod
+    .union([
+      zod.string().max(recordKitsIRNResponseBusinessParkingOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  correctionSaved: zod
+    .boolean()
+    .default(recordKitsIRNResponseCorrectionSavedDefault),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
+  gstEvidence: zod
+    .union([
+      zod.object({
+        applicable_from: zod.string(),
+        order_date: zod.string(),
+        policy_revision: zod.number().int(),
+        rate: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(recordKitsIRNResponseIrnCanRecordDefault),
+  kit: zod
+    .object({
+      custom: zod
+        .string()
+        .max(recordKitsIRNResponseKitCustomMax)
+        .default(recordKitsIRNResponseKitCustomDefault),
+      product: zod
+        .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+        .default(recordKitsIRNResponseKitProductDefault),
+      quantity: zod
+        .string()
+        .max(recordKitsIRNResponseKitQuantityMax)
+        .default(recordKitsIRNResponseKitQuantityDefault),
+      volume: zod
+        .string()
+        .max(recordKitsIRNResponseKitVolumeMax)
+        .default(recordKitsIRNResponseKitVolumeDefault),
+    })
+    .optional(),
+  lancets: zod
+    .string()
+    .max(recordKitsIRNResponseLancetsMax)
+    .default(recordKitsIRNResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum([
+        "Unpaid",
+        "Paid",
+        "Part paid",
+        "Unavailable",
+        "Pending pricing",
+      ]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrEditable: zod.boolean().default(recordKitsIRNResponseMrEditableDefault),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  orderFor: zod
+    .enum(["doctor", "mr"])
+    .default(recordKitsIRNResponseOrderForDefault),
+  other: zod
+    .object({
+      address: zod
+        .object({
+          city: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressCityMax)
+            .default(recordKitsIRNResponseOtherAddressCityDefault),
+          country: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressCountryMax)
+            .default(recordKitsIRNResponseOtherAddressCountryDefault),
+          landmark: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressLandmarkMax)
+            .default(recordKitsIRNResponseOtherAddressLandmarkDefault),
+          line1: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressLine1Max)
+            .default(recordKitsIRNResponseOtherAddressLine1Default),
+          line2: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressLine2Max)
+            .default(recordKitsIRNResponseOtherAddressLine2Default),
+          pincode: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressPincodeMax)
+            .default(recordKitsIRNResponseOtherAddressPincodeDefault),
+          state: zod
+            .string()
+            .max(recordKitsIRNResponseOtherAddressStateMax)
+            .default(recordKitsIRNResponseOtherAddressStateDefault),
+        })
+        .optional(),
+      name: zod
+        .string()
+        .max(recordKitsIRNResponseOtherNameMax)
+        .default(recordKitsIRNResponseOtherNameDefault),
+      phone: zod
+        .string()
+        .max(recordKitsIRNResponseOtherPhoneMax)
+        .default(recordKitsIRNResponseOtherPhoneDefault),
+    })
+    .optional(),
+  patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(recordKitsIRNResponsePaymentStatusDefault),
+  poNumber: zod
+    .union([zod.string().max(recordKitsIRNResponsePoNumberOneMax), zod.null()])
+    .optional(),
+  pricing: zod
+    .union([
+      zod.object({
+        applicatorsRate: zod
+          .union([
+            zod
+              .string()
+              .max(recordKitsIRNResponsePricingOneApplicatorsRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        discountAmount: zod.string(),
+        discountType: zod.enum(["percent", "inr"]),
+        discountValue: zod
+          .string()
+          .max(recordKitsIRNResponsePricingOneDiscountValueMax),
+        discounted: zod.string(),
+        forwardingCharges: zod
+          .string()
+          .max(recordKitsIRNResponsePricingOneForwardingChargesMax),
+        gross: zod.string(),
+        gst: zod.string(),
+        gstPolicy: zod
+          .union([
+            zod.object({
+              applicable_from: zod.string(),
+              order_date: zod.string(),
+              policy_revision: zod.number().int(),
+              rate: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
+        kitRate: zod
+          .union([
+            zod.string().max(recordKitsIRNResponsePricingOneKitRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        lancetsRate: zod
+          .union([
+            zod.string().max(recordKitsIRNResponsePricingOneLancetsRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        lineAmounts: zod.record(zod.string(), zod.string()),
+        taxPercentage: zod.union([zod.string(), zod.null()]).optional(),
+        taxable: zod.string(),
+        total: zod.string(),
+        trayRate: zod
+          .union([
+            zod.string().max(recordKitsIRNResponsePricingOneTrayRateOneMax),
+            zod.null(),
+          ])
+          .optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  pricingNeedsReview: zod
+    .boolean()
+    .default(recordKitsIRNResponsePricingNeedsReviewDefault),
+  pricingState: zod.union([zod.string(), zod.null()]).optional(),
+  recipient: zod.record(zod.string(), zod.unknown()),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod
+    .string()
+    .max(recordKitsIRNResponseRemarksMax)
+    .default(recordKitsIRNResponseRemarksDefault),
+  reviewDecision: zod.union([zod.string(), zod.null()]).optional(),
+  reviewHistory: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  shipping: zod
+    .enum(["doctor", "mr", "other"])
+    .default(recordKitsIRNResponseShippingDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(recordKitsIRNResponseStatusDefault),
+  tray: zod
+    .string()
+    .max(recordKitsIRNResponseTrayMax)
+    .default(recordKitsIRNResponseTrayDefault),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Record Irn
+ */
+export const RecordLupinIRNParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RecordLupinIRNBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  number: zod.string().min(1).max(recordLupinIRNBodyNumberMax),
+});
+
+export const recordLupinIRNResponsePaymentStatusDefault = `Unpaid`;
+
+export const recordLupinIRNResponseRemarksDefault = ``;
+
+export const recordLupinIRNResponseStatusDefault = `Confirmed`;
+
+export const RecordLupinIRNResponse = zod.object({
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(recordLupinIRNResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  correctionSaved: zod
+    .boolean()
+    .default(recordLupinIRNResponseCorrectionSavedDefault),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod
+    .boolean()
+    .default(recordLupinIRNResponseIrnCanRecordDefault),
+  mr: zod.record(zod.string(), zod.unknown()),
+  mrEditable: zod.boolean().default(recordLupinIRNResponseMrEditableDefault),
+  mrId: zod.string().uuid(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientCount: zod
+    .number()
+    .int()
+    .min(1)
+    .max(recordLupinIRNResponsePatientCountMax),
+  patientIds: zod
+    .array(zod.string().uuid())
+    .max(recordLupinIRNResponsePatientIdsMax)
+    .optional(),
+  patients: zod.array(zod.record(zod.string(), zod.unknown())),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(recordLupinIRNResponsePaymentStatusDefault),
+  price: zod
+    .union([zod.string().max(recordLupinIRNResponsePriceOneMax), zod.null()])
+    .optional(),
+  pricingNeedsReview: zod
+    .boolean()
+    .default(recordLupinIRNResponsePricingNeedsReviewDefault),
+  pricingState: zod.union([zod.string(), zod.null()]).optional(),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod
+    .string()
+    .max(recordLupinIRNResponseRemarksMax)
+    .default(recordLupinIRNResponseRemarksDefault),
+  reviewDecision: zod.union([zod.string(), zod.null()]).optional(),
+  reviewHistory: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(recordLupinIRNResponseStatusDefault),
+  total: zod.union([zod.string(), zod.null()]),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Record Irn
+ */
+export const RecordSptIRNParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const RecordSptIRNBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  number: zod.string().min(1).max(recordSptIRNBodyNumberMax),
+});
+
+export const RecordSptIRNResponse = zod.object({
+  approval: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  audit: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  correctionSaved: zod
+    .boolean()
+    .default(recordSptIRNResponseCorrectionSavedDefault),
+  date: zod.string(),
+  decisionEligibility: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  doctorId: zod.union([zod.string().uuid(), zod.null()]),
+  doctorName: zod.string(),
+  draftSavedAt: zod.union([zod.string(), zod.null()]).optional(),
+  id: zod.string().uuid(),
+  irn: zod
+    .union([
+      zod.object({
+        number: zod.string(),
+        recordVersion: zod.number().int(),
+        recordedAt: zod.string(),
+        recordedBy: zod.string().uuid(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  irnCanRecord: zod.boolean().default(recordSptIRNResponseIrnCanRecordDefault),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrEditable: zod.boolean().default(recordSptIRNResponseMrEditableDefault),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  number: zod.string(),
+  patients: zod.array(
+    zod.object({
+      age: zod.number().int(),
+      amount: zod.string(),
+      code: zod.string(),
+      gender: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      source: zod.enum(["master", "spt"]),
+    }),
+  ),
+  pricingNeedsReview: zod
+    .boolean()
+    .default(recordSptIRNResponsePricingNeedsReviewDefault),
+  pricingState: zod.union([zod.string(), zod.null()]).optional(),
+  rejection: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  remarks: zod.string(),
+  reviewDecision: zod.union([zod.string(), zod.null()]).optional(),
+  reviewHistory: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  sourceId: zod.string().uuid(),
+  status: zod.enum([
+    "Draft",
+    "Saved",
+    "Approved",
+    "In process",
+    "Shipped",
+    "Returned",
+    "Rejected",
+  ]),
+  total: zod.union([zod.string(), zod.null()]),
   version: zod.number().int(),
 });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { reviewLabel } from '../../components/orders/OrderReviewStatus.jsx';
+import { useOrderIRN } from '../../components/orders/OrderIRN.jsx';
 import { useOrderListFreshness } from '../../services/orderFreshness.js';
 import { Link } from 'wouter';
 import { ClipboardList, Eye, Pencil, Plus, Search } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function SptOrders() {
   const sequence = useRef(0);
   const resetPage = () => { setPage(1); setCursors([null]); setOffsets([0]); };
   const refresh = () => { resetPage(); setRevision((n) => n + 1); };
+  const irn = useOrderIRN('spt', request, refresh);
   useOrderListFreshness('spt', refresh);
   const clear = () => { setDraft(EMPTY); setApplied(EMPTY); resetPage(); };
   const set = (patch) => setDraft((v) => ({ ...v, ...patch }));
@@ -65,7 +67,7 @@ export default function SptOrders() {
     { key: 'count', label: 'Patients', render: (o) => o.patients.length },
     { key: 'total', label: 'Total (INR)', render: (o) => <span className="spt-num">{o.total ?? 'Pending pricing'}</span> },
     { key: 'status', label: 'Status', render: (o) => <span className={`admin-badge${o.status === 'Draft' ? ' admin-badge--inactive' : ''}`}>{reviewLabel(o)}</span> },
-    { key: 'action', label: 'Action', render: (o) => <div className="spt-actions"><Link className="admin-icon-button order-view-action" href={`${BASE}/${o.id}`} aria-label={`View ${o.number}`} data-testid={`link-spt-open-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className={o.status === 'Draft' ? 'admin-button admin-button--secondary' : 'admin-icon-button order-view-action'} aria-label={`${o.status === 'Draft' ? 'Resume draft' : 'Edit'} ${o.number}`}><Pencil size={16} aria-hidden="true" />{o.status === 'Draft' && 'Resume draft'}</Link>}</div> },
+    { key: 'action', label: 'Action', render: (o) => <div className="spt-actions"><Link className="admin-icon-button order-view-action" href={`${BASE}/${o.id}`} aria-label={`View ${o.number}`} data-testid={`link-spt-open-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className={o.status === 'Draft' ? 'admin-button admin-button--secondary' : 'admin-icon-button order-view-action'} aria-label={`${o.status === 'Draft' ? 'Resume draft' : 'Edit'} ${o.number}`}><Pencil size={16} aria-hidden="true" />{o.status === 'Draft' && 'Resume draft'}</Link>}{irn.action(o)}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);
 
@@ -87,7 +89,7 @@ export default function SptOrders() {
           </div>
         </div>} />
         <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
-        <section className="admin-panel" aria-label="SPT orders">
+        <section className="admin-panel" aria-label="SPT orders" tabIndex={-1}>
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}
             onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
             <label className="spt-field spt-field--grow">
@@ -116,6 +118,7 @@ export default function SptOrders() {
                   onPageChange={changePage} onPageSizeChange={(size) => { setPageSize(size); resetPage(); }} />
               </>}
         </section>
+        {irn.dialog}
       </div>
     </AdminLayout>
   );

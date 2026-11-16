@@ -25,13 +25,15 @@ from app.schemas.patients import PatientFields, PatientLanguageChoices
 from app.services import patients as patient_service
 
 from app.schemas.order_approval import OrderApproval, OrderRejection
+from app.schemas.order_irn import OrderIRNInput
+from app.services.order_irn import record as record_order_irn
 from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 
 router = APIRouter(prefix="/admin/immunotherapy-orders", tags=["immunotherapy"],
     dependencies=[Depends(operation_router("immunotherapy", {
         "listing": None, "detail": None, "references": None, "next_dosage": None, "export": "export",
         "review": "import", "commit": "import", "create": "add", "edit": "edit",
-        "approve": "edit", "reject": "edit", "resubmit": "edit",
+        "approve": "edit", "reject": "edit", "resubmit": "edit", "record_irn": "edit",
         "policy": "upload_attachment", "prescription": "upload_attachment",
     }, allow_mr=True))])
 MULTIPART = {
@@ -57,6 +59,11 @@ from app.services.order_eligibility import preview as eligibility_preview
 @router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewImmunotherapyEligibility")
 def eligibility(body: ImmEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return eligibility_preview(db, actor, "immunotherapy", body)
+
+
+@router.post("/{record_id}/irn", response_model=ImmRecord, response_model_exclude_unset=True, operation_id="recordImmunotherapyIRN")
+def record_irn(record_id: uuid.UUID, body: OrderIRNInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return record_order_irn(db, actor, record_id, body, "immunotherapy")
 
 
 @router.post("/{record_id}/approve", response_model=ImmRecord, operation_id="approveImmunotherapyOrder")

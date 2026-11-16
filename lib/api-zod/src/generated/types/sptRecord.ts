@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { OrderIRN } from "./orderIRN";
 import type { SptPatientSnapshot } from "./sptPatientSnapshot";
 import type { SptRecordApproval } from "./sptRecordApproval";
 import type { SptRecordAudit } from "./sptRecordAudit";
@@ -26,6 +27,8 @@ export interface SptRecord {
   doctorName: string;
   draftSavedAt?: string | null;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   mr: SptRecordMr;
   mrEditable?: boolean;
   mrId: string | null;

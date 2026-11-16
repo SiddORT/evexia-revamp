@@ -11,6 +11,10 @@ refined Pricing Rules validators, optional/default semantics and repeated-array
 query serialization, even when the task changes none of that backend behavior.
 Generated output is not necessarily an innocuous formatting-only change.
 
+Generation can also relocate hand-maintained exports or emit helpers for
+pre-existing unrelated contracts that had not previously been generated.
+Keep those additions out of a narrow feature unless separately requested.
+
 **How to apply:** Keep the new endpoint's exported schemas and generated helpers,
 but compare unrelated output against the prior source and retain its behavior.
 Do not run the package codegen wrapper when checks are prohibited: it chains a

@@ -114,3 +114,5 @@ export * from "./generated/types/combinationStatusInput";
 export * from "./generated/types/combinationStatusEvent";
 export * from "./generated/types/combinationStatusResult";
 export * from "./generated/types/combinationStatusHistory";
+export * from "./generated/types/orderIRN";
+export * from "./generated/types/orderIRNInput";

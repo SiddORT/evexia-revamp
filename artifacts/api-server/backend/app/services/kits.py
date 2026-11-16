@@ -175,7 +175,8 @@ def transaction(db, actor, work, *, action=None, before_commit=None):
         from app.services.order_capabilities import public_result
         from app.services.order_audit import present
         from app.services.order_lifecycle import read_result
-        result = read_result(result)
+        from app.services.order_irn import expose
+        result = expose(current, "kits", read_result(result))
         result = present(db, current, result)
         result = public_result(current, "kits", result)
         from app.services.person_contacts import order_result
@@ -206,6 +207,8 @@ def project(keys, row):
     from app.services.order_approval import editable
     from app.services.order_invoice_references import public_snapshot
     value = public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext))
+    from app.services.order_irn import projection
+    value.update(projection(row, value))
     value["pricingState"] = ("Pending pricing" if value.get("pricing") is None
                              else "Needs pricing review" if value.get("pricingNeedsReview") else "Priced")
     from app.services.order_lifecycle import status

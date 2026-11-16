@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { reviewLabel } from '../../components/orders/OrderReviewStatus.jsx';
+import { useOrderIRN } from '../../components/orders/OrderIRN.jsx';
 import { useOrderListFreshness } from '../../services/orderFreshness.js';
 import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -50,6 +51,7 @@ export default function ImmunotherapyOrders() {
   const rows = result.items;
   const filters = { search, status: status === 'All' ? '' : status, from_date: from, to_date: to };
   const resetPage = () => { setPage(1); setCursors([null]); setSelected(new Set()); setKnown({}); };
+  const irn = useOrderIRN('immunotherapy', request, () => { resetPage(); setRevision((n) => n + 1); });
   useOrderListFreshness('immunotherapy', () => { resetPage(); setRevision((n) => n + 1); });
   useEffect(() => {
     const controller = new AbortController();
@@ -109,6 +111,7 @@ export default function ImmunotherapyOrders() {
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
       <Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
       {can.edit && !orderLocked(o) && (portal !== 'mr' || mrEditable(o)) && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>}
+      {irn.action(o)}
       {can.documents && eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
   ];  const columns = withAuditColumns(baseColumns, audit);
 
@@ -126,7 +129,7 @@ export default function ImmunotherapyOrders() {
     {error && <div className="imm-errors" role="alert">{error} <button type="button" className="imm-link-btn" onClick={() => setRevision((n) => n + 1)}>Retry</button></div>}
     {loading && <p role="status">Loading saved orders…</p>}
     <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
-    <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
+    <section className="admin-panel imm-listing" aria-label="Immunotherapy orders" tabIndex={-1}>
       <OrderListingFilters masterDisclosure onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
         <label className="imm-field imm-field--grow">
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 12, top: 13, color: 'var(--admin-muted)' }} />
@@ -155,6 +158,7 @@ export default function ImmunotherapyOrders() {
         empty={<div className="imm-empty" data-testid="empty-imm"><ClipboardList size={28} aria-hidden="true" /><strong>{loading ? 'Loading…' : error ? 'Orders unavailable' : result.total ? 'No matches in this section' : 'No immunotherapy orders yet'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : result.total ? 'Adjust the search, status or dates.' : 'Saved orders will appear here.'}</p>{result.total ? <button type="button" className="admin-button admin-button--secondary" onClick={reset}>Reset filters</button> : can.add && <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
       <TablePagination cursorMode sectionCount={rows.length} page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} filtered={result.filtered} total={result.total} label="orders" testId="text-imm-count" onPageChange={pager.setPage} onPageSizeChange={pager.setPageSize} />
     </section>
+    {irn.dialog}
     {printKind && <ImmPrintDialog kind={printKind} orders={printOrders} returnFocusRef={printTrigger} onClose={() => setPrintKind('')} />}
     {documentRequest && <ImmDialog title={documentRequest.action.document} eyebrow={`Order ${documentRequest.order.number}`}
       className="imm-dialog--sm imm-document-dialog" returnFocusRef={documentRequest.returnFocusRef} onClose={() => setDocumentRequest(null)}

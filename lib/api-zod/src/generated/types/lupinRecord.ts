@@ -16,6 +16,7 @@ import type { LupinRecordPaymentStatus } from "./lupinRecordPaymentStatus";
 import type { LupinRecordRejection } from "./lupinRecordRejection";
 import type { LupinRecordReviewHistoryItem } from "./lupinRecordReviewHistoryItem";
 import type { LupinRecordStatus } from "./lupinRecordStatus";
+import type { OrderIRN } from "./orderIRN";
 
 export interface LupinRecord {
   approval?: LupinRecordApproval;
@@ -29,6 +30,8 @@ export interface LupinRecord {
   doctor: LupinRecordDoctor;
   doctorId: string;
   id: string;
+  irn?: OrderIRN | null;
+  irnCanRecord?: boolean;
   mr: LupinRecordMr;
   mrEditable?: boolean;
   mrId: string;

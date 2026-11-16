@@ -1,3 +1,21 @@
+# Approved order IRNs — save only
+
+Kits & Consumables, SPT, Lupin and Immunotherapy listings now have a record-once
+IRN metadata action for existing family approvers. Kits/Lupin remain protected
+Super Admin-only; MR and non-approving staff receive no saved IRN metadata.
+The existing encrypted order snapshot and actor-bound retry journal hold the
+value; no new ledger or schema migration is introduced. Ordinary edits/imports
+and fulfillment preserve it. Invoice references and financial facts remain
+unchanged. Live invoice viewing/download and IRNs on issued invoices are deferred.
+See `docs/order-irns.md`.
+
+This delivery used source/diff inspection, scoped offline API/client generation
+and generated-source formatting only. No tests, builds, typechecks,
+regression/release/completion-validation commands, runtime/browser probes,
+service starts/restarts, migrations, live writes or deployments were run.
+Runtime, concurrency, persistence, visual and accessibility behavior remain
+unverified.
+
 # Settlement credit notes — prepared source only
 
 Protected Super Admin Settlement credit notes are non-cash balance reductions.

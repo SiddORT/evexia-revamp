@@ -24,6 +24,8 @@ from app.api.v1.immunotherapy import MULTIPART
 from app.schemas.order_approval import OrderApproval, OrderRejection
 from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 from app.schemas.gst_settings import GSTEvidence
+from app.schemas.order_irn import OrderIRNInput
+from app.services.order_irn import record as record_order_irn
 
 router = APIRouter(prefix="/admin/kits-orders", tags=["kits"],
     dependencies=[Depends(operation_router("kits", {
@@ -60,6 +62,11 @@ def financial_review(record_id: uuid.UUID, actor=Depends(current_identity), db: 
 @router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewKitsEligibility")
 def eligibility(body: KitsEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return eligibility_preview(db, actor, "kits", body)
+
+
+@router.post("/{record_id}/irn", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="recordKitsIRN")
+def record_irn(record_id: uuid.UUID, body: OrderIRNInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return record_order_irn(db, actor, record_id, body, "kits")
 
 
 @router.post("/{record_id}/approve", response_model=KitsRecord, response_model_exclude_unset=True, operation_id="approveKitsOrder")

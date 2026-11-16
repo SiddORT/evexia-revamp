@@ -74,7 +74,8 @@ def transaction(db, actor, work, *, action=None, resource="immunotherapy", respo
         if not isinstance(result, RejectedMutation):
             from app.services.order_capabilities import public_result
             from app.services.order_lifecycle import read_result
-            result = read_result(result)
+            from app.services.order_irn import expose
+            result = expose(current, resource, read_result(result))
             result = present_audit(db, current, result)
             result = public_result(current, resource, result)
             from app.services.person_contacts import order_result
@@ -108,7 +109,11 @@ def project(keys, row):
     from app.services.order_lifecycle import status
     from app.services.order_approval import editable, eligibility
     from app.services.order_invoice_references import public_snapshot
-    value = {**public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext)), "status": status(row.status)}
+    saved = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    value = {**public_snapshot(saved), "status": status(row.status)}
+    from app.services.order_irn import projection
+    # Check the original saved state before lifecycle read compatibility.
+    value.update(projection(row, saved))
     return {**value, "mrEditable": editable("immunotherapy", value), "decisionEligibility": eligibility("immunotherapy", value),
             "orderBatchNo": (value.get("orderBatch") or {}).get("number"),
             "audit": audit_metadata(row),

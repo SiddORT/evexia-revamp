@@ -19,6 +19,8 @@ from app.api.v1.files import storage_dependency
 from app.api.v1.immunotherapy import MULTIPART
 from app.schemas.lupin import LupinUpdate
 from app.schemas.order_approval import OrderApproval, OrderRejection
+from app.schemas.order_irn import OrderIRNInput
+from app.services.order_irn import record as record_order_irn
 from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 
 router = APIRouter(prefix="/admin/lupin-orders", tags=["lupin"],
@@ -56,6 +58,11 @@ def eligibility(body: LupinEligibilityInput, actor=Depends(current_identity), db
 @router.post("/{record_id}/edit", response_model=LupinRecord, operation_id="updateLupinOrder")
 def edit(record_id: uuid.UUID, body: LupinUpdate, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return service.update(db, actor, record_id, body)
+
+
+@router.post("/{record_id}/irn", response_model=LupinRecord, response_model_exclude_unset=True, operation_id="recordLupinIRN")
+def record_irn(record_id: uuid.UUID, body: OrderIRNInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return record_order_irn(db, actor, record_id, body, "lupin")
 
 
 @router.post("/{record_id}/approve", response_model=LupinRecord, operation_id="approveLupinOrder")

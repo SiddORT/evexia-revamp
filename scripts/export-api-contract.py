@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["mr-dashboard", "low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["mr-dashboard", "low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits", "order-irns"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -174,6 +174,9 @@ def main() -> None:
         selected = {path: item for path, item in contract["paths"].items()
                     if (args.scope == "mr-dashboard" and path in (
                         "/v1/mr/sales-achievement/dashboard", "/v1/mr/sales-achievement/doctor-payments"))
+                    or (args.scope == "order-irns" and path.endswith("/irn") and
+                        any(path.startswith(f"/v1/admin/{kind}-orders/") for kind in
+                            ("kits", "spt", "lupin", "immunotherapy")))
                     or (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
                     or (args.scope == "settlement-credits" and
                         (path == "/v1/admin/settlements" or path.startswith("/v1/admin/settlements/")))
@@ -239,6 +242,8 @@ def main() -> None:
                 selected[path] = item
         schema_updates = {}
         deferred_fields = {
+            name: ("irn", "irnCanRecord") for name in ("KitsRecord", "SptRecord", "LupinRecord", "ImmRecord")
+        } if args.scope == "order-irns" else {
             "DoctorChoice": ("doctorDaysLimit",),
             "DoctorResponse": ("daysLimit",), "MRDoctorRead": ("daysLimit",),
             "KitsRecord": ("pricingState", "ledgerPaymentStatus"),
@@ -276,7 +281,7 @@ def main() -> None:
                     saved.pop("required", None)
                 schema_updates[name] = saved
                 continue
-            prefixes = (() if args.scope in ("deferred-order-review", "settlement-credits") else ("UnifiedDraft",) if args.scope == "unified-drafts"
+            prefixes = (() if args.scope in ("deferred-order-review", "settlement-credits", "order-irns") else ("UnifiedDraft",) if args.scope == "unified-drafts"
                         else ("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("MR", "Doctor") if args.scope == "territories"

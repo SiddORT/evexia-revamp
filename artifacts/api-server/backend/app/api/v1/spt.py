@@ -10,6 +10,8 @@ from app.schemas.spt import SptWrite, SptRegistration, SptPatient, SptRecord, Sp
 from app.schemas.immunotherapy import ImmReferencePage, ImmImportReview
 from app.services import spt as service
 from app.schemas.order_approval import OrderApproval, OrderRejection
+from app.schemas.order_irn import OrderIRNInput
+from app.services.order_irn import record as record_order_irn
 from app.schemas.spt import ReadStatus
 from app.services.order_approval import approve as approve_order, resubmit as resubmit_order
 
@@ -18,7 +20,7 @@ router = APIRouter(prefix="/admin/spt-orders", tags=["spt"],
         "listing": None, "detail": None, "references": None, "export": "export",
         "review": "import", "commit": "import", "create": "add", "edit": "edit", "approve": "edit", "reject": "edit",
         "register": ("add", "import"),
-        "resubmit": "edit",
+        "resubmit": "edit", "record_irn": "edit",
         "financial_review": "edit", "eligibility": "edit",
     }, allow_mr=True))])
 
@@ -49,6 +51,11 @@ def financial_review(record_id: uuid.UUID, actor=Depends(current_identity), db: 
 @router.post("/eligibility", response_model=EligibilityPreview, operation_id="previewSptEligibility")
 def eligibility(body: SptEligibilityInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
     return eligibility_preview(db, actor, "spt", body)
+
+
+@router.post("/{record_id}/irn", response_model=SptRecord, response_model_exclude_unset=True, operation_id="recordSptIRN")
+def record_irn(record_id: uuid.UUID, body: OrderIRNInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return record_order_irn(db, actor, record_id, body, "spt")
 
 
 @router.post("/{record_id}/approve", response_model=SptRecord, operation_id="approveSptOrder")

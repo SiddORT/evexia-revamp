@@ -1,5 +1,10 @@
 # Order invoice references
 
+Manual approved-order IRNs are separate, record-once encrypted metadata; they do
+not assign, replace or expose this invoice authority through a new invoice
+workflow. See [Approved order IRNs](order-irns.md). Live invoice viewing,
+download and IRNs on issued invoices remain deferred.
+
 ## Scope and authority
 
 The confirmed format is financial year / saved numeric order portion:

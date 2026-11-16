@@ -54,7 +54,12 @@ class LupinImport(Strict):
     confirmUpdates: bool = False
 
 
+from app.schemas.order_irn import OrderIRN
+
+
 class LupinRecord(LupinInput):
+    irn: OrderIRN | None = None
+    irnCanRecord: bool = False
     reviewHistory: list[dict] = Field(default_factory=list)
     reviewDecision: str | None = None
     correctionSaved: bool = False
