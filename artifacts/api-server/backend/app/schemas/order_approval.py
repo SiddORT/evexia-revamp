@@ -10,6 +10,18 @@ class OrderApproval(Strict):
     reason: str | None = Field(default=None, max_length=2000)
 
 
+class OrderApprovalNote(OrderApproval):
+    @field_validator("reason")
+    @classmethod
+    def plain_optional_reason(cls, value):
+        if value is None:
+            return None
+        value = value.strip()
+        if any(ord(c) < 32 and c not in "\n\t" for c in value):
+            raise ValueError("Enter a plain-text approval note of up to 2000 characters")
+        return value or None
+
+
 class OrderRejection(OrderApproval):
     reason: str = Field(min_length=1, max_length=2000, strict=True)
 

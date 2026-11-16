@@ -53,7 +53,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
       setError('The signed-in account changed. This account cannot send or recover the original operation.'); return;
     }
     if (!submission.current && (decision === 'resubmit' ? !resubmittable || dirty
-      : decision === 'approve' ? !eligibility?.canApprove || !pricingReady || dirty || (deferred && (!approvalReason.trim() || approvalReason.length > 2000)) || (reviewRequired && !currentFinancial)
+      : decision === 'approve' ? !eligibility?.canApprove || !pricingReady || dirty || (deferred && approvalReason.length > 2000) || (reviewRequired && !currentFinancial)
         : !eligibility?.canReject || !reason.trim() || reason.length > 2000 || (dirty && !ignoreDraft))) return;
     if (submission.current && submission.current.owner !== owner) {
       setError('Only the original signed-in account can recover this decision. Keep this page open.'); return;
@@ -62,7 +62,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
     if (!submission.current) submission.current = { owner, decision, body: {
       expected_version: order.version, idempotencyKey: crypto.randomUUID(),
       ...(decision === 'reject' ? { reason: reason.trim() } : decision === 'approve' && deferred
-        ? { reason: approvalReason.trim(), ...(reviewRequired ? { financialReviewToken: currentFinancial.token } : {}) } : {}),
+        ? { ...(approvalReason.trim() ? { reason: approvalReason.trim() } : {}), ...(reviewRequired ? { financialReviewToken: currentFinancial.token } : {}) } : {}),
     } };
     const operation = submission.current;
     try {
@@ -107,12 +107,12 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
         ? eligible ? editing || order.pricing ? 'Save valid pricing before approval.' : 'Use Edit order and pricing before approval.' : 'This order is already decided or closed.'
         : eligibility.approvalUnavailable}</p>}
       {dirty && <p role="status">{compact ? 'Save changes before approval. Rejection applies only to the saved order; your edits stay here.' : 'Save changes first, then approve the resulting saved version. Rejection can target the saved submission while keeping your unsaved draft here.'}</p>}
-      {deferred && eligible && pricingReady && <label className={compact ? 'order-approval__reason' : undefined}>{compact ? 'Approval reason (required)' : 'Approval reason (required, up to 2,000 characters)'}
+      {deferred && eligible && pricingReady && <label className="order-approval__reason">{compact ? 'Approval reason (optional)' : 'Approval reason (optional, up to 2,000 characters)'}
         <textarea value={approvalReason} maxLength={2000} disabled={busy || uncertain || blocked}
           onChange={(event) => setApprovalReason(event.target.value)} />
       </label>}
       <div className="order-approval__actions">
-        <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || (uncertain ? submission.current?.decision !== 'approve' : !eligibility?.canApprove || !pricingReady || (deferred && !approvalReason.trim()) || (reviewRequired && !currentFinancial))} onClick={() => decide('approve')}>{busy && submission.current?.decision === 'approve' ? 'Approving…' : uncertain && submission.current?.decision === 'approve' ? 'Retry unchanged approval' : 'Approve order'}</button>
+        <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || (uncertain ? submission.current?.decision !== 'approve' : !eligibility?.canApprove || !pricingReady || (deferred && approvalReason.length > 2000) || (reviewRequired && !currentFinancial))} onClick={() => decide('approve')}>{busy && submission.current?.decision === 'approve' ? 'Approving…' : uncertain && submission.current?.decision === 'approve' ? 'Retry unchanged approval' : 'Approve order'}</button>
         <button type="button" className="admin-button admin-button--danger" disabled={busy || blocked || uncertain || !eligible || Boolean(conflict)} onClick={() => { setReason(''); setIgnoreDraft(false); setConfirmReject(true); }}>Reject order</button>
       </div>
     </>}

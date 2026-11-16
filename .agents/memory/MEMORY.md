@@ -140,3 +140,4 @@
 - [Immunotherapy tariff meaning](immunotherapy-tariff-policy.md) — total suborder MRP and per-allergen clinical quantities have independent meanings and change authority.
 - [Hidden master prices](hidden-master-prices.md) — hide catalogue prices without erasing saved values; retain optional import inputs and independent financial prices.
 - [Doctor MR mapping policy](doctor-mr-mapping-policy.md) — Doctor Area is explicit catalogue data; transfers preserve linked Patients and honest historical baselines.
+- [Order approval notes](order-approval-note-policy.md) — Kits, SPT and Lupin notes are optional; rejection reasons and other approval safeguards remain mandatory.

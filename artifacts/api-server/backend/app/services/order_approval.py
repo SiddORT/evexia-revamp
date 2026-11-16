@@ -197,11 +197,14 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
             if decision == "approve" and not available["canApprove"]:
                 raise ImmError(available["approvalUnavailable"], 422, "order_pricing")
             if kind in {"kits", "spt", "lupin"}:
-                from app.schemas.order_approval import OrderRejection
+                from app.schemas.order_approval import OrderApprovalNote, OrderRejection
+                contract = OrderRejection if decision == "reject" else OrderApprovalNote
                 try:
-                    decision_reason = OrderRejection.model_validate(body.model_dump()).reason
+                    decision_reason = contract.model_validate(body.model_dump()).reason
                 except ValueError:
-                    raise ImmError("Enter a plain-text decision reason of 1–2000 characters.", 422, "order_decision_reason") from None
+                    message = ("Enter a plain-text decision reason of 1–2000 characters." if decision == "reject"
+                               else "Enter a plain-text approval note of up to 2000 characters, or leave it blank.")
+                    raise ImmError(message, 422, "order_decision_reason") from None
                 if decision == "approve" and row.mr_id:
                     from app.services.order_financial_review import review
                     financial = review(db, keys, kind, row, previous, previous)
