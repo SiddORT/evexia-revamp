@@ -112,15 +112,26 @@ def prepare(db, day):
         matching = [r for r in rows if r["status"] == group]
         lines = [" | ".join(str(r[k]) for k in ("productName", "category", "batchNo", "expiryDate", "quantity", "unit", "locationName")) for r in matching]
         text_sections.append(heading + "\n" + ("\n".join(lines) or "None"))
-        sections.append("<h2>" + escape(heading) + "</h2><ul>" + "".join("<li>" + escape(line) + "</li>" for line in lines) + "</ul>")
+        cards = []
+        for row in matching:
+            fields = [("Category", "category"), ("Batch", "batchNo"), ("Expiry date", "expiryDate"),
+                      ("Quantity", "quantity"), ("Unit", "unit"), ("Location", "locationName")]
+            cards.append('<div style="padding:16px;margin:0 0 16px;border:1px solid #ddd7e5;border-radius:8px">'
+                '<h3 style="font-size:18px;line-height:1.4;margin:0 0 12px">' + escape(str(row["productName"])) + '</h3>' +
+                "".join('<p style="margin:0 0 8px"><strong>' + escape(label) + ':</strong> ' +
+                        escape(str(row[key])) + '</p>' for label, key in fields) + '</div>')
+        sections.append('<h2 style="font-size:20px;line-height:1.4;margin:24px 0 16px">' +
+                        escape(heading) + '</h2>' + ("".join(cards) or "<p>None</p>"))
     # No partial digest when the complete bounded scan cannot be represented.
     soon = origin + "/admin/inventory/expiring"
     expired = origin + "/admin/inventory/expired"
     content = template.introduction + "\n\n" + "\n\n".join(text_sections) + f"\n\nExpiring Soon: {soon}\nExpired Products: {expired}"
-    html = "<p>" + escape(template.introduction) + "</p>" + "".join(sections) + (
-        f'<p><a href="{escape(soon, quote=True)}">Expiring Soon</a> · '
-        f'<a href="{escape(expired, quote=True)}">Expired Products</a></p>')
-    rendered = RenderedEmail(template.subject + " — " + day.isoformat(), content, html)
+    html = '<div>' + escape(template.introduction).replace("\n", "<br>") + '</div>' + "".join(sections) + (
+        f'<p><a style="color:#187368" href="{escape(soon, quote=True)}">Expiring Soon</a></p>'
+        f'<p><a style="color:#187368" href="{escape(expired, quote=True)}">Expired Products</a></p>')
+    from app.services.email_presentation import delivery_presentation
+    rendered = RenderedEmail(template.subject + " — " + day.isoformat(), content,
+        delivery_presentation(html, title="Allergen expiry digest"))
     return lambda: send_smtp(transport, recipient, rendered, sender_name=transport.sender_name)
 
 

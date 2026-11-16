@@ -88,10 +88,20 @@ def send_smtp(settings, recipient, rendered, *, sender_name=None):
     message.set_content(rendered.text)
     message.add_alternative(rendered.html, subtype="html")
     from app.services.email_rendering import LOGO_CID
-    message.get_payload()[1].add_related(
-        (Path(__file__).parent / "assets" / "evexia-logo.png").read_bytes(),
-        maintype="image", subtype="png", cid=f"<{LOGO_CID}>", disposition="inline",
-        filename="evexia-logo.png")
+    from html.parser import HTMLParser
+    class InlineLogo(HTMLParser):
+        referenced = False
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "img" and dict(attrs).get("src") == "cid:" + LOGO_CID:
+                self.referenced = True
+    resources = InlineLogo()
+    resources.feed(rendered.html)
+    if resources.referenced:
+        message.get_payload()[1].add_related(
+            (Path(__file__).parent / "assets" / "evexia-logo.png").read_bytes(),
+            maintype="image", subtype="png", cid=f"<{LOGO_CID}>", disposition="inline",
+            filename="evexia-logo.png")
     context = ssl.create_default_context()
     if settings.smtp_implicit_tls:
         connection = smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port,

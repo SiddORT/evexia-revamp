@@ -1,4 +1,5 @@
 import { EVEXIA_LOGO_SOURCE, EVEXIA_LOGO_DATA } from './messageTemplateBrand.js';
+import { emailPresentation } from './emailPresentation.js';
 
 export const SUPPORTED_TOKENS = Object.freeze([
   'recipient_name',
@@ -31,7 +32,8 @@ export const SAMPLE_VALUES = Object.freeze({
   order_details_url: 'https://email-sample.invalid/admin/orders/immunotherapy/00000000-0000-4000-8000-000000000000',
 });
 
-const EMAIL_PREVIEW_TOKENS = [...SUPPORTED_TOKENS, ...EMAIL_ONLY_TOKENS];
+const EMAIL_PREVIEW_TOKENS = [...SUPPORTED_TOKENS, ...EMAIL_ONLY_TOKENS,
+  'order_type', 'event_name', 'status', 'timestamp', 'transaction_amount'];
 const MAX_HTML_FILE_BYTES = 100_000;
 
 /**
@@ -470,7 +472,7 @@ function sanitizeEmailHtml(source, embedLogo = false) {
       // untrusted src/data/srcset values, styles, sizes or event handlers.
       const sources = tag.attributes.filter(([name]) => name === 'src');
       if (sources.length === 1 && sources[0][1] === EVEXIA_LOGO_SOURCE) {
-        output += `<img src="${embedLogo ? EVEXIA_LOGO_DATA : EVEXIA_LOGO_SOURCE}" alt="EVEXIA Life Sciences" width="154" height="80" style="display:inline-block;max-width:100%;height:auto">`;
+        output += `<img src="${embedLogo ? EVEXIA_LOGO_DATA : EVEXIA_LOGO_SOURCE}" alt="EVEXIA Life Sciences" width="154" style="display:inline-block;max-width:100%;height:auto">`;
       }
     } else if (tag.name === 'a') {
       // Preserve link/button presentation but never emit a navigable element.
@@ -502,11 +504,11 @@ const PREVIEW_CSP = [
   'sandbox',
 ].join('; ');
 
-export function buildEmailPreview(html, values = null) {
+export function buildEmailPreview(html, values = null, eventKey = null) {
   const source = typeof html === 'string' ? html : '';
   // Establish image identity before substitution: a sample value must never
   // turn an untrusted src token into the trusted logo capability.
-  const authored = sanitizeEmailHtml(source);
+  const authored = emailPresentation(sanitizeEmailHtml(source), eventKey);
   const substituted = values === null ? authored : substituteTokens(authored, values, true, EMAIL_PREVIEW_TOKENS);
   const safeContent = sanitizeEmailHtml(substituted, true);
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${PREVIEW_CSP}"><meta name="referrer" content="no-referrer"><style>html,body{margin:0;padding:0}body{padding:16px;color:#222;background:#fff;font:14px/1.5 Arial,sans-serif;overflow-wrap:anywhere}table{border-collapse:collapse;max-width:100%}td,th{vertical-align:top}</style></head><body>${safeContent}</body></html>`;

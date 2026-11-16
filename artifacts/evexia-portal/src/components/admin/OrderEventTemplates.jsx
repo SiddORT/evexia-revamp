@@ -3,6 +3,7 @@ import MessageTemplateDrawer from './MessageTemplateDrawer.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { orderNotificationRequest, getSession } from '../../auth/adminSession.js';
 import { buildEmailPreview } from '../../services/messageTemplatePreview.js';
+import { orderEmailContent } from '../../services/emailPresentation.js';
 import './orderEventTemplates.css';
 
 const CH = [['email', 'Email'], ['sms', 'SMS'], ['waba', 'WhatsApp (WABA)']];
@@ -15,6 +16,8 @@ const PLACEMENT = 'mr_immunotherapy_placed';
 const PLACEMENT_VARIABLES = ['mr_name', 'patient_name', 'placement_date'];
 const PLACEHOLDERS = ['order_number', 'order_type', 'event_name', 'status', 'mr_name', 'timestamp', 'transaction_amount', 'company_name', 'patient_name', 'placement_date'];
 const SAMPLE = { order_number: 'IMM-2025-00417', order_type: 'Immunotherapy', event_name: 'Order shipped', status: 'Shipped', mr_name: 'Fictional MR Kavya Rao', timestamp: '14 Mar 2025, 4:12 PM', transaction_amount: 'INR 18,450.00', company_name: 'EVEXIA Life Sciences', patient_name: 'Fictional Patient', placement_date: '03/11/2026' };
+const EMAIL_SAMPLE = { ...SAMPLE, order_number: 'KIT-SAMPLE-00417', order_type: 'Kits & Consumables',
+  timestamp: '14 Mar 2025, 04:12 PM IST (Asia/Kolkata, UTC+05:30)', transaction_amount: '18,450.00' };
 const READINESS = {
   template_only: 'Template only — no SMS/WABA delivery for this trigger',
   ready: 'Ready to send', not_assigned: 'Not assigned to an event', template_required: 'No template for this event', template_disabled: 'Template disabled',
@@ -202,12 +205,21 @@ function Editor({ ed, events, busy, edit, save, discard, reload, close, variable
 
 function Preview({ t }) {
   const [sample, setSample] = useState(true);
-  const s = (v, h) => (sample ? sub(v, h) : (v || ''));
-  const doc = useMemo(() => (t.channel === 'email' ? buildEmailPreview(s(t.html, true), null) : ''), [t.channel, t.html, sample]); // eslint-disable-line react-hooks/exhaustive-deps
+  const previewValues = { ...EMAIL_SAMPLE, event_name: EVENT_LABEL[t.eventKey] || EMAIL_SAMPLE.event_name };
+  const s = (v) => {
+    if (!sample) return v || '';
+    if (t.channel !== 'email') return sub(v);
+    return (v || '').replace(/\{\{([a-z][a-z0-9_]*)\}\}/g,
+      (match, key) => Object.hasOwn(previewValues, key) ? previewValues[key] : match);
+  };
+  const content = t.channel === 'email' ? orderEmailContent(t.html, t.text, t.eventKey) : t;
+  const doc = useMemo(() => (t.channel === 'email' ? buildEmailPreview(content.html,
+    sample ? { ...EMAIL_SAMPLE, event_name: EVENT_LABEL[t.eventKey] || EMAIL_SAMPLE.event_name } : null, t.eventKey) : ''),
+  [t.channel, content.html, t.eventKey, sample]);
   return <section className="mt-prev" aria-label="Offline preview">
     <div className="mt-prev__bar"><div className="admin-tabs" role="group" aria-label="Preview mode"><button type="button" aria-pressed={!sample} className={!sample ? 'is-on' : ''} onClick={() => setSample(false)}>Tokens</button><button type="button" aria-pressed={sample} className={sample ? 'is-on' : ''} onClick={() => setSample(true)}>Fictional sample</button></div></div>
-    <p className="mt-note">Offline, inert preview. Links and remote content are disabled; sample values are fictional.</p>
-    {t.channel === 'email' && <><p><strong>Subject:</strong> {s(t.subject)}</p>{t.html ? <iframe title="Email HTML preview" className="oet-frame" sandbox="" srcDoc={doc} /> : null}{t.text && <pre className="oet-pre">{s(t.text)}</pre>}</>}
+    <p className="mt-note">Offline, inert preview. Links and remote content are disabled; sample values are fictional. Email delivery adds a shared EVEXIA frame to body fragments and labels untouched default order facts; saved source is not rewritten.</p>
+    {t.channel === 'email' && <><p><strong>Subject:</strong> {s(t.subject)}</p>{t.html ? <iframe title="Email HTML preview" className="oet-frame" sandbox="" srcDoc={doc} /> : null}{t.text && <pre className="oet-pre">{s(content.text)}</pre>}</>}
     {t.channel === 'sms' && <><p className="mt-note">DLT ID: {t.dltId || 'not set'}</p><pre className="oet-pre">{s(t.text)}</pre></>}
     {t.channel === 'waba' && <><p className="mt-note">Template {t.providerTemplate || 'not set'} · {t.language || 'no language'}</p>
       <ol className="oet-plist">{(t.parameters || []).map((p, i) => <li key={i}>{`{{${i + 1}}}`} = {p ? (sample ? SAMPLE[p] ?? p : `{{${p}}}`) : 'unmapped'}</li>)}</ol>

@@ -69,11 +69,17 @@ class DeliveryHTML(HTMLParser):
                             or not re.fullmatch(r"[a-zA-Z0-9 #.,%()\-]+", css.strip())
                             or re.search(r"url|expression|image|var\s*\(|attr\s*\(", css, re.I)):
                         raise ValueError("Unsupported inline styling.")
-            clean.append(f'{key}="{escape(value, quote=True)}"')
+            # Validate authored attributes above before normalizing the sole
+            # allowed image. Do not weaken the existing source restrictions.
+            if not (tag == "img" and key in ("width", "height", "alt", "style")):
+                clean.append(f'{key}="{escape(value, quote=True)}"')
         if tag == "a" and not any(k == "href" for k, _ in attrs):
             raise ValueError("Links require the assigned server-owned URL.")
         if tag == "img" and not any(k == "src" for k, _ in attrs):
             raise ValueError("Images require the bundled logo.")
+        if tag == "img":
+            clean.extend(['alt="EVEXIA Life Sciences"', 'width="154"',
+                          'style="display:inline-block;max-width:100%;height:auto"'])
         self.output.append("<" + tag + (" " + " ".join(clean) if clean else "") + ">")
         if tag not in ("img", "br", "hr"):
             self.stack.append(tag)
@@ -201,4 +207,7 @@ def _render(template, *, recipient_name, reset_url, expiry_minutes, portal_name,
     subject = sub(template.subject)
     if re.search(r"[\x00-\x1f\x7f-\x9f]", subject) or len(subject) > 998:
         raise ValueError("Invalid rendered subject.")
-    return RenderedEmail(subject, sub(template.text), sub(html, True))
+    from app.services.email_presentation import delivery_presentation, ACCOUNT_TITLES
+    return RenderedEmail(subject, sub(template.text),
+                         delivery_presentation(sub(html, True), source=html,
+                             title=ACCOUNT_TITLES.get(template.event_key, "")))

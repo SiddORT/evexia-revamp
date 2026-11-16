@@ -34,6 +34,7 @@
 - [Label template scope](label-template-scope.md) — supplied PDFs guide Settings samples only; do not activate live label output or infer clinical/batch values.
 - [Receipt PDF text geometry](receipt-pdf-text-geometry.md) — SVG collapses whitespace before character indexing; measure displayed characters, not raw textContent.
 - [Message preview boundary](message-preview-boundary.md) — preserve authored source, but keep previews offline and inert after literal substitution; never relax isolation for inbox fidelity.
+- [Email presentation policy](email-presentation-policy.md) — modernization is presentation only; preserve authored wording and queued guards without activating or replaying delivery.
 - [Isolated Python parsers](isolated-python-parsers.md) — test child imports explicitly; isolated Python does not inherit Replit's package search path.
 - [Migration child dependencies](migration-child-dependencies.md) — Replit startup hooks can mask lost CI dependency paths; verify external-interpreter children.
 - [Auth renewal and drafts](auth-renewal-drafts.md) — fail-closed session checks must not discard already-mounted browser-local editor drafts.

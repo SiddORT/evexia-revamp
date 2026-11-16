@@ -27,9 +27,9 @@ export default function MessageTemplatePreview({ channel, content, eventKey = nu
   }, [c.subject, c.html, c.text, c.body, email, eventKey]);
   const vals = mode === 'sample' ? values : null;
   const sub = (v) => (vals ? substituteTokens(v || '', vals, false, email ? variables : SUPPORTED_TOKENS) : (v || ''));
-  const srcDoc = useMemo(() => (email ? buildEmailPreview(c.html || '', vals) : ''),
+  const srcDoc = useMemo(() => (email ? buildEmailPreview(c.html || '', vals, eventKey) : ''),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [email, c.html, mode, values]);
+    [email, c.html, mode, values, eventKey]);
   const smsText = !email ? sub(c.body) : '';
   const blocked = email && /<(script|iframe|object|embed|link|form)\b|\son\w+\s*=|<img[^>]+src\s*=\s*["']?(https?:)?\/\//i.test(c.html || '');
   return <section className="mt-prev" aria-label="Preview" data-testid={`${idPrefix}-preview`}>

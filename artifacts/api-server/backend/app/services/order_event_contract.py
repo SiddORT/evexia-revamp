@@ -37,8 +37,16 @@ def render(template, values):
     from app.services.immunotherapy_placement_notification import ASSIGNMENT
     from app.services.email_rendering import validate_template
     placement = template.event_key == ASSIGNMENT
-    safe = (validate_template(template.subject, template.html, template.text, ASSIGNMENT) if placement
-            else "".join(DeliveryHTML(template.html).output))
+    from app.services.email_presentation import (
+        order_content, recorded_time, delivery_presentation, ACCOUNT_TITLES,
+    )
+    source, text = (template.html, template.text) if placement else order_content(template)
+    safe = (validate_template(template.subject, source, text, ASSIGNMENT) if placement
+            else "".join(DeliveryHTML(source).output))
+    # Email-only copy; SMS/WABA and immutable snapshots retain their contract.
+    values = dict(values)
+    if not placement and "timestamp" in values:
+        values["timestamp"] = recorded_time(values["timestamp"])
     import re
     subject = substitute(template.subject, values)
     if re.search(r"[\x00-\x1f\x7f-\x9f]", subject) or len(subject) > 998:
@@ -47,5 +55,6 @@ def render(template, values):
         literal = escape(values[match[1]], quote=True)
         return literal.replace("\n", "<br>") if placement and match[1] == "allergen_list" else literal
     return RenderedEmail(subject=subject,
-                         text=substitute(template.text, values),
-                         html=TOKEN.sub(html_value, safe))
+                         text=substitute(text, values),
+                         html=delivery_presentation(TOKEN.sub(html_value, safe), source=safe,
+                             title=ACCOUNT_TITLES.get(template.event_key, EVENTS.get(template.event_key, ""))))

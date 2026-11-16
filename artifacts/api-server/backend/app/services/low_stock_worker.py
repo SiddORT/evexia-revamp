@@ -139,10 +139,24 @@ def rendered(data, link):
         for r in data["items"]
     ]
     text_body = f"Low stock alerts\nSnapshot: {instant} (UTC)\n\n" + "\n".join(lines) + "\n\nSign in to inventory: " + link
-    html = ("<h1>Low stock alerts</h1><p>Snapshot: " + escape(instant) +
-        " (UTC)</p><ul>" + "".join("<li>" + escape(line) + "</li>" for line in lines) +
-        '</ul><p><a href="' + escape(link, quote=True) + '">Sign in to inventory</a></p>')
-    return RenderedEmail("EVEXIA low stock alerts", text_body, html)
+    from app.services.email_presentation import delivery_presentation
+    cards = []
+    for row in data["items"]:
+        fields = [
+            ("Category", row["category"]),
+            ("Quantity", row["quantity"] + " " + row["unit"]),
+            ("Threshold", row["thresholdLimit"] if row["thresholdLimit"] is not None else "Not set"),
+            ("Reason", row["reason"]),
+        ]
+        cards.append('<div style="padding:16px;margin:0 0 16px;border:1px solid #ddd7e5;border-radius:8px">'
+            '<h2 style="font-size:18px;line-height:1.4;margin:0 0 12px">' + escape(row["name"]) + '</h2>' +
+            "".join('<p style="margin:0 0 8px"><strong>' + escape(label) + ':</strong> ' +
+                    escape(value) + '</p>' for label, value in fields) + '</div>')
+    html = ('<p style="margin:0 0 24px">Snapshot: ' + escape(instant) + ' (UTC)</p>' +
+        "".join(cards) + '<p><a style="color:#187368;text-decoration:underline" href="' +
+        escape(link, quote=True) + '">Sign in to inventory</a></p>')
+    return RenderedEmail("EVEXIA low stock alerts", text_body,
+                         delivery_presentation(html, title="Low stock alerts"))
 
 
 def finish(db, week, slot, token, status, category=None):
