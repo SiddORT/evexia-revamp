@@ -1,22 +1,23 @@
 # MR sales achievement
 
-## Deferred Kits contribution integration
+## KIT achievement authority
 
-Kits financial saves now retain separate `kits_parking_discount_v1` MR sales
-and achievement facts alongside the existing encrypted invoice pricing.
-See `docs/kits-orders.md` for formulas, examples, signed rounding, unavailable
-inputs and financial-revision evidence. This does **not** change this report
-or any MR/Admin dashboard: the projection below still uses saved payable totals.
-Do not interpret storing contribution evidence as permission to switch reports,
-targets, collections or cached aggregates to the new amounts.
+Eligible KIT orders now contribute **saved Business Parking directly**, with no
+discount or active credit-note deductions. ₹900 Parking contributes ₹900 even
+when invoice discounts or active credit notes exist. Receipts and verification
+do not affect achievement. Missing Parking makes the order contribution
+unavailable, never zero or an invoice/contribution fallback; explicit zero is
+valid. Valid Parking does not require invoice pricing.
 
-A future approved integration must read saved contribution facts without
-recalculating from current masters, require actual order approval and matching
-saved MR/date/financial-basis attribution, exclude returned/rejected orders, and
-disclose missing historical contributions rather than inventing zeroes. Later
-nonfinancial order versions can legitimately exceed the financial-save version;
-compare the actual basis, not version equality alone. No bulk backfill has
-been authorized.
+One shared `achievement_amount` policy serves Overview annual progress,
+Performance annual/quarterly/monthly totals and Targets summary/per-order
+amounts and percentages. All other types retain their saved invoice-total
+formula. The general settlement `saved_total` helper is unchanged.
+
+Existing encrypted `kits_parking_discount_v1` facts and financial history remain
+untouched and are not read as achievement authority, recomputed or backfilled.
+The later direct-Parking approval supersedes the earlier invoice-total
+achievement basis for KIT only, not historical snapshot meanings.
 
 ## Approved read-only scope
 
@@ -70,14 +71,16 @@ No performance claim or benchmark is made.
 
 ## Money, target availability and pagination
 
-The existing settlement `saved_total` contract extracts:
+Achievement uses saved facts without recalculating current catalogue prices:
 
 - Immunotherapy: the saved integer `totalMinor`, divided exactly by 100. No sum
   over bottles or child/suborder records.
 - SPT: saved `total`, already representing all saved patient amounts once.
-- Kits: saved `pricing.total`, including its saved tax contract; not Business
-  Parking or current catalogue rates.
+- KIT: saved `businessParking` directly, with no invoice-pricing requirement.
 - Lupin: saved `total`, not recomputed from current count or catalogue prices.
+
+The separate settlement `saved_total` contract still extracts KIT
+`pricing.total` for invoices, debt, credits and shared Gross/Actual Sales.
 
 Missing, corrupt, undecryptable or invalid per-order financial evidence becomes
 an unavailable amount, not zero. Every such eligible order is still counted and
@@ -123,17 +126,17 @@ Dashboard now has a separate aggregate contract documented in
 `docs/mr-dashboard.md`. Its order cards and recent saved orders use the selected
 year/quarter; achievement retains full-year context and directory counts are
 current. The former fictional dashboard activity panel has been removed.
-Unrelated demo workflows and Targets reporting behavior remain unchanged.
+Unrelated demo workflows and non-KIT Targets reporting behavior remain unchanged.
 
 ## Verification limits for this delivery
 
 This is **source-only and untested** at the user's request. Authorization,
-four saved-total extraction paths, approved-state whitelist, fiscal boundaries,
+saved Parking/invoice extraction policies, approved-state whitelist, fiscal boundaries,
 one-row-per-order projection, sum-before-pagination, exact math and response
 guards were inspected in source.
 
-Only offline FastAPI OpenAPI export, direct Orval generation, generated Zod
-constant ordering and generated-file formatting were run. The ordinary codegen
+Only scoped offline FastAPI OpenAPI export and direct dashboard Orval generation
+were run for this extension. The ordinary codegen
 wrapper was deliberately not used because it chains library type checking.
 
 No tests were added, modified or run. No regression/release suites, completion

@@ -49,6 +49,15 @@ def target_for_year(db, mr_id, year):
     return row, state
 
 
+def achievement_amount(kind, saved):
+    """KIT alone uses independent saved Parking, never invoice/contribution facts."""
+    if kind == "Kit":
+        from app.services.settlements import exact
+        parking = saved.get("businessParking")
+        return None if parking is None else exact(parking)
+    return saved_total(kind, saved)
+
+
 def transaction(db, actor, work):
     try:
         # Reuse order identity/graph checks and the shared financial/lifecycle lock.
@@ -124,7 +133,7 @@ def reporting(db, actor, start_year=None, period="all", offset=0, limit=25):
                                        422, "mr_sales_limit")
                     try:
                         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
-                        amount = saved_total(kind, saved)
+                        amount = achievement_amount(kind, saved)
                     except (DirectoryCryptoError, ImmError, ValueError, KeyError, TypeError, AttributeError, ArithmeticError):
                         # Per-order unreadable prices stay visible, never zero.
                         amount = None

@@ -21,6 +21,11 @@
 .mrd-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); }
 .mrd-grid--status { grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); }
 .mrd-grid--financial { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mrd-card--financial { padding-right: 12px; }
+.mrd-card--financial .mrd-card__body { flex: 1; overflow-wrap: anywhere; }
+.mrd-card--financial h3 { margin: 0; font-size: 12px; color: var(--admin-text-soft); }
+.mrd-card--financial .mrd-link { justify-self: start; min-height: 32px; }
+@media (max-width: 1100px) { .mrd-grid--financial { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .mrd-grid--live { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .mrd-card { position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 12px 40px 12px 12px; min-width: 0; background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px; }
 .mrd-card__icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--admin-state-soft); color: var(--admin-accent); }

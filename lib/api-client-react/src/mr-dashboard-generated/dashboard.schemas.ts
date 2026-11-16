@@ -56,6 +56,48 @@ export interface MRDashboardDirectory {
   patients: number;
 }
 
+export type MRDashboardFinancialContributionKind = typeof MRDashboardFinancialContributionKind[keyof typeof MRDashboardFinancialContributionKind];
+
+
+export const MRDashboardFinancialContributionKind = {
+  IT: 'IT',
+  Kit: 'Kit',
+  SPT: 'SPT',
+  Lupin: 'Lupin',
+} as const;
+
+export type MRDashboardFinancialContributionState = typeof MRDashboardFinancialContributionState[keyof typeof MRDashboardFinancialContributionState];
+
+
+export const MRDashboardFinancialContributionState = {
+  configured: 'configured',
+  unconfigured: 'unconfigured',
+} as const;
+
+export interface MRDashboardFinancialMetric {
+  amount: string | null;
+  complete: boolean;
+}
+
+export interface MRDashboardFinancialAmounts {
+  actualSales: MRDashboardFinancialMetric;
+  dueAmount: MRDashboardFinancialMetric;
+  grossSales: MRDashboardFinancialMetric;
+  totalSales: MRDashboardFinancialMetric;
+}
+
+export interface MRDashboardFinancialContribution {
+  kind: MRDashboardFinancialContributionKind;
+  state: MRDashboardFinancialContributionState;
+  totals: MRDashboardFinancialAmounts | null;
+}
+
+export interface MRDashboardFinancial {
+  contributions: MRDashboardFinancialContribution[];
+  scope: 'configured-subtotal';
+  totals: MRDashboardFinancialAmounts;
+}
+
 export interface MRDashboardMonth {
   amount: string | null;
   knownSales: string;
@@ -121,6 +163,7 @@ export interface MRDashboardReport {
   dateFrom: string;
   dateTo: string;
   directory: MRDashboardDirectory;
+  financial: MRDashboardFinancial;
   monthly: MRDashboardMonth[];
   mrId: string;
   orders: MRDashboardCount;

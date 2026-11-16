@@ -1,4 +1,4 @@
-"""Read-only dashboard projections; intentionally no deferred financial fields."""
+"""Read-only MR-self projections with explicitly configured financial subtotals."""
 from typing import Literal
 from pydantic import BaseModel
 
@@ -49,6 +49,30 @@ class MRDashboardDirectory(BaseModel):
     patients: int
 
 
+class MRDashboardFinancialMetric(BaseModel):
+    amount: str | None
+    complete: bool
+
+
+class MRDashboardFinancialAmounts(BaseModel):
+    totalSales: MRDashboardFinancialMetric
+    grossSales: MRDashboardFinancialMetric
+    actualSales: MRDashboardFinancialMetric
+    dueAmount: MRDashboardFinancialMetric
+
+
+class MRDashboardFinancialContribution(BaseModel):
+    kind: Literal["IT", "Kit", "SPT", "Lupin"]
+    state: Literal["configured", "unconfigured"]
+    totals: MRDashboardFinancialAmounts | None
+
+
+class MRDashboardFinancial(BaseModel):
+    scope: Literal["configured-subtotal"]
+    totals: MRDashboardFinancialAmounts
+    contributions: list[MRDashboardFinancialContribution]
+
+
 class MRDashboardReport(BaseModel):
     mrId: str
     startYear: int
@@ -59,6 +83,7 @@ class MRDashboardReport(BaseModel):
     orders: MRDashboardCount
     statuses: list[MRDashboardCount]
     directory: MRDashboardDirectory
+    financial: MRDashboardFinancial
     annual: MRDashboardAchievement
     quarters: list[MRDashboardAchievement]
     monthly: list[MRDashboardMonth]

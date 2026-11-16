@@ -261,7 +261,11 @@ def main() -> None:
             "KitsRecord": ("ledgerCredited", "ledgerPaid"),
             "SettlementRecord": ("credited", "credits", "invoiceReference"),
             "SettlementAllocation": ("expected_credited",),
-        } if args.scope == "settlement-credits" else {}
+        } if args.scope == "settlement-credits" else {
+            # Dashboard additions must update the existing report reference,
+            # not only append its previously unseen dependency schemas.
+            "MRDashboardReport": ("financial",),
+        } if args.scope == "mr-dashboard" else {}
         needed.update(deferred_fields)
         for name in needed:
             if name in deferred_fields:

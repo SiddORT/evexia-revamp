@@ -9,9 +9,9 @@
   and count-card portals close when leaving Overview.
 - Overview retains a compact restriction status backed by the same fetched
   state as the detailed restrictions panel.
-- The undefined financial cards remain in a secondary disclosure. They have
-  no new formulas. The policy/evidence disclosure and long implementation
-  explanations have been removed.
+- Overview now has four shared financial cards with configured KIT subtotals
+  and an explicit disclosure that other type formulas are pending. There is
+  no duplicate pending-only card group in Doctor payments.
 - Dashboard-local layouts wrap controls, keep mobile KPIs compact and render
   payment records as labeled mobile records without fixed-height panels.
   Existing chart/table alternatives and global MR navigation remain intact.
@@ -55,7 +55,42 @@ cross-tab notifications, visibility, page-show, focus and explicit Refresh.
 Settlements have no separate change broadcast today; their existing
 polling/focus pattern and explicit Refresh provide the freshness path.
 
-## Verification actually performed
+## Shared Overview financial contributions
+
+The four shared cards use the selected FY/quarter saved-order-date period and
+saved MR ownership, including Doctor-less KIT supply orders. They do not use
+the current assigned-Doctor directory above. Total Sales sums saved Business
+Parking. Gross and Actual Sales intentionally both sum saved invoice payable
+totals. These three sales measures require the existing approved-state whitelist.
+
+Due Amount retains existing obligation lifecycle rules (including payable
+Returned orders). It adds committed unverified allocation amounts to ordinary
+unpaid balances: payable minus all receipts minus active credits plus
+unverified receipts. ₹1,000 payable and ₹300 unverified means ₹700 unpaid plus
+₹300 unverified = ₹1,000 Due; after verification it becomes ₹700. Fully
+received but unverified is not zero on this card. The all-date Doctor balances,
+ledger balances and enforcement rules above are unchanged.
+
+KIT target achievement separately uses saved Business Parking directly with no
+discount, credit-note, receipt or verification deductions: ₹900 Parking means
+₹900 achievement. Overview, Performance and Targets share this policy.
+Non-KIT achievement is unchanged. Existing encrypted contribution/history
+snapshots are neither rewritten nor used as a fallback.
+
+See `mr-dashboard.md` for the configured-subtotal contract, independent evidence
+availability, exact arithmetic, bounded snapshot read and privacy boundaries.
+
+### Financial contribution delivery verification
+
+Only source/diff inspection and narrowly scoped offline OpenAPI/direct dashboard
+client and validator generation were performed for this change. No tests,
+regression/release checks, completion-validation wrappers, builds, typechecks,
+browser/runtime probes, migrations, managed service starts/restarts,
+deployments or live business writes were performed. Runtime behavior remains
+**unverified**, including totals, verification transitions, historical evidence,
+authorization, concurrent changes and responsive/keyboard rendering.
+
+## Earlier organization work: historical verification record
 
 - Offline scoped OpenAPI export and additive dashboard client/validator
   generation. The package codegen wrapper was not used because it chains checks.

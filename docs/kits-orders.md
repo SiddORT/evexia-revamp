@@ -210,11 +210,21 @@ the explicit Admin decision. Tokens bind the Kits financial basis and saved
 version as well as current limits/history/payments; equal totals with changed
 financial inputs do not share approval evidence. Warnings never auto-reject.
 
-These are saved financial facts, **not earned credit**. Future aggregation must
-separately require actual approval, match saved MR/date attribution and the
-financial basis, and exclude returned/rejected orders without erasing facts.
-The existing MR/Admin dashboards, sales-achievement report, collections and
-targets are unchanged. No historical bulk backfill or recalculation occurs.
+These are historical saved financial facts, **not earned credit**. The later
+MR reporting approval uses saved Business Parking **directly** for eligible KIT
+achievement, not either discount-derived result above: ₹900 Parking contributes
+₹900 even with discounts or active credit notes. Missing Parking is unavailable,
+explicit zero is valid, and valid Parking does not require invoice pricing.
+Dashboard Overview, Performance and Targets share that policy, preserving the
+approved-state whitelist and saved MR/order-date attribution.
+
+The shared MR Overview financial cards now include configured KIT contributions:
+Total Sales uses Parking; Gross and Actual Sales both use invoice payable
+totals; Due Amount uses unpaid plus unverified committed allocations. Other
+order-type card formulas remain explicitly unconfigured, not zero.
+The existing encrypted snapshots above remain untouched. Admin dashboard,
+collections, pricing and financial enforcement are unchanged. No historical
+bulk backfill or recalculation occurs. See `mr-dashboard.md` for read boundaries.
 
 This extension was inspected through source and diffs only, with narrowly
 scoped offline OpenAPI/client/Zod generation and generated-source formatting.

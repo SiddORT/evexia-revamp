@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
+import { salesMoney } from '../services/serverMRSales.js';
 
 export const KIND_LABELS = { IT: 'Immunotherapy', Kit: 'Kits & Consumables', SPT: 'SPT', Lupin: 'Lupin' };
 export const KIND_ORDER = ['IT', 'Kit', 'SPT', 'Lupin'];
@@ -101,16 +102,19 @@ export default function DashboardCountCard({ icon: Icon, label, total, byType, t
   </div>;
 }
 
-/** Deferred financial card: never a zero, never a fabricated split. */
-export function PendingCard({ icon: Icon, label, testId }) {
-  return <div className="mrd-card mrd-card--pending" data-testid={testId}>
+/** Shared card displaying only the explicitly configured type contributions. */
+export function FinancialCard({ icon: Icon, label, metric, onRetry, testId }) {
+  const id = useId();
+  return <article className="mrd-card mrd-card--financial" data-testid={testId} aria-labelledby={id}>
     <span className="mrd-card__icon" aria-hidden="true"><Icon size={17} /></span>
     <div className="mrd-card__body">
-      <strong aria-label={`${label}: not yet defined`}>—</strong>
-      <span>{label}</span>
-      <small>Definition pending · type split pending</small>
+      <h3 id={id}>{label}</h3>
+      <strong data-testid={`${testId}-value`}>{metric.complete ? salesMoney(metric.amount) : 'Unavailable'}</strong>
+      <small>KIT included · Other order types pending</small>
+      {!metric.complete && <><small>Incomplete saved evidence · No estimate</small>
+        <button type="button" className="mrd-link" onClick={onRetry} aria-label={`Retry ${label}`}>Retry</button></>}
     </div>
-  </div>;
+  </article>;
 }
 
 export function DirectoryCard({ icon: Icon, label, value, note, testId }) {

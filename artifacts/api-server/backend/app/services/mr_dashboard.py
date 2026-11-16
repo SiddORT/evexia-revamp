@@ -10,7 +10,7 @@ from app.services.directory_inventory import DirectoryCryptoError
 from app.services.directory_runtime import crypto_scope
 from app.services.immunotherapy import ImmError
 from app.services.order_lifecycle import status
-from app.services.settlements import fmt, saved_total
+from app.services.settlements import fmt
 from app.services.shipments import SOURCES
 
 KINDS = ("IT", "Kit", "SPT", "Lupin")
@@ -121,7 +121,7 @@ def report(db, actor, start_year=None, period="all"):
                         month = by_month[row.date.isoformat()[:7]]
                         try:
                             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
-                            amount = saved_total(kind, saved)
+                            amount = mr_sales.achievement_amount(kind, saved)
                         except (DirectoryCryptoError, ImmError, ValueError, KeyError, TypeError,
                                 AttributeError, ArithmeticError):
                             amount = None
@@ -147,13 +147,15 @@ def report(db, actor, start_year=None, period="all"):
                         if unavailable == 0 and target is not None else None,
                         percentage=mr_sales.percentage(known, target) if unavailable == 0 else None)
 
+        from app.services.mr_dashboard_financials import financial_cards
+        financial = financial_cards(db, mr_id, start, end)
         return dict(mrId=str(mr_id), startYear=year, currentYear=mr_sales.current_year(), period=period,
                     dateFrom=start.isoformat(), dateTo=end.isoformat(),
                     directory=dict(doctors=doctor_count, patients=patient_count),
                     orders=count_card("Total Orders", counts),
                     statuses=[count_card(label, status_counts[label]) for label in STATUSES],
                     recent=recent[:RECENT_LIMIT], recentLimit=RECENT_LIMIT,
-                    annual=achievement("all", months),
+                    financial=financial, annual=achievement("all", months),
                     quarters=[achievement(f"Q{i + 1}", months[i * 3:i * 3 + 3]) for i in range(4)],
                     monthly=[dict(month=row["month"], knownSales=fmt(row["known"]),
                                   amount=None if row["unavailable"] else fmt(row["known"]),

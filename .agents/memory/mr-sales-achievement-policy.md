@@ -13,13 +13,16 @@ contribute.
 **How to apply:** Preserve this rule when extending MR reporting. Do not turn
 achievement into collections, delivered-only accounting or target administration.
 
-The MR dashboard's Total Sales, Gross Sales, Actual Sales and Due Amount remain
-undefined until the user supplies each formula separately. Do not infer them
-from a supplied screenshot or substitute achievement or collection arithmetic.
-Keep them visibly unconfigured rather than claiming zero balances.
+KIT achievement uses saved Business Parking directly, without discount or
+credit-note deductions. Missing Parking is unavailable; explicit zero is valid.
+Do not require invoice pricing or substitute invoice totals or stored
+discount-derived contribution facts. Other order types retain their prior
+achievement formulas.
 
-**Why:** The user explicitly deferred defining each financial card while
-approving live order, directory, target and achievement reporting.
+**Why:** The user explicitly superseded the KIT invoice-total achievement basis,
+while preserving historical encrypted contribution snapshots and non-KIT rules.
 
-**How to apply:** Treat approval for the live MR overview as separate from
-approval for these financial definitions or protected Kits contribution data.
+**How to apply:** Keep Overview, Performance and Targets consistent. A ₹900
+Parking contributes ₹900 despite invoice discounts, active credits, receipts or
+verification. Shared dashboard card formulas have a separate narrow approval:
+see [shared financial policy](mr-shared-financial-policy.md).

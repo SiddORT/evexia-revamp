@@ -37747,6 +37747,9 @@
           "directory": {
             "$ref": "#/components/schemas/MRDashboardDirectory"
           },
+          "financial": {
+            "$ref": "#/components/schemas/MRDashboardFinancial"
+          },
           "monthly": {
             "items": {
               "$ref": "#/components/schemas/MRDashboardMonth"
@@ -37816,7 +37819,8 @@
           "quarters",
           "monthly",
           "recent",
-          "recentLimit"
+          "recentLimit",
+          "financial"
         ],
         "title": "MRDashboardReport",
         "type": "object"
@@ -38044,6 +38048,120 @@
           "number"
         ],
         "title": "OrderIRNInput",
+        "type": "object"
+      },
+      "MRDashboardFinancial": {
+        "properties": {
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/MRDashboardFinancialContribution"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "scope": {
+            "const": "configured-subtotal",
+            "title": "Scope",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/MRDashboardFinancialAmounts"
+          }
+        },
+        "required": [
+          "scope",
+          "totals",
+          "contributions"
+        ],
+        "title": "MRDashboardFinancial",
+        "type": "object"
+      },
+      "MRDashboardFinancialAmounts": {
+        "properties": {
+          "actualSales": {
+            "$ref": "#/components/schemas/MRDashboardFinancialMetric"
+          },
+          "dueAmount": {
+            "$ref": "#/components/schemas/MRDashboardFinancialMetric"
+          },
+          "grossSales": {
+            "$ref": "#/components/schemas/MRDashboardFinancialMetric"
+          },
+          "totalSales": {
+            "$ref": "#/components/schemas/MRDashboardFinancialMetric"
+          }
+        },
+        "required": [
+          "totalSales",
+          "grossSales",
+          "actualSales",
+          "dueAmount"
+        ],
+        "title": "MRDashboardFinancialAmounts",
+        "type": "object"
+      },
+      "MRDashboardFinancialContribution": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "IT",
+              "Kit",
+              "SPT",
+              "Lupin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "configured",
+              "unconfigured"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MRDashboardFinancialAmounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "state",
+          "totals"
+        ],
+        "title": "MRDashboardFinancialContribution",
+        "type": "object"
+      },
+      "MRDashboardFinancialMetric": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "amount",
+          "complete"
+        ],
+        "title": "MRDashboardFinancialMetric",
         "type": "object"
       }
     },

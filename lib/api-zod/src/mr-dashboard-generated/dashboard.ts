@@ -41,6 +41,49 @@ export const MrDashboardResponse = zod.object({
   "doctors": zod.number().int(),
   "patients": zod.number().int()
 }),
+  "financial": zod.object({
+  "contributions": zod.array(zod.object({
+  "kind": zod.enum(['IT', 'Kit', 'SPT', 'Lupin']),
+  "state": zod.enum(['configured', 'unconfigured']),
+  "totals": zod.union([zod.object({
+  "actualSales": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+}),
+  "dueAmount": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+}),
+  "grossSales": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+}),
+  "totalSales": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+})
+}),zod.null()])
+})),
+  "scope": zod.literal("configured-subtotal"),
+  "totals": zod.object({
+  "actualSales": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+}),
+  "dueAmount": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+}),
+  "grossSales": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+}),
+  "totalSales": zod.object({
+  "amount": zod.union([zod.string(),zod.null()]),
+  "complete": zod.boolean()
+})
+})
+}),
   "monthly": zod.array(zod.object({
   "amount": zod.union([zod.string(),zod.null()]),
   "knownSales": zod.string(),

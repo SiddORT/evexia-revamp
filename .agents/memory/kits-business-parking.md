@@ -15,6 +15,9 @@ formulas are a later explicit user instruction, not an inference from it.
 
 **How to apply:** Preserve invoice-neutrality and missing-versus-zero meaning.
 Save contribution facts only on financial changes; preserve historical facts.
-Dashboard/report integration is deferred and requires separate approval. Stored
-facts alone do not establish earned credit: approval, saved owner/date and
-exclusion of returned/rejected orders remain separate requirements.
+Later MR reporting approval uses saved Parking directly for KIT achievement
+and shared Total Sales, not these discount-derived snapshots. Preserve those
+historical encrypted facts without recomputing or backfilling them. See
+[shared financial policy](mr-shared-financial-policy.md) for the approved card
+definitions. Approval, saved owner/date and exclusion of returned/rejected
+orders remain separate sales/achievement requirements.

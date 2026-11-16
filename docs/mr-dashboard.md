@@ -14,12 +14,13 @@ workflows retain their behavior.
 | Currently Assigned Patients | Current MR-visible active Patient references: active nondeleted Patient Directory and identity owner, active nondeleted assigned Doctor and saved MR ownership |
 | Annual target and four quarterly panels | Entire selected financial year; explicit quarter date ranges |
 | Monthly and quarterly achievement graphs | Entire selected financial year regardless of order-period selection |
-| Total Sales, Gross Sales, Actual Sales, Due Amount | **Unconfigured**: em dash, “Definition pending” and type split pending |
+| Total Sales, Gross Sales, Actual Sales, Due Amount | Overview shared cards; selected saved-order-date FY/quarter; KIT configured contribution only; other types explicitly unconfigured |
 
-Financial definitions must be supplied separately. None of those four cards
-uses achievement, invoice totals, collections, Parking/contribution snapshots,
-payment flags or inferred debt as a substitute. They remain visible even when
-the reporting request fails. Directory counts do not change their meaning with
+The shared financial cards display configured subtotals, not complete all-order
+totals. Only KIT formulas are authorized; Immunotherapy, SPT and Lupin remain
+unconfigured, not zero. Missing evidence shows unavailable with retry; a report
+failure shows the dashboard error and retry, never stale amounts.
+Directory counts do not change their meaning with
 historical order periods or order types. MR does not gain generic Patient-master
 access; the Patient total matches the existing eligible reference surface,
 not Admin's broader Patient directory or historical order participants.
@@ -39,7 +40,7 @@ renewal, identity/generation checks and caller cancellation remain in place.
 The component requests 25 Doctors per page using `offset` and `limit`, passes its
 abort signal and rejects stale results after refresh, paging or session changes.
 It displays saved payment/day limits and the business evaluation date separately
-from the four undefined financial cards. Refresh retries the read. Valid empty
+from the four shared Overview financial cards. Refresh retries the read. Valid empty
 and disabled responses retain their distinct messages; failures remain
 unavailable, never zero balances or an assertion that no restrictions exist.
 The backend still revalidates the active MR and scopes obligations and currently
@@ -98,14 +99,68 @@ The recent feed retrieves six candidates per type, then sorts by saved date and
 source-qualified key descending and takes six globally. This bounded list does
 not supply any report-wide aggregate.
 
-## Achievement is unchanged
+## Shared financial cards and configured contributions
+
+Overview shows **Total Sales**, **Gross Sales**, **Actual Sales** and **Due Amount**
+in one responsive shared row/grid, not a KIT-only group or filter. Each card
+discloses “KIT included · Other order types pending”. The old pending-only
+disclosure has been removed from Doctor payments.
+
+The MR-self response's `financial` member has `scope="configured-subtotal"`,
+four `totals` metrics, and four `contributions` entries in IT/Kit/SPT/Lupin order.
+Each metric contains only decimal-string `amount` (null when incomplete) and
+`complete`. Only Kit is configured and carries amounts; the other entries have
+`state="unconfigured"` and `totals=null`. These nulls do not suppress the valid
+configured KIT subtotal and are not zero contributions.
+
+For the authenticated MR's saved orders in the selected order-date period:
+
+- **Total Sales:** exact sum of independently saved `businessParking`.
+- **Gross Sales and Actual Sales:** intentionally identical exact sums of saved
+  `pricing.total` invoice payable totals, not pre-discount gross, taxable value,
+  Parking, `mrSales` or `mrAchievement`.
+- Those three sales cards include only Approved/In process/Shipped/Delivered.
+  Drafts, pending submissions, rejected and returned orders do not contribute.
+- **Due Amount:** existing active obligations, including returned orders and
+  pending submissions where applicable, use saved payable minus all committed
+  receipts minus active credits, **plus only unverified allocation amounts**.
+  This equals saved payable minus verified receipts minus active credits.
+  Receipt dates do not narrow history. Mixed verification is evaluated per
+  allocation, not by marking a whole order unverified.
+
+For a ₹1,000 obligation with ₹300 unverified receipts and no credits, ordinary
+unpaid is ₹700 and dashboard Due Amount is ₹1,000. Verification makes this card
+₹700 without reposting cash. A fully received, entirely unverified ₹1,000 stays
+₹1,000 here until verification; it is not a second ledger balance.
+
+There is no Doctor join or current-assignment filter: saved MR ownership covers
+Doctor-less supply orders too. Orders, credits, receipt allocations and
+verification are read under the dashboard's existing repeatable-read snapshot
+and financial lock. No protected order snapshots, raw per-order Parking or
+contact details are returned. Targets exposes only its already authorized
+minimal per-order achievement amount and percentage.
+
+Missing Parking affects Total Sales independently of Gross/Actual. Missing
+invoice evidence affects Gross/Actual independently of valid Parking.
+Pending pricing, inconsistent balances or unreadable settlement/credit evidence
+make Due unavailable, never zero. A fully scanned empty set or cleared known
+obligation without unverified cash may show zero. Financial reads use a
+20,000-order cap, existing 50,000-entry receipt and credit history bounds,
+SQL timeouts and a 15-second application budget. Limits/errors yield unavailable
+metrics, not silent truncation. Savepoints keep a failed financial read from
+discarding valid unrelated widgets; a failed debt read preserves valid sales.
+Existing key/identity/period guards hide old responses during refresh or changes.
+
+## Achievement amount policy
 
 The dashboard shares the existing target-selection helper, approval whitelist,
-`saved_total` extraction and exact Decimal/BigInt arithmetic used by Targets.
+`achievement_amount` extraction and exact Decimal/BigInt arithmetic used by Targets.
 Eligible statuses are `Approved`, `In process`, `Shipped`, `Delivered`; saved owner
 and order date govern attribution. Pending/draft/rejected/returned orders never
-contribute. Saved authoritative payable amounts are not catalogue-repriced.
-Kits continues using saved invoice pricing, not protected contribution evidence.
+contribute. KIT uses saved Business Parking directly, independently of invoice
+pricing, discounts, credits, receipts or verification. Other types retain saved
+invoice totals. Missing Parking is unavailable; explicit zero is valid. Neither
+stored discount-derived contribution field is an achievement authority.
 
 Annual/quarterly target state remains active, missing, inactive or deleted.
 Active zero targets are genuine zero targets, not missing targets; their
@@ -139,7 +194,7 @@ Order disclosures use a separate MR component modeled on the Admin pattern;
 there are no Admin fixtures/imports or Admin navigation. Hover, focus and touch
 open four-type splits. Escape/outside press dismiss; fixed panels are clamped
 and scroll within the visual viewport without shifting cards. Directory cards
-are never split by order type; deferred financial splits remain pending.
+are never split by order type; financial cards disclose configured-subtotal scope.
 
 Charts are local React/SVG, with chronological monthly columns, grouped quarterly
 comparisons and selected-period order distribution. Monthly/quarterly tables are

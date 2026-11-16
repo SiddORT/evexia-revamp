@@ -143,3 +143,4 @@
 - [Order approval notes](order-approval-note-policy.md) — Kits, SPT and Lupin notes are optional; rejection reasons and other approval safeguards remain mandatory.
 - [MR dashboard reporting](mr-dashboard-reporting-policy.md) — all-date own-Doctor balances include both unpaid age and remaining days; reporting does not change financial policy.
 - [Order IRN scope](order-irn-scope.md) — save-only metadata for four approved sales families; live invoice actions and issued-invoice display remain deferred.
+- [Shared MR financial cards](mr-shared-financial-policy.md) — KIT-only configured contributions to shared cards; dashboard Due is unpaid plus unverified, not ledger balance.

@@ -15,7 +15,9 @@ export function SalesRules() {
   return <p className="mrw-notice">Only approved saved orders count, including orders progressed to Shipped or Delivered.
     Legacy Approved and In process mean the same approved stage. Attribution uses the saved order date and MR owner,
     not approval date. Drafts (including incomplete drafts), pending submissions, rejected, cancelled/voided and returned
-    orders do not count. Each order counts once, using its saved total—not today’s catalogue prices, payment flags or settlements.
+    orders do not count. Each KIT order counts once using saved Business Parking directly, without discount or credit-note
+    deductions and without requiring invoice pricing. Other order types retain their saved invoice-total basis.
+    Missing Parking is unavailable, not zero. Today’s catalogue prices, payment flags, receipts and verification do not affect achievement.
     Q1: April–June; Q2: July–September; Q3: October–December; Q4: January–March.</p>;
 }
 
@@ -37,7 +39,7 @@ export function SalesSummary({ report, percentageTestId = 'text-target-percentag
       </div>}
       {TARGET_NOTICE[data.targetState] && <p className="mrw-notice">{TARGET_NOTICE[data.targetState]}</p>}
       {data.target === '0.00' && <p className="mrw-notice">The active saved target is zero. Achievement and order contribution percentages are unavailable.</p>}
-      {!data.complete && <p className="mrw-alert" role="status">{data.unavailableOrders} contributing order(s) have unavailable saved prices.
+      {!data.complete && <p className="mrw-alert" role="status">{data.unavailableOrders} contributing order(s) have unavailable saved achievement amounts.
         The known sales sum below is incomplete. Definitive achievement and remaining amount are unavailable.</p>}
       <p className="mrw-notice">{data.total} approved order(s) across the entire selected period—not only the displayed page.</p>
     </section>
@@ -96,7 +98,8 @@ export default function Targets() {
           <table className="mrw-table mrw-sales-table">
             <caption className="mrw-notice">Order contributions to the selected {period === 'all' ? 'full-year' : period} target.
               {data.target == null || data.target === '0.00' ? ' Percentages are unavailable without a positive active target.' : ''}
-              {!data.complete ? ' Unavailable prices mean the period aggregate is incomplete.' : ''}</caption>
+              {' KIT uses saved Business Parking; other types use saved invoice totals.'}
+              {!data.complete ? ' Unavailable contribution amounts mean the period aggregate is incomplete.' : ''}</caption>
             <thead><tr>{['Order number', 'Type', 'Saved order date', 'Status', 'Saved sales amount', 'Target contribution'].map((label) => <th scope="col" key={label}>{label}</th>)}</tr></thead>
             <tbody>{data.items.map((row) => <tr key={row.key}>
               {[row.number, KINDS[row.kind], date(row.date), row.status, salesMoney(row.amount), row.contribution == null ? 'Unavailable' : `${row.contribution}%`].map((v, i) =>

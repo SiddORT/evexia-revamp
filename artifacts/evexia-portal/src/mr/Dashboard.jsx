@@ -10,7 +10,7 @@ import { useSalesYears } from './useSalesAchievement.js';
 import { useDoctorPayments, useFinancialRestrictions, useSavedOrderRefresh } from './useDashboardFeeds.js';
 import FinancialRestrictions, { RestrictionSummary } from './FinancialRestrictions.jsx';
 import DoctorPayments from './DoctorPayments.jsx';
-import DashboardCountCard, { DirectoryCard, KIND_LABELS, PendingCard } from './DashboardCountCard.jsx';
+import DashboardCountCard, { DirectoryCard, FinancialCard, KIND_LABELS } from './DashboardCountCard.jsx';
 import { MonthlyAchievement, QuarterComparison, TypeDistribution } from './DashboardCharts.jsx';
 import './dashboard.css';
 
@@ -36,7 +36,7 @@ function notes(a) {
   const out = [];
   if (STATE_NOTICE[a.targetState]) out.push(STATE_NOTICE[a.targetState]);
   if (a.target === '0.00') out.push('Zero target · % unavailable');
-  if (!a.complete) out.push(`${a.unavailableOrders} unpriced order(s) · incomplete`);
+  if (!a.complete) out.push(`${a.unavailableOrders} unavailable contribution(s) · incomplete`);
   return out;
 }
 
@@ -153,6 +153,18 @@ export default function Dashboard() {
       <RestrictionSummary state={restrictions} onOpen={() => select('payments', true)} />
       <ReportGate report={report}>{(d) => <>
         <p className="mrd-scope" role="status" aria-live="polite" data-testid="status-dashboard-scope">Orders: {periodLabel} · Directory: current</p>
+        <section aria-labelledby="mrd-financial" className="mrd-group">
+          <h2 id="mrd-financial" className="mrd-group__title">Financial summary <small>{fy} · {periodLabel} · Saved order dates</small></h2>
+          <div className="mrd-grid mrd-grid--financial">
+            <FinancialCard icon={BadgeIndianRupee} label="Total Sales" metric={d.financial.totals.totalSales} onRetry={report.refresh} testId="card-total-sales" />
+            <FinancialCard icon={Receipt} label="Gross Sales" metric={d.financial.totals.grossSales} onRetry={report.refresh} testId="card-gross-sales" />
+            <FinancialCard icon={Scale} label="Actual Sales" metric={d.financial.totals.actualSales} onRetry={report.refresh} testId="card-actual-sales" />
+            <FinancialCard icon={Wallet} label="Due Amount" metric={d.financial.totals.dueAmount} onRetry={report.refresh} testId="card-due-amount" />
+          </div>
+          <p className="mrw-notice">Configured contributions only, not complete all-order totals. Total Sales uses saved Business Parking;
+            Gross and Actual Sales both use saved invoice totals. Due Amount includes unpaid and received-but-unverified amounts,
+            including payable returned orders. Other order-type financial formulas are not configured.</p>
+        </section>
         <section aria-labelledby="mrd-overview" className="mrd-group">
           <h2 id="mrd-overview" className="sr-only">Counts</h2>
           <div className="mrd-grid mrd-grid--live">
@@ -194,16 +206,6 @@ export default function Dashboard() {
     <div {...panel('payments')}>
       <FinancialRestrictions state={restrictions} />
       <DoctorPayments state={payments} />
-      <details className="mrw-card mrd-defs">
-        <summary data-testid="button-financial-definitions">Financial cards <small>Definitions pending</small></summary>
-        <div className="mrd-grid mrd-grid--financial">
-          <PendingCard icon={BadgeIndianRupee} label="Total Sales" testId="card-total-sales" />
-          <PendingCard icon={Receipt} label="Gross Sales" testId="card-gross-sales" />
-          <PendingCard icon={Scale} label="Actual Sales" testId="card-actual-sales" />
-          <PendingCard icon={ClipboardList} label="Due Amount" testId="card-due-amount" />
-        </div>
-        <p className="mrw-notice">Formulas not yet defined. A dash is not zero.</p>
-      </details>
     </div>
 
     <div {...panel('performance')}>

@@ -20,6 +20,31 @@
 
 ## Financial facts
 
+### Separate MR dashboard measure
+
+The MR Overview's shared Due Amount card now includes the configured KIT
+contribution for its selected saved-order-date period: ordinary unpaid balance
+**plus committed unverified allocation amounts**, each once. Equivalently,
+saved payable minus verified receipts minus active credits. A ₹1,000 obligation
+with ₹300 unverified has ₹700 ledger unpaid but ₹1,000 dashboard Due Amount;
+after verification the card is ₹700. A fully received but unverified ₹1,000
+remains ₹1,000 on that card until verification. Mixed receipt verification is
+evaluated per allocation, never by adding an entire order total.
+
+This is a reporting-only definition. Ledger balances, per-Doctor balances,
+posting/verification, credit policy and eligibility retain their existing
+meanings. Returned payable orders remain obligations. No receipt-date filtering
+or legacy payment-flag inference is introduced. KIT achievement independently
+uses saved Business Parking directly without discount/credit deductions;
+the invoice-total extractor below is unchanged.
+
+This extension was inspected in source/diffs only with scoped offline contract
+generation. No tests, regression/release checks, completion-validation commands,
+builds, typechecks, browser/runtime probes, migrations, starts/restarts,
+deployments or live writes were performed. Runtime behavior is **unverified**.
+
+### Authoritative settlement totals
+
 Saved Immunotherapy `totalMinor`, SPT/Lupin `total` and Kits `pricing.total` are
 the only authoritative totals. No current catalogue lookup, patient count
 allocation, Business Parking, demo history, inferred credit or payment deadline

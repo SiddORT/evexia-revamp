@@ -39,6 +39,37 @@ function validateAchievement(row, year, period) {
   if (row.total === row.unavailableOrders && row.knownSales !== '0.00') fail();
 }
 
+const FINANCIAL_FIELDS = ['totalSales', 'grossSales', 'actualSales', 'dueAmount'];
+function validateFinancialAmounts(totals) {
+  if (!totals || Object.keys(totals).length !== FINANCIAL_FIELDS.length) fail();
+  FINANCIAL_FIELDS.forEach((key) => {
+    const value = totals[key];
+    if (!value || Object.keys(value).length !== 2 || typeof value.complete !== 'boolean'
+      || (value.complete ? !money(value.amount) : value.amount !== null)) fail();
+  });
+  if (totals.grossSales.amount !== totals.actualSales.amount
+    || totals.grossSales.complete !== totals.actualSales.complete) fail();
+}
+
+function validateFinancial(financial) {
+  if (!financial || financial.scope !== 'configured-subtotal'
+    || !Array.isArray(financial.contributions) || financial.contributions.length !== KINDS.length) fail();
+  validateFinancialAmounts(financial.totals);
+  financial.contributions.forEach((row, i) => {
+    if (!row || row.kind !== KINDS[i]) fail();
+    if (row.kind !== 'Kit') {
+      if (row.state !== 'unconfigured' || row.totals !== null) fail();
+      return;
+    }
+    if (row.state !== 'configured') fail();
+    validateFinancialAmounts(row.totals);
+    FINANCIAL_FIELDS.forEach((key) => {
+      if (row.totals[key].amount !== financial.totals[key].amount
+        || row.totals[key].complete !== financial.totals[key].complete) fail();
+    });
+  });
+}
+
 export async function getMRDashboard({ year, period = 'all', mrId, signal }) {
   const data = await mrSalesRequest('/dashboard', {
     params: { ...(year == null ? {} : { start_year: year }), period }, signal,
@@ -51,6 +82,7 @@ export async function getMRDashboard({ year, period = 'all', mrId, signal }) {
   if (data.dateFrom !== dates[0] || data.dateTo !== dates[1]
     || !data.directory || !count(data.directory.doctors) || !count(data.directory.patients)) fail();
   validateCard(data.orders, 'Total Orders');
+  validateFinancial(data.financial);
   if (!Array.isArray(data.statuses) || data.statuses.length !== STATUSES.length) fail();
   data.statuses.forEach((row, i) => validateCard(row, STATUSES[i]));
   KINDS.forEach((kind, i) => {
