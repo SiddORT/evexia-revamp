@@ -117,7 +117,8 @@
 - [MR contact masking scope](mr-contact-scope.md) — mask Doctor/Patient contacts only; preserve identities, demographics, MR self details and authoritative snapshots.
 - [Doctor overview financial boundary](doctor-overview-financial-boundary.md) — real saved facts only; payment flags do not establish debt, credit or deadlines.
 - [Shipment listing scope](shipment-listing-scope.md) — show In process, Shipped and Returned together by default; shipping must not hide an order.
-- [Settlement policy](settlement-policy.md) — only owning MRs post; Super Admin is read-only, prior payments start at zero and legacy flags are not receipts.
+- [Settlement policy](settlement-policy.md) — only owning MRs post cash; protected verification is separate, prior payments start at zero and legacy flags are not receipts.
+- [Settlement credit policy](settlement-credit-policy.md) — Super Admin non-cash credits, zero-balance reversal block, exact numbering and explicit saved invoice references.
 - [MR eligibility policy](mr-eligibility-policy.md) — MR-owned financial settings, independent zero restrictions, saved-order-date aging and advisory allergen warnings.
 - [In-house dilution policy](in-house-dilution-policy.md) — only reviewed 2/5/10-fold conversions create inventory; undiluted moves stay reserve-only.
 - [Order notification policy](order-notification-policy.md) — placing MR only; configuration changes never replay blocked history and unknown sends never auto-resend.

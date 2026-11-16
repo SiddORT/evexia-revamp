@@ -1,3 +1,23 @@
+# Settlement credit notes — prepared source only
+
+Protected Super Admin Settlement credit notes are non-cash balance reductions.
+Only the owning MR's existing Accounts history exposes read-only note evidence;
+no MR mutation or new MR destination is authorized. Active credits reduce
+outstanding/exposure/aging, never receipts, saved totals/taxes or cash collections.
+Partial payment permits reversal; zero credit-adjusted balance blocks it.
+Numbers use `CN/IMT|KIT|SPT|LPN/YY-YY/integer`, April–March Kolkata issue dates
+and one non-resetting sequence; example 163 is not an opening seed. Preserve
+order identifiers and explicitly collect the saved invoice reference: no issued
+invoice-number authority currently exists. Keep original Directory decryption
+keys for immutable credit archives. See `docs/settlement-credit-notes.md`.
+
+Forward `0112_settlement_credits` and DDL-free staged join, coordinated source
+metadata, APIs/clients and screens are prepared, not applied. Only source/diff
+inspection and offline generation/formatting were performed. No tests, builds,
+typechecks, regression/release/completion-validation wrappers, browser/runtime
+probes, managed preview starts/restarts, migrations, live writes, production
+access or deployment were run. Runtime/schema/visual behavior remain unverified.
+
 # Kits financial contributions — prepared source only
 
 Kits explicit financial saves retain server-owned `kits_parking_discount_v1`

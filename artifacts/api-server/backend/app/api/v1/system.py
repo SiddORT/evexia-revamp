@@ -54,6 +54,8 @@ def readiness(db: Session = Depends(get_db)):
             accepted.append(["0109_mapping_staged_merge"])
         if SCHEMA_REVISION == "0110_retire_legacy_pricing":
             accepted.append(["0111_pricing_retirement_merge"])
+        if SCHEMA_REVISION == "0112_settlement_credits":
+            accepted.append(["0113_credits_staged_merge"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -67,6 +69,10 @@ def readiness(db: Session = Depends(get_db)):
         # Catalogue-only successor inherits every predecessor readiness probe.
         # Shipment status CHECK expansion retains all numbering and predecessor
         # probes; accepting this exact successor must not skip capability checks.
+        if revisions in (["0112_settlement_credits"], ["0113_credits_staged_merge"]):
+            from app.services.credit_notes import ready as credits_ready
+            credits_ready(db)
+            revisions = ["0111_pricing_retirement_merge"] if revisions == ["0113_credits_staged_merge"] else ["0110_retire_legacy_pricing"]
         retired_pricing = revisions in (["0110_retire_legacy_pricing"], ["0111_pricing_retirement_merge"])
         if retired_pricing:
             from app.services.combination_order_pricing import ready as pricing_ready

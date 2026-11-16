@@ -22,7 +22,9 @@ export default function FinancialReview({ order, request, proposedValues, onEvid
           : await request(`/${order.id}/financial-review`, { signal: controller.signal });
         guard();
         if (!result || result.orderId !== order.id || result.version !== order.version || typeof result.token !== 'string'
-            || typeof result.outstanding !== 'string' || !Array.isArray(result.pendingPricingOrders)) {
+            || typeof result.outstanding !== 'string' || !Array.isArray(result.pendingPricingOrders)
+            || !(result.committedTargetCredits == null || (typeof result.committedTargetCredits === 'string' && /^(0|[1-9]\d{0,13})\.\d{2}$/.test(result.committedTargetCredits)))
+            || !(result.creditRevision == null || typeof result.creditRevision === 'string' || Number.isSafeInteger(result.creditRevision))) {
           throw new Error('Financial evidence could not be confirmed for this saved version.');
         }
         if (alive) { setState({ loading: false, data: result, error: '' }); onEvidence({ ...result, reviewValues: serialized }); }
@@ -51,7 +53,8 @@ export default function FinancialReview({ order, request, proposedValues, onEvid
         <div><dt>{compact ? 'Other priced outstanding' : 'Existing priced unpaid exposure, excluding this order'}</dt><dd>{amount(data.outstanding)}</dd></div>
         <div><dt>{compact ? serialized ? 'Entered order payable total' : 'Saved order payable total'
           : serialized ? 'Entered total' : 'Saved order total'}</dt><dd>{amount(data.proposedAmount)}</dd></div>
-        <div><dt>Committed payments on this order</dt><dd>{amount(data.committedTargetPayments)}</dd></div>
+        <div><dt>Paid (cash) on this order</dt><dd>{amount(data.committedTargetPayments)}</dd></div>
+        <div><dt>Credited on this order (not cash)</dt><dd>{data.committedTargetCredits == null ? 'Not reported' : amount(data.committedTargetCredits)}</dd></div>
         <div><dt>Resulting priced exposure</dt><dd>{amount(data.resultingExposure)}</dd></div>
       </dl>
       {compact && <p role="status">{data.exposureComplete ? 'Priced exposure history is complete.' : 'Exposure history is incomplete; pending orders are not zero.'}</p>}

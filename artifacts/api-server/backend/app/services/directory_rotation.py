@@ -56,6 +56,10 @@ def _maintenance_revision(db):
     # Preserve exactly 0096's locks, fields and retained order inventories.
     # Do not admit the staged merge or arbitrary later schemas.
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    if revision == "0112_settlement_credits":
+        return "0096_hsn_master"
+    if revision == "0113_credits_staged_merge":
+        return "0097_hsn_staged_merge"
     if revision in ("0105_combination_staged_merge", "0107_combination_status_merge", "0107_territory_staged_merge", "0109_mapping_staged_merge"):
         return "0097_hsn_staged_merge"
     if revision == "0111_pricing_retirement_merge":
@@ -110,6 +114,12 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if revisions in (["0112_settlement_credits"], ["0113_credits_staged_merge"]):
+        from app.services.credit_notes import ready as credits_ready
+        credits_ready(db)
+        db.execute(text(f"LOCK TABLE settlement_credit_notes,settlement_credit_reversals,"
+                        f"settlement_credit_requests IN {mode} MODE NOWAIT"))
+        revisions = ["0111_pricing_retirement_merge"] if revisions == ["0113_credits_staged_merge"] else ["0110_retire_legacy_pricing"]
     retired_pricing = revisions in (["0110_retire_legacy_pricing"], ["0111_pricing_retirement_merge"])
     if retired_pricing:
         from app.services.combination_order_pricing import ready as pricing_ready
@@ -375,7 +385,7 @@ def _inventory(db, crypto, digest_key):
             cursor = rows[-1]["id"]
         counts[name] = count
     patient = tables["patient_directory"]
-    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge", "0110_retire_legacy_pricing", "0111_pricing_retirement_merge"):
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0108_doctor_mr_mapping", "0109_mapping_staged_merge", "0110_retire_legacy_pricing", "0111_pricing_retirement_merge", "0112_settlement_credits", "0113_credits_staged_merge"):
         # Immutable archive: authenticate and report original-key usage, but do
         # not include it in mutable rotation batches or historical field lists.
         cursor, count = None, 0
@@ -401,6 +411,34 @@ def _inventory(db, crypto, digest_key):
             count += len(rows)
             cursor = rows[-1]["id"]
         counts["doctor_assignment_events"] = count
+    if db.scalar(text("SELECT version_num FROM alembic_version")) in ("0112_settlement_credits", "0113_credits_staged_merge"):
+        # Original keys remain required for these immutable financial archives.
+        # Authenticate/count them, never send them through mutable rotation.
+        from app.db.credit_note_models import CreditNote, CreditReversal, CreditRequest
+        from app.services.settlement_crypto import unseal
+        for model, domain in ((CreditNote, "credit_notes"), (CreditReversal, "credit_reversals"),
+                              (CreditRequest, "credit_requests")):
+            table, cursor, count = model.__table__, None, 0
+            while True:
+                staging._deadline(start, 120)
+                query = select(table).order_by(table.c.id).limit(staging.BATCH_LIMIT)
+                if cursor is not None:
+                    query = query.where(table.c.id > cursor)
+                rows = list(db.execute(query).mappings())
+                if not rows:
+                    break
+                for row in rows:
+                    logical = dict(row)
+                    stored = logical.pop("payload_ciphertext")
+                    usage[stored.split(":")[1]] += 1
+                    logical["payload"] = unseal(crypto, domain, row["id"], stored)
+                    for digest, payload in ((mac, logical), (raw, dict(row))):
+                        encoded = canonical([table.name, _encoded(payload)])
+                        digest.update(len(encoded).to_bytes(8, "big"))
+                        digest.update(encoded)
+                count += len(rows)
+                cursor = rows[-1]["id"]
+            counts[table.name] = count
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()

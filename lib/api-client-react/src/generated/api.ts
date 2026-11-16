@@ -649,6 +649,519 @@ import type {
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 
+import type {
+  CreditInput,
+  CreditPage,
+  CreditReconciliation,
+  CreditRecord,
+  CreditRevertInput,
+  ListSettlementCreditNotesParams,
+} from "./api.schemas";
+
+export const getListSettlementCreditNotesUrl = (
+  params?: ListSettlementCreditNotesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/settlements/credit-notes?${stringifiedParams}`
+    : `/api/v1/admin/settlements/credit-notes`;
+};
+
+export const listSettlementCreditNotes = async (
+  params?: ListSettlementCreditNotesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreditPage> => {
+  return customFetch<CreditPage>(getListSettlementCreditNotesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSettlementCreditNotesQueryKey = (
+  params?: ListSettlementCreditNotesParams,
+) => {
+  return [
+    `/api/v1/admin/settlements/credit-notes`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListSettlementCreditNotesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSettlementCreditNotes>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSettlementCreditNotesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlementCreditNotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSettlementCreditNotesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSettlementCreditNotes>>
+  > = ({ signal }) =>
+    listSettlementCreditNotes(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlementCreditNotes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSettlementCreditNotesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSettlementCreditNotes>>
+>;
+
+export type ListSettlementCreditNotesQueryError = ErrorType<ErrorEnvelope>;
+
+export function useListSettlementCreditNotes<
+  TData = Awaited<ReturnType<typeof listSettlementCreditNotes>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSettlementCreditNotesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlementCreditNotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSettlementCreditNotesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateSettlementCreditNoteUrl = () => {
+  return `/api/v1/admin/settlements/credit-notes`;
+};
+
+export const createSettlementCreditNote = async (
+  creditInput: CreditInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreditRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CreditRecord>(getCreateSettlementCreditNoteUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(creditInput),
+  });
+};
+
+export const getCreateSettlementCreditNoteMutationKey = () =>
+  ["createSettlementCreditNote"] as const;
+
+export const getCreateSettlementCreditNoteMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSettlementCreditNote>>,
+    TError,
+    CreateSettlementCreditNoteMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSettlementCreditNote>>,
+  TError,
+  CreateSettlementCreditNoteMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateSettlementCreditNoteMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSettlementCreditNote>>,
+    CreateSettlementCreditNoteMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSettlementCreditNote(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSettlementCreditNoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSettlementCreditNote>>
+>;
+
+export type CreateSettlementCreditNoteMutationBody = BodyType<CreditInput>;
+
+export type CreateSettlementCreditNoteMutationError = ErrorType<ErrorEnvelope>;
+
+export type CreateSettlementCreditNoteMutationVariables = {
+  data: BodyType<CreditInput>;
+};
+
+export const useCreateSettlementCreditNote = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSettlementCreditNote>>,
+    TError,
+    CreateSettlementCreditNoteMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSettlementCreditNote>>,
+  TError,
+  CreateSettlementCreditNoteMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateSettlementCreditNoteMutationOptions(options));
+};
+
+export const getGetSettlementCreditNoteUrl = (identity: string) => {
+  return `/api/v1/admin/settlements/credit-notes/${identity}`;
+};
+
+export const getSettlementCreditNote = async (
+  identity: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreditRecord> => {
+  return customFetch<CreditRecord>(getGetSettlementCreditNoteUrl(identity), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSettlementCreditNoteQueryKey = (identity: string) => {
+  return [`/api/v1/admin/settlements/credit-notes/${identity}`] as const;
+};
+
+export const getGetSettlementCreditNoteQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementCreditNote>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementCreditNote>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementCreditNoteQueryKey(identity);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementCreditNote>>
+  > = ({ signal }) =>
+    getSettlementCreditNote(identity, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: identity !== null && identity !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementCreditNote>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementCreditNoteQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementCreditNote>>
+>;
+
+export type GetSettlementCreditNoteQueryError = ErrorType<ErrorEnvelope>;
+
+export function useGetSettlementCreditNote<
+  TData = Awaited<ReturnType<typeof getSettlementCreditNote>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  identity: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementCreditNote>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementCreditNoteQueryOptions(
+    identity,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRevertSettlementCreditNoteUrl = (identity: string) => {
+  return `/api/v1/admin/settlements/credit-notes/${identity}/revert`;
+};
+
+export const revertSettlementCreditNote = async (
+  identity: string,
+  creditRevertInput: CreditRevertInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreditRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CreditRecord>(getRevertSettlementCreditNoteUrl(identity), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(creditRevertInput),
+  });
+};
+
+export const getRevertSettlementCreditNoteMutationKey = () =>
+  ["revertSettlementCreditNote"] as const;
+
+export const getRevertSettlementCreditNoteMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof revertSettlementCreditNote>>,
+    TError,
+    RevertSettlementCreditNoteMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof revertSettlementCreditNote>>,
+  TError,
+  RevertSettlementCreditNoteMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRevertSettlementCreditNoteMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof revertSettlementCreditNote>>,
+    RevertSettlementCreditNoteMutationVariables
+  > = (props) => {
+    const { identity, data } = props ?? {};
+
+    return revertSettlementCreditNote(identity, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RevertSettlementCreditNoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof revertSettlementCreditNote>>
+>;
+
+export type RevertSettlementCreditNoteMutationBody =
+  BodyType<CreditRevertInput>;
+
+export type RevertSettlementCreditNoteMutationError = ErrorType<ErrorEnvelope>;
+
+export type RevertSettlementCreditNoteMutationVariables = {
+  identity: string;
+  data: BodyType<CreditRevertInput>;
+};
+
+export const useRevertSettlementCreditNote = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof revertSettlementCreditNote>>,
+    TError,
+    RevertSettlementCreditNoteMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof revertSettlementCreditNote>>,
+  TError,
+  RevertSettlementCreditNoteMutationVariables,
+  TContext
+> => {
+  return useMutation(getRevertSettlementCreditNoteMutationOptions(options));
+};
+
+export const getReconcileSettlementCreditNoteUrl = (key: string) => {
+  return `/api/v1/admin/settlements/credit-requests/${key}`;
+};
+
+export const reconcileSettlementCreditNote = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreditReconciliation> => {
+  return customFetch<CreditReconciliation>(
+    getReconcileSettlementCreditNoteUrl(key),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getReconcileSettlementCreditNoteQueryKey = (key: string) => {
+  return [`/api/v1/admin/settlements/credit-requests/${key}`] as const;
+};
+
+export const getReconcileSettlementCreditNoteQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileSettlementCreditNote>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileSettlementCreditNote>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileSettlementCreditNoteQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileSettlementCreditNote>>
+  > = ({ signal }) =>
+    reconcileSettlementCreditNote(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileSettlementCreditNote>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileSettlementCreditNoteQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileSettlementCreditNote>>
+>;
+
+export type ReconcileSettlementCreditNoteQueryError = ErrorType<ErrorEnvelope>;
+
+export function useReconcileSettlementCreditNote<
+  TData = Awaited<ReturnType<typeof reconcileSettlementCreditNote>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileSettlementCreditNote>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileSettlementCreditNoteQueryOptions(
+    key,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 type AwaitedInput<T> = PromiseLike<T> | T;
 
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;

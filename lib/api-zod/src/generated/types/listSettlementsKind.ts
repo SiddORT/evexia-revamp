@@ -6,13 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ListSettlementsKind =
-  (typeof ListSettlementsKind)[keyof typeof ListSettlementsKind];
+export type ListSettlementsKind = typeof ListSettlementsKind[keyof typeof ListSettlementsKind];
 
 export const ListSettlementsKind = {
-  All: "All",
-  IT: "IT",
-  Kit: "Kit",
-  SPT: "SPT",
-  Lupin: "Lupin",
+  All: 'All',
+  IT: 'IT',
+  Kit: 'Kit',
+  SPT: 'SPT',
+  Lupin: 'Lupin',
 } as const;

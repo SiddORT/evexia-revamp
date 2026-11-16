@@ -54,7 +54,7 @@ export default function LupinOrders() {
     { key: 'order', label: 'Order details', render: (o) => <><strong>{o.number}</strong><span className="lupin-sub">{date(o.date)}</span><span className="lupin-sub">{o.patientCount} patients, {amountMoney(o.total)}</span></> },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctor.name}<span className="lupin-sub">{o.mr.name}</span></> },
     { key: 'status', label: 'Order status', render: (o) => <span className="lupin-pill">{reviewLabel(o)}</span> },
-    { key: 'pay', label: 'Payment status', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },
+    { key: 'pay', label: 'Payment flag (legacy)', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },
     { key: 'act', label: 'Action', render: (o) => <div className="lupin-actions"><Link href={`${BASE}/${o.id}`} className="admin-icon-button order-view-action" aria-label={`View ${o.number}`} data-testid={`link-lupin-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>{can.edit && o.mrEditable && <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button order-view-action" aria-label={`Edit ${o.number}`}><Pencil size={16} aria-hidden="true" /></Link>}</div> },
   ];
   const columns = withAuditColumns(baseColumns, audit);

@@ -51,7 +51,7 @@ export default function HistoryDialog({ row, date, canVerify, onClose, onChanged
   const tx = record?.transactions || [];
   const verifiedCount = tx.filter((t) => t.verification === 'Verified').length;
   return <Dialog eyebrow="Transactions" title={`Order ${row.number}`} className="settle-dialog settle-history-dialog" onClose={onClose} dismissDisabled={Boolean(busyId)}
-    description={`${KIND_LABEL[row.kind] || row.kind} · recorded payments only. Receipts cannot be edited or deleted.`}
+    description={`${KIND_LABEL[row.kind] || row.kind} · cash payments and credit notes. Receipts cannot be edited or deleted.`}
     footer={<button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busyId)} onClick={onClose} data-testid="button-close-history">Close</button>}>
     {error ? <div className="settle-state settle-state--error" role="alert"><strong>History unavailable</strong><p>{error}</p>
       <button type="button" className="admin-button admin-button--secondary" onClick={() => { setRecord(null); setRevision((n) => n + 1); }} data-testid="button-retry-history">Retry</button></div>
@@ -60,8 +60,20 @@ export default function HistoryDialog({ row, date, canVerify, onClose, onChanged
           <dl className="settle-history-sum">
             <div><dt>Total</dt><dd>{record.total != null ? inr(record.total) : <span className="settle-na">{record.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
             <div><dt>Paid</dt><dd>{inr(record.paid)}</dd></div>
+            <div><dt>Credited</dt><dd data-testid="text-history-credited">{inr(record.credited)}</dd></div>
             <div><dt>Balance</dt><dd>{record.balance != null ? inr(record.balance) : <span className="settle-na">{record.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
           </dl>
+          {record.credits?.length > 0 && <section aria-label="Credit notes" data-testid="section-history-credits">
+            <h3 className="settle-h3">Credit notes (not cash)</h3>
+            <ul className="settle-txlist">{record.credits.map((c) => <li key={c.id} data-testid={`row-credit-${c.id}`}>
+              <div className="settle-txlist__main">
+                <strong className="settle-mono">{inr(c.amount)}</strong>
+                <span className="settle-sub">{c.number} · {date(c.date)} · Invoice {c.invoiceReference}</span>
+                {c.status === 'Reverted' && <span className="settle-sub">Reverted{c.revertedAt ? ` on ${stamp(c.revertedAt)}` : ''}; no longer reduces the balance.</span>}
+              </div>
+              <div className="settle-txlist__side"><span className={`settle-pill settle-pill--${c.status === 'Active' ? 'ok' : 'none'}`} data-testid={`status-credit-${c.id}`}>{c.status === 'Active' ? 'Credit active' : 'Reverted'}</span></div>
+            </li>)}</ul>
+          </section>}
           <div className="settle-history-status">
             <span className="settle-history-status__label">Verification status</span>
             <VerifyPill value={record.verification} />

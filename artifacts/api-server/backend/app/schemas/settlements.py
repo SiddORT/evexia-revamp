@@ -7,7 +7,8 @@ from decimal import Decimal
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-SettlementKind = Literal["IT", "Kit", "SPT", "Lupin"]
+from app.schemas.settlement_common import SettlementKind, SettlementPerson
+from app.schemas.credit_notes import CreditRecord
 SettlementMode = Literal["Cash", "UPI", "Bank transfer", "Cheque", "Card", "Other"]
 SettlementVerification = Literal["No transactions", "Not verified", "Verified"]
 
@@ -27,9 +28,10 @@ class SettlementAllocation(BaseModel):
     id: uuid.UUID
     expected_version: int = Field(strict=True, ge=1)
     expected_paid: str = Field(pattern=r"^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$")
+    expected_credited: str = "0.00"
     amount: str = Field(pattern=r"^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$")
 
-    @field_validator("expected_paid", mode="before")
+    @field_validator("expected_paid", "expected_credited", mode="before")
     @classmethod
     def paid_lexeme(cls, value):
         return money(value)
@@ -71,16 +73,6 @@ class SettlementInput(BaseModel):
         return self
 
 
-class SettlementPerson(BaseModel):
-    id: str | None = None
-    name: str | None = None
-    code: str | None = None
-    qualification: str | None = None
-    phone: str | None = None
-    email: str | None = None
-    contactsMasked: bool = False
-
-
 class SettlementTransaction(BaseModel):
     id: str
     batchId: str
@@ -110,6 +102,9 @@ class SettlementRecord(BaseModel):
     patients: list[SettlementPerson]
     total: str | None
     paid: str
+    credited: str
+    credits: list[CreditRecord]
+    invoiceReference: str | None
     balance: str | None
     verification: SettlementVerification
     transactions: list[SettlementTransaction]

@@ -70,6 +70,8 @@ class FinancialReview(BaseModel):
     outstanding: str
     proposedAmount: str | None
     committedTargetPayments: str
+    committedTargetCredits: str
+    creditRevision: str
     resultingExposure: str | None
     amountLimitState: Literal["Pending pricing", "Disabled", "Exceeded", "Reached", "Below limit"]
     pendingPricingOrders: list[PendingPricingOrder]

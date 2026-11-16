@@ -10,6 +10,7 @@ import type { SettlementAllocationKind } from "./settlementAllocationKind";
 export interface SettlementAllocation {
   /** @pattern ^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$ */
   amount: string;
+  expected_credited?: string;
   /** @pattern ^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$ */
   expected_paid: string;
   /** @minimum 1 */

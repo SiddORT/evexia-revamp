@@ -6,12 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ListSettlementsVerification =
-  (typeof ListSettlementsVerification)[keyof typeof ListSettlementsVerification];
+export type ListSettlementsVerification = typeof ListSettlementsVerification[keyof typeof ListSettlementsVerification];
 
 export const ListSettlementsVerification = {
-  All: "All",
-  No_transactions: "No transactions",
-  Not_verified: "Not verified",
-  Verified: "Verified",
+  All: 'All',
+  No_transactions: 'No transactions',
+  Not_verified: 'Not verified',
+  Verified: 'Verified',
 } as const;

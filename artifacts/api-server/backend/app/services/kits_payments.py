@@ -37,9 +37,18 @@ def with_status(db, keys, records, *, budget=None):
     finally:
         rows.close()
     from app.services.order_financial_review import pending_pricing
-    return [{**record, "ledgerPaymentStatus": "Pending pricing" if saved_total("Kit", record) is None and not paid[identity]
-             and pending_pricing("Kit", record, record["status"]) else payment_position(saved_total("Kit", record), paid[identity])}
-            for record, identity in zip(records, identities)]
+    from app.services.credit_notes import history, active_total
+    credits = history(db, keys, {"Kit": identities})
+    result = []
+    for record, identity in zip(records, identities):
+        credit = active_total(credits[("Kit", identity)])
+        total = saved_total("Kit", record)
+        state = payment_position(total, paid[identity], credit)
+        if total is None and not paid[identity] and not credit and pending_pricing("Kit", record, record["status"]):
+            state = "Pending pricing"
+        from app.services.settlements import fmt
+        result.append({**record, "ledgerPaymentStatus": state, "ledgerCredited": fmt(credit), "ledgerPaid": fmt(paid[identity])})
+    return result
 
 
 def read_result(db, keys, result):

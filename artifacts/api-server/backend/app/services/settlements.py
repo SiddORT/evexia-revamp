@@ -113,7 +113,11 @@ def people(saved, *, mask_contacts=False):
 
 def history(db, keys, candidates):
     """One financial row per source order, never multiplied by patient joins."""
-    output = defaultdict(list)
+    class FinancialHistory(defaultdict):
+        pass
+    from app.services import credit_notes
+    output = FinancialHistory(list)
+    output.credits = credit_notes.history(db, keys, candidates)
     count = 0
     for kind, identities in candidates.items():
         if not identities:
@@ -143,19 +147,26 @@ def history(db, keys, candidates):
     return output
 
 
-def payment_position(total, paid):
+def payment_position(total, paid, credited=ZERO):
     """Recorded allocations count independently of verification and legacy flags."""
-    if total is not None and paid > total:
-        fail("Recorded payments exceed the saved order total. Ask an administrator to investigate.",
+    if (total is None and (paid or credited)) or (total is not None and paid + credited > total):
+        fail("Recorded payments and active credits conflict with the saved total. Ask an administrator to investigate.",
              503, "settlement_inconsistent_balance")
-    return ("Unavailable" if total is None else "Paid" if paid == total
-            else "Part paid" if paid > ZERO else "Unpaid")
+    return ("Unavailable" if total is None else "Paid" if paid + credited == total
+            else "Part paid" if paid + credited > ZERO else "Unpaid")
 
 
-def projection(kind, row, saved, receipts, *, mr_scope=False):
+def credited(receipts, kind, identity):
+    from app.services.credit_notes import active_total
+    return active_total(receipts.credits[(kind, identity)])
+
+
+def projection(kind, row, saved, receipts, *, credits, mr_scope=False):
+    from app.services.credit_notes import active_total, saved_invoice
     total = saved_total(kind, saved)
     paid = sum((exact(item["amount"]) for item in receipts), ZERO)
-    payment_status = payment_position(total, paid)
+    credit = active_total(credits)
+    payment_status = payment_position(total, paid, credit)
     from app.services.order_financial_review import pending_pricing
     if total is None and not paid and pending_pricing(kind, saved, row.status):
         payment_status = "Pending pricing"
@@ -164,12 +175,16 @@ def projection(kind, row, saved, receipts, *, mr_scope=False):
     return dict(key=f"{kind}:{row.id}", kind=kind, id=str(row.id), number=row.number,
                 date=row.date.isoformat(), version=row.version,
                 status="In process" if row.status == "Approved" else row.status,
-                payable=row.status in PAYABLE_STAGES and total is not None and total > paid,
+                payable=row.status in PAYABLE_STAGES and total is not None and total > paid + credit,
                 paymentStatus=payment_status,
                 doctor=person(saved.get("doctor"), mask_contacts=mr_scope),
                 mr=person(saved.get("mr")), patients=people(saved, mask_contacts=mr_scope),
                 total=fmt(total) if total is not None else None, paid=fmt(paid),
-                balance=fmt(total - paid) if total is not None else None,
+                credited=fmt(credit), invoiceReference=saved_invoice(saved),
+                credits=[{**item, "doctor": person(item["doctor"], mask_contacts=mr_scope),
+                          "canRevert": not mr_scope and item["status"] == "Active"
+                          and total is not None and total > paid + credit} for item in credits],
+                balance=fmt(total - paid - credit) if total is not None else None,
                 verification=verification, transactions=receipts)
 
 
@@ -229,7 +244,8 @@ def listing(db, actor, *, kind="All", order_from=None, order_to=None,
             if doctor_id and row.doctor_id != doctor_id or mr_id and row.mr_id != mr_id:
                 continue
             saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
-            record = projection(label, row, saved, receipts[(label, row.id)], mr_scope=current.role == "mr")
+            record = projection(label, row, saved, receipts[(label, row.id)],
+                                credits=receipts.credits[(label, row.id)], mr_scope=current.role == "mr")
             if payable_only and not record["payable"]:
                 continue
             if payment_status != "All" and record["paymentStatus"] != payment_status:
@@ -320,7 +336,8 @@ def order_history(db, actor, kind, identity):
         source, row = owned_order(db, kind, identity)
         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
         receipts = history(db, keys, {kind: [row.id]})
-        return projection(kind, row, saved, receipts[(kind, row.id)], mr_scope=current.role == "mr")
+        return projection(kind, row, saved, receipts[(kind, row.id)],
+                          credits=receipts.credits[(kind, row.id)], mr_scope=current.role == "mr")
     return transaction(db, actor, work)
 
 
@@ -332,7 +349,9 @@ def rejected_data(current, keys, rejected):
 
 def normalized_request(request):
     """Old frozen requests omitted the optional reference; keep those replays valid."""
-    return {**request, "reference": request.get("reference") or None}
+    return {**request, "reference": request.get("reference") or None,
+            "entries": [{**e, "expected_credited": e.get("expected_credited", "0.00")}
+                        for e in request["entries"]]}
 
 
 def verify(db, actor, identity):
@@ -358,7 +377,8 @@ def verify(db, actor, identity):
             db.flush()
         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
         receipts = history(db, keys, {entry.kind: [row.id]})
-        return projection(entry.kind, row, saved, receipts[(entry.kind, row.id)])
+        return projection(entry.kind, row, saved, receipts[(entry.kind, row.id)],
+                          credits=receipts.credits[(entry.kind, row.id)])
     return transaction(db, actor, work)
 
 
@@ -393,9 +413,11 @@ def post(db, actor, body):
         receipts = history(db, keys, scoped)
         for item, row, total in chosen:
             paid = sum((exact(t["amount"]) for t in receipts[(item.kind, row.id)]), ZERO)
-            if paid != Decimal(item.expected_paid):
-                fail("Recorded payments changed. Refresh before preparing a new transaction.", 409, "settlement_stale")
-            if Decimal(item.amount) > total - paid:
+            credit = credited(receipts, item.kind, row.id)
+            payment_position(total, paid, credit)
+            if paid != Decimal(item.expected_paid) or credit != Decimal(item.expected_credited):
+                fail("Payments or credits changed. Refresh before preparing a new transaction.", 409, "settlement_stale")
+            if Decimal(item.amount) > total - paid - credit:
                 fail("An entered amount exceeds that order's remaining balance. Nothing was posted.",
                      422, "settlement_overpayment")
         now = utcnow()

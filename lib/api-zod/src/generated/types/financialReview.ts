@@ -11,7 +11,9 @@ import type { PendingPricingOrder } from "./pendingPricingOrder";
 export interface FinancialReview {
   amountLimitState: FinancialReviewAmountLimitState;
   businessDate: string;
+  committedTargetCredits: string;
   committedTargetPayments: string;
+  creditRevision: string;
   exposureComplete: boolean;
   orderId: string;
   outstanding: string;

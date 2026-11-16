@@ -28,6 +28,7 @@ const PricingRules = lazyRoute(() => import('./pages/admin/PricingRules.jsx'));
 const PricingRuleFormPage = lazyRoute(() => import('./pages/admin/PricingRuleFormPage.jsx'));
 const Shipments = lazyRoute(() => import('./pages/admin/Shipments.jsx'));
 const AccountsSettlements = lazyRoute(() => import('./pages/admin/AccountsSettlements.jsx'));
+const AccountsCreditNotes = lazyRoute(() => import('./pages/admin/AccountsCreditNotes.jsx'));
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
 const MRMaster = lazyRoute(() => import('./pages/admin/MRMaster.jsx'));
 const MRFormPage = lazyRoute(() => import('./pages/admin/MRFormPage.jsx'));
@@ -147,6 +148,7 @@ function App() {
       <Route path="/admin/pricing-rules/:id/edit">{(params) => <PricingRuleFormPage key={params.id} id={params.id} />}</Route>
       <Route path="/admin/shipments" component={Shipments} />
       <Route path="/admin/accounts/settlements" component={AccountsSettlements} />
+      <Route path="/admin/accounts/credit-notes" component={AccountsCreditNotes} />
       <Route path="/admin/masters/courier-partners" component={CourierPartnerMaster} />
       <Route path="/admin/masters/sales-targets" component={SalesTargetMaster} />
       <Route path="/admin/masters/mrs" component={MRMaster} />

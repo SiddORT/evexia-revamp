@@ -11,11 +11,16 @@ import type { SettlementRecordPaymentStatus } from "./settlementRecordPaymentSta
 import type { SettlementRecordVerification } from "./settlementRecordVerification";
 import type { SettlementTransaction } from "./settlementTransaction";
 
+import type { CreditRecord } from "./creditRecord";
+
 export interface SettlementRecord {
   balance: string | null;
+  credited: string;
+  credits: CreditRecord[];
   date: string;
   doctor: SettlementPerson | null;
   id: string;
+  invoiceReference: string | null;
   key: string;
   kind: SettlementRecordKind;
   mr: SettlementPerson | null;

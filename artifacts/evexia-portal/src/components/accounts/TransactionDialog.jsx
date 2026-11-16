@@ -141,7 +141,7 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
       frozen.current = Object.freeze({
         idempotency_key: newKey(), date, mode, reference: reference.trim() || null,
         entries: Object.freeze(rows.map((r) => Object.freeze({ kind: r.kind, id: r.id, expected_version: r.version,
-          expected_paid: r.paid, amount: fromPaise(toPaise(amounts[r.key])) }))),
+          expected_paid: r.paid, expected_credited: r.credited, amount: fromPaise(toPaise(amounts[r.key])) }))),
       });
       setConfirming(true);
       requestAnimationFrame(() => reviewHeading.current?.focus());
@@ -274,14 +274,14 @@ export default function TransactionDialog({ onClose, onCommitted, formatDate }) 
                   <caption className="sr-only">{selectedOnly ? 'Selected orders' : 'Pending orders'} with payment amounts in INR</caption>
                   <thead><tr>
                     <th scope="col"><input type="checkbox" className="settle-check" checked={pageAllOn} onChange={togglePage} aria-label="Select all orders on this page only" data-testid="checkbox-select-pending-page" /></th>
-                    <th scope="col">Order / date</th><th scope="col">Doctor</th><th scope="col">Patients</th><th scope="col">Total</th><th scope="col">Outstanding</th><th scope="col">Payment (INR)</th>
+                    <th scope="col">Order / date</th><th scope="col">Doctor</th><th scope="col">Patients</th><th scope="col">Total</th><th scope="col">Credited</th><th scope="col">Outstanding</th><th scope="col">Payment (INR)</th>
                   </tr></thead>
                   <tbody>{pageItems.map((r) => <tr key={r.key} data-selected={selected.has(r.key) || undefined}>
                     <td><input type="checkbox" className="settle-check" checked={selected.has(r.key)} disabled={!selected.has(r.key) && full} onChange={() => toggle(r)}
                       aria-label={`Select ${r.number}`} data-testid={`checkbox-pending-${r.key}`} /></td>
                     <td><strong className="settle-mono">{r.number}</strong><span className="settle-sub">{r.date ? formatDate(r.date) : 'Date unavailable'} · {KIND_LABEL[r.kind]}</span></td>
                     <td>{r.doctor?.name || 'Not recorded'}</td><td>{names(r)}</td>
-                    <td className="settle-mono">{inr(r.total)}</td><td className="settle-mono settle-due">{inr(r.balance)}</td>
+                    <td className="settle-mono">{inr(r.total)}</td><td className="settle-mono">{inr(r.credited)}</td><td className="settle-mono settle-due">{inr(r.balance)}</td>
                     <td>
                       <input id={`settle-amount-${r.key}`} inputMode="decimal" className="settle-amount" aria-label={`Amount for ${r.number}`} value={amounts[r.key] || ''} disabled={!selected.has(r.key)}
                         aria-invalid={selected.has(r.key) && Boolean(errors[r.key])} aria-describedby={selected.has(r.key) && errors[r.key] ? `settle-err-${r.key}` : undefined}

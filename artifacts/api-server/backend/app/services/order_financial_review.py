@@ -73,16 +73,16 @@ def obligations(db, keys, mr_id, *, exclude=None, doctor_id=None):
     for label, source, row in candidates:
         saved = source.unseal(keys, "orders", row.id, row.snapshot_ciphertext)
         paid = sum((settlements.exact(r["amount"]) for r in receipts[(label, row.id)]), settlements.ZERO)
+        credit = settlements.credited(receipts, label, row.id)
         total = settlements.saved_total(label, saved)
         if total is None:
-            if pending_pricing(label, saved, row.status) and not paid:
+            if pending_pricing(label, saved, row.status) and not paid and not credit:
                 pending.append(dict(kind=label, id=str(row.id), number=row.number, date=row.date.isoformat()))
                 continue
             raise ImmError(f"Saved financial evidence is unavailable for {row.number}; this is not pending pricing.",
                            409, "mr_eligibility_unavailable")
-        if paid > total:
-            raise ImmError("Committed payments exceed a saved total.", 409, "mr_eligibility_unavailable")
-        result.append((row, saved, total - paid))
+        settlements.payment_position(total, paid, credit)
+        result.append((row, saved, total - paid - credit))
     return result, pending
 
 
@@ -135,15 +135,17 @@ def review(db, keys, kind, row, data, previous):
     total = proposed_total(kind, data)
     receipts = settlements.history(db, keys, {LABELS[kind]: [row.id]})
     paid = sum((settlements.exact(r["amount"]) for r in receipts[(LABELS[kind], row.id)]), settlements.ZERO)
-    if total is not None and paid > total:
-        raise ImmError("Proposed pricing is below committed payments.", 409, "order_pricing")
+    credit = settlements.credited(receipts, LABELS[kind], row.id)
+    if (total is None and (paid or credit)) or (total is not None and paid + credit > total):
+        raise ImmError("Proposed pricing is below committed payments and active credits.", 409, "order_pricing")
     limit = settlements.exact(policy.paymentLimit)
-    exposure = outstanding + total - paid if total is not None else None
+    exposure = outstanding + total - paid - credit if total is not None else None
     state = ("Pending pricing" if exposure is None else "Disabled" if not limit else
              "Exceeded" if exposure > limit else "Reached" if exposure == limit else "Below limit")
     evidence = dict(orderId=str(row.id), version=row.version, paymentLimit=settlements.fmt(limit),
         outstanding=settlements.fmt(outstanding), proposedAmount=settlements.fmt(total) if total is not None else None,
         committedTargetPayments=settlements.fmt(paid),
+        committedTargetCredits=settlements.fmt(credit),
         resultingExposure=settlements.fmt(exposure) if exposure is not None else None,
         amountLimitState=state, pendingPricingOrders=pending,
         exposureComplete=not pending and (kind != "kits" or total is not None),
@@ -154,6 +156,8 @@ def review(db, keys, kind, row, data, previous):
     basis = [{k: data.get(k) for k in (
         "pricing", "businessParking", "mrId", "kit", "lancets", "applicators", "tray",
     )}] if kind == "kits" else []
+    from app.services.credit_notes import revision
+    evidence["creditRevision"] = revision(db, keys, row.mr_id)
     evidence["token"] = keys._index("order-financial-review:v1", [kind, evidence, *basis])
     return evidence
 

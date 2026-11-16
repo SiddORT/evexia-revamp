@@ -6,14 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementInputMode =
-  (typeof SettlementInputMode)[keyof typeof SettlementInputMode];
+export type SettlementInputMode = typeof SettlementInputMode[keyof typeof SettlementInputMode];
 
 export const SettlementInputMode = {
-  Cash: "Cash",
-  UPI: "UPI",
-  Bank_transfer: "Bank transfer",
-  Cheque: "Cheque",
-  Card: "Card",
-  Other: "Other",
+  Cash: 'Cash',
+  UPI: 'UPI',
+  Bank_transfer: 'Bank transfer',
+  Cheque: 'Cheque',
+  Card: 'Card',
+  Other: 'Other',
 } as const;

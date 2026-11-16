@@ -116,7 +116,7 @@ function ShipmentsPage() {
     { key: 'mr', label: 'MR', render: (r) => r.mr ?? NA },
     { key: 'patient', label: 'Patient', render: patients },
     { key: 'courier', label: 'Shipment', render: courier },
-    { key: 'status', label: 'Status', render: (r) => <><StatusPill status={r.status} /><span className="shipment-sub">Pay: {r.paymentStatus ?? 'Unavailable'}</span></> },
+    { key: 'status', label: 'Status', render: (r) => <><StatusPill status={r.status} /><span className="shipment-sub">Legacy pay flag: {r.paymentStatus ?? 'Unavailable'}</span></> },
     { key: 'act', label: 'Action', render: (r) => <div className="shipment-actions">{viewBtn(r)}<Actions row={r} onAction={onAction} /></div> },
   ];
 
@@ -159,7 +159,7 @@ function ShipmentsPage() {
                 <div className="shipment-card__head"><div><strong className="shipment-mono">{r.number}</strong><span className="shipment-sub">{fmtDate(r.date)} · {TYPE_LABELS[r.type] || r.type}</span></div><StatusPill status={r.status} /></div>
                 <dl className="shipment-card__facts">
                   <div><dt>Value</dt><dd>{r.value ?? NA}</dd></div>
-                  <div><dt>Payment</dt><dd>{r.paymentStatus ?? NA}</dd></div>
+                  <div><dt>Legacy payment flag</dt><dd>{r.paymentStatus ?? NA}</dd></div>
                   <div><dt>Doctor</dt><dd>{r.doctor ?? NA}</dd></div>
                   <div><dt>MR</dt><dd>{r.mr ?? NA}</dd></div>
                   <div><dt>Patient</dt><dd>{patients(r)}</dd></div>

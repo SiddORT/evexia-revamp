@@ -6,12 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementAllocationKind =
-  (typeof SettlementAllocationKind)[keyof typeof SettlementAllocationKind];
+export type SettlementAllocationKind = typeof SettlementAllocationKind[keyof typeof SettlementAllocationKind];
 
 export const SettlementAllocationKind = {
-  IT: "IT",
-  Kit: "Kit",
-  SPT: "SPT",
-  Lupin: "Lupin",
+  IT: 'IT',
+  Kit: 'Kit',
+  SPT: 'SPT',
+  Lupin: 'Lupin',
 } as const;

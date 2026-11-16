@@ -11,30 +11,30 @@ import type { ListSettlementsPaymentStatus } from "./listSettlementsPaymentStatu
 import type { ListSettlementsVerification } from "./listSettlementsVerification";
 
 export type ListSettlementsParams = {
-  kind?: ListSettlementsKind;
-  order_from?: Date | null;
-  order_to?: Date | null;
-  payment_from?: Date | null;
-  payment_to?: Date | null;
-  doctor_id?: string | null;
-  mr_id?: string | null;
-  patient_id?: string | null;
-  verification?: ListSettlementsVerification;
-  /**
-   * @maxLength 100
-   */
-  search?: string;
-  order_status?: ListSettlementsOrderStatus;
-  payment_status?: ListSettlementsPaymentStatus;
-  payable_only?: boolean;
-  /**
-   * @minimum 0
-   * @maximum 20000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
+kind?: ListSettlementsKind;
+order_from?: Date | null;
+order_to?: Date | null;
+payment_from?: Date | null;
+payment_to?: Date | null;
+doctor_id?: string | null;
+mr_id?: string | null;
+patient_id?: string | null;
+verification?: ListSettlementsVerification;
+/**
+ * @maxLength 100
+ */
+search?: string;
+order_status?: ListSettlementsOrderStatus;
+payment_status?: ListSettlementsPaymentStatus;
+payable_only?: boolean;
+/**
+ * @minimum 0
+ * @maximum 20000
+ */
+offset?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };

@@ -5,6 +5,119 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+export type CreditRecordKind =
+  (typeof CreditRecordKind)[keyof typeof CreditRecordKind];
+
+export const CreditRecordKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export type CreditRecordStatus =
+  (typeof CreditRecordStatus)[keyof typeof CreditRecordStatus];
+
+export const CreditRecordStatus = {
+  Active: "Active",
+  Reverted: "Reverted",
+} as const;
+
+export interface CreditRecord {
+  actorId: string;
+  amount: string;
+  canRevert: boolean;
+  createdAt: string;
+  date: string;
+  doctor: SettlementPerson | null;
+  id: string;
+  invoiceReference: string;
+  kind: CreditRecordKind;
+  mr: SettlementPerson | null;
+  number: string;
+  orderDate: string;
+  orderId: string;
+  orderNumber: string;
+  revertedAt: string | null;
+  revertedBy: string | null;
+  status: CreditRecordStatus;
+}
+
+export type CreditInputKind =
+  (typeof CreditInputKind)[keyof typeof CreditInputKind];
+
+export const CreditInputKind = {
+  IT: "IT",
+  Kit: "Kit",
+  SPT: "SPT",
+  Lupin: "Lupin",
+} as const;
+
+export interface CreditInput {
+  /** @pattern ^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$ */
+  amount: string;
+  expected_credited: string;
+  expected_paid: string;
+  /** @minimum 1 */
+  expected_version: number;
+  id: string;
+  idempotency_key: string;
+  /**
+   * @maxLength 100
+   * @pattern ^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$
+   */
+  invoice_reference: string;
+  kind: CreditInputKind;
+}
+
+export interface CreditPage {
+  items: CreditRecord[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type CreditReconciliationRejection = { [key: string]: string } | null;
+
+export type CreditReconciliationStatus =
+  (typeof CreditReconciliationStatus)[keyof typeof CreditReconciliationStatus];
+
+export const CreditReconciliationStatus = {
+  committed: "committed",
+  absent: "absent",
+  rejected: "rejected",
+} as const;
+
+export interface CreditReconciliation {
+  note: CreditRecord | null;
+  rejection: CreditReconciliationRejection;
+  status: CreditReconciliationStatus;
+}
+
+export interface CreditRevertInput {
+  idempotency_key: string;
+}
+
+export type ListSettlementCreditNotesParams = {
+  date_from?: string | null;
+  date_to?: string | null;
+  mr_id?: string | null;
+  /**
+   * @maxLength 100
+   */
+  search?: string;
+  /**
+   * @minimum 0
+   * @maximum 20000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
 export interface LedgerLocation {
   id: string;
   name: string;
@@ -2664,7 +2777,9 @@ export interface PendingPricingOrder {
 export interface FinancialReview {
   amountLimitState: FinancialReviewAmountLimitState;
   businessDate: string;
+  committedTargetCredits: string;
   committedTargetPayments: string;
+  creditRevision: string;
   exposureComplete: boolean;
   orderId: string;
   outstanding: string;
@@ -4899,6 +5014,10 @@ export interface KitsRecord {
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;
+  /** Read-only active non-cash credits, independent of legacy flags. */
+  ledgerCredited?: string | null;
+  /** Read-only received money, independent of credits. */
+  ledgerPaid?: string | null;
   /** Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field. */
   ledgerPaymentStatus?: KitsRecordLedgerPaymentStatus;
   mr: KitsRecordMr;
@@ -11413,6 +11532,7 @@ export const SettlementAllocationKind = {
 export interface SettlementAllocation {
   /** @pattern ^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$ */
   amount: string;
+  expected_credited?: string;
   /** @pattern ^(?:0|[1-9]\d{0,11})(?:\.\d{1,2})?$ */
   expected_paid: string;
   /** @minimum 1 */
@@ -11559,9 +11679,12 @@ export const SettlementRecordVerification = {
 
 export interface SettlementRecord {
   balance: string | null;
+  credited: string;
+  credits: CreditRecord[];
   date: string;
   doctor: SettlementPerson | null;
   id: string;
+  invoiceReference: string | null;
   key: string;
   kind: SettlementRecordKind;
   mr: SettlementPerson | null;

@@ -83,8 +83,21 @@ export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58'
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Part paid', 'Unavailable', 'Pending pricing']);
 // Never fall back to the legacy paymentStatus used by protected saves/imports.
-export const paymentStatusLabel = (order) => PAYMENT_STATUSES.includes(order?.ledgerPaymentStatus)
-  ? order.ledgerPaymentStatus : 'Unavailable';
+// Ledger label; credit-settled orders are never shown as cash Paid.
+export function paymentStatusLabel(order) {
+  const status = order?.ledgerPaymentStatus;
+  if (!PAYMENT_STATUSES.includes(status)) return 'Unavailable';
+  const raw = order?.ledgerCredited;
+  const credited = typeof raw === 'string' && /^(0|[1-9]\d{0,13})\.\d{2}$/.test(raw) && raw !== '0.00' && !/^0\.00$/.test(raw);
+  if (!credited) return status;
+  if (status === 'Paid') return 'Settled';
+  if (status === 'Part paid') {
+    const paid = order?.ledgerPaid;
+    if (typeof paid !== 'string' || !/^\d+\.\d{2}$/.test(paid)) return 'Part settled';
+    return paid === '0.00' ? 'Part credited' : 'Part paid + credit';
+  }
+  return status;
+}
 export function validateAttachments(files, existing = []) {
   if (files.length + existing.length > 10) return 'Select at most ten files.';
   const allowed = { 'application/pdf': ['pdf'], 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };

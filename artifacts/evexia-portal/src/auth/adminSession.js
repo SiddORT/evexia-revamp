@@ -1326,7 +1326,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : [404, 405].includes(response.status) ? 'The running API does not provide GST Settings. The updated API and schema must be activated; your edits are preserved.'
         : uncertain().message
       : resource === 'settlements' && response.status === 403
-      ? 'Settlement access denied. Only owning MRs may record payments; only the protected Super Admin may verify entries.'
+      ? 'Settlement access denied. Only owning MRs may record payments; only the protected Super Admin may verify entries or manage credit notes.'
       : response.status === 403 ? (mrOrder ? 'MR order access denied. Your draft is preserved.' : 'Purchase orders are restricted to the protected Super Admin.')
       : /^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(data?.error?.code || '') && typeof data?.error?.message === 'string' ? data.error.message
       : response.status >= 500 && !(batchOperation && typeof data?.error?.message === 'string') ? uncertain().message

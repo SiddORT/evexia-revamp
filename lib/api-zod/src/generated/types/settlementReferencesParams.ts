@@ -7,18 +7,18 @@
  */
 
 export type SettlementReferencesParams = {
-  /**
-   * @maxLength 100
-   */
-  search?: string;
-  /**
-   * @minimum 0
-   * @maximum 20000
-   */
-  offset?: number;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
+/**
+ * @maxLength 100
+ */
+search?: string;
+/**
+ * @minimum 0
+ * @maximum 20000
+ */
+offset?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };

@@ -6,12 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SettlementRecordKind =
-  (typeof SettlementRecordKind)[keyof typeof SettlementRecordKind];
+export type SettlementRecordKind = typeof SettlementRecordKind[keyof typeof SettlementRecordKind];
 
 export const SettlementRecordKind = {
-  IT: "IT",
-  Kit: "Kit",
-  SPT: "SPT",
-  Lupin: "Lupin",
+  IT: 'IT',
+  Kit: 'Kit',
+  SPT: 'SPT',
+  Lupin: 'Lupin',
 } as const;

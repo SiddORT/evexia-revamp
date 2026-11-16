@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Filter, History, Plus, RefreshCw, Search, Wallet } from 'lucide-react';
+import { ChevronDown, FileMinus, Filter, History, Plus, RefreshCw, Search, Wallet } from 'lucide-react';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import TablePagination from '../admin/TablePagination.jsx';
 import KitsReferenceSelect from '../admin/KitsReferenceSelect.jsx';
 import SearchableSelect from '../admin/SearchableSelect.jsx';
 import TransactionDialog from './TransactionDialog.jsx';
+import CreditNoteDialog from './CreditNoteDialog.jsx';
 import HistoryDialog, { VerifyPill } from './HistoryDialog.jsx';
-import { EMPTY_FILTERS, KINDS, KIND_LABEL, ORDER_STATUSES, PAYMENT_STATUSES, VERIFICATION_OPTIONS, inr, listSettlements, referenceRequester, rowKey } from '../../services/serverSettlements.js';
+import { EMPTY_FILTERS, KINDS, KIND_LABEL, ORDER_STATUSES, PAYMENT_STATUSES, VERIFICATION_OPTIONS, creditEligible, inr, listSettlements, paymentLabel, referenceRequester, rowKey } from '../../services/serverSettlements.js';
 import './settlements.css';
 
 const POLL_MS = 60000, POLL_MAX = 15;
 const NA = <span className="settle-na">Not recorded</span>;
 const KIND_OPTIONS = KINDS.map(([value, label]) => ({ value, label }));
-const PAY_OPTIONS = PAYMENT_STATUSES.map((v) => ({ value: v, label: v === 'All' ? 'All payment statuses' : v }));
+const PAY_OPTIONS = PAYMENT_STATUSES.map((v) => ({ value: v, label: v === 'All' ? 'All settlement statuses' : v === 'Paid' ? 'Fully settled' : v === 'Part paid' ? 'Part settled' : v }));
 // Admin keeps its prior default view (approved In process orders); MR sees all saved owned orders.
 const defaultsFor = (mode) => (mode === 'mr' ? EMPTY_FILTERS : { ...EMPTY_FILTERS, order_status: 'In process' });
 
@@ -25,9 +26,10 @@ function Person({ p }) {
     </>}</>;
 }
 
-function PayPill({ value }) {
+function PayPill({ row }) {
+  const value = row.paymentStatus;
   const tone = value === 'Paid' ? 'ok' : value === 'Part paid' ? 'pending' : value === 'Unpaid' ? 'due' : 'none';
-  return <span className={`settle-pill settle-pill--${tone}`} data-testid="status-payment">{value}</span>;
+  return <span className={`settle-pill settle-pill--${tone}`} data-testid="status-payment">{paymentLabel(row)}</span>;
 }
 
 export default function SettlementsView({ mode, date, mrIdentity }) {
@@ -43,12 +45,13 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
   const [dialog, setDialog] = useState(false);
   const [history, setHistory] = useState(null);
   const [notice, setNotice] = useState('');
+  const [credit, setCredit] = useState(null);
   const addRef = useRef(null);
   const refreshRef = useRef(null);
   const returnRef = useRef(null);
   const historyChanged = useRef(false);
   const dialogOpen = useRef(false);
-  dialogOpen.current = dialog || Boolean(history);
+  dialogOpen.current = dialog || Boolean(history) || Boolean(credit);
   const refresh = () => { if (!dialogOpen.current) setRevision((n) => n + 1); };
   const requestKey = JSON.stringify([applied, page, pageSize, revision]);
   const result = response?.key === requestKey ? response : { items: [], total: 0 };
@@ -113,6 +116,13 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
     focusBack(returnRef.current);
   }
 
+  function openCredit(r, el) { returnRef.current = el; setNotice(''); setCredit(r); }
+  function creditDone(note) {
+    setCredit(null);
+    setNotice(`Credit note ${note.number} recorded: ${inr(note.amount)} against invoice ${note.invoiceReference} for order ${note.orderNumber}. No cash was recorded.`);
+    setRevision((n) => n + 1);
+    focusBack(returnRef.current);
+  }
   const pageCount = Math.max(1, Math.ceil(result.total / pageSize));
   const filterCount = Object.entries(applied).filter(([k, v]) => k !== 'search' && v && v !== 'All' && v !== defaults[k]).length + (applied.search ? 1 : 0);
   const statusOptions = [...new Set([...ORDER_STATUSES, ...result.items.map((r) => r.status)])].map((v) => ({ value: v, label: v === 'All' ? 'All order statuses' : v }));
@@ -125,10 +135,14 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
   const money = (r) => <dl className="settle-money">
     <div><dt>Total</dt><dd>{r.total != null ? inr(r.total) : <span className="settle-na">{r.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
     <div><dt>Paid</dt><dd>{inr(r.paid)}</dd></div>
+    <div><dt>Credited</dt><dd data-testid={`text-credited-${r.key}`}>{inr(r.credited)}</dd></div>
     <div><dt>Balance</dt><dd className={r.payable ? 'settle-due' : ''}>{r.balance != null ? inr(r.balance) : <span className="settle-na">{r.paymentStatus === 'Pending pricing' ? 'Pending pricing' : 'Unavailable'}</span>}</dd></div>
   </dl>;
-  const action = (r) => <button type="button" className="admin-button admin-button--secondary settle-action" onClick={(e) => openHistory(r, e.currentTarget)}
-    aria-label={`View transactions for ${r.number}`} data-testid={`button-history-${r.key}`}><History size={15} aria-hidden="true" />{r.transactions.length ? `Transactions (${r.transactions.length})` : 'View transactions'}</button>;
+  const action = (r) => <div className="settle-actions">{historyBtn(r)}
+    {!canPost && creditEligible(r) && <button type="button" className="admin-button admin-button--secondary settle-action" onClick={(e) => openCredit(r, e.currentTarget)}
+      aria-label={`Add credit note for ${r.number}`} data-testid={`button-credit-${r.key}`}><FileMinus size={15} aria-hidden="true" />Add credit note</button>}</div>;
+  const historyBtn = (r) => <button type="button" className="admin-button admin-button--secondary settle-action" onClick={(e) => openHistory(r, e.currentTarget)}
+    aria-label={`View transactions for ${r.number}`} data-testid={`button-history-${r.key}`}><History size={15} aria-hidden="true" />{r.transactions.length || r.credits?.length ? `History (${r.transactions.length + (r.credits?.length || 0)})` : 'View transactions'}</button>;
 
   const paymentFilters = <>
     <div className="kits-field"><span>Payment status</span><SearchableSelect id="settle-pay-status" label="Payment status" value={draft.payment_status} options={PAY_OPTIONS} onChange={(v) => set({ payment_status: v || 'All' })} placeholder="All payment statuses" viewportMenu /></div>
@@ -178,7 +192,7 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
 
     {!canPost && <aside className="settle-note" data-testid="text-ledger-note">
       <Wallet size={18} aria-hidden="true" />
-      <p><strong>Ledger starts at zero.</strong> Paid and Balance reflect only payments recorded here; legacy Paid or Partial flags are not treated as payments. Orders without a saved total show Unavailable. Recorded payments cannot be edited or deleted.</p>
+      <p><strong>Ledger starts at zero.</strong> Paid is cash recorded here; Credited is Super Admin credit notes and is never cash; Balance is Total less both. Fully settled orders with any credit show Settled, not Paid; legacy Paid or Partial flags are not treated as payments. Orders without a saved total show Unavailable. Recorded payments cannot be edited or deleted.</p>
     </aside>}
     {notice && <div className="admin-feedback admin-feedback--success" role="status" data-testid="status-settlement-notice">{notice}</div>}
 
@@ -220,13 +234,13 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
                     <td className="settle-mono">{(page - 1) * pageSize + i + 1}</td>
                     <td>{orderCell(r)}</td><td><Person p={r.doctor} /></td><td>{patientsCell(r)}</td>
                     {!canPost && <td><Person p={r.mr} /></td>}
-                    <td>{money(r)}</td><td><PayPill value={r.paymentStatus} /></td><td><VerifyPill value={r.verification} /></td>
+                    <td>{money(r)}</td><td><PayPill row={r} /></td><td><VerifyPill value={r.verification} /></td>
                     <td>{action(r)}</td>
                   </tr>)}</tbody>
                 </table>
               </div>
               <ul className="settle-cards">{result.items.map((r) => <li key={r.key} className="settle-card">
-                <div className="settle-card__head"><div>{orderCell(r)}</div><PayPill value={r.paymentStatus} /></div>
+                <div className="settle-card__head"><div>{orderCell(r)}</div><PayPill row={r} /></div>
                 {money(r)}
                 <dl className="settle-card__facts"><div><dt>Doctor</dt><dd><Person p={r.doctor} /></dd></div>{!canPost && <div><dt>MR</dt><dd><Person p={r.mr} /></dd></div>}<div><dt>Patients</dt><dd>{patientsCell(r)}</dd></div><div><dt>Verification</dt><dd><VerifyPill value={r.verification} /></dd></div></dl>
                 {action(r)}
@@ -236,6 +250,7 @@ export default function SettlementsView({ mode, date, mrIdentity }) {
         onPageChange={(n) => { if (!loading && n >= 1 && n <= pageCount) setPage(n); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
     </section>
     {dialog && <TransactionDialog formatDate={date} onClose={() => { setDialog(false); focusBack(addRef.current); }} onCommitted={committed} />}
+    {credit && <CreditNoteDialog row={credit} onClose={() => { setCredit(null); focusBack(returnRef.current); }} onCommitted={creditDone} />}
     {history && <HistoryDialog row={history} date={date} canVerify={mode === 'admin'} onClose={closeHistory} onChanged={() => { historyChanged.current = true; }} />}
   </div>;
 }

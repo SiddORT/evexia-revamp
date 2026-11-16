@@ -11,9 +11,9 @@ import type { SettlementInputMode } from "./settlementInputMode";
 export interface SettlementInput {
   date: Date;
   /**
-   * @minItems 1
-   * @maxItems 100
-   */
+     * @minItems 1
+     * @maxItems 100
+     */
   entries: SettlementAllocation[];
   idempotency_key: string;
   mode: SettlementInputMode;

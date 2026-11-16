@@ -18,6 +18,14 @@ interpret verification authority as settlement posting permission. Fulfillment
 changes do not forgive debt or create credits; approved orders remain payable
 through subsequent fulfillment stages when a known positive balance remains.
 
+The separately approved [credit policy](settlement-credit-policy.md) adds
+Super Admin non-cash credit creation/reversal; it does not expand cash posting
+or receipt mutation authority.
+
+**Why:** The user explicitly authorized credit notes independently of payments.
+
+**How to apply:** Keep the non-cash extension separate from these cash rules.
+
 Admin approval is still required before payments; do not allow pre-approval
 receipts to reconcile unpaid Accounts rows with an empty payment picker.
 

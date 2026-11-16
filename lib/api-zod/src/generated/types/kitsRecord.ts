@@ -50,6 +50,10 @@ export interface KitsRecord {
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;
+  /** Read-only active non-cash credits, independent of legacy flags. */
+  ledgerCredited?: string | null;
+  /** Read-only received money, independent of credits. */
+  ledgerPaid?: string | null;
   /** Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field. */
   ledgerPaymentStatus?: KitsRecordLedgerPaymentStatus;
   mr: KitsRecordMr;

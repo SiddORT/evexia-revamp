@@ -144,7 +144,7 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
                         required_scope[label].append(saved_row.id)
                 if row:
                     required_scope[LABELS[kind]].append(row.id)
-            receipts = settlements.history(db, keys, required_scope) if days else defaultdict(list)
+            receipts = settlements.history(db, keys, required_scope)
             exposure_complete, doctor_complete = False, bool(days)
     else:
         receipts = settlements.history(db, keys, scoped)
@@ -163,9 +163,9 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
                 doctor_complete = False
             return None
         paid = sum((settlements.exact(r["amount"]) for r in receipts[(label, saved_row.id)]), settlements.ZERO)
-        if paid > total:
-            incomplete("Committed payments exceed an applicable saved order total.")
-        return total - paid
+        credit = settlements.credited(receipts, label, saved_row.id)
+        settlements.payment_position(total, paid, credit)
+        return total - paid - credit
 
     def aged(balance, date, selected):
         if days and selected and balance > 0:
@@ -200,9 +200,10 @@ def _evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None)
     if total is None:
         incomplete("The proposed order has no authoritative total for the enabled MR financial rule; its pricing may require Admin review.")
     paid = sum((settlements.exact(r["amount"]) for r in receipts[(LABELS[kind], row.id)]), settlements.ZERO) if row else settlements.ZERO
-    if paid > total:
-        incomplete("The proposed replacement total is below committed payments.")
-    proposed = total - paid
+    credit = settlements.credited(receipts, LABELS[kind], row.id) if row else settlements.ZERO
+    if paid + credit > total:
+        incomplete("The proposed replacement total is below committed payments and active credits.")
+    proposed = total - paid - credit
     aged(proposed, row.date if row else order_date or business_date, True)
     result.update(outstanding=settlements.fmt(outstanding) if (limit or governed_it) and exposure_complete else None,
                   proposedBalance=settlements.fmt(proposed),
@@ -241,6 +242,18 @@ def evaluate(db, keys, kind, data, *, row=None, order_date=None, previous=None):
 
 
 def enforce(db, keys, kind, data, *, row=None, order_date=None, previous=None):
+    # Debt integrity applies to Admin edits and to MRs with disabled limits too.
+    # Eligibility policy below must not allow repricing below retained credits.
+    if row:
+        from app.services import settlements
+        receipts = settlements.history(db, keys, {LABELS[kind]: [row.id]})
+        paid = sum((settlements.exact(r["amount"]) for r in receipts[(LABELS[kind], row.id)]), settlements.ZERO)
+        credit = settlements.credited(receipts, LABELS[kind], row.id)
+        if paid or credit:
+            total = proposed_total(kind, data, previous)
+            if total is None or total < paid + credit:
+                raise ImmError("Saved payments and active credits require a known total at least as large as their sum.",
+                               409, "settlement_inconsistent_balance")
     result = evaluate(db, keys, kind, data, row=row, order_date=order_date, previous=previous)
     if not result["eligible"]:
         raise ImmError(" ".join(r["message"] for r in result["reasons"]) + " Your draft and verified attachments are retained.",

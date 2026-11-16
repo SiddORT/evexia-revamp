@@ -2,6 +2,8 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0112_settlement_credits": "automatic",
+    "0113_credits_staged_merge": "automatic",
     "0110_retire_legacy_pricing": "automatic",
     "0111_pricing_retirement_merge": "automatic",
     "0106_territory_assignments": "automatic",

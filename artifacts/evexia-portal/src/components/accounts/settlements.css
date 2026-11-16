@@ -186,3 +186,18 @@
 @container settle-payment (min-width: 800px) {
   .settle-dialog--payment .settle-payment-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+.settle-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.credit-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; align-items: end; padding: 0.75rem 0; }
+.credit-filters__actions { display: flex; gap: 0.5rem; }
+.credit-notes .settle-table-wrap { display: block; max-width: 100%; }
+.credit-notes .credit-filters { padding: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); }
+.credit-filters__actions { flex-wrap: wrap; }
+.settle-credit-dialog .kits-field { display: grid; gap: 5px; min-width: 0; }
+.settle-credit-dialog .kits-field input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; }
+.settle-credit-dialog .kits-field input[aria-invalid="true"] { border-color: var(--admin-danger); }
+.settle-credit-dialog .settle-history-sum { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); margin: 0; }
+.settle-credit-dialog .settle-history-sum > div { min-width: 0; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px; }
+.settle-credit-dialog .settle-history-sum dd { margin: 4px 0 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.settle-credit-dialog .settle-history-sum dt { color: var(--admin-text-soft); font-size: .8rem; }
+.settle-history-dialog .settle-history-sum { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 540px) { .settle-history-dialog .settle-history-sum { grid-template-columns: minmax(0, 1fr); } }

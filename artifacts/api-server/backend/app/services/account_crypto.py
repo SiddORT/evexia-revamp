@@ -202,10 +202,16 @@ def ready(db):
         ["0109_mapping_staged_merge"],
         ["0110_retire_legacy_pricing"],
         ["0111_pricing_retirement_merge"],
+        ["0112_settlement_credits"],
+        ["0113_credits_staged_merge"],
     ):
         raise AccountCryptoError()
     # This exact catalogue-only successor retains the predecessor account
     # anchors and protected identity; it introduces no encryption inventory.
+    if revisions in (["0112_settlement_credits"], ["0113_credits_staged_merge"]):
+        from app.services.credit_notes import ready as credits_ready
+        credits_ready(db)
+        revisions = ["0111_pricing_retirement_merge"] if revisions == ["0113_credits_staged_merge"] else ["0110_retire_legacy_pricing"]
     if revisions in (["0110_retire_legacy_pricing"], ["0111_pricing_retirement_merge"]):
         revisions = ["0109_mapping_staged_merge"] if revisions == ["0111_pricing_retirement_merge"] else ["0108_doctor_mr_mapping"]
     if revisions in (["0108_doctor_mr_mapping"], ["0109_mapping_staged_merge"]):

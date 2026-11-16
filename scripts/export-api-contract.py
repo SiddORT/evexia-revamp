@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -173,6 +173,8 @@ def main() -> None:
             return
         selected = {path: item for path, item in contract["paths"].items()
                     if (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
+                    or (args.scope == "settlement-credits" and
+                        (path == "/v1/admin/settlements" or path.startswith("/v1/admin/settlements/")))
                     or (args.scope == "deferred-order-review" and
                         (path.endswith("/financial-review") or path.endswith("/mr-financial-summary")
                          or path == "/v1/admin/settlements"))
@@ -213,6 +215,12 @@ def main() -> None:
                     collect(item)
 
         collect(selected)
+        if args.scope == "settlement-credits":
+            for name in ("FinancialReview", "KitsRecord"):
+                # Only new response members; retain all unrelated refinements.
+                for field in (("committedTargetCredits", "creditRevision") if name == "FinancialReview"
+                              else ("ledgerCredited", "ledgerPaid")):
+                    collect(contract["components"]["schemas"][name]["properties"][field])
         if args.scope == "kits-contributions":
             # Response-only addition: retain every existing route and unrelated
             # refined schema. Collect only the new response field dependencies.
@@ -241,7 +249,12 @@ def main() -> None:
             "SettlementRecord": ("paymentStatus",),
         } if args.scope == "deferred-order-review" else {
             "KitsRecord": ("financialContribution", "financialHistory"),
-        } if args.scope == "kits-contributions" else {}
+        } if args.scope == "kits-contributions" else {
+            "FinancialReview": ("committedTargetCredits", "creditRevision"),
+            "KitsRecord": ("ledgerCredited", "ledgerPaid"),
+            "SettlementRecord": ("credited", "credits", "invoiceReference"),
+            "SettlementAllocation": ("expected_credited",),
+        } if args.scope == "settlement-credits" else {}
         needed.update(deferred_fields)
         for name in needed:
             if name in deferred_fields:
@@ -261,7 +274,7 @@ def main() -> None:
                     saved.pop("required", None)
                 schema_updates[name] = saved
                 continue
-            prefixes = (() if args.scope == "deferred-order-review" else ("UnifiedDraft",) if args.scope == "unified-drafts"
+            prefixes = (() if args.scope in ("deferred-order-review", "settlement-credits") else ("UnifiedDraft",) if args.scope == "unified-drafts"
                         else ("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("MR", "Doctor") if args.scope == "territories"

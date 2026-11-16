@@ -11,8 +11,40 @@ from app.schemas.settlements import (
     SettlementReferences, SettlementBatchResult, SettlementReconciliation,
 )
 from app.services import settlements as service
+from app.services import credit_notes as credits
+from app.schemas.credit_notes import CreditInput, CreditRevertInput, CreditRecord, CreditPage, CreditReconciliation
 
 router = APIRouter(prefix="/admin/settlements", tags=["settlements"])
+
+
+@router.get("/credit-notes", response_model=CreditPage, operation_id="listSettlementCreditNotes")
+def credit_listing(date_from: date | None = None, date_to: date | None = None,
+                   mr_id: uuid.UUID | None = None, search: str = Query("", max_length=100),
+                   offset: int = Query(0, ge=0, le=20000), limit: int = Query(25, ge=1, le=100),
+                   actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return credits.listing(db, actor, date_from=date_from, date_to=date_to, mr_id=mr_id,
+                           search=search, offset=offset, limit=limit)
+
+
+@router.post("/credit-notes", response_model=CreditRecord, operation_id="createSettlementCreditNote")
+def credit_create(body: CreditInput, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return credits.create(db, actor, body)
+
+
+@router.get("/credit-notes/{identity}", response_model=CreditRecord, operation_id="getSettlementCreditNote")
+def credit_detail(identity: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return credits.detail(db, actor, identity)
+
+
+@router.post("/credit-notes/{identity}/revert", response_model=CreditRecord, operation_id="revertSettlementCreditNote")
+def credit_revert(identity: uuid.UUID, body: CreditRevertInput,
+                  actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return credits.revert(db, actor, identity, body)
+
+
+@router.get("/credit-requests/{key}", response_model=CreditReconciliation, operation_id="reconcileSettlementCreditNote")
+def credit_reconcile(key: uuid.UUID, actor=Depends(current_identity), db: Session = Depends(get_db)):
+    return credits.reconcile(db, actor, key)
 
 
 @router.get("", response_model=SettlementPage, operation_id="listSettlements")

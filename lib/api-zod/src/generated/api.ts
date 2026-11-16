@@ -7,6 +7,29 @@
  */
 import * as zod from "zod";
 
+export const listSettlementsResponseItemsItemCreditsItemDoctorOneContactsMaskedDefault = false;
+export const listSettlementsResponseItemsItemCreditsItemMrOneContactsMaskedDefault = false;
+export const settlementOrderHistoryResponseCreditsItemDoctorOneContactsMaskedDefault = false;
+export const settlementOrderHistoryResponseCreditsItemMrOneContactsMaskedDefault = false;
+export const verifySettlementTransactionResponseCreditsItemDoctorOneContactsMaskedDefault = false;
+export const verifySettlementTransactionResponseCreditsItemMrOneContactsMaskedDefault = false;
+export const listSettlementCreditNotesQuerySearchMax = 100;
+export const listSettlementCreditNotesQueryOffsetDefault = 0;
+export const listSettlementCreditNotesQueryOffsetMin = 0;
+export const listSettlementCreditNotesQueryOffsetMax = 20000;
+export const listSettlementCreditNotesQueryLimitDefault = 25;
+export const listSettlementCreditNotesQueryLimitMax = 100;
+export const listSettlementCreditNotesResponseItemsItemDoctorOneContactsMaskedDefault = false;
+export const listSettlementCreditNotesResponseItemsItemMrOneContactsMaskedDefault = false;
+export const createSettlementCreditNoteBodyInvoiceReferenceMax = 100;
+export const createSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
+export const createSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
+export const getSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
+export const getSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
+export const revertSettlementCreditNoteResponseDoctorOneContactsMaskedDefault = false;
+export const revertSettlementCreditNoteResponseMrOneContactsMaskedDefault = false;
+export const reconcileSettlementCreditNoteResponseNoteOneDoctorOneContactsMaskedDefault = false;
+export const reconcileSettlementCreditNoteResponseNoteOneMrOneContactsMaskedDefault = false;
 export const listAllergensQueryQueryMax = 200;
 export const listAllergensQueryMinPriceOneMax = 64;
 export const listAllergensQueryMaxPriceOneMax = 64;
@@ -2956,6 +2979,326 @@ export const getMrFinancialSummaryQueryOffsetDefault = 0;
 export const getMrFinancialSummaryQueryOffsetMin = 0;
 export const getMrFinancialSummaryQueryLimitDefault = 25;
 export const getMrFinancialSummaryQueryLimitMax = 100;
+
+export const recordSettlementBodyEntriesItemExpectedCreditedDefault = `0.00`;
+
+export const listSettlementCreditNotesQuerySearchDefault = ``;
+
+export const ListSettlementCreditNotesQueryParams = zod.object({
+  date_from: zod.union([zod.date(), zod.null()]).optional(),
+  date_to: zod.union([zod.date(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  search: zod.coerce
+    .string()
+    .max(listSettlementCreditNotesQuerySearchMax)
+    .default(listSettlementCreditNotesQuerySearchDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listSettlementCreditNotesQueryOffsetMin)
+    .max(listSettlementCreditNotesQueryOffsetMax)
+    .default(listSettlementCreditNotesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listSettlementCreditNotesQueryLimitMax)
+    .default(listSettlementCreditNotesQueryLimitDefault),
+});
+
+export const ListSettlementCreditNotesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      canRevert: zod.boolean(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementCreditNotesResponseItemsItemDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      invoiceReference: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              listSettlementCreditNotesResponseItemsItemMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      orderDate: zod.string(),
+      orderId: zod.string(),
+      orderNumber: zod.string(),
+      revertedAt: zod.union([zod.string(), zod.null()]),
+      revertedBy: zod.union([zod.string(), zod.null()]),
+      status: zod.enum(["Active", "Reverted"]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+export const createSettlementCreditNoteBodyAmountRegExp = new RegExp(
+  "^(?:0|[1-9][0-9]{0,11})\\.[0-9]{2}$",
+);
+
+export const createSettlementCreditNoteBodyInvoiceReferenceRegExp = new RegExp(
+  "^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$",
+);
+
+export const CreateSettlementCreditNoteBody = zod.object({
+  amount: zod.string().regex(createSettlementCreditNoteBodyAmountRegExp),
+  expected_credited: zod.string(),
+  expected_paid: zod.string(),
+  expected_version: zod.number().int().min(1),
+  id: zod.string().uuid(),
+  idempotency_key: zod.string().uuid(),
+  invoice_reference: zod
+    .string()
+    .max(createSettlementCreditNoteBodyInvoiceReferenceMax)
+    .regex(createSettlementCreditNoteBodyInvoiceReferenceRegExp),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+});
+
+export const CreateSettlementCreditNoteResponse = zod.object({
+  actorId: zod.string(),
+  amount: zod.string(),
+  canRevert: zod.boolean(),
+  createdAt: zod.string(),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          createSettlementCreditNoteResponseDoctorOneContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  invoiceReference: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(createSettlementCreditNoteResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  orderDate: zod.string(),
+  orderId: zod.string(),
+  orderNumber: zod.string(),
+  revertedAt: zod.union([zod.string(), zod.null()]),
+  revertedBy: zod.union([zod.string(), zod.null()]),
+  status: zod.enum(["Active", "Reverted"]),
+});
+
+export const GetSettlementCreditNoteParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const GetSettlementCreditNoteResponse = zod.object({
+  actorId: zod.string(),
+  amount: zod.string(),
+  canRevert: zod.boolean(),
+  createdAt: zod.string(),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(getSettlementCreditNoteResponseDoctorOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  invoiceReference: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(getSettlementCreditNoteResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  orderDate: zod.string(),
+  orderId: zod.string(),
+  orderNumber: zod.string(),
+  revertedAt: zod.union([zod.string(), zod.null()]),
+  revertedBy: zod.union([zod.string(), zod.null()]),
+  status: zod.enum(["Active", "Reverted"]),
+});
+
+export const RevertSettlementCreditNoteParams = zod.object({
+  identity: zod.coerce.string().uuid(),
+});
+
+export const RevertSettlementCreditNoteBody = zod.object({
+  idempotency_key: zod.string().uuid(),
+});
+
+export const RevertSettlementCreditNoteResponse = zod.object({
+  actorId: zod.string(),
+  amount: zod.string(),
+  canRevert: zod.boolean(),
+  createdAt: zod.string(),
+  date: zod.string(),
+  doctor: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(
+          revertSettlementCreditNoteResponseDoctorOneContactsMaskedDefault,
+        ),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  id: zod.string(),
+  invoiceReference: zod.string(),
+  kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+  mr: zod.union([
+    zod.object({
+      code: zod.union([zod.string(), zod.null()]).optional(),
+      contactsMasked: zod
+        .boolean()
+        .default(revertSettlementCreditNoteResponseMrOneContactsMaskedDefault),
+      email: zod.union([zod.string(), zod.null()]).optional(),
+      id: zod.union([zod.string(), zod.null()]).optional(),
+      name: zod.union([zod.string(), zod.null()]).optional(),
+      phone: zod.union([zod.string(), zod.null()]).optional(),
+      qualification: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+    zod.null(),
+  ]),
+  number: zod.string(),
+  orderDate: zod.string(),
+  orderId: zod.string(),
+  orderNumber: zod.string(),
+  revertedAt: zod.union([zod.string(), zod.null()]),
+  revertedBy: zod.union([zod.string(), zod.null()]),
+  status: zod.enum(["Active", "Reverted"]),
+});
+
+export const ReconcileSettlementCreditNoteParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const ReconcileSettlementCreditNoteResponse = zod.object({
+  note: zod.union([
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      canRevert: zod.boolean(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              reconcileSettlementCreditNoteResponseNoteOneDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      invoiceReference: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              reconcileSettlementCreditNoteResponseNoteOneMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      orderDate: zod.string(),
+      orderId: zod.string(),
+      orderNumber: zod.string(),
+      revertedAt: zod.union([zod.string(), zod.null()]),
+      revertedBy: zod.union([zod.string(), zod.null()]),
+      status: zod.enum(["Active", "Reverted"]),
+    }),
+    zod.null(),
+  ]),
+  rejection: zod.union([zod.record(zod.string(), zod.string()), zod.null()]),
+  status: zod.enum(["committed", "absent", "rejected"]),
+});
 
 /**
  * @summary <Lambda>
@@ -11639,7 +11982,9 @@ export const PreviewImmunotherapyEligibilityResponse = zod.object({
           "Below limit",
         ]),
         businessDate: zod.string(),
+        committedTargetCredits: zod.string(),
         committedTargetPayments: zod.string(),
+        creditRevision: zod.string(),
         exposureComplete: zod.boolean(),
         orderId: zod.string(),
         outstanding: zod.string(),
@@ -17720,6 +18065,16 @@ export const ListKitsOrdersResponse = zod.object({
         .string()
         .max(listKitsOrdersResponseItemsItemLancetsMax)
         .default(listKitsOrdersResponseItemsItemLancetsDefault),
+      ledgerCredited: zod
+        .union([zod.string(), zod.null()])
+        .optional()
+        .describe(
+          "Read-only active non-cash credits, independent of legacy flags.",
+        ),
+      ledgerPaid: zod
+        .union([zod.string(), zod.null()])
+        .optional()
+        .describe("Read-only received money, independent of credits."),
       ledgerPaymentStatus: zod
         .union([
           zod.enum([
@@ -18269,6 +18624,16 @@ export const CreateKitsOrderResponse = zod.object({
     .string()
     .max(createKitsOrderResponseLancetsMax)
     .default(createKitsOrderResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
   ledgerPaymentStatus: zod
     .union([
       zod.enum([
@@ -19014,7 +19379,9 @@ export const PreviewKitsEligibilityResponse = zod.object({
           "Below limit",
         ]),
         businessDate: zod.string(),
+        committedTargetCredits: zod.string(),
         committedTargetPayments: zod.string(),
+        creditRevision: zod.string(),
         exposureComplete: zod.boolean(),
         orderId: zod.string(),
         outstanding: zod.string(),
@@ -19260,6 +19627,16 @@ export const ExportKitsOrdersResponse = zod.object({
         .string()
         .max(exportKitsOrdersResponseItemsItemLancetsMax)
         .default(exportKitsOrdersResponseItemsItemLancetsDefault),
+      ledgerCredited: zod
+        .union([zod.string(), zod.null()])
+        .optional()
+        .describe(
+          "Read-only active non-cash credits, independent of legacy flags.",
+        ),
+      ledgerPaid: zod
+        .union([zod.string(), zod.null()])
+        .optional()
+        .describe("Read-only received money, independent of credits."),
       ledgerPaymentStatus: zod
         .union([
           zod.enum([
@@ -19910,6 +20287,16 @@ export const CommitKitsImportResponse = zod.object({
         .string()
         .max(commitKitsImportResponseOrdersItemLancetsMax)
         .default(commitKitsImportResponseOrdersItemLancetsDefault),
+      ledgerCredited: zod
+        .union([zod.string(), zod.null()])
+        .optional()
+        .describe(
+          "Read-only active non-cash credits, independent of legacy flags.",
+        ),
+      ledgerPaid: zod
+        .union([zod.string(), zod.null()])
+        .optional()
+        .describe("Read-only received money, independent of credits."),
       ledgerPaymentStatus: zod
         .union([
           zod.enum([
@@ -20610,6 +20997,16 @@ export const GetKitsOrderResponse = zod.object({
     .string()
     .max(getKitsOrderResponseLancetsMax)
     .default(getKitsOrderResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
   ledgerPaymentStatus: zod
     .union([
       zod.enum([
@@ -20932,6 +21329,16 @@ export const ApproveKitsOrderResponse = zod.object({
     .string()
     .max(approveKitsOrderResponseLancetsMax)
     .default(approveKitsOrderResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
   ledgerPaymentStatus: zod
     .union([
       zod.enum([
@@ -21454,6 +21861,16 @@ export const UpdateKitsOrderResponse = zod.object({
     .string()
     .max(updateKitsOrderResponseLancetsMax)
     .default(updateKitsOrderResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
   ledgerPaymentStatus: zod
     .union([
       zod.enum([
@@ -21779,6 +22196,16 @@ export const RejectKitsOrderResponse = zod.object({
     .string()
     .max(rejectKitsOrderResponseLancetsMax)
     .default(rejectKitsOrderResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
   ledgerPaymentStatus: zod
     .union([
       zod.enum([
@@ -22106,6 +22533,16 @@ export const ResubmitKitsOrderResponse = zod.object({
     .string()
     .max(resubmitKitsOrderResponseLancetsMax)
     .default(resubmitKitsOrderResponseLancetsDefault),
+  ledgerCredited: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe(
+      "Read-only active non-cash credits, independent of legacy flags.",
+    ),
+  ledgerPaid: zod
+    .union([zod.string(), zod.null()])
+    .optional()
+    .describe("Read-only received money, independent of credits."),
   ledgerPaymentStatus: zod
     .union([
       zod.enum([
@@ -23242,7 +23679,9 @@ export const PreviewLupinEligibilityResponse = zod.object({
           "Below limit",
         ]),
         businessDate: zod.string(),
+        committedTargetCredits: zod.string(),
         committedTargetPayments: zod.string(),
+        creditRevision: zod.string(),
         exposureComplete: zod.boolean(),
         orderId: zod.string(),
         outstanding: zod.string(),
@@ -30836,6 +31275,16 @@ export const SubmitOrderDraftResponse = zod.union([
       .string()
       .max(submitOrderDraftResponseTwoLancetsMax)
       .default(submitOrderDraftResponseTwoLancetsDefault),
+    ledgerCredited: zod
+      .union([zod.string(), zod.null()])
+      .optional()
+      .describe(
+        "Read-only active non-cash credits, independent of legacy flags.",
+      ),
+    ledgerPaid: zod
+      .union([zod.string(), zod.null()])
+      .optional()
+      .describe("Read-only received money, independent of credits."),
     ledgerPaymentStatus: zod
       .union([
         zod.enum([
@@ -41542,6 +41991,58 @@ export const ListSettlementsResponse = zod.object({
   items: zod.array(
     zod.object({
       balance: zod.union([zod.string(), zod.null()]),
+      credited: zod.string(),
+      credits: zod.array(
+        zod.object({
+          actorId: zod.string(),
+          amount: zod.string(),
+          canRevert: zod.boolean(),
+          createdAt: zod.string(),
+          date: zod.string(),
+          doctor: zod.union([
+            zod.object({
+              code: zod.union([zod.string(), zod.null()]).optional(),
+              contactsMasked: zod
+                .boolean()
+                .default(
+                  listSettlementsResponseItemsItemCreditsItemDoctorOneContactsMaskedDefault,
+                ),
+              email: zod.union([zod.string(), zod.null()]).optional(),
+              id: zod.union([zod.string(), zod.null()]).optional(),
+              name: zod.union([zod.string(), zod.null()]).optional(),
+              phone: zod.union([zod.string(), zod.null()]).optional(),
+              qualification: zod.union([zod.string(), zod.null()]).optional(),
+            }),
+            zod.null(),
+          ]),
+          id: zod.string(),
+          invoiceReference: zod.string(),
+          kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+          mr: zod.union([
+            zod.object({
+              code: zod.union([zod.string(), zod.null()]).optional(),
+              contactsMasked: zod
+                .boolean()
+                .default(
+                  listSettlementsResponseItemsItemCreditsItemMrOneContactsMaskedDefault,
+                ),
+              email: zod.union([zod.string(), zod.null()]).optional(),
+              id: zod.union([zod.string(), zod.null()]).optional(),
+              name: zod.union([zod.string(), zod.null()]).optional(),
+              phone: zod.union([zod.string(), zod.null()]).optional(),
+              qualification: zod.union([zod.string(), zod.null()]).optional(),
+            }),
+            zod.null(),
+          ]),
+          number: zod.string(),
+          orderDate: zod.string(),
+          orderId: zod.string(),
+          orderNumber: zod.string(),
+          revertedAt: zod.union([zod.string(), zod.null()]),
+          revertedBy: zod.union([zod.string(), zod.null()]),
+          status: zod.enum(["Active", "Reverted"]),
+        }),
+      ),
       date: zod.string(),
       doctor: zod.union([
         zod.object({
@@ -41560,6 +42061,7 @@ export const ListSettlementsResponse = zod.object({
         zod.null(),
       ]),
       id: zod.string(),
+      invoiceReference: zod.union([zod.string(), zod.null()]),
       key: zod.string(),
       kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
       mr: zod.union([
@@ -41650,6 +42152,58 @@ export const SettlementOrderHistoryParams = zod.object({
 
 export const SettlementOrderHistoryResponse = zod.object({
   balance: zod.union([zod.string(), zod.null()]),
+  credited: zod.string(),
+  credits: zod.array(
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      canRevert: zod.boolean(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              settlementOrderHistoryResponseCreditsItemDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      invoiceReference: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              settlementOrderHistoryResponseCreditsItemMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      orderDate: zod.string(),
+      orderId: zod.string(),
+      orderNumber: zod.string(),
+      revertedAt: zod.union([zod.string(), zod.null()]),
+      revertedBy: zod.union([zod.string(), zod.null()]),
+      status: zod.enum(["Active", "Reverted"]),
+    }),
+  ),
   date: zod.string(),
   doctor: zod.union([
     zod.object({
@@ -41666,6 +42220,7 @@ export const SettlementOrderHistoryResponse = zod.object({
     zod.null(),
   ]),
   id: zod.string(),
+  invoiceReference: zod.union([zod.string(), zod.null()]),
   key: zod.string(),
   kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
   mr: zod.union([
@@ -41835,6 +42390,9 @@ export const RecordSettlementBody = zod.object({
     .array(
       zod.object({
         amount: zod.string().regex(recordSettlementBodyEntriesItemAmountRegExp),
+        expected_credited: zod
+          .string()
+          .default(recordSettlementBodyEntriesItemExpectedCreditedDefault),
         expected_paid: zod
           .string()
           .regex(recordSettlementBodyEntriesItemExpectedPaidRegExp),
@@ -41876,6 +42434,58 @@ export const VerifySettlementTransactionParams = zod.object({
 
 export const VerifySettlementTransactionResponse = zod.object({
   balance: zod.union([zod.string(), zod.null()]),
+  credited: zod.string(),
+  credits: zod.array(
+    zod.object({
+      actorId: zod.string(),
+      amount: zod.string(),
+      canRevert: zod.boolean(),
+      createdAt: zod.string(),
+      date: zod.string(),
+      doctor: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              verifySettlementTransactionResponseCreditsItemDoctorOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string(),
+      invoiceReference: zod.string(),
+      kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
+      mr: zod.union([
+        zod.object({
+          code: zod.union([zod.string(), zod.null()]).optional(),
+          contactsMasked: zod
+            .boolean()
+            .default(
+              verifySettlementTransactionResponseCreditsItemMrOneContactsMaskedDefault,
+            ),
+          email: zod.union([zod.string(), zod.null()]).optional(),
+          id: zod.union([zod.string(), zod.null()]).optional(),
+          name: zod.union([zod.string(), zod.null()]).optional(),
+          phone: zod.union([zod.string(), zod.null()]).optional(),
+          qualification: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ]),
+      number: zod.string(),
+      orderDate: zod.string(),
+      orderId: zod.string(),
+      orderNumber: zod.string(),
+      revertedAt: zod.union([zod.string(), zod.null()]),
+      revertedBy: zod.union([zod.string(), zod.null()]),
+      status: zod.enum(["Active", "Reverted"]),
+    }),
+  ),
   date: zod.string(),
   doctor: zod.union([
     zod.object({
@@ -41894,6 +42504,7 @@ export const VerifySettlementTransactionResponse = zod.object({
     zod.null(),
   ]),
   id: zod.string(),
+  invoiceReference: zod.union([zod.string(), zod.null()]),
   key: zod.string(),
   kind: zod.enum(["IT", "Kit", "SPT", "Lupin"]),
   mr: zod.union([
@@ -42548,7 +43159,9 @@ export const PreviewSptEligibilityResponse = zod.object({
           "Below limit",
         ]),
         businessDate: zod.string(),
+        committedTargetCredits: zod.string(),
         committedTargetPayments: zod.string(),
+        creditRevision: zod.string(),
         exposureComplete: zod.boolean(),
         orderId: zod.string(),
         outstanding: zod.string(),
@@ -52499,7 +53112,9 @@ export const GetKitsFinancialReviewResponse = zod.object({
     "Below limit",
   ]),
   businessDate: zod.string(),
+  committedTargetCredits: zod.string(),
   committedTargetPayments: zod.string(),
+  creditRevision: zod.string(),
   exposureComplete: zod.boolean(),
   orderId: zod.string(),
   outstanding: zod.string(),
@@ -52534,7 +53149,9 @@ export const GetLupinFinancialReviewResponse = zod.object({
     "Below limit",
   ]),
   businessDate: zod.string(),
+  committedTargetCredits: zod.string(),
   committedTargetPayments: zod.string(),
+  creditRevision: zod.string(),
   exposureComplete: zod.boolean(),
   orderId: zod.string(),
   outstanding: zod.string(),
@@ -52614,7 +53231,9 @@ export const GetSptFinancialReviewResponse = zod.object({
     "Below limit",
   ]),
   businessDate: zod.string(),
+  committedTargetCredits: zod.string(),
   committedTargetPayments: zod.string(),
+  creditRevision: zod.string(),
   exposureComplete: zod.boolean(),
   orderId: zod.string(),
   outstanding: zod.string(),

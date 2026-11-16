@@ -59,7 +59,7 @@ function Review({ order: initialOrder }) {
         <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
         <div><dt>Doctor</dt><dd>{order.doctor.name}</dd></div>
         <div><dt>MR</dt><dd>{order.mr.name}</dd></div>
-        <div><dt>Order status</dt><dd>{order.status}</dd></div><div><dt>Payment status</dt><dd>{order.paymentStatus}</dd></div>
+        <div><dt>Order status</dt><dd>{order.status}</dd></div><div><dt>Payment flag (legacy)</dt><dd>{order.paymentStatus}</dd></div>
       </dl>
       <OrderApproval kind="lupin" order={order} request={request} onApproved={setOrder} />
     </section>
