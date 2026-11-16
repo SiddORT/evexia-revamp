@@ -99,7 +99,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
         : order.status === 'Draft' ? 'Draft · not submitted'
           : eligible ? 'Submitted · awaiting Admin decision' : 'No recorded approval evidence'}</p>}
     {permitted && <>
-      {reviewRequired && eligible && pricingReady && <FinancialReview order={order} request={request}
+      {reviewRequired && eligible && (pricingReady || (compact && dirty)) && <FinancialReview order={order} request={request}
         compact={compact} refreshKey={financialRevision}
         proposedValues={dirty ? proposedValues : null} onEvidence={setFinancial} disabled={busy || uncertain || blocked} />}
       {!eligibility && <p role="status">{compact ? 'Decision availability could not be loaded. Reopen the saved order.' : 'Decision availability is unavailable. Refresh the saved view; a compatible server/schema is required.'}</p>}

@@ -63,3 +63,31 @@ export function moneyText(value) {
     ? `${whole.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',')},${whole.slice(-3)}` : whole;
   return `₹${grouped}.${fraction}`;
 }
+
+// Signed calculated outputs only. Invoice/parking input validators stay strict.
+export function signedMoneyText(value) {
+  if (value == null || value === '') return 'Unavailable';
+  if (typeof value !== 'string' || !/^-?\d{1,18}\.\d{2}$/.test(value)) return 'Unavailable';
+  return value.startsWith('-') ? `−${moneyText(value.slice(1))}` : moneyText(value);
+}
+
+export function calculateKitsContribution(parking, pricing, mrId) {
+  const unavailable = (unavailableReason) => ({ state: 'Unavailable', unavailableReason });
+  if (parking == null || parking === '') return unavailable('Business Parking was not entered.');
+  if (!pricing) return unavailable('Complete pricing for this item basis is unavailable.');
+  if (!['percent', 'inr'].includes(pricing.discountType)) return unavailable('The saved discount basis is unavailable.');
+  if (!mrId) return unavailable('No saved MR owner.');
+  try {
+    const p = decimal(parking).paise;
+    const d = decimal(pricing.discountValue, pricing.discountType === 'percent' ? 10000n : MAX_AMOUNT).paise;
+    const numerator = pricing.discountType === 'percent' ? p * d : d;
+    const denominator = pricing.discountType === 'percent' ? 10000n : 1n;
+    const sales = halfUp(numerator, denominator), achievement = halfUp(numerator * 2n, denominator);
+    const signed = (value) => value < 0n ? `-${text(-value)}` : text(value);
+    return { state: 'Available', businessParking: text(p), discountType: pricing.discountType,
+      discountValue: text(d), salesDeduction: text(sales), achievementDeduction: text(achievement),
+      mrSales: signed(p - sales), mrAchievement: signed(p - achievement) };
+  } catch {
+    return unavailable('Enter valid Business Parking and complete pricing.');
+  }
+}

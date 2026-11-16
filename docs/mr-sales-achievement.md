@@ -1,5 +1,23 @@
 # MR sales achievement
 
+## Deferred Kits contribution integration
+
+Kits financial saves now retain separate `kits_parking_discount_v1` MR sales
+and achievement facts alongside the existing encrypted invoice pricing.
+See `docs/kits-orders.md` for formulas, examples, signed rounding, unavailable
+inputs and financial-revision evidence. This does **not** change this report
+or any MR/Admin dashboard: the projection below still uses saved payable totals.
+Do not interpret storing contribution evidence as permission to switch reports,
+targets, collections or cached aggregates to the new amounts.
+
+A future approved integration must read saved contribution facts without
+recalculating from current masters, require actual order approval and matching
+saved MR/date/financial-basis attribution, exclude returned/rejected orders, and
+disclose missing historical contributions rather than inventing zeroes. Later
+nonfinancial order versions can legitimately exceed the financial-save version;
+compare the actual basis, not version equality alone. No bulk backfill has
+been authorized.
+
 ## Approved read-only scope
 
 MR Dashboard and Targets now consume MR-self reporting, separate from Admin Sales

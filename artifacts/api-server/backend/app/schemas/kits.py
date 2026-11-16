@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field, model_validator, field_validator
 from app.schemas.kits_pricing import KitsPricingInput, KitsPricingSnapshot, amount
 from app.schemas.gst_settings import GSTEvidence
+from app.schemas.kits_contributions import KitsContribution
 from app.schemas.immunotherapy import Strict, Status, ImmReferencePage, ImmImportReview, ImmUploadPolicy
 
 Payment = Literal["Unpaid", "Paid", "Partial"]
@@ -120,6 +121,8 @@ class KitsImport(Strict):
 
 
 class KitsRecord(KitsInput):
+    financialContribution: KitsContribution | None = None
+    financialHistory: list[dict] = Field(default_factory=list)
     pricingState: str | None = None
     ledgerPaymentStatus: LedgerPayment | None = Field(
         default=None, description="Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.")

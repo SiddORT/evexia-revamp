@@ -17655,6 +17655,36 @@ export const ListKitsOrdersResponse = zod.object({
         .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
+      financialContribution: zod
+        .union([
+          zod.object({
+            achievementDeduction: zod
+              .union([zod.string(), zod.null()])
+              .optional(),
+            businessParking: zod.union([zod.string(), zod.null()]),
+            discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+            discountValue: zod.union([zod.string(), zod.null()]),
+            itemQuantities: zod.record(zod.string(), zod.string()),
+            mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+            mrId: zod.union([zod.string(), zod.null()]),
+            mrSales: zod.union([zod.string(), zod.null()]).optional(),
+            orderDate: zod.string(),
+            orderId: zod.string(),
+            orderNumber: zod.string(),
+            orderVersion: zod.number().int(),
+            policyVersion: zod.literal("kits_parking_discount_v1"),
+            salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+            savedAt: zod.string(),
+            savedBy: zod.string(),
+            state: zod.enum(["Available", "Unavailable"]),
+            unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      financialHistory: zod
+        .array(zod.record(zod.string(), zod.unknown()))
+        .optional(),
       gstEvidence: zod
         .union([
           zod.object({
@@ -18176,6 +18206,34 @@ export const CreateKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -19137,6 +19195,36 @@ export const ExportKitsOrdersResponse = zod.object({
         .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
+      financialContribution: zod
+        .union([
+          zod.object({
+            achievementDeduction: zod
+              .union([zod.string(), zod.null()])
+              .optional(),
+            businessParking: zod.union([zod.string(), zod.null()]),
+            discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+            discountValue: zod.union([zod.string(), zod.null()]),
+            itemQuantities: zod.record(zod.string(), zod.string()),
+            mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+            mrId: zod.union([zod.string(), zod.null()]),
+            mrSales: zod.union([zod.string(), zod.null()]).optional(),
+            orderDate: zod.string(),
+            orderId: zod.string(),
+            orderNumber: zod.string(),
+            orderVersion: zod.number().int(),
+            policyVersion: zod.literal("kits_parking_discount_v1"),
+            salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+            savedAt: zod.string(),
+            savedBy: zod.string(),
+            state: zod.enum(["Available", "Unavailable"]),
+            unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      financialHistory: zod
+        .array(zod.record(zod.string(), zod.unknown()))
+        .optional(),
       gstEvidence: zod
         .union([
           zod.object({
@@ -19757,6 +19845,36 @@ export const CommitKitsImportResponse = zod.object({
         .optional(),
       doctor: zod.record(zod.string(), zod.unknown()),
       doctorId: zod.string().uuid(),
+      financialContribution: zod
+        .union([
+          zod.object({
+            achievementDeduction: zod
+              .union([zod.string(), zod.null()])
+              .optional(),
+            businessParking: zod.union([zod.string(), zod.null()]),
+            discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+            discountValue: zod.union([zod.string(), zod.null()]),
+            itemQuantities: zod.record(zod.string(), zod.string()),
+            mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+            mrId: zod.union([zod.string(), zod.null()]),
+            mrSales: zod.union([zod.string(), zod.null()]).optional(),
+            orderDate: zod.string(),
+            orderId: zod.string(),
+            orderNumber: zod.string(),
+            orderVersion: zod.number().int(),
+            policyVersion: zod.literal("kits_parking_discount_v1"),
+            salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+            savedAt: zod.string(),
+            savedBy: zod.string(),
+            state: zod.enum(["Available", "Unavailable"]),
+            unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      financialHistory: zod
+        .array(zod.record(zod.string(), zod.unknown()))
+        .optional(),
       gstEvidence: zod
         .union([
           zod.object({
@@ -20429,6 +20547,34 @@ export const GetKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -20723,6 +20869,34 @@ export const ApproveKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -21217,6 +21391,34 @@ export const UpdateKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -21514,6 +21716,34 @@ export const RejectKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -21813,6 +22043,34 @@ export const ResubmitKitsOrderResponse = zod.object({
     .optional(),
   doctor: zod.record(zod.string(), zod.unknown()),
   doctorId: zod.string().uuid(),
+  financialContribution: zod
+    .union([
+      zod.object({
+        achievementDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        businessParking: zod.union([zod.string(), zod.null()]),
+        discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+        discountValue: zod.union([zod.string(), zod.null()]),
+        itemQuantities: zod.record(zod.string(), zod.string()),
+        mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+        mrId: zod.union([zod.string(), zod.null()]),
+        mrSales: zod.union([zod.string(), zod.null()]).optional(),
+        orderDate: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string(),
+        orderVersion: zod.number().int(),
+        policyVersion: zod.literal("kits_parking_discount_v1"),
+        salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+        savedAt: zod.string(),
+        savedBy: zod.string(),
+        state: zod.enum(["Available", "Unavailable"]),
+        unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  financialHistory: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
   gstEvidence: zod
     .union([
       zod.object({
@@ -30513,6 +30771,36 @@ export const SubmitOrderDraftResponse = zod.union([
       .optional(),
     doctor: zod.record(zod.string(), zod.unknown()),
     doctorId: zod.string().uuid(),
+    financialContribution: zod
+      .union([
+        zod.object({
+          achievementDeduction: zod
+            .union([zod.string(), zod.null()])
+            .optional(),
+          businessParking: zod.union([zod.string(), zod.null()]),
+          discountType: zod.union([zod.enum(["percent", "inr"]), zod.null()]),
+          discountValue: zod.union([zod.string(), zod.null()]),
+          itemQuantities: zod.record(zod.string(), zod.string()),
+          mrAchievement: zod.union([zod.string(), zod.null()]).optional(),
+          mrId: zod.union([zod.string(), zod.null()]),
+          mrSales: zod.union([zod.string(), zod.null()]).optional(),
+          orderDate: zod.string(),
+          orderId: zod.string(),
+          orderNumber: zod.string(),
+          orderVersion: zod.number().int(),
+          policyVersion: zod.literal("kits_parking_discount_v1"),
+          salesDeduction: zod.union([zod.string(), zod.null()]).optional(),
+          savedAt: zod.string(),
+          savedBy: zod.string(),
+          state: zod.enum(["Available", "Unavailable"]),
+          unavailableReason: zod.union([zod.string(), zod.null()]).optional(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    financialHistory: zod
+      .array(zod.record(zod.string(), zod.unknown()))
+      .optional(),
     gstEvidence: zod
       .union([
         zod.object({

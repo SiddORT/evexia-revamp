@@ -38,6 +38,10 @@ def finances(db, actor, body, previous):
     if supplied and not is_super_admin(actor):
         raise ImmError("Only the protected Super Admin may submit Kits pricing or PO fields.", 403, "access_denied")
     values = {key: previous[key] for key in FINANCIAL_FIELDS - {"gstEvidence"} if previous and key in previous}
+    # Server-owned evidence never enters KitsInput (including reviewed imports).
+    for key in ("financialContribution", "financialHistory"):
+        if previous and key in previous:
+            values[key] = previous[key]
     if actor.role == "mr" and previous:
         # Never recalculate protected prices implicitly, including on a second
         # correction save after the item basis has already changed.
@@ -60,7 +64,7 @@ def finances(db, actor, body, previous):
             raw = values["pricing"]
             price = KitsPricingInput.model_validate({k: raw[k] for k in KitsPricingInput.model_fields if k in raw})
             tax = (previous or {}).get("pricing")
-            if tax is not None and all(
+            if tax is not None and not previous.get("pricingNeedsReview") and all(
                 getattr(price, k) == tax.get(k) for k in KitsPricingInput.model_fields
             ) and all(
                 body.model_dump(mode="json").get(k) == previous.get(k)
@@ -86,6 +90,44 @@ def finances(db, actor, body, previous):
             raise ImmError("Enter valid unit rates for included items and a discount not exceeding gross.", 422, "kits_pricing") from None
     values.pop("gstEvidence", None)
     return values
+
+
+def save_financial_evidence(actor, row, body, data, previous):
+    """Called only by the atomic writer after assigning the actual saved version."""
+    fields = body.model_fields_set
+    items = ("kit", "lancets", "applicators", "tray")
+    pricing_write = ("pricing" in fields and body.pricing is not None and
+                     (not previous or data.get("pricing") != previous.get("pricing") or
+                      previous.get("pricingNeedsReview") or
+                      any(data.get(k) != previous.get(k) for k in items)))
+    parking_write = ("businessParking" in fields and
+                     (not previous or data.get("businessParking") != previous.get("businessParking")))
+    if not (pricing_write or parking_write):
+        return
+    from app.schemas.kits_contributions import calculate_contribution
+    from app.services.order_approval import saved_pricing
+    try:
+        saved_pricing("kits", data)
+        complete = True
+    except (ValueError, KeyError, TypeError, ArithmeticError, ImmError):
+        complete = False
+    if previous:
+        data["financialHistory"] = [*previous.get("financialHistory", []), {
+            "orderVersion": previous["version"],
+            "orderDate": previous["date"],
+            "mrId": previous.get("mrId"),
+            "pricing": previous.get("pricing"),
+            "businessParking": previous.get("businessParking"),
+            "financialContribution": previous.get("financialContribution"),
+            "itemBasis": {k: previous.get(k) for k in items},
+        }]
+    data["financialContribution"] = calculate_contribution(
+        data.get("businessParking"), data.get("pricing"), pricing_complete=complete,
+        orderId=str(row.id), orderNumber=row.number, orderDate=row.date.isoformat(),
+        orderVersion=row.version, mrId=str(row.mr_id) if row.mr_id else None,
+        savedBy=str(actor.user.id), savedAt=utcnow().isoformat(),
+        itemQuantities={k: (body.kit.quantity if k == "kit" else getattr(body, k))
+                        for k in ("kit", "lancets", "applicators", "tray")})
 
 
 def person(row, kind):
@@ -242,6 +284,10 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     data = resolved(db, actor, keys, body, previous)
     from app.services.order_approval import preserve
     preserve(actor, "kits", data, previous)
+    if previous and data.get("pricing") is not None and "pricing" not in body.model_fields_set:
+        # Reviewing Parking/PO/remarks is not confirmation of a corrected invoice.
+        data["pricingNeedsReview"] = previous.get("pricingNeedsReview", False) or any(
+            data.get(k) != previous.get(k) for k in ("kit", "lancets", "applicators", "tray"))
     from app.services.order_eligibility import enforce
     enforce(db, keys, "kits", data, row=row, order_date=body.orderDate, previous=previous)
     if not row:
@@ -255,6 +301,7 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     row.doctor_id, row.mr_id, row.patient_id = body.doctorId, body.mrId, body.patientId
     row.order_for, row.status, row.payment_status = body.orderFor, body.status, body.paymentStatus
     row.updated_by = actor.user.id
+    save_financial_evidence(actor, row, body, data, previous)
     row.snapshot_ciphertext = seal(keys, "orders", row.id, data)
     db.flush()
     retained = {f["id"] for f in previous["attachments"]} if previous else set()

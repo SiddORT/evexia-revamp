@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -213,6 +213,10 @@ def main() -> None:
                     collect(item)
 
         collect(selected)
+        if args.scope == "kits-contributions":
+            # Response-only addition: retain every existing route and unrelated
+            # refined schema. Collect only the new response field dependencies.
+            collect(contract["components"]["schemas"]["KitsRecord"]["properties"]["financialContribution"])
         if args.scope == "deferred-order-review":
             # Kits payment filters are inline query schemas. Keep every other
             # reviewed query/response property byte-equivalent after JSON parsing.
@@ -235,7 +239,9 @@ def main() -> None:
             "OrderRejection": ("financialReviewToken",),
             "EligibilityPreview": ("financialReview",),
             "SettlementRecord": ("paymentStatus",),
-        } if args.scope == "deferred-order-review" else {}
+        } if args.scope == "deferred-order-review" else {
+            "KitsRecord": ("financialContribution", "financialHistory"),
+        } if args.scope == "kits-contributions" else {}
         needed.update(deferred_fields)
         for name in needed:
             if name in deferred_fields:

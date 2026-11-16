@@ -92,15 +92,16 @@ Calculation order (server authoritative, mirrored using browser BigInt paise):
    discount amount, discounted value, taxable value, GST and total are distinct
    displayed and saved decimal strings with two fractional digits.
 
-Initial pricing captures **5.00% GST**. Later edits use that saved percentage,
+Initial pricing captures the **effective-date GST rate**. Later edits use that saved percentage,
 not a future master lookup or client-selected rate. There is no tax selector,
 invoice or payment framework. Submitted computed totals are not accepted by
 the write schema; the server calculates its own snapshot.
 
 `businessParking` is an independently entered INR amount, with explicit zero
-distinct from missing. It has **no commission, percentage, deduction or linkage
-to the order total**. `poNumber` is optional text of at most 200 characters.
-The browser editor asks for a Business Parking amount explicitly when pricing.
+distinct from missing. It is **not an invoice charge, commission or deduction
+from the order total**. The explicitly approved contribution formulas below
+use it separately. `poNumber` is optional text of at most 200 characters.
+The browser editor leaves blank Parking unavailable instead of inventing zero.
 
 The editor starts from historical identities, independent saved shipping and
 billing, configuration, quantities, remarks and retained private file IDs.
@@ -125,8 +126,102 @@ fields, passing only rates, forwarding and discount to server review/commit.
 It retains an existing order's captured tax percentage. Omitted new fields in
 older unpriced backups preserve saved pricing/Business Parking/PO values; they
 never implicitly clear them. Explicitly clearing previously saved pricing is
-rejected. An authorized quantity update with omitted pricing recalculates from
-the saved rates. Import does not recreate historical file bytes or associations.
+rejected. A quantity update with omitted pricing retains the historical invoice
+and requires an explicit pricing review; it does not recalculate on import.
+Import does not recreate historical file bytes or associations.
+
+## Saved MR financial contributions
+
+The `kits_parking_discount_v1` policy extends the **same encrypted order
+snapshot**. It adds no database table/column, migration, separate ledger,
+dashboard aggregate or competing total. Existing `pricing` remains the invoice
+authority. Its rates and line amounts, the saved order quantities, forwarding,
+gross including forwarding, entered discount mode/value, discount amount,
+taxable amount, actual saved GST rate/policy evidence, GST and payable total
+retain their meanings. First pricing follows the effective-date policy described
+at the start of this document.
+
+Business Parking (`P`) remains independently entered, never copied from taxable
+value or payable total, and never becomes an invoice charge or deduction.
+It now explicitly supplies the basis for two **separate contribution facts**:
+
+| Entered discount | Sales deduction | MR sales | Achievement deduction | MR achievement |
+| --- | --- | --- | --- | --- |
+| Percentage `d` | `P × d / 100` | `P − sales deduction` | `P × 2d / 100` | `P − achievement deduction` |
+| Fixed INR `D` | `D` | `P − D` | `2D` | `P − 2D` |
+
+Both deductions use the original `P`; neither is compounded. Fixed rupees are
+**not** converted to an equivalent percentage. Normalize entered money and
+percentage values using the existing nonnegative, plain-string half-up policy
+to hundredths. Calculate each deduction independently with exact Decimal
+arithmetic and round it half-up to paise, then subtract that saved deduction
+from normalized `P`. In particular, achievement deduction is not twice an
+already rounded sales deduction. Keep negative formula results as signed
+decimal strings without capping at zero. Signed formatting applies only to
+calculated outputs; rates, forwarding, discounts and Parking retain their
+existing nonnegative input validation and invoice discount bounds.
+
+Examples:
+
+- Gross ₹1,000 (including forwarding), discount 10%, GST 5% and Parking ₹900:
+  invoice discount ₹100, taxable ₹900, GST ₹45, payable ₹945; sales deduction
+  ₹90 and **MR sales ₹810**; achievement deduction ₹180 and
+  **MR achievement ₹720**.
+- With the same gross, GST and Parking but a fixed ₹100 discount, invoice
+  discount remains ₹100 and payable remains ₹945. Sales deduction is exactly
+  ₹100 and **MR sales ₹800**; achievement deduction is ₹200 and
+  **MR achievement ₹700**.
+
+`financialContribution` is read-only evidence containing policy version,
+availability/reason, original Parking and discount mode/value, item quantities,
+separate deductions and results, saved MR ID, order ID/number/date, financial-save
+order version, saving actor and timestamp. Unavailable results are null, not
+zero. Missing Parking, missing/incomplete pricing or no saved MR owner makes
+the contribution explicitly unavailable; genuine zero Parking is still an
+entered amount and can yield zero or negative results. An older order without
+this evidence stays historically unavailable on reads.
+
+Create, edit and reviewed import use the existing locked, atomic, optimistic-
+versioned, audited and idempotent writer. New pricing, actual repricing or a
+Parking change records new contribution evidence in the same transaction.
+Parking-only edits preserve the invoice snapshot byte-for-value, including its
+saved GST; they do not look up masters or reprice. Before a financial revision,
+`financialHistory` retains the preceding pricing, Parking, contribution, item
+basis and order version inside the same ciphertext. No submitted contribution
+or history field is accepted by strict input models. Transfers ignore these
+read-only outputs and calculate only from authorized financial inputs.
+Unchanged imported/ordinary financial snapshots, PO-only changes, nonfinancial
+edits, reads, approvals, returns and retries do not upgrade old contribution
+policy or rewrite its association. Corrected item quantities without pricing
+keep the invoice pending explicit review, including after Parking-only saves.
+
+Super Admin alone sees the saved breakdown and unsaved contribution estimate;
+MR/staff responses recursively omit contribution and financial history along
+with the already protected pricing/Parking fields. The editor can leave Parking
+blank or save Parking without repricing. Saved views render persisted amounts,
+not recalculations using current masters. Existing draft preservation and
+unchanged retry payload/key behavior remain in place.
+
+Financial review uses **invoice payable total**, not Parking or either
+contribution, plus other outstanding balances minus this order's committed
+payments. It displays configured MR limit, this order total, payments, resulting
+exposure, completeness/pending histories and reached/exceeded warnings before
+the explicit Admin decision. Tokens bind the Kits financial basis and saved
+version as well as current limits/history/payments; equal totals with changed
+financial inputs do not share approval evidence. Warnings never auto-reject.
+
+These are saved financial facts, **not earned credit**. Future aggregation must
+separately require actual approval, match saved MR/date attribution and the
+financial basis, and exclude returned/rejected orders without erasing facts.
+The existing MR/Admin dashboards, sales-achievement report, collections and
+targets are unchanged. No historical bulk backfill or recalculation occurs.
+
+This extension was inspected through source and diffs only, with narrowly
+scoped offline OpenAPI/client/Zod generation and generated-source formatting.
+The codegen wrapper was not used because it runs a typecheck. No tests, builds,
+typechecks, release/regression/completion-validation commands, browser/runtime
+probes, service starts/restarts, migrations, live writes or deployment were run.
+Runtime behavior remains **unverified**.
 
 ### Source-only delivery boundary
 

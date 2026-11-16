@@ -49,10 +49,12 @@ export default function FinancialReview({ order, request, proposedValues, onEvid
       <dl>
         <div><dt>{compact ? 'MR payment limit' : 'MR Payment Limit'}</dt><dd>{amount(data.paymentLimit)}{data.paymentLimit === '0.00' ? ' · disabled' : ''}</dd></div>
         <div><dt>{compact ? 'Other priced outstanding' : 'Existing priced unpaid exposure, excluding this order'}</dt><dd>{amount(data.outstanding)}</dd></div>
-        {!compact && <div><dt>{serialized ? 'Entered total' : 'Saved order total'}</dt><dd>{amount(data.proposedAmount)}</dd></div>}
+        <div><dt>{compact ? serialized ? 'Entered order payable total' : 'Saved order payable total'
+          : serialized ? 'Entered total' : 'Saved order total'}</dt><dd>{amount(data.proposedAmount)}</dd></div>
         <div><dt>Committed payments on this order</dt><dd>{amount(data.committedTargetPayments)}</dd></div>
         <div><dt>Resulting priced exposure</dt><dd>{amount(data.resultingExposure)}</dd></div>
       </dl>
+      {compact && <p role="status">{data.exposureComplete ? 'Priced exposure history is complete.' : 'Exposure history is incomplete; pending orders are not zero.'}</p>}
       {(!compact || ['Reached', 'Exceeded'].includes(data.amountLimitState)) && <p role="status">{data.amountLimitState === 'Reached' ? 'Payment limit exactly reached.'
         : data.amountLimitState === 'Exceeded' ? 'Payment limit exceeded.'
           : data.amountLimitState === 'Below limit' ? 'Priced exposure is below the payment limit.'

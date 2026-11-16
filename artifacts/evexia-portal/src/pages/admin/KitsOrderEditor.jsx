@@ -7,7 +7,8 @@ import { DownloadOrderFile, OrderFileList } from '../../components/orders/OrderF
 import { KIT_PRODUCTS, blankOrder, orderInput, downloadAttachment, attachmentBlob, updateOrder, request, uploadAttachment, validateAttachments, fileSize, loadKitsGST } from '../../services/serverKits.js';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
-import { blankPricing, calculateKitsPricing, pricingInput, moneyText, normalizeKitsAmount } from '../../services/kitsPricing.js';
+import { blankPricing, calculateKitsPricing, calculateKitsContribution, pricingInput, moneyText, normalizeKitsAmount } from '../../services/kitsPricing.js';
+import KitsContributionSummary from '../../components/orders/KitsContributionSummary.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import useOrderDraftNavigation from '../../components/orders/useOrderDraftNavigation.jsx';
 import OrderApproval from '../../components/orders/OrderApproval.jsx';
@@ -50,6 +51,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
   const { date } = useAdminDateFormatters();
   const [v, setV] = useState(() => hydrate(order));
   const [pricing, setPricing] = useState(() => (order.pricing ? { ...blankPricing(), ...pricingInput(order.pricing) } : blankPricing()));
+  const [repriceRequested, setRepriceRequested] = useState(false);
   const [parking, setParking] = useState(order.businessParking == null ? '' : String(order.businessParking));
   const [po, setPo] = useState(order.poNumber || '');
   const [doctor, setDoctor] = useState(null), [mr, setMr] = useState(null);
@@ -82,7 +84,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
 
   const initialDraft = useRef(JSON.stringify({ v, pricing, parking, po }));
   const leaveDialog = useOrderDraftNavigation({
-    dirty: !done && (files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })),
+    dirty: !done && (repriceRequested || files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })),
     pending: busy || uncertain || reviewBusy,
     onBlocked: () => setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' }),
   });
@@ -91,13 +93,27 @@ export default function KitsOrderEditor({ order: initialOrder }) {
   const setKit = (p) => setV((c) => ({ ...c, kit: { ...c.kit, ...p } }));
   const setP = (p) => setPricing((c) => ({ ...c, ...p }));
   const frozen = busy || uncertain || reviewBusy || done;
+  const itemChanged = ['kit', 'lancets', 'applicators', 'tray'].some((key) => JSON.stringify(v[key]) !== JSON.stringify(order[key]));
+  const pricingChanged = repriceRequested || JSON.stringify(pricingInput(pricing)) !== JSON.stringify(pricingInput(order.pricing || blankPricing()))
+    || (Boolean(order.pricing) && itemChanged);
+  const parkingChanged = parking !== (order.businessParking == null ? '' : String(order.businessParking));
+  // Omission preserves immutable invoice evidence on Parking/PO-only saves.
+  const financialValues = {
+    ...(pricingChanged ? { pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}) } : {}),
+    ...(parkingChanged ? { businessParking: parking === '' ? null : parking } : {}),
+    ...(po !== (order.poNumber || '') ? { poNumber: po } : {}),
+  };
 
   const calc = useMemo(() => {
+    if (!pricingChanged) return { snap: order.pricing || null, error: '' };
     try { return { snap: calculateKitsPricing(v, pricing, tax), error: '' }; }
     catch (e) { return { snap: null, error: e.message || 'Enter valid rates.' }; }
-  }, [v, pricing, tax]);
+  }, [v, pricing, tax, pricingChanged, order.pricing]);
   const snap = calc.snap;
   const L = snap?.lineAmounts || {};
+  const contributionChanged = pricingChanged || parkingChanged;
+  const contribution = contributionChanged
+    ? calculateKitsContribution(parking, order.pricingNeedsReview && !pricingChanged ? null : snap, v.mrId) : order.financialContribution;
 
   const doctorChanged = v.doctorId !== order.doctorId;
   const mrChanged = v.mrId !== (order.mrId || '');
@@ -112,7 +128,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
     if (!submission.current) {
       const e = {};
       if (!mrPortal) {
-        try { normalizeKitsAmount(parking); } catch { e.parking = 'Enter Business Parking as a non-negative amount up to 999999999.99; 0 is valid.'; }
+        try { if (parking !== '') normalizeKitsAmount(parking); } catch { e.parking = 'Enter Business Parking as a non-negative amount up to 999999999.99; 0 is valid. Leave blank for unavailable contributions.'; }
         if (calc.error) e.pricing = calc.error;
       }
       if (Object.keys(e).length) { setErrors(e); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
@@ -125,7 +141,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
           if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
           attachments.push(uploads.current.get(file));
         }
-        submission.current = { ...orderInput({ ...v, attachments }), ...(!mrPortal ? { pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}), businessParking: parking, poNumber: po } : {}), expected_version: order.version, idempotencyKey: crypto.randomUUID() };
+        submission.current = { ...orderInput({ ...v, attachments }), ...(!mrPortal ? financialValues : {}), expected_version: order.version, idempotencyKey: crypto.randomUUID() };
       }
       await updateOrder(order.id, submission.current);
       submission.current = null; setUncertain(false); setDone(true);
@@ -143,8 +159,8 @@ export default function KitsOrderEditor({ order: initialOrder }) {
   const rate = (key, label) => <input aria-label={`${label} rate (INR per unit)`} inputMode="decimal" value={pricing[key] ?? ''} onChange={(e) => setP({ [key]: e.target.value })} placeholder="Not entered" />;
   const count = (k, label) => <input aria-label={`${label} count`} inputMode="numeric" value={v[k]} onChange={(e) => set({ [k]: e.target.value })} placeholder="Count" />;
   const decisionReview = <OrderApproval kind="kits" order={decisionRecord} request={request} editing
-    proposedValues={{ ...orderInput(v), pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}), businessParking: parking, poNumber: po }}
-    dirty={files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })}
+    proposedValues={{ ...orderInput(v), ...(!mrPortal ? financialValues : {}) }}
+    dirty={repriceRequested || files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })}
     blocked={busy || uncertain || done} onLockChange={setReviewBusy} onApproved={(saved) => {
       setDecisionRecord(saved);
       if (!files.length && initialDraft.current === JSON.stringify({ v, pricing, parking, po })) {
@@ -181,6 +197,9 @@ export default function KitsOrderEditor({ order: initialOrder }) {
                   <tr key={k}><th scope="row">{l}</th><td>{count(k, l)}</td><td /><td />{!mrPortal && <><td>{rate(r, l)}</td><td>{L[k] ? moneyText(L[k]) : '-'}</td></>}</tr>)}
               </tbody></table></div>
           {!mrPortal && <>{calc.error && <Err text={calc.error} />}
+           {order.pricingNeedsReview && <p role="status">Saved item changes need pricing review. Parking-only saves do not reprice this invoice.
+             {' '}<button type="button" className="kits-link" disabled={frozen || repriceRequested}
+               onClick={() => setRepriceRequested(true)}>Review and recalculate invoice pricing</button></p>}
           {!order.pricing && <div>
             {(gstError || !gstEvidence) && <p role={gstError ? 'alert' : 'status'}>{gstError || 'Loading GST…'}</p>}
             <button type="button" className="kits-link" disabled={frozen} onClick={() => setGSTReload((n) => n + 1)}>Refresh GST</button></div>}
@@ -190,7 +209,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
               <select aria-label="Discount type" value={pricing.discountType} onChange={(e) => setP({ discountType: e.target.value })}><option value="percent">%</option><option value="inr">Fixed INR</option></select></div></div>
           </div>
           <dl className="kpr-totals" aria-live="polite" data-testid="kits-editor-totals">
-            {[['Gross value', 'gross'], ['Discount', 'discountAmount'], ['Discounted value', 'discounted'], ['Taxable value', 'taxable'], [tax == null ? 'GST unavailable' : `GST (${tax}%)`, 'gst']].map(([l, k]) => <div key={k}><dt>{l}</dt><dd>{snap ? moneyText(snap[k]) : '-'}</dd></div>)}
+            {[['Gross including forwarding', 'gross'], ['Order discount', 'discountAmount'], ['Discounted value', 'discounted'], ['Taxable value', 'taxable'], [tax == null ? 'GST unavailable' : `GST (${tax}%)`, 'gst']].map(([l, k]) => <div key={k}><dt>{l}</dt><dd>{snap ? moneyText(snap[k]) : '-'}</dd></div>)}
             <div className="kpr-total"><dt>Total amount</dt><dd>{snap ? moneyText(snap.total) : '-'}</dd></div></dl>
           </>}
         </section>
@@ -218,7 +237,8 @@ export default function KitsOrderEditor({ order: initialOrder }) {
           <div className="kits-grid">
             <div className="kits-field"><label htmlFor="kito-parking">Business Parking (INR)</label><input id="kito-parking" inputMode="decimal" aria-invalid={Boolean(errors.parking)} aria-describedby="kito-parking-hint" value={parking} onChange={(e) => setParking(e.target.value)} placeholder="Not entered" /></div>
             <div className="kits-field"><label htmlFor="kito-po">PO Number (optional)</label><input id="kito-po" maxLength={200} value={po} onChange={(e) => setPo(e.target.value)} placeholder="Enter PO number" /></div>
-          </div><p id="kito-parking-hint" className="kits-hint">Independently entered amount. Not a commission, deduction or part of the order total.</p></section>}
+           </div><p id="kito-parking-hint" className="kits-hint">Independently entered contribution basis, never an invoice charge or deduction. Blank means unavailable; 0 is a real amount.</p>
+           <KitsContributionSummary contribution={contribution} preview={contributionChanged} /></section>}
       </div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Doctor details</h2>

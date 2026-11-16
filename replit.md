@@ -1,3 +1,22 @@
+# Kits financial contributions — prepared source only
+
+Kits explicit financial saves retain server-owned `kits_parking_discount_v1`
+sales and achievement evidence in the existing encrypted per-order snapshot.
+Independent Business Parking is the basis: percentage deductions use original
+Parking once/twice; fixed INR discounts subtract exactly D/2D, never an equivalent
+percentage. Invoice pricing/GST stay separate. Preserve signed results, missing
+inputs, old unchanged snapshots and saved owner/date/version evidence. Parking-only
+changes never reprice invoices; nonfinancial writes do not upgrade policy.
+Prior financial revisions remain encrypted and contributions remain protected
+Super Admin-only facts, not earned credit or a new ledger. See
+`docs/kits-orders.md` for both examples and `docs/mr-sales-achievement.md` for
+the deferred reporting boundary. Dashboards/report aggregation are unchanged.
+
+Only source/diff inspection, scoped offline contract generation and generated-
+source formatting were performed. No tests, builds, typechecks, regression/release
+or completion-validation wrappers, runtime/browser probes, service starts/restarts,
+migrations, live data writes or deployments were run. Runtime is unverified.
+
 # Doctor MR Mapping — prepared source only
 
 The separate Admin Doctor–MR Mapping destination uses existing Doctor permissions,

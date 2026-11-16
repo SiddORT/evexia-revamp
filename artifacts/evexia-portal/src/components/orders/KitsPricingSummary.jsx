@@ -1,6 +1,7 @@
 import { moneyText } from '../../services/kitsPricing.js';
 import { useEffect, useState } from 'react';
 import { loadKitsGST } from '../../services/serverKits.js';
+import KitsContributionSummary from './KitsContributionSummary.jsx';
 
 function CurrentGST() {
   const [evidence, setEvidence] = useState(null), [error, setError] = useState(''), [refresh, setRefresh] = useState(0);
@@ -36,7 +37,8 @@ export default function KitsPricingSummary({ order, compact = false }) {
   if (!p) return <div className="kpr kpr-empty" data-testid="kits-pricing-unpriced">
     <p>{compact ? 'Rates have not been added yet.' : 'Not yet priced. No historical totals have been assumed.'}</p>
     {!compact && <><p>Actual applied GST: unavailable — no saved pricing evidence.</p><CurrentGST /></>}
-    <AdditionalInformation order={order} compact={compact} /></div>;
+    <AdditionalInformation order={order} compact={compact} />
+    <KitsContributionSummary contribution={order.financialContribution} /></div>;
   const L = p.lineAmounts || {};
   const rows = [];
   if (k.product || k.volume || k.quantity) rows.push(['Stallergo Skin Prick Kit', k.product === 'Customized' ? `Customized (${k.custom})` : k.product, k.volume, k.quantity, p.kitRate, L.kit]);
@@ -51,7 +53,7 @@ export default function KitsPricingSummary({ order, compact = false }) {
     <section className="kpr-breakdown" aria-label="Pricing totals"><h3>Pricing totals</h3>
     <dl className="kpr-totals">
       <div><dt>Forwarding charges</dt><dd>{moneyText(p.forwardingCharges)}</dd></div>
-      <div><dt>Gross value</dt><dd>{moneyText(p.gross)}</dd></div>
+      <div><dt>Gross including forwarding</dt><dd>{moneyText(p.gross)}</dd></div>
       <div><dt>Discount ({disc})</dt><dd>{moneyText(p.discountAmount)}</dd></div>
       <div><dt>Discounted value</dt><dd>{moneyText(p.discounted)}</dd></div>
       <div><dt>Taxable value</dt><dd>{moneyText(p.taxable)}</dd></div>
@@ -62,5 +64,6 @@ export default function KitsPricingSummary({ order, compact = false }) {
       : 'Policy revision and effective boundary were not saved with this historical price. The saved rate and amounts above are actual order evidence, not inferred from current policy.'}</p>
     <CurrentGST /></>}</section>
     <AdditionalInformation order={order} compact={compact} />
+    <KitsContributionSummary contribution={order.financialContribution} />
   </div>;
 }

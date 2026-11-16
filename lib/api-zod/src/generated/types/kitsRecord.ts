@@ -7,6 +7,7 @@
  */
 import type { GSTEvidence } from "./gSTEvidence";
 import type { KitsConfiguration } from "./kitsConfiguration";
+import type { KitsContribution } from "./kitsContribution";
 import type { KitsPricingSnapshot } from "./kitsPricingSnapshot";
 import type { KitsRecipient } from "./kitsRecipient";
 import type { KitsRecordApproval } from "./kitsRecordApproval";
@@ -15,6 +16,7 @@ import type { KitsRecordAudit } from "./kitsRecordAudit";
 import type { KitsRecordBilling } from "./kitsRecordBilling";
 import type { KitsRecordDecisionEligibility } from "./kitsRecordDecisionEligibility";
 import type { KitsRecordDoctor } from "./kitsRecordDoctor";
+import type { KitsRecordFinancialHistoryItem } from "./kitsRecordFinancialHistoryItem";
 import type { KitsRecordLedgerPaymentStatus } from "./kitsRecordLedgerPaymentStatus";
 import type { KitsRecordMr } from "./kitsRecordMr";
 import type { KitsRecordOrderFor } from "./kitsRecordOrderFor";
@@ -41,6 +43,8 @@ export interface KitsRecord {
   decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
   doctorId: string;
+  financialContribution?: KitsContribution | null;
+  financialHistory?: KitsRecordFinancialHistoryItem[];
   gstEvidence?: GSTEvidence | null;
   id: string;
   kit?: KitsConfiguration;

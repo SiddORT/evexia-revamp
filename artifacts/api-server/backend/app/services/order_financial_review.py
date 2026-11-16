@@ -145,9 +145,16 @@ def review(db, keys, kind, row, data, previous):
         outstanding=settlements.fmt(outstanding), proposedAmount=settlements.fmt(total) if total is not None else None,
         committedTargetPayments=settlements.fmt(paid),
         resultingExposure=settlements.fmt(exposure) if exposure is not None else None,
-        amountLimitState=state, pendingPricingOrders=pending, exposureComplete=not pending,
+        amountLimitState=state, pendingPricingOrders=pending,
+        exposureComplete=not pending and (kind != "kits" or total is not None),
         businessDate=business_date.isoformat())
-    evidence["token"] = keys._index("order-financial-review:v1", [kind, evidence])
+    # Equal payable totals are not interchangeable pricing/parking decisions.
+    # Bind draft evidence to the complete Kits financial basis as well as the
+    # saved version, current limits, payments and scoped history above.
+    basis = [{k: data.get(k) for k in (
+        "pricing", "businessParking", "mrId", "kit", "lancets", "applicators", "tray",
+    )}] if kind == "kits" else []
+    evidence["token"] = keys._index("order-financial-review:v1", [kind, evidence, *basis])
     return evidence
 
 

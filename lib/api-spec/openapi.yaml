@@ -12587,6 +12587,24 @@
             "title": "Doctorid",
             "type": "string"
           },
+          "financialContribution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitsContribution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financialHistory": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Financialhistory",
+            "type": "array"
+          },
           "gstEvidence": {
             "anyOf": [
               {
@@ -36911,6 +36929,175 @@
           "date"
         ],
         "title": "PendingPricingOrder",
+        "type": "object"
+      },
+      "KitsContribution": {
+        "additionalProperties": false,
+        "properties": {
+          "achievementDeduction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achievementdeduction"
+          },
+          "businessParking": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Businessparking"
+          },
+          "discountType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "percent",
+                  "inr"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discounttype"
+          },
+          "discountValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discountvalue"
+          },
+          "itemQuantities": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Itemquantities",
+            "type": "object"
+          },
+          "mrAchievement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mrachievement"
+          },
+          "mrId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mrid"
+          },
+          "mrSales": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mrsales"
+          },
+          "orderDate": {
+            "title": "Orderdate",
+            "type": "string"
+          },
+          "orderId": {
+            "title": "Orderid",
+            "type": "string"
+          },
+          "orderNumber": {
+            "title": "Ordernumber",
+            "type": "string"
+          },
+          "orderVersion": {
+            "title": "Orderversion",
+            "type": "integer"
+          },
+          "policyVersion": {
+            "const": "kits_parking_discount_v1",
+            "title": "Policyversion",
+            "type": "string"
+          },
+          "salesDeduction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesdeduction"
+          },
+          "savedAt": {
+            "title": "Savedat",
+            "type": "string"
+          },
+          "savedBy": {
+            "title": "Savedby",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "Available",
+              "Unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "unavailableReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailablereason"
+          }
+        },
+        "required": [
+          "policyVersion",
+          "state",
+          "orderId",
+          "orderNumber",
+          "orderDate",
+          "orderVersion",
+          "mrId",
+          "savedBy",
+          "savedAt",
+          "businessParking",
+          "discountType",
+          "discountValue",
+          "itemQuantities"
+        ],
+        "title": "KitsContribution",
         "type": "object"
       }
     },

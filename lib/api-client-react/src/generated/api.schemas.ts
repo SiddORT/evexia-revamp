@@ -4729,6 +4729,46 @@ export interface KitsImport {
   reviewToken?: string;
 }
 
+export type KitsContributionDiscountType =
+  | (typeof KitsContributionDiscountType)[keyof typeof KitsContributionDiscountType]
+  | null;
+
+export const KitsContributionDiscountType = {
+  percent: "percent",
+  inr: "inr",
+} as const;
+
+export type KitsContributionState =
+  (typeof KitsContributionState)[keyof typeof KitsContributionState];
+
+export const KitsContributionState = {
+  Available: "Available",
+  Unavailable: "Unavailable",
+} as const;
+
+export type KitsContributionItemQuantities = { [key: string]: string };
+
+export interface KitsContribution {
+  achievementDeduction?: string | null;
+  businessParking: string | null;
+  discountType: KitsContributionDiscountType;
+  discountValue: string | null;
+  itemQuantities: KitsContributionItemQuantities;
+  mrAchievement?: string | null;
+  mrId: string | null;
+  mrSales?: string | null;
+  orderDate: string;
+  orderId: string;
+  orderNumber: string;
+  orderVersion: number;
+  policyVersion: "kits_parking_discount_v1";
+  salesDeduction?: string | null;
+  savedAt: string;
+  savedBy: string;
+  state: KitsContributionState;
+  unavailableReason?: string | null;
+}
+
 /**
  * Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.
  */
@@ -4825,6 +4865,8 @@ export type KitsRecordDecisionEligibility = { [key: string]: unknown } | null;
 
 export type KitsRecordDoctor = { [key: string]: unknown };
 
+export type KitsRecordFinancialHistoryItem = { [key: string]: unknown };
+
 export type KitsRecordMr = { [key: string]: unknown } | null;
 
 export type KitsRecordPatient = { [key: string]: unknown } | null;
@@ -4850,6 +4892,8 @@ export interface KitsRecord {
   decisionEligibility?: KitsRecordDecisionEligibility;
   doctor: KitsRecordDoctor;
   doctorId: string;
+  financialContribution?: KitsContribution | null;
+  financialHistory?: KitsRecordFinancialHistoryItem[];
   gstEvidence?: GSTEvidence | null;
   id: string;
   kit?: KitsConfiguration;
