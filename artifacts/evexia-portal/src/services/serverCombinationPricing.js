@@ -54,6 +54,8 @@ export async function combinationAllergens(id, params, signal) {
 export async function generateCombinations(body, signal) {
   const page = await request('/generate', { body, signal });
   const all = body.categoryScope === 'all';
+  // All-category singletons use the same complete-scope evidence and bounds.
+  // Either Mix flag is valid at size 1; pairs/triples remain Mix-only below.
   if (!page || page.categoryId !== body.categoryId || page.categoryScope !== (body.categoryScope || 'single')
     || page.dosage !== body.dosage || page.size !== body.size
     || !token(page.eligibilityVersion) || !token(page.scopeVersion) || !integer(page.scopeTotal) || page.scopeTotal > 1000

@@ -11,6 +11,12 @@ import type { CombinationSaveDosage } from "./combinationSaveDosage";
 export interface CombinationSave {
   allergenIds?: string[] | null;
   categoryId?: string | null;
+  /**
+   * All requires the complete catalogue, a common copyRate and no edits.
+   * Size 1 prices Mix and No Mix singletons independently of Mix pairs/triples.
+   * One-time selected dosage/date only; capped at 500 categories,
+   * 500 catalogue members and 1000 rules, saved atomically.
+   */
   categoryScope?: "single" | "all";
   copyRate?: string | null;
   dosage: CombinationSaveDosage;

@@ -127,7 +127,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
       if (sequence !== seq.current) return;
       latest.current.attempt = null; setAttempt(null);
       baseline.current = null; latest.current.draft = blank(); setDraft(blank()); setPage(null); setBlocked(false);
-      setNotice(`${value.saved.length} dated combination rate${value.saved.length === 1 ? '' : 's'} saved atomically. Current order quotation and saved orders are unchanged.`);
+      setNotice(`${value.saved.length} dated ${pending.body.size === 1 ? 'individual allergen' : 'combination'} rate${value.saved.length === 1 ? '' : 's'} saved atomically. Current order quotation and saved orders are unchanged.`);
       setReload((n) => n + 1);
       // Clear the synchronous navigation guard before leaving a confirmed save.
       active.current = false; saving.current = false;

@@ -14224,6 +14224,11 @@ export const CombinationGenerateDosage = {
 export interface CombinationGenerate {
   allergenIds?: string[] | null;
   categoryId?: string | null;
+  /**
+   * All requires null categoryId/allergenIds and size 1, 2 or 3.
+   * Size 1 includes eligible Mix and No Mix allergens; sizes 2 and 3
+   * include only category-local Mix combinations, never search matches alone.
+   */
   categoryScope?: "single" | "all";
   dosage: CombinationGenerateDosage;
   /**
@@ -14381,6 +14386,12 @@ export const CombinationSaveDosage = {
 export interface CombinationSave {
   allergenIds?: string[] | null;
   categoryId?: string | null;
+  /**
+   * All requires the complete catalogue, a common copyRate and no edits.
+   * Size 1 prices Mix and No Mix singletons independently of Mix pairs/triples.
+   * One-time selected dosage/date only; capped at 500 categories,
+   * 500 catalogue members and 1000 rules, saved atomically.
+   */
   categoryScope?: "single" | "all";
   copyRate?: string | null;
   dosage: CombinationSaveDosage;

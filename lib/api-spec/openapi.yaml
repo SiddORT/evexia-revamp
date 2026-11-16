@@ -35804,7 +35804,7 @@
             "type": "string",
             "enum": ["single", "all"],
             "default": "single",
-            "description": "All requires null categoryId/allergenIds and size 2 or 3; resolves the complete active catalogue, not search matches."
+            "description": "All requires null categoryId/allergenIds and size 1, 2 or 3; resolves the complete active saved catalogue, not search matches. Size 1 includes eligible Mix and No Mix allergens; sizes 2 and 3 are Mix-only within each category. Excludes deleted/inactive records and the bound Dilution material."
           },
           "dosage": {
             "enum": [
@@ -36250,7 +36250,7 @@
             "type": "string",
             "enum": ["single", "all"],
             "default": "single",
-            "description": "All requires null categoryId/allergenIds, size 2 or 3, a common copyRate, and no edits. Whole request limited to 500 catalogue members and 1000 rules. Revalidates full scope and saves atomically."
+            "description": "All requires null categoryId/allergenIds, size 1, 2 or 3, a common copyRate, and no edits. Size 1 independently prices every eligible Mix and No Mix singleton; sizes 2 and 3 independently price category-local Mix combinations with an explicit total, never derived from singleton prices. One-time configuration for the selected dosage/date only. Whole request limited to 500 active categories, 500 catalogue members and 1000 rules. Revalidates full scope and saves atomically."
           },
           "copyRate": {
             "anyOf": [

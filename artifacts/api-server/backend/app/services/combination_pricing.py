@@ -132,7 +132,9 @@ def all_category_scope(db, body):
     groups, summaries, evidence = {}, [], []
     for category in cats:
         category_rows = members[category.id]
-        pool = [r for r in category_rows if r.mix]
+        # Singletons include Mix and No Mix; combinations remain category-local
+        # and Mix-only. Every size retains its own exact saved member-key.
+        pool = category_rows if body.size == 1 else [r for r in category_rows if r.mix]
         count = math.comb(len(pool), body.size) if len(pool) >= body.size else 0
         if len(groups) + count > MAX_ROWS:
             fail(f"All Categories exceeds the {MAX_ROWS}-rule atomic request limit. {instruction}", "bound", 422)

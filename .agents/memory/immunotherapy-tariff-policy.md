@@ -35,3 +35,16 @@ to activate these records in current order quotation or reprice saved orders.
 **How to apply:** Keep saved identities category-specific and require another
 explicit configuration save for new catalogue members. Do not infer quotation
 activation from approval of the bulk-entry workflow.
+
+All Categories **Individual / 1 allergen** base pricing covers both Mix and
+No Mix saved eligible allergens for one selected dosage/effective date. Base
+means an explicitly saved common singleton price, not a global fallback.
+Pair/triple prices remain independent explicit totals for category-local Mix
+members only.
+
+**Why:** The user requested a common individual base followed by separately
+configured two- and three-allergen prices, without automatic future coverage,
+additive formulas or order-consumer activation.
+
+**How to apply:** Never derive combination totals from individual prices or
+expand a singleton save to other dosages, future records or saved orders.

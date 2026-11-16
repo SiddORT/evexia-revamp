@@ -27,8 +27,8 @@ class CombinationScope(Strict):
     @model_validator(mode="after")
     def category_scope(self):
         if self.categoryScope == "all":
-            if self.categoryId is not None or self.allergenIds is not None or self.size not in (2, 3):
-                raise ValueError("All Categories requires pairs/triples and the complete catalogue, without a category or subset")
+            if self.categoryId is not None or self.allergenIds is not None:
+                raise ValueError("All Categories requires the complete catalogue, without a category or subset")
         elif self.categoryId is None:
             raise ValueError("Choose one category")
         return self

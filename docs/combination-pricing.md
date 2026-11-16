@@ -1,5 +1,42 @@
 # Combination Pricing Master — prepared source only
 
+## All Categories individual base entry — source-only extension
+
+All Categories retains **Individual / 1 allergen** alongside 2 and 3 allergens.
+For Individual, the common Base MRP and explicit effective date append one
+independent singleton revision for every eligible saved allergen across active,
+nondeleted saved categories, including both Mix and No Mix. Inactive/deleted
+allergens and the separately bound Dilution material remain excluded. Two- and
+three-allergen rules still contain only Mix members within the same category.
+Base does not mean a fallback, multiplier, surcharge or sum: singleton, pair and
+triple member keys keep independent dates, totals, versions, status and history.
+
+The category review identifies included/skipped categories and their eligible
+counts. The paged searchable review identifies each individual and its Mix flag.
+The full unfiltered scope count, keys and row versions accompany every review
+page; search and paging never constrain the submitted common-price batch.
+Authoritative generation/save still reject more than 500 active categories,
+500 eligible catalogue members (including members of skipped categories), or
+1,000 generated rules, without truncation or partial saves. The complete scope
+is reconstructed under existing locks and checked against both version digests
+before insertion. Authorization, encrypted revisions/retry outcomes, category
+audit events, atomic date conflicts and frozen identical retries are unchanged.
+
+This is one-time configuration for the selected dosage/date and current saved
+catalogue. Future allergens/categories and other dosages are not automatically
+priced. No order consumer, saved order, clinical quantity or stock is changed.
+Single-category subsets, per-combination custom entry and exact saved-rule edits
+retain their existing behavior and draft/navigation/recovery guards.
+
+Verification for this extension was **source/diff review only**. No tests,
+builds, typechecks, regression/release/completion-validation wrappers, browser
+or runtime probes, service starts/restarts, migrations, deployment or live
+database writes were performed. Runtime behavior and layout remain unverified.
+The wire shapes already support sizes 1–3 and boolean Mix flags, so no new
+types, endpoints or schema migration are needed. OpenAPI descriptions and
+client type comments were narrowly synchronized in source without executing
+export/code-generation wrappers or altering unrelated generated contracts.
+
 ## Activation boundary
 
 The protected Super Admin **Pricing Rules** route is a saved-records master list.

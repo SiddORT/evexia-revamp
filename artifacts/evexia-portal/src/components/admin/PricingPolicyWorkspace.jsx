@@ -13,7 +13,7 @@ import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { combinationAllergens, DOSAGES } from '../../services/serverCombinationPricing.js';
 import '../../mr.css';
 
-const SIZES = ['1 allergen', '2 allergens', '3 allergens'];
+const SIZES = ['Individual / 1 allergen', '2 allergens', '3 allergens'];
 const ALL_CATEGORIES = { id: '__all__', name: 'All Categories', status: 'active' };
 export default function PricingPolicyWorkspace({ record }) {
   const [, navigate] = useLocation();
@@ -118,7 +118,6 @@ export default function PricingPolicyWorkspace({ record }) {
       allergenController.current?.abort();
       setCategory(next); setSelection(null); setAllergens(null); setEligibleCount(null);
       setCombinationMode('all');
-      if (next?.id === ALL_CATEGORIES.id && latest.current.size === 1) setSize(2);
       setAllergenQuery(''); setAllergenOffset(0); setCountOpen(false);
     }, document.getElementById('combination-category'));
   }
@@ -228,7 +227,7 @@ export default function PricingPolicyWorkspace({ record }) {
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-size">Allergens per rule</label>
           <select id="combination-size" data-testid="select-pricing-rule-size" className="mr-form__control" value={size} disabled={disabled || editing}
             onChange={(e) => { const value = Number(e.target.value); void change(() => setSize(value), e.target); }}>
-            {SIZES.map((name, i) => (!allCategories || i > 0) && <option key={name} value={i + 1}>{name}</option>)}</select></div>
+            {SIZES.map((name, i) => <option key={name} value={i + 1}>{name}</option>)}</select></div>
       </div>
       </section>
       {!editing && <section className="pricing-entry-section" aria-labelledby="pricing-select-allergens">
@@ -236,15 +235,18 @@ export default function PricingPolicyWorkspace({ record }) {
       {!category && <p role="status">Choose a Product Category first. All eligible allergens will be selected by default.</p>}
       {category && category.status !== 'active' && <p role="status">This category is history-only. Choose an active category to add pricing rules.</p>}
       {allCategories && <>
-        <p>Includes every active, nondeleted saved category and its eligible Mix allergens, excluding the bound Dilution material.
-          Pairs and triples stay within each category; allergens from different categories are never combined.</p>
-        <p>Search and paging only change the review shown, never this complete scope. Singleton and individually priced subsets require a single category.</p>
+        <p>Includes every active, nondeleted saved category and its eligible active, nondeleted{' '}
+          {size === 1 ? 'Mix and No Mix individual allergens' : 'Mix allergens'}, excluding the bound Dilution material.
+          {size === 1 ? ' Each individual allergen receives its own category-specific singleton rule.'
+            : ' Pairs and triples stay within each category; No Mix allergens and allergens from different categories are never combined.'}</p>
+        <p>Search and paging only change the review shown, never this complete scope. Subset selection and per-row custom prices require a single category.</p>
         {tariff.page && <div className="pricing-all-category-review" aria-label="Complete category scope">
           <p role="status"><strong>{tariff.page.categories.filter((c) => !c.skipped).length} categories with rules ·{' '}
             {tariff.page.categories.filter((c) => c.skipped).length} skipped · {tariff.page.scopeTotal} total rules</strong></p>
           <ul className="pricing-category-scope-list">{tariff.page.categories.map((c) => <li key={c.categoryId}>
-            <strong>{c.categoryName}</strong><span>{c.eligibleMembers} eligible Mix allergens ·{' '}
-              {c.skipped ? `Skipped: fewer than ${size} eligible Mix allergens` : `${c.ruleCount} rules`}</span>
+            <strong>{c.categoryName}</strong><span>{c.eligibleMembers} eligible {size === 1 ? 'individual allergens (Mix and No Mix)' : 'Mix allergens'} ·{' '}
+              {c.skipped ? size === 1 ? 'Skipped: no eligible individual allergens'
+                : `Skipped: fewer than ${size} eligible Mix allergens` : `${c.ruleCount} rules`}</span>
           </li>)}</ul>
           {!tariff.page.categories.length && <p>No active saved categories. This empty scope cannot be saved.</p>}
         </div>}
@@ -284,7 +286,10 @@ export default function PricingPolicyWorkspace({ record }) {
       <form onSubmit={(e) => { e.preventDefault(); if (!deciding.current && !tariff.attempt) void tariff.save(); }} className="pricing-combination-editor">
       <section className="pricing-entry-section" aria-labelledby="pricing-set-price">
       <h2 id="pricing-set-price">{editing ? 'Append a dated price' : '3. Set price'}</h2>
-      <p id="pricing-mrp-help">MRP is the total for each resulting suborder, not per allergen or ml. Explicit 0 is valid; blank is not zero.</p>
+      <p id="pricing-mrp-help">{allCategories && size === 1
+        ? 'Base MRP is one common explicitly saved price for each individual allergen, not a global fallback. Pair and triple prices are unchanged.'
+        : 'MRP is the explicit total for each resulting suborder, not per allergen or ml. It is not calculated from individual base prices.'}{' '}
+        Explicit 0 is valid; blank is not zero.</p>
       {!editing && !allCategories && size > 1 && category?.status === 'active' && <fieldset className="pricing-entry-modes" disabled={disabled || tariff.blocked}>
         <legend>Pricing mode</legend>
         {['all', 'choose'].map((value) => <label key={value}><input type="radio" name="pricing-entry-mode" data-testid={`radio-pricing-mode-${value}`}
@@ -305,12 +310,13 @@ export default function PricingPolicyWorkspace({ record }) {
       {!category && <p>Choose a category and allergens to enter a price.</p>}
       {tariff.page && <>
         {!tariff.page.scopeTotal && <p>No eligible targets in this scope. {allCategories
-          ? `No category has at least ${size} eligible Mix allergens. Nothing can be saved.`
+          ? size === 1 ? 'No eligible Mix or No Mix individual allergens in active saved categories. Nothing can be saved.'
+            : `No category has at least ${size} eligible Mix allergens. Nothing can be saved.`
           : size > 1
           ? `Select at least ${size} eligible Mix allergens, or choose 1 allergen per rule.`
           : 'Select at least one eligible allergen.'}</p>}
         <div className="pricing-combination-batch">
-          {mode !== 'choose' && <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-rate">Total MRP (₹)</label>
+          {mode !== 'choose' && <div className="mr-form__field"><label className="mr-form__label" htmlFor="combination-rate">{allCategories && size === 1 ? 'Base MRP per individual allergen (₹)' : 'Total MRP (₹)'}</label>
             <input id="combination-rate" data-testid="input-pricing-total-mrp" className="mr-form__control" inputMode="decimal" maxLength={15} required
               value={commonMrp} aria-describedby="pricing-mrp-help"
               disabled={disabled || tariff.blocked} onChange={(e) => editing
@@ -325,16 +331,16 @@ export default function PricingPolicyWorkspace({ record }) {
         <p id="pricing-combination-search-help" role="status" data-testid="status-combination-selection">{allCategories
           ? <strong>Review only: every one of the {tariff.page.scopeTotal} rules will receive the common MRP, regardless of search or page.</strong>
           : <><strong>{chosenCount} combinations checked across all pages.</strong> Enter a price for each. Search only changes the choices shown.</>}</p>
-        <label className="admin-search pricing-combination-search"><span className="pricing-sr-only">{allCategories ? 'Search categories or combinations' : 'Search combinations'}</span>
-          <input type="search" data-testid="input-pricing-combination-search" value={tariff.view.query} maxLength={100} placeholder={allCategories ? 'Search category or combination names…' : 'Search combination names…'} aria-describedby="pricing-combination-search-help"
+        <label className="admin-search pricing-combination-search"><span className="pricing-sr-only">{allCategories ? size === 1 ? 'Search categories or individual allergens' : 'Search categories or combinations' : 'Search combinations'}</span>
+          <input type="search" data-testid="input-pricing-combination-search" value={tariff.view.query} maxLength={100} placeholder={allCategories ? size === 1 ? 'Search category or allergen names…' : 'Search category or combination names…' : 'Search combination names…'} aria-describedby="pricing-combination-search-help"
             disabled={Boolean(tariff.attempt) || selecting || tariff.blocked}
             onChange={(e) => tariff.changeView({ query: e.target.value, offset: 0 })} /></label>
-        <div className="pricing-chosen-list" aria-label="Choose combination rates" aria-busy={tariff.busy}>
+        <div className="pricing-chosen-list" aria-label={allCategories ? size === 1 ? 'Review individual allergen prices' : 'Review combination prices' : 'Choose combination rates'} aria-busy={tariff.busy}>
           {!tariff.busy && tariff.page.items.map((row) => {
             const chosen = Object.hasOwn(tariff.draft.edits, row.key);
             const name = row.members.map((m) => m.name).join(' + ');
             return <div key={row.key} className="pricing-chosen-row">
-              {allCategories ? <div className="pricing-chosen-members"><span><strong>{row.categoryName}</strong> · {name}</span></div>
+              {allCategories ? <div className="pricing-chosen-members"><span><strong>{row.categoryName}</strong> · {name}{size === 1 && <> · {row.members[0].mix ? 'Mix' : 'No Mix'}</>}</span></div>
                 : <label className="pricing-chosen-members"><input type="checkbox" data-testid={`checkbox-pricing-combination-${row.key}`} checked={chosen} disabled={disabled || tariff.blocked}
                   onChange={(e) => toggleCombination(row.key, e.target.checked, e.target)} /><span>{name}</span></label>}
               {chosen && <label className="pricing-chosen-rate"><span>Total MRP (₹)<span className="pricing-sr-only"> for {name}</span></span>
@@ -343,10 +349,10 @@ export default function PricingPolicyWorkspace({ record }) {
                   aria-describedby="pricing-mrp-help" placeholder="Enter total MRP" onChange={(e) => tariff.edit(row.key, e.target.value)} /></label>}
             </div>;
           })}
-          {!tariff.busy && !tariff.page.items.length && <p>No matching eligible combinations. {allCategories
+          {!tariff.busy && !tariff.page.items.length && <p>No matching eligible {size === 1 ? 'individual allergens' : 'combinations'}. {allCategories
             ? 'Try another search; the complete save scope above is unchanged.' : 'Try another search or select more Mix allergens.'}</p>}
         </div>
-        <p className="pricing-rules-note">{tariff.page.total} matching combinations / {tariff.page.scopeTotal} eligible combinations</p>
+        <p className="pricing-rules-note">{tariff.page.total} matching {size === 1 ? 'individual allergens' : 'combinations'} / {tariff.page.scopeTotal} eligible {size === 1 ? 'individual allergens (Mix and No Mix)' : 'Mix combinations'}</p>
         {(tariff.page.total > tariff.view.limit || tariff.view.offset > 0) && <div className="admin-panel__foot admin-pagination">
           <span>Page {Math.floor(tariff.view.offset / tariff.view.limit) + 1}</span>
           <label>Rows per page <select value={tariff.view.limit} disabled={disabled || tariff.blocked}
@@ -368,9 +374,11 @@ export default function PricingPolicyWorkspace({ record }) {
                 : mode === 'choose' ? `${chosenCount} checked combinations retained; eligible rule count unavailable until choices load.`
                   : 'Rule count unavailable until eligible choices load.'}{' '}
             Effective from: {tariff.draft.effectiveFrom ? formatAdminDate(tariff.draft.effectiveFrom, prefs) || tariff.draft.effectiveFrom : 'not entered'}.
-            {mode !== 'choose' && <> Total MRP (₹): {commonMrp.trim() || 'not entered'}{!editing && ' for each rule'}.</>}
-            {allCategories && <> One-time application to the current eligible catalogue only: each category-specific rule receives this total suborder MRP.
-              Future categories and allergens are not automatically priced. Saved orders and current order pricing are unchanged.</>}
+            {mode !== 'choose' && <> {allCategories && size === 1 ? 'Base MRP (₹)' : 'Total MRP (₹)'}: {commonMrp.trim() || 'not entered'}{!editing && ' for each rule'}.</>}
+            {allCategories && <> One-time application to the current eligible catalogue for {dosage} and this date only:{' '}
+              {size === 1 ? 'each Mix and No Mix individual allergen receives this base MRP in its own category-specific rule. Pair and triple prices are unchanged.'
+                : 'each category-local Mix combination receives this explicit total suborder MRP. Individual base prices and other rule sizes are unchanged.'}{' '}
+              Future categories, allergens and other dosages are not automatically priced. Saved orders and current order pricing are unchanged.</>}
           </> : 'Select a category to prepare pricing rules.'}
         </p>
         <div className="pricing-policy-actions"><button type="button" data-testid="button-cancel-pricing" className="admin-button admin-button--secondary" disabled={disabled}

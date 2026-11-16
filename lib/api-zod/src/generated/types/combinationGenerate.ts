@@ -10,6 +10,11 @@ import type { CombinationGenerateDosage } from "./combinationGenerateDosage";
 export interface CombinationGenerate {
   allergenIds?: string[] | null;
   categoryId?: string | null;
+  /**
+   * All requires null categoryId/allergenIds and size 1, 2 or 3.
+   * Size 1 includes eligible Mix and No Mix allergens; sizes 2 and 3
+   * include only category-local Mix combinations, never search matches alone.
+   */
   categoryScope?: "single" | "all";
   dosage: CombinationGenerateDosage;
   /**
