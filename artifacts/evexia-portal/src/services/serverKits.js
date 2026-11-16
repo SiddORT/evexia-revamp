@@ -81,7 +81,10 @@ export async function loadKitsGST(recordId, signal) {
 }
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
-export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Partial']);
+export const PAYMENT_STATUSES = Object.freeze(['Unpaid', 'Paid', 'Part paid', 'Unavailable']);
+// Never fall back to the legacy paymentStatus used by protected saves/imports.
+export const paymentStatusLabel = (order) => PAYMENT_STATUSES.includes(order?.ledgerPaymentStatus)
+  ? order.ledgerPaymentStatus : 'Unavailable';
 export function validateAttachments(files, existing = []) {
   if (files.length + existing.length > 10) return 'Select at most ten files.';
   const allowed = { 'application/pdf': ['pdf'], 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };

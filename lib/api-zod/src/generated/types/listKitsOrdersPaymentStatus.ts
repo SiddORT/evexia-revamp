@@ -13,5 +13,7 @@ export type ListKitsOrdersPaymentStatus =
 export const ListKitsOrdersPaymentStatus = {
   Unpaid: "Unpaid",
   Paid: "Paid",
+  Part_paid: "Part paid",
+  Unavailable: "Unavailable",
   Partial: "Partial",
 } as const;

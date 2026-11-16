@@ -6,7 +6,7 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
 import { DownloadOrderFile, OrderFileList, OrderFileRow } from '../../components/orders/OrderFiles.jsx';
-import { KIT_PRODUCTS, STATUSES, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment, attachmentBlob } from '../../services/serverKits.js';
+import { KIT_PRODUCTS, STATUSES, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment, attachmentBlob, paymentStatusLabel } from '../../services/serverKits.js';
 import PrescriptionViewer from '../../components/immunotherapy/PrescriptionViewer.jsx';
 import KitsOrderEditor from './KitsOrderEditor.jsx';
 import KitsPricingSummary from '../../components/orders/KitsPricingSummary.jsx';
@@ -87,9 +87,10 @@ function Summary({ order: initialOrder }) {
             {order.applicators && <div><dt>Applicators</dt><dd>{order.applicators}</dd></div>}
             {order.tray && <div><dt>Tray</dt><dd>{order.tray}</dd></div>}
             <div><dt>Status</dt><dd data-testid="kits-summary-status">{order.status}</dd></div>
-            <div><dt>Payment</dt><dd>{order.paymentStatus}</dd></div>
+            <div><dt>Payment status (Accounts ledger)</dt><dd>{paymentStatusLabel(order)}</dd></div>
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
+          <p className="kits-hint">Payment status uses saved totals and recorded Accounts allocations, including unverified payments. Verification is separate and never records another payment. Unavailable means the payment position cannot be established; no zero balance is assumed.</p>
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-attachments"><h2 id="kits-s-attachments">Private attachments</h2>
           <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment"

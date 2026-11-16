@@ -4696,6 +4696,20 @@ export interface KitsImport {
   reviewToken?: string;
 }
 
+/**
+ * Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.
+ */
+export type KitsRecordLedgerPaymentStatus =
+  | (typeof KitsRecordLedgerPaymentStatus)[keyof typeof KitsRecordLedgerPaymentStatus]
+  | null;
+
+export const KitsRecordLedgerPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Part_paid: "Part paid",
+  Unavailable: "Unavailable",
+} as const;
+
 export type KitsRecordOrderFor =
   (typeof KitsRecordOrderFor)[keyof typeof KitsRecordOrderFor];
 
@@ -4807,6 +4821,8 @@ export interface KitsRecord {
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;
+  /** Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field. */
+  ledgerPaymentStatus?: KitsRecordLedgerPaymentStatus;
   mr: KitsRecordMr;
   mrEditable?: boolean;
   mrId?: string | null;
@@ -15538,6 +15554,8 @@ export type ListKitsOrdersPaymentStatus =
 export const ListKitsOrdersPaymentStatus = {
   Unpaid: "Unpaid",
   Paid: "Paid",
+  Part_paid: "Part paid",
+  Unavailable: "Unavailable",
   Partial: "Partial",
 } as const;
 
@@ -15587,6 +15605,8 @@ export type ExportKitsOrdersPaymentStatus =
 export const ExportKitsOrdersPaymentStatus = {
   Unpaid: "Unpaid",
   Paid: "Paid",
+  Part_paid: "Part paid",
+  Unavailable: "Unavailable",
   Partial: "Partial",
 } as const;
 

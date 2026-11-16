@@ -12592,6 +12592,24 @@
             "title": "Lancets",
             "type": "string"
           },
+          "ledgerPaymentStatus": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Unpaid",
+                  "Paid",
+                  "Part paid",
+                  "Unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+            "title": "Ledgerpaymentstatus"
+          },
           "mr": {
             "anyOf": [
               {
@@ -75351,6 +75369,8 @@
                   "enum": [
                     "Unpaid",
                     "Paid",
+                    "Part paid",
+                    "Unavailable",
                     "Partial"
                   ],
                   "type": "string"
@@ -76603,6 +76623,8 @@
                   "enum": [
                     "Unpaid",
                     "Paid",
+                    "Part paid",
+                    "Unavailable",
                     "Partial"
                   ],
                   "type": "string"

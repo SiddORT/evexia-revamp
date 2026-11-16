@@ -128,6 +128,8 @@ def transaction(db, actor, work, *, action=None, before_commit=None):
         current = authorize(db, actor, action)
         with crypto_scope(db) as keys:
             result = work(current, keys)
+            from app.services.kits_payments import read_result as payment_read_result
+            result = payment_read_result(db, keys, result)
         from app.services.order_capabilities import public_result
         from app.services.order_audit import present
         from app.services.order_lifecycle import read_result
@@ -321,8 +323,11 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
         if from_date and to_date and from_date > to_date:
             raise ImmError("From date must not follow To date.", 422, "kits_dates")
         clauses = [getattr(Order, field) == val for field, val in (
-            ("status", status), ("payment_status", payment_status), ("order_for", order_for),
+            ("order_for", order_for),
             ("doctor_id", doctor_id), ("mr_id", mr_id), ("patient_id", patient_id)) if val]
+        if status:
+            from app.services.order_lifecycle import filter_status
+            clauses.append(filter_status(Order.status, status))
         clauses.extend(scope(db, Order))
         if from_date:
             clauses.append(Order.date >= from_date)
@@ -332,20 +337,31 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
         if cursor and not complete:
             query = query.where(Order.id > cursor)
         cap = 10000 if complete else 500
-        rows = db.scalars(query.limit(cap + 1).execution_options(yield_per=25))
-        found, last, more, size = [], None, False, 0
         started = time.monotonic()
-        try:
-            for n, row in enumerate(rows):
-                if n == cap:
-                    if complete:
-                        raise ImmError("Export exceeds 10,000 candidates; narrow filters. No partial export.", 409, "kits_bound")
-                    more = True
-                    break
+        rows = list(db.scalars(query.limit(cap + 1)))
+        if complete and len(rows) > cap:
+            raise ImmError("Export exceeds 10,000 candidates; narrow filters. No partial export.", 409, "kits_bound")
+        has_more = len(rows) > cap
+        rows = rows[:cap]
+        found, last, more, size, consumed = [], None, has_more, 0, 0
+        from app.services.kits_payments import with_status
+        from app.services.settlements import HISTORY_LIMIT
+        history_budget = {"remaining": HISTORY_LIMIT}
+        # Bounded batches, never one receipt query per row. Filter the derived
+        # status before filling a page, including empty continuation sections.
+        expected_payment = "Part paid" if payment_status == "Partial" else payment_status
+        for offset in range(0, len(rows), 25):
+            if time.monotonic() - started > (30 if complete else 5):
+                raise ImmError("Secure search budget exceeded. Narrow filters and retry.", 409, "kits_bound")
+            batch_rows = rows[offset:offset + 25]
+            records = with_status(db, keys, [project(keys, row) for row in batch_rows], budget=history_budget)
+            for row, data in zip(batch_rows, records):
                 if time.monotonic() - started > (30 if complete else 5):
                     raise ImmError("Secure search budget exceeded. Narrow filters and retry.", 409, "kits_bound")
-                data = project(keys, row)
                 last = row.id
+                consumed += 1
+                if expected_payment and data["ledgerPaymentStatus"] != expected_payment:
+                    continue
                 searchable = [data["number"], encode(data["kit"]), data["remarks"]]
                 for key in ("doctor", "mr", "patient", "recipient"):
                     searchable.append(encode(data.get(key)))
@@ -356,15 +372,18 @@ def listing(db, actor, *, search="", status=None, payment_status=None, order_for
                     from app.services.order_approval import export_safe
                     found.append(export_safe(data) if complete else data)
                 if not complete and len(found) == limit:
-                    more = next(rows, None) is not None
+                    more = has_more or consumed < len(rows)
                     break
-        finally:
-            rows.close()
+            if not complete and len(found) == limit:
+                break
         counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
         from app.services.order_lifecycle import counts as compatible_counts
         counts = compatible_counts(counts)
         return dict(items=found, total=sum(counts.values()), counts=counts,
-            filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
+            # No SQL legacy-flag count for a ledger-filtered bounded scan.
+            filtered=(len(found) if complete or (not cursor and not more) else
+                      None if search or payment_status else
+                      db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)
     return transaction(db, actor, work, action="export" if complete else None)
 

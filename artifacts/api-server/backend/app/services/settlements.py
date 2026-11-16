@@ -141,20 +141,26 @@ def history(db, keys, candidates):
     return output
 
 
-def projection(kind, row, saved, receipts, *, mr_scope=False):
-    total = saved_total(kind, saved)
-    paid = sum((exact(item["amount"]) for item in receipts), ZERO)
+def payment_position(total, paid):
+    """Recorded allocations count independently of verification and legacy flags."""
     if total is not None and paid > total:
         fail("Recorded payments exceed the saved order total. Ask an administrator to investigate.",
              503, "settlement_inconsistent_balance")
+    return ("Unavailable" if total is None else "Paid" if paid == total
+            else "Part paid" if paid > ZERO else "Unpaid")
+
+
+def projection(kind, row, saved, receipts, *, mr_scope=False):
+    total = saved_total(kind, saved)
+    paid = sum((exact(item["amount"]) for item in receipts), ZERO)
+    payment_status = payment_position(total, paid)
     verification = ("No transactions" if not receipts else
                     "Verified" if all(t["verification"] == "Verified" for t in receipts) else "Not verified")
     return dict(key=f"{kind}:{row.id}", kind=kind, id=str(row.id), number=row.number,
                 date=row.date.isoformat(), version=row.version,
                 status="In process" if row.status == "Approved" else row.status,
                 payable=row.status in PAYABLE_STAGES and total is not None and total > paid,
-                paymentStatus=("Unavailable" if total is None else "Paid" if paid == total
-                               else "Part paid" if paid > ZERO else "Unpaid"),
+                paymentStatus=payment_status,
                 doctor=person(saved.get("doctor"), mask_contacts=mr_scope),
                 mr=person(saved.get("mr")), patients=people(saved, mask_contacts=mr_scope),
                 total=fmt(total) if total is not None else None, paid=fmt(paid),

@@ -15,6 +15,7 @@ import type { KitsRecordAudit } from "./kitsRecordAudit";
 import type { KitsRecordBilling } from "./kitsRecordBilling";
 import type { KitsRecordDecisionEligibility } from "./kitsRecordDecisionEligibility";
 import type { KitsRecordDoctor } from "./kitsRecordDoctor";
+import type { KitsRecordLedgerPaymentStatus } from "./kitsRecordLedgerPaymentStatus";
 import type { KitsRecordMr } from "./kitsRecordMr";
 import type { KitsRecordOrderFor } from "./kitsRecordOrderFor";
 import type { KitsRecordPatient } from "./kitsRecordPatient";
@@ -45,6 +46,8 @@ export interface KitsRecord {
   kit?: KitsConfiguration;
   /** @maxLength 12 */
   lancets?: string;
+  /** Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field. */
+  ledgerPaymentStatus?: KitsRecordLedgerPaymentStatus;
   mr: KitsRecordMr;
   mrEditable?: boolean;
   mrId?: string | null;

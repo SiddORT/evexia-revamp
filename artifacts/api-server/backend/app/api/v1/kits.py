@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from app.api.deps import current_identity, operation_router
 from app.db.session import get_db
-from app.schemas.kits import KitsWrite, KitsUpdate, KitsImport, KitsRecord, KitsPage, KitsImportResult, Payment
+from app.schemas.kits import KitsWrite, KitsUpdate, KitsImport, KitsRecord, KitsPage, KitsImportResult, PaymentFilter
 from app.schemas.immunotherapy import Status, ImmReferencePage, ImmUploadPolicy, ImmImportReview
 from app.services import kits as service, files as file_service
 from app.core.config import get_settings
@@ -40,7 +40,7 @@ def gst_evidence(record_id: uuid.UUID | None = None, order_date: date | None = N
 
 
 def filters(search: str = Query("", max_length=200), status: Status | None = None,
-            payment_status: Payment | None = None, order_for: Literal["doctor", "mr"] | None = None,
+            payment_status: PaymentFilter | None = None, order_for: Literal["doctor", "mr"] | None = None,
             doctor_id: uuid.UUID | None = None, mr_id: uuid.UUID | None = None, patient_id: uuid.UUID | None = None,
             from_date: date | None = None, to_date: date | None = None):
     return dict(search=search, status=status, payment_status=payment_status, order_for=order_for,

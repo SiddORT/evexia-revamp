@@ -17514,7 +17514,10 @@ export const ListKitsOrdersQueryParams = zod.object({
     ])
     .optional(),
   payment_status: zod
-    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable", "Partial"]),
+      zod.null(),
+    ])
     .optional(),
   order_for: zod.union([zod.enum(["doctor", "mr"]), zod.null()]).optional(),
   doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
@@ -17635,6 +17638,15 @@ export const ListKitsOrdersResponse = zod.object({
         .string()
         .max(listKitsOrdersResponseItemsItemLancetsMax)
         .default(listKitsOrdersResponseItemsItemLancetsDefault),
+      ledgerPaymentStatus: zod
+        .union([
+          zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+        ),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
         .boolean()
@@ -18140,6 +18152,15 @@ export const CreateKitsOrderResponse = zod.object({
     .string()
     .max(createKitsOrderResponseLancetsMax)
     .default(createKitsOrderResponseLancetsDefault),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(createKitsOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -18906,7 +18927,10 @@ export const ExportKitsOrdersQueryParams = zod.object({
     ])
     .optional(),
   payment_status: zod
-    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable", "Partial"]),
+      zod.null(),
+    ])
     .optional(),
   order_for: zod.union([zod.enum(["doctor", "mr"]), zod.null()]).optional(),
   doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
@@ -19027,6 +19051,15 @@ export const ExportKitsOrdersResponse = zod.object({
         .string()
         .max(exportKitsOrdersResponseItemsItemLancetsMax)
         .default(exportKitsOrdersResponseItemsItemLancetsDefault),
+      ledgerPaymentStatus: zod
+        .union([
+          zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+        ),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
         .boolean()
@@ -19631,6 +19664,15 @@ export const CommitKitsImportResponse = zod.object({
         .string()
         .max(commitKitsImportResponseOrdersItemLancetsMax)
         .default(commitKitsImportResponseOrdersItemLancetsDefault),
+      ledgerPaymentStatus: zod
+        .union([
+          zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+        ),
       mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
       mrEditable: zod
         .boolean()
@@ -20287,6 +20329,15 @@ export const GetKitsOrderResponse = zod.object({
     .string()
     .max(getKitsOrderResponseLancetsMax)
     .default(getKitsOrderResponseLancetsDefault),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(getKitsOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -20556,6 +20607,15 @@ export const ApproveKitsOrderResponse = zod.object({
     .string()
     .max(approveKitsOrderResponseLancetsMax)
     .default(approveKitsOrderResponseLancetsDefault),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(approveKitsOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -21034,6 +21094,15 @@ export const UpdateKitsOrderResponse = zod.object({
     .string()
     .max(updateKitsOrderResponseLancetsMax)
     .default(updateKitsOrderResponseLancetsDefault),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(updateKitsOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -21309,6 +21378,15 @@ export const RejectKitsOrderResponse = zod.object({
     .string()
     .max(rejectKitsOrderResponseLancetsMax)
     .default(rejectKitsOrderResponseLancetsDefault),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(rejectKitsOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -21583,6 +21661,15 @@ export const ResubmitKitsOrderResponse = zod.object({
     .string()
     .max(resubmitKitsOrderResponseLancetsMax)
     .default(resubmitKitsOrderResponseLancetsDefault),
+  ledgerPaymentStatus: zod
+    .union([
+      zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+    ),
   mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
   mrEditable: zod.boolean().default(resubmitKitsOrderResponseMrEditableDefault),
   mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -30132,6 +30219,15 @@ export const SubmitOrderDraftResponse = zod.union([
       .string()
       .max(submitOrderDraftResponseTwoLancetsMax)
       .default(submitOrderDraftResponseTwoLancetsDefault),
+    ledgerPaymentStatus: zod
+      .union([
+        zod.enum(["Unpaid", "Paid", "Part paid", "Unavailable"]),
+        zod.null(),
+      ])
+      .optional()
+      .describe(
+        "Read-only Accounts ledger status; paymentStatus remains the immutable legacy save/import field.",
+      ),
     mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
     mrEditable: zod
       .boolean()
