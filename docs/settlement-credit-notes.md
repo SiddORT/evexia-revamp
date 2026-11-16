@@ -36,15 +36,47 @@ at one. No reset, padding or example-derived opening value is introduced.
 Failed transactions may leave sequence gaps; reversed numbers are never reused.
 Order UUIDs and existing order numbers are unchanged.
 
-Source inspection found no authoritative issued invoice-number field.
-`saved_invoice` therefore explicitly returns no authority; it never derives an
-invoice number from an order number or Settings template. The dialog requires
-an explicit saved invoice reference such as `024-25/00051002`, preserved
-independently in the encrypted note. It accepts a two-to-four-digit year,
-hyphen, two digits, slash and one-to-twenty-digit order suffix, preserving zeroes.
-The read-only-authority branch is ready for a future explicitly integrated
-authority, but this change does not issue invoices or designate arbitrary
-snapshot keys as authoritative.
+New credits now require a persisted, server-generated order invoice reference.
+The Add credit note dialog displays it as non-editable text and repeats the same
+saved value in confirmation. There is no manual-entry fallback. Missing or
+unreadable authority is shown as **Unavailable** and blocks Review. Amount drafts,
+current financial eligibility and uncertain-submission freezing are unchanged.
+
+The first successful explicit approval into In process saves the reference in
+the same encrypted order snapshot/transaction as the approval, for Immunotherapy,
+Kits, SPT and Lupin. Format: `YYYY-YY/numeric-order-portion`, using the saved
+order date's April–March financial year. For example, a saved `IT-00051002` dated
+2024-04-01 produces `2024-25/00051002`; the same number dated 2024-03-31 produces
+`2023-24/00051002`. These are illustrations, not a sequence seed or new numbering.
+No product prefix is appended and all existing numeric leading zeroes survive.
+The same reference text may occur in different families: kind plus immutable
+order UUID, not the text alone, identifies its authority.
+
+`order_invoice_references` validates the authenticated `invoiceAuthority` object
+against its source kind, UUID, saved number and saved date before Accounts exposes
+`invoiceReference`. The object has a versioned schema, original date/number basis,
+reference, provenance, recording timestamp and (prospectively only) approval
+version. Rejection and failed/rolled-back approval save no new authority. Existing
+decision locks, expected versions and idempotency records serialize concurrent
+decisions and retries. General order/import inputs cannot submit this object.
+All four ordinary writers copy it from the locked raw snapshot without repair;
+normal order projections/transfers omit it. Fulfillment mutates the existing
+snapshot and retains it. No general update can substitute a reference.
+
+The existing API wire shapes are retained: SettlementRecord.invoiceReference is
+a nullable string; CreditInput.invoice_reference remains the required frozen
+confirmation echo, **not** a manual override. Creation requires readable server
+authority and exact equality with that echo, then stores the server value.
+The client distinguishes the new four-digit-year saved authority from the wider
+historical note grammar. Existing immutable credit notes keep their original
+references verbatim, including manually entered two/three-digit years. Their
+reads, exact request replays, reconciliation and reversals do not require current
+invoice authority or revalidate historical text against a new order reference.
+No new API field, generated type or validator shape was needed.
+
+See `docs/order-invoice-references.md` for the prepared historical adoption
+procedure and activation prerequisites. This reference authority is not an
+invoice PDF, legal/tax certification, financial recalculation or Settings change.
 
 ## Persistence and concurrency
 

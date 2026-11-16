@@ -14,6 +14,8 @@ class CreditInput(BaseModel):
     expected_version: int = Field(strict=True, ge=1)
     expected_paid: str
     expected_credited: str
+    # Frozen confirmation echo, not a manual override. The service requires exact
+    # persisted authority for new notes; keep the older grammar for history/replay.
     invoice_reference: str = Field(max_length=100, pattern=r"^[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}$")
     amount: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$")
 
@@ -35,7 +37,7 @@ class CreditInput(BaseModel):
     @classmethod
     def invoice(cls, value):
         if not re.fullmatch(r"[0-9]{2,4}-[0-9]{2}/[0-9]{1,20}", value):
-            raise ValueError("Enter the saved invoice reference in year/order-number form.")
+            raise ValueError("Use the saved server-owned invoice reference in year/order-number form.")
         return value
 
 

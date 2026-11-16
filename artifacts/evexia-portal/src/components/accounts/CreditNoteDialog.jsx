@@ -2,13 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import Dialog from '../admin/Dialog.jsx';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
-import { CREDIT_AMOUNT, INVOICE_REFERENCE, KIND_LABEL, confirmCredit, creditEligible, fromPaise, inr, lookupCreditRequest, newIdempotencyKey, postCreditNote, toPaise } from '../../services/serverSettlements.js';
+import { CREDIT_AMOUNT, SAVED_INVOICE_REFERENCE, KIND_LABEL, confirmCredit, creditEligible, fromPaise, inr, lookupCreditRequest, newIdempotencyKey, postCreditNote, toPaise } from '../../services/serverSettlements.js';
 
 // Super Admin credit note against one settlement row. Draft survives rejection;
 // an uncertain submission stays frozen and only the exact same body may be retried.
 export default function CreditNoteDialog({ row, onClose, onCommitted }) {
-  const authoritative = row.invoiceReference || null;
-  const [invoice, setInvoice] = useState(authoritative || '');
+  const authoritative = typeof row.invoiceReference === 'string' && SAVED_INVOICE_REFERENCE.test(row.invoiceReference) ? row.invoiceReference : null;
   const [amount, setAmount] = useState('');
   const [errors, setErrors] = useState({});
   const [confirming, setConfirming] = useState(false);
@@ -40,17 +39,15 @@ export default function CreditNoteDialog({ row, onClose, onCommitted }) {
 
   function review(e) {
     e.preventDefault();
-    if (locked || !eligible) return;
+    if (locked || !eligible || !authoritative) return;
     const next = {};
-    const ref = authoritative || invoice.trim();
-    if (!INVOICE_REFERENCE.test(ref)) next.invoice = 'Use the invoice format, for example 024-25/00051002.';
     if (!CREDIT_AMOUNT.test(amount)) next.amount = 'Enter rupees with exactly two decimals, for example 1250.00.';
     else if (amountP <= 0n) next.amount = 'Amount must be more than zero.';
     else if (amountP > balanceP) next.amount = `Cannot exceed the balance of ${inr(row.balance)}.`;
     setErrors(next); setMessage('');
     if (Object.keys(next).length) return;
     frozen.current = Object.freeze({ idempotency_key: newIdempotencyKey(), kind: row.kind, id: row.id, expected_version: row.version,
-      expected_paid: row.paid, expected_credited: row.credited, invoice_reference: ref, amount: fromPaise(amountP) });
+      expected_paid: row.paid, expected_credited: row.credited, invoice_reference: authoritative, amount: fromPaise(amountP) });
     setConfirming(true);
     requestAnimationFrame(() => reviewRef.current?.focus());
   }
@@ -107,11 +104,11 @@ export default function CreditNoteDialog({ row, onClose, onCommitted }) {
     <button type="button" className="admin-button" disabled={phase === 'posting'} onClick={send} data-testid="button-confirm-credit">{phase === 'posting' ? 'Recording…' : `Credit ${inr(amountP)}`}</button>
   </> : <>
     <button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-credit">Cancel</button>
-    <button type="submit" form="credit-form" className="admin-button" disabled={!eligible} data-testid="button-review-credit">Review</button>
+    <button type="submit" form="credit-form" className="admin-button" disabled={!eligible || !authoritative} data-testid="button-review-credit">Review</button>
   </>;
 
   return <Dialog eyebrow="Credit note" title={`Order ${row.number}`} className="settle-dialog settle-credit-dialog" onClose={close} dismissDisabled={locked} footer={footer}
-    description={`${KIND_LABEL[row.kind] || row.kind} · a credit reduces the balance without recording cash. No invoice, PDF or notification is issued.`}>
+    description={`${KIND_LABEL[row.kind] || row.kind} · a credit reduces the balance without recording cash. No invoice document, PDF or notification is issued.`}>
     <form id="credit-form" noValidate onSubmit={review} className="settle-form">
       <dl className="settle-history-sum">
         <div><dt>Total</dt><dd>{row.total != null ? inr(row.total) : 'Unavailable'}</dd></div>
@@ -121,12 +118,11 @@ export default function CreditNoteDialog({ row, onClose, onCommitted }) {
         <div><dt>Proposed balance</dt><dd data-testid="text-credit-balance-after">{proposed != null && proposed >= 0n ? inr(proposed) : '—'}</dd></div>
       </dl>
       {!eligible && <p className="settle-msg settle-msg--warn" role="alert">This order is not eligible for credit: it needs a known total, a positive balance and a payable stage.</p>}
-      <label className="kits-field"><span>Invoice reference</span>
-        <input value={invoice} readOnly={Boolean(authoritative) || locked} maxLength={30} onChange={(e) => { setInvoice(e.target.value); setErrors((x) => ({ ...x, invoice: undefined })); }}
-          placeholder="024-25/00051002" aria-invalid={Boolean(errors.invoice)} aria-describedby={errors.invoice ? 'credit-inv-err' : undefined} data-testid="input-credit-invoice" />
-        {authoritative && <span className="settle-sub">Recorded invoice reference; it cannot be changed here.</span>}
-        {errors.invoice && <span id="credit-inv-err" className="settle-err">{errors.invoice}</span>}
-      </label>
+      <div className="kits-field">
+        <dl><dt>Invoice reference</dt><dd data-testid="text-credit-invoice">{authoritative || 'Unavailable'}</dd></dl>
+        {authoritative ? <span className="settle-sub">Saved server-generated reference; it cannot be changed here.</span>
+          : <p className="settle-msg settle-msg--warn" role="alert">The saved invoice reference is unavailable. A new credit cannot be created. Ask an administrator to review the order reference, then close and reopen this dialog.</p>}
+      </div>
       <label className="kits-field"><span>Credit amount (INR)</span>
         <input value={amount} inputMode="decimal" readOnly={locked} maxLength={15} onChange={(e) => { setAmount(e.target.value.trim()); setErrors((x) => ({ ...x, amount: undefined })); }}
           placeholder="0.00" className="settle-amount" aria-invalid={Boolean(errors.amount)} aria-describedby={errors.amount ? 'credit-amt-err' : undefined} data-testid="input-credit-amount" />

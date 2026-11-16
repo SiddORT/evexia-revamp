@@ -39,11 +39,9 @@ def number(kind, date, sequence):
     return f"CN/{token}/{start % 100:02d}-{(start + 1) % 100:02d}/{sequence}"
 
 
-def saved_invoice(saved):
-    # No order-number conversion, Settings template or generated invoice number.
-    # This source has no issued-invoice field authority. A future authority must
-    # be explicitly integrated here, rather than guessed from arbitrary keys.
-    return None
+def saved_invoice(kind, row, saved):
+    from app.services.order_invoice_references import saved_reference
+    return saved_reference(kind, row, saved)
 
 
 def project(keys, note, reversal=None, *, mr_scope=False):
@@ -203,8 +201,11 @@ def create(db, actor, body):
                         409, "settlement_credit_ineligible")
         if ledger.exact(body.amount) > ledger.exact(record["balance"]):
             ledger.fail("Credit exceeds the current unpaid balance.", 422, "settlement_overcredit")
-        authoritative = saved_invoice(saved)
-        if authoritative and authoritative != body.invoice_reference:
+        authoritative = saved_invoice(body.kind, row, saved)
+        if authoritative is None:
+            ledger.fail("The saved order invoice reference is unavailable. Ask an administrator to review its authority before creating a credit.",
+                        409, "settlement_credit_invoice_unavailable")
+        if authoritative != body.invoice_reference:
             ledger.fail("Use the authoritative saved invoice reference.", 409, "settlement_credit_invoice")
         now = utcnow()
         date = datetime.now(ZoneInfo("Asia/Kolkata")).date()
@@ -213,7 +214,7 @@ def create(db, actor, body):
         data = dict(id=str(identity), number=number(body.kind, date, sequence), date=date.isoformat(),
                     createdAt=now.isoformat(), actorId=str(current.user.id), kind=body.kind,
                     orderId=str(row.id), orderNumber=row.number, orderDate=row.date.isoformat(),
-                    doctor=record["doctor"], mr=record["mr"], invoiceReference=body.invoice_reference,
+                    doctor=record["doctor"], mr=record["mr"], invoiceReference=authoritative,
                     amount=body.amount, status="Active", revertedAt=None, revertedBy=None, canRevert=False)
         db.add(Note(id=identity, sequence=sequence, kind=body.kind, order_id=row.id, mr_id=row.mr_id,
                     actor_id=current.user.id, date=date, created_at=now,

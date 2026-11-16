@@ -7,9 +7,15 @@ outstanding/exposure/aging, never receipts, saved totals/taxes or cash collectio
 Partial payment permits reversal; zero credit-adjusted balance blocks it.
 Numbers use `CN/IMT|KIT|SPT|LPN/YY-YY/integer`, April–March Kolkata issue dates
 and one non-resetting sequence; example 163 is not an opening seed. Preserve
-order identifiers and explicitly collect the saved invoice reference: no issued
-invoice-number authority currently exists. Keep original Directory decryption
-keys for immutable credit archives. See `docs/settlement-credit-notes.md`.
+order identifiers. New credits now require the server-owned saved order invoice
+reference in `YYYY-YY/numeric-order-portion` form, based on the order-date
+April–March year with saved numeric zeroes retained; no manual fallback. The
+reference is assigned atomically at first successful approval, not by a new
+counter. Kind/UUID remain authoritative because visible references can repeat
+across families. Existing credit-note references remain immutable. Historical
+adoption is prepared, bounded and explicit, not executed or run at startup.
+Keep original Directory decryption keys for immutable credit archives. See
+`docs/settlement-credit-notes.md` and `docs/order-invoice-references.md`.
 
 Forward `0112_settlement_credits` and DDL-free staged join, coordinated source
 metadata, APIs/clients and screens are prepared, not applied. Only source/diff

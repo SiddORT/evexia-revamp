@@ -180,7 +180,7 @@ def projection(kind, row, saved, receipts, *, credits, mr_scope=False):
                 doctor=person(saved.get("doctor"), mask_contacts=mr_scope),
                 mr=person(saved.get("mr")), patients=people(saved, mask_contacts=mr_scope),
                 total=fmt(total) if total is not None else None, paid=fmt(paid),
-                credited=fmt(credit), invoiceReference=saved_invoice(saved),
+                credited=fmt(credit), invoiceReference=saved_invoice(kind, row, saved),
                 credits=[{**item, "doctor": person(item["doctor"], mask_contacts=mr_scope),
                           "canRevert": not mr_scope and item["status"] == "Active"
                           and total is not None and total > paid + credit} for item in credits],

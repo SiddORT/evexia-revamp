@@ -75,7 +75,8 @@ def find(db, identity):
 def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
-    value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    from app.services.order_invoice_references import public_snapshot
+    value = public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext))
     value.setdefault("pricingState", "Priced" if value.get("total") is not None else "Unavailable")
     from app.services.order_approval import eligibility
     from app.services.order_lifecycle import status
@@ -176,7 +177,8 @@ def apply(db, actor, keys, body, identity=None, expected=None, source_id=None):
     order_date = row.date if row else body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date()
     data = resolve(db, keys, body, previous, order_date)
     from app.services.order_approval import preserve
-    preserve(actor, "spt", data, previous)
+    preserve(actor, "spt", data, previous,
+             saved=unseal(keys, "orders", row.id, row.snapshot_ciphertext) if row else None)
     from app.services.order_eligibility import enforce
     enforce(db, keys, "spt", data, row=row, order_date=order_date, previous=previous)
     if not row:

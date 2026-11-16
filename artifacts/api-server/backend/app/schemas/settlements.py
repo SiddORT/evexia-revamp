@@ -104,6 +104,7 @@ class SettlementRecord(BaseModel):
     paid: str
     credited: str
     credits: list[CreditRecord]
+    # Validated persisted authority only; null blocks new credits, not history.
     invoiceReference: str | None
     balance: str | None
     verification: SettlementVerification

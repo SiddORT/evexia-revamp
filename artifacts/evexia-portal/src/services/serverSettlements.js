@@ -37,6 +37,9 @@ function validTransaction(t) {
 }
 
 export const INVOICE_REFERENCE = /^[0-9]{2,4}-[0-9]{2}\/[0-9]{1,20}$/;
+// Existing credit documents retain their historical, manually entered lexemes.
+// Only new credits use the narrower saved order-reference authority.
+export const SAVED_INVOICE_REFERENCE = /^[0-9]{4}-[0-9]{2}\/[0-9]{1,20}$/;
 export const CREDIT_AMOUNT = /^(0|[1-9]\d{0,11})\.\d{2}$/;
 const validStamp = (v) => typeof v === 'string' && !Number.isNaN(Date.parse(v));
 export function validateCredit(c) {
@@ -67,7 +70,7 @@ export function validateRecord(r) {
     || !Number.isSafeInteger(r.version) || r.version < 1 || !validPerson(r.doctor) || !validPerson(r.mr)
     || !Array.isArray(r.patients) || !r.patients.every((p) => p && validPerson(p))
     || !(r.total === null || money(r.total)) || !money(r.paid) || !money(r.credited) || !Array.isArray(r.credits)
-    || !(r.invoiceReference === null || (typeof r.invoiceReference === 'string' && INVOICE_REFERENCE.test(r.invoiceReference))) || !(r.balance === null || money(r.balance))
+    || !(r.invoiceReference === null || (typeof r.invoiceReference === 'string' && SAVED_INVOICE_REFERENCE.test(r.invoiceReference))) || !(r.balance === null || money(r.balance))
     || !VERIFICATION.slice(1).includes(r.verification) || !Array.isArray(r.transactions) || r.transactions.length > 50000) failure();
   let paid = 0n;
   const receipts = new Set();

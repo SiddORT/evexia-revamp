@@ -47,7 +47,9 @@ def evidence(actor):
     return {"approvedBy": str(actor.user.id), "approvedAt": utcnow().isoformat()}
 
 
-def preserve(actor, kind, data, previous):
+def preserve(actor, kind, data, previous, *, saved=None):
+    from app.services.order_invoice_references import preserve as preserve_invoice
+    preserve_invoice(data, saved)
     # Fulfillment is server-owned. Ordinary edits retain, but cannot submit or
     # clear, the encrypted shipping evidence (including older detail revisions).
     for key in ("shipment", "shipmentHistory"):
@@ -246,6 +248,9 @@ def approve(db, actor, identity, body, kind, *, decision="approve"):
             else:
                 body_reason = decision_reason if kind in {"kits", "spt", "lupin"} else None
             record_decision(snapshot, current, decision, row.version + 1, body_reason)
+            if decision == "approve":
+                from app.services.order_invoice_references import KINDS, assign
+                assign(KINDS[kind], row, snapshot, recorded_at=snapshot["approval"]["approvedAt"])
             snapshot["status"] = row.status = "In process" if decision == "approve" else "Rejected"
             row.version += 1
             row.updated_by, row.updated_at = current.user.id, utcnow()

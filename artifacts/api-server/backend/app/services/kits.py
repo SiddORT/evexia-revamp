@@ -204,7 +204,8 @@ def find(db, identity):
 def project(keys, row):
     from app.services.order_audit import metadata
     from app.services.order_approval import editable
-    value = unseal(keys, "orders", row.id, row.snapshot_ciphertext)
+    from app.services.order_invoice_references import public_snapshot
+    value = public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext))
     value["pricingState"] = ("Pending pricing" if value.get("pricing") is None
                              else "Needs pricing review" if value.get("pricingNeedsReview") else "Priced")
     from app.services.order_lifecycle import status
@@ -283,7 +284,8 @@ def apply(db, actor, keys, body, identity=None, expected=None):
     attachment_changes(actor, "kits", body.attachmentIds, previous)
     data = resolved(db, actor, keys, body, previous)
     from app.services.order_approval import preserve
-    preserve(actor, "kits", data, previous)
+    preserve(actor, "kits", data, previous,
+             saved=unseal(keys, "orders", row.id, row.snapshot_ciphertext) if row else None)
     if previous and data.get("pricing") is not None and "pricing" not in body.model_fields_set:
         # Reviewing Parking/PO/remarks is not confirmation of a corrected invoice.
         data["pricingNeedsReview"] = previous.get("pricingNeedsReview", False) or any(

@@ -28,13 +28,20 @@ existing order identifiers.
 
 **How to apply:** Never renumber orders or reuse reverted credit numbers.
 
-There is no approval for a new invoicing system. Reuse an explicitly integrated
-authoritative saved invoice reference if one exists; otherwise require the user
-to enter their saved year/order-number reference, preserving values such as
-`024-25/00051002` without constructing an issued invoice number.
+The former manual-reference fallback is superseded: the user confirmed
+`2024-25/00051002` means financial year / order number and explicitly included
+existing approved orders. References use the saved order-date April–March year
+and saved numeric portion without losing zeroes. Kind/UUID remain identity;
+families may share visible text. New credits require saved server authority,
+never browser derivation or manual override. Old notes retain their original
+immutable references, including manually entered historical text.
 
-**Why:** Invoice Settings and order identifiers do not establish invoice issuance.
+**Why:** The user explicitly authorized automatic saved order references and
+historical adoption, but no separate invoice sequence, order renumbering or
+rewriting of credit evidence.
 
-**How to apply:** Keep entered invoice references independent of order numbering.
-PDF/printing, tax adjustment documents, refunds, wallets, notification delivery
-and financial-history imports remain outside this credit-note approval.
+**How to apply:** Treat historical adoption as distinct from original issuance;
+never invent its date/event. Invoice documents, legal/tax certification,
+financial recalculation, refunds, wallets, notifications and financial-history
+imports remain outside this approval. Source preparation does not authorize
+live adoption, migrations, runtime checks or activation.

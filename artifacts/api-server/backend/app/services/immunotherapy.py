@@ -107,7 +107,8 @@ def find(db, record_id):
 def project(keys, row):
     from app.services.order_lifecycle import status
     from app.services.order_approval import editable, eligibility
-    value = {**unseal(keys, "orders", row.id, row.snapshot_ciphertext), "status": status(row.status)}
+    from app.services.order_invoice_references import public_snapshot
+    value = {**public_snapshot(unseal(keys, "orders", row.id, row.snapshot_ciphertext)), "status": status(row.status)}
     return {**value, "mrEditable": editable("immunotherapy", value), "decisionEligibility": eligibility("immunotherapy", value),
             "orderBatchNo": (value.get("orderBatch") or {}).get("number"),
             "audit": audit_metadata(row),
@@ -334,7 +335,8 @@ def apply(db, actor, keys, body, record_id=None, expected=None):
     db.info["imm_actor"] = actor.user.id
     data = resolved(db, body, previous)
     from app.services.order_approval import preserve
-    preserve(actor, "immunotherapy", data, previous)
+    preserve(actor, "immunotherapy", data, previous,
+             saved=unseal(keys, "orders", row.id, row.snapshot_ciphertext) if row else None)
     from app.services.immunotherapy_material_pricing import prepare_quote, require_confirmation
     effective_date = row.date if row else body.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date()
     quoted = prepare_quote(db, keys, data, body, effective_date, previous)
