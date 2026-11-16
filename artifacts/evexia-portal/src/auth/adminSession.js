@@ -35,7 +35,7 @@ export const subscribeSession = (listener) => { listeners.add(listener); return 
 
 // Read-only MR-self reporting. No Admin target permissions or MR selector.
 export async function mrSalesRequest(path = '', { params = {}, signal } = {}) {
-  if (!['', '/years', '/dashboard'].includes(path)) throw new SessionError('Unsupported sales report.');
+  if (!['', '/years', '/dashboard', '/doctor-payments'].includes(path)) throw new SessionError('Unsupported sales report.');
   const epoch = generation;
   const scope = contactReadScope();
   const check = () => {
