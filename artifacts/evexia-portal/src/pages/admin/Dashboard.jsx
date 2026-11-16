@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import AccessDenied from '../../components/admin/AccessDenied.jsx';
+import DashboardContent from '../../components/admin/dashboard/DashboardContent.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity, staffPathAllowed } from '../../auth/capabilities.js';
 
@@ -19,11 +20,7 @@ export default function Dashboard() {
   if (staff) return destination ? null : <AccessDenied title="Workspace" heading="No workspace permissions assigned" testId="status-no-workspace-access" message="Your account can sign in, but its saved role has no approved workspace permissions. Ask a Super Admin to update your role." />;
   return (
     <AdminLayout title="Dashboard">
-      <div className="admin-empty-page">
-        <div className="admin-page-head">
-          <div><h1>Dashboard</h1></div>
-        </div>
-      </div>
+      <DashboardContent />
     </AdminLayout>
   );
 }
