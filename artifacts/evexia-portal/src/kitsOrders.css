@@ -52,6 +52,10 @@
 .kits-entry .kits-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; }
 .kits-entry .kits-main, .kits-entry .kits-side { gap: 16px; }
 .kits-entry .kits-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; }
+.kits-entry .kits-entry__doctor-field { display: grid; align-content: start; gap: 8px; min-width: 0; text-align: left; }
+.kits-entry .kits-entry__doctor-field > .mrw-notice { display: grid; gap: 8px; min-width: 0; font-size: 12px; line-height: 1.5; color: var(--admin-text-soft); overflow-wrap: anywhere; }
+.kits-entry .kits-entry__doctor-field > .mrw-notice > p { margin: 0; }
+.kits-entry .kits-entry__doctor-field > .mrw-notice > .admin-button { justify-self: start; }
 .kits-entry .kits-radios { min-width: 0; margin: 0; gap: 8px 14px; }
 .kits-entry .kits-radios legend { padding: 0; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: var(--admin-text-soft); }
 .kits-entry .kits-radios label { min-width: 0; font-size: 13px; }

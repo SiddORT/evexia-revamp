@@ -245,13 +245,16 @@ function Form({ draft }) {
       <div className="kits-side">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-people"><h2 id="kits-h-people">Doctor details</h2>
           <div className="kits-grid">
-            <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: authenticatedMR?.id || '' }); setMr(authenticatedMR); }} onPerson={setDoctor} />
-            {portal === 'mr' && <EffectiveDoctorDays doctorId={v.doctorId} request={request} />}
+            <div className="kits-entry__doctor-field">
+              <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: authenticatedMR?.id || '' }); setMr(authenticatedMR); }} onPerson={setDoctor} />
+              {portal === 'mr' && <EffectiveDoctorDays doctorId={v.doctorId} request={request} />}
+            </div>
             {portal === 'mr' ? <label className="kits-field" htmlFor="kits-mrId">MR (signed-in account)<input id="kits-mrId" readOnly value={authenticatedMR.name} /></label>
               : <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />}
             <KitsReferenceSelect showClearAction={false} disabled={busy || uncertain} id="kits-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />
-            <p className="kits-hint">Patient is optional for supply orders. If selected, the Patient must belong to the billing Doctor. A selected MR must match that Doctor’s current assignment. No masters or clinical history are created.</p>
-          </div></section>
+          </div>
+          <p className="kits-hint">Patient is optional for supply orders. If selected, the Patient must belong to the billing Doctor. A selected MR must match that Doctor’s current assignment. No masters or clinical history are created.</p>
+        </section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-ship"><h2 id="kits-h-ship">Shipping details</h2>
           <fieldset className="kits-radios" aria-describedby={e.shipping ? 'kits-shipping-err' : undefined}><legend>Ship to</legend>
             {[['doctor', 'Doctor'], ['mr', 'MR'], ['other', 'Other']].map(([s, l]) => <label key={s}><input id={`kits-shipping-${s}`} type="radio" name="shipping" checked={v.shipping === s} onChange={() => set({ shipping: s })} data-testid={`kits-ship-${s}`} />{l}</label>)}</fieldset>
