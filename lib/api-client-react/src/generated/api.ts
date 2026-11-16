@@ -346,6 +346,7 @@ import type {
   ListStaffParams,
   ListStockProductsParams,
   ListStorageLocationsParams,
+  ListUnifiedOrderDraftsParams,
   ListVendorsParams,
   ListZonesParams,
   LocationEdit,
@@ -616,6 +617,7 @@ import type {
   StaffSearchPage,
   StaffStatus,
   TokenResponse,
+  UnifiedDraftPage,
   UploadFileParams,
   UploadImmunotherapyPrescriptionBody,
   UploadKitsAttachmentBody,
@@ -49854,6 +49856,106 @@ export function useGetDoctorAssignmentHistory<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListUnifiedOrderDraftsUrl = (
+  params?: ListUnifiedOrderDraftsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/order-drafts?${stringifiedParams}`
+    : `/api/v1/admin/order-drafts`;
+};
+
+/**
+ * @summary Unified Listing
+ */
+export const listUnifiedOrderDrafts = async (
+  params?: ListUnifiedOrderDraftsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<UnifiedDraftPage> => {
+  return customFetch<UnifiedDraftPage>(getListUnifiedOrderDraftsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListUnifiedOrderDraftsQueryKey = (
+  params?: ListUnifiedOrderDraftsParams,
+) => {
+  return [`/api/v1/admin/order-drafts`, ...(params ? [params] : [])] as const;
+};
+
+export const getListUnifiedOrderDraftsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listUnifiedOrderDrafts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListUnifiedOrderDraftsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listUnifiedOrderDrafts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListUnifiedOrderDraftsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listUnifiedOrderDrafts>>
+  > = ({ signal }) =>
+    listUnifiedOrderDrafts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listUnifiedOrderDrafts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListUnifiedOrderDraftsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listUnifiedOrderDrafts>>
+>;
+export type ListUnifiedOrderDraftsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Unified Listing
+ */
+
+export function useListUnifiedOrderDrafts<
+  TData = Awaited<ReturnType<typeof listUnifiedOrderDrafts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListUnifiedOrderDraftsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listUnifiedOrderDrafts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListUnifiedOrderDraftsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

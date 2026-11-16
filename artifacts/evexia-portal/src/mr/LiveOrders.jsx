@@ -18,6 +18,7 @@ export default function LiveOrders() {
   const [kind, id, action] = parts;
   let screen;
   if (!kind || kind === 'new') screen = <section className="mrw-card"><h1>Orders</h1><p>Choose an order type to view saved orders or add an order. These orders are live and shared with Admin. Their recorded payments are available in Accounts.</p></section>;
+  else if (kind === 'drafts' && parts.length === 1) screen = <ImmunotherapyDrafts />;
   else if (kind === 'immunotherapy' && parts.length === 1) screen = <ImmunotherapyOrders />;
   else if (kind === 'immunotherapy' && id === 'drafts' && parts.length === 2) screen = <ImmunotherapyDrafts />;
   else if (kind === 'kits-consumables' && parts.length === 1) screen = <KitsOrders />;

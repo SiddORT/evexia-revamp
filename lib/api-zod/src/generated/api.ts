@@ -2950,6 +2950,10 @@ export const getDoctorAssignmentHistoryQueryLimitMax = 50;
 export const getDoctorAssignmentHistoryQueryOffsetDefault = 0;
 export const getDoctorAssignmentHistoryQueryOffsetMin = 0;
 export const getDoctorAssignmentHistoryQueryOffsetMax = 1000000;
+export const listUnifiedOrderDraftsQuerySearchMax = 200;
+export const listUnifiedOrderDraftsQueryCursorOneMax = 4096;
+export const listUnifiedOrderDraftsQueryLimitDefault = 25;
+export const listUnifiedOrderDraftsQueryLimitMax = 50;
 
 /**
  * @summary <Lambda>
@@ -51607,4 +51611,54 @@ export const GetDoctorAssignmentHistoryResponse = zod.object({
   limit: zod.number().int(),
   offset: zod.number().int(),
   total: zod.number().int(),
+});
+
+/**
+ * @summary Unified Listing
+ */
+export const listUnifiedOrderDraftsQuerySearchDefault = ``;
+
+export const ListUnifiedOrderDraftsQueryParams = zod.object({
+  kind: zod
+    .union([zod.enum(["immunotherapy", "spt", "kits", "lupin"]), zod.null()])
+    .optional(),
+  search: zod.coerce
+    .string()
+    .max(listUnifiedOrderDraftsQuerySearchMax)
+    .default(listUnifiedOrderDraftsQuerySearchDefault),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  cursor: zod
+    .union([
+      zod.coerce.string().max(listUnifiedOrderDraftsQueryCursorOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listUnifiedOrderDraftsQueryLimitMax)
+    .default(listUnifiedOrderDraftsQueryLimitDefault),
+});
+
+export const ListUnifiedOrderDraftsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      canResume: zod.boolean(),
+      details: zod.union([zod.string(), zod.null()]),
+      doctor: zod.union([zod.string(), zod.null()]),
+      id: zod.string().uuid(),
+      identifier: zod.union([zod.string(), zod.null()]),
+      kind: zod.enum(["immunotherapy", "spt", "kits", "lupin"]),
+      mr: zod.union([zod.string(), zod.null()]),
+      patient: zod.union([zod.string(), zod.null()]),
+      remarks: zod.union([zod.string(), zod.null()]),
+      updatedAt: zod.union([zod.string(), zod.null()]),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string(), zod.null()]),
+  scanLimited: zod.boolean(),
+  scannedCount: zod.number().int(),
 });

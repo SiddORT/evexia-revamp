@@ -1,16 +1,27 @@
 """Shared creator-private draft endpoints; SPT retains its existing contract."""
 import uuid
+from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.api.deps import current_identity
 from app.db.session import get_db
-from app.schemas.order_drafts import DraftKind, DraftWrite, DraftSubmit, DraftRecord, DraftPage
+from app.schemas.order_drafts import DraftKind, DraftWrite, DraftSubmit, DraftRecord, DraftPage, UnifiedDraftKind, UnifiedDraftPage
 from app.schemas.immunotherapy import ImmRecord
 from app.schemas.kits import KitsRecord
 from app.schemas.lupin import LupinRecord
 from app.services import order_drafts as service
 
 router = APIRouter(prefix="/admin/order-drafts", tags=["order-drafts"])
+
+
+@router.get("", response_model=UnifiedDraftPage, operation_id="listUnifiedOrderDrafts")
+def unified_listing(kind: UnifiedDraftKind | None = None, search: str = Query("", max_length=200),
+                    from_date: date | None = None, to_date: date | None = None,
+                    cursor: str | None = Query(None, max_length=4096), limit: int = Query(25, ge=1, le=50),
+                    actor=Depends(current_identity), db: Session = Depends(get_db)):
+    from app.services.unified_order_drafts import listing
+    return listing(db, actor, kind=kind, search=search, from_date=from_date,
+                   to_date=to_date, cursor=cursor, limit=limit)
 
 
 @router.get("/{kind}", response_model=DraftPage, operation_id="listOrderDrafts")

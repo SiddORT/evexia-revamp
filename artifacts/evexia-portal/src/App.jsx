@@ -114,6 +114,7 @@ function App() {
       <Route path="/admin/inventory/purchase-received/:id">{(params) => <PurchaseReceivedFormPage id={params.id} />}</Route>
       <Route path="/admin/inventory/move-stocks" component={MoveStocks} />
       <Route path="/admin/inventory/move-stocks/new" component={MoveStockFormPage} />
+      <Route path="/admin/orders/drafts" component={ImmunotherapyDrafts} />
       <Route path="/admin/orders/immunotherapy" component={ImmunotherapyOrders} />
       <Route path="/admin/orders/immunotherapy/drafts" component={ImmunotherapyDrafts} />
       <Route path="/admin/orders/immunotherapy/new">{() => <ImmunotherapyOrderFormPage key="new" mode="edit" />}</Route>

@@ -96,6 +96,9 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
   }
   if (isSuperAdminIdentity(user)) return true;
   if (!isStaffIdentity(user)) return false;
+  if (resource === 'order-drafts') return path === '' && body === undefined && file === undefined
+    && (method === undefined || method === 'GET')
+    && (['immunotherapy', 'kits', 'lupin'].some((kind) => hasCapability(user, kind, 'add')) || canReadResource(user, 'spt'));
   const draft = /^order-drafts\/(immunotherapy|kits|lupin)$/.exec(resource);
   if (draft) return hasCapability(user, draft[1], 'add');
   const writing = body !== undefined || file !== undefined;
@@ -174,6 +177,9 @@ export const workflowAllowed = (user, resource, path = '', { body, method, file,
 export const STAFF_PATHS = Object.freeze(['/admin', '/admin/masters/zones', '/admin/masters/import/zone']);
 export const staffPathAllowed = (path, user) => {
   if (path === '/admin') return true;
+  if (['/admin/orders/drafts', '/admin/orders/immunotherapy/drafts'].includes(path)) {
+    return ['immunotherapy', 'kits', 'lupin', 'spt'].some((kind) => canReadResource(user, kind));
+  }
   if (path === '/admin/languages') return canViewMaster(user, 'language');
   if (path === '/admin/staff') return canReadResource(user, 'staff');
   if (path === '/admin/staff-access') return hasCapability(user, 'staff_access', 'view');

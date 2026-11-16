@@ -14459,6 +14459,37 @@ export interface DoctorMappingReferences {
   total: number | null;
 }
 
+export type UnifiedDraftSummaryKind =
+  (typeof UnifiedDraftSummaryKind)[keyof typeof UnifiedDraftSummaryKind];
+
+export const UnifiedDraftSummaryKind = {
+  immunotherapy: "immunotherapy",
+  spt: "spt",
+  kits: "kits",
+  lupin: "lupin",
+} as const;
+
+export interface UnifiedDraftSummary {
+  canResume: boolean;
+  details: string | null;
+  doctor: string | null;
+  id: string;
+  identifier: string | null;
+  kind: UnifiedDraftSummaryKind;
+  mr: string | null;
+  patient: string | null;
+  remarks: string | null;
+  updatedAt: string | null;
+  version: number;
+}
+
+export interface UnifiedDraftPage {
+  items: UnifiedDraftSummary[];
+  nextCursor: string | null;
+  scanLimited: boolean;
+  scannedCount: number;
+}
+
 export type ListAllergensParams = {
   /**
    * @maxLength 200
@@ -18341,3 +18372,30 @@ export type GetDoctorAssignmentHistoryParams = {
    */
   offset?: number;
 };
+
+export type ListUnifiedOrderDraftsParams = {
+  kind?: ListUnifiedOrderDraftsKind;
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  from_date?: string | null;
+  to_date?: string | null;
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+};
+
+export type ListUnifiedOrderDraftsKind =
+  | (typeof ListUnifiedOrderDraftsKind)[keyof typeof ListUnifiedOrderDraftsKind]
+  | null;
+
+export const ListUnifiedOrderDraftsKind = {
+  immunotherapy: "immunotherapy",
+  spt: "spt",
+  kits: "kits",
+  lupin: "lupin",
+} as const;

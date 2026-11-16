@@ -53,3 +53,27 @@ class DraftRecord(Strict):
 class DraftPage(Strict):
     items: list[DraftRecord]
     nextCursor: uuid.UUID | None
+
+
+UnifiedDraftKind = Literal["immunotherapy", "spt", "kits", "lupin"]
+
+
+class UnifiedDraftSummary(Strict):
+    id: uuid.UUID
+    kind: UnifiedDraftKind
+    version: int
+    updatedAt: str | None
+    identifier: str | None
+    doctor: str | None
+    mr: str | None
+    patient: str | None
+    details: str | None
+    remarks: str | None
+    canResume: bool
+
+
+class UnifiedDraftPage(Strict):
+    items: list[UnifiedDraftSummary]
+    nextCursor: str | None
+    scanLimited: bool
+    scannedCount: int

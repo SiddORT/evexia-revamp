@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -172,7 +172,8 @@ def main() -> None:
             args.output.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             return
         selected = {path: item for path, item in contract["paths"].items()
-                    if (args.scope == "territories" and
+                    if (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
+                    or (args.scope == "territories" and
                         (path == "/v1/admin/mrs" or path.startswith("/v1/admin/mrs/")
                          or path == "/v1/admin/doctors" or path.startswith("/v1/admin/doctors/")))
                     or (args.scope == "low-stock" and
@@ -211,7 +212,8 @@ def main() -> None:
         collect(selected)
         schema_updates = {}
         for name in needed:
-            prefixes = (("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
+            prefixes = (("UnifiedDraft",) if args.scope == "unified-drafts"
+                        else ("ProductCategory", "Allergen", "DilutionMaterialSetup") if args.scope == "catalogue-prices"
                         else ("Allergen", "Hsn", "DilutionMaterialSetup") if args.scope == "hsn-allergens"
                         else ("MR", "Doctor") if args.scope == "territories"
                         else ("Language",) if args.scope == "languages"

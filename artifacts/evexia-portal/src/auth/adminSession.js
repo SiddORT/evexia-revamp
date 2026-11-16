@@ -1090,6 +1090,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
+  const unifiedDraftRead = resource === 'order-drafts' && path === '' && body === undefined && file === undefined
+    && (method === undefined || method === 'GET') && !download;
+  if (resource === 'order-drafts' && !unifiedDraftRead) throw new SessionError('Unsupported draft listing operation.');
   const draftResource = /^order-drafts\/(?:immunotherapy|kits|lupin)$/.test(resource);
   const draftKind = draftResource ? resource.split('/')[1] : null;
   const draftSubmission = draftResource && path.endsWith('/submit');
@@ -1098,7 +1101,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const combinationStatus = combinationOperation && path.endsWith('/status');
   // Submission returns the normal order contract, never a Purchase Order.
   const responseResource = draftSubmission ? `${draftKind}-orders` : resource;
-  const allowed = draftResource
+  const allowed = unifiedDraftRead ? /^$/ : draftResource
     ? /^(?:|\/[0-9a-f-]{36}(?:\/submit)?)$/i
     : resource === 'pricing-rules'
     ? /(?!)/
@@ -1146,7 +1149,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   }
   const uid = '[0-9a-f-]{36}';
   const methodRoutes = { PUT: new RegExp(`^/${uid}$`, 'i'), PATCH: new RegExp(`^/${uid}/status$`, 'i'), DELETE: new RegExp(`^/${uid}$`, 'i') };
-  if (method !== undefined && (resource !== 'products' || !methodRoutes[method]?.test(path) || body === undefined)) {
+  if (method !== undefined && !unifiedDraftRead && (resource !== 'products' || !methodRoutes[method]?.test(path) || body === undefined)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
   const writing = body !== undefined || file !== undefined;
@@ -1185,7 +1188,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const sharedSettingsLabel = resource === 'low-stock-settings' ? 'Cron Jobs' : 'Invoice Details';
   const extractSettingsOperation = resource === 'immunotherapy-extract-settings';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
-  const mrOrder = (draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
+  const mrOrder = (unifiedDraftRead || draftResource || ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders', 'settlements'].includes(resource)) && state.user?.identity_kind === 'mr';
   const check = () => {
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || readScope !== contactReadScope() || state.status !== 'authenticated' || !token) {
@@ -1242,7 +1245,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : resource === 'in-house-stock'
       ? mutation ? 'Save outcome is unconfirmed. Your draft is preserved; check the save outcome before another save.'
         : 'Unable to load in-house concentrate reserves. Check your connection and retry.'
-      : draftResource
+      : (unifiedDraftRead || draftResource)
       ? mutation ? draftSubmission
         ? 'Order submission outcome is unconfirmed. Keep this editor open and retry the unchanged submission.'
         : 'Draft save outcome is unconfirmed. Keep this editor open and retry the unchanged draft save.'

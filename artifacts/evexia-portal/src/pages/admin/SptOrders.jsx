@@ -10,6 +10,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderListingHeader from '../../components/orders/OrderListingHeader.jsx';
 import OrderCountSummary from '../../components/orders/OrderCountSummary.jsx';
+import DraftOrdersLink from '../../components/orders/DraftOrdersLink.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
 import { request, STATUSES } from '../../services/serverSpt.js';
@@ -81,11 +82,8 @@ export default function SptOrders() {
           </div>
           <div className="spt-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
         </div>} />
-        <div className="spt-actions" aria-label="Order views">
-          <button type="button" className="admin-button admin-button--secondary" aria-pressed={applied.status !== 'Draft'} onClick={() => { setDraft(EMPTY); setApplied(EMPTY); resetPage(); }}>Orders</button>
-          <button type="button" className="admin-button admin-button--secondary" aria-pressed={applied.status === 'Draft'} onClick={() => { const values = { ...EMPTY, status: 'Draft' }; setDraft(values); setApplied(values); resetPage(); }}>Drafts — resume incomplete orders</button>
-        </div>
-        <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
+        <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading}
+          afterAllOrders={<DraftOrdersLink from={BASE} testId="link-spt-drafts" />} />
         <section className="admin-panel" aria-label="SPT orders">
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}
             onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
@@ -101,7 +99,7 @@ export default function SptOrders() {
             {[['doctors', 'doctor_id', 'Doctor'], ...(!mr ? [['mrs', 'mr_id', 'MR']] : []), ['patients', 'patient_id', 'Patient']].map(([kind, key, label]) => <SptReferenceSelect key={key} id={`spt-filter-${key}`} kind={kind} label={label} value={draft[key]} onChange={(id) => set({ [key]: id })} />)}
             <div className="spt-field"><label htmlFor="spt-filter-status">Status</label>
               <select id="spt-filter-status" value={draft.status} onChange={(e) => set({ status: e.target.value })} data-testid="select-spt-status">
-                <option value="">All</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}
+                <option value="">All</option>{STATUSES.filter((s) => s !== 'Draft').map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
           </OrderListingFilters>
