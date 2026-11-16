@@ -8,7 +8,7 @@ import './orderApproval.css';
 import OrderReviewStatus from './OrderReviewStatus.jsx';
 import FinancialReview from './FinancialReview.jsx';
 
-export default function OrderApproval({ kind, order, request, onApproved, dirty = false, blocked = false, onLockChange, proposedValues }) {
+export default function OrderApproval({ kind, order, request, onApproved, dirty = false, blocked = false, onLockChange, proposedValues, editing = false }) {
   const can = useOrderActions(kind);
   const { portal } = useOrderPortal();
   const { timestamp } = useAdminDateFormatters();
@@ -18,6 +18,8 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
   const [reason, setReason] = useState(''), [ignoreDraft, setIgnoreDraft] = useState(false);
   const [conflict, setConflict] = useState('');
   const [financial, setFinancial] = useState(null), [approvalReason, setApprovalReason] = useState('');
+  const [financialRevision, setFinancialRevision] = useState(0);
+  const compact = kind === 'kits' && portal !== 'mr';
   const deferred = ['kits', 'spt', 'lupin'].includes(kind);
   const reviewRequired = deferred && Boolean(order.mrId);
   const submission = useRef(null), sending = useRef(false);
@@ -26,6 +28,10 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
   const permitted = portal !== 'mr' && (['kits', 'lupin'].includes(kind) ? can.protected : can.edit);
   const eligibility = order.decisionEligibility;
   const eligible = Boolean(eligibility?.canReject);
+  const pricingReady = !compact || Boolean(order.pricing && eligibility?.canApprove);
+  const currentFinancial = !compact ? financial
+    : financial?.orderId === order.id && financial?.version === order.version
+      && financial.reviewValues === '' ? financial : null;
   const owner = useRef(getSession().user?.id).current;
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -47,7 +53,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
       setError('The signed-in account changed. This account cannot send or recover the original operation.'); return;
     }
     if (!submission.current && (decision === 'resubmit' ? !resubmittable || dirty
-      : decision === 'approve' ? !eligibility?.canApprove || dirty || (deferred && !approvalReason.trim()) || (reviewRequired && !financial)
+      : decision === 'approve' ? !eligibility?.canApprove || !pricingReady || dirty || (deferred && (!approvalReason.trim() || approvalReason.length > 2000)) || (reviewRequired && !currentFinancial)
         : !eligibility?.canReject || !reason.trim() || reason.length > 2000 || (dirty && !ignoreDraft))) return;
     if (submission.current && submission.current.owner !== owner) {
       setError('Only the original signed-in account can recover this decision. Keep this page open.'); return;
@@ -56,7 +62,7 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
     if (!submission.current) submission.current = { owner, decision, body: {
       expected_version: order.version, idempotencyKey: crypto.randomUUID(),
       ...(decision === 'reject' ? { reason: reason.trim() } : decision === 'approve' && deferred
-        ? { reason: approvalReason.trim(), ...(reviewRequired ? { financialReviewToken: financial.token } : {}) } : {}),
+        ? { reason: approvalReason.trim(), ...(reviewRequired ? { financialReviewToken: currentFinancial.token } : {}) } : {}),
     } };
     const operation = submission.current;
     try {
@@ -73,40 +79,44 @@ export default function OrderApproval({ kind, order, request, onApproved, dirty 
       setUncertain(keep);
       if (!keep) submission.current = null;
       setError(cause.message || 'Decision was not confirmed.');
-      if (cause.code === 'order_financial_review_stale') setFinancial(null);
+      if (cause.code === 'order_financial_review_stale') { setFinancial(null); setFinancialRevision((n) => n + 1); }
       if (!keep && cause.status === 409 && cause.code !== 'order_financial_review_stale' && !/^mr_(?:payment_limit|doctor_days_limit|eligibility_)/.test(cause.code || '')) {
         setConflict('The saved order changed. Reopen its saved view separately before making a decision.');
         try {
           const current = await request(`/${order.id}`);
           if (!alive.current || getSession().user?.id !== owner) return;
-          setConflict(`Saved state: ${current.status} · version ${current.version}. Reopen the saved view before deciding; this page has not replaced your displayed values.`);
+          setConflict(compact ? `Saved status: ${current.status}. Open the latest saved view before deciding. Your displayed values have not been replaced.`
+            : `Saved state: ${current.status} · version ${current.version}. Reopen the saved view before deciding; this page has not replaced your displayed values.`);
         } catch { /* Keep the explicit conflict when the saved read is unavailable. */ }
       }
     } finally { sending.current = false; if (alive.current) setBusy(false); }
   }
-  return <section className="order-approval" aria-label="Admin order decision" ref={decisionFocus} tabIndex={-1}>
-    <OrderReviewStatus order={order} />
-    <p>{order.approval
+  return <section className={`order-approval${compact ? ' order-approval--kits' : ''}`} aria-label="Admin order decision" ref={decisionFocus} tabIndex={-1}>
+    <OrderReviewStatus order={order} compact={compact} />
+    {(!compact || order.approval || order.rejection) && <p>{order.approval
       ? <>Approved{order.approval.approvedAt ? ` · ${timestamp(order.approval.approvedAt)}` : ''}{order.approval.approvedBy ? ` · ${order.approval.approvedBy}` : ''}</>
       : order.rejection ? <>Rejected{order.rejection.rejectedAt ? ` · ${timestamp(order.rejection.rejectedAt)}` : ''}{order.rejection.rejectedBy ? ` · ${order.rejection.rejectedBy}` : ''}</>
         : order.status === 'Draft' ? 'Draft · not submitted'
-          : eligible ? 'Submitted · awaiting Admin decision' : 'No recorded approval evidence'}</p>
+          : eligible ? 'Submitted · awaiting Admin decision' : 'No recorded approval evidence'}</p>}
     {permitted && <>
-      {reviewRequired && eligible && <FinancialReview order={order} request={request}
+      {reviewRequired && eligible && pricingReady && <FinancialReview order={order} request={request}
+        compact={compact} refreshKey={financialRevision}
         proposedValues={dirty ? proposedValues : null} onEvidence={setFinancial} disabled={busy || uncertain || blocked} />}
-      {!eligibility && <p role="status">Decision availability is unavailable. Refresh the saved view; a compatible server/schema is required.</p>}
-      {eligibility?.approvalUnavailable && <p role="status">{eligibility.approvalUnavailable}</p>}
-      {dirty && <p role="status">Save changes first, then approve the resulting saved version. Rejection can target the saved submission while keeping your unsaved draft here.</p>}
-      {deferred && eligible && <label>Approval reason (required, up to 2,000 characters)
+      {!eligibility && <p role="status">{compact ? 'Decision availability could not be loaded. Reopen the saved order.' : 'Decision availability is unavailable. Refresh the saved view; a compatible server/schema is required.'}</p>}
+      {eligibility?.approvalUnavailable && !(compact && dirty && eligible) && <p role="status">{compact
+        ? eligible ? editing || order.pricing ? 'Save valid pricing before approval.' : 'Use Edit order and pricing before approval.' : 'This order is already decided or closed.'
+        : eligibility.approvalUnavailable}</p>}
+      {dirty && <p role="status">{compact ? 'Save changes before approval. Rejection applies only to the saved order; your edits stay here.' : 'Save changes first, then approve the resulting saved version. Rejection can target the saved submission while keeping your unsaved draft here.'}</p>}
+      {deferred && eligible && pricingReady && <label className={compact ? 'order-approval__reason' : undefined}>{compact ? 'Approval reason (required)' : 'Approval reason (required, up to 2,000 characters)'}
         <textarea value={approvalReason} maxLength={2000} disabled={busy || uncertain || blocked}
           onChange={(event) => setApprovalReason(event.target.value)} />
       </label>}
       <div className="order-approval__actions">
-        <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || (uncertain ? submission.current?.decision !== 'approve' : !eligibility?.canApprove || (deferred && !approvalReason.trim()) || (reviewRequired && !financial))} onClick={() => decide('approve')}>{busy && submission.current?.decision === 'approve' ? 'Approving…' : uncertain && submission.current?.decision === 'approve' ? 'Retry unchanged approval' : 'Approve order'}</button>
+        <button type="button" className="admin-button" disabled={busy || blocked || dirty || Boolean(conflict) || (uncertain ? submission.current?.decision !== 'approve' : !eligibility?.canApprove || !pricingReady || (deferred && !approvalReason.trim()) || (reviewRequired && !currentFinancial))} onClick={() => decide('approve')}>{busy && submission.current?.decision === 'approve' ? 'Approving…' : uncertain && submission.current?.decision === 'approve' ? 'Retry unchanged approval' : 'Approve order'}</button>
         <button type="button" className="admin-button admin-button--danger" disabled={busy || blocked || uncertain || !eligible || Boolean(conflict)} onClick={() => { setReason(''); setIgnoreDraft(false); setConfirmReject(true); }}>Reject order</button>
       </div>
     </>}
-    {!busy && !uncertain && <a className="admin-button admin-button--secondary" href={`/${portal}/orders/${kind === 'kits' ? 'kits-consumables' : kind}/${order.id}`} target="_blank" rel="noopener noreferrer">
+    {!busy && !uncertain && (!compact || conflict || error) && <a className="admin-button admin-button--secondary" href={`/${portal}/orders/${kind === 'kits' ? 'kits-consumables' : kind}/${order.id}`} target="_blank" rel="noopener noreferrer">
       Open latest saved view separately
     </a>}
     {portal === 'mr' && order.status === 'Rejected' && <>

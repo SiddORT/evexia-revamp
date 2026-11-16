@@ -142,23 +142,24 @@ export default function KitsOrderEditor({ order: initialOrder }) {
   const errList = Object.entries(errors).filter(([, m]) => m);
   const rate = (key, label) => <input aria-label={`${label} rate (INR per unit)`} inputMode="decimal" value={pricing[key] ?? ''} onChange={(e) => setP({ [key]: e.target.value })} placeholder="Not entered" />;
   const count = (k, label) => <input aria-label={`${label} count`} inputMode="numeric" value={v[k]} onChange={(e) => set({ [k]: e.target.value })} placeholder="Count" />;
+  const decisionReview = <OrderApproval kind="kits" order={decisionRecord} request={request} editing
+    proposedValues={{ ...orderInput(v), pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}), businessParking: parking, poNumber: po }}
+    dirty={files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })}
+    blocked={busy || uncertain || done} onLockChange={setReviewBusy} onApproved={(saved) => {
+      setDecisionRecord(saved);
+      if (!files.length && initialDraft.current === JSON.stringify({ v, pricing, parking, po })) {
+        const next = { ...v, status: saved.status, paymentStatus: saved.paymentStatus };
+        setOrder(saved); setV(next); initialDraft.current = JSON.stringify({ v: next, pricing, parking, po });
+      }
+    }} />;
 
   return <AdminLayout title="KITS & CONSUMABLES"><div className="kits order-entry kits-entry kito">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Edit order {order.number}</h1>
-      <p className="admin-page-head__description">Saved date: {date(order.date)}. Historical people, shipping and billing stay as saved unless you change them.</p></div>
+      {mrPortal && <p className="admin-page-head__description">Saved date: {date(order.date)}. Historical people, shipping and billing stay as saved unless you change them.</p>}</div>
       <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     {!protectedOk && <p role="alert" className="kits-error">This order cannot be edited by your account. Your draft is preserved.</p>}
     {mrPortal && <EffectiveDoctorDays doctorId={v.doctorId} request={request} />}
-    <OrderApproval kind="kits" order={decisionRecord} request={request}
-      proposedValues={{ ...orderInput(v), pricing: pricingInput(pricing), ...(!order.pricing ? { gstEvidence } : {}), businessParking: parking, poNumber: po }}
-      dirty={files.length > 0 || initialDraft.current !== JSON.stringify({ v, pricing, parking, po })}
-      blocked={busy || uncertain || done} onLockChange={setReviewBusy} onApproved={(saved) => {
-        setDecisionRecord(saved);
-        if (!files.length && initialDraft.current === JSON.stringify({ v, pricing, parking, po })) {
-          const next = { ...v, status: saved.status, paymentStatus: saved.paymentStatus };
-          setOrder(saved); setV(next); initialDraft.current = JSON.stringify({ v: next, pricing, parking, po });
-        }
-      }} />
+    {mrPortal && decisionReview}
     {done && <p role="status" className="kito-done">Order saved. <Link href={`${BASE}/${order.id}`} className="kits-link">View order</Link></p>}
     {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef}><strong>{errors.save ? 'Order save needs attention' : 'Fix before saving'}</strong>
       <ul>{errList.map(([k, m]) => <li key={k}>{m}</li>)}</ul>
@@ -180,8 +181,9 @@ export default function KitsOrderEditor({ order: initialOrder }) {
                   <tr key={k}><th scope="row">{l}</th><td>{count(k, l)}</td><td /><td />{!mrPortal && <><td>{rate(r, l)}</td><td>{L[k] ? moneyText(L[k]) : '-'}</td></>}</tr>)}
               </tbody></table></div>
           {!mrPortal && <>{calc.error && <Err text={calc.error} />}
-          {!order.pricing && <p role={gstError ? 'alert' : 'status'}>{gstError || (gstEvidence ? `Applicable GST for saved order date ${gstEvidence.order_date}: ${gstEvidence.rate}% (effective ${gstEvidence.applicable_from}, policy revision ${gstEvidence.policy_revision}).` : 'Loading Applicable GST…')}
-            <button type="button" className="kits-link" disabled={frozen} onClick={() => setGSTReload((n) => n + 1)}>Refresh GST evidence</button></p>}
+          {!order.pricing && <div>
+            {(gstError || !gstEvidence) && <p role={gstError ? 'alert' : 'status'}>{gstError || 'Loading GST…'}</p>}
+            <button type="button" className="kits-link" disabled={frozen} onClick={() => setGSTReload((n) => n + 1)}>Refresh GST</button></div>}
           <div className="kito-fin">
             <div className="kits-field"><label htmlFor="kito-fwd">Forwarding charges</label><input id="kito-fwd" inputMode="decimal" value={pricing.forwardingCharges} onChange={(e) => setP({ forwardingCharges: e.target.value })} /></div>
             <div className="kits-field"><label htmlFor="kito-dv">Discount</label><div className="kito-disc"><input id="kito-dv" inputMode="decimal" value={pricing.discountValue} onChange={(e) => setP({ discountValue: e.target.value })} />
@@ -190,8 +192,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
           <dl className="kpr-totals" aria-live="polite" data-testid="kits-editor-totals">
             {[['Gross value', 'gross'], ['Discount', 'discountAmount'], ['Discounted value', 'discounted'], ['Taxable value', 'taxable'], [tax == null ? 'GST unavailable' : `GST (${tax}%)`, 'gst']].map(([l, k]) => <div key={k}><dt>{l}</dt><dd>{snap ? moneyText(snap[k]) : '-'}</dd></div>)}
             <div className="kpr-total"><dt>Total amount</dt><dd>{snap ? moneyText(snap.total) : '-'}</dd></div></dl>
-          <p className="kits-hint">{order.pricing ? 'Preview only; the server recalculates every total on save.' : 'Not yet priced. Enter rates to price this order; the server recalculates totals on save.'}</p>
-          <p className="kits-hint">Quantity × unit rate for each included item, plus forwarding = gross. Discount is applied once to gross; discounted value is taxable. GST is added last. Products and ml do not multiply prices.</p></>}
+          </>}
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="kito-more"><h2 id="kito-more">Remarks and attachments</h2>
           <div className="kits-field"><label htmlFor="kito-remarks">Remarks</label><textarea id="kito-remarks" rows={3} maxLength={4000} value={v.remarks} onChange={(e) => set({ remarks: e.target.value })} /></div>
@@ -237,6 +238,10 @@ export default function KitsOrderEditor({ order: initialOrder }) {
         <section className="admin-panel kits-panel"><h2>Billing details</h2><p className="kits-hint">Always the billing doctor, independent of shipping.</p><Facts person={billing} empty="Billing doctor unavailable." /></section>
       </div>
     </fieldset>
+    {!mrPortal && <section className="admin-panel kits-panel" aria-labelledby="kito-decision">
+      <h2 id="kito-decision">Order review</h2>
+      {decisionReview}
+    </section>}
     <div className="kits-actions"><button type="button" className="admin-button" disabled={!protectedOk || busy || reviewBusy || done} onClick={save}>{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save changes'}</button>
       {!busy && !uncertain && !done && <Link href={`${BASE}/${order.id}`} className="admin-button admin-button--secondary">Cancel</Link>}</div>
     {protectedOk && can.read_attachment && viewing && <PrescriptionViewer file={viewing} load={attachmentBlob} download={downloadAttachment} allowed={can.read_attachment} documentLabel="Attachment" returnFocusRef={viewerOpener} onClose={() => setViewing(null)} />}

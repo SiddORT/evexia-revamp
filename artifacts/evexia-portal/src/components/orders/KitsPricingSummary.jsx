@@ -18,10 +18,11 @@ function CurrentGST() {
   </p>;
 }
 
-function AdditionalInformation({ order }) {
+function AdditionalInformation({ order, compact = false }) {
+  if (compact && order.businessParking == null && !order.poNumber) return null;
   return <section className="kpr-additional" aria-label="Parking and PO">
     <h3>Parking and PO</h3>
-    <p className="kits-hint">Business Parking is an independent amount, not a deduction or part of the order total.</p>
+    {!compact && <p className="kits-hint">Business Parking is an independent amount, not a deduction or part of the order total.</p>}
     <dl className="kpr-totals kpr-extra">
       <div><dt>Business Parking</dt><dd>{order.businessParking == null ? 'Not set' : moneyText(order.businessParking)}</dd></div>
       <div><dt>PO Number</dt><dd>{order.poNumber || '-'}</dd></div>
@@ -29,12 +30,13 @@ function AdditionalInformation({ order }) {
   </section>;
 }
 
-export default function KitsPricingSummary({ order }) {
+export default function KitsPricingSummary({ order, compact = false }) {
   const p = order?.pricing;
   const k = order?.kit || {};
-  if (!p) return <div className="kpr kpr-empty" data-testid="kits-pricing-unpriced"><p>Not yet priced. No historical totals have been assumed.</p>
-    <p>Actual applied GST: unavailable — no saved pricing evidence.</p><CurrentGST />
-    <AdditionalInformation order={order} /></div>;
+  if (!p) return <div className="kpr kpr-empty" data-testid="kits-pricing-unpriced">
+    <p>{compact ? 'Rates have not been added yet.' : 'Not yet priced. No historical totals have been assumed.'}</p>
+    {!compact && <><p>Actual applied GST: unavailable — no saved pricing evidence.</p><CurrentGST /></>}
+    <AdditionalInformation order={order} compact={compact} /></div>;
   const L = p.lineAmounts || {};
   const rows = [];
   if (k.product || k.volume || k.quantity) rows.push(['Stallergo Skin Prick Kit', k.product === 'Customized' ? `Customized (${k.custom})` : k.product, k.volume, k.quantity, p.kitRate, L.kit]);
@@ -56,9 +58,9 @@ export default function KitsPricingSummary({ order }) {
       <div><dt>{p.taxPercentage == null ? 'Actual applied GST: rate unavailable' : `Actual applied GST (${p.taxPercentage}%)`}</dt><dd>{moneyText(p.gst)}</dd></div>
       <div className="kpr-total"><dt>Total amount</dt><dd>{moneyText(p.total)}</dd></div>
     </dl>
-    <p className="kits-hint">{p.gstPolicy ? `Saved GST policy revision ${p.gstPolicy.policy_revision} · Effective from ${p.gstPolicy.applicable_from === '0001-01-01' ? 'opening period' : p.gstPolicy.applicable_from} · Order date ${p.gstPolicy.order_date}.`
+    {!compact && <><p className="kits-hint">{p.gstPolicy ? `Saved GST policy revision ${p.gstPolicy.policy_revision} · Effective from ${p.gstPolicy.applicable_from === '0001-01-01' ? 'opening period' : p.gstPolicy.applicable_from} · Order date ${p.gstPolicy.order_date}.`
       : 'Policy revision and effective boundary were not saved with this historical price. The saved rate and amounts above are actual order evidence, not inferred from current policy.'}</p>
-    <CurrentGST /></section>
-    <AdditionalInformation order={order} />
+    <CurrentGST /></>}</section>
+    <AdditionalInformation order={order} compact={compact} />
   </div>;
 }

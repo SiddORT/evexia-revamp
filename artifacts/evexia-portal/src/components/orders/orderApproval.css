@@ -7,3 +7,11 @@
 .order-review-status { flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; }
 .order-review-reason { white-space: pre-wrap; overflow-wrap: anywhere; }
 .order-approval__dialog textarea { display: block; box-sizing: border-box; width: 100%; min-height: 110px; margin-block: 8px 16px; }
+.order-approval--kits { align-items: flex-start; gap: 10px; }
+.order-approval--kits > .order-approval__reason,
+.order-approval--kits > .order-approval__financial { flex: 1 1 100%; min-width: 0; }
+.order-approval--kits .order-approval__reason textarea { display: block; box-sizing: border-box; width: min(100%, 640px); min-height: 72px; margin-top: 6px; }
+.order-approval__financial h3 { margin: 0 0 8px; }
+.order-approval__financial dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 8px 16px; margin: 10px 0; }
+.order-approval__financial dt { font-size: .85em; color: var(--admin-text-soft); }
+.order-approval__financial dd { margin: 3px 0 0; overflow-wrap: anywhere; }

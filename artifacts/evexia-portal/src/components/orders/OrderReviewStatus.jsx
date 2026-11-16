@@ -5,14 +5,14 @@ export function reviewLabel(order) {
   return order.status;
 }
 
-export default function OrderReviewStatus({ order }) {
+export default function OrderReviewStatus({ order, compact = false }) {
   return <div className="order-review-status">
     <p role="status">{reviewLabel(order)}</p>
-    {order.pricingState === 'Pending pricing' && <p>Pending pricing · amount not recorded. Not a payment or approval.</p>}
+    {!compact && order.pricingState === 'Pending pricing' && <p>Pending pricing · amount not recorded. Not a payment or approval.</p>}
     {order.status === 'Rejected' && <div>
       <strong>Rejection reason</strong>
       <p className="order-review-reason">{order.rejection?.reason || 'Reason unavailable for this historical rejection.'}</p>
-      <p>Saving corrections keeps this order Rejected. Only an explicit Resubmit for review sends it back to Admin.</p>
+      {!compact && <p>Saving corrections keeps this order Rejected. Only an explicit Resubmit for review sends it back to Admin.</p>}
     </div>}
     {order.reviewHistory?.length > 0 && <details><summary>Review history</summary>
       <ol>{order.reviewHistory.map((entry, index) => <li key={index}>

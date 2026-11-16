@@ -1139,7 +1139,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const lupinDecision = resource === 'lupin-orders'
     && /^\/[0-9a-f-]{36}\/(?:approve|reject)$/i.test(path);
   const eligibilityPreview = ['immunotherapy-orders', 'kits-orders', 'spt-orders', 'lupin-orders'].includes(resource) && path === '/eligibility';
-  if ((!allowed.test(path) && !combinationOperation && !eligibilityPreview) || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
+  const kitsFinancialRead = resource === 'kits-orders'
+    && /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/financial-review$/i.test(path);
+  if ((!allowed.test(path) && !combinationOperation && !eligibilityPreview && !kitsFinancialRead)
+      || (kitsFinancialRead && (body !== undefined || file !== undefined || download || method !== undefined))
+      || ((immunotherapyDecision || lupinDecision || eligibilityPreview) && body === undefined)) {
     throw new SessionError(resource === 'pricing-rules'
       ? 'Unsupported Pricing Rules configuration operation.' : 'Unsupported purchase order operation.');
   }

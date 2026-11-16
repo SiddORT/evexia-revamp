@@ -65,14 +65,14 @@ function Summary({ order: initialOrder }) {
   const rec = order.recipient;
   return <AdminLayout title="KITS & CONSUMABLES"><div className="kits kits-saved">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Order {order.number}</h1>
-      <p className="admin-page-head__description">Read-only saved order with historical billing, shipping and personal details.</p></div>
+      {portal === 'mr' && <p className="admin-page-head__description">Read-only saved order with historical billing, shipping and personal details.</p>}</div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     <div className="kits-layout">
       <div className="kits-main">
         {can.protected && <section className="admin-panel kits-panel" aria-labelledby="kits-s-pricing">
           <div className="kits-saved__section-head"><h2 id="kits-s-pricing">Order items and pricing</h2>
-            <Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link></div>
-          <KitsPricingSummary order={order} />
+            {can.edit && <Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link>}</div>
+          <KitsPricingSummary order={order} compact={portal !== 'mr'} />
         </section>}
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
           {portal === 'mr' && can.edit && order.mrEditable && <div className="kits-saved__actions"><Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link></div>}
@@ -91,7 +91,7 @@ function Summary({ order: initialOrder }) {
             <div><dt>Payment status (Accounts ledger)</dt><dd>{paymentStatusLabel(order)}</dd></div>
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
-          <p className="kits-hint">Payment status uses saved totals and recorded Accounts allocations, including unverified payments. Verification is separate and never records another payment. Unavailable means the payment position cannot be established; no zero balance is assumed.</p>
+          {portal === 'mr' && <p className="kits-hint">Payment status uses saved totals and recorded Accounts allocations, including unverified payments. Verification is separate and never records another payment. Unavailable means the payment position cannot be established; no zero balance is assumed.</p>}
         </section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-attachments"><h2 id="kits-s-attachments">Private attachments</h2>
           <OrderFileList>{(order.attachments || []).map((f) => <DownloadOrderFile key={f.id} file={f} allowed={can.read_attachment} download={downloadAttachment} status="Saved attachment"
