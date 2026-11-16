@@ -1,6 +1,7 @@
 import { purchaseOrderRequest } from '../auth/adminSession.js';
 import { MalformedResponseError, validDate } from './serverPricingRules.js';
 import { DOSES } from './serverImmunotherapy.js';
+import { pricingReadMessage } from '../auth/pricingReadErrors.js';
 
 export const DOSAGES = DOSES;
 const request = (path, options) => purchaseOrderRequest(`/combinations${path}`, options, 'pricing-rules');
@@ -30,7 +31,7 @@ function revision(r, categoryId, dosage) {
     || !Array.isArray(r.memberIds) || r.memberIds.join(',') !== memberKey(r.memberIds)
     || new Set(r.memberIds).size !== r.memberIds.length || r.members.map(member).map((m) => m.id).join(',') !== r.memberIds.join(',')
     || !integer(r.version) || r.version < 1 || !validDate(r.effectiveFrom)
-    || typeof r.totalMrp !== 'string' || exactCombinationRate(r.totalMrp) !== r.totalMrp
+    || typeof r.totalMrp !== 'string' || !/^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$/.test(r.totalMrp)
     || !uuid(r.actorId) || typeof r.recordedAt !== 'string' || Number.isNaN(Date.parse(r.recordedAt))) malformed();
   return r;
 }
@@ -52,6 +53,18 @@ export async function combinationAllergens(id, params, signal) {
   return page;
 }
 export async function generateCombinations(body, signal) {
+  try {
+    return await validatedGeneration(body, signal);
+  } catch (cause) {
+    if (cause.malformed) {
+      // Preserve strict shape/membership/version checks. A malformed successful
+      // response is not an empty catalogue and must never supply a save scope.
+      cause.message = pricingReadMessage('/combinations/generate', { reason: 'response' });
+    }
+    throw cause;
+  }
+}
+async function validatedGeneration(body, signal) {
   const page = await request('/generate', { body, signal });
   const all = body.categoryScope === 'all';
   // All-category singletons use the same complete-scope evidence and bounds.

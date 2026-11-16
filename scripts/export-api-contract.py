@@ -153,6 +153,24 @@ def main() -> None:
     if args.scope:
         original = (args.base_contract or args.output).read_text(encoding="utf-8")
         existing = json.loads(original)
+        if args.scope == "pricing-retirement":
+            # Remove only retired pricing routes/schemas. Preserve every
+            # unrelated handwritten contract value, including refined uploads.
+            prefix = "/v1/admin/pricing-rules"
+            existing["paths"] = {p: v for p, v in existing["paths"].items()
+                                 if p != prefix and (not p.startswith(prefix + "/")
+                                                     or p.startswith(prefix + "/combinations/"))}
+            existing["paths"].update({p: v for p, v in contract["paths"].items()
+                                      if p.startswith(prefix + "/combinations/")})
+            obsolete = ("ItPricingRule", "ItPricingAllergenReference", "ItPricingReferencePage", "CategoryCountTariff")
+            existing["components"]["schemas"] = {
+                k: v for k, v in existing["components"]["schemas"].items()
+                if not k.startswith(obsolete)}
+            existing["components"]["schemas"].update({
+                k: v for k, v in contract["components"]["schemas"].items()
+                if k.startswith("Combination") or k == "ItPricingReference"})
+            args.output.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            return
         selected = {path: item for path, item in contract["paths"].items()
                     if (args.scope == "territories" and
                         (path == "/v1/admin/mrs" or path.startswith("/v1/admin/mrs/")

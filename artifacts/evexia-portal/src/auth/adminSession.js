@@ -4,6 +4,7 @@ import { captureExportPreferences, exportPreferenceHeader } from '../services/ex
 import { privateUploadMessage, privateRequestReference, privateFileId } from './privateFileErrors.js';
 import { validOrderDraft } from './orderDraftResponse.js';
 import { extractSettingsFailure } from './extractSettingsErrors.js';
+import { pricingReadMessage } from './pricingReadErrors.js';
 import { EXTRACT_POLICY, expectedExtractSaveRows } from '../services/extractSettingsContract.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
@@ -1219,9 +1220,6 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const downloadGuard = download ? reportingIdentityGuard() : null;
   const form = file === undefined ? null : new FormData();
   if (form) form.append('file', file);
-  const pricingChoices = resource === 'pricing-rules' && (path === '/combinations/categories' || path.startsWith('/combinations/allergens/'));
-  const pricingReadLabel = pricingChoices ? path.endsWith('/allergens') ? 'Allergen choices' : 'Category choices' : 'Pricing Rules';
-  const pricingReadAction = pricingChoices ? 'Retry choices; your selections are retained.' : 'Retry loading Pricing Rules.';
   const uncertain = (reason = 'delivery') => {
     if (extractSettingsOperation) return extractSettingsFailure({
       mutation, reason, status: response?.status || 0, code: data?.error?.code,
@@ -1232,9 +1230,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
         : `${sharedSettingsLabel} could not be loaded. Your edits are preserved; retry loading.`
       : resource === 'pricing-rules'
       ? mutation ? 'Pricing Rule save outcome is unconfirmed. Your editor is preserved. Retry only the unchanged submission to confirm or finish it safely.'
-        : reason === 'response' ? `${pricingReadLabel} could not be loaded because the service returned an invalid response. ${pricingReadAction}`
-        : reason === 'service' ? `${pricingReadLabel} are unavailable from the service. ${pricingReadAction}`
-        : `${pricingReadLabel} could not be loaded because the request did not complete. ${pricingReadAction}`
+        : pricingReadMessage(path, { reason, status: response?.status, code: data?.error?.code })
       : resource === 'settlements'
       ? mutation ? 'Transaction outcome is unconfirmed. Keep this dialog open and retry the exact same transaction.'
         : 'Settlements could not be loaded. Check your connection and retry.'
@@ -1254,6 +1250,10 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : mutation
       ? 'Save outcome is unconfirmed. Retry the same reviewed order to check or finish this save safely.'
       : 'Unable to load purchase orders. Check your connection and retry.');
+    if (resource === 'pricing-rules' && !mutation) {
+      error.status = response?.status || 0;
+      error.code = data?.error?.code;
+    }
     error.ambiguous = mutation;
     return error;
   };
@@ -1304,11 +1304,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
           ? 'Cron Jobs storage is unavailable. Retry loading, or ask an operator to review approved schema activation. Your edits are preserved; no empty configuration is assumed.'
           : uncertain('service').message
       : resource === 'pricing-rules'
-      ? response.status === 403 ? 'Pricing Rules require the protected Super Admin.'
+      ? !mutation ? pricingReadMessage(path, { status: response.status, code: data?.error?.code, fields: data?.error?.fields })
+        : response.status === 403 ? 'Pricing Rules require the protected Super Admin.'
         : response.status >= 500 ? uncertain('service').message
-        : pricingChoices ? data?.error?.code === 'pricing_rule_category'
-          ? 'Allergen choices require categories that are still active. Your selections are retained; review the selected categories and retry choices.'
-          : `${pricingReadLabel} request was rejected. ${pricingReadAction}`
         : combinationOperation ? typeof data?.error?.message === 'string' && /^combination_/.test(data?.error?.code || '')
           ? data.error.message
           : 'Combination pricing is unavailable or the request is invalid. Review the category, canonical dosage, selected members and explicit two-decimal rates. Prepared API/schema activation may be required. Your draft is retained.'

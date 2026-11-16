@@ -116,7 +116,7 @@ export default function PricingPolicyWorkspace({ record }) {
       allergenController.current?.abort();
       setCategory(next); setSelection(null); setAllergens(null); setEligibleCount(null);
       setCombinationMode('all');
-      setAllergenQuery(''); setAllergenOffset(0); setCountOpen(false);
+      setAllergenQuery(''); setAllergenOffset(0);
     }, document.getElementById('combination-category'));
   }
   async function toggleAllergen(id, checked, trigger) {
@@ -190,7 +190,8 @@ export default function PricingPolicyWorkspace({ record }) {
   const commonMrp = editing ? tariff.draft.edits[saved.memberIds.join(',')] ?? '' : tariff.draft.copyRate ?? '';
   const recoveryActions = <>
     {!tariff.blocked && <button type="button" className="admin-button admin-button--secondary" disabled={disabled}
-      data-testid="button-reload-pricing" onClick={tariff.retry}>Reload saved rates; keep draft</button>}
+      data-testid="button-reload-pricing" onClick={tariff.retry}>{tariff.loadError
+        ? 'Retry scope loading; keep draft' : 'Reload saved rates; keep draft'}</button>}
     <button type="button" className="admin-button admin-button--secondary" disabled={disabled}
       data-testid="button-discard-pricing" onClick={discardAndReload}>Discard draft and reload masters</button>
   </>;
@@ -228,6 +229,10 @@ export default function PricingPolicyWorkspace({ record }) {
             {SIZES.map((name, i) => <option key={name} value={i + 1}>{name}</option>)}</select></div>
       </div>
       </section>
+      {tariff.loadError && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="pricing-scope-error">
+        <p>{tariff.loadError}</p>
+        {!tariff.attempt && category?.status === 'active' && <div className="pricing-entry-secondary-actions">{recoveryActions}</div>}
+      </div>}
       {!editing && <section className="pricing-entry-section" aria-labelledby="pricing-select-allergens">
       <h2 id="pricing-select-allergens">{allCategories ? '2. Review catalogue scope' : '2. Select allergens'}</h2>
       {!category && <p role="status">Choose a Product Category first. All eligible allergens will be selected by default.</p>}
@@ -294,7 +299,7 @@ export default function PricingPolicyWorkspace({ record }) {
           checked={combinationMode === value} onChange={(e) => change(() => setCombinationMode(value), e.target)} />
           {value === 'all' ? 'Same price for all combinations' : 'Set prices individually'}</label>)}
       </fieldset>}
-      {tariff.busy && <p role="status">Loading or saving combination rates…</p>}
+       {tariff.busy && <p role="status">{tariff.attempt ? 'Saving the frozen pricing submission…' : 'Loading eligible pricing scope and saved rates…'}</p>}
       {(tariff.error || localError) && <div className="admin-feedback admin-feedback--error" role="alert">
         {tariff.error && <p>{tariff.error}</p>}
         {localError && <p>{localError}</p>}

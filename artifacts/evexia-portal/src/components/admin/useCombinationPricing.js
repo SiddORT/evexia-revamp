@@ -11,6 +11,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(null);
   const [blocked, setBlocked] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [view, setView] = useState({ query: '', offset: 0, limit: 25 });
@@ -25,7 +26,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
   useEffect(() => {
     scoped.current = identity;
     baseline.current = null;
-    setPage(null); setDraft(blank()); setAttempt(null); setBlocked(false); setError(''); setNotice('');
+    setPage(null); setDraft(blank()); setAttempt(null); setBlocked(false); setLoadError(''); setError(''); setNotice('');
     setView({ query: '', offset: 0, limit: 25 });
     return () => { seq.current++; };
   }, [identity]);
@@ -34,7 +35,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
     if (!scopeId) { active.current = false; setBusy(false); return undefined; }
     const ctl = new AbortController();
     const sequence = ++seq.current;
-    active.current = true; setBusy(true); setError('');
+    active.current = true; setBusy(true); setLoadError('');
     const timer = setTimeout(async () => {
       try {
         const value = await generateCombinations({ ...scope, ...view }, ctl.signal);
@@ -42,16 +43,16 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
         const old = baseline.current;
         if (old && (old.eligibilityVersion !== value.eligibilityVersion || old.scopeVersion !== value.scopeVersion)) {
           setBlocked(true);
-          setError('Master eligibility or saved rates changed. Your draft has not been applied to the new scope. Review saved history, then explicitly discard the draft and reload before a new save.');
+          setLoadError('Master eligibility or saved rates changed. Your draft has not been applied to the new scope. Review saved history, then explicitly discard the draft and reload before a new save.');
           return;
         }
         baseline.current = value;
         setPage({ ...value, identity });
       } catch (cause) {
         if (!ctl.signal.aborted && sequence === seq.current) {
-          setError(`${cause.message} ${scope?.categoryScope === 'all'
-            ? 'If All Categories exceeds the complete-request limits, use single-category entry with a smaller subset.'
-            : 'If the scope is too large, use Clear and choose a smaller allergen subset (at most 500 selected members and 1,000 eligible combinations per save).'}`);
+          // Bounds and service/contract errors are classified by the read
+          // adapter. Do not imply a large scope, missing price or date here.
+          setLoadError(cause.message);
           setPage(null);
         }
       } finally {
@@ -83,7 +84,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
   }
   function reset() {
     if (active.current || latest.current.attempt) return;
-    baseline.current = null; setDraft(blank()); setBlocked(false); setPage(null); setError(''); setNotice('');
+    baseline.current = null; setDraft(blank()); setBlocked(false); setPage(null); setLoadError(''); setError(''); setNotice('');
     setReload((n) => n + 1);
   }
   async function save() {
@@ -149,7 +150,7 @@ export default function useCombinationPricing(scope, owner, onSaved, mode) {
     }
   }
   const dirty = Object.keys(draft.edits).length > 0 || draft.copyRate !== null || Boolean(draft.effectiveFrom);
-  return { page: page?.identity === identity ? page : null, draft, busy, attempt, blocked, error, notice,
+  return { page: page?.identity === identity ? page : null, draft, busy, attempt, blocked, loadError, error, notice,
     locked: busy || Boolean(attempt), dirty, view, edit, date, rate, remove, reset, save,
     retry: () => { if (!active.current && !latest.current.attempt) setReload((n) => n + 1); },
     changeView: (value) => {

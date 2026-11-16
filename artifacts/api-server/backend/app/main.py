@@ -236,7 +236,8 @@ def create_app() -> FastAPI:
             # Return known locations only, never authored prices or arbitrary keys.
             allowed = {"categoryId", "allergenIds", "cutoff", "beforeRate", "afterRate",
                        "idempotencyKey", "expected_version", "record_id", "kind",
-                       "query", "offset", "limit"}
+                       "query", "offset", "limit", "categoryScope", "category_id",
+                       "dosage", "size", "memberKey"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]

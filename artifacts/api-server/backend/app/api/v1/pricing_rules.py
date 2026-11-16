@@ -52,6 +52,9 @@ def categories(query: str = Query("", max_length=100), offset: int = Query(0, ge
     return combination_pricing.categories(db, actor, query, offset, limit)
 
 
+# Keep the query-form reader compatible with staged API clients. The published
+# pathname contract remains canonical for the portal and existing listeners.
+@router.get("/combinations/allergens", response_model=CombinationAllergenPage, include_in_schema=False)
 @router.get("/combinations/allergens/{category_id}", response_model=CombinationAllergenPage, operation_id="listCombinationPricingAllergens")
 def allergens(category_id: uuid.UUID, query: str = Query("", max_length=100),
               offset: int = Query(0, ge=0, le=1000000), limit: int = Query(50, ge=1, le=100),
@@ -69,6 +72,7 @@ def save(body: CombinationSave, actor: Identity = Depends(manager), db: Session 
     return combination_pricing.save(db, actor, body)
 
 
+@router.get("/combinations/history", response_model=CombinationHistory, include_in_schema=False)
 @router.get("/combinations/history/{category_id}", response_model=CombinationHistory, operation_id="getCombinationPricingHistory")
 def history(category_id: uuid.UUID, dosage: Dosage, memberKey: str = Query("", max_length=110),
             offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
