@@ -109,13 +109,19 @@ function Summary({ order: initialOrder }) {
     </div></AdminLayout>;
 }
 
+// Placement-only: never apply this default to shared blank orders or saved edits.
+function placementValues(values, mrPortal) {
+  return mrPortal ? { ...values, kit: { ...values.kit, volume: '1' } } : values;
+}
+
 function Form({ draft }) {
   const persistent = usePersistentOrderDraft('kits', draft);
   const can = useOrderActions('kits');
   const BASE = useOrderBase('kits-consumables');
   const { portal, mr: authenticatedMR } = useOrderPortal();
+  const mrPortal = portal === 'mr';
   const [, navigate] = useLocation();
-  const [v, setV] = useState(() => draft?.payload.values || ({ ...blankOrder(), mrId: authenticatedMR?.id || '' }));
+  const [v, setV] = useState(() => placementValues(draft?.payload.values || ({ ...blankOrder(), mrId: authenticatedMR?.id || '' }), mrPortal));
   const [errors, setErrors] = useState({});
   const [fileMsg, setFileMsg] = useState('');
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
@@ -136,7 +142,7 @@ function Form({ draft }) {
   }, [can.upload_attachment]);
   const summaryRef = useRef(null);
   const set = (p) => setV((c) => ({ ...c, ...p }));
-  const setKit = (p) => setV((c) => ({ ...c, kit: { ...c.kit, ...p } }));
+  const setKit = (p) => setV((c) => placementValues({ ...c, kit: { ...c.kit, ...p } }, mrPortal));
   const setOther = (p) => setV((c) => ({ ...c, other: { ...c.other, ...p } }));
   const setOtherAddr = (p) => setV((c) => ({ ...c, other: { ...c.other, address: { ...c.other.address, ...p } } }));
   const focusId = (k) => requestAnimationFrame(() => { const el = document.getElementById(`kits-${k}`); if (el) { el.scrollIntoView?.({ block: 'center' }); el.focus(); } });
@@ -167,8 +173,9 @@ function Form({ draft }) {
           if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
           attachments.push(uploads.current.get(file));
         }
-        const saved = await persistent.persist({ values: { ...v, attachments } });
-        setV(saved.payload.values); initial.current = JSON.stringify(saved.payload.values);
+        const saved = await persistent.persist({ values: placementValues({ ...v, attachments }, mrPortal) });
+        const values = placementValues(saved.payload.values, mrPortal);
+        setV(values); initial.current = JSON.stringify(values);
         return;
       }
       if (!submission.current) {
@@ -178,7 +185,10 @@ function Form({ draft }) {
           if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
           attachments.push(uploads.current.get(file));
         }
-        submission.current = { ...orderInput({ ...v, attachments }), idempotencyKey: crypto.randomUUID() };
+        const input = orderInput(placementValues({ ...v, attachments }, mrPortal));
+        // The displayed default alone must not request a kit in consumables-only orders.
+        if (mrPortal && !input.kit.product && !input.kit.custom && !input.kit.quantity) input.kit.volume = '';
+        submission.current = { ...input, idempotencyKey: crypto.randomUUID() };
       }
       const order = await persistent.submit(submission.current, () => request('', { body: submission.current }));
       submission.current = null; saving.current = false; setUncertain(false);
@@ -224,7 +234,7 @@ function Form({ draft }) {
               <div className="kits-field"><label htmlFor="kits-kit-product">Products</label>
                 <select {...inv('kit-product')} value={v.kit.product} onChange={(ev) => setKit({ product: ev.target.value })}><option value="">Select</option>{KIT_PRODUCTS.map((p) => <option key={p}>{p}</option>)}</select><Err id="kits-kit-product-err" text={e['kit-product']} /></div>
               {v.kit.product === 'Customized' && <div className="kits-field"><label htmlFor="kits-kit-custom">Custom value</label><input {...inv('kit-custom')} value={v.kit.custom} onChange={(ev) => setKit({ custom: ev.target.value })} /><Err id="kits-kit-custom-err" text={e['kit-custom']} /></div>}
-              <div className="kits-field"><label htmlFor="kits-kit-volume">Volume (ml)</label><input {...inv('kit-volume')} inputMode="decimal" value={v.kit.volume} onChange={(ev) => setKit({ volume: ev.target.value })} /><Err id="kits-kit-volume-err" text={e['kit-volume']} /></div>
+              <div className="kits-field"><label htmlFor="kits-kit-volume">Volume (ml)</label><input {...inv('kit-volume')} inputMode="decimal" readOnly={mrPortal} value={v.kit.volume} onChange={(ev) => setKit({ volume: ev.target.value })} /><Err id="kits-kit-volume-err" text={e['kit-volume']} /></div>
               <div className="kits-field"><label htmlFor="kits-kit-quantity">Quantity</label><input {...inv('kit-quantity')} inputMode="numeric" value={v.kit.quantity} onChange={(ev) => setKit({ quantity: ev.target.value })} /><Err id="kits-kit-quantity-err" text={e['kit-quantity']} /></div>
             </div><p className="kits-hint">Product, volume and quantity are configuration values, not prices.</p></div>
           <div className="kits-row"><div className="kits-grid">{consumable('lancets', 'Lancets')}{consumable('applicators', 'Applicators')}{consumable('tray', 'Tray')}</div>
