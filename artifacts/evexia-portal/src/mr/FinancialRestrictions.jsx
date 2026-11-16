@@ -1,110 +1,71 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { RefreshCw } from 'lucide-react';
-import { useAdminSession } from '../auth/AdminBoundary.jsx';
-import { contactReadScope, getSession, purchaseOrderRequest, sessionEpoch } from '../auth/adminSession.js';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { useAdminDateFormatters } from '../components/admin/adminPreferences.js';
 
-export default function FinancialRestrictions() {
-  const { status, user } = useAdminSession();
+/** Compact Overview status. Uses the dashboard-level restriction state; no own fetching. */
+export function RestrictionSummary({ state, onOpen }) {
+  const d = state.data;
+  return <section className="mrw-card mrd-rsum" aria-labelledby="mrd-rsum-h" data-testid="panel-restrictions-summary">
+    <h2 id="mrd-rsum-h">Limits <small>Current · all dates</small></h2>
+    {state.loading ? <p className="mrd-rsum__state" role="status">Loading limits…</p>
+      : state.error ? <p className="mrd-rsum__state mrd-rsum__state--error" role="alert" data-testid="status-restrictions-summary-error">Restrictions unavailable — not assumed clear.</p>
+        : <dl className="mrd-rsum__dl">
+          <div><dt>Payment limit</dt><dd>₹{d.paymentLimit}{d.paymentLimit === '0.00' && <small>Disabled</small>}</dd></div>
+          <div><dt>Days limit</dt><dd>{d.doctorDaysLimit} days{d.doctorDaysLimit === 0 && <small>Disabled</small>}</dd></div>
+          <div className={d.total ? 'is-alert' : ''}><dt>Blocked Doctors</dt><dd data-testid="text-restrictions-summary-blocked">{d.total}</dd></div>
+        </dl>}
+    <button type="button" className="admin-button admin-button--secondary mrd-rsum__go" onClick={onOpen} data-testid="button-open-doctor-payments">
+      Doctor payments <ArrowRight size={15} aria-hidden="true" /></button>
+  </section>;
+}
+
+export default function FinancialRestrictions({ state }) {
   const { date } = useAdminDateFormatters();
-  const scope = contactReadScope(user), epoch = sessionEpoch();
-  const [offset, setOffset] = useState(0), [revision, setRevision] = useState(0), [result, setResult] = useState(null);
-  const key = JSON.stringify([scope, epoch, offset, revision]);
-  useEffect(() => {
-    if (status !== 'authenticated' || user?.identity_kind !== 'mr') return undefined;
-    const controller = new AbortController();
-    const current = () => !controller.signal.aborted && sessionEpoch() === epoch && contactReadScope(getSession().user) === scope;
-    purchaseOrderRequest('/mr-financial-summary', { params: { offset, limit: 25 }, signal: controller.signal }, 'spt-orders')
-      .then((data) => {
-        if (!data || typeof data.paymentLimit !== 'string' || !Number.isInteger(data.doctorDaysLimit)
-            || !Array.isArray(data.items) || !Number.isInteger(data.total)) throw new Error('Financial summary response is unavailable.');
-        if (current()) setResult({ key, data });
-      }).catch((error) => { if (current()) setResult({ key, error: error.message }); });
-    return () => controller.abort();
-  }, [key, epoch, scope, offset, status, user?.identity_kind]);
-  useEffect(() => {
-    const refresh = () => { if (!document.hidden) setRevision((n) => n + 1); };
-    const timer = window.setInterval(refresh, 45000);
-    window.addEventListener('focus', refresh);
-    document.addEventListener('visibilitychange', refresh);
-    window.addEventListener('evexia:saved-order-change', refresh);
-    const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('evexia-order-refresh') : null;
-    if (channel) channel.onmessage = refresh;
-    return () => {
-      clearInterval(timer); channel?.close();
-      window.removeEventListener('focus', refresh);
-      document.removeEventListener('visibilitychange', refresh);
-      window.removeEventListener('evexia:saved-order-change', refresh);
-    };
-  }, []);
-  const visible = status === 'authenticated' && result?.key === key ? result : null;
-  const data = visible?.data;
+  const { data, error, loading, offset, setOffset, page } = state;
   const outOfRange = data && offset > 0 && !data.items.length;
-  const showPages = data && (data.total > 25 || offset > 0);
+  const showPages = data && (data.total > page || offset > 0);
   return <section className="mrw-card mrd-restrictions" aria-labelledby="mr-financial-restrictions">
     <header className="mrd-restrictions__header">
-      <h2 id="mr-financial-restrictions">MR payment limit and overdue Doctors</h2>
+      <div><h2 id="mr-financial-restrictions">Limits and blocked Doctors</h2>
+        <small className="mrd-scopetag">Current · all dates</small></div>
       <button type="button" className="admin-button admin-button--secondary" data-testid="button-refresh-restrictions"
-        onClick={() => setRevision((n) => n + 1)}><RefreshCw size={15} aria-hidden="true" />Refresh restrictions</button>
+        onClick={state.refresh}><RefreshCw size={15} aria-hidden="true" />Refresh</button>
     </header>
-    {!visible && <p className="mrd-restrictions__state" role="status" data-testid="status-restrictions-loading">Loading current MR limits and saved unpaid evidence…</p>}
-    {visible?.error && <p className="mrd-restrictions__state mrd-restrictions__state--error" role="alert" data-testid="status-restrictions-error">
-      <strong>Financial restrictions unavailable</strong>
-      <span>{visible.error} No absence of restrictions has been assumed. Use Refresh restrictions to retry.</span>
+    {loading && <p className="mrd-restrictions__state" role="status" data-testid="status-restrictions-loading">Loading limits…</p>}
+    {error && <p className="mrd-restrictions__state mrd-restrictions__state--error" role="alert" data-testid="status-restrictions-error">
+      <strong>Restrictions unavailable</strong><span>{error} Not assumed clear.</span>
     </p>}
     {data && <>
       <dl className="mrd-restrictions__summary">
-        <div data-testid="text-restrictions-payment-limit">
-          <dt>MR Payment Limit</dt><dd>₹{data.paymentLimit}
-            <small>{data.paymentLimit === '0.00' ? 'Amount restriction disabled · zero limit' : 'Configured amount limit'}</small>
-          </dd>
-        </div>
-        <div data-testid="text-restrictions-days-limit">
-          <dt>Inherited Doctor Days Limit</dt><dd>{data.doctorDaysLimit} <span>days</span>
-            <small>{data.doctorDaysLimit === 0 ? 'Overdue-days restriction disabled · zero limit' : 'Applies to currently assigned Doctors'}</small>
-          </dd>
-        </div>
-        <div data-testid="text-restrictions-blocked-total">
-          <dt>Overdue / blocked Doctors</dt><dd>{data.total}
-            <small>Blocked by the overdue-days rule · not a balance</small>
-          </dd>
-        </div>
+        <div data-testid="text-restrictions-payment-limit"><dt>MR Payment Limit</dt><dd>₹{data.paymentLimit}
+          {data.paymentLimit === '0.00' && <small>Disabled · zero limit</small>}</dd></div>
+        <div data-testid="text-restrictions-days-limit"><dt>Doctor Days Limit</dt><dd>{data.doctorDaysLimit} <span>days</span>
+          {data.doctorDaysLimit === 0 && <small>Disabled · zero limit</small>}</dd></div>
+        <div data-testid="text-restrictions-blocked-total"><dt>Blocked Doctors</dt><dd>{data.total}<small>Overdue-days rule</small></dd></div>
       </dl>
-      <div className="mrd-restrictions__metadata">
-        <p data-testid="text-restrictions-evaluated">Evaluated on {date(data.businessDate)} · Asia/Kolkata</p>
-        <details>
-          <summary data-testid="button-restrictions-policy">Policy and evidence</summary>
-          <p>Kits, SPT and Lupin amounts are reviewed by Admin. This list uses your own saved obligations and committed payments, not legacy payment flags or demo balances.</p>
-        </details>
-      </div>
-      {data.items.length ? <ul className="mrd-restrictions__doctors" aria-label="Doctors blocked by the overdue-days rule">
+      <p className="mrd-restrictions__metadata" data-testid="text-restrictions-evaluated">Evaluated {date(data.businessDate)} · Asia/Kolkata</p>
+      {data.items.length ? <ul className="mrd-restrictions__doctors" aria-label="Blocked Doctors">
         {data.items.map((item) => <li key={item.doctorId} data-testid={`row-restrictions-doctor-${item.doctorId}`}>
           <Link className="mrd-restrictions__doctor" href={`/mr/doctors/${item.doctorId}`} data-testid={`link-restrictions-doctor-${item.doctorId}`}>
-            <strong>{item.doctorName}</strong><span>View Doctor →</span>
+            <strong>{item.doctorName}</strong><span>View Doctor</span>
           </Link>
           <dl className="mrd-restrictions__evidence">
-            <div><dt>Unpaid amount</dt><dd>₹{item.doctorPendingBalance}</dd></div>
-            <div><dt>Oldest unpaid order</dt><dd>{date(item.oldestDoctorUnpaidDate)}<small>{item.oldestDoctorUnpaidAgeDays} days old</small></dd></div>
-            <div><dt>Effective days limit</dt><dd>{item.doctorDaysLimit} days</dd></div>
+            <div><dt>Unpaid</dt><dd>₹{item.doctorPendingBalance}</dd></div>
+            <div><dt>Oldest unpaid</dt><dd>{date(item.oldestDoctorUnpaidDate)}<small>{item.oldestDoctorUnpaidAgeDays} days old</small></dd></div>
+            <div><dt>Days limit</dt><dd>{item.doctorDaysLimit} days</dd></div>
           </dl>
         </li>)}
       </ul> : <div className="mrd-restrictions__state" role="status" data-testid="status-restrictions-empty">
-        <strong>{outOfRange ? 'No Doctors on this page' : data.doctorDaysLimit === 0 ? 'Overdue-days restriction disabled' : data.total ? 'No Doctors on this page' : 'No Doctors currently blocked'}</strong>
-        <span>{outOfRange
-          ? 'Return to the previous page to view the current results.'
-          : data.total ? 'No Doctors returned on this page. Refresh restrictions to retry.'
-            : data.doctorDaysLimit === 0
-              ? 'The inherited days limit is zero, so the overdue-days rule does not block Doctors. This does not mean unpaid balances are zero.'
-              : 'No currently assigned Doctors are blocked by the overdue-days rule. This does not mean unpaid balances are zero.'}</span>
+        <strong>{outOfRange || data.total ? 'No Doctors on this page' : data.doctorDaysLimit === 0 ? 'Days restriction disabled' : 'No Doctors blocked'}</strong>
+        <span>{outOfRange ? 'Go to the previous page.' : data.total ? 'Refresh to retry.' : 'Unpaid balances may still exist.'}</span>
       </div>}
       {data.pendingPricingOrders?.length > 0 && <p className="mrd-restrictions__pricing" data-testid="status-restrictions-pending-pricing">
-        <strong>Pending pricing excluded:</strong> {data.pendingPricingOrders.length} other pending-pricing orders are not counted as zero or as overdue debt.
+        <strong>Pending pricing:</strong> {data.pendingPricingOrders.length} order(s) not counted as zero or overdue.
       </p>}
-      {showPages && <nav className="mrd-restrictions__pages" aria-label="Overdue Doctors pages">
-        <button type="button" className="admin-button admin-button--secondary" data-testid="button-restrictions-previous" disabled={!offset} onClick={() => setOffset((n) => Math.max(0, n - 25))}>Previous Doctors</button>
-        <span>{data.items.length ? `${offset + 1}–${offset + data.items.length} of ${data.total} blocked Doctors` : `${data.total} blocked Doctors · page out of range`}</span>
-        <button type="button" className="admin-button admin-button--secondary" data-testid="button-restrictions-next" disabled={offset + 25 >= data.total} onClick={() => setOffset((n) => n + 25)}>Next Doctors</button>
+      {showPages && <nav className="mrd-restrictions__pages" aria-label="Blocked Doctors pages">
+        <button type="button" className="admin-button admin-button--secondary" data-testid="button-restrictions-previous" disabled={!offset} onClick={() => setOffset((n) => Math.max(0, n - page))}>Previous</button>
+        <span>{data.items.length ? `${offset + 1}–${offset + data.items.length} of ${data.total}` : `${data.total} blocked · page out of range`}</span>
+        <button type="button" className="admin-button admin-button--secondary" data-testid="button-restrictions-next" disabled={offset + page >= data.total} onClick={() => setOffset((n) => n + page)}>Next</button>
       </nav>}
     </>}
   </section>;

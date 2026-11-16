@@ -18,7 +18,9 @@ import type {
 import type {
   ErrorEnvelope,
   MRDashboardReport,
-  MrDashboardParams
+  MRDoctorPaymentsPage,
+  MrDashboardParams,
+  MrDoctorPaymentsParams
 } from './dashboard.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -120,6 +122,90 @@ export function useMrDashboard<TData = Awaited<ReturnType<typeof mrDashboard>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getMrDashboardQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMrDoctorPaymentsUrl = (params?: MrDoctorPaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/mr/sales-achievement/doctor-payments?${stringifiedParams}` : `/api/v1/mr/sales-achievement/doctor-payments`
+}
+
+/**
+ * @summary Doctor Payments
+ */
+export const mrDoctorPayments = async (params?: MrDoctorPaymentsParams, options?: Parameters<typeof customFetch>[1]): Promise<MRDoctorPaymentsPage> => {
+
+  return customFetch<MRDoctorPaymentsPage>(getMrDoctorPaymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getMrDoctorPaymentsQueryKey = (params?: MrDoctorPaymentsParams,) => {
+    return [
+    `/api/v1/mr/sales-achievement/doctor-payments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getMrDoctorPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof mrDoctorPayments>>, TError = ErrorType<ErrorEnvelope>>(params?: MrDoctorPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof mrDoctorPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getMrDoctorPaymentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof mrDoctorPayments>>> = ({ signal }) => mrDoctorPayments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof mrDoctorPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type MrDoctorPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof mrDoctorPayments>>>
+export type MrDoctorPaymentsQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Doctor Payments
+ */
+
+export function useMrDoctorPayments<TData = Awaited<ReturnType<typeof mrDoctorPayments>>, TError = ErrorType<ErrorEnvelope>>(
+ params?: MrDoctorPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof mrDoctorPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getMrDoctorPaymentsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

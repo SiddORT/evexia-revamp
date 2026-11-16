@@ -148,6 +148,29 @@ export interface ErrorEnvelope {
   error: ErrorDetail;
 }
 
+export interface MRDoctorPayment {
+  daysRemaining: number | null;
+  doctorId: string;
+  doctorName: string;
+  due: string | null;
+  knownDue: string;
+  oldestUnpaidAgeDays: number | null;
+  oldestUnpaidDate: string | null;
+  overdueDays: number | null;
+  pendingPricingOrders: number;
+  received: string;
+}
+
+export interface MRDoctorPaymentsPage {
+  businessDate: string;
+  doctorDaysLimit: number;
+  items: MRDoctorPayment[];
+  limit: number;
+  mrId: string;
+  offset: number;
+  total: number;
+}
+
 export type MrDashboardParams = {
 start_year?: number | null;
 period?: MrDashboardPeriod;
@@ -163,4 +186,21 @@ export const MrDashboardPeriod = {
   Q3: 'Q3',
   Q4: 'Q4',
 } as const;
+
+export type MrDoctorPaymentsParams = {
+/**
+ * @maxLength 100
+ */
+search?: string;
+/**
+ * @minimum 0
+ * @maximum 20000
+ */
+offset?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
 

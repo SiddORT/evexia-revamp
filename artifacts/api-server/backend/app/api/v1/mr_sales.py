@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import current_identity
 from app.db.session import get_db
 from app.schemas.mr_sales import MRSalesReport, MRSalesYears
-from app.schemas.mr_dashboard import MRDashboardReport
+from app.schemas.mr_dashboard import MRDashboardReport, MRDoctorPaymentsPage
 from app.services import mr_sales as service
 
 router = APIRouter(prefix="/mr/sales-achievement", tags=["mr-sales-achievement"])
@@ -14,6 +14,16 @@ def dashboard_database(db: Session = Depends(get_db)):
     from app.services.mr_dashboard import begin_snapshot
     begin_snapshot(db)
     return db
+
+
+@router.get("/doctor-payments", response_model=MRDoctorPaymentsPage, operation_id="mrDoctorPayments")
+def doctor_payments(response: Response, search: str = Query("", max_length=100),
+                    offset: int = Query(0, ge=0, le=20000),
+                    limit: int = Query(25, ge=1, le=100),
+                    db: Session = Depends(dashboard_database), actor=Depends(current_identity)):
+    from app.services.mr_doctor_payments import report
+    response.headers["Cache-Control"] = "no-store"
+    return report(db, actor, search=search, offset=offset, limit=limit)
 
 
 @router.get("/dashboard", response_model=MRDashboardReport, operation_id="mrDashboard")

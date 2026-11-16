@@ -13,4 +13,7 @@ export type {
   MRDashboardRecentOrder,
   MRDashboardTypeCount,
   MrDashboardParams,
+  MRDoctorPayment,
+  MRDoctorPaymentsPage,
+  MrDoctorPaymentsParams,
 } from "./mr-dashboard-generated/dashboard.schemas";

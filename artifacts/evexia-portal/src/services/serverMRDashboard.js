@@ -99,3 +99,39 @@ export async function getMRDashboard({ year, period = 'all', mrId, signal }) {
   });
   return data;
 }
+
+// Current all-date balances are deliberately independent of sales FY/quarter.
+export async function getMRDoctorPayments({ search = '', offset = 0, limit = 25, mrId, signal }) {
+  const data = await mrSalesRequest('/doctor-payments', { params: { search, offset, limit }, signal });
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const dayNumber = (v) => {
+    if (typeof v !== 'string' || !DAY.test(v)) fail();
+    const parsed = Date.parse(`${v}T00:00:00Z`);
+    if (!Number.isFinite(parsed) || new Date(parsed).toISOString().slice(0, 10) !== v) fail();
+    return parsed / 86400000;
+  };
+  if (!data || data.mrId !== mrId || data.offset !== offset || data.limit !== limit
+    || !count(data.total) || data.total > 20000 || !count(data.doctorDaysLimit) || data.doctorDaysLimit > 3650
+    || !Array.isArray(data.items) || data.items.length !== Math.min(limit, Math.max(0, data.total - offset))) fail();
+  const businessDay = dayNumber(data.businessDate);
+  const seen = new Set();
+  for (const row of data.items) {
+    if (!row || typeof row.doctorId !== 'string' || !uuid.test(row.doctorId) || seen.has(row.doctorId)
+      || typeof row.doctorName !== 'string' || !row.doctorName.trim()
+      || !money(row.received) || !money(row.knownDue) || !count(row.pendingPricingOrders)
+      || row.pendingPricingOrders > 20000
+      || row.due !== (row.pendingPricingOrders ? null : row.knownDue)) fail();
+    seen.add(row.doctorId);
+    if (row.oldestUnpaidDate === null) {
+      if (row.oldestUnpaidAgeDays !== null || row.daysRemaining !== null || row.overdueDays !== null
+        || cents(row.knownDue) !== 0n) fail();
+    } else {
+      const age = businessDay - dayNumber(row.oldestUnpaidDate);
+      if (!Number.isSafeInteger(row.oldestUnpaidAgeDays) || row.oldestUnpaidAgeDays !== age
+        || cents(row.knownDue) <= 0n
+        || row.daysRemaining !== (data.doctorDaysLimit ? Math.max(0, data.doctorDaysLimit - age) : null)
+        || row.overdueDays !== (data.doctorDaysLimit && age >= data.doctorDaysLimit ? Math.max(0, age - data.doctorDaysLimit) : null)) fail();
+    }
+  }
+  return data;
+}

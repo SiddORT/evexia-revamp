@@ -6,7 +6,7 @@ import path from "node:path";
 
 const root = path.resolve(__dirname, "../..");
 const contract = JSON.parse(fs.readFileSync(path.join(__dirname, "openapi.yaml"), "utf8"));
-const route = "/v1/mr/sales-achievement/dashboard";
+const routes = ["/v1/mr/sales-achievement/dashboard", "/v1/mr/sales-achievement/doctor-payments"];
 const schemas: Record<string, unknown> = {};
 function collect(value: unknown) {
   if (Array.isArray(value)) return value.forEach(collect);
@@ -21,12 +21,12 @@ function collect(value: unknown) {
   }
   Object.values(record).forEach(collect);
 }
-collect(contract.paths[route]);
+routes.forEach((route) => collect(contract.paths[route]));
 const input = {
   target: {
     openapi: contract.openapi,
     info: { ...contract.info, title: "MRDashboardApi" },
-    paths: { [route]: contract.paths[route] },
+    paths: Object.fromEntries(routes.map((route) => [route, contract.paths[route]])),
     components: { schemas, securitySchemes: contract.components.securitySchemes },
   },
 };

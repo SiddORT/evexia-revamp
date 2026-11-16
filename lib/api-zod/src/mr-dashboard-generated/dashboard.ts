@@ -92,3 +92,46 @@ export const MrDashboardResponse = zod.object({
 })
 
 
+/**
+ * @summary Doctor Payments
+ */
+export const mrDoctorPaymentsQuerySearchDefault = ``;
+export const mrDoctorPaymentsQuerySearchMax = 100;
+
+export const mrDoctorPaymentsQueryOffsetDefault = 0;
+export const mrDoctorPaymentsQueryOffsetMin = 0;
+export const mrDoctorPaymentsQueryOffsetMax = 20000;
+
+export const mrDoctorPaymentsQueryLimitDefault = 25;
+export const mrDoctorPaymentsQueryLimitMax = 100;
+
+
+
+export const MrDoctorPaymentsQueryParams = zod.object({
+  "search": zod.string().max(mrDoctorPaymentsQuerySearchMax).default(mrDoctorPaymentsQuerySearchDefault),
+  "offset": zod.number().int().min(mrDoctorPaymentsQueryOffsetMin).max(mrDoctorPaymentsQueryOffsetMax).default(mrDoctorPaymentsQueryOffsetDefault),
+  "limit": zod.number().int().min(1).max(mrDoctorPaymentsQueryLimitMax).default(mrDoctorPaymentsQueryLimitDefault)
+})
+
+export const MrDoctorPaymentsResponse = zod.object({
+  "businessDate": zod.string(),
+  "doctorDaysLimit": zod.number().int(),
+  "items": zod.array(zod.object({
+  "daysRemaining": zod.union([zod.number().int(),zod.null()]),
+  "doctorId": zod.string(),
+  "doctorName": zod.string(),
+  "due": zod.union([zod.string(),zod.null()]),
+  "knownDue": zod.string(),
+  "oldestUnpaidAgeDays": zod.union([zod.number().int(),zod.null()]),
+  "oldestUnpaidDate": zod.union([zod.string(),zod.null()]),
+  "overdueDays": zod.union([zod.number().int(),zod.null()]),
+  "pendingPricingOrders": zod.number().int(),
+  "received": zod.string()
+})),
+  "limit": zod.number().int(),
+  "mrId": zod.string(),
+  "offset": zod.number().int(),
+  "total": zod.number().int()
+})
+
+

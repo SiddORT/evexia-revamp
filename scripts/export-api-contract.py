@@ -172,7 +172,8 @@ def main() -> None:
             args.output.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             return
         selected = {path: item for path, item in contract["paths"].items()
-                    if (args.scope == "mr-dashboard" and path == "/v1/mr/sales-achievement/dashboard")
+                    if (args.scope == "mr-dashboard" and path in (
+                        "/v1/mr/sales-achievement/dashboard", "/v1/mr/sales-achievement/doctor-payments"))
                     or (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
                     or (args.scope == "settlement-credits" and
                         (path == "/v1/admin/settlements" or path.startswith("/v1/admin/settlements/")))

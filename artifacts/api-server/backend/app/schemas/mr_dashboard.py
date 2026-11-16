@@ -64,3 +64,26 @@ class MRDashboardReport(BaseModel):
     monthly: list[MRDashboardMonth]
     recent: list[MRDashboardRecentOrder]
     recentLimit: int
+
+
+class MRDoctorPayment(BaseModel):
+    doctorId: str
+    doctorName: str
+    received: str
+    knownDue: str
+    due: str | None
+    pendingPricingOrders: int
+    oldestUnpaidDate: str | None
+    oldestUnpaidAgeDays: int | None
+    daysRemaining: int | None
+    overdueDays: int | None
+
+
+class MRDoctorPaymentsPage(BaseModel):
+    mrId: str
+    businessDate: str
+    doctorDaysLimit: int
+    total: int
+    offset: int
+    limit: int
+    items: list[MRDoctorPayment]

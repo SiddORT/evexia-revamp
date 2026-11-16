@@ -14,7 +14,7 @@ export function fullBreakdown(byType) {
 }
 
 /** Order-count card with a viewport-safe four-type disclosure (hover, focus, tap). */
-export default function DashboardCountCard({ icon: Icon, label, total, byType, tone = 'status', scope, testId }) {
+export default function DashboardCountCard({ icon: Icon, label, total, byType, tone = 'status', scope, testId, active = true }) {
   const id = useId();
   const card = useRef(null);
   const panel = useRef(null);
@@ -26,6 +26,7 @@ export default function DashboardCountCard({ icon: Icon, label, total, byType, t
   const rows = fullBreakdown(byType);
   const cancel = () => window.clearTimeout(timer.current);
   const dismiss = () => { cancel(); pinned.current = false; setOpen(false); };
+  useEffect(() => { if (!active) { window.clearTimeout(timer.current); pinned.current = false; setOpen(false); } }, [active]);
   const leave = () => {
     cancel();
     timer.current = window.setTimeout(() => {
@@ -34,21 +35,25 @@ export default function DashboardCountCard({ icon: Icon, label, total, byType, t
   };
   useEffect(() => () => window.clearTimeout(timer.current), []);
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || !active) return undefined;
     const outside = (e) => { if (!card.current?.contains(e.target) && !panel.current?.contains(e.target)) dismiss(); };
     const esc = (e) => { if (e.key === 'Escape') { e.preventDefault(); dismiss(); } };
     document.addEventListener('pointerdown', outside, true);
     document.addEventListener('keydown', esc, true);
     return () => { document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', esc, true); };
-  }, [open]);
+  }, [open, active]);
   useLayoutEffect(() => {
-    if (!open) { setPosition(null); return undefined; }
+    if (!open || !active) { setPosition(null); return undefined; }
     const update = () => {
       if (!card.current || !panel.current) return;
       const a = card.current.getBoundingClientRect();
       const vv = window.visualViewport;
       const left = (vv?.offsetLeft || 0) + 8, top = (vv?.offsetTop || 0) + 8;
-      const right = left + (vv?.width || window.innerWidth) - 16, bottom = top + (vv?.height || window.innerHeight) - 16;
+      const navigation = card.current.closest('.mrw')?.querySelector('.mrw-nav');
+      const navTop = navigation && getComputedStyle(navigation).position === 'fixed'
+        ? navigation.getBoundingClientRect().top : Infinity;
+      const right = left + (vv?.width || window.innerWidth) - 16;
+      const bottom = Math.min(top + (vv?.height || window.innerHeight) - 16, navTop - 8);
       if (a.bottom < top || a.top > bottom) { dismiss(); return; }
       const b = panel.current.getBoundingClientRect();
       const below = bottom - a.bottom - 6, above = a.top - top - 6;
@@ -66,7 +71,7 @@ export default function DashboardCountCard({ icon: Icon, label, total, byType, t
       window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true);
       window.visualViewport?.removeEventListener('resize', update); window.visualViewport?.removeEventListener('scroll', update);
     };
-  }, [open, byType]);
+  }, [open, byType, active]);
 
   return <div ref={card} className={`mrd-card mrd-card--${tone}`} data-testid={testId}
     onPointerEnter={(e) => { if (e.pointerType !== 'touch') { cancel(); setOpen(true); } }}
@@ -79,12 +84,12 @@ export default function DashboardCountCard({ icon: Icon, label, total, byType, t
       <span>{label}</span>
     </div>
     <button type="button" className="mrd-card__info" aria-label={`${label}: ${fmt(total)} orders, breakdown by order type`}
-      aria-expanded={open} aria-controls={open ? id : undefined} aria-describedby={open ? id : undefined}
+      aria-expanded={open && active} aria-controls={open && active ? id : undefined} aria-describedby={open && active ? id : undefined}
       data-testid={testId ? `button-${testId}-breakdown` : undefined}
       onClick={() => { if (pinned.current) dismiss(); else { cancel(); pinned.current = true; setOpen(true); } }}>
       <Info size={15} aria-hidden="true" />
     </button>
-    {open && host && createPortal(<div ref={panel} id={id} role="tooltip" className="mrd-breakdown"
+    {open && active && host && createPortal(<div ref={panel} id={id} role="tooltip" className="mrd-breakdown"
       style={{ left: position?.left ?? 8, top: position?.top ?? 8, maxWidth: position?.maxWidth,
         maxHeight: position?.maxHeight, visibility: position ? 'visible' : 'hidden' }}
       onPointerEnter={cancel} onPointerLeave={leave}>

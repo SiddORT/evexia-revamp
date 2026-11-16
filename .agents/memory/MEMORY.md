@@ -141,3 +141,4 @@
 - [Hidden master prices](hidden-master-prices.md) — hide catalogue prices without erasing saved values; retain optional import inputs and independent financial prices.
 - [Doctor MR mapping policy](doctor-mr-mapping-policy.md) — Doctor Area is explicit catalogue data; transfers preserve linked Patients and honest historical baselines.
 - [Order approval notes](order-approval-note-policy.md) — Kits, SPT and Lupin notes are optional; rejection reasons and other approval safeguards remain mandatory.
+- [MR dashboard reporting](mr-dashboard-reporting-policy.md) — all-date own-Doctor balances include both unpaid age and remaining days; reporting does not change financial policy.
