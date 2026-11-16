@@ -1,4 +1,5 @@
 export * from "./generated/api";
+export * from "./mr-dashboard-generated/dashboard";
 export * from "./generated/types/creditInput";
 export * from "./generated/types/creditPage";
 export * from "./generated/types/creditRecord";

@@ -35,7 +35,7 @@ export const subscribeSession = (listener) => { listeners.add(listener); return 
 
 // Read-only MR-self reporting. No Admin target permissions or MR selector.
 export async function mrSalesRequest(path = '', { params = {}, signal } = {}) {
-  if (!['', '/years'].includes(path)) throw new SessionError('Unsupported sales report.');
+  if (!['', '/years', '/dashboard'].includes(path)) throw new SessionError('Unsupported sales report.');
   const epoch = generation;
   const scope = contactReadScope();
   const check = () => {
@@ -66,6 +66,8 @@ export async function mrSalesRequest(path = '', { params = {}, signal } = {}) {
     throw new SessionError(response.status === 401 ? 'Session checked. Retry explicitly.'
       : response.status === 403 ? 'Sales achievement requires your active saved MR identity.'
       : data?.error?.code === 'mr_sales_limit' ? 'This period exceeds the safe 20,000-order reporting limit. Select a quarter. No partial achievement is shown.'
+      : data?.error?.code === 'mr_dashboard_limit' ? 'Full-year achievement exceeds the safe 20,000-order limit. Use Targets for a shorter period. No partial dashboard is shown.'
+      : path === '/dashboard' ? 'Dashboard is unavailable. Refresh or retry; failures are not shown as zero.'
       : 'Sales achievement is unavailable. Refresh or retry; no estimates are shown.', response.status);
   }
   return data;

@@ -145,7 +145,7 @@ def normalize_spec(source: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--scope", choices=["low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits"], help="Merge only the selected contract, retaining unrelated refinements.")
+    parser.add_argument("--scope", choices=["mr-dashboard", "low-stock", "languages", "hsn-allergens", "catalogue-prices", "gst-kits", "count-tariffs", "combination-pricing", "pricing-retirement", "territories", "doctor-mapping", "unified-drafts", "deferred-order-review", "kits-contributions", "settlement-credits"], help="Merge only the selected contract, retaining unrelated refinements.")
     parser.add_argument("--base-contract", type=Path, help="Existing contract to retain for a scoped export.")
     args = parser.parse_args()
 
@@ -172,7 +172,8 @@ def main() -> None:
             args.output.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             return
         selected = {path: item for path, item in contract["paths"].items()
-                    if (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
+                    if (args.scope == "mr-dashboard" and path == "/v1/mr/sales-achievement/dashboard")
+                    or (args.scope == "unified-drafts" and path == "/v1/admin/order-drafts")
                     or (args.scope == "settlement-credits" and
                         (path == "/v1/admin/settlements" or path.startswith("/v1/admin/settlements/")))
                     or (args.scope == "deferred-order-review" and

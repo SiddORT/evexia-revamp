@@ -28,8 +28,10 @@ count toward achievement.
 
 The current financial year is determined on the server using Asia/Kolkata today.
 Years run April 1–March 31. Q1 is April–June, Q2 July–September, Q3 October–December
-and Q4 January–March. Every summary and order contribution uses the same selected
-year/quarter, saved order date and persisted MR owner. Approval timestamps do not
+and Q4 January–March. Every Targets summary and order contribution uses the same selected
+year/quarter, saved order date and persisted MR owner. Dashboard achievement keeps
+full-financial-year context even when its order section is narrowed to a quarter.
+Approval timestamps do not
 determine attribution.
 
 Eligible persisted statuses are `Approved`, `In process`, `Shipped` and
@@ -117,10 +119,11 @@ visibility return and browser page return; Refresh/Retry are explicit.
 Targets retains browser date preferences, native labeled year/quarter controls,
 explicit quarter ranges, summary/loading/no-sales/no-target/error states and a
 semantic table with responsive stacked rows and previous/next navigation.
-Dashboard uses the server's current fiscal year with a direct Targets link.
-Demo milestones/badges/achievement and demo collection/outstanding summary cards
-have been removed from its live achievement area. The untouched fictional
-activity section and demo-payment shortcut are explicitly identified as demo.
+Dashboard now has a separate aggregate contract documented in
+`docs/mr-dashboard.md`. Its order cards and recent saved orders use the selected
+year/quarter; achievement retains full-year context and directory counts are
+current. The former fictional dashboard activity panel has been removed.
+Unrelated demo workflows and Targets reporting behavior remain unchanged.
 
 ## Verification limits for this delivery
 

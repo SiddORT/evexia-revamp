@@ -37443,6 +37443,352 @@
         ],
         "title": "CreditRevertInput",
         "type": "object"
+      },
+      "MRDashboardAchievement": {
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "dateFrom": {
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "title": "Dateto",
+            "type": "string"
+          },
+          "knownSales": {
+            "title": "Knownsales",
+            "type": "string"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "period": {
+            "enum": [
+              "all",
+              "Q1",
+              "Q2",
+              "Q3",
+              "Q4"
+            ],
+            "title": "Period",
+            "type": "string"
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "targetState": {
+            "enum": [
+              "active",
+              "missing",
+              "inactive",
+              "deleted"
+            ],
+            "title": "Targetstate",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unavailableOrders": {
+            "title": "Unavailableorders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "period",
+          "dateFrom",
+          "dateTo",
+          "targetState",
+          "target",
+          "knownSales",
+          "complete",
+          "unavailableOrders",
+          "total",
+          "remaining",
+          "percentage"
+        ],
+        "title": "MRDashboardAchievement",
+        "type": "object"
+      },
+      "MRDashboardCount": {
+        "properties": {
+          "byType": {
+            "items": {
+              "$ref": "#/components/schemas/MRDashboardTypeCount"
+            },
+            "title": "Bytype",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "total",
+          "byType"
+        ],
+        "title": "MRDashboardCount",
+        "type": "object"
+      },
+      "MRDashboardDirectory": {
+        "properties": {
+          "doctors": {
+            "title": "Doctors",
+            "type": "integer"
+          },
+          "patients": {
+            "title": "Patients",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doctors",
+          "patients"
+        ],
+        "title": "MRDashboardDirectory",
+        "type": "object"
+      },
+      "MRDashboardMonth": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "knownSales": {
+            "title": "Knownsales",
+            "type": "string"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "unavailableOrders": {
+            "title": "Unavailableorders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "amount",
+          "knownSales",
+          "unavailableOrders"
+        ],
+        "title": "MRDashboardMonth",
+        "type": "object"
+      },
+      "MRDashboardRecentOrder": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "IT",
+              "Kit",
+              "SPT",
+              "Lupin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "Pending",
+              "In process",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "number",
+          "kind",
+          "date",
+          "status"
+        ],
+        "title": "MRDashboardRecentOrder",
+        "type": "object"
+      },
+      "MRDashboardReport": {
+        "properties": {
+          "annual": {
+            "$ref": "#/components/schemas/MRDashboardAchievement"
+          },
+          "currentYear": {
+            "title": "Currentyear",
+            "type": "integer"
+          },
+          "dateFrom": {
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "title": "Dateto",
+            "type": "string"
+          },
+          "directory": {
+            "$ref": "#/components/schemas/MRDashboardDirectory"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MRDashboardMonth"
+            },
+            "title": "Monthly",
+            "type": "array"
+          },
+          "mrId": {
+            "title": "Mrid",
+            "type": "string"
+          },
+          "orders": {
+            "$ref": "#/components/schemas/MRDashboardCount"
+          },
+          "period": {
+            "enum": [
+              "all",
+              "Q1",
+              "Q2",
+              "Q3",
+              "Q4"
+            ],
+            "title": "Period",
+            "type": "string"
+          },
+          "quarters": {
+            "items": {
+              "$ref": "#/components/schemas/MRDashboardAchievement"
+            },
+            "title": "Quarters",
+            "type": "array"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/MRDashboardRecentOrder"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
+          "recentLimit": {
+            "title": "Recentlimit",
+            "type": "integer"
+          },
+          "startYear": {
+            "title": "Startyear",
+            "type": "integer"
+          },
+          "statuses": {
+            "items": {
+              "$ref": "#/components/schemas/MRDashboardCount"
+            },
+            "title": "Statuses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "mrId",
+          "startYear",
+          "currentYear",
+          "period",
+          "dateFrom",
+          "dateTo",
+          "orders",
+          "statuses",
+          "directory",
+          "annual",
+          "quarters",
+          "monthly",
+          "recent",
+          "recentLimit"
+        ],
+        "title": "MRDashboardReport",
+        "type": "object"
+      },
+      "MRDashboardTypeCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "IT",
+              "Kit",
+              "SPT",
+              "Lupin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "count",
+          "percentage"
+        ],
+        "title": "MRDashboardTypeCount",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -177254,6 +177600,306 @@
         "summary": "Credit Reconcile",
         "tags": [
           "settlements"
+        ]
+      }
+    },
+    "/v1/mr/sales-achievement/dashboard": {
+      "get": {
+        "operationId": "mrDashboard",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start_year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 9998,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Year"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "Q1",
+                "Q2",
+                "Q3",
+                "Q4"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MRDashboardReport"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Dashboard",
+        "tags": [
+          "mr-sales-achievement"
         ]
       }
     }

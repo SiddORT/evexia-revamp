@@ -39,6 +39,16 @@ def percentage(amount, target):
     return format((amount * 100 / target).quantize(Decimal(".01"), rounding=ROUND_HALF_UP), ".2f")
 
 
+def target_for_year(db, mr_id, year):
+    # Live rows precede retained deletions. Shared by Dashboard and Targets.
+    row = db.scalar(select(SalesTarget).where(
+        SalesTarget.mrId == mr_id, SalesTarget.startYear == year
+    ).order_by(SalesTarget.deleted_at.asc().nulls_first(), SalesTarget.updated_at.desc(),
+               SalesTarget.id).limit(1))
+    state = "missing" if row is None else "deleted" if row.deleted_at else row.status
+    return row, state
+
+
 def transaction(db, actor, work):
     try:
         # Reuse order identity/graph checks and the shared financial/lifecycle lock.
@@ -83,11 +93,7 @@ def reporting(db, actor, start_year=None, period="all", offset=0, limit=25):
         year = start_year if start_year is not None else current_year()
         start, end = bounds(year, period)
         # Active/inactive live records take precedence over retained deletions.
-        target_row = db.scalar(select(SalesTarget).where(
-            SalesTarget.mrId == current.mr.id, SalesTarget.startYear == year
-        ).order_by(SalesTarget.deleted_at.asc().nulls_first(), SalesTarget.updated_at.desc(), SalesTarget.id).limit(1))
-        target_state = ("missing" if target_row is None else "deleted" if target_row.deleted_at
-                        else target_row.status)
+        target_row, target_state = target_for_year(db, current.mr.id, year)
         target = None
         if target_state == "active":
             target = target_row.annual_target if period == "all" else getattr(target_row, period.lower())

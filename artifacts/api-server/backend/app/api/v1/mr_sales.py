@@ -4,9 +4,28 @@ from sqlalchemy.orm import Session
 from app.api.deps import current_identity
 from app.db.session import get_db
 from app.schemas.mr_sales import MRSalesReport, MRSalesYears
+from app.schemas.mr_dashboard import MRDashboardReport
 from app.services import mr_sales as service
 
 router = APIRouter(prefix="/mr/sales-achievement", tags=["mr-sales-achievement"])
+
+
+def dashboard_database(db: Session = Depends(get_db)):
+    from app.services.mr_dashboard import begin_snapshot
+    begin_snapshot(db)
+    return db
+
+
+@router.get("/dashboard", response_model=MRDashboardReport, operation_id="mrDashboard")
+def dashboard(response: Response, start_year: int | None = Query(None, ge=1, le=9998),
+              period: Literal["all", "Q1", "Q2", "Q3", "Q4"] = "all",
+              db: Session = Depends(dashboard_database), actor=Depends(current_identity)):
+    # Resolve the snapshot dependency before current_identity, which reuses the
+    # cached get_db session. No isolation changes after authentication queries,
+    # no extra connection per request, and no commit of pending business writes.
+    from app.services.mr_dashboard import report as dashboard_report
+    response.headers["Cache-Control"] = "no-store"
+    return dashboard_report(db, actor, start_year, period)
 
 
 @router.get("/years", response_model=MRSalesYears, operation_id="mrSalesYears")
