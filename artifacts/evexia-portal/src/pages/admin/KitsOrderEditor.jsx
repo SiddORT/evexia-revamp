@@ -238,7 +238,7 @@ export default function KitsOrderEditor({ order: initialOrder }) {
             <div className="kits-field"><label htmlFor="kito-parking">Business Parking (INR)</label><input id="kito-parking" inputMode="decimal" aria-invalid={Boolean(errors.parking)} aria-describedby="kito-parking-hint" value={parking} onChange={(e) => setParking(e.target.value)} placeholder="Not entered" /></div>
             <div className="kits-field"><label htmlFor="kito-po">PO Number (optional)</label><input id="kito-po" maxLength={200} value={po} onChange={(e) => setPo(e.target.value)} placeholder="Enter PO number" /></div>
            </div><p id="kito-parking-hint" className="kits-hint">Independently entered contribution basis, never an invoice charge or deduction. Blank means unavailable; 0 is a real amount.</p>
-           <KitsContributionSummary contribution={contribution} preview={contributionChanged} /></section>}
+           <KitsContributionSummary contribution={contribution} preview={contributionChanged} hideSavedNotes={portal === 'admin'} /></section>}
       </div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Doctor details</h2>

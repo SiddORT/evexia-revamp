@@ -31,14 +31,14 @@ function AdditionalInformation({ order, compact = false }) {
   </section>;
 }
 
-export default function KitsPricingSummary({ order, compact = false }) {
+export default function KitsPricingSummary({ order, compact = false, hideSavedContributionNotes = false }) {
   const p = order?.pricing;
   const k = order?.kit || {};
   if (!p) return <div className="kpr kpr-empty" data-testid="kits-pricing-unpriced">
     <p>{compact ? 'Rates have not been added yet.' : 'Not yet priced. No historical totals have been assumed.'}</p>
     {!compact && <><p>Actual applied GST: unavailable — no saved pricing evidence.</p><CurrentGST /></>}
     <AdditionalInformation order={order} compact={compact} />
-    <KitsContributionSummary contribution={order.financialContribution} /></div>;
+    <KitsContributionSummary contribution={order.financialContribution} hideSavedNotes={hideSavedContributionNotes} /></div>;
   const L = p.lineAmounts || {};
   const rows = [];
   if (k.product || k.volume || k.quantity) rows.push(['Stallergo Skin Prick Kit', k.product === 'Customized' ? `Customized (${k.custom})` : k.product, k.volume, k.quantity, p.kitRate, L.kit]);
@@ -64,6 +64,6 @@ export default function KitsPricingSummary({ order, compact = false }) {
       : 'Policy revision and effective boundary were not saved with this historical price. The saved rate and amounts above are actual order evidence, not inferred from current policy.'}</p>
     <CurrentGST /></>}</section>
     <AdditionalInformation order={order} compact={compact} />
-    <KitsContributionSummary contribution={order.financialContribution} />
+    <KitsContributionSummary contribution={order.financialContribution} hideSavedNotes={hideSavedContributionNotes} />
   </div>;
 }

@@ -72,7 +72,7 @@ function Summary({ order: initialOrder }) {
         {can.protected && <section className="admin-panel kits-panel" aria-labelledby="kits-s-pricing">
           <div className="kits-saved__section-head"><h2 id="kits-s-pricing">Order items and pricing</h2>
             {can.edit && <Link href={`${BASE}/${order.id}/edit`} className="admin-button admin-button--secondary">Edit order and pricing</Link>}</div>
-          <KitsPricingSummary order={order} compact={portal !== 'mr'} />
+          <KitsPricingSummary order={order} compact={portal !== 'mr'} hideSavedContributionNotes={portal === 'admin'} />
         </section>}
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
           {portal === 'mr' && can.edit && order.mrEditable && <div className="kits-saved__actions"><Link href={`${BASE}/${order.id}/edit`} className="admin-button">Edit order</Link></div>}
