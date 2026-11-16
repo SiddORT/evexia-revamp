@@ -119,13 +119,13 @@ export default function ImmunotherapyOrders() {
         <p className="admin-page-head__description">Review patient dosage, allergen suborders and saved pricing.</p></div>
       <div className="imm-list-head__actions">
         {actions}
+        <DraftOrdersLink from={BASE} testId="link-imm-drafts" />
         {can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-imm-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}
       </div>
     </div>} />
     {error && <div className="imm-errors" role="alert">{error} <button type="button" className="imm-link-btn" onClick={() => setRevision((n) => n + 1)}>Retry</button></div>}
     {loading && <p role="status">Loading saved orders…</p>}
-    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading}
-      afterAllOrders={<DraftOrdersLink from={BASE} testId="link-imm-drafts" />} />
+    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
     <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
       <OrderListingFilters masterDisclosure onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
         <label className="imm-field imm-field--grow">

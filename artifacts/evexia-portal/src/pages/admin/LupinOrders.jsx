@@ -63,10 +63,13 @@ export default function LupinOrders() {
     <OrderListingHeader kind="lupin" rows={result.items} adapter={createLupinTransferAdapter(applied, refresh)} total={loading || error ? undefined : result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Order Management – Lupin</h1><p className="admin-page-head__description">Review saved Lupin orders by Doctor, MR and status.</p></div>
-        <div className="lupin-actions">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
+        <div className="lupin-actions">
+          {actions}
+          <DraftOrdersLink from={BASE} testId="link-lupin-drafts" />
+          {can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}
+        </div>
       </div>} />
-    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading}
-      afterAllOrders={<DraftOrdersLink from={BASE} testId="link-lupin-drafts" />} />
+    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
     <section className="admin-panel" aria-label="Lupin orders">
       <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         resetTestId="button-lupin-reset" applyTestId="button-lupin-apply"

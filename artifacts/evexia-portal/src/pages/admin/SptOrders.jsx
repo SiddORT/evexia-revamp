@@ -80,10 +80,13 @@ export default function SptOrders() {
             <h1>SPT</h1>
             <p className="admin-page-head__description">Review SPT orders by doctor, MR and status.</p>
           </div>
-          <div className="spt-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
+          <div className="spt-actions-top">
+            {actions}
+            <DraftOrdersLink from={BASE} testId="link-spt-drafts" />
+            {can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>}
+          </div>
         </div>} />
-        <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading}
-          afterAllOrders={<DraftOrdersLink from={BASE} testId="link-spt-drafts" />} />
+        <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
         <section className="admin-panel" aria-label="SPT orders">
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}
             onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={

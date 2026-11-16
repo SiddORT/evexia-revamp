@@ -89,10 +89,13 @@ export default function KitsOrders() {
     <OrderListingHeader kind="kits" rows={result.items} adapter={createKitsTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Kits &amp; Consumables</h1><p className="admin-page-head__description">Skin prick kits, lancets, applicators and trays ordered for doctors and MRs.</p></div>
-        <div className="kits-actions-top">{actions}{can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}</div>
+        <div className="kits-actions-top">
+          {actions}
+          <DraftOrdersLink from={BASE} testId="link-kits-drafts" />
+          {can.add && <Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link>}
+        </div>
       </div>} />
-    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading}
-      afterAllOrders={<DraftOrdersLink from={BASE} testId="link-kits-drafts" />} />
+    <OrderCountSummary statuses={STATUSES} total={result.total} counts={result.counts} loading={loading} />
     <section className="admin-panel kits-panel kits-listing__panel" aria-label="Kits and consumables orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
